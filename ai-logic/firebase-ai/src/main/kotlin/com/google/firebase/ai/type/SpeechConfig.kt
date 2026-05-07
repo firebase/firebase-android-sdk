@@ -27,18 +27,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 public data class SpeakerVoiceConfig(
   public val speaker: String,
-  public val voiceConfig: Voice,
+  public val voice: Voice,
 ) {
   internal fun toInternal() =
     Internal(
       speaker = speaker,
-      voiceConfig = voiceConfig.toInternal().let { Voice.Internal.VoiceConfigInternal(it) },
+      voiceConfig = voice.toInternal().let { VoiceConfigInternal(it) },
     )
 
   @Serializable
   internal data class Internal(
     val speaker: String,
-    @SerialName("voice_config") val voiceConfig: Voice.Internal.VoiceConfigInternal,
+    @SerialName("voice_config") val voiceConfig: VoiceConfigInternal,
   )
 }
 
@@ -48,7 +48,8 @@ public data class SpeakerVoiceConfig(
 public data class MultiSpeakerVoiceConfig(
   public val speakerVoiceConfigs: List<SpeakerVoiceConfig>,
 ) {
-  internal fun toInternal() = Internal(speakerVoiceConfigs = speakerVoiceConfigs.map { it.toInternal() })
+  internal fun toInternal() =
+    Internal(speakerVoiceConfigs = speakerVoiceConfigs.map { it.toInternal() })
 
   @Serializable
   internal data class Internal(
@@ -65,19 +66,25 @@ private constructor(
   public val languageCode: String? = null,
 ) {
 
+  @JvmOverloads
   public constructor(
     voice: Voice,
     languageCode: String? = null,
   ) : this(voice = voice, multiSpeakerVoiceConfig = null, languageCode = languageCode)
 
+  @JvmOverloads
   public constructor(
     multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig,
     languageCode: String? = null,
-  ) : this(voice = null, multiSpeakerVoiceConfig = multiSpeakerVoiceConfig, languageCode = languageCode)
+  ) : this(
+    voice = null,
+    multiSpeakerVoiceConfig = multiSpeakerVoiceConfig,
+    languageCode = languageCode
+  )
 
   @Serializable
   internal data class Internal(
-    @SerialName("voice_config") val voiceConfig: Voice.Internal.VoiceConfigInternal? = null,
+    @SerialName("voice_config") val voiceConfig: VoiceConfigInternal? = null,
     @SerialName("multi_speaker_voice_config")
     val multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig.Internal? = null,
     @SerialName("language_code") val languageCode: String? = null,
@@ -85,7 +92,7 @@ private constructor(
 
   internal fun toInternal(): Internal {
     return Internal(
-      voiceConfig = voice?.toInternal()?.let { Voice.Internal.VoiceConfigInternal(it) },
+      voiceConfig = voice?.toInternal()?.let { VoiceConfigInternal(it) },
       multiSpeakerVoiceConfig = multiSpeakerVoiceConfig?.toInternal(),
       languageCode = languageCode,
     )

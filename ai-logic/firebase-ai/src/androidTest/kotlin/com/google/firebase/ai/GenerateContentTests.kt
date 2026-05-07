@@ -22,7 +22,12 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.ImageSize
+import com.google.firebase.ai.type.MultiSpeakerVoiceConfig
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
+import com.google.firebase.ai.type.SpeakerVoiceConfig
+import com.google.firebase.ai.type.SpeechConfig
+import com.google.firebase.ai.type.Voice
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.imageConfig
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -32,6 +37,7 @@ import io.kotest.matchers.string.shouldContainIgnoringCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 class GenerateContentTests {
   private val validator = TypesValidator()
 
@@ -125,6 +131,48 @@ class GenerateContentTests {
       // Verify Size (512px)
       bitmap.width shouldBe 512
       bitmap.height shouldBe 512
+    }
+  }
+
+  @Test
+  fun testGenerateContent_speechConfig() {
+    val modelName = "gemini-3.1-flash-tts-preview"
+    val config = generationConfig {
+      responseModalities = listOf(ResponseModality.AUDIO)
+      speechConfig = SpeechConfig(voice = Voice("Aoede"), languageCode = "en-US")
+    }
+    val models = AIModels.getGenerativeModels(modelName = modelName, config = config)
+    runBlocking {
+      for (model in models) {
+        val response = model.generateContent("Hello")
+        validator.validateResponse(response)
+      }
+    }
+  }
+
+  @Test
+  fun testGenerateContent_speechConfig_multiSpeaker() {
+    val config = generationConfig {
+      responseModalities = listOf(ResponseModality.AUDIO)
+      speechConfig =
+        SpeechConfig(
+          multiSpeakerVoiceConfig =
+            MultiSpeakerVoiceConfig(
+              listOf(
+                SpeakerVoiceConfig("Speaker1", Voice("Puck")),
+                SpeakerVoiceConfig("Speaker2", Voice("Charon"))
+              )
+            ),
+          languageCode = "en-US"
+        )
+    }
+    val modelName = "gemini-3.1-flash-tts-preview"
+    val models = AIModels.getGenerativeModels(modelName = modelName, config = config)
+    runBlocking {
+      for (model in models) {
+        val response = model.generateContent("Hello")
+        validator.validateResponse(response)
+      }
     }
   }
 }

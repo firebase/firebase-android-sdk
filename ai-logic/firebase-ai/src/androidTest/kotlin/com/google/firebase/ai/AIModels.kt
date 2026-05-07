@@ -17,8 +17,12 @@ package com.google.firebase.ai
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.Tool
 
 @OptIn(PublicPreviewAPI::class)
 class AIModels {
@@ -29,18 +33,27 @@ class AIModels {
     private val PROJECT_ID: String = "fireescape-integ-tests"
     // General purpose models
     var app: FirebaseApp? = null
-    lateinit var vertexAIFlashModel: GenerativeModel
-    lateinit var vertexAIFlashLiteModel: GenerativeModel
-    lateinit var googleAIFlashModel: GenerativeModel
-    lateinit var googleAIFlashLiteModel: GenerativeModel
-    lateinit var vertexAITemplateModel: TemplateGenerativeModel
-    lateinit var googleAITemplateModel: TemplateGenerativeModel
+    val vertexAIFlashModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash")
+    }
+    val vertexAIFlashLiteModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash-lite")
+    }
+    val googleAIFlashModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-2.5-flash")
+    }
+    val googleAIFlashLiteModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-2.5-flash-lite")
+    }
+    val vertexAITemplateModel: TemplateGenerativeModel by lazy {
+      FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI()).templateGenerativeModel()
+    }
+    val googleAITemplateModel: TemplateGenerativeModel by lazy {
+      FirebaseAI.getInstance(app(), GenerativeBackend.googleAI()).templateGenerativeModel()
+    }
 
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
-      if (app == null) {
-        setup()
-      }
       return listOf(
         vertexAIFlashModel,
         vertexAIFlashLiteModel,
@@ -49,11 +62,26 @@ class AIModels {
       )
     }
 
-    /** Returns a list of template models to test */
+    fun getGenerativeModel(
+      backend: GenerativeBackend,
+      modelName: String = "gemini-2.5-flash",
+      config: GenerationConfig? = null
+    ): GenerativeModel {
+      return FirebaseAI.getInstance(app(), backend)
+        .generativeModel(modelName = modelName, generationConfig = config)
+    }
+
+    fun getGenerativeModels(
+      modelName: String = "gemini-2.5-flash",
+      config: GenerationConfig? = null
+    ): List<GenerativeModel> {
+      return listOf(
+        getGenerativeModel(GenerativeBackend.vertexAI(), modelName, config),
+        getGenerativeModel(GenerativeBackend.googleAI(), modelName, config),
+      )
+    }
+
     fun getTemplateModels(): List<TemplateGenerativeModel> {
-      if (app == null) {
-        setup()
-      }
       return listOf(vertexAITemplateModel, googleAITemplateModel)
     }
 
@@ -67,30 +95,39 @@ class AIModels {
     fun setup() {
       val context = InstrumentationRegistry.getInstrumentation().context
       app = FirebaseApp.initializeApp(context)
-      vertexAIFlashModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
-          .generativeModel(
-            modelName = "gemini-2.5-flash",
-          )
-      vertexAIFlashLiteModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
-          .generativeModel(
-            modelName = "gemini-2.5-flash-lite",
-          )
-      googleAIFlashModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
-          .generativeModel(
-            modelName = "gemini-2.5-flash",
-          )
-      googleAIFlashLiteModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
-          .generativeModel(
-            modelName = "gemini-2.5-flash-lite",
-          )
-      vertexAITemplateModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
-      googleAITemplateModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
+    }
+
+    fun getGoogleLiveModel(
+      modelName: String? = null,
+      config: LiveGenerationConfig? = null,
+      systemInstruction: Content? = null,
+      tools: List<Tool>? = null
+    ): LiveGenerativeModel {
+      return FirebaseAI.getInstance(app(), GenerativeBackend.googleAI())
+        .liveModel(
+          modelName = modelName ?: "gemini-3.1-flash-live-preview",
+          generationConfig = config,
+          systemInstruction = systemInstruction,
+          tools = tools
+        )
+    }
+
+    fun getVertexLiveModel(
+      modelName: String? = null,
+      config: LiveGenerationConfig? = null
+    ): LiveGenerativeModel {
+      return FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
+        .liveModel(
+          modelName = modelName ?: "gemini-live-2.5-flash-native-audio",
+          generationConfig = config,
+        )
+    }
+
+    fun getAllLiveModels(
+      modelName: String? = null,
+      config: LiveGenerationConfig? = null
+    ): List<LiveGenerativeModel> {
+      return listOf(getGoogleLiveModel(modelName, config), getVertexLiveModel(modelName, config))
     }
   }
 }

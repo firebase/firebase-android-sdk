@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for `SpeechConfig` in `GenerationConfig`. Added `MultiSpeakerVoiceConfig` and `languageCode` in `SpeechConfig`. (#8100)
+
 - [feature] Added support for `ImageConfig` and `finishMessage`. (#8020)
 
 - [feature] Added a Java-friendly wrapper for TemplateChat interactions (`TemplateChatFutures`).

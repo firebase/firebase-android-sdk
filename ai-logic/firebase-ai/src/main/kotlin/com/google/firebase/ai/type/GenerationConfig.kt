@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -83,8 +84,10 @@ import kotlinx.serialization.Serializable
  *
  * @property responseModalities The format of data in which the model should respond with.
  * @property imageConfig Configuration for the aspect ratio and size of generated images.
- * @property speechConfig The configuration for controlling the voice of the model during conversation.
+ * @property speechConfig The configuration for controlling the voice of the model during
+ * conversation.
  */
+@OptIn(PublicPreviewAPI::class)
 public class GenerationConfig
 private constructor(
   internal val temperature: Float?,
@@ -133,9 +136,9 @@ private constructor(
    * @property responseJsonSchema See [GenerationConfig.responseJsonSchema]
    *
    * @property responseModalities See [GenerationConfig.responseModalities].
-   * 
+   *
    * @property imageConfig See [GenerationConfig.imageConfig].
-   * 
+   *
    * @property speechConfig See [GenerationConfig.speechConfig].
    *
    * @see [generationConfig]
@@ -298,6 +301,7 @@ private constructor(
       speechConfig = speechConfig?.toInternal()
     )
 
+  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     val temperature: Float?,

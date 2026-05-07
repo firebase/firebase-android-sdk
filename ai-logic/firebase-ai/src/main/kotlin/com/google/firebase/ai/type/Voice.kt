@@ -24,11 +24,18 @@ import kotlinx.serialization.Serializable
  * [all supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
  */
 @PublicPreviewAPI
+@Serializable
 public class Voice public constructor(public val voiceName: String) {
 
-  @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
-
-  internal fun toInternal(): Internal {
-    return Internal(this.voiceName)
+  internal fun toInternal(): PrebuiltVoiceInternal {
+    return PrebuiltVoiceInternal(this.voiceName)
   }
 }
+
+@Serializable
+internal data class PrebuiltVoiceInternal(@SerialName("voice_name") val voiceName: String)
+
+@Serializable
+internal data class VoiceConfigInternal(
+  @SerialName("prebuilt_voice_config") val prebuiltVoiceConfig: PrebuiltVoiceInternal
+)
