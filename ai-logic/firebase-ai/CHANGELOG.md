@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig`
+
 - [feature] Added support for `ImageConfig` and `finishMessage`. (#8020)
 
 - [feature] Added a Java-friendly wrapper for TemplateChat interactions (`TemplateChatFutures`).

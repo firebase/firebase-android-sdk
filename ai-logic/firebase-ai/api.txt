@@ -213,8 +213,8 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
-    method public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
+    method @Deprecated public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
 }
@@ -1847,7 +1847,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class TemplateToolConfig {
-    ctor public TemplateToolConfig();
   }
 
   public final class TextPart implements com.google.firebase.ai.type.Part {

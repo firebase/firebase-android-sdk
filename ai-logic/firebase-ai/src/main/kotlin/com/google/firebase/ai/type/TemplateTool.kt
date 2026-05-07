@@ -127,8 +127,12 @@ internal constructor(
 }
 
 /** Config for template tools to use with server prompts. */
-public class TemplateToolConfig {
-  internal fun toInternal(): ToolConfig.Internal? {
-    return null // Empty config payload as defined in flutter API
+public class TemplateToolConfig
+internal constructor(private val retrievalConfig: RetrievalConfig? = null) {
+  internal fun toInternal(): ToolConfig.Internal {
+    return ToolConfig.Internal(
+      functionCallingConfig = null,
+      retrievalConfig = retrievalConfig?.toInternal()
+    )
   }
 }
