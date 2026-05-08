@@ -20,6 +20,9 @@ import app.cash.turbine.Event
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.awaitError
+import com.google.firebase.dataconnect.testutil.awaitStatusException
+import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
@@ -35,7 +38,6 @@ import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
-import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -153,12 +155,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.send(streamRequest)
 
-        val exception = awaitError()
-
-        val statusException = exception.shouldBeInstanceOf<StatusException>()
-        statusException.status.code shouldBe Status.Code.INVALID_ARGUMENT
-        statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-          "invalid connector name"
+        awaitStatusException(Status.Code.INVALID_ARGUMENT) {
+          it.message shouldContainWithNonAbuttingTextIgnoringCase "invalid connector name"
+        }
       }
     }
   }
@@ -169,12 +168,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.outgoingRequests.close()
 
     streams.incomingResponses.test {
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -185,12 +181,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.incomingResponses.test {
       streams.outgoingRequests.close()
 
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -218,10 +211,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(CancellationException("forced exception v5bgf9ppmm"))
 
-        val exception = awaitError()
-
-        val cancellationException = exception.shouldBeInstanceOf<CancellationException>()
-        cancellationException shouldHaveMessage "forced exception v5bgf9ppmm"
+        awaitError<CancellationException> { it shouldHaveMessage "forced exception v5bgf9ppmm" }
       }
     }
 
@@ -234,10 +224,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(TestException("forced exception gajhw85ajt"))
 
-        val exception = awaitError()
-
-        val testException = exception.shouldBeInstanceOf<TestException>()
-        testException shouldHaveMessage "forced exception gajhw85ajt"
+        awaitError<TestException> { it shouldHaveMessage "forced exception gajhw85ajt" }
       }
     }
 
@@ -356,11 +343,10 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       awaitItem().requestId shouldBe requestId
 
       streams.outgoingRequests.send(streamRequest2)
-      val exception = awaitError()
+      awaitStatusException(Status.Code.FAILED_PRECONDITION) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
+      }
 
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.FAILED_PRECONDITION
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
     }
   }
 
