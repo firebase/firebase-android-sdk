@@ -16,9 +16,12 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataSource
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
@@ -39,8 +42,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
-  projectId: String,
-  connector: ConnectorConfig,
+  @get:VisibleForTesting val connectorResourceName: String,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -48,12 +50,6 @@ internal class DataConnectGrpcClient(
 ) {
   val instanceId: String
     get() = logger.nameWithId
-
-  private val connectorResourceName =
-    "projects/$projectId/" +
-      "locations/${connector.location}" +
-      "/services/${connector.serviceId}" +
-      "/connectors/${connector.connector}"
 
   data class OperationResult(
     val data: Struct?,

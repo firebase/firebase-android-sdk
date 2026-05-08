@@ -1,5 +1,7 @@
 # Unreleased
 
+# 4.1.1
+
 - [feature] Support callback when the pseudonymous id was updated
 
 # 4.1.0

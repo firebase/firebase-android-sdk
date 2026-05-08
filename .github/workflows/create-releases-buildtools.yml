@@ -62,24 +62,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
-      - name: Make release for Firebase Crashlytics Buildtools
+      - name: Make release for Firebase Crashlytics
         run: |
           ./gradlew \
-            -Dmaven.repo.local=${ARTIFACTS}-buildtools \
-            :firebase-crashlytics-buildtools:publishToMavenLocal
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
-        with:
-          name: firebase-crashlytics-buildtools
-          path: ${{ env.ARTIFACTS }}-buildtools
-      - name: Make release for Firebase Crashlytics Gradle Plugin
-        run: |
-          ./gradlew \
-            -Dmaven.repo.local=${ARTIFACTS}-plugin \
+            -Dmaven.repo.local=${ARTIFACTS} \
+            :firebase-crashlytics-buildtools:publishToMavenLocal \
             :firebase-crashlytics-gradle:publishToMavenLocal
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: firebase-crashlytics-gradle
-          path: ${{ env.ARTIFACTS }}-plugin
+          name: firebase-crashlytics-gradle-and-buildtools
+          path: ${{ env.ARTIFACTS }}
 
 
   make-performance-release:

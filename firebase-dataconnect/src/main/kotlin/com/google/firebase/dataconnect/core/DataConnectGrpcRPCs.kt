@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
@@ -52,12 +53,14 @@ import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
+import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
 import java.lang.System.currentTimeMillis
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
@@ -92,6 +95,11 @@ internal class DataConnectGrpcRPCs(
     }
   val instanceId: String
     get() = logger.nameWithId
+
+  @VisibleForTesting
+  data class TestInfo(val context: Context, val host: String, val sslEnabled: Boolean)
+
+  @get:VisibleForTesting val testInfo = TestInfo(context, host, sslEnabled)
 
   private val mutex = Mutex()
   private var closed = false
@@ -133,40 +141,8 @@ internal class DataConnectGrpcRPCs(
     SuspendingLazy(mutex = mutex, coroutineContext = blockingCoroutineDispatcher) {
       check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
       logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
-
-      // Upgrade the Android security provider using Google Play Services.
-      //
-      // We need to upgrade the Security Provider before any network channels are initialized
-      // because okhttp maintains a list of supported providers that is initialized when the JVM
-      // first resolves the static dependencies of ManagedChannel.
-      //
-      // If initialization fails for any reason, then a warning is logged and the original,
-      // un-upgraded security provider is used.
-      try {
-        ProviderInstaller.installIfNeeded(context)
-      } catch (e: Exception) {
-        logger.warn(e) { "Failed to update ssl context" }
-      }
-
-      val grpcChannel =
-        ManagedChannelBuilder.forTarget(host).let {
-          if (!sslEnabled) {
-            it.usePlaintext()
-          }
-
-          // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-          // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-          // failsafe.
-          it.keepAliveTime(30, TimeUnit.SECONDS)
-
-          it.executor(blockingCoroutineDispatcher.asExecutor())
-
-          // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-          // to respond more gracefully to network change events, such as switching from cellular to
-          // wifi.
-          AndroidChannelBuilder.usingBuilder(it).context(context).build()
-        }
-
+      val executor = blockingCoroutineDispatcher.asExecutor()
+      val grpcChannel = createGrpcManagedChannel(context, host, sslEnabled, executor, logger)
       logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled done" }
       grpcChannel
     }
@@ -470,8 +446,50 @@ internal class DataConnectGrpcRPCs(
     }
   }
 
-  private companion object {
-    fun Logger.logGrpcSending(
+  companion object {
+
+    @VisibleForTesting
+    fun createGrpcManagedChannel(
+      context: Context,
+      host: String,
+      sslEnabled: Boolean,
+      executor: Executor,
+      logger: Logger
+    ): ManagedChannel {
+      // Upgrade the Android security provider using Google Play Services.
+      //
+      // We need to upgrade the Security Provider before any network channels are initialized
+      // because okhttp maintains a list of supported providers that is initialized when the JVM
+      // first resolves the static dependencies of ManagedChannel.
+      //
+      // If initialization fails for any reason, then a warning is logged and the original,
+      // un-upgraded security provider is used.
+      try {
+        ProviderInstaller.installIfNeeded(context)
+      } catch (e: Exception) {
+        logger.warn(e) { "Failed to update ssl context" }
+      }
+
+      return ManagedChannelBuilder.forTarget(host).let {
+        if (!sslEnabled) {
+          it.usePlaintext()
+        }
+
+        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+        // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
+        // failsafe.
+        it.keepAliveTime(30, TimeUnit.SECONDS)
+
+        it.executor(executor)
+
+        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+        // to respond more gracefully to network change events, such as switching from cellular to
+        // wifi.
+        AndroidChannelBuilder.usingBuilder(it).context(context).build()
+      }
+    }
+
+    private fun Logger.logGrpcSending(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
@@ -497,7 +515,7 @@ internal class DataConnectGrpcRPCs(
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
     }
 
-    fun Logger.logGrpcReturningFromCache(
+    private fun Logger.logGrpcReturningFromCache(
       requestId: String,
       kotlinMethodName: String,
       cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Found,
@@ -507,7 +525,7 @@ internal class DataConnectGrpcRPCs(
         "(expires in ${cachedResult.freshnessRemaining})"
     }
 
-    fun Logger.logGrpcIgnoringStaleCache(
+    private fun Logger.logGrpcIgnoringStaleCache(
       requestId: String,
       kotlinMethodName: String,
       cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Stale,
@@ -516,18 +534,18 @@ internal class DataConnectGrpcRPCs(
         "because it expired ${cachedResult.staleness} ago"
     }
 
-    fun Logger.logGrpcStarting(
+    private fun Logger.logGrpcStarting(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
     ) = debug { "$kotlinMethodName [rid=$requestId] starting ${grpcMethod.fullMethodName}" }
 
-    fun Logger.logGrpcCompleted(
+    private fun Logger.logGrpcCompleted(
       requestId: String,
       kotlinMethodName: String,
     ) = debug { "$kotlinMethodName [rid=$requestId] completed" }
 
-    fun Logger.logGrpcReceived(
+    private fun Logger.logGrpcReceived(
       requestId: String,
       kotlinMethodName: String,
       response: Struct,
@@ -537,7 +555,7 @@ internal class DataConnectGrpcRPCs(
       "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
     }
 
-    fun Logger.logGrpcFailed(
+    private fun Logger.logGrpcFailed(
       requestId: String,
       kotlinMethodName: String,
       throwable: Throwable,

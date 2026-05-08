@@ -71,19 +71,39 @@ object VersionUtils {
 
     val matchResults = Regex("/gradle/gradle/releases/tag/v?([^\"/\\s>]+)").findAll(content)
 
-    // Find the first stable version in the releases list
-    for (match in matchResults) {
-      val version = match.groupValues[1]
-      // Convert RC versions like 9.5.0-RC1 to 9.5.0-rc-1 for the isUnstable check
-      val normalizedVersion =
-        version.replace(Regex("-RC(\\d+)", RegexOption.IGNORE_CASE)) { "-rc-${it.groupValues[1]}" }
+    val stableVersions =
+      matchResults
+        .map { it.groupValues[1] }
+        .map { version ->
+          // Convert RC versions like 9.5.0-RC1 to 9.5.0-rc-1 for the isUnstable check
+          version.replace(Regex("-RC(\\d+)", RegexOption.IGNORE_CASE)) {
+            "-rc-${it.groupValues[1]}"
+          }
+        }
+        .filter { !isUnstable(it) }
+        .toList()
 
-      if (!isUnstable(normalizedVersion)) {
-        // Return the version in the rc-1 format if it was an RC
-        return normalizedVersion
-      }
+    if (stableVersions.isEmpty()) {
+      throw RuntimeException("Failed to find any stable Gradle version in HTML")
     }
-    throw RuntimeException("Failed to find any stable Gradle version in HTML")
+
+    return stableVersions.maxWithOrNull(VersionComparator) ?: stableVersions[0]
+  }
+
+  private object VersionComparator : Comparator<String> {
+    override fun compare(v1: String, v2: String): Int {
+      val parts1 = v1.split(".").mapNotNull { it.toIntOrNull() }
+      val parts2 = v2.split(".").mapNotNull { it.toIntOrNull() }
+      val maxLen = maxOf(parts1.size, parts2.size)
+      for (i in 0 until maxLen) {
+        val p1 = parts1.getOrElse(i) { 0 }
+        val p2 = parts2.getOrElse(i) { 0 }
+        if (p1 != p2) {
+          return p1.compareTo(p2)
+        }
+      }
+      return 0
+    }
   }
 
   private fun <T> fetchUrl(url: String, parser: (HttpURLConnection) -> T): T {
@@ -101,7 +121,7 @@ object VersionUtils {
   }
 
   private fun isUnstable(version: String): Boolean {
-    val unstableKeywords = listOf("alpha", "beta", "milestone", "canary", "m")
+    val unstableKeywords = listOf("alpha", "beta", "milestone", "canary", "m", "rc")
     return unstableKeywords.any { version.contains(it, ignoreCase = true) }
   }
 }
