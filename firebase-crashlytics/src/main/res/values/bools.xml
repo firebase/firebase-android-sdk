@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="firebase_crashlytics_logcat_enabled">true</bool>
+</resources>
