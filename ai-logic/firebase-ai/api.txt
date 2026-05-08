@@ -306,6 +306,8 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendAudioRealtime(com.google.firebase.ai.type.InlineData audio);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
     method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendStartActivityRealtime();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendStopActivityRealtime();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendTextRealtime(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendVideoRealtime(com.google.firebase.ai.type.InlineData video);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
@@ -1351,6 +1353,43 @@ package com.google.firebase.ai.type {
     property public final double longitude;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveActivityDetection {
+    method public static com.google.firebase.ai.type.LiveActivityDetection.Builder builder();
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Companion Companion;
+  }
+
+  public static final class LiveActivityDetection.Builder {
+    ctor public LiveActivityDetection.Builder();
+    method public com.google.firebase.ai.type.LiveActivityDetection build();
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder setDisabled(boolean disabled);
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder setEndSensitivity(com.google.firebase.ai.type.LiveActivityDetection.Sensitivity sensitivity);
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder setPrefixPaddingMS(int paddingMs);
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder setSilenceDurationMS(int durationMs);
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder setStartSensitivity(com.google.firebase.ai.type.LiveActivityDetection.Sensitivity sensitivity);
+    field public Boolean? disabled;
+    field public com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? endSensitivity;
+    field public Integer? prefixPaddingMS;
+    field public Integer? silenceDurationMS;
+    field public com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? startSensitivity;
+  }
+
+  public static final class LiveActivityDetection.Companion {
+    method public com.google.firebase.ai.type.LiveActivityDetection.Builder builder();
+  }
+
+  public static final class LiveActivityDetection.Sensitivity {
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity HIGH;
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity LOW;
+  }
+
+  public static final class LiveActivityDetection.Sensitivity.Companion {
+  }
+
+  public final class LiveActivityDetectionKt {
+    method public static com.google.firebase.ai.type.LiveActivityDetection liveActivityDetection(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveActivityDetection.Builder,kotlin.Unit> init);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
     field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
   }
@@ -1391,6 +1430,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setOutputAudioTranscription(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setRealtimeInputConfig(com.google.firebase.ai.type.LiveRealtimeInputConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.ai.type.ResponseModality? responseModality);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
@@ -1402,6 +1442,7 @@ package com.google.firebase.ai.type {
     field public Integer? maxOutputTokens;
     field public com.google.firebase.ai.type.AudioTranscriptionConfig? outputAudioTranscription;
     field public Float? presencePenalty;
+    field public com.google.firebase.ai.type.LiveRealtimeInputConfig? realtimeInputConfig;
     field public com.google.firebase.ai.type.ResponseModality? responseModality;
     field public com.google.firebase.ai.type.SpeechConfig? speechConfig;
     field public Float? temperature;
@@ -1415,6 +1456,48 @@ package com.google.firebase.ai.type {
 
   public final class LiveGenerationConfigKt {
     method public static com.google.firebase.ai.type.LiveGenerationConfig liveGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveGenerationConfig.Builder,kotlin.Unit> init);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveRealtimeInputConfig {
+    method public static com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder builder();
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.Companion Companion;
+  }
+
+  public static final class LiveRealtimeInputConfig.ActivityHandling {
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling INTERRUPT;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling NO_INTERRUPT;
+  }
+
+  public static final class LiveRealtimeInputConfig.ActivityHandling.Companion {
+  }
+
+  public static final class LiveRealtimeInputConfig.Builder {
+    ctor public LiveRealtimeInputConfig.Builder();
+    method public com.google.firebase.ai.type.LiveRealtimeInputConfig build();
+    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder setActivityHandling(com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling handling);
+    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder setAutomaticActivityDetection(com.google.firebase.ai.type.LiveActivityDetection config);
+    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder setTurnCoverage(com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage coverage);
+    field public com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling? activityHandling;
+    field public com.google.firebase.ai.type.LiveActivityDetection? automaticActivityDetection;
+    field public com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage? turnCoverage;
+  }
+
+  public static final class LiveRealtimeInputConfig.Companion {
+    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder builder();
+  }
+
+  public static final class LiveRealtimeInputConfig.TurnCoverage {
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ALL_INPUT;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ONLY_ACTIVITY;
+  }
+
+  public static final class LiveRealtimeInputConfig.TurnCoverage.Companion {
+  }
+
+  public final class LiveRealtimeInputConfigKt {
+    method public static com.google.firebase.ai.type.LiveRealtimeInputConfig liveRealtimeInputConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder,kotlin.Unit> init);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
@@ -1475,6 +1558,8 @@ package com.google.firebase.ai.type {
     method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendStartActivityRealtime(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendStopActivityRealtime(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendVideoRealtime(com.google.firebase.ai.type.InlineData video, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(com.google.firebase.ai.type.LiveAudioConversationConfig liveAudioConversationConfig, kotlin.coroutines.Continuation<? super kotlin.Unit>);

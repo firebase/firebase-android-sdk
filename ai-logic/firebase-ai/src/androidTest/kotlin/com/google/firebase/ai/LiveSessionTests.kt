@@ -25,7 +25,9 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.InlineData
+import com.google.firebase.ai.type.LiveActivityDetection
 import com.google.firebase.ai.type.LiveGenerationConfig
+import com.google.firebase.ai.type.LiveRealtimeInputConfig
 import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
@@ -36,7 +38,9 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
+import com.google.firebase.ai.type.liveActivityDetection
 import com.google.firebase.ai.type.liveGenerationConfig
+import com.google.firebase.ai.type.liveRealtimeInputConfig
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -317,5 +321,66 @@ class LiveSessionTests {
       }
       .collect {}
     return transcriptBuilder.toString()
+  }
+
+  @Test
+  fun testRealtimeInputConfig_manualActivity(): Unit = runBlocking {
+    val config = liveGenerationConfig {
+      responseModality = ResponseModality.AUDIO
+      outputAudioTranscription = AudioTranscriptionConfig()
+      realtimeInputConfig = liveRealtimeInputConfig {
+        automaticActivityDetection = liveActivityDetection { disabled = true }
+      }
+    }
+    val liveModel =
+      getLiveModel(
+        modelName = modelName,
+        config = config,
+        systemInstruction = SystemInstructions.yesOrNo
+      )
+    val session = liveModel.connect()
+    try {
+      session.sendStartActivityRealtime()
+      session.sendTextRealtime("Does five plus five equal ten?")
+      session.sendStopActivityRealtime()
+
+      val text = withTimeoutOrNull(15.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+      text.toLowerCasePreservingASCIIRules() shouldContain "yes"
+    } finally {
+      session.close()
+    }
+  }
+
+  @Test
+  fun testRealtimeInputConfig_fullConfiguration(): Unit = runBlocking {
+    val config = liveGenerationConfig {
+      responseModality = ResponseModality.AUDIO
+      outputAudioTranscription = AudioTranscriptionConfig()
+      realtimeInputConfig = liveRealtimeInputConfig {
+        activityHandling = LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT
+        turnCoverage = LiveRealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
+        automaticActivityDetection = liveActivityDetection {
+          startSensitivity = LiveActivityDetection.Sensitivity.HIGH
+          endSensitivity = LiveActivityDetection.Sensitivity.LOW
+          prefixPaddingMS = 100
+          silenceDurationMS = 500
+          disabled = false
+        }
+      }
+    }
+    val liveModel =
+      getLiveModel(
+        modelName = modelName,
+        config = config,
+        systemInstruction = SystemInstructions.yesOrNo
+      )
+    val session = liveModel.connect()
+    try {
+      session.sendTextRealtime("Is the sky blue?")
+      val text = withTimeoutOrNull(15.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+      text.toLowerCasePreservingASCIIRules() shouldContain "yes"
+    } finally {
+      session.close()
+    }
   }
 }
