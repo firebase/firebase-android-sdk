@@ -17,6 +17,7 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
@@ -176,11 +177,7 @@ class CrashlyticsExtensionTests {
 
     val thrown =
       Assertions.assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":tasks", "--configuration-cache")
-          .build()
+        buildGradleRunner(projectDir, "-d", ":tasks", "--configuration-cache")
       }
 
     assertThat(thrown)
