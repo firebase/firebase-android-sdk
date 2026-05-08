@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import android.os.ConditionVariable
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc.ConnectorStreamServiceImplBase
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
@@ -28,6 +27,8 @@ import io.grpc.ServerCallHandler
 import io.grpc.ServerInterceptor
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -66,16 +67,18 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
     get() = _port.get()
 
   /**
-   * The gRPC [Server] opened by [open].
+   * The gRPC [Server] started by [open].
    *
    * @throws IllegalStateException if accessed before [open] or after [close].
    */
   val grpcServer: Server
     get() =
       when (val currentState = state.get()) {
-        State.Closed -> error("close() has been called [s6gt7tmktz]")
+        is State.Unopened -> error("open() has not yet been called [a4zarrmvzd]")
+        is State.Opening -> currentState.server
         is State.Opened -> currentState.server
-        is State.Unopened -> error("open() has not yet been called [nhcsrt6epf]")
+        is State.Closing,
+        State.Closed -> error("close() has been called [s6gt7tmktz]")
       }
 
   private class EventHandler(
@@ -97,16 +100,7 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
 
   private val listener = AtomicReference<(Event) -> Unit>()
 
-  private val state: AtomicReference<State> = run {
-    val eventHandler = EventHandler(_events, listener)
-    val server =
-      OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
-        .addService(ConnectorStreamingServiceImpl(eventHandler))
-        .intercept(ServerInterceptorImpl(eventHandler))
-        .build()
-
-    AtomicReference(State.Unopened(server, ConditionVariable()))
-  }
+  private val state: AtomicReference<State> = AtomicReference(State.Unopened)
 
   /**
    * A unique identifier for a connection to the streaming service.
@@ -163,21 +157,38 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
   fun open(): Server {
     while (true) {
       when (val currentState = state.get()) {
-        is State.Unopened ->
-          if (
-            state.compareAndSet(
-              currentState,
-              State.Opened(currentState.server, currentState.startCondition)
-            )
-          ) {
-            currentState.server.start()
-            _port.set(currentState.server.port)
-            currentState.startCondition.open()
+        is State.Unopened -> {
+          val future = CompletableFuture<Unit>()
+          val eventHandler = EventHandler(_events, listener)
+          val server =
+            OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+              .addService(ConnectorStreamingServiceImpl(eventHandler))
+              .intercept(ServerInterceptorImpl(eventHandler))
+              .build()
+
+          val openingState = State.Opening(server, future)
+          if (!state.compareAndSet(currentState, openingState)) {
+            continue
           }
-        is State.Opened -> {
-          currentState.startCondition.block()
-          return currentState.server
+          try {
+            server.start()
+            _port.set(server.port)
+            future.complete(Unit)
+          } catch (e: Throwable) {
+            future.completeExceptionally(e)
+            throw e
+          }
         }
+        is State.Opening -> {
+          try {
+            currentState.started.get()
+          } catch (e: ExecutionException) {
+            throw e.cause ?: e
+          }
+          state.compareAndSet(currentState, State.Opened(currentState.server))
+        }
+        is State.Opened -> return currentState.server
+        is State.Closing,
         State.Closed -> error("close() has been called [zv6n23ry4h]")
       }
     }
@@ -192,17 +203,23 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
    */
   override fun close() {
     while (true) {
-      val currentState = state.get()
-      when (currentState) {
-        State.Closed -> return
-        is State.Opened -> {
-          currentState.server.shutdownNow()
+      when (val currentState = state.get()) {
+        is State.Unopened -> if (state.compareAndSet(currentState, State.Closed)) return
+        is State.Opening ->
+          if (state.compareAndSet(currentState, State.Closing(currentState.server))) {
+            currentState.server.shutdownNow()
+            currentState.started.completeExceptionally(IllegalStateException("close() called"))
+          }
+        is State.Opened ->
+          if (state.compareAndSet(currentState, State.Closing(currentState.server))) {
+            currentState.server.shutdownNow()
+          }
+        is State.Closing -> {
           currentState.server.awaitTermination()
+          state.compareAndSet(currentState, State.Closed)
         }
-        is State.Unopened -> {}
+        State.Closed -> return
       }
-
-      state.compareAndSet(currentState, State.Closed)
     }
   }
 
@@ -219,11 +236,17 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
   }
 
   private sealed interface State {
-    class Unopened(val server: Server, val startCondition: ConditionVariable) : State {
+    object Unopened : State {
       override fun toString() = "Unopened"
     }
-    class Opened(val server: Server, val startCondition: ConditionVariable) : State {
-      override fun toString() = "Opened(port=${server.port})"
+    class Opening(val server: Server, val started: CompletableFuture<Unit>) : State {
+      override fun toString() = "Opening"
+    }
+    class Opened(val server: Server) : State {
+      override fun toString() = "Opened(${server.port})"
+    }
+    class Closing(val server: Server) : State {
+      override fun toString() = "Closing"
     }
     data object Closed : State {
       override fun toString() = "Closed"
