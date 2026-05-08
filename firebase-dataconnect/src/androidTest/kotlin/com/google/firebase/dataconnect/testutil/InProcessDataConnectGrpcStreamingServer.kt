@@ -28,6 +28,7 @@ import io.grpc.ServerCallHandler
 import io.grpc.ServerInterceptor
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -39,15 +40,8 @@ import kotlinx.coroutines.flow.asSharedFlow
  * An in-process gRPC server for testing Firebase Data Connect streaming features. It starts a
  * server on a random port and exposes all events (calls, requests, errors) via a [SharedFlow] for
  * verification in tests.
- *
- * @param onEvent An optional callback invoked whenever an event occurs. This method is called
- * synchronously and, therefore, if it blocks then the gRPC server blocks and if it throws an
- * exception then that exception will bubble up as if it were thrown by the caller itself. If the
- * only desire is to _observe_ the events, then consider collecting from the [events] stream
- * instead.
  */
-class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)? = null) :
-  AutoCloseable {
+class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
 
   private val _events = MutableSharedFlow<Event>(extraBufferCapacity = UNLIMITED)
 
@@ -56,23 +50,38 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
    *
    * Tests can collect this flow to verify the behavior of the client.
    *
-   * In order to influence the server's behavior in response to events, use the [onEvent]
-   * constructor parameter instead.
+   * In order to influence the server's behavior in response to events, register a listener via
+   * [setListener].
    */
   val events: SharedFlow<Event> = _events.asSharedFlow()
 
+  private val _port = AtomicInteger(-1)
+
+  /**
+   * The TCP port to which the gRPC server is bound and on which it is listening.
+   *
+   * Will be -1 before [open] has been called.
+   */
+  val port: Int
+    get() = _port.get()
+
+  /**
+   * The gRPC [Server] opened by [open].
+   *
+   * @throws IllegalStateException if accessed before [open] or after [close].
+   */
+  val grpcServer: Server
+    get() =
+      when (val currentState = state.get()) {
+        State.Closed -> error("close() has been called [s6gt7tmktz]")
+        is State.Opened -> currentState.server
+        is State.Unopened -> error("open() has not yet been called [nhcsrt6epf]")
+      }
+
   private class EventHandler(
     private val events: MutableSharedFlow<Event>,
-    private val onEvent: ((Server, Event) -> Unit)?,
+    private val listener: AtomicReference<(Event) -> Unit>,
   ) {
-
-    private val server = AtomicReference<Server?>(null)
-
-    fun setServer(server: Server) {
-      if (!this.server.compareAndSet(null, server)) {
-        error("server has already been set [mkqx8t245x]")
-      }
-    }
 
     fun handleEvent(event: Event) {
       val emitSuccessful = events.tryEmit(event)
@@ -82,19 +91,19 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
           "but it returned false"
       }
 
-      onEvent?.invoke(server.get()!!, event)
+      listener.get()?.invoke(event)
     }
   }
 
+  private val listener = AtomicReference<(Event) -> Unit>()
+
   private val state: AtomicReference<State> = run {
-    val eventHandler = EventHandler(_events, onEvent)
+    val eventHandler = EventHandler(_events, listener)
     val server =
       OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
         .addService(ConnectorStreamingServiceImpl(eventHandler))
         .intercept(ServerInterceptorImpl(eventHandler))
         .build()
-
-    eventHandler.setServer(server)
 
     AtomicReference(State.Unopened(server, ConditionVariable()))
   }
@@ -109,13 +118,14 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
 
   /** Represents an event that occurred on the server. */
   sealed interface Event {
+
     /** Represents an incoming gRPC call, before the call is actually processed by the server. */
-    data class Call(val call: ServerCall<*, *>, val headers: Metadata) : Event {
+    class Call(val call: ServerCall<*, *>, val headers: Metadata) : Event {
       override fun toString() = "Call"
     }
 
     /** Represents the start of a "Connect" RPC. */
-    data class ConnectRpcStarted(
+    class ConnectRpcStarted(
       val connectionId: ConnectionId,
       val responseObserver: StreamObserver<StreamResponse>,
     ) : Event {
@@ -123,7 +133,7 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
     }
 
     /** Represents a request received from the client over the stream. */
-    data class StreamRequestReceived(
+    class StreamRequestReceived(
       val connectionId: ConnectionId,
       val streamRequest: StreamRequest,
     ) : Event {
@@ -133,12 +143,12 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
     }
 
     /** Represents an error received from the client or the stream. */
-    data class ErrorReceived(val connectionId: ConnectionId, val exception: Throwable) : Event {
+    class ErrorReceived(val connectionId: ConnectionId, val exception: Throwable) : Event {
       override fun toString() = "ErrorReceived($connectionId, ${exception::class.qualifiedName})"
     }
 
     /** Represents the completion of the stream by the client. */
-    data class CompletedReceived(val connectionId: ConnectionId) : Event {
+    class CompletedReceived(val connectionId: ConnectionId) : Event {
       override fun toString() = "CompletedReceived($connectionId)"
     }
   }
@@ -161,6 +171,7 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
             )
           ) {
             currentState.server.start()
+            _port.set(currentState.server.port)
             currentState.startCondition.open()
           }
         is State.Opened -> {
@@ -192,6 +203,18 @@ class InProcessDataConnectGrpcStreamingServer(onEvent: ((Server, Event) -> Unit)
       }
 
       state.compareAndSet(currentState, State.Closed)
+    }
+  }
+
+  fun setListener(onEvent: ((Event) -> Unit)) {
+    while (true) {
+      val currentListener = listener.get()
+      if (currentListener !== null) {
+        error("a listener is already registered [fwpeptaxc2]")
+      }
+      if (listener.compareAndSet(currentListener, onEvent)) {
+        break
+      }
     }
   }
 
