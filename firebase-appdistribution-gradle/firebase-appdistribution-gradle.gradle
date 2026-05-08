@@ -167,7 +167,7 @@ task integrationTest(type: Test) {
   }
 }
 
-// check.dependsOn(integrationTest)
+check.dependsOn(integrationTest)
 
 task prodTest(type: Test) {
   description = 'Runs prod tests.'
