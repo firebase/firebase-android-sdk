@@ -124,6 +124,7 @@ genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiP
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-dexmaker = { module = "com.google.dexmaker:dexmaker", version.ref = "dexmakerVersion" }
+grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
 grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }

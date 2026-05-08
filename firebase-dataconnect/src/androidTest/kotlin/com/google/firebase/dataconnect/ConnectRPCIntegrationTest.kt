@@ -19,7 +19,12 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.Event
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.awaitError
+import com.google.firebase.dataconnect.testutil.awaitStatusException
+import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
@@ -35,7 +40,6 @@ import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
-import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -153,12 +157,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.send(streamRequest)
 
-        val exception = awaitError()
-
-        val statusException = exception.shouldBeInstanceOf<StatusException>()
-        statusException.status.code shouldBe Status.Code.INVALID_ARGUMENT
-        statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-          "invalid connector name"
+        awaitStatusException(Status.Code.INVALID_ARGUMENT) {
+          it.message shouldContainWithNonAbuttingTextIgnoringCase "invalid connector name"
+        }
       }
     }
   }
@@ -169,12 +170,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.outgoingRequests.close()
 
     streams.incomingResponses.test {
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -185,12 +183,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.incomingResponses.test {
       streams.outgoingRequests.close()
 
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -218,10 +213,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(CancellationException("forced exception v5bgf9ppmm"))
 
-        val exception = awaitError()
-
-        val cancellationException = exception.shouldBeInstanceOf<CancellationException>()
-        cancellationException shouldHaveMessage "forced exception v5bgf9ppmm"
+        awaitError<CancellationException> { it shouldHaveMessage "forced exception v5bgf9ppmm" }
       }
     }
 
@@ -234,10 +226,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(TestException("forced exception gajhw85ajt"))
 
-        val exception = awaitError()
-
-        val testException = exception.shouldBeInstanceOf<TestException>()
-        testException shouldHaveMessage "forced exception gajhw85ajt"
+        awaitError<TestException> { it shouldHaveMessage "forced exception gajhw85ajt" }
       }
     }
 
@@ -356,12 +345,70 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       awaitItem().requestId shouldBe requestId
 
       streams.outgoingRequests.send(streamRequest2)
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.FAILED_PRECONDITION
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
+      awaitStatusException(Status.Code.FAILED_PRECONDITION) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
+      }
     }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectionEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.Call) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectRpcEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectMidStream() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+
+    turbineScope {
+      val incomingResponseCollector =
+        streams.incomingResponses.testIn(backgroundScope, name = "incomingResponses")
+      val serverEventReceiver = streams.server.events.testIn(backgroundScope, name = "serverEvents")
+      streams.outgoingRequests.send(StreamRequest.getDefaultInstance())
+      val rpcStartedEvent: InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted =
+        serverEventReceiver.awaitUntilItemIsInstance()
+      serverEventReceiver.cancelAndIgnoreRemainingEvents()
+      rpcStartedEvent.responseObserver.onNext(StreamResponse.getDefaultInstance())
+      incomingResponseCollector.awaitItem()
+
+      streams.server.grpcServer.shutdownNow()
+
+      incomingResponseCollector.awaitStatusException(Status.Code.CANCELLED)
+    }
+  }
+
+  private data class InProcessConnectionStreams(
+    val server: InProcessDataConnectGrpcStreamingServer,
+    val outgoingRequests: SendChannel<StreamRequest>,
+    val incomingResponses: Flow<StreamResponse>,
+  )
+
+  private fun startAndConnectToInProcessDataConnectGrpcStreamingServer():
+    InProcessConnectionStreams {
+    val server = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server)
+    server.open()
+    val streams = connect(server)
+    return InProcessConnectionStreams(server, streams.outgoingRequests, streams.incomingResponses)
   }
 
   @Test
@@ -436,13 +483,22 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
    * Establishes a connection to the Data Connect `Connect` RPC and returns the streams for
    * communication.
    */
-  private fun connect(): ConnectionStreams {
-    val connector = RealtimeConnector.getInstance(dataConnectFactory)
+  private fun connect(backend: DataConnectBackend? = null): ConnectionStreams {
+    val connector = RealtimeConnector.getInstance(dataConnectFactory, backend)
     val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
     val outgoingRequests = Channel<StreamRequest>(UNLIMITED)
     val stub = ConnectorStreamServiceCoroutineStub(grpcManagedChannel)
     val incomingResponses = stub.connect(outgoingRequests.consumeAsFlow())
     return ConnectionStreams(connector, outgoingRequests, incomingResponses)
+  }
+
+  /**
+   * Establishes a connection to the Data Connect `Connect` RPC running in-process, represented by
+   * the given [inProcessServer], and returns the streams for communication.
+   */
+  private fun connect(inProcessServer: InProcessDataConnectGrpcStreamingServer): ConnectionStreams {
+    val backend = DataConnectBackend.Custom("localhost:${inProcessServer.port}", sslEnabled = false)
+    return connect(backend)
   }
 
   /**

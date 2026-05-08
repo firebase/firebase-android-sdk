@@ -67,6 +67,7 @@ dependencies {
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)
   implementation(libs.auth0.jwt)
+  implementation(libs.grpc.api)
   implementation(libs.kotest.assertions)
   implementation(libs.kotest.property)
   implementation(libs.kotlinx.coroutines.core)
