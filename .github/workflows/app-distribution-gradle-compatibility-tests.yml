@@ -3,6 +3,11 @@ name: App Distribution Gradle Compatibility Tests
 on:
   schedule:
     - cron: '0 6 * * *' # Run daily at 6 AM
+  pull_request:
+    paths:
+      - 'firebase-appdistribution/**'
+      - 'firebase-appdistribution-api/**'
+      - 'firebase-appdistribution-gradle/**'
   workflow_dispatch: # Allow manual triggering
 
 permissions:
