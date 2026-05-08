@@ -19,7 +19,9 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.Event
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.awaitError
 import com.google.firebase.dataconnect.testutil.awaitStatusException
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
@@ -346,8 +348,67 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       awaitStatusException(Status.Code.FAILED_PRECONDITION) {
         it.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
       }
-
     }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectionEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.Call) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectRpcEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectMidStream() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+
+    turbineScope {
+      val incomingResponseCollector =
+        streams.incomingResponses.testIn(backgroundScope, name = "incomingResponses")
+      val serverEventReceiver = streams.server.events.testIn(backgroundScope, name = "serverEvents")
+      streams.outgoingRequests.send(StreamRequest.getDefaultInstance())
+      val rpcStartedEvent: InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted =
+        serverEventReceiver.awaitUntilItemIsInstance()
+      serverEventReceiver.cancelAndIgnoreRemainingEvents()
+      rpcStartedEvent.responseObserver.onNext(StreamResponse.getDefaultInstance())
+      incomingResponseCollector.awaitItem()
+
+      streams.server.grpcServer.shutdownNow()
+
+      incomingResponseCollector.awaitStatusException(Status.Code.CANCELLED)
+    }
+  }
+
+  private data class InProcessConnectionStreams(
+    val server: InProcessDataConnectGrpcStreamingServer,
+    val outgoingRequests: SendChannel<StreamRequest>,
+    val incomingResponses: Flow<StreamResponse>,
+  )
+
+  private fun startAndConnectToInProcessDataConnectGrpcStreamingServer():
+    InProcessConnectionStreams {
+    val server = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server)
+    server.open()
+    val streams = connect(server)
+    return InProcessConnectionStreams(server, streams.outgoingRequests, streams.incomingResponses)
   }
 
   @Test
@@ -422,13 +483,22 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
    * Establishes a connection to the Data Connect `Connect` RPC and returns the streams for
    * communication.
    */
-  private fun connect(): ConnectionStreams {
-    val connector = RealtimeConnector.getInstance(dataConnectFactory)
+  private fun connect(backend: DataConnectBackend? = null): ConnectionStreams {
+    val connector = RealtimeConnector.getInstance(dataConnectFactory, backend)
     val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
     val outgoingRequests = Channel<StreamRequest>(UNLIMITED)
     val stub = ConnectorStreamServiceCoroutineStub(grpcManagedChannel)
     val incomingResponses = stub.connect(outgoingRequests.consumeAsFlow())
     return ConnectionStreams(connector, outgoingRequests, incomingResponses)
+  }
+
+  /**
+   * Establishes a connection to the Data Connect `Connect` RPC running in-process, represented by
+   * the given [inProcessServer], and returns the streams for communication.
+   */
+  private fun connect(inProcessServer: InProcessDataConnectGrpcStreamingServer): ConnectionStreams {
+    val backend = DataConnectBackend.Custom("localhost:${inProcessServer.port}", sslEnabled = false)
+    return connect(backend)
   }
 
   /**
