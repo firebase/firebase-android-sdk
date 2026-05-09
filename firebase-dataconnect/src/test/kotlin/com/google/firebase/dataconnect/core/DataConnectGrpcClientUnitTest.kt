@@ -88,6 +88,7 @@ import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
@@ -379,32 +380,19 @@ class DataConnectGrpcClientUnitTest {
       mockDataConnectAuth.stubGetTokensSimulatingForceRefresh(authTokens)
       val appCheckTokens = appCheckTokenPairArb().next(rs)
       mockDataConnectAppCheck.stubGetTokensSimulatingForceRefresh(appCheckTokens)
-      coEvery {
-        mockDataConnectGrpcRPCs.executeQuery(
-          any(),
-          any(),
-          any(),
-          any(),
-          matchNullable { it == authTokens.value1 },
-          matchNullable { it == appCheckTokens.value1 },
-        )
-      } throws
-        StatusException(
-          Status.UNAUTHENTICATED.withDescription("status exception ${Random.nextInt()} bjh9zc6h5n")
-        )
       val responseData = Arb.proto.struct().next(rs).struct
-      coEvery {
-        mockDataConnectGrpcRPCs.executeQuery(
-          any(),
-          any(),
-          any(),
-          any(),
-          matchNullable { it == authTokens.value2 },
-          matchNullable { it == appCheckTokens.value2 },
+      coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any()) }
+        .throws(
+          StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "status exception ${Random.nextInt()} bjh9zc6h5n"
+            )
+          )
         )
-      } returns
-        DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
-          ExecuteQueryResponse.newBuilder().setData(responseData).build()
+        .andThen(
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.newBuilder().setData(responseData).build()
+          )
         )
 
       val result =
@@ -413,12 +401,27 @@ class DataConnectGrpcClientUnitTest {
           operationName,
           variables,
           callerSdkType,
-          fetchPolicy
+          fetchPolicy,
         )
 
       result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.SERVER)
-      coVerify(exactly = 2) {
-        mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      coVerifyOrder {
+        mockDataConnectGrpcRPCs.executeQuery(
+          any(),
+          any(),
+          any(),
+          any(),
+          authTokens.value1,
+          appCheckTokens.value1
+        )
+        mockDataConnectGrpcRPCs.executeQuery(
+          any(),
+          any(),
+          any(),
+          any(),
+          authTokens.value2,
+          appCheckTokens.value2
+        )
       }
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
         "retrying with fresh Auth and/or AppCheck tokens"
@@ -433,35 +436,36 @@ class DataConnectGrpcClientUnitTest {
       mockDataConnectAuth.stubGetTokensSimulatingForceRefresh(authTokens)
       val appCheckTokens = appCheckTokenPairArb().next(rs)
       mockDataConnectAppCheck.stubGetTokensSimulatingForceRefresh(appCheckTokens)
-      coEvery {
-        mockDataConnectGrpcRPCs.executeMutation(
-          any(),
-          any(),
-          any(),
-          matchNullable { it == authTokens.value1 },
-          matchNullable { it == appCheckTokens.value1 },
-        )
-      } throws
-        StatusException(
-          Status.UNAUTHENTICATED.withDescription("status exception ${Random.nextInt()} m8gzej7pmy")
-        )
       val responseData = Arb.proto.struct().next(rs).struct
-      coEvery {
-        mockDataConnectGrpcRPCs.executeMutation(
-          any(),
-          any(),
-          any(),
-          matchNullable { it == authTokens.value2 },
-          matchNullable { it == appCheckTokens.value2 },
+      coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any(), any(), any()) }
+        .throws(
+          StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "status exception ${Random.nextInt()} m8gzej7pmy"
+            )
+          )
         )
-      } returns ExecuteMutationResponse.newBuilder().setData(responseData).build()
+        .andThen(ExecuteMutationResponse.newBuilder().setData(responseData).build())
 
       val result =
         dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
       result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.SERVER)
-      coVerify(exactly = 2) {
-        mockDataConnectGrpcRPCs.executeMutation(any(), any(), any(), any(), any())
+      coVerifyOrder {
+        mockDataConnectGrpcRPCs.executeMutation(
+          any(),
+          any(),
+          any(),
+          authTokens.value1,
+          appCheckTokens.value1
+        )
+        mockDataConnectGrpcRPCs.executeMutation(
+          any(),
+          any(),
+          any(),
+          authTokens.value2,
+          appCheckTokens.value2
+        )
       }
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
         "retrying with fresh Auth and/or AppCheck tokens"
