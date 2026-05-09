@@ -174,7 +174,7 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteMutationRequest",
       authUid = authToken?.authUid,
     )
@@ -185,7 +185,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
+        response = { it.toStructProto() },
         responseTypeName = "ExecuteMutationResponse",
       )
     }
@@ -242,7 +242,7 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteQueryRequest",
       authUid = authToken?.authUid,
     )
@@ -267,7 +267,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = response.toStructProto(),
+        response = { response.toStructProto() },
         responseTypeName = "ExecuteQueryResponse",
       )
 
@@ -358,7 +358,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
+        response = { it.toStructProto() },
         responseTypeName = "EmulatorInfo",
       )
     }
@@ -394,7 +394,7 @@ internal class DataConnectGrpcRPCs(
         logger.logGrpcReceived(
           requestId = requestId,
           kotlinMethodName = kotlinMethodName,
-          response = response.toStructProto(),
+          response = { response.toStructProto() },
           responseTypeName = "EmulatorIssuesResponse"
         )
       }
@@ -489,19 +489,20 @@ internal class DataConnectGrpcRPCs(
       }
     }
 
-    private fun Logger.logGrpcSending(
+    private inline fun Logger.logGrpcSending(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
-      request: Struct,
+      request: () -> Struct,
       requestTypeName: String,
       authUid: String?,
     ) = debug {
+      val requestStruct = request()
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
         put("Metadata", metadata.toStructProto(authUid))
-        put(requestTypeName, request)
+        put(requestTypeName, requestStruct)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
       val keySortSelector: (String) -> String = {
@@ -545,13 +546,14 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName: String,
     ) = debug { "$kotlinMethodName [rid=$requestId] completed" }
 
-    private fun Logger.logGrpcReceived(
+    private inline fun Logger.logGrpcReceived(
       requestId: String,
       kotlinMethodName: String,
-      response: Struct,
+      response: () -> Struct,
       responseTypeName: String
     ) = debug {
-      val struct = buildStructProto { put(responseTypeName, response) }
+      val responseStruct = response()
+      val struct = buildStructProto { put(responseTypeName, responseStruct) }
       "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
     }
 
