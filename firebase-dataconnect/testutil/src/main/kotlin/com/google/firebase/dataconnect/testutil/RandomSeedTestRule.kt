@@ -16,6 +16,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import io.kotest.property.RandomSource
+import org.junit.AssumptionViolatedException
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -36,16 +37,17 @@ class RandomSeedTestRule(val rs: Lazy<RandomSource>) : TestRule {
   override fun apply(base: Statement, description: Description) =
     object : Statement() {
       override fun evaluate() {
-        val result = base.runCatching { evaluate() }
-        result.onFailure {
-          if (rs.isInitialized()) {
-            println(
+        try {
+          base.evaluate()
+        } catch (throwable: Throwable) {
+          if (rs.isInitialized() && throwable !is AssumptionViolatedException) {
+            System.err.println(
               "WARNING[55negqf33k]: RandomSeedTestRule: Test failed using " +
                 "RandomSource with seed=${rs.value.seed}: ${description.displayName}"
             )
           }
+          throw throwable
         }
-        result.getOrThrow()
       }
     }
 }
