@@ -27,7 +27,11 @@ import org.junit.runners.model.Statement
  */
 class RandomSeedTestRule(val rs: Lazy<RandomSource>) : TestRule {
 
-  constructor() : this(lazy(LazyThreadSafetyMode.PUBLICATION) { RandomSource.default() })
+  constructor(createRandomSource: () -> RandomSource) : this(lazy(LazyThreadSafetyMode.PUBLICATION, createRandomSource))
+
+  constructor() : this(RandomSource::default)
+
+  constructor(seed: Long) : this({ RandomSource.seeded(seed) })
 
   override fun apply(base: Statement, description: Description) =
     object : Statement() {
