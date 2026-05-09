@@ -266,7 +266,7 @@ class FirebaseDataConnectImplUnitTest {
         projectId,
         config ->
         val dataConnect = newDataConnect(projectId = projectId, config = config)
-        dataConnect.grpcClient.connectorResourceName shouldBe dataConnect.connectorResourceName
+        dataConnect.grpcRPCs.connectorResourceName shouldBe dataConnect.connectorResourceName
       }
     }
 

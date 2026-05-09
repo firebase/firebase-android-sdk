@@ -69,6 +69,7 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
@@ -97,7 +98,8 @@ class DataConnectGrpcRPCsUnitTest {
 
   private val mockLogger = newMockLogger("s3nx74epqj")
   private val requestIdArb = Arb.dataConnect.requestId()
-  private val executeQueryRequestArb = executeQueryRequestArb()
+  private val connectorResourceNameArb = Arb.dataConnect.connectorResourceName()
+  private val operationNameVariablesPairArb = operationNameVariablesPairArb()
   private val callerSdkTypeArb = Arb.enum<CallerSdkType>()
   private val grpcMetadataArb = Arb.dataConnect.dataConnectGrpcMetadata()
 
@@ -127,12 +129,13 @@ class DataConnectGrpcRPCsUnitTest {
 
         startServer().use { server ->
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val request = executeQueryRequestArb.bind()
+          val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response1
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request,
+            request.operationName,
+            request.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
             authToken,
@@ -142,7 +145,8 @@ class DataConnectGrpcRPCsUnitTest {
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               FetchPolicy.SERVER_ONLY,
               authToken,
@@ -170,7 +174,7 @@ class DataConnectGrpcRPCsUnitTest {
         QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
           .pair()
           .bind()
-      val (request1, request2) = executeQueryRequestArb.distinctPair().bind()
+      val (request1, request2) = operationNameVariablesPairArb.distinctPair().bind()
 
       startServer().use { server ->
         val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
@@ -178,7 +182,8 @@ class DataConnectGrpcRPCsUnitTest {
         server.nextResponse = sample1.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
-          request1,
+          request1.operationName,
+          request1.variables,
           callerSdkTypeArb.bind(),
           fetchPolicy1,
           authToken,
@@ -187,7 +192,8 @@ class DataConnectGrpcRPCsUnitTest {
         server.nextResponse = sample2.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
-          request2,
+          request2.operationName,
+          request2.variables,
           callerSdkTypeArb.bind(),
           FetchPolicy.SERVER_ONLY,
           authToken,
@@ -196,7 +202,8 @@ class DataConnectGrpcRPCsUnitTest {
         val result =
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request1,
+            request1.operationName,
+            request1.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
             authToken,
@@ -213,13 +220,14 @@ class DataConnectGrpcRPCsUnitTest {
   fun `executeQuery(fetchPolicy=CACHE_ONLY) throws if no cached data`() = runTest {
     startServer().use { server ->
       val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-      val request = executeQueryRequestArb.next()
+      val request = operationNameVariablesPairArb.next()
 
       val exception =
         shouldThrow<CachedDataNotFoundException> {
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.next(),
-            request,
+            request.operationName,
+            request.variables,
             callerSdkTypeArb.next(),
             FetchPolicy.CACHE_ONLY,
             Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(),
@@ -253,12 +261,13 @@ class DataConnectGrpcRPCsUnitTest {
           val response = sample.hydratedStruct.toExecuteQueryResponse()
           server.nextResponse = response
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val request = executeQueryRequestArb.bind()
+          val request = operationNameVariablesPairArb.bind()
 
           val result1 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy1,
               authToken,
@@ -267,7 +276,8 @@ class DataConnectGrpcRPCsUnitTest {
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy2,
               authToken,
@@ -306,14 +316,15 @@ class DataConnectGrpcRPCsUnitTest {
           val sample1 = queryResultArb.bind()
           val sample2 = queryResultArb.bind()
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val distinctExecuteQueryRequestArb = executeQueryRequestArb.distinct()
+          val distinctExecuteQueryRequestArb = operationNameVariablesPairArb.distinct()
           val request1 = distinctExecuteQueryRequestArb.bind()
           val request2 = distinctExecuteQueryRequestArb.bind()
 
           server.nextResponse = sample1.toExecuteQueryResponse()
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request1,
+            request1.operationName,
+            request1.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
             authToken,
@@ -322,7 +333,8 @@ class DataConnectGrpcRPCsUnitTest {
           server.nextResponse = sample2.toExecuteQueryResponse()
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request2,
+            request2.operationName,
+            request2.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
             authToken,
@@ -331,7 +343,8 @@ class DataConnectGrpcRPCsUnitTest {
           val result1 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request1,
+              request1.operationName,
+              request1.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy3,
               authToken,
@@ -340,7 +353,8 @@ class DataConnectGrpcRPCsUnitTest {
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request2,
+              request2.operationName,
+              request2.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy4,
               authToken,
@@ -414,6 +428,7 @@ class DataConnectGrpcRPCsUnitTest {
       context = RuntimeEnvironment.getApplication(),
       host = "localhost:${server.port}",
       sslEnabled = false,
+      connectorResourceName = connectorResourceNameArb.next(),
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.next(),
       cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
@@ -424,16 +439,16 @@ class DataConnectGrpcRPCsUnitTest {
 private val propTestConfig =
   PropTestConfig(iterations = 50, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
-private fun executeQueryRequestArb(
+class OperationNameVariablesPair(
+  val operationName: String,
+  val variables: StructProto,
+)
+
+private fun operationNameVariablesPairArb(
   operationName: Arb<String> = Arb.dataConnect.operationName(),
   variables: Arb<ProtoArb.StructInfo> = Arb.proto.struct(),
-): Arb<ExecuteQueryRequest> =
-  Arb.bind(operationName, variables) { operationName, variables ->
-    ExecuteQueryRequest.newBuilder()
-      .setOperationName(operationName)
-      .setVariables(variables.struct)
-      .build()
-  }
+): Arb<OperationNameVariablesPair> =
+  Arb.bind(operationName, variables.map { it.struct }, ::OperationNameVariablesPair)
 
 private fun StructProto.toExecuteQueryResponse(): ExecuteQueryResponse =
   ExecuteQueryResponse.newBuilder().setData(this@toExecuteQueryResponse).build()
