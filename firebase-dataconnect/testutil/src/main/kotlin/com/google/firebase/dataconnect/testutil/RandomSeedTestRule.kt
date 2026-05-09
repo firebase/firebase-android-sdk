@@ -25,15 +25,28 @@ import org.junit.runners.model.Statement
  * A JUnit test rule that prints the seed of a [RandomSource] if the test fails, enabling replaying
  * the test with the same seed to investigate failures. If the [Lazy] is never initialized, then the
  * random seed is _not_ printed.
+ *
+ * @property rs A [Lazy] instance that produces the [RandomSource] to be used in the test.
  */
 class RandomSeedTestRule(val rs: Lazy<RandomSource>) : TestRule {
 
+  /**
+   * Creates a [RandomSeedTestRule] with a factory function for the [RandomSource].
+   *
+   * @param createRandomSource A factory function invoked lazily to create the [RandomSource].
+   */
   constructor(
     createRandomSource: () -> RandomSource
   ) : this(lazy(LazyThreadSafetyMode.PUBLICATION, createRandomSource))
 
+  /** Creates a [RandomSeedTestRule] with a default, randomly seeded [RandomSource]. */
   constructor() : this(RandomSource::default)
 
+  /**
+   * Creates a [RandomSeedTestRule] with a [RandomSource] initialized with the specified [seed].
+   *
+   * @param seed The specific seed to initialize the [RandomSource] with.
+   */
   constructor(seed: Long) : this({ RandomSource.seeded(seed) })
 
   override fun apply(base: Statement, description: Description) =
