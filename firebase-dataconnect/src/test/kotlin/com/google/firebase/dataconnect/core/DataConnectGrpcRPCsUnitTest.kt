@@ -439,7 +439,7 @@ class DataConnectGrpcRPCsUnitTest {
 private val propTestConfig =
   PropTestConfig(iterations = 50, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
-class OperationNameVariablesPair(
+data class OperationNameVariablesPair(
   val operationName: String,
   val variables: StructProto,
 )
