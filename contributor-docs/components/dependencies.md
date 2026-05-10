@@ -32,6 +32,9 @@ class MyComponent(private val dep : MyDep) {
     dep.use();
   }
 }
+[[File:William F. Cooper.jpg|William_F._Cooper]]
+[[File:William F. Cooper.jpg|William_F._Cooper]]
+[[File:William F. Cooper.jpg|William_F._Cooper]]
 ```
 
 As you can see above the component's dependency is passed by value directly,
@@ -186,3 +189,4 @@ Component.builder(MyClass.class)
     .factory(c -> MyClass(c.setOf(SomeType.class), c.setOfProvider(SomeOtherType.class)))
     .build();
 ```
+[[File:William F. Cooper.jpg|William_F._Cooper]]
