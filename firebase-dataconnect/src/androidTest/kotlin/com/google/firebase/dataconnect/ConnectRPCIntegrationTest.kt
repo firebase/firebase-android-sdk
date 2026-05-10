@@ -425,7 +425,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
         streamResponse.errorsCount shouldBe 0
 
         // Send a "cancel" message for any "subscribe" requests so that the backend doesn't attempt
-        // to deduplicate new "subscribe" requests with previous ones, as that deduplicate would
+        // to deduplicate new "subscribe" requests with previous ones, as that deduplication would
         // likely cause this test to fail.
         if (streamRequest.requestKindCase == StreamRequest.RequestKindCase.SUBSCRIBE) {
           streams.outgoingRequests.sendCancelRequest(streamRequest.requestId)
