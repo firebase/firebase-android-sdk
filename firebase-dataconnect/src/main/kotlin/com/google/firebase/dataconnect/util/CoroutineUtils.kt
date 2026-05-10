@@ -49,21 +49,15 @@ internal object CoroutineUtils {
     logger: Logger,
     parent: Job? = null,
     coroutineName: String? = null
-  ): CoroutineScope {
-    var newContext = context + SupervisorJob(parent)
-
-    newContext += CoroutineExceptionHandler { exceptionContext, throwable ->
-      logger.warn(throwable) {
-        "uncaught exception from a coroutine named ${exceptionContext[CoroutineName]?.name}"
-      }
-    }
-
-    if (coroutineName !== null) {
-      newContext += CoroutineName(coroutineName)
-    } else if (newContext[CoroutineName] === null) {
-      newContext += CoroutineName(logger.nameWithId)
-    }
-
-    return CoroutineScope(newContext)
-  }
+  ): CoroutineScope =
+    CoroutineScope(
+      context +
+        SupervisorJob(parent) +
+        CoroutineName(coroutineName ?: logger.nameWithId) +
+        CoroutineExceptionHandler { exceptionContext, throwable ->
+          logger.warn(throwable) {
+            "uncaught exception from a coroutine named ${exceptionContext[CoroutineName]?.name}"
+          }
+        }
+    )
 }
