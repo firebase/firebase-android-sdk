@@ -1,6 +1,8 @@
 # Unreleased
 
 - [changed] Fix ANR in SharedPreferencesQueue by reducing lock contention
+- [feature] Added support for FCM registration using Firebase Installation ID as token
+- [deprecated] Existing getToken, deleteToken, onNewToken api(s) are deprecated
 
 # 25.0.1
 
