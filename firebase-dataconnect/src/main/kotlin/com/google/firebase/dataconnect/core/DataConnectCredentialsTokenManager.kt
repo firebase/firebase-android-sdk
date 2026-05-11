@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
@@ -64,8 +65,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
 
   private val coroutineScope =
     createSupervisorCoroutineScope(
-      parentCoroutineScope.coroutineContext[CoroutineDispatcher]!!,
-      logger
+      context = parentCoroutineScope.coroutineContext,
+      logger = logger,
+      parent = parentCoroutineScope.coroutineContext[Job]
     )
 
   private sealed interface State<out T, out R : GetTokenResult> {

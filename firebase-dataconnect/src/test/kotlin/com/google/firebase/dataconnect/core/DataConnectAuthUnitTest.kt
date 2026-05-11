@@ -36,7 +36,6 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
-import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageWithException
 import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
@@ -580,8 +579,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.close()
 
     withClue("result=$result") { result.shouldBeNull() }
-    mockLogger.shouldHaveLoggedExactlyOneMessageWithException(testException)
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh", testException)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "${dataConnectAuth.instanceId} whenAvailable"
     )

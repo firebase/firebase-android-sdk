@@ -18,7 +18,8 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -30,33 +31,37 @@ import kotlinx.coroutines.awaitAll
 internal object CoroutineUtils {
 
   /**
-   * Creates and returns a new [CoroutineScope] appropriate for a private member of a class that
-   * needs a scope to perform work and will cancel the scope upon its "close" method being invoked.
+   * Creates and returns a new [CoroutineScope] with a [SupervisorJob], [CoroutineName], and
+   * [CoroutineExceptionHandler].
    *
-   * The returned scope has the following properties:
-   * 1. Its job is a [SupervisorJob], with the given [parent] (if specified).
-   * 2. Its dispatcher is the given [CoroutineDispatcher].
-   * 3. Its [CoroutineName] is the [Logger.nameWithId] of the given [Logger], or the given
-   * [coroutineName].
-   * 4. Its [CoroutineExceptionHandler] logs a warning message rather than crashing the scope.
+   * The [CoroutineContext] of the returned [CoroutineScope] will be the given [context], with some
+   * elements unconditionally replaced:
+   *
+   * * The [Job] element will be a newly-created [SupervisorJob] with the given [parent]; notably,
+   * if the given [parent] is null then the parent of the [SupervisorJob] will _also_ be null.
+   * * The [CoroutineName] element will be a newly-created instance whose value is the string given
+   * for the [coroutineName] argument, or the value returned from [Logger.nameWithId] if the given
+   * [coroutineName] is null.
+   * * The [CoroutineExceptionHandler] will be a newly-created instance that simply logs a warning
+   * message to the given [Logger] and then drops the exception. This prevents any crashing
+   * coroutines in the returned scope from propagating outside the scope.
    */
   fun createSupervisorCoroutineScope(
-    dispatcher: CoroutineDispatcher,
+    context: CoroutineContext = EmptyCoroutineContext,
     logger: Logger,
     parent: Job? = null,
-    coroutineName: String = logger.nameWithId,
+    coroutineName: String? = null
   ): CoroutineScope =
     CoroutineScope(
-      SupervisorJob(parent) +
-        CoroutineName(coroutineName) +
-        dispatcher +
-        CoroutineExceptionHandler { context, throwable ->
+      context +
+        SupervisorJob(parent) +
+        CoroutineName(coroutineName ?: logger.nameWithId) +
+        CoroutineExceptionHandler { exceptionContext, throwable ->
           logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]?.name}"
+            "uncaught exception from a coroutine named ${exceptionContext[CoroutineName]?.name}"
           }
         }
     )
-
   suspend fun <T1, T2> awaitAll(job1: Deferred<T1>, job2: Deferred<T2>): Pair<T1, T2> {
     listOf(job1, job2).awaitAll()
     return Pair(job1.await(), job2.await())
