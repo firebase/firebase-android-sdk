@@ -17,6 +17,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import app.cash.turbine.test
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
@@ -26,8 +27,12 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResu
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.sqlite.hydratedStructWithMutatedEntityValuesFrom
+import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -52,11 +57,13 @@ import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
+import google.firebase.dataconnect.proto.StreamRequest
 import io.grpc.InsecureServerCredentials
 import io.grpc.Server
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -66,6 +73,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
@@ -95,9 +103,14 @@ class DataConnectGrpcRPCsUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
+  @get:Rule val cleanups = CleanupsRule()
+
+  private val rs: RandomSource by randomSeedTestRule.rs
 
   private val mockLogger = newMockLogger("s3nx74epqj")
   private val requestIdArb = Arb.dataConnect.requestId()
+  private val streamIdArb = Arb.dataConnect.streamId()
   private val connectorResourceNameArb = Arb.dataConnect.connectorResourceName()
   private val operationNameVariablesPairArb = operationNameVariablesPairArb()
   private val callerSdkTypeArb = Arb.enum<CallerSdkType>()
@@ -220,18 +233,18 @@ class DataConnectGrpcRPCsUnitTest {
   fun `executeQuery(fetchPolicy=CACHE_ONLY) throws if no cached data`() = runTest {
     startServer().use { server ->
       val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-      val request = operationNameVariablesPairArb.next()
+      val request = operationNameVariablesPairArb.next(rs)
 
       val exception =
         shouldThrow<CachedDataNotFoundException> {
           dataConnectGrpcRPCs.executeQuery(
-            requestIdArb.next(),
+            requestIdArb.next(rs),
             request.operationName,
             request.variables,
-            callerSdkTypeArb.next(),
+            callerSdkTypeArb.next(rs),
             FetchPolicy.CACHE_ONLY,
-            Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(),
-            Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(),
+            Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(rs),
+            Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(rs),
           )
         }
 
@@ -373,6 +386,40 @@ class DataConnectGrpcRPCsUnitTest {
       }
     }
 
+  @Test
+  fun `connect() eagerly sends init request`() = runTest {
+    val server = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server)
+    server.open()
+    val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
+
+    server.events.test {
+      dataConnectGrpcRPCs.connect()
+
+      val streamRequest =
+        awaitUntilItemIsInstance<
+            _, InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
+          >()
+          .streamRequest
+
+      withClue("streamRequest=${streamRequest.print().value}") {
+        withClue("requestId") { streamRequest.requestId shouldBe "init" }
+        withClue("name") { streamRequest.name shouldBe dataConnectGrpcRPCs.connectorResourceName }
+        withClue("requestKindCase") {
+          streamRequest.requestKindCase shouldBe StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET
+        }
+      }
+    }
+  }
+
+  private suspend fun DataConnectGrpcRPCs.connect() =
+    connect(
+      streamId = streamIdArb.next(rs),
+      callerSdkType = Arb.enum<CallerSdkType>().next(rs),
+      authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
+      appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
+    )
+
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")
 
   private class StartServerResult(
@@ -423,15 +470,22 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
-  private fun newDataConnectGrpcRPCs(server: StartServerResult) =
+  private fun newDataConnectGrpcRPCs(server: StartServerResult): DataConnectGrpcRPCs =
+    newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port)
+
+  private fun newDataConnectGrpcRPCs(
+    server: InProcessDataConnectGrpcStreamingServer
+  ): DataConnectGrpcRPCs = newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port)
+
+  private fun newDataConnectGrpcRPCsForLocalhostServerOnPort(port: Int) =
     DataConnectGrpcRPCs(
       context = RuntimeEnvironment.getApplication(),
-      host = "localhost:${server.port}",
+      host = "localhost:$port",
       sslEnabled = false,
-      connectorResourceName = connectorResourceNameArb.next(),
+      connectorResourceName = connectorResourceNameArb.next(rs),
       nonBlockingCoroutineDispatcher = Dispatchers.Default,
       blockingCoroutineDispatcher = Dispatchers.IO,
-      grpcMetadata = grpcMetadataArb.next(),
+      grpcMetadata = grpcMetadataArb.next(rs),
       cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
       parentLogger = mockLogger,
     )
