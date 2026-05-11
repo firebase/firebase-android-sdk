@@ -71,6 +71,7 @@ import com.google.firebase.ai.type.LiveServerToolCall;
 import com.google.firebase.ai.type.LiveServerToolCallCancellation;
 import com.google.firebase.ai.type.MediaData;
 import com.google.firebase.ai.type.ModalityTokenCount;
+import com.google.firebase.ai.type.MultiSpeakerVoiceConfig;
 import com.google.firebase.ai.type.Part;
 import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.PublicPreviewAPI;
@@ -78,6 +79,7 @@ import com.google.firebase.ai.type.ResponseModality;
 import com.google.firebase.ai.type.RetrievalConfig;
 import com.google.firebase.ai.type.SafetyRating;
 import com.google.firebase.ai.type.Schema;
+import com.google.firebase.ai.type.SpeakerVoiceConfig;
 import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.ToolConfig;
@@ -145,13 +147,14 @@ public class JavaCompileTests {
         .setPresencePenalty(2.0F)
         .setStopSequences(List.of("foo", "bar"))
         .setResponseMimeType("image/jxl")
-        .setResponseModalities(List.of(ResponseModality.TEXT, ResponseModality.TEXT))
+        .setResponseModalities(List.of(ResponseModality.AUDIO))
         .setResponseSchema(getSchema())
         .setImageConfig(
             ImageConfig.builder()
                 .setAspectRatio(AspectRatio.LANDSCAPE_21x9)
                 .setImageSize(ImageSize.SIZE_512)
                 .build())
+        .setSpeechConfig(new SpeechConfig(new Voice("Kora"), "en-US"))
         .build();
   }
 
@@ -195,6 +198,18 @@ public class JavaCompileTests {
         new ImagenEditingConfig(ImagenEditMode.OUTPAINT, 25));
     ImagenMaskReference.generateMaskAndPadForOutpainting(
         new ImagenInlineImage(new byte[0], ""), new Dimensions(0, 0));
+  }
+
+  private void testSpeechConfig() {
+    SpeechConfig singleSpeechConfig = new SpeechConfig(new Voice("Kora"), "en-US");
+
+    MultiSpeakerVoiceConfig multiSpeakerConfig =
+        new MultiSpeakerVoiceConfig(
+            List.of(
+                new SpeakerVoiceConfig("Joe", new Voice("Kora")),
+                new SpeakerVoiceConfig("Jane", new Voice("Kora"))));
+    SpeechConfig multiSpeechConfig = new SpeechConfig(multiSpeakerConfig);
+    SpeechConfig multiSpeechConfigWithLang = new SpeechConfig(multiSpeakerConfig, "en-US");
   }
 
   private void testFutures(GenerativeModelFutures futures) throws Exception {
