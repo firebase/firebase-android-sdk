@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:SharedWithAndroidTest
+
 package com.google.firebase.dataconnect.testutil
 
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc.ConnectorStreamServiceImplBase
