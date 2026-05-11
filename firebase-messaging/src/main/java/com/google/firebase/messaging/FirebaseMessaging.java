@@ -106,7 +106,7 @@ public class FirebaseMessaging {
   private final Task<TopicsSubscriber> topicsSubscriberTask;
   private final Metadata metadata;
 
-  private String firebaseInstallationsId = null;
+  private final FirebaseInstallationsApi firebaseInstallationsApi;
 
   @GuardedBy("this")
   private boolean syncScheduledOrRunning = false;
@@ -212,8 +212,9 @@ public class FirebaseMessaging {
     this.lifecycleCallbacks = new FcmLifecycleCallbacks();
     this.metadata = metadata;
     this.gmsRpc = gmsRpc;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.gmsRegistrationClient =
-        new GmsRegistrationClient(context, firebaseApp, firebaseInstallationsApi, gmsRpc);
+        new GmsRegistrationClient(context, firebaseApp, firebaseInstallationsApi, gmsRpc, metadata);
     this.requestDeduplicator = new RequestDeduplicator(taskExecutor);
     this.initExecutor = initExecutor;
     this.fileExecutor = fileExecutor;
@@ -240,17 +241,10 @@ public class FirebaseMessaging {
     }
 
     if (gmsRegistrationClient.isV1RegistrationEnabled()) {
-      initExecutor.execute(
-          () -> {
-            // We will fetch and init FID field. This will be used to check the freshness of FCM
-            // registration.
-            firebaseInstallationsId = fetchFid(firebaseInstallationsApi);
-          });
       @SuppressLint("InvalidDeferredApiUse")
       FidListenerHandle unused =
           firebaseInstallationsApi.registerFidListener(
               fid -> {
-                firebaseInstallationsId = fid;
                 Store.Token token = getTokenWithoutTriggeringSync();
                 if (token == null) {
                   // Not registered case. So do nothing
@@ -299,7 +293,7 @@ public class FirebaseMessaging {
 
   @WorkerThread
   @Nullable
-  private String fetchFid(FirebaseInstallationsApi firebaseInstallationsApi) {
+  private String fetchFid() {
     try {
       return Tasks.await(firebaseInstallationsApi.getId());
     } catch (ExecutionException | InterruptedException e) {
@@ -843,11 +837,12 @@ public class FirebaseMessaging {
   @VisibleForTesting
   boolean tokenNeedsRefresh(@Nullable Store.Token token) {
     if (gmsRegistrationClient.isV1RegistrationEnabled()) {
-      if (firebaseInstallationsId != null) {
+      String fid = fetchFid();
+      if (fid != null) {
         // In V1 registration, if the current FID is not equal to the existing token, then the FCM
         // registration needs refresh.
         return token == null
-            || !firebaseInstallationsId.equalsIgnoreCase(token.token)
+            || !fid.equalsIgnoreCase(token.token)
             || token.needsRefresh(metadata.getAppVersionCode());
       }
     }

@@ -39,6 +39,7 @@ public class GmsRegistrationClientRoboTest {
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallationsApi;
   @Mock private GmsRpc mockGmsRpc;
+  @Mock private Metadata metadata;
 
   private CloudMessagingClient proxyCloudMessagingClient;
   private GmsRegistrationClient client;
@@ -96,7 +97,8 @@ public class GmsRegistrationClientRoboTest {
             firebaseApp,
             mockFirebaseInstallationsApi,
             mockGmsRpc,
-            proxyCloudMessagingClient);
+            proxyCloudMessagingClient,
+            metadata);
   }
 
   private void setV1RegistrationEnabled(boolean enabled) throws Exception {

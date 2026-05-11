@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.gms.cloudmessaging.CloudMessaging;
 import com.google.android.gms.cloudmessaging.CloudMessagingClient;
@@ -23,37 +24,40 @@ import java.util.concurrent.ExecutorService;
 public class GmsRegistrationClient {
   static final String MANIFEST_METADATA_FIREBASE_MESSAGING_INSTALLATION_ID_ENABLED =
       "firebase_messaging_installation_id_enabled";
+  private static final int GMS_VERSION_Y2026W12 = 261200000;
   private final CloudMessagingClient client;
   private final FirebaseApp app;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final GmsRpc gmsRpc;
+  private final Metadata metadata;
 
-  GmsRegistrationClient(
-      @NonNull Context context,
-      @NonNull FirebaseApp app,
-      @NonNull FirebaseInstallationsApi firebaseInstallations,
-      @NonNull GmsRpc gmsRpc) {
-    this(context, app, firebaseInstallations, gmsRpc, CloudMessaging.getClient(context));
-  }
-
-  @androidx.annotation.VisibleForTesting
   GmsRegistrationClient(
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull GmsRpc gmsRpc,
-      @NonNull CloudMessagingClient client) {
+      @NonNull Metadata metadata) {
+    this(context, app, firebaseInstallations, gmsRpc, CloudMessaging.getClient(context), metadata);
+  }
+
+  @VisibleForTesting
+  GmsRegistrationClient(
+      @NonNull Context context,
+      @NonNull FirebaseApp app,
+      @NonNull FirebaseInstallationsApi firebaseInstallations,
+      @NonNull GmsRpc gmsRpc,
+      @NonNull CloudMessagingClient client,
+      @NonNull Metadata metadata) {
     this.client = client;
     this.app = app;
     this.firebaseInstallations = firebaseInstallations;
     this.gmsRpc = gmsRpc;
+    this.metadata = metadata;
   }
 
   /** Checks whether the installed gmscore supports v1 registration. */
   private boolean haveV1RegistrationSupport() {
-    // TODO:: Figure out the gmscore version which supports V1 registration.
-    // return metadata.getGmsVersionCode() > 1;...
-    return true;
+    return metadata.getGmsVersionCode() >= GMS_VERSION_Y2026W12;
   }
 
   /** Reads the Manifest metadata to check whether FCM V1 registration is enabled or not. */
