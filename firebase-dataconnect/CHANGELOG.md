@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.2.2
+
 - [changed] Internal refactor for calculating debug logging strings.
   ([#8024](https://github.com/firebase/firebase-android-sdk/pull/8024))
 - [changed] Internal refactor to use more descriptive variable names.
