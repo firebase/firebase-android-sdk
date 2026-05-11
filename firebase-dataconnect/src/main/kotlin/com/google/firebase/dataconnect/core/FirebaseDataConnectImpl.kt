@@ -69,6 +69,8 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingDispatcher: CoroutineDispatcher
 
   fun getOperationManager(): OperationManager
+  val connectorResourceName: String
+  val grpcRPCs: DataConnectGrpcRPCs
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -103,6 +105,12 @@ internal class FirebaseDataConnectImpl(
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
 
   override val coroutineScope = createSupervisorCoroutineScope(nonBlockingDispatcher, logger)
+
+  override val connectorResourceName =
+    "projects/$projectId/" +
+      "locations/${config.location}" +
+      "/services/${config.serviceId}" +
+      "/connectors/${config.connector}"
 
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
@@ -151,6 +159,9 @@ internal class FirebaseDataConnectImpl(
   private val state = MutableStateFlow<State>(State.New())
 
   override fun getOperationManager(): OperationManager = initialize().operationManager
+
+  override val grpcRPCs: DataConnectGrpcRPCs
+    get() = initialize().grpcRPCs
 
   private fun initialize(): State.Initialized {
     val newState =

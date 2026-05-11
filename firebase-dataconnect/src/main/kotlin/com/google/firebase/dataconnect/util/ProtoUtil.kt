@@ -278,7 +278,7 @@ internal object ProtoUtil {
 
   fun StreamResponse.toStructProto(): Struct = buildStructProto {
     put("requestId", requestId)
-    if (hasData()) putValue("data", data.toValueProto())
+    if (hasData()) put("data", data)
     if (errorsCount > 0) {
       put("errors", errorsList)
     }

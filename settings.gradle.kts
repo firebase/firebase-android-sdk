@@ -57,9 +57,8 @@ fun readSubprojectsFile(
       }
     }
 
-  class SubprojectsFileNotFoundException(message: String) : Exception(message)
   return subprojectsFileText
-    ?: throw SubprojectsFileNotFoundException(
+    ?: error(
       "No subprojects files found in ${subprojectsDirectory.asFile.absolutePath} " +
         "(looked for: ${subprojectsFileNames.joinToString()})"
     )
@@ -80,10 +79,9 @@ fun readSubprojectsFile(): String {
  * - Other lines are treated as project paths.
  */
 fun discoverSubprojects(subprojectsFileContents: String): List<String> {
-  return subprojectsFileContents
-    .lines()
-    .mapNotNull { it.split("#").firstOrNull()?.trim() }
-    .filter { it.isNotEmpty() }
+  return subprojectsFileContents.lines().mapNotNull { line ->
+    line.substringBefore('#').trim().takeIf { it.isNotEmpty() }
+  }
 }
 
 fun discoverSubprojects(): List<String> {

@@ -26,6 +26,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin") apply false
   id("com.google.devtools.ksp") version "2.1.21-2.0.2"
+  id("com.google.firebase.dataconnect.sharedtest")
 }
 
 firebaseLibrary {

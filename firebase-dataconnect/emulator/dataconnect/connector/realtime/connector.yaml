@@ -1,0 +1,8 @@
+connectorId: realtime
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/realtime
+    package: com.google.firebase.dataconnect.connectors.realtime
+    clientCache:
+      maxAge: 1h

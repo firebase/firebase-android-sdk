@@ -27,8 +27,8 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_ai_logic_ondevice}}")
-    versionName.set("ai_ondevice")
+    name.set("{{firebase_ai_logic_ondevice_android}}")
+    versionName.set("ai-ondevice")
   }
 }
 

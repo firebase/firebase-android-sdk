@@ -39,6 +39,11 @@ gradlePlugin {
       id = "com.google.firebase.dataconnect.gradle.plugin"
       implementationClass = "com.google.firebase.dataconnect.gradle.plugin.DataConnectGradlePlugin"
     }
+    create("sharedTest") {
+      id = "com.google.firebase.dataconnect.sharedtest"
+      implementationClass =
+        "com.google.firebase.dataconnect.gradle.sharedtest.SharedWithAndroidTestPlugin"
+    }
   }
 }
 

@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectException
@@ -61,6 +62,7 @@ import io.grpc.MethodDescriptor
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.android.AndroidChannelBuilder
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
@@ -94,7 +96,7 @@ internal class DataConnectGrpcRPCs(
   context: Context,
   host: String,
   sslEnabled: Boolean,
-  private val connectorResourceName: String,
+  @get:VisibleForTesting val connectorResourceName: String,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcMetadata: DataConnectGrpcMetadata,
   parentLogger: Logger,
@@ -114,6 +116,11 @@ internal class DataConnectGrpcRPCs(
   // TODO: Delete this!
   private val connectCoroutineScope = createSupervisorCoroutineScope(Dispatchers.Default, logger)
 
+  @VisibleForTesting
+  data class TestInfo(val context: Context, val host: String, val sslEnabled: Boolean)
+
+  @get:VisibleForTesting val testInfo = TestInfo(context, host, sslEnabled)
+
   private val mutex = Mutex()
   private var closed = false
 
@@ -122,40 +129,8 @@ internal class DataConnectGrpcRPCs(
     SuspendingLazy(mutex = mutex, coroutineContext = blockingCoroutineDispatcher) {
       check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
       logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
-
-      // Upgrade the Android security provider using Google Play Services.
-      //
-      // We need to upgrade the Security Provider before any network channels are initialized
-      // because okhttp maintains a list of supported providers that is initialized when the JVM
-      // first resolves the static dependencies of ManagedChannel.
-      //
-      // If initialization fails for any reason, then a warning is logged and the original,
-      // un-upgraded security provider is used.
-      try {
-        ProviderInstaller.installIfNeeded(context)
-      } catch (e: Exception) {
-        logger.warn(e) { "Failed to update ssl context" }
-      }
-
-      val grpcChannel =
-        ManagedChannelBuilder.forTarget(host).let {
-          if (!sslEnabled) {
-            it.usePlaintext()
-          }
-
-          // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-          // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-          // failsafe.
-          it.keepAliveTime(30, TimeUnit.SECONDS)
-
-          it.executor(blockingCoroutineDispatcher.asExecutor())
-
-          // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-          // to respond more gracefully to network change events, such as switching from cellular to
-          // wifi.
-          AndroidChannelBuilder.usingBuilder(it).context(context).build()
-        }
-
+      val executor = blockingCoroutineDispatcher.asExecutor()
+      val grpcChannel = createGrpcManagedChannel(context, host, sslEnabled, executor, logger)
       logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled done" }
       grpcChannel
     }
@@ -201,7 +176,7 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
           metadata = metadata,
-          structFromRequest = { initRequest.toStructProto(authToken?.authUid) },
+          request = { initRequest.toStructProto(authToken?.authUid) },
           requestTypeName = "StreamRequest",
           authUid = authToken?.authUid,
         )
@@ -305,7 +280,7 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
           metadata = metadata,
-          structFromRequest = { initRequest.toStructProto(authToken?.authUid) },
+          request = { initRequest.toStructProto(authToken?.authUid) },
           requestTypeName = "StreamRequest",
           authUid = authToken?.authUid,
         )
@@ -389,7 +364,7 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
       metadata = metadata,
-      structFromRequest = { requestProto.toStructProto() },
+      request = { requestProto.toStructProto() },
       requestTypeName = "ExecuteMutationRequest",
       authUid = authToken?.authUid,
     )
@@ -400,7 +375,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        structFromResponse = { response.toStructProto() },
+        response = { response.toStructProto() },
         responseTypeName = "ExecuteMutationResponse",
       )
     }
@@ -437,7 +412,7 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
       metadata = metadata,
-      structFromRequest = { requestProto.toStructProto() },
+      request = { requestProto.toStructProto() },
       requestTypeName = "ExecuteQueryRequest",
       authUid = authToken?.authUid,
     )
@@ -448,7 +423,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        structFromResponse = { response.toStructProto() },
+        response = { response.toStructProto() },
         responseTypeName = "ExecuteQueryResponse",
       )
     }
@@ -480,7 +455,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        structFromResponse = { response.toStructProto() },
+        response = { response.toStructProto() },
         responseTypeName = "EmulatorInfo",
       )
     }
@@ -516,7 +491,7 @@ internal class DataConnectGrpcRPCs(
         logger.logGrpcReceived(
           requestId = requestId,
           kotlinMethodName = kotlinMethodName,
-          structFromResponse = { response.toStructProto() },
+          response = { response.toStructProto() },
           responseTypeName = "EmulatorIssuesResponse"
         )
       }
@@ -550,20 +525,63 @@ internal class DataConnectGrpcRPCs(
     }
   }
 
-  private companion object {
-    inline fun Logger.logGrpcSending(
+  companion object {
+
+    @VisibleForTesting
+    fun createGrpcManagedChannel(
+      context: Context,
+      host: String,
+      sslEnabled: Boolean,
+      executor: Executor,
+      logger: Logger
+    ): ManagedChannel {
+      // Upgrade the Android security provider using Google Play Services.
+      //
+      // We need to upgrade the Security Provider before any network channels are initialized
+      // because okhttp maintains a list of supported providers that is initialized when the JVM
+      // first resolves the static dependencies of ManagedChannel.
+      //
+      // If initialization fails for any reason, then a warning is logged and the original,
+      // un-upgraded security provider is used.
+      try {
+        ProviderInstaller.installIfNeeded(context)
+      } catch (e: Exception) {
+        logger.warn(e) { "Failed to update ssl context" }
+      }
+
+      return ManagedChannelBuilder.forTarget(host).let {
+        if (!sslEnabled) {
+          it.usePlaintext()
+        }
+
+        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+        // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
+        // failsafe.
+        it.keepAliveTime(30, TimeUnit.SECONDS)
+
+        it.executor(executor)
+
+        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+        // to respond more gracefully to network change events, such as switching from cellular to
+        // wifi.
+        AndroidChannelBuilder.usingBuilder(it).context(context).build()
+      }
+    }
+
+    private inline fun Logger.logGrpcSending(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
-      crossinline structFromRequest: () -> Struct,
+      request: () -> Struct,
       requestTypeName: String,
       authUid: String?,
     ) = debug {
+      val requestStruct = request()
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
         put("Metadata", metadata.toStructProto(authUid))
-        put(requestTypeName, structFromRequest())
+        put(requestTypeName, requestStruct)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
       val keySortSelector: (String) -> String = {
@@ -598,28 +616,29 @@ internal class DataConnectGrpcRPCs(
         response.toCompactString()
     }
 
-    fun Logger.logGrpcStarting(
+    private fun Logger.logGrpcStarting(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
     ) = debug { "$kotlinMethodName [rid=$requestId] starting ${grpcMethod.fullMethodName}" }
 
-    fun Logger.logGrpcCompleted(
+    private fun Logger.logGrpcCompleted(
       requestId: String,
       kotlinMethodName: String,
     ) = debug { "$kotlinMethodName [rid=$requestId] completed" }
 
-    inline fun Logger.logGrpcReceived(
+    private inline fun Logger.logGrpcReceived(
       requestId: String,
       kotlinMethodName: String,
-      crossinline structFromResponse: () -> Struct,
+      response: () -> Struct,
       responseTypeName: String
     ) = debug {
-      val struct = buildStructProto { put(responseTypeName, structFromResponse()) }
+      val responseStruct = response()
+      val struct = buildStructProto { put(responseTypeName, responseStruct) }
       "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
     }
 
-    fun Logger.logGrpcFailed(
+    private fun Logger.logGrpcFailed(
       requestId: String,
       kotlinMethodName: String,
       throwable: Throwable,

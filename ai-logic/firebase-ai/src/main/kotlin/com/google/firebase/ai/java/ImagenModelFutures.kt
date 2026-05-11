@@ -38,7 +38,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
-@Deprecated("All Imagen models are deprecated.")
+@Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
 @PublicPreviewAPI
 public abstract class ImagenModelFutures internal constructor() {
   /**
@@ -50,7 +50,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.")
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public abstract fun generateImages(
     prompt: String,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
@@ -67,7 +67,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.")
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public abstract fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -85,7 +85,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.")
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public abstract fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -103,7 +103,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.")
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public abstract fun inpaintImage(
     image: ImagenInlineImage,
     prompt: String,
@@ -129,7 +129,7 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.")
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public abstract fun outpaintImage(
     image: ImagenInlineImage,
     newDimensions: Dimensions,
@@ -145,7 +145,8 @@ public abstract class ImagenModelFutures internal constructor() {
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
-  @Deprecated("All Imagen models are deprecated.") public abstract fun getImageModel(): ImagenModel
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
+  public abstract fun getImageModel(): ImagenModel
 
   private class FuturesImpl(private val model: ImagenModel) : ImagenModelFutures() {
     override fun generateImages(
@@ -197,7 +198,7 @@ public abstract class ImagenModelFutures internal constructor() {
      * early as June 2026. As a replacement, you can
      * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
-    @Deprecated("All Imagen models are deprecated.")
+    @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
     @JvmStatic
     public fun from(model: ImagenModel): ImagenModelFutures = FuturesImpl(model)
   }
