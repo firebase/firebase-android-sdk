@@ -78,6 +78,7 @@ internal class DataConnectGrpcRPCs(
   context: Context,
   host: String,
   sslEnabled: Boolean,
+  @get:VisibleForTesting val connectorResourceName: String,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val cacheSettings: CacheSettings?,
@@ -161,13 +162,22 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun executeMutation(
     requestId: String,
-    request: ExecuteMutationRequest,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
-    val kotlinMethodName = "executeMutation(${request.operationName})"
+    val kotlinMethodName = "executeMutation($operationName)"
+
+    val request =
+      ExecuteMutationRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,
@@ -228,14 +238,23 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun executeQuery(
     requestId: String,
-    request: ExecuteQueryRequest,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteQueryResult {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
-    val kotlinMethodName = "executeQuery(${request.operationName})"
+    val kotlinMethodName = "executeQuery($operationName)"
+
+    val request =
+      ExecuteQueryRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,

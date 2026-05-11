@@ -276,6 +276,7 @@ internal class FirebaseDataConnectImpl(
         context = context,
         host = backendInfo.host,
         sslEnabled = backendInfo.sslEnabled,
+        connectorResourceName = connectorResourceName,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
         cacheSettings = cacheSettings,
@@ -292,7 +293,6 @@ internal class FirebaseDataConnectImpl(
 
   private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
     DataConnectGrpcClient(
-      connectorResourceName = connectorResourceName,
       grpcRPCs = grpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,

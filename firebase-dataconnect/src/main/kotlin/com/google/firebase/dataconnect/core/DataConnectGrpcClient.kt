@@ -16,8 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
-import androidx.annotation.VisibleForTesting
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.DataConnectOperationException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataSource
@@ -34,15 +33,12 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.executeMutationRequest
-import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
-  @get:VisibleForTesting val connectorResourceName: String,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -64,16 +60,18 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ): OperationResult {
-    val request = executeQueryRequest {
-      this.name = connectorResourceName
-      this.operationName = operationName
-      this.variables = variables
-    }
-
     val executeQueryResult =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") { authToken, appCheckToken
         ->
-        executeQuery(requestId, request, callerSdkType, fetchPolicy, authToken, appCheckToken)
+        executeQuery(
+          requestId,
+          operationName,
+          variables,
+          callerSdkType,
+          fetchPolicy,
+          authToken,
+          appCheckToken,
+        )
       }
 
     return executeQueryResult.toOperationResult()
@@ -85,17 +83,18 @@ internal class DataConnectGrpcClient(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationResult {
-    val request = executeMutationRequest {
-      this.name = connectorResourceName
-      this.operationName = operationName
-      this.variables = variables
-    }
-
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeMutation") {
         authToken,
         appCheckToken ->
-        executeMutation(requestId, request, callerSdkType, authToken, appCheckToken)
+        executeMutation(
+          requestId,
+          operationName,
+          variables,
+          callerSdkType,
+          authToken,
+          appCheckToken,
+        )
       }
 
     return OperationResult(
