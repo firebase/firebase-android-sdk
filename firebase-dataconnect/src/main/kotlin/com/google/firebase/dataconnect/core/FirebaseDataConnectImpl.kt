@@ -228,7 +228,7 @@ internal class FirebaseDataConnectImpl(
         context = context,
         host = backendInfo.host,
         sslEnabled = backendInfo.sslEnabled,
-        connectorResourceName = calculateConnectorResourceName(projectId, config),
+        connectorResourceName = connectorResourceName,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
         parentLogger = logger,

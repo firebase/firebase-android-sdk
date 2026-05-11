@@ -352,24 +352,26 @@ internal class DataConnectGrpcRPCs(
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation($operationName)"
-    val requestProto =
-      ExecuteMutationRequest.newBuilder()
-        .setName(connectorResourceName)
-        .setOperationName(operationName)
-        .setVariables(variables)
-        .build()
+
+    val request =
+      ExecuteMutationRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
       metadata = metadata,
-      request = { requestProto.toStructProto() },
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteMutationRequest",
       authUid = authToken?.authUid,
     )
 
-    val result = lazyGrpcStub.get().runCatching { executeMutation(requestProto, metadata) }
+    val result = lazyGrpcStub.get().runCatching { executeMutation(request, metadata) }
 
     result.onSuccess { response ->
       logger.logGrpcReceived(
@@ -400,24 +402,26 @@ internal class DataConnectGrpcRPCs(
   ): ExecuteQueryResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery($operationName)"
-    val requestProto =
-      ExecuteQueryRequest.newBuilder()
-        .setName(connectorResourceName)
-        .setOperationName(operationName)
-        .setVariables(variables)
-        .build()
+
+    val request =
+      ExecuteQueryRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
       metadata = metadata,
-      request = { requestProto.toStructProto() },
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteQueryRequest",
       authUid = authToken?.authUid,
     )
 
-    val result = lazyGrpcStub.get().runCatching { executeQuery(requestProto, metadata) }
+    val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
 
     result.onSuccess { response ->
       logger.logGrpcReceived(
