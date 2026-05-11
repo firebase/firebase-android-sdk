@@ -8,6 +8,8 @@
   ([#8027](https://github.com/firebase/firebase-android-sdk/pull/8027))
 - [changed] Internal change to add protos for realtime query updates.
   ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
+- [changed] Fixed wasteful computation that is only for debug logging.
+  ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
 
 # 17.2.1
 
