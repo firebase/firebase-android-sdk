@@ -505,12 +505,6 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     val backend = DataConnectBackend.Custom("localhost:${inProcessServer.port}", sslEnabled = false)
     return connect(backend)
   }
-
-  /**
-   * Convenience extension function on [Arb] that gets a non-edge-case value using the [rs] property
-   * of the [DataConnectIntegrationTestBase] superclass for the randomness source.
-   */
-  private fun <T> Arb<T>.sample(): T = sample(rs).value
 }
 
 @OptIn(ExperimentalKotest::class)
