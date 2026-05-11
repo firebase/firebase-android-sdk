@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import java.util.UUID
 import kotlinx.serialization.Serializable
@@ -128,8 +129,11 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
         serviceId = "sid2ehn9ct8te",
       )
 
-    fun getInstance(dataConnectFactory: TestDataConnectFactory): RealtimeConnector {
-      val dataConnect = dataConnectFactory.newInstance(config)
+    fun getInstance(
+      dataConnectFactory: TestDataConnectFactory,
+      backend: DataConnectBackend? = null,
+    ): RealtimeConnector {
+      val dataConnect = dataConnectFactory.newInstance(config, backend)
       return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
     }
   }
