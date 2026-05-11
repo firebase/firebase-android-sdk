@@ -53,9 +53,9 @@ class TemplateIntegrationTests {
 
   @Test
   fun testTemplateGenerateContent() {
-    for (model in getTemplateModels()) {
+    for (template in getTemplateModels()) {
       runBlocking {
-        val response = model.generateContent(templateId, inputs)
+        val response = template.model.generateContent("$templateId-${template.backend}", inputs)
 
         response.candidates.shouldNotBeEmpty()
         response.text shouldContainIgnoringCase customerName
@@ -66,12 +66,14 @@ class TemplateIntegrationTests {
 
   @Test
   fun testTemplateGenerateContentStream() {
-    for (model in getTemplateModels()) {
+    for (template in getTemplateModels()) {
       runBlocking {
-        val responses = model.generateContentStream(templateId, inputs).toList()
+        val responses = template.model.generateContentStream("$templateId-${template.backend}", inputs).toList()
         responses
           .joinToString { it.text ?: "" }
           .lowercase()
+          .replace(",", "")
+          .replace("  ", " ") // Model sometimes doubles spacing
           .let {
             it shouldContainIgnoringCase customerName
             it shouldContainIgnoringCase topic

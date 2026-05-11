@@ -24,17 +24,14 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 class AIModels {
 
   companion object {
-    private val API_KEY: String = ""
-    private val APP_ID: String = ""
-    private val PROJECT_ID: String = "fireescape-integ-tests"
     // General purpose models
     var app: FirebaseApp? = null
     lateinit var vertexAIFlashModel: GenerativeModel
     lateinit var vertexAIFlashLiteModel: GenerativeModel
     lateinit var googleAIFlashModel: GenerativeModel
     lateinit var googleAIFlashLiteModel: GenerativeModel
-    lateinit var vertexAITemplateModel: TemplateGenerativeModel
-    lateinit var googleAITemplateModel: TemplateGenerativeModel
+    lateinit var vertexAITemplateModel: TemplateModel
+    lateinit var googleAITemplateModel: TemplateModel
 
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
@@ -50,7 +47,7 @@ class AIModels {
     }
 
     /** Returns a list of template models to test */
-    fun getTemplateModels(): List<TemplateGenerativeModel> {
+    fun getTemplateModels(): List<TemplateModel> {
       if (app == null) {
         setup()
       }
@@ -80,7 +77,7 @@ class AIModels {
       googleAIFlashModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
           .generativeModel(
-            modelName = "gemini-2.5-flash",
+            modelName = "gemini-3-flash-preview",
           )
       googleAIFlashLiteModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
@@ -88,9 +85,14 @@ class AIModels {
             modelName = "gemini-2.5-flash-lite",
           )
       vertexAITemplateModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
+        TemplateModel("vertex-ai",
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel())
       googleAITemplateModel =
-        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
+        TemplateModel("google-ai",
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel())
     }
   }
 }
+
+@OptIn(PublicPreviewAPI::class)
+data class TemplateModel(val backend: String, val model: TemplateGenerativeModel)

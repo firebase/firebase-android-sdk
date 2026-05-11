@@ -61,9 +61,9 @@ class ChatTemplateIntegrationTests {
 
   @Test
   fun testTemplateChat_sendMessage() {
-    for (model in getTemplateModels()) {
+    for (template in getTemplateModels()) {
       runBlocking {
-        val chat = model.startChat(templateId, inputs)
+        val chat = template.model.startChat("$templateId-${template.backend}", inputs)
         val response = chat.sendMessage("which number is higher, one or ten?")
 
         response.candidates.isNotEmpty() shouldBe true
@@ -76,9 +76,9 @@ class ChatTemplateIntegrationTests {
 
   @Test
   fun testTemplateChat_sendMessageStream() {
-    for (model in getTemplateModels()) {
+    for (template in getTemplateModels()) {
       runBlocking {
-        val chat = model.startChat(templateId, inputs)
+        val chat = template.model.startChat("$templateId-${template.backend}", inputs)
         val responses = chat.sendMessageStream("which number is higher, one or ten?").toList()
         responses.isNotEmpty() shouldBe true
         responses.joinToString { it.text ?: "" } shouldContainIgnoringCase "ten"
@@ -89,22 +89,22 @@ class ChatTemplateIntegrationTests {
 
   @Test
   fun testTemplateChat_withHistory() {
-    for (model in getTemplateModels()) {
+    for (template in getTemplateModels()) {
       runBlocking {
         val history =
           listOf(
             content("user") { text("which number is higher, one or ten?") },
             content("model") { text("Ten.") }
           )
-        val chat = model.startChat(templateId, inputs, history)
+        val chat = template.model.startChat("$templateId-${template.backend}", inputs, history)
         chat.history.size shouldBe 2
         val response =
           chat.sendMessage(
-            "Please concatenate them both, first the smaller one, then the bigger one."
+            "Please concatenate them both, first the smaller one, then the bigger one. Do not use punctuation or spaces."
           )
 
         response.candidates.isNotEmpty() shouldBe true
-        response.text shouldContainIgnoringCase "oneten"
+        response.text?.replace(" ", "") shouldContainIgnoringCase "oneten"
 
         chat.history.size shouldBe 4
       }
