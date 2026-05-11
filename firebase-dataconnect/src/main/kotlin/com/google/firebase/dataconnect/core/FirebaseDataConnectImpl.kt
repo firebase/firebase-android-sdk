@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.util.nextAlphanumericString
@@ -43,14 +44,11 @@ import java.util.concurrent.Executor
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -109,19 +107,7 @@ internal class FirebaseDataConnectImpl(
   override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
 
-  override val coroutineScope =
-    CoroutineScope(
-      SupervisorJob() +
-        nonBlockingDispatcher +
-        CoroutineName(instanceId) +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            val coroutineName = context[CoroutineName]?.name
-            "WARNING: uncaught exception from coroutine named \"$coroutineName\" " +
-              "(error code jszxcbe37k)"
-          }
-        }
-    )
+  override val coroutineScope = createSupervisorCoroutineScope(nonBlockingDispatcher, logger)
 
   override val connectorResourceName =
     "projects/$projectId/" +
@@ -276,6 +262,7 @@ internal class FirebaseDataConnectImpl(
         context = context,
         host = backendInfo.host,
         sslEnabled = backendInfo.sslEnabled,
+        connectorResourceName = connectorResourceName,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
         cacheSettings = cacheSettings,
@@ -292,7 +279,6 @@ internal class FirebaseDataConnectImpl(
 
   private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
     DataConnectGrpcClient(
-      connectorResourceName = connectorResourceName,
       grpcRPCs = grpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,

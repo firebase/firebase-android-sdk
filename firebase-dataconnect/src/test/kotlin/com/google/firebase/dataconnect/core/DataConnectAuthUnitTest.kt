@@ -579,8 +579,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.close()
 
     withClue("result=$result") { result.shouldBeNull() }
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("$testException")
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh", testException)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "${dataConnectAuth.instanceId} whenAvailable"
     )
