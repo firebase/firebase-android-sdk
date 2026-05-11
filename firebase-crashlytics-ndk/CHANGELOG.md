@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.0.6
+
 - [changed] Updated `firebase-crashlytics` dependency to 20.0.6
 
 # 20.0.5
