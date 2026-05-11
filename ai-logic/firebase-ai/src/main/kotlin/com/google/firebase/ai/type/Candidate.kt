@@ -738,9 +738,7 @@ internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int 
     }
     sumIndex += text.length
   }
-  throw StringIndexOutOfBoundsException(
-    "Desired index $originalIndex is higher than content size $progress"
-  )
+  return originalIndex
 }
 
 private fun Char.isAscii() = this.code < 0x80
