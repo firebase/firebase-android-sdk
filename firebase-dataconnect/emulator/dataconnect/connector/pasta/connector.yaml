@@ -1,6 +1,0 @@
-connectorId: pasta
-authMode: PUBLIC
-generate:
-  kotlinSdk:
-    outputDir: ../../.generated/pasta
-    package: com.google.firebase.dataconnect.connectors.pasta

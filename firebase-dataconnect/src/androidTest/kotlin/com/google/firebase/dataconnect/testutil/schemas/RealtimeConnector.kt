@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
@@ -29,6 +30,9 @@ import kotlinx.serialization.serializer
 class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataConnectInternal) {
 
   val dataConnect: FirebaseDataConnect = dataConnectInternal
+
+  internal val dataConnectGrpcRPCs: DataConnectGrpcRPCs by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { dataConnectInternal.grpcRPCs }
 
   val resourceName: String = dataConnectInternal.connectorResourceName
 
@@ -56,6 +60,8 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
     fun queryRef(variables: Variables) =
       connector.dataConnect.query(OPERATION_NAME, variables, serializer<Data>(), serializer())
+
+    fun queryRef(key: Key) = queryRef(Variables(key))
 
     @Serializable data class Variables(val key: Key)
 

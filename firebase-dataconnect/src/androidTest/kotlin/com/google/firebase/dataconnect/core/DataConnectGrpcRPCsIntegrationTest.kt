@@ -23,14 +23,13 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.copy
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.subscribe
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
-import com.google.firebase.dataconnect.testutil.schemas.PastaConnector
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.RequestIdGenerator
@@ -52,7 +51,6 @@ import io.kotest.property.arbs.firstName
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlin.String
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -70,11 +68,11 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
     val stringArb = Arb.firstName().map { it.name }
     val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
     val requestIdArb = Arb.dataConnect.requestId()
-    val connector = newConnector()
+    val connector = RealtimeConnector.getInstance(dataConnectFactory)
     checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
-      val key = connector.insert(name1)
+      val key = connector.insertString(name1)
       val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
-      val queryRef = connector.refs.getByKey(key)
+      val queryRef = connector.getStringByKey.queryRef(key)
 
       val stream =
         dataConnectGrpcRPCs.connect(
@@ -95,9 +93,9 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
         withTimeout(3.seconds) {
           try {
             withClue("awaitItem1") { channel.receive().shouldHaveName(name1, queryRef) }
-            connector.update(key, name2)
+            connector.updateString(key, name2)
             withClue("awaitItem2") { channel.receive().shouldHaveName(name2, queryRef) }
-            connector.update(key, name3)
+            connector.updateString(key, name3)
             withClue("awaitItem3") { channel.receive().shouldHaveName(name3, queryRef) }
           } finally {
             channel.cancel()
@@ -110,11 +108,11 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryManagerTest() = runTest {
     val stringArb = Arb.firstName().map { it.name }
-    val connector = newConnector()
+    val connector = RealtimeConnector.getInstance(dataConnectFactory)
     checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
-      val key = connector.insert(name1)
+      val key = connector.insertString(name1)
       val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
-      val queryRef = connector.refs.getByKey(key)
+      val queryRef = connector.getStringByKey.queryRef(key)
 
       val queryManager =
         QueryManager(
@@ -132,21 +130,15 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
       try {
         queryManager.subscribe(queryRef).test {
           withClue("awaitItem1") { awaitItem().shouldHaveName(name1, DataSource.SERVER) }
-          connector.update(key, name2)
+          connector.updateString(key, name2)
           withClue("awaitItem2") { awaitItem().shouldHaveName(name2, DataSource.SERVER) }
-          connector.update(key, name3)
+          connector.updateString(key, name3)
           withClue("awaitItem3") { awaitItem().shouldHaveName(name3, DataSource.SERVER) }
         }
       } finally {
         queryManager.close()
       }
     }
-  }
-
-  private fun newConnector(): PastaConnector {
-    val connectorConfig = testConnectorConfig.copy(connector = PastaConnector.CONNECTOR_NAME)
-    val dataConnect = dataConnectFactory.newInstance(connectorConfig)
-    return PastaConnector(dataConnect)
   }
 }
 
@@ -157,9 +149,6 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off,
   )
 
-private val PastaConnector.dataConnectGrpcRPCs: DataConnectGrpcRPCs
-  get() = (this.dataConnect as FirebaseDataConnectImpl).dataConnectGrpcRPCsForTesting
-
 private fun <T> Struct.decodeAsData(ref: OperationRef<T, *>): T =
   decodeFromStruct(this, ref.dataDeserializer, ref.dataSerializersModule)
 
@@ -168,16 +157,18 @@ private fun <T> QueryRef<*, T>.encodeVariables(): Struct =
 
 private fun ExecuteQueryResponse.shouldHaveName(
   name: String,
-  ref: OperationRef<PastaConnector.Data.Get, *>
+  ref: OperationRef<RealtimeConnector.GetStringByKeyQuery.Data, *>
 ) {
   val struct: Struct = withClue("data") { data.shouldNotBeNull() }
 
-  val data: PastaConnector.Data.Get = withClue("decodeAsData") { struct.decodeAsData(ref) }
+  val data: RealtimeConnector.GetStringByKeyQuery.Data =
+    withClue("decodeAsData") { struct.decodeAsData(ref) }
 
   data.asClue { it.item.shouldNotBeNull().name shouldBe name }
 }
 
-private fun Result<QueryManager.ExecuteResult<PastaConnector.Data.Get>>.shouldHaveName(
+private fun Result<QueryManager.ExecuteResult<RealtimeConnector.GetStringByKeyQuery.Data>>
+  .shouldHaveName(
   name: String,
   dataSource: DataSource,
 ) {
