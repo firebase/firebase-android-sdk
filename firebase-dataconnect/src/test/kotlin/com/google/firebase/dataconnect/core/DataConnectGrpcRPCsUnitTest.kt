@@ -429,6 +429,7 @@ class DataConnectGrpcRPCsUnitTest {
       host = "localhost:${server.port}",
       sslEnabled = false,
       connectorResourceName = connectorResourceNameArb.next(),
+      nonBlockingCoroutineDispatcher = Dispatchers.Default,
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.next(),
       cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
