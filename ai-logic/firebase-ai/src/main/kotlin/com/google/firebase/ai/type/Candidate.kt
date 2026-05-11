@@ -703,6 +703,12 @@ private constructor(public val name: String, public val ordinal: Int) {
   }
 }
 
+/**
+ * The APIs for citation provide indices in UTF-8 bytes. Java and Kotlin internally represent a
+ * character as UTF-16, meaning that UTF-8 indices do not map cleanly and need to be manually
+ * converted. While native solutions exist for encoding strings, the cost of searching for an index
+ * is larger than necessary, so this linear approach seeks an index instead of encoding repeatedly.
+ */
 internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int {
   if (originalIndex == 0) {
     return 0
@@ -713,15 +719,16 @@ internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int 
     val text = part.asTextOrNull() ?: ""
     var i = 0
     while (i < text.length) {
-      val c = text[i].code
+      text[i].isHighSurrogate()
+      val ch = text[i]
       progress +=
         when {
-          c < 0x80 -> 1 // ASCII
-          c < 0x800 -> 2 // Two-byte codepoint
-          c in 0xD800..0xDBFF -> 4 // High surrogate character
+          ch.isAscii() -> 1
+          ch.isTwoByte() -> 2
+          ch.isHighSurrogate() -> 4
           else -> 3
         }
-      if (c in 0xD800..0xDBFF && i + 1 < text.length) {
+      if (ch.isHighSurrogate() && i + 1 < text.length) {
         i++ // Skip the low surrogate
       }
       i++
@@ -735,3 +742,7 @@ internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int 
     "Desired index $originalIndex is higher than content size $progress"
   )
 }
+
+private fun Char.isAscii() = this.code < 0x80
+
+private fun Char.isTwoByte() = this.code in 0x80..0x7FF

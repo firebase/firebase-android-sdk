@@ -20,13 +20,13 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.TextPart
-import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.ints.shouldBeBetween
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeEmpty
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /** Performs structural validation of various API types */
 class TypesValidator {
@@ -51,13 +51,11 @@ class TypesValidator {
 
   fun validateGroundingSupport(candidate: Candidate, grounding: GroundingSupport) {
     val segment = grounding.segment
-    segment.partIndex shouldBeGreaterThanOrEqual 0
-    segment.partIndex shouldBeLessThan candidate.content.parts.size
+    segment.partIndex.shouldBeBetween(0, candidate.content.parts.size)
     val part = candidate.content.parts[segment.partIndex]
-    part::class shouldBe TextPart::class
-    val text = (part as TextPart).text
-    segment.startIndex shouldBeGreaterThanOrEqual 0
-    segment.startIndex shouldBeLessThanOrEqual segment.endIndex
+    part.shouldBeInstanceOf<TextPart>()
+    val text = part.text
+    segment.startIndex.shouldBeBetween(0, segment.endIndex)
     segment.endIndex shouldBeLessThanOrEqual text.length
     segment.text shouldBe text.substring(segment.startIndex, segment.endIndex)
   }
