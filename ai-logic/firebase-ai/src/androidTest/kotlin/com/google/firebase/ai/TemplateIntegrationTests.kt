@@ -68,7 +68,8 @@ class TemplateIntegrationTests {
   fun testTemplateGenerateContentStream() {
     for (template in getTemplateModels()) {
       runBlocking {
-        val responses = template.model.generateContentStream("$templateId-${template.backend}", inputs).toList()
+        val responses =
+          template.model.generateContentStream("$templateId-${template.backend}", inputs).toList()
         responses
           .joinToString { it.text ?: "" }
           .lowercase()

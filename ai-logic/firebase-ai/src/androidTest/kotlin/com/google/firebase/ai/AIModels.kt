@@ -85,11 +85,15 @@ class AIModels {
             modelName = "gemini-2.5-flash-lite",
           )
       vertexAITemplateModel =
-        TemplateModel("vertex-ai",
-        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel())
+        TemplateModel(
+          "vertex-ai",
+          FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
+        )
       googleAITemplateModel =
-        TemplateModel("google-ai",
-        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel())
+        TemplateModel(
+          "google-ai",
+          FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
+        )
     }
   }
 }
