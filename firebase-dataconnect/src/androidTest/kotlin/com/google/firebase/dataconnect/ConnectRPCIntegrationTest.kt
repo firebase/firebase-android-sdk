@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.protobuf.Empty
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
@@ -422,6 +423,13 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
         val streamResponse = awaitItem()
         streamResponse.requestId shouldBe streamRequest.requestId
         streamResponse.errorsCount shouldBe 0
+
+        // Send a "cancel" message for any "subscribe" requests so that the backend doesn't attempt
+        // to deduplicate new "subscribe" requests with previous ones, as that deduplication would
+        // likely cause this test to fail.
+        if (streamRequest.requestKindCase == StreamRequest.RequestKindCase.SUBSCRIBE) {
+          streams.outgoingRequests.sendCancelRequest(streamRequest.requestId)
+        }
       }
     }
   }
@@ -431,21 +439,18 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     val streams = connect()
     streams.sendInitRequest()
 
-    // Use distinct UUIDs in the "subscribe" requests because the backend appears to do some weird
-    // de-duping if the same query is subscribed to with distinct request IDs.
-    val subscribeStreamRequestArb =
-      validSubscribeStreamRequestArb(
-        validExecuteQueryRequest =
-          validExecuteQueryRequestArb(keyArb(@OptIn(DelicateKotest::class) Arb.uuid().distinct()))
-      )
-
     streams.incomingResponses.test {
-      checkAll(propTestConfig, subscribeStreamRequestArb) { streamRequest ->
+      checkAll(propTestConfig, validSubscribeStreamRequestArb()) { streamRequest ->
         check(streamRequest.hasSubscribe())
         streams.outgoingRequests.send(streamRequest)
         val streamResponse = awaitItem()
         streamResponse.requestId shouldBe streamRequest.requestId
         streamResponse.errorsCount shouldBe 0
+
+        // Send a "cancel" message for each "subscribe" request so that the backend doesn't attempt
+        // to deduplicate new "subscribe" requests with previous ones, as that deduplication would
+        // likely cause this test to fail.
+        streams.outgoingRequests.sendCancelRequest(streamRequest.requestId)
       }
     }
   }
@@ -580,6 +585,21 @@ private fun SendChannel<StreamRequest>.sendInitRequest(
     StreamRequest.newBuilder().let {
       it.setRequestId(requestId)
       it.setName(connectorResourceName)
+      it.build()
+    }
+  sendNonBlockingOrThrow(streamRequest)
+}
+
+/**
+ * Sends a "cancel" request to the receiver [ConnectionStreams.outgoingRequests].
+ *
+ * @param requestId The "request ID" to send in the outgoing message.
+ */
+private fun SendChannel<StreamRequest>.sendCancelRequest(requestId: String) {
+  val streamRequest =
+    StreamRequest.newBuilder().let {
+      it.setRequestId(requestId)
+      it.setCancel(Empty.getDefaultInstance())
       it.build()
     }
   sendNonBlockingOrThrow(streamRequest)
