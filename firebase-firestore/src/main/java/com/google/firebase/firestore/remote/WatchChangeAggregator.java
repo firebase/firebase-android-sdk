@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -58,7 +57,7 @@ public class WatchChangeAggregator {
      * become inactive.
      */
     @Nullable
-    TargetData getTargetDataForTarget(RemoteTargetId targetId);
+    RemoteTargetData getTargetDataForTarget(RemoteTargetId targetId);
 
     /**
      * Translates a RemoteTargetId to its stable SDK TargetId. Returns the remoteTargetId's value
@@ -202,7 +201,7 @@ public class WatchChangeAggregator {
     RemoteTargetId targetId = RemoteTargetId.from(watchChange.getTargetId());
     int expectedCount = watchChange.getExistenceFilter().getCount();
 
-    TargetData targetData = queryDataForActiveTarget(targetId);
+    RemoteTargetData targetData = queryDataForActiveTarget(targetId);
     if (targetData != null) {
       ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
       if (singleDocPath != null) {
@@ -334,7 +333,7 @@ public class WatchChangeAggregator {
       RemoteTargetId targetId = entry.getKey();
       TargetState targetState = entry.getValue();
 
-      TargetData targetData = queryDataForActiveTarget(targetId);
+      RemoteTargetData targetData = queryDataForActiveTarget(targetId);
       if (targetData != null) {
         ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
         if (targetState.isCurrent() && singleDocPath != null) {
@@ -371,7 +370,7 @@ public class WatchChangeAggregator {
       boolean isOnlyLimboTarget = true;
 
       for (RemoteTargetId targetId : targets) {
-        TargetData targetData = queryDataForActiveTarget(targetId);
+        RemoteTargetData targetData = queryDataForActiveTarget(targetId);
         if (targetData != null && !targetData.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
           isOnlyLimboTarget = false;
           break;
@@ -480,9 +479,9 @@ public class WatchChangeAggregator {
    * Increment the number of acks needed from watch before we can consider the server to be
    * 'in-sync' with the client's active targets.
    */
-  void recordPendingTargetRequest(int targetId) {
+  void recordPendingTargetRequest(RemoteTargetId targetId) {
     // For each request we get we need to record we need a response for it.
-    TargetState targetState = ensureTargetState(RemoteTargetId.from(targetId));
+    TargetState targetState = ensureTargetState(targetId);
     targetState.recordPendingTargetRequest();
   }
 
@@ -520,7 +519,7 @@ public class WatchChangeAggregator {
    * interested in that has no outstanding target change requests).
    */
   @Nullable
-  private TargetData queryDataForActiveTarget(RemoteTargetId targetId) {
+  private RemoteTargetData queryDataForActiveTarget(RemoteTargetId targetId) {
     TargetState targetState = targetStates.get(targetId);
     return targetState != null && targetState.isPending()
         ? null

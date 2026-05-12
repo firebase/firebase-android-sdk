@@ -32,7 +32,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -476,7 +475,7 @@ public final class RemoteSerializer {
   // Queries
 
   @Nullable
-  public Map<String, String> encodeListenRequestLabels(TargetData targetData) {
+  public Map<String, String> encodeListenRequestLabels(RemoteTargetData targetData) {
     @Nullable String value = encodeLabel(targetData.getPurpose());
     if (value == null) {
       return null;
@@ -503,7 +502,7 @@ public final class RemoteSerializer {
     }
   }
 
-  public com.google.firestore.v1.Target encodeTarget(TargetData targetData) {
+  public com.google.firestore.v1.Target encodeTarget(RemoteTargetData targetData) {
     com.google.firestore.v1.Target.Builder builder = com.google.firestore.v1.Target.newBuilder();
     TargetOrPipeline target = targetData.getTarget();
 
@@ -520,7 +519,7 @@ public final class RemoteSerializer {
       builder.setQuery(encodeQueryTarget(target.target()));
     }
 
-    builder.setTargetId(targetData.getTargetId());
+    builder.setTargetId(targetData.getTargetId().value());
 
     if (targetData.getResumeToken().isEmpty()
         && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {

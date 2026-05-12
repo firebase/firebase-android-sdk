@@ -27,7 +27,6 @@ import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.TargetIdGenerator;
-import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -136,7 +135,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * removed with unlistens are removed eagerly without waiting for confirmation from the listen
    * stream.
    */
-  private final Map<RemoteTargetId, TargetData> listenTargets;
+  private final Map<RemoteTargetId, RemoteTargetData> listenTargets;
 
   private final Map<Integer, RemoteTargetId> targetIdMapSdkToRemote;
   private final Map<RemoteTargetId, Integer> targetIdMapRemoteToSdk;
@@ -371,12 +370,24 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
-  private int generateRemoteTargetId(int sdkTargetId) {
+  private RemoteTargetId generateRemoteTargetId(int sdkTargetId) {
     if (sdkTargetId % 2 != 0) {
-      return syncEngineTargetIdGenerator.nextId();
+      return RemoteTargetId.from(syncEngineTargetIdGenerator.nextId());
     } else {
-      return targetCacheTargetIdGenerator.nextId();
+      return RemoteTargetId.from(targetCacheTargetIdGenerator.nextId());
     }
+  }
+
+  private RemoteTargetId allocateRemoteTargetId(int sdkTargetId) {
+    RemoteTargetId currentRemoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
+    if (currentRemoteTargetId != null) {
+      targetIdMapRemoteToSdk.remove(currentRemoteTargetId);
+    }
+
+    RemoteTargetId newRemoteTargetId = generateRemoteTargetId(sdkTargetId);
+    targetIdMapSdkToRemote.put(sdkTargetId, newRemoteTargetId);
+    targetIdMapRemoteToSdk.put(newRemoteTargetId, sdkTargetId);
+    return newRemoteTargetId;
   }
 
   // Watch Stream
@@ -384,68 +395,31 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /**
    * Listens to the target identified by the given TargetData.
    *
-   * <p>It is a no-op if the target of the given query data is already being listened to.
+   * <p>
+   * It is a no-op if the target of the given query data is already being listened
+   * to.
    */
-  private String getPipelineCanonicalIdExceptSort(
-      com.google.firebase.firestore.RealtimePipeline p) {
-    String canonicalId = p.toString();
-    String[] stages = canonicalId.split("\\|");
-    List<String> stripped = new ArrayList<>();
-    for (String stage : stages) {
-      if (!stage.startsWith("sort")) {
-        stripped.add(stage);
-      }
-    }
-    return String.join("|", stripped);
-  }
-
   public void listen(TargetData targetData) {
+    // Get any remote target ID currently mapped to the targetData
     int sdkTargetId = targetData.getTargetId();
     RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
 
-    if (remoteTargetId == null) {
-      TargetOrPipeline top = targetData.getTarget();
-      String topCanonicalId =
-          top.isPipeline()
-              ? getPipelineCanonicalIdExceptSort(
-                  top.pipeline$com_google_firebase_firebase_firestore())
-              : null;
-
-      for (Map.Entry<RemoteTargetId, TargetData> entry : listenTargets.entrySet()) {
-        TargetOrPipeline activeTop = entry.getValue().getTarget();
-        if (top.isTarget() && activeTop.isTarget()) {
-          if (top.target().equals(activeTop.target())) {
-            remoteTargetId = entry.getKey();
-            targetIdMapSdkToRemote.put(sdkTargetId, remoteTargetId);
-            break;
-          }
-        } else if (top.isPipeline() && activeTop.isPipeline()) {
-          if (topCanonicalId.equals(
-              getPipelineCanonicalIdExceptSort(
-                  activeTop.pipeline$com_google_firebase_firebase_firestore()))) {
-            remoteTargetId = entry.getKey();
-            targetIdMapSdkToRemote.put(sdkTargetId, remoteTargetId);
-            break;
-          }
-        }
-      }
-    }
-
+    // If remote store is still listening for this remote target ID, this is a
+    // no-op.
     if (remoteTargetId != null && listenTargets.containsKey(remoteTargetId)) {
       return;
     }
 
-    if (remoteTargetId != null) {
-      targetIdMapRemoteToSdk.remove(remoteTargetId);
-    }
-    remoteTargetId = RemoteTargetId.from(generateRemoteTargetId(sdkTargetId));
-    targetIdMapSdkToRemote.put(sdkTargetId, remoteTargetId);
-    targetIdMapRemoteToSdk.put(remoteTargetId, sdkTargetId);
+    // Generate and map a new remote ID to the SDK target ID
+    remoteTargetId = allocateRemoteTargetId(sdkTargetId);
 
-    TargetData remoteTargetData =
-        new TargetData(
+    Logger.debug(
+        LOG_TAG, "listen mapping SDK target ID to remote: %d -> %s", sdkTargetId, remoteTargetId);
+
+    RemoteTargetData remoteTargetData =
+        new RemoteTargetData(
             targetData.getTarget(),
-            remoteTargetId.value(),
+            remoteTargetId,
             targetData.getSequenceNumber(),
             targetData.getPurpose(),
             targetData.getSnapshotVersion(),
@@ -462,16 +436,28 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
-  private void sendWatchRequest(TargetData targetData) {
-    RemoteTargetId remoteTargetId = RemoteTargetId.from(targetData.getTargetId());
-    watchChangeAggregator.recordPendingTargetRequest(remoteTargetId.value());
-    if (!targetData.getResumeToken().isEmpty()
-        || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+  private void sendWatchRequest(RemoteTargetData remoteTargetData) {
+    RemoteTargetId remoteTargetId = remoteTargetData.getTargetId();
+    watchChangeAggregator.recordPendingTargetRequest(remoteTargetId);
+
+    if (!remoteTargetData.getResumeToken().isEmpty()
+        || remoteTargetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+
+      Integer sdkTargetId = this.targetIdMapRemoteToSdk.get(remoteTargetId);
+
+      if (sdkTargetId == null) {
+        Logger.debug(LOG_TAG, "SDK target ID not found for remote ID: %s", remoteTargetId);
+
+        // There's already a new remoteStoreListen request for the original
+        // target, so ignore this.
+        return;
+      }
+
       int expectedCount = this.getRemoteKeysForTarget(remoteTargetId).size();
-      targetData = targetData.withExpectedCount(expectedCount);
+      remoteTargetData = remoteTargetData.withExpectedCount(expectedCount);
     }
 
-    watchStream.watchQuery(targetData);
+    watchStream.watchQuery(remoteTargetData);
   }
 
   /**
@@ -484,16 +470,20 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void stopListening(int sdkTargetId) {
     RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.remove(sdkTargetId);
+    Logger.debug(
+        LOG_TAG,
+        "stopListening removing mapping of SDK target ID to remote: %d -> %s",
+        sdkTargetId,
+        remoteTargetId);
+
     hardAssert(
         remoteTargetId != null,
         "stopListening called on target not currently watched: %d",
         sdkTargetId);
+
     targetIdMapRemoteToSdk.remove(remoteTargetId);
-    TargetData remoteTargetData = listenTargets.remove(remoteTargetId);
-    hardAssert(
-        remoteTargetData != null,
-        "stopListening called on target not currently watched: %d",
-        sdkTargetId);
+    targetIdMapSdkToRemote.remove(sdkTargetId);
+    listenTargets.remove(remoteTargetId);
 
     // The watch stream might not be started if we're in a disconnected state
     if (watchStream.isOpen()) {
@@ -513,8 +503,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void sendUnwatchRequest(RemoteTargetId remoteTargetId) {
-    watchChangeAggregator.recordPendingTargetRequest(remoteTargetId.value());
-    watchStream.unwatchTarget(remoteTargetId.value());
+    watchChangeAggregator.recordPendingTargetRequest(remoteTargetId);
+    watchStream.unwatchTarget(remoteTargetId);
   }
 
   /**
@@ -552,7 +542,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void handleWatchStreamOpen() {
     // Restore any existing watches.
-    for (TargetData targetData : listenTargets.values()) {
+    for (RemoteTargetData targetData : listenTargets.values()) {
       sendWatchRequest(targetData);
     }
   }
@@ -692,7 +682,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         int sdkTargetId = entry.getKey();
         RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
         if (remoteTargetId != null) {
-          TargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
+          RemoteTargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
           // A watched target might have been removed already.
           if (remoteTargetData != null) {
             this.listenTargets.put(
@@ -709,7 +699,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       int sdkTargetId = entry.getKey();
       RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
       if (remoteTargetId != null) {
-        TargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
+        RemoteTargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
         // A watched target might have been removed already.
         if (remoteTargetData != null) {
           // Clear the resume token for the query, since we're in a known mismatch state.
@@ -727,10 +717,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           // this way without impacting future listens of this target (that might happen for example
           // on
           // reconnect).
-          TargetData requestTargetData =
-              new TargetData(
+          RemoteTargetData requestTargetData =
+              new RemoteTargetData(
                   remoteTargetData.getTarget(),
-                  remoteTargetId.value(),
+                  remoteTargetId,
                   remoteTargetData.getSequenceNumber(),
                   /* purpose= */ entry.getValue());
           this.sendWatchRequest(requestTargetData);
@@ -939,7 +929,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   @Nullable
   @Override
-  public TargetData getTargetDataForTarget(RemoteTargetId remoteTargetId) {
+  public RemoteTargetData getTargetDataForTarget(RemoteTargetId remoteTargetId) {
     return this.listenTargets.get(remoteTargetId);
   }
 

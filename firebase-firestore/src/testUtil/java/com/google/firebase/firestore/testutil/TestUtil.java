@@ -76,6 +76,7 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteTargetData;
 import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -404,14 +405,14 @@ public class TestUtil {
     return targetChange(ByteString.EMPTY, true, Arrays.asList(docs), null, null);
   }
 
-  public static Map<Integer, TargetData> activeQueries(Iterable<Integer> targets) {
+  public static Map<Integer, RemoteTargetData> activeQueries(Iterable<Integer> targets) {
     Query query = query("foo");
-    Map<Integer, TargetData> listenMap = new HashMap<>();
+    Map<Integer, RemoteTargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
-      TargetData targetData =
-          new TargetData(
+      RemoteTargetData targetData =
+          new RemoteTargetData(
               new TargetOrPipeline.TargetWrapper(query.toTarget()),
-              targetId,
+              RemoteTargetId.from(targetId),
               ARBITRARY_SEQUENCE_NUMBER,
               QueryPurpose.LISTEN);
       listenMap.put(targetId, targetData);
@@ -419,19 +420,19 @@ public class TestUtil {
     return listenMap;
   }
 
-  public static Map<Integer, TargetData> activeQueries(Integer... targets) {
+  public static Map<Integer, RemoteTargetData> activeQueries(Integer... targets) {
     return activeQueries(asList(targets));
   }
 
-  public static Map<Integer, TargetData> activeLimboQueries(
+  public static Map<Integer, RemoteTargetData> activeLimboQueries(
       String docKey, Iterable<Integer> targets) {
     Query query = query(docKey);
-    Map<Integer, TargetData> listenMap = new HashMap<>();
+    Map<Integer, RemoteTargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
-      TargetData targetData =
-          new TargetData(
+      RemoteTargetData targetData =
+          new RemoteTargetData(
               new TargetOrPipeline.TargetWrapper(query.toTarget()),
-              targetId,
+              RemoteTargetId.from(targetId),
               ARBITRARY_SEQUENCE_NUMBER,
               QueryPurpose.LIMBO_RESOLUTION);
       listenMap.put(targetId, targetData);
@@ -439,7 +440,8 @@ public class TestUtil {
     return listenMap;
   }
 
-  public static Map<Integer, TargetData> activeLimboQueries(String docKey, Integer... targets) {
+  public static Map<Integer, RemoteTargetData> activeLimboQueries(
+      String docKey, Integer... targets) {
     return activeLimboQueries(docKey, asList(targets));
   }
 
@@ -448,7 +450,12 @@ public class TestUtil {
   }
 
   public static RemoteEvent noChangeEvent(int targetId, int version, ByteString resumeToken) {
-    TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo/bar");
+    RemoteTargetData targetData =
+        new RemoteTargetData(
+            new TargetOrPipeline.TargetWrapper(query("foo/bar").toTarget()),
+            RemoteTargetId.from(targetId),
+            ARBITRARY_SEQUENCE_NUMBER,
+            QueryPurpose.LISTEN);
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
 
@@ -469,7 +476,12 @@ public class TestUtil {
 
   public static RemoteEvent existenceFilterEvent(
       int targetId, ImmutableSortedSet<DocumentKey> syncedKeys, int remoteCount, int version) {
-    TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
+    RemoteTargetData targetData =
+        new RemoteTargetData(
+            new TargetOrPipeline.TargetWrapper(query("foo").toTarget()),
+            RemoteTargetId.from(targetId),
+            ARBITRARY_SEQUENCE_NUMBER,
+            QueryPurpose.LISTEN);
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
 
@@ -500,9 +512,13 @@ public class TestUtil {
               }
 
               @Override
-              public TargetData getTargetDataForTarget(RemoteTargetId targetId) {
+              public RemoteTargetData getTargetDataForTarget(RemoteTargetId targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
-                return targetData(targetId.value(), QueryPurpose.LISTEN, collectionPath.toString());
+                return new RemoteTargetData(
+                    new TargetOrPipeline.TargetWrapper(Query.atPath(collectionPath).toTarget()),
+                    targetId,
+                    ARBITRARY_SEQUENCE_NUMBER,
+                    QueryPurpose.LISTEN);
               }
 
               @Override
@@ -553,9 +569,14 @@ public class TestUtil {
               }
 
               @Override
-              public TargetData getTargetDataForTarget(RemoteTargetId targetId) {
+              public RemoteTargetData getTargetDataForTarget(RemoteTargetId targetId) {
                 return activeTargets.contains(targetId.value())
-                    ? targetData(targetId.value(), QueryPurpose.LISTEN, doc.getKey().toString())
+                    ? new RemoteTargetData(
+                        new TargetOrPipeline.TargetWrapper(
+                            Query.atPath(doc.getKey().getPath()).toTarget()),
+                        targetId,
+                        ARBITRARY_SEQUENCE_NUMBER,
+                        QueryPurpose.LISTEN)
                     : null;
               }
 

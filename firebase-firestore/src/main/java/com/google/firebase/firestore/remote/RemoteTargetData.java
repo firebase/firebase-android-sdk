@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,38 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.remote;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.TargetOrPipeline;
+import com.google.firebase.firestore.local.BaseTargetData;
+import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.remote.WatchStream;
 import com.google.protobuf.ByteString;
+import java.util.Objects;
 
-/** An immutable set of metadata that the store will need to keep track of for each target. */
-public final class TargetData extends BaseTargetData {
-  private final int targetId;
+/** An immutable set of metadata that the remote store will need to keep track of for each target. */
+public final class RemoteTargetData extends BaseTargetData {
+  private final RemoteTargetId targetId;
 
-  /**
-   * Creates a new TargetData with the given values.
-   *
-   * @param target The target being listened to.
-   * @param targetId The target id to which the target corresponds.
-   * @param sequenceNumber The sequence number, denoting the last time this target was used.
-   * @param purpose The purpose of the target.
-   * @param snapshotVersion The latest snapshot version seen for this target.
-   * @param lastLimboFreeSnapshotVersion The maximum snapshot version at which the associated target
-   *     view contained no limbo documents.
-   * @param resumeToken An opaque, server-assigned token that allows watching a target to be resumed
-   *     after disconnecting without retransmitting all the data that matches the target. The resume
-   *     token essentially identifies a point in time from which the server should resume sending
-   * @param expectedCount The number of documents that last matched the query at the resume token or
-   *     read time. Documents are counted only when making a listen request with resume token or
-   *     read time, otherwise, keep it null.
-   */
-  public TargetData(
+  public RemoteTargetData(
       TargetOrPipeline target,
-      int targetId,
+      RemoteTargetId targetId,
       long sequenceNumber,
       QueryPurpose purpose,
       SnapshotVersion snapshotVersion,
@@ -61,9 +46,8 @@ public final class TargetData extends BaseTargetData {
     this.targetId = targetId;
   }
 
-  /** Convenience constructor for use when creating a TargetData for the first time. */
-  public TargetData(
-      TargetOrPipeline target, int targetId, long sequenceNumber, QueryPurpose purpose) {
+  public RemoteTargetData(
+      TargetOrPipeline target, RemoteTargetId targetId, long sequenceNumber, QueryPurpose purpose) {
     this(
         target,
         targetId,
@@ -75,13 +59,13 @@ public final class TargetData extends BaseTargetData {
         null);
   }
 
-  public int getTargetId() {
+  public RemoteTargetId getTargetId() {
     return targetId;
   }
 
   @Override
-  public TargetData withSequenceNumber(long sequenceNumber) {
-    return new TargetData(
+  public RemoteTargetData withSequenceNumber(long sequenceNumber) {
+    return new RemoteTargetData(
         getTarget(),
         targetId,
         sequenceNumber,
@@ -93,8 +77,8 @@ public final class TargetData extends BaseTargetData {
   }
 
   @Override
-  public TargetData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
-    return new TargetData(
+  public RemoteTargetData withResumeToken(ByteString resumeToken, SnapshotVersion snapshotVersion) {
+    return new RemoteTargetData(
         getTarget(),
         targetId,
         getSequenceNumber(),
@@ -106,8 +90,8 @@ public final class TargetData extends BaseTargetData {
   }
 
   @Override
-  public TargetData withExpectedCount(@Nullable Integer expectedCount) {
-    return new TargetData(
+  public RemoteTargetData withExpectedCount(@Nullable Integer expectedCount) {
+    return new RemoteTargetData(
         getTarget(),
         targetId,
         getSequenceNumber(),
@@ -119,8 +103,9 @@ public final class TargetData extends BaseTargetData {
   }
 
   @Override
-  public TargetData withLastLimboFreeSnapshotVersion(SnapshotVersion lastLimboFreeSnapshotVersion) {
-    return new TargetData(
+  public RemoteTargetData withLastLimboFreeSnapshotVersion(
+      SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return new RemoteTargetData(
         getTarget(),
         targetId,
         getSequenceNumber(),
@@ -131,37 +116,25 @@ public final class TargetData extends BaseTargetData {
         getExpectedCount());
   }
 
-  TargetData withTarget(TargetOrPipeline target) {
-    return new TargetData(
-        target,
-        targetId,
-        getSequenceNumber(),
-        getPurpose(),
-        getSnapshotVersion(),
-        getLastLimboFreeSnapshotVersion(),
-        getResumeToken(),
-        getExpectedCount());
-  }
-
   @Override
   public boolean equals(Object o) {
     if (!super.equals(o)) {
       return false;
     }
-    TargetData that = (TargetData) o;
-    return targetId == that.targetId;
+    RemoteTargetData that = (RemoteTargetData) o;
+    return Objects.equals(targetId, that.targetId);
   }
 
   @Override
   public int hashCode() {
     int result = super.hashCode();
-    result = 31 * result + targetId;
+    result = 31 * result + Objects.hashCode(targetId);
     return result;
   }
 
   @Override
   public String toString() {
-    return "TargetData{"
+    return "RemoteTargetData{"
         + "target="
         + getTarget()
         + ", targetId="

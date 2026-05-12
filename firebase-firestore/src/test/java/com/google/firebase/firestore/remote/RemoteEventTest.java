@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -84,7 +83,7 @@ public class RemoteEventTest {
    *     changes are DocumentWatchChange and WatchTargetChange.
    */
   private WatchChangeAggregator createAggregator(
-      Map<Integer, TargetData> targetMap,
+      Map<Integer, RemoteTargetData> targetMap,
       Map<Integer, Integer> outstandingResponses,
       ImmutableSortedSet<DocumentKey> existingKeys,
       WatchChange... watchChanges) {
@@ -98,7 +97,7 @@ public class RemoteEventTest {
 
     List<Integer> targetIds = new ArrayList<>();
 
-    for (Map.Entry<Integer, TargetData> entry : targetMap.entrySet()) {
+    for (Map.Entry<Integer, RemoteTargetData> entry : targetMap.entrySet()) {
       targetIds.add(entry.getKey());
       targetMetadataProvider.setSyncedKeys(entry.getValue(), existingKeys);
     }
@@ -141,7 +140,7 @@ public class RemoteEventTest {
    */
   private RemoteEvent createRemoteEvent(
       long snapshotVersion,
-      Map<Integer, TargetData> targetMap,
+      Map<Integer, RemoteTargetData> targetMap,
       Map<Integer, Integer> outstandingResponses,
       ImmutableSortedSet<DocumentKey> existingKeys,
       WatchChange... watchChanges) {
@@ -152,7 +151,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillAccumulateDocumentAddedAndRemovedEvents() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
 
     MutableDocument existingDoc = doc("docs/1", 1, map("value", 1));
     MutableDocument newDoc = doc("docs/2", 2, map("value", 2));
@@ -194,7 +193,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillIgnoreEventsForPendingTargets() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -222,7 +221,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillIgnoreEventsForRemovedTargets() {
-    Map<Integer, TargetData> targetMap = activeQueries();
+    Map<Integer, RemoteTargetData> targetMap = activeQueries();
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
 
@@ -244,7 +243,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillKeepResetMappingEvenWithUpdates() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -287,7 +286,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillHandleSingleReset() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -309,7 +308,7 @@ public class RemoteEventTest {
 
   @Test
   public void testWillHandleTargetAddAndRemovalInSameBatch() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     MutableDocument doc1a = doc("docs/1", 1, map("value", 1));
     MutableDocument doc1b = doc("docs/1", 1, map("value", 2));
@@ -335,7 +334,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTargetCurrentChangeWillMarkTheTargetCurrent() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     WatchChange change = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
 
@@ -351,7 +350,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTargetAddedChangeWillResetPreviousState() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 3);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 3);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -400,7 +399,7 @@ public class RemoteEventTest {
 
   @Test
   public void testNoChangeWillStillMarkTheAffectedTargets() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -419,7 +418,7 @@ public class RemoteEventTest {
 
   @Test
   public void testExistenceFilterMismatchClearsTarget() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -467,7 +466,7 @@ public class RemoteEventTest {
 
   @Test
   public void existenceFilterMismatchWithSuccessfulBloomFilterApplication() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -521,7 +520,7 @@ public class RemoteEventTest {
 
   @Test
   public void existenceFilterMismatchWithBloomFilterFalsePositiveResult() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
@@ -577,7 +576,7 @@ public class RemoteEventTest {
 
   @Test
   public void testExistenceFilterMismatchRemovesCurrentChanges() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -609,7 +608,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDocumentUpdate() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
@@ -662,7 +661,7 @@ public class RemoteEventTest {
 
   @Test
   public void testResumeTokenHandledPerTarget() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -688,7 +687,7 @@ public class RemoteEventTest {
 
   @Test
   public void testLastResumeTokenWins() {
-    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1, 2);
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys);
@@ -719,7 +718,7 @@ public class RemoteEventTest {
 
   @Test
   public void testSynthesizeDeletes() {
-    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, RemoteTargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange shouldSynthesize =
         new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
@@ -736,7 +735,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDoesNotSynthesizeDeleteInWrongState() {
-    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, RemoteTargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange wrongState = new WatchTargetChange(WatchTargetChangeType.NoChange, asList(1));
 
@@ -748,7 +747,7 @@ public class RemoteEventTest {
 
   @Test
   public void testDoesNotSynthesizeDeleteWithExistingDocument() {
-    Map<Integer, TargetData> targetMap = activeLimboQueries("foo/doc", 1);
+    Map<Integer, RemoteTargetData> targetMap = activeLimboQueries("foo/doc", 1);
 
     WatchTargetChange hasDocument = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
 
@@ -761,7 +760,7 @@ public class RemoteEventTest {
 
   @Test
   public void testSeparatesUpdates() {
-    Map<Integer, TargetData> targetMap = activeQueries(1);
+    Map<Integer, RemoteTargetData> targetMap = activeQueries(1);
 
     MutableDocument newDoc = doc("docs/new", 1, map("key", "value"));
     DocumentChange newDocChange =
@@ -797,7 +796,7 @@ public class RemoteEventTest {
 
   @Test
   public void testTracksLimboDocuments() {
-    Map<Integer, TargetData> listens = activeQueries(1);
+    Map<Integer, RemoteTargetData> listens = activeQueries(1);
     listens.putAll(activeLimboQueries("doc/2", 2));
 
     // Add 3 docs: 1 is limbo and non-limbo, 2 is limbo-only, 3 is non-limbo

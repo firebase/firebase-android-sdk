@@ -82,6 +82,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
+import com.google.firebase.firestore.remote.RemoteTargetData;
 import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
@@ -1420,11 +1421,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     // Create a copy and map remote target IDs to SDK target IDs
     Map<Integer, TargetData> actualTargets = new HashMap<>();
-    for (Map.Entry<Integer, TargetData> entry : datastore.activeTargets().entrySet()) {
+    for (Map.Entry<Integer, RemoteTargetData> entry : datastore.activeTargets().entrySet()) {
       int remoteTargetId = entry.getKey();
       Integer sdkTargetId = remoteStore.getSdkTargetId(RemoteTargetId.from(remoteTargetId));
       if (sdkTargetId != null) {
-        TargetData remoteTargetData = entry.getValue();
+        RemoteTargetData remoteTargetData = entry.getValue();
         TargetData sdkTargetData =
             new TargetData(
                 remoteTargetData.getTarget(),
