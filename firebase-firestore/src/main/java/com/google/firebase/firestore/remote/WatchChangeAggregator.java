@@ -385,16 +385,11 @@ public class WatchChangeAggregator {
       document.setReadTime(snapshotVersion);
     }
 
-    Map<RemoteTargetId, QueryPurpose> translatedTargetMismatches = new HashMap<>();
-    for (Map.Entry<RemoteTargetId, QueryPurpose> entry : pendingTargetResets.entrySet()) {
-      translatedTargetMismatches.put(entry.getKey(), entry.getValue());
-    }
-
     RemoteEvent<RemoteTargetId> remoteEvent =
         new RemoteEvent<>(
             snapshotVersion,
             Collections.unmodifiableMap(targetChanges),
-            Collections.unmodifiableMap(translatedTargetMismatches),
+            Collections.unmodifiableMap(pendingTargetResets),
             Collections.unmodifiableMap(pendingDocumentUpdates),
             Collections.unmodifiableSet(resolvedLimboDocuments));
 
