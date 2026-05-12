@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
+
 # 17.12.0
 
 - [feature] Added support for `ImageConfig` and `finishMessage`. (#8020)
