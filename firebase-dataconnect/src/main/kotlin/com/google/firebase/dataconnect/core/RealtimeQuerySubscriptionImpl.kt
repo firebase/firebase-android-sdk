@@ -120,6 +120,6 @@ private fun Random.nextRequestId(): String =
 private fun Random.nextAlphabeticChar(): Char = ALPHABETIC_ALPHABET.random(this)
 
 // The set of characters comprising the 26 lowercase letters of the English alphabet with some
-// characters removed that can look similar in different fonts, 'l', and 'i'.
+// characters removed that can look similar in different fonts, such as 'l', and 'i'.
 @Suppress("SpellCheckingInspection")
 private const val ALPHABETIC_ALPHABET = "abcdefghjkmnpqrstvwxyz"
