@@ -74,9 +74,9 @@ public class FirebaseCrashlytics {
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
 
-    boolean isLogCatEnabled =
-        context.getResources().getBoolean(R.bool.firebase_crashlytics_logcat_enabled);
-    Logger.getLogger().setLogCatEnabled(isLogCatEnabled);
+    Logger.getLogger()
+        .toggleLogging(
+            context.getResources().getBoolean(R.bool.firebase_crashlytics_logcat_enabled));
 
     Logger.getLogger()
         .i(

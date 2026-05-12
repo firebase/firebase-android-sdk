@@ -14,22 +14,18 @@
 
 package com.google.firebase.crashlytics.internal;
 
-import android.util.Log;
+import com.google.firebase.logger.Logger.Level;
 
 /** Default logger that logs to android.util.Log. */
 public class Logger {
   public static final String TAG = "FirebaseCrashlytics";
 
-  static final Logger DEFAULT_LOGGER = new Logger(TAG);
+  static final Logger DEFAULT_LOGGER = new Logger();
 
-  private final String tag;
-  private final int logLevel;
+  private com.google.firebase.logger.Logger logger;
 
-  private boolean isLogCatEnabled;
-
-  public Logger(String tag) {
-    this.tag = tag;
-    this.logLevel = Log.INFO;
+  public Logger() {
+    this.logger = com.google.firebase.logger.Logger.getLogger(TAG, true, Level.INFO);
   }
 
   /** Returns the global {@link Logger}. */
@@ -37,42 +33,28 @@ public class Logger {
     return DEFAULT_LOGGER;
   }
 
-  private boolean canLog(int level) {
-    return isLogCatEnabled && (logLevel <= level || Log.isLoggable(tag, level));
-  }
-
-  public void setLogCatEnabled(boolean isLogCatEnabled) {
-    this.isLogCatEnabled = isLogCatEnabled;
+  public void toggleLogging(boolean isLoggerEnabled) {
+    this.logger = com.google.firebase.logger.Logger.getLogger(TAG, isLoggerEnabled, Level.INFO);
   }
 
   public void d(String text, Throwable throwable) {
-    if (canLog(Log.DEBUG)) {
-      Log.d(tag, text, throwable);
-    }
+    logger.debug(text, throwable);
   }
 
   public void v(String text, Throwable throwable) {
-    if (canLog(Log.VERBOSE)) {
-      Log.v(tag, text, throwable);
-    }
+    logger.verbose(text, throwable);
   }
 
   public void i(String text, Throwable throwable) {
-    if (canLog(Log.INFO)) {
-      Log.i(tag, text, throwable);
-    }
+    logger.info(text, throwable);
   }
 
   public void w(String text, Throwable throwable) {
-    if (canLog(Log.WARN)) {
-      Log.w(tag, text, throwable);
-    }
+    logger.warn(text, throwable);
   }
 
   public void e(String text, Throwable throwable) {
-    if (canLog(Log.ERROR)) {
-      Log.e(tag, text, throwable);
-    }
+    logger.error(text, throwable);
   }
 
   public void d(String text) {
@@ -93,15 +75,5 @@ public class Logger {
 
   public void e(String text) {
     e(text, null);
-  }
-
-  public void log(int priority, String msg) {
-    log(priority, msg, false);
-  }
-
-  public void log(int priority, String msg, boolean forceLog) {
-    if (forceLog || canLog(priority)) {
-      Log.println(priority, tag, msg);
-    }
   }
 }
