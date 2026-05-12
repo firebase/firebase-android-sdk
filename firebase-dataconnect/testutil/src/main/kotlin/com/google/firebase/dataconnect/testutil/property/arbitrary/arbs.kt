@@ -161,6 +161,11 @@ object DataConnectArb {
       "requestId_${string.bind()}"
     }
 
+  fun streamId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "streamId_${string.bind()}"
+    }
+
   fun connectorResourceName(
     string: Arb<String> = Arb.string(size = 8, Codepoint.az())
   ): Arb<String> = arbitrary { "connectorResourceName_${string.bind()}" }

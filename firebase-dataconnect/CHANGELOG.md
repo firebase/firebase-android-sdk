@@ -4,6 +4,8 @@
   ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
 - [changed] Fixed wasteful computation that is only for debug logging.
   ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
+- [changed] Internal implementation of backend connection for realtime query results.
+  ([#8141](https://github.com/firebase/firebase-android-sdk/pull/8141))
 
 # 17.2.2
 
