@@ -35,8 +35,12 @@ import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.SemanticVersion
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
+import google.firebase.dataconnect.proto.SourceLocation as SourceLocationProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -45,6 +49,7 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -76,6 +81,43 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
   )
 }
 
+internal fun DataConnectArb.sourceLocationProto(
+  line: Arb<Int> = Arb.int(),
+  column: Arb<Int> = Arb.int(),
+): Arb<SourceLocationProto> =
+  Arb.bind(line, column) { line, column ->
+    SourceLocationProto.newBuilder().setLine(line).setColumn(column).build()
+  }
+
+internal fun DataConnectArb.graphqlErrorProto(
+  message: Arb<String?> = string().orNull(nullProbability = 0.2),
+  locations: Arb<List<SourceLocationProto>> = Arb.list(sourceLocationProto(), 0..5),
+  path: Arb<ListValue?> =
+    Arb.proto
+      .listValue(
+        depth = 1..1,
+        scalarValue =
+          Arb.choice(
+            Arb.proto.stringValue(),
+            Arb.int().map { it.toValueProto() },
+          )
+      )
+      .map { it.listValue }
+      .orNull(nullProbability = 0.2),
+): Arb<GraphqlErrorProto> =
+  Arb.bind(message, locations, path) { message, locations, path ->
+    GraphqlErrorProto.newBuilder().let {
+      if (message !== null) {
+        it.setMessage(message)
+      }
+      locations.forEach { location -> it.addLocations(location) }
+      if (path !== null) {
+        it.setPath(path)
+      }
+      it.build()
+    }
+  }
+
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
   path: Arb<List<DataConnectPathSegment>> = dataConnectPath(),
@@ -106,7 +148,7 @@ internal fun DataConnectArb.operationFailureResponseImpl(
 
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
-  errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
+  errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..5),
   source: Arb<DataSource> = Arb.enum(),
 ) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
 

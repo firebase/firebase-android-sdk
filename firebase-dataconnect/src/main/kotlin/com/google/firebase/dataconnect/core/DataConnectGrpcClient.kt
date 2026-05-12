@@ -16,27 +16,16 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectOperationException
-import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.ProtoUtil.toMap
-import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.GraphqlError
 import io.grpc.Status
 import io.grpc.StatusException
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
   private val grpcRPCs: DataConnectGrpcRPCs,
@@ -49,7 +38,7 @@ internal class DataConnectGrpcClient(
 
   data class OperationResult(
     val data: Struct?,
-    val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
+    val errors: List<GraphqlError>,
     val source: DataSource,
   )
 
@@ -99,7 +88,7 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toErrorInfoImpl() },
+      errors = response.errorsList,
       source = DataSource.SERVER,
     )
   }
@@ -148,88 +137,7 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
-        errors = response.errorsList.map { it.toErrorInfoImpl() },
+        errors = response.errorsList,
         source = DataSource.SERVER,
       )
   }
-
-/**
- * Holder for "global" functions related to [DataConnectGrpcClient].
- *
- * Technically, these functions _could_ be defined as free functions; however, doing so creates a
- * DataConnectGrpcClientKit Java class with public visibility, which pollutes the public API. Using
- * an "internal" object, instead, to gather together the top-level functions avoids this public API
- * pollution.
- */
-internal object DataConnectGrpcClientGlobals {
-  private fun ListValue.toPathSegment() =
-    valuesList.map {
-      when (it.kindCase) {
-        Value.KindCase.STRING_VALUE -> DataConnectPathSegment.Field(it.stringValue)
-        Value.KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(it.numberValue.toInt())
-        // The cases below are expected to never occur; however, implement some logic for them
-        // to avoid things like throwing exceptions in those cases.
-        Value.KindCase.NULL_VALUE -> DataConnectPathSegment.Field("null")
-        Value.KindCase.BOOL_VALUE -> DataConnectPathSegment.Field(it.boolValue.toString())
-        Value.KindCase.LIST_VALUE -> DataConnectPathSegment.Field(it.listValue.toCompactString())
-        Value.KindCase.STRUCT_VALUE ->
-          DataConnectPathSegment.Field(it.structValue.toCompactString())
-        else -> DataConnectPathSegment.Field(it.toString())
-      }
-    }
-
-  fun GraphqlError.toErrorInfoImpl() =
-    DataConnectOperationFailureResponseImpl.ErrorInfoImpl(
-      message = message,
-      path = path.toPathSegment(),
-    )
-
-  fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-    deserializer: DeserializationStrategy<T>,
-    serializersModule: SerializersModule?,
-  ): T {
-    if (deserializer === DataConnectUntypedData) {
-      @Suppress("UNCHECKED_CAST") return DataConnectUntypedData(data?.toMap(), errors) as T
-    }
-
-    val decodedData: Result<T>? =
-      data?.let { data -> runCatching { decodeFromStruct(data, deserializer, serializersModule) } }
-
-    if (errors.isNotEmpty()) {
-      throw DataConnectOperationException(
-        "operation encountered errors during execution: $errors",
-        response =
-          DataConnectOperationFailureResponseImpl(
-            rawData = data?.toMap(),
-            data = decodedData?.getOrNull(),
-            errors = errors,
-          )
-      )
-    }
-
-    if (decodedData == null) {
-      throw DataConnectOperationException(
-        "no data was included in the response from the server",
-        response =
-          DataConnectOperationFailureResponseImpl(
-            rawData = null,
-            data = null,
-            errors = emptyList(),
-          )
-      )
-    }
-
-    return decodedData.getOrElse { exception ->
-      throw DataConnectOperationException(
-        "decoding data from the server's response failed: ${exception.message}",
-        cause = exception,
-        response =
-          DataConnectOperationFailureResponseImpl(
-            rawData = data?.toMap(),
-            data = null,
-            errors = emptyList(),
-          )
-      )
-    }
-  }
-}

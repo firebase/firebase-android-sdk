@@ -20,9 +20,9 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.core.DataConnectSerialization.Companion.toErrorInfoImpl
 import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult
 import com.google.firebase.dataconnect.toPathString
-import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
 import com.google.protobuf.ListValue
