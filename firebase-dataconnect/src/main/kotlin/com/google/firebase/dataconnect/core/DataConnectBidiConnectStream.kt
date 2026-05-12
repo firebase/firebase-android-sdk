@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.CoroutineUtils
+import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Struct
@@ -75,12 +75,7 @@ internal class DataConnectBidiConnectStream(
   private val state =
     MutableStateFlow<State>(
       run {
-        val collectCoroutineScope =
-          CoroutineUtils.createSupervisorCoroutineScope(
-            coroutineScope.coroutineContext,
-            logger,
-            parent = coroutineScope.coroutineContext.job,
-          )
+        val collectCoroutineScope = coroutineScope.createChildSupervisorScope(logger)
 
         val completedResponse =
           MutableStateFlow(NullableReference<IncomingResponse.Completed>(null))
