@@ -78,7 +78,9 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
         variables = key.encodeToGetStringByKeyQueryVariables(),
       )
 
-    executeResponseFlow.test { awaitItem().shouldBeGetStringByKeyQueryResponse(name = null) }
+    executeResponseFlow.test {
+      awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = null)
+    }
   }
 
   @Test
@@ -97,11 +99,11 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
       )
 
     executeResponseFlow.test {
-      awaitItem().shouldBeGetStringByKeyQueryResponse(name = name1)
+      awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name1)
       connector.updateString(key, name = name2)
-      awaitItem().shouldBeGetStringByKeyQueryResponse(name = name2)
+      awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name2)
       connector.deleteString(key)
-      awaitItem().shouldBeGetStringByKeyQueryResponse(name = null)
+      awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = null)
     }
   }
 
@@ -124,20 +126,20 @@ private fun Struct.decodeAsGetStringByKeyQueryData(): GetStringByKeyQuery.Data =
   decodeFromStruct(this, serializer(), null)
 
 private fun ExecuteResponse.shouldBeGetStringByKeyQueryResponse(
-  name: String?,
-  errors: List<GraphqlErrorProto> = emptyList(),
+  expectedName: String?,
+  expectedErrors: List<GraphqlErrorProto> = emptyList(),
 ) {
   assertSoftly {
-    withClue("data") { data.shouldBeGetStringByKeyQueryData(name) }
-    withClue("errors") { errors shouldContainExactlyInAnyOrder errors }
+    withClue("data") { data.shouldBeGetStringByKeyQueryData(expectedName) }
+    withClue("errors") { errors shouldContainExactlyInAnyOrder expectedErrors }
   }
 }
 
-private fun Struct.shouldBeGetStringByKeyQueryData(name: String?) {
+private fun Struct.shouldBeGetStringByKeyQueryData(expectedName: String?) {
   val data: GetStringByKeyQuery.Data = decodeAsGetStringByKeyQueryData()
-  if (name === null) {
+  if (expectedName === null) {
     data.item.shouldBeNull()
   } else {
-    data.item.shouldNotBeNull() shouldBe GetStringByKeyQuery.Data.Item(name)
+    data.item.shouldNotBeNull() shouldBe GetStringByKeyQuery.Data.Item(expectedName)
   }
 }
