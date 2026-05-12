@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalRealtimeQueries::class)
+
 package com.google.firebase.dataconnect
 
 import app.cash.turbine.test

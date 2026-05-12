@@ -23,9 +23,11 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder
 import com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -78,6 +80,23 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
+
+  /**
+   * A temporary method that is similar to the public [query] method but the [QueryRef] that it
+   * returns supports "realtime subscription updates".
+   *
+   * "Realtime subscription updates" is currently a work-in-progress; however, when it is completed,
+   * this method will be deleted and the public [query] method will be modified to return [QueryRef]
+   * objects that support realtime subscription updates.
+   */
+  @ExperimentalRealtimeQueries
+  fun <Data, Variables> realtimeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)? = null,
+  ): QueryRef<Data, Variables>
 }
 
 internal class FirebaseDataConnectImpl(
@@ -414,6 +433,34 @@ internal class FirebaseDataConnectImpl(
     optionsBuilder?.let { it(options) }
 
     return QueryRefImpl(
+      dataConnect = this,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
+      variablesSerializersModule = options.variablesSerializersModule,
+      dataSerializersModule = options.dataSerializersModule,
+    )
+  }
+
+  @ExperimentalRealtimeQueries
+  override fun <Data, Variables> realtimeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)?,
+  ): RealtimeQueryRefImpl<Data, Variables> {
+    val options =
+      object : QueryRefOptionsBuilder<Data, Variables> {
+        override var callerSdkType: FirebaseDataConnect.CallerSdkType? = null
+        override var variablesSerializersModule: SerializersModule? = null
+        override var dataSerializersModule: SerializersModule? = null
+      }
+    optionsBuilder?.let { it(options) }
+
+    return RealtimeQueryRefImpl(
       dataConnect = this,
       operationName = operationName,
       variables = variables,

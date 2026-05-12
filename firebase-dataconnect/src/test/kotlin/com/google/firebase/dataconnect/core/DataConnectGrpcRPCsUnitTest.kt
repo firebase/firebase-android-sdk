@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class, DelicateKotest::class)
+@file:OptIn(ExperimentalKotest::class, DelicateKotest::class, ExperimentalRealtimeQueries::class)
 
 package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.CacheSettings

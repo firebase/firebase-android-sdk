@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.NullableReference
@@ -63,6 +64,7 @@ import kotlinx.coroutines.job
  * lifecycle.
  * @param logger The [Logger] used for debug and error logging.
  */
+@ExperimentalRealtimeQueries
 internal class DataConnectBidiConnectStream(
   outgoingRequests: SendChannel<StreamRequestProto>,
   incomingResponses: Flow<StreamResponseProto>,
@@ -194,8 +196,17 @@ internal class DataConnectBidiConnectStream(
       .transformWhile { incomingResponse ->
         when (incomingResponse) {
           is IncomingResponse.Subscribed -> {
-            outgoingRequests.send(streamRequest)
-            true
+            val sendResult = outgoingRequests.trySend(streamRequest)
+            when {
+              sendResult.isSuccess -> true
+              sendResult.isClosed -> false
+              else ->
+                error(
+                  "internal error xw3zdzycfq: outgoingRequests.trySend(streamRequest) " +
+                    "was unable to enqueue the streamRequest; this should never happen because " +
+                    "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
+                )
+            }
           }
           is IncomingResponse.Message -> {
             if (incomingResponse.streamResponse.requestId != requestId) {
