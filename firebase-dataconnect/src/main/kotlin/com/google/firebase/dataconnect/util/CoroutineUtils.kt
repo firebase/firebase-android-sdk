@@ -18,8 +18,6 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorCoroutineScope
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -70,8 +68,7 @@ internal object CoroutineUtils {
         CoroutineName(coroutineName ?: logger.nameWithId) +
         CoroutineExceptionHandler { exceptionContext, throwable ->
           logger.warn(throwable) {
-            "uncaught exception from a coroutine named " +
-              "${exceptionContext[CoroutineName]?.name}: $throwable"
+            "uncaught exception from a coroutine named ${exceptionContext[CoroutineName]?.name}"
           }
         }
     )
