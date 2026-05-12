@@ -27,10 +27,10 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
+import com.google.firebase.dataconnect.util.nextIdString
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
-import com.google.firebase.util.nextAlphanumericString
 import java.lang.ref.WeakReference
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
@@ -286,7 +286,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    * progress.
    */
   suspend fun getToken(requestId: String): R? {
-    val invocationId = "gat" + Random.nextAlphanumericString(length = 8)
+    val invocationId = Random.nextIdString("gat")
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
       val attemptSequenceNumber = nextSequenceNumber()

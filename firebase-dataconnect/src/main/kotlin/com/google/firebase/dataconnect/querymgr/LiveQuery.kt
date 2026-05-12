@@ -29,7 +29,7 @@ import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.util.nextIdString
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
@@ -51,7 +51,7 @@ internal class LiveQuery(
   parentCoroutineScope: CoroutineScope,
   private val grpcClient: DataConnectGrpcClient,
   private val registeredDataDeserializerFactory: RegisteredDataDeserializerFactory,
-  private val secureRandom: Random,
+  private val random: Random,
   parentLogger: Logger,
 ) : AutoCloseable {
   private val logger =
@@ -171,7 +171,7 @@ internal class LiveQuery(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ) {
-    val requestId = "qry" + secureRandom.nextAlphanumericString(length = 10)
+    val requestId = random.nextIdString("qry")
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =

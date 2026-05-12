@@ -21,7 +21,7 @@ import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.util.nextIdString
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -42,10 +42,9 @@ internal interface Logger {
 
 private class LoggerImpl(override val name: String) : Logger {
 
-  override val id: String by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { "lgr" + Random.nextAlphanumericString(length = 10) }
+  override val id: String = Random.nextIdString("lgr")
 
-  override val nameWithId: String by lazy(LazyThreadSafetyMode.PUBLICATION) { "$name[id=$id]" }
+  override val nameWithId: String = "$name[id=$id]"
 
   override fun log(exception: Throwable?, level: LogLevel, message: String) {
     val fullMessage = "[${BuildConfig.VERSION_NAME}] $nameWithId $message"

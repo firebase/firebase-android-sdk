@@ -290,7 +290,7 @@ class FirebaseDataConnectImplUnitTest {
         deferredAppCheckProvider = deferredAppCheckProvider,
         creator = mockk(relaxed = true),
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
-        secureRandom = Random,
+        random = Random,
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }

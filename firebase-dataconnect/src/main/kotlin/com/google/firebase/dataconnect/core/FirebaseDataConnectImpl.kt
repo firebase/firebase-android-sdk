@@ -40,7 +40,7 @@ import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumeri
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.util.nextIdString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlin.random.Random
@@ -110,7 +110,7 @@ internal class FirebaseDataConnectImpl(
   deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
-  private val secureRandom: Random,
+  private val random: Random,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -337,7 +337,7 @@ internal class FirebaseDataConnectImpl(
             parentCoroutineScope = coroutineScope,
             grpcClient = grpcClient,
             registeredDataDeserializerFactory = registeredDataDeserializerFactory,
-            secureRandom = secureRandom,
+            random = random,
             parentLogger = parentLogger,
           )
       }
@@ -367,7 +367,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun logEmulatorVersion(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = "gei" + Random.nextAlphanumericString(length = 6)
+    val requestId = Random.nextIdString("gei")
     logger.debug { "[rid=$requestId] Getting Data Connect Emulator information" }
 
     val job =
@@ -398,7 +398,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun streamEmulatorErrors(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = "see" + Random.nextAlphanumericString(length = 6)
+    val requestId = Random.nextIdString("see")
     logger.debug { "[rid=$requestId] Streaming Data Connect Emulator errors" }
 
     val job =
@@ -495,7 +495,7 @@ internal class FirebaseDataConnectImpl(
       callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
-      secureRandom = secureRandom,
+      random = random,
     )
   }
 

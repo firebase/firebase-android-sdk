@@ -96,7 +96,7 @@ class MutationRefImplUnitTest {
   @Test
   fun `constructor should initialize properties to the given objects`() = runTest {
     val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb, Arb.random()) { args, secureRandom,
+    checkAll(propTestConfig, argsArb, Arb.random()) { args, random,
       ->
       val mutationRefImpl =
         MutationRefImpl(
@@ -108,7 +108,7 @@ class MutationRefImplUnitTest {
           callerSdkType = args.callerSdkType,
           dataSerializersModule = args.dataSerializersModule,
           variablesSerializersModule = args.variablesSerializersModule,
-          secureRandom = secureRandom,
+          random = random,
         )
 
       mutationRefImpl.shouldHavePropertiesEqualTo(args)
@@ -116,7 +116,7 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `should use the given secureRandom to generate request IDs`() = runTest {
+  fun `should use the given random to generate request IDs`() = runTest {
     val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
     checkAll(propTestConfig, argsArb, Arb.randomSeed()) { args, randomSeed,
       ->
@@ -131,7 +131,7 @@ class MutationRefImplUnitTest {
             callerSdkType = args.callerSdkType,
             dataSerializersModule = args.dataSerializersModule,
             variablesSerializersModule = args.variablesSerializersModule,
-            secureRandom = Random(randomSeed),
+            random = Random(randomSeed),
           )
         }
 
