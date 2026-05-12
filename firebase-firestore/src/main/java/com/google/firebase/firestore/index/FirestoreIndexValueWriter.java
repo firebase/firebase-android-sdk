@@ -126,7 +126,7 @@ public class FirestoreIndexValueWriter {
             writeIndexBsonObjectId(indexValue.getMapValue(), encoder);
             break;
           case BSON_BINARY:
-            writeIndexBsonBinaryData(indexValue.getMapValue(), encoder);
+            writeIndexBlob(indexValue.getMapValue(), encoder);
             break;
           case INT32:
             writeIndexInt32(indexValue.getMapValue(), encoder);
@@ -259,7 +259,7 @@ public class FirestoreIndexValueWriter {
     encoder.writeBytes(ByteString.copyFrom(oid.getBytes()));
   }
 
-  private void writeIndexBsonBinaryData(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
+  private void writeIndexBlob(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_BSON_BINARY);
 
     encoder.writeBytes(

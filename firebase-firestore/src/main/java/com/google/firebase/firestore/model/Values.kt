@@ -778,67 +778,71 @@ object Values {
   /** Returns the lowest value for the given value type (inclusive). */
   @JvmStatic
   fun getLowerBound(value: Value): Value {
-    return when (value.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> NULL_VALUE
-      ValueTypeCase.BOOLEAN_VALUE -> MIN_BOOLEAN
-      ValueTypeCase.INTEGER_VALUE,
-      ValueTypeCase.DOUBLE_VALUE -> MIN_NUMBER
-      ValueTypeCase.TIMESTAMP_VALUE -> MIN_TIMESTAMP
-      ValueTypeCase.STRING_VALUE -> MIN_STRING
-      ValueTypeCase.BYTES_VALUE -> MIN_BYTES
-      ValueTypeCase.REFERENCE_VALUE -> MIN_REFERENCE
-      ValueTypeCase.GEO_POINT_VALUE -> MIN_GEO_POINT
-      ValueTypeCase.ARRAY_VALUE -> MIN_ARRAY
-      ValueTypeCase.MAP_VALUE -> {
-        val mapType = detectMapRepresentation(value)
-        when (mapType) {
-          MapRepresentation.VECTOR -> MIN_VECTOR_VALUE
-          MapRepresentation.BSON_OBJECT_ID -> MIN_BSON_OBJECT_ID_VALUE
-          MapRepresentation.BSON_TIMESTAMP -> MIN_BSON_TIMESTAMP_VALUE
-          MapRepresentation.BSON_BINARY -> MIN_BSON_BINARY_VALUE
-          MapRepresentation.REGEX -> MIN_REGEX_VALUE
-          MapRepresentation.INT32,
-          MapRepresentation.DECIMAL128 -> MIN_NUMBER
-          MapRepresentation.MIN_KEY -> MIN_KEY_VALUE
-          MapRepresentation.MAX_KEY -> MAX_KEY_VALUE
-          else -> MIN_MAP
+    val result =
+      when (value.valueTypeCase) {
+        ValueTypeCase.NULL_VALUE -> NULL_VALUE
+        ValueTypeCase.BOOLEAN_VALUE -> MIN_BOOLEAN
+        ValueTypeCase.INTEGER_VALUE,
+        ValueTypeCase.DOUBLE_VALUE -> MIN_NUMBER
+        ValueTypeCase.TIMESTAMP_VALUE -> MIN_TIMESTAMP
+        ValueTypeCase.STRING_VALUE -> MIN_STRING
+        ValueTypeCase.BYTES_VALUE -> MIN_BYTES
+        ValueTypeCase.REFERENCE_VALUE -> MIN_REFERENCE
+        ValueTypeCase.GEO_POINT_VALUE -> MIN_GEO_POINT
+        ValueTypeCase.ARRAY_VALUE -> MIN_ARRAY
+        ValueTypeCase.MAP_VALUE -> {
+          val mapType = detectMapRepresentation(value)
+          when (mapType) {
+            MapRepresentation.VECTOR -> MIN_VECTOR_VALUE
+            MapRepresentation.BSON_OBJECT_ID -> MIN_BSON_OBJECT_ID_VALUE
+            MapRepresentation.BSON_TIMESTAMP -> MIN_BSON_TIMESTAMP_VALUE
+            MapRepresentation.BSON_BINARY -> MIN_BSON_BINARY_VALUE
+            MapRepresentation.REGEX -> MIN_REGEX_VALUE
+            MapRepresentation.INT32,
+            MapRepresentation.DECIMAL128 -> MIN_NUMBER
+            MapRepresentation.MIN_KEY -> MIN_KEY_VALUE
+            MapRepresentation.MAX_KEY -> MAX_KEY_VALUE
+            else -> MIN_MAP
+          }
         }
+        else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
       }
-      else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
-    }
+    return result
   }
 
   /** Returns the largest value for the given value type (exclusive). */
   @JvmStatic
   fun getUpperBound(value: Value): Value {
-    return when (value.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> MIN_KEY_VALUE
-      ValueTypeCase.BOOLEAN_VALUE -> MIN_NUMBER
-      ValueTypeCase.INTEGER_VALUE,
-      ValueTypeCase.DOUBLE_VALUE -> MIN_TIMESTAMP
-      ValueTypeCase.TIMESTAMP_VALUE -> MIN_BSON_TIMESTAMP_VALUE
-      ValueTypeCase.STRING_VALUE -> MIN_BYTES
-      ValueTypeCase.BYTES_VALUE -> MIN_BSON_BINARY_VALUE
-      ValueTypeCase.REFERENCE_VALUE -> MIN_BSON_OBJECT_ID_VALUE
-      ValueTypeCase.GEO_POINT_VALUE -> MIN_REGEX_VALUE
-      ValueTypeCase.ARRAY_VALUE -> MIN_VECTOR_VALUE
-      ValueTypeCase.MAP_VALUE -> {
-        val mapType = detectMapRepresentation(value)
-        when (mapType) {
-          MapRepresentation.VECTOR -> MIN_MAP
-          MapRepresentation.BSON_OBJECT_ID -> MIN_GEO_POINT
-          MapRepresentation.BSON_TIMESTAMP -> MIN_STRING
-          MapRepresentation.BSON_BINARY -> MIN_REFERENCE
-          MapRepresentation.REGEX -> MIN_ARRAY
-          MapRepresentation.INT32,
-          MapRepresentation.DECIMAL128 -> MIN_TIMESTAMP
-          MapRepresentation.MIN_KEY -> MIN_BOOLEAN
-          MapRepresentation.MAX_KEY -> INTERNAL_MAX_VALUE
-          else -> MAX_KEY_VALUE
+    val result =
+      when (value.valueTypeCase) {
+        ValueTypeCase.NULL_VALUE -> MIN_KEY_VALUE
+        ValueTypeCase.BOOLEAN_VALUE -> MIN_NUMBER
+        ValueTypeCase.INTEGER_VALUE,
+        ValueTypeCase.DOUBLE_VALUE -> MIN_TIMESTAMP
+        ValueTypeCase.TIMESTAMP_VALUE -> MIN_BSON_TIMESTAMP_VALUE
+        ValueTypeCase.STRING_VALUE -> MIN_BYTES
+        ValueTypeCase.BYTES_VALUE -> MIN_BSON_BINARY_VALUE
+        ValueTypeCase.REFERENCE_VALUE -> MIN_BSON_OBJECT_ID_VALUE
+        ValueTypeCase.GEO_POINT_VALUE -> MIN_REGEX_VALUE
+        ValueTypeCase.ARRAY_VALUE -> MIN_VECTOR_VALUE
+        ValueTypeCase.MAP_VALUE -> {
+          val mapType = detectMapRepresentation(value)
+          when (mapType) {
+            MapRepresentation.VECTOR -> MIN_MAP
+            MapRepresentation.BSON_OBJECT_ID -> MIN_GEO_POINT
+            MapRepresentation.BSON_TIMESTAMP -> MIN_STRING
+            MapRepresentation.BSON_BINARY -> MIN_REFERENCE
+            MapRepresentation.REGEX -> MIN_ARRAY
+            MapRepresentation.INT32,
+            MapRepresentation.DECIMAL128 -> MIN_TIMESTAMP
+            MapRepresentation.MIN_KEY -> MIN_BOOLEAN
+            MapRepresentation.MAX_KEY -> INTERNAL_MAX_VALUE
+            else -> MAX_KEY_VALUE
+          }
         }
+        else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
       }
-      else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
-    }
+    return result
   }
 
   /** Returns true if the Value represents the canonical [.MAX_VALUE] . */

@@ -38,7 +38,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -589,13 +589,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     configureFieldIndexes(singletonList(index));
 
     writeMutation(
-        setMutation("coll/doc1", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc1", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3}))));
     writeMutation(
-        setMutation("coll/doc2", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
+        setMutation("coll/doc2", map("key", Blob.createBsonBinary(1, new byte[] {1, 2}))));
     writeMutation(
-        setMutation("coll/doc3", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
+        setMutation("coll/doc3", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4}))));
     writeMutation(
-        setMutation("coll/doc4", map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2}))));
+        setMutation("coll/doc4", map("key", Blob.createBsonBinary(2, new byte[] {1, 2}))));
 
     backfillIndexes();
 
@@ -615,16 +615,14 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertQueryReturned("coll/doc2", "coll/doc1", "coll/doc3", "coll/doc4");
 
     query =
-        query("coll")
-            .filter(filter("key", "==", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "==", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/doc1", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc1");
 
     query =
-        query("coll")
-            .filter(filter("key", "!=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "!=", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -638,8 +636,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertQueryReturned("coll/doc2", "coll/doc3", "coll/doc4");
 
     query =
-        query("coll")
-            .filter(filter("key", ">=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", ">=", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 3, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -653,8 +650,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertQueryReturned("coll/doc1", "coll/doc3", "coll/doc4");
 
     query =
-        query("coll")
-            .filter(filter("key", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "<=", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -665,15 +661,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/doc2", "coll/doc1");
 
-    query =
-        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(2, new byte[] {1, 2})));
+    query = query("coll").filter(filter("key", ">", Blob.createBsonBinary(2, new byte[] {1, 2})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
     assertQueryReturned();
 
-    query =
-        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2})));
+    query = query("coll").filter(filter("key", "<", Blob.createBsonBinary(1, new byte[] {1, 2})));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertOverlayTypes(keyMap());
@@ -686,8 +680,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                     "key",
                     "in",
                     Arrays.asList(
-                        BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
-                        BsonBinaryData.fromBytes(1, new byte[] {1, 2}))));
+                        Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
+                        Blob.createBsonBinary(1, new byte[] {1, 2}))));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertOverlayTypes(
@@ -1248,9 +1242,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     writeMutation(setMutation("coll/doc6", map("key", new BsonTimestamp(1000, 1001))));
     writeMutation(setMutation("coll/doc7", map("key", new BsonTimestamp(1000, 1000))));
     writeMutation(
-        setMutation("coll/doc8", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}))));
+        setMutation("coll/doc8", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4}))));
     writeMutation(
-        setMutation("coll/doc9", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc9", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3}))));
     writeMutation(
         setMutation("coll/doc10", map("key", new BsonObjectId("507f191e810c19729de860eb"))));
     writeMutation(
@@ -1331,7 +1325,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     writeMutation(setMutation("coll/doc11", map("key", "string")));
     writeMutation(setMutation("coll/doc12", map("key", blob(1, 2, 3))));
     writeMutation(
-        setMutation("coll/doc13", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))));
+        setMutation("coll/doc13", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3}))));
     writeMutation(setMutation("coll/doc14", map("key", ref("foo/bar"))));
     writeMutation(
         setMutation("coll/doc15", map("key", new BsonObjectId("507f191e810c19729de860ea"))));

@@ -413,8 +413,8 @@ public final class UserDataReader {
       return parseBsonObjectId((BsonObjectId) input);
     } else if (input instanceof BsonTimestamp) {
       return parseBsonTimestamp((BsonTimestamp) input);
-    } else if (input instanceof BsonBinaryData) {
-      return parseBsonBinary((BsonBinaryData) input);
+    } else if (input instanceof Blob) {
+      return parseBlob((Blob) input);
     } else if (input instanceof RegexValue) {
       return parseRegexValue((RegexValue) input);
     } else if (input instanceof Int32Value) {
@@ -496,16 +496,20 @@ public final class UserDataReader {
     return Value.newBuilder().setMapValue(mapBuilder).build();
   }
 
-  private Value parseBsonBinary(BsonBinaryData binary) {
-    MapValue.Builder mapBuilder = MapValue.newBuilder();
-    mapBuilder.putFields(
-        Values.RESERVED_BSON_BINARY_KEY,
-        Value.newBuilder()
-            .setBytesValue(
-                ByteString.copyFrom(new byte[] {(byte) binary.subtype()})
-                    .concat(binary.dataAsByteString()))
-            .build());
-    return Value.newBuilder().setMapValue(mapBuilder).build();
+  private Value parseBlob(Blob blob) {
+    if (blob.isBson()) {
+      MapValue.Builder mapBuilder = MapValue.newBuilder();
+      mapBuilder.putFields(
+          Values.RESERVED_BSON_BINARY_KEY,
+          Value.newBuilder()
+              .setBytesValue(
+                  ByteString.copyFrom(new byte[] {(byte) blob.getSubType()})
+                      .concat(blob.toByteString()))
+              .build());
+      return Value.newBuilder().setMapValue(mapBuilder).build();
+    } else {
+      return Values.encodeValue(blob);
+    }
   }
 
   private Value parseRegexValue(RegexValue regex) {

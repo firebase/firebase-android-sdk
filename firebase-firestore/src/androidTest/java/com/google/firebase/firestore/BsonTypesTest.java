@@ -15,8 +15,8 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.assertSDKQueryResultsConsistentWithBackend;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionOnNightly;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocsOnNightly;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.lang.Double.NaN;
@@ -42,19 +42,31 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class BsonTypesTest {
 
+  @org.junit.Before
+  public void setUp() {
+    org.junit.Assume.assumeTrue(
+        "BSON types require Firestore Enterprise Database",
+        com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition()
+                == com.google.firebase.firestore.testutil.IntegrationTestUtil.BackendEdition
+                    .ENTERPRISE
+            && com.google.firebase.firestore.testutil.IntegrationTestUtil.testEnvDatabaseId()
+                .getDatabaseId()
+                .startsWith("enterprise"));
+  }
+
   @Test
   public void writeAndReadBsonTypes() throws ExecutionException, InterruptedException {
     Map<String, Object> expected = new HashMap<>();
 
     DocumentReference docRef =
         waitFor(
-            testCollectionOnNightly()
+            testCollection()
                 .add(
                     map(
                         "bsonObjectId", new BsonObjectId("507f191e810c19729de860ea"),
                         "regex", new RegexValue("^foo", "i"),
                         "bsonTimestamp", new BsonTimestamp(1, 2),
-                        "bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                        "bsonBinary", Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
                         "int32", new Int32Value(1),
                         "decimal128", new Decimal128Value("1.2e3"),
                         "minKey", MinKey.instance(),
@@ -76,7 +88,7 @@ public class BsonTypesTest {
     expected.put("bsonObjectId", new BsonObjectId("507f191e810c19729de860eb"));
     expected.put("regex", new RegexValue("^foo", "m"));
     expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
-    expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+    expected.put("bsonBinary", Blob.createBsonBinary(1, new byte[] {1, 2, 3}));
     expected.put("int32", new Int32Value(2));
     expected.put("decimal128", new Decimal128Value("1.2e3"));
     expected.put("minKey", MinKey.instance());
@@ -87,7 +99,7 @@ public class BsonTypesTest {
     assertTrue(actual.get("bsonObjectId") instanceof BsonObjectId);
     assertTrue(actual.get("regex") instanceof RegexValue);
     assertTrue(actual.get("bsonTimestamp") instanceof BsonTimestamp);
-    assertTrue(actual.get("bsonBinary") instanceof BsonBinaryData);
+    assertTrue(actual.get("bsonBinary") instanceof Blob);
     assertTrue(actual.get("int32") instanceof Int32Value);
     assertTrue(actual.get("decimal128") instanceof Decimal128Value);
     assertTrue(actual.get("minKey") instanceof MinKey);
@@ -97,7 +109,7 @@ public class BsonTypesTest {
 
   @Test
   public void writeAndReadBsonTypeOffline() throws ExecutionException, InterruptedException {
-    CollectionReference randomColl = testCollectionOnNightly();
+    CollectionReference randomColl = testCollection();
     DocumentReference docRef = randomColl.document();
 
     waitFor(randomColl.getFirestore().disableNetwork());
@@ -113,7 +125,7 @@ public class BsonTypesTest {
             "bsonTimestamp",
             new BsonTimestamp(1, 2),
             "bsonBinary",
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
             "int32",
             new Int32Value(1),
             "decimal128",
@@ -135,7 +147,7 @@ public class BsonTypesTest {
     expected.put("bsonObjectId", new BsonObjectId("507f191e810c19729de860eb"));
     expected.put("regex", new RegexValue("^foo", "m"));
     expected.put("bsonTimestamp", new BsonTimestamp(1, 3));
-    expected.put("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+    expected.put("bsonBinary", Blob.createBsonBinary(1, new byte[] {1, 2, 3}));
     expected.put("int32", new Int32Value(1));
     expected.put("decimal128", new Decimal128Value("1.2e3"));
     expected.put("minKey", MinKey.instance());
@@ -146,7 +158,7 @@ public class BsonTypesTest {
     assertTrue(actual.get("bsonObjectId") instanceof BsonObjectId);
     assertTrue(actual.get("regex") instanceof RegexValue);
     assertTrue(actual.get("bsonTimestamp") instanceof BsonTimestamp);
-    assertTrue(actual.get("bsonBinary") instanceof BsonBinaryData);
+    assertTrue(actual.get("bsonBinary") instanceof Blob);
     assertTrue(actual.get("int32") instanceof Int32Value);
     assertTrue(actual.get("decimal128") instanceof Decimal128Value);
     assertTrue(actual.get("minKey") instanceof MinKey);
@@ -158,7 +170,7 @@ public class BsonTypesTest {
   public void listenToDocumentsWithBsonTypes() throws Throwable {
     final Semaphore semaphore = new Semaphore(0);
     ListenerRegistration registration = null;
-    CollectionReference randomColl = testCollectionOnNightly();
+    CollectionReference randomColl = testCollection();
     DocumentReference ref = randomColl.document();
     AtomicReference<Throwable> failureMessage = new AtomicReference(null);
     int totalPermits = 5;
@@ -187,7 +199,7 @@ public class BsonTypesTest {
                                   "bsonTimestamp",
                                   new BsonTimestamp(1, 2),
                                   "bsonBinary",
-                                  BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+                                  Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
                                   "int32",
                                   new Int32Value(1),
                                   "decimal128",
@@ -201,8 +213,8 @@ public class BsonTypesTest {
                           assertNotNull(docSnap);
 
                           assertEquals(
-                              docSnap.getBsonBinaryData("bsonBinary"),
-                              BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+                              docSnap.getBlob("bsonBinary"),
+                              Blob.createBsonBinary(1, new byte[] {1, 2, 3}));
                           assertEquals(
                               docSnap.getBsonObjectId("bsonObjectId"),
                               new BsonObjectId("507f191e810c19729de860ea"));
@@ -281,7 +293,7 @@ public class BsonTypesTest {
             map("key", new BsonObjectId("507f191e810c19729de860eb")),
             "c",
             map("key", new BsonObjectId("507f191e810c19729de860ec")));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl
@@ -308,7 +320,7 @@ public class BsonTypesTest {
             map("key", new BsonTimestamp(1, 2)),
             "c",
             map("key", new BsonTimestamp(2, 1)));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl
@@ -328,21 +340,21 @@ public class BsonTypesTest {
   }
 
   @Test
-  public void filterAndOrderBsonBinaryData() throws Exception {
+  public void filterAndOrderBlob() throws Exception {
     Map<String, Map<String, Object>> docs =
         map(
             "a",
-            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
+            map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})),
             "b",
-            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})),
+            map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4})),
             "c",
-            map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2, 2})));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+            map("key", Blob.createBsonBinary(2, new byte[] {1, 2, 2})));
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereGreaterThan("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+            .whereGreaterThan("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3}));
 
     assertSDKQueryResultsConsistentWithBackend(
         randomColl, orderedQuery, docs, Arrays.asList("c", "b"));
@@ -350,7 +362,7 @@ public class BsonTypesTest {
     orderedQuery =
         randomColl
             .orderBy("key", Direction.DESCENDING)
-            .whereNotEqualTo("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
+            .whereNotEqualTo("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4}));
 
     assertSDKQueryResultsConsistentWithBackend(
         randomColl, orderedQuery, docs, Arrays.asList("c", "a"));
@@ -363,7 +375,7 @@ public class BsonTypesTest {
             "a", map("key", new RegexValue("^bar", "i")),
             "b", map("key", new RegexValue("^bar", "m")),
             "c", map("key", new RegexValue("^baz", "i")));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl
@@ -389,7 +401,7 @@ public class BsonTypesTest {
             "a", map("key", new Int32Value(-1)),
             "b", map("key", new Int32Value(1)),
             "c", map("key", new Int32Value(2)));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl.orderBy("key", Direction.DESCENDING).whereGreaterThan("key", new Int32Value(-1));
@@ -420,7 +432,7 @@ public class BsonTypesTest {
             map("key", new Decimal128Value("-Infinity")),
             "f",
             map("key", new Decimal128Value("Infinity")));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery =
         randomColl
@@ -484,7 +496,7 @@ public class BsonTypesTest {
             "c", map("key", null),
             "d", map("key", 1L),
             "e", map("key", MaxKey.instance()));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query query =
         randomColl
@@ -521,7 +533,7 @@ public class BsonTypesTest {
             "c", map("key", MaxKey.instance()),
             "d", map("key", MaxKey.instance()),
             "e", map("key", null));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query query =
         randomColl
@@ -558,7 +570,7 @@ public class BsonTypesTest {
             "c", map("key", null),
             "d", map("key", 1L),
             "e", map("key", MaxKey.instance()));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query query = randomColl.whereEqualTo("key", null);
     assertSDKQueryResultsConsistentWithBackend(randomColl, query, docs, Arrays.asList("b", "c"));
@@ -596,7 +608,7 @@ public class BsonTypesTest {
             map("key", NaN),
             "l",
             map("key", POSITIVE_INFINITY));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery = randomColl.orderBy("key", Direction.DESCENDING);
     assertSDKQueryResultsConsistentWithBackend(
@@ -647,7 +659,7 @@ public class BsonTypesTest {
             "e",
             map("key", new Decimal128Value("1.1e-3")) // 0.0011
             );
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery = randomColl.whereEqualTo("key", new Decimal128Value("1.1"));
     assertSDKQueryResultsConsistentWithBackend(randomColl, orderedQuery, docs, Arrays.asList("b"));
@@ -687,11 +699,11 @@ public class BsonTypesTest {
             "bsonTimestamp3",
             map("key", new BsonTimestamp(1, 1)),
             "bsonBinary1",
-            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
+            map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})),
             "bsonBinary2",
-            map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})),
+            map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4})),
             "bsonBinary3",
-            map("key", BsonBinaryData.fromBytes(2, new byte[] {1, 2, 2})),
+            map("key", Blob.createBsonBinary(2, new byte[] {1, 2, 2})),
             "int32Value1",
             map("key", new Int32Value(-1)),
             "int32Value2",
@@ -712,7 +724,7 @@ public class BsonTypesTest {
             map("key", MaxKey.instance()),
             "maxKey2",
             map("key", MaxKey.instance()));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     Query orderedQuery = randomColl.orderBy("key", Direction.DESCENDING);
     List<String> expectedDocs =
@@ -752,8 +764,8 @@ public class BsonTypesTest {
         map(
             "a", map("key", new BsonObjectId("507f191e810c19729de860ea")),
             "b", map("key", new RegexValue("^foo", "i")),
-            "c", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
-    CollectionReference randomColl = testCollectionWithDocsOnNightly(docs);
+            "c", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
+    CollectionReference randomColl = testCollectionWithDocs(docs);
 
     waitFor(
         randomColl.firestore.runTransaction(

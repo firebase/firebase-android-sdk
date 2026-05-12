@@ -43,16 +43,12 @@ package com.google.firebase.firestore {
 
   public class Blob implements java.lang.Comparable<com.google.firebase.firestore.Blob!> {
     method public int compareTo(com.google.firebase.firestore.Blob);
+    method public static com.google.firebase.firestore.Blob createBsonBinary(byte[]);
+    method public static com.google.firebase.firestore.Blob createBsonBinary(int, byte[]);
     method public static com.google.firebase.firestore.Blob fromBytes(byte[]);
+    method public int getSubType();
+    method public boolean isBson();
     method public byte[] toBytes();
-  }
-
-  public final class BsonBinaryData {
-    method public com.google.protobuf.ByteString dataAsByteString();
-    method public byte[] dataAsBytes();
-    method public static com.google.firebase.firestore.BsonBinaryData fromByteString(int, com.google.protobuf.ByteString);
-    method public static com.google.firebase.firestore.BsonBinaryData fromBytes(int, byte[]);
-    method public int subtype();
   }
 
   public final class BsonObjectId {
@@ -134,7 +130,6 @@ package com.google.firebase.firestore {
     method public <T> T? get(String, Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public com.google.firebase.firestore.Blob? getBlob(String);
     method public Boolean? getBoolean(String);
-    method public com.google.firebase.firestore.BsonBinaryData? getBsonBinaryData(String);
     method public com.google.firebase.firestore.BsonObjectId? getBsonObjectId(String);
     method public com.google.firebase.firestore.BsonTimestamp? getBsonTimestamp(String);
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData();

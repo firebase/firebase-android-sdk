@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.index;
 
-import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -135,10 +135,9 @@ public class FirestoreIndexValueWriterTest {
   }
 
   @Test
-  public void writeIndexValueSupportsBsonBinaryData()
-      throws ExecutionException, InterruptedException {
+  public void writeIndexValueSupportsBlob() throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}));
+    Value value = dataReader.parseQueryValue(Blob.createBsonBinary(1, new byte[] {1, 2, 3}));
 
     // Encode an actual BSONBinaryDataValue
     IndexByteEncoder encoder = new IndexByteEncoder();
@@ -164,7 +163,7 @@ public class FirestoreIndexValueWriterTest {
   public void writeIndexValueSupportsBsonBinaryWithEmptyData()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
-    Value value = dataReader.parseQueryValue(BsonBinaryData.fromBytes(1, new byte[] {}));
+    Value value = dataReader.parseQueryValue(Blob.createBsonBinary(1, new byte[] {}));
 
     // Encode an actual BSONBinaryDataValue
     IndexByteEncoder encoder = new IndexByteEncoder();

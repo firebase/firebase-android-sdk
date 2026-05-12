@@ -157,7 +157,7 @@ public class UserDataWriter {
         fields.get(Values.RESERVED_BSON_TIMESTAMP_INCREMENT_KEY).getIntegerValue());
   }
 
-  BsonBinaryData convertBsonBinary(Map<String, Value> mapValue) {
+  Blob convertBsonBinary(Map<String, Value> mapValue) {
     ByteString bytes = mapValue.get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
     // Note: A byte is interpreted as a signed 8-bit value. Since values larger than 127 have a
     // leading '1' bit, simply casting them to integer results in sign-extension and lead to a
@@ -166,7 +166,7 @@ public class UserDataWriter {
     // Since we want the `subtype` to be an unsigned byte, we need to perform 0-extension (rather
     // than sign-extension) to convert it to an int.
     int subtype = bytes.byteAt(0) & 0xFF;
-    return BsonBinaryData.fromByteString(subtype, bytes.substring(1));
+    return Blob.createBsonBinary(subtype, bytes.substring(1));
   }
 
   RegexValue convertRegex(Map<String, Value> mapValue) {

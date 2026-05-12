@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -80,9 +80,9 @@ public class ValuesTest {
     BsonObjectId objectId1 = new BsonObjectId("507f191e810c19729de860ea");
     BsonObjectId objectId2 = new BsonObjectId("507f191e810c19729de860eb");
 
-    BsonBinaryData binaryData1 = BsonBinaryData.fromBytes(1, new byte[] {1, 2});
-    BsonBinaryData binaryData2 = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
-    BsonBinaryData binaryData3 = BsonBinaryData.fromBytes(2, new byte[] {1, 2});
+    Blob binaryData1 = Blob.createBsonBinary(1, new byte[] {1, 2});
+    Blob binaryData2 = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
+    Blob binaryData3 = Blob.createBsonBinary(2, new byte[] {1, 2});
 
     BsonTimestamp bsonTimestamp1 = new BsonTimestamp(1, 2);
     BsonTimestamp bsonTimestamp2 = new BsonTimestamp(1, 3);
@@ -148,10 +148,9 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("foo", 1)))
         .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860ea")), wrap(objectId1))
         .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860eb")), wrap(objectId2))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2})), wrap(binaryData1))
-        .addEqualityGroup(
-            wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})), wrap(binaryData2))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(2, new byte[] {1, 2})), wrap(binaryData3))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {1, 2})), wrap(binaryData1))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {1, 2, 3})), wrap(binaryData2))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(2, new byte[] {1, 2})), wrap(binaryData3))
         .addEqualityGroup(wrap(new BsonTimestamp(1, 2)), wrap(bsonTimestamp1))
         .addEqualityGroup(wrap(new BsonTimestamp(1, 3)), wrap(bsonTimestamp2))
         .addEqualityGroup(wrap(new BsonTimestamp(2, 2)), wrap(bsonTimestamp3))
@@ -264,12 +263,12 @@ public class ValuesTest {
 
         // bson binary data
         .addEqualityGroup(
-            wrap(BsonBinaryData.fromBytes(1, new byte[] {})),
-            wrap(BsonBinaryData.fromByteString(1, ByteString.EMPTY)))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(1, new byte[] {0})))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2})))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(5, new byte[] {1, 2, 3})))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(7, new byte[] {1})))
+            wrap(Blob.createBsonBinary(1, new byte[] {})),
+            wrap(Blob.createBsonBinary(1, ByteString.EMPTY)))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {0})))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(5, new byte[] {1, 2})))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(5, new byte[] {1, 2, 3})))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(7, new byte[] {1})))
 
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
@@ -380,10 +379,10 @@ public class ValuesTest {
 
         // bson binary data
         .addEqualityGroup(
-            wrap(getLowerBound(TestUtil.wrap(BsonBinaryData.fromBytes(128, new byte[] {1, 2, 3})))),
-            wrap(BsonBinaryData.fromBytes(0, new byte[] {})),
-            wrap(BsonBinaryData.fromByteString((byte) 0, ByteString.EMPTY)))
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(0, new byte[] {0})))
+            wrap(getLowerBound(TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2, 3})))),
+            wrap(Blob.createBsonBinary(0, new byte[] {})),
+            wrap(Blob.createBsonBinary((byte) 0, ByteString.EMPTY)))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(0, new byte[] {0})))
 
         // resource names
         .addEqualityGroup(
@@ -475,9 +474,9 @@ public class ValuesTest {
         .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(blob(255)))))
 
         // bson binary data
-        .addEqualityGroup(wrap(BsonBinaryData.fromBytes(128, new byte[] {1, 2})))
+        .addEqualityGroup(wrap(Blob.createBsonBinary(128, new byte[] {1, 2})))
         .addEqualityGroup(
-            wrap(getUpperBound(TestUtil.wrap(BsonBinaryData.fromBytes(0, new byte[] {})))))
+            wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(0, new byte[] {})))))
 
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
@@ -543,10 +542,9 @@ public class ValuesTest {
     assertCanonicalId((TestUtil.wrap(new Int32Value(1))), "{__int__:1}");
     assertCanonicalId(TestUtil.wrap(new Decimal128Value("1.2e3")), "{__decimal128__:1.2e3}");
     assertCanonicalId(
-        TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
+        TestUtil.wrap(Blob.createBsonBinary(1, new byte[] {1, 2, 3})), "{__binary__:01010203}");
     assertCanonicalId(
-        TestUtil.wrap(BsonBinaryData.fromBytes(128, new byte[] {1, 2, 3})),
-        "{__binary__:80010203}");
+        TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2, 3})), "{__binary__:80010203}");
     assertCanonicalId(TestUtil.wrap(MinKey.instance()), "{__min__:null}");
     assertCanonicalId(TestUtil.wrap(MaxKey.instance()), "{__max__:null}");
   }
@@ -570,8 +568,8 @@ public class ValuesTest {
     Value regexValue = TestUtil.wrap(new RegexValue("^foo", "i"));
     Value bsonTimestampValue = TestUtil.wrap(new BsonTimestamp(1, 2));
     Value bsonObjectIdValue = TestUtil.wrap(new BsonObjectId("foo"));
-    Value bsonBinaryDataValue1 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {}));
-    Value bsonBinaryDataValue2 = TestUtil.wrap(BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4}));
+    Value bsonBinaryDataValue1 = TestUtil.wrap(Blob.createBsonBinary(1, new byte[] {}));
+    Value bsonBinaryDataValue2 = TestUtil.wrap(Blob.createBsonBinary(1, new byte[] {1, 2, 4}));
 
     assertTrue(Values.isMinKey(minKeyValue));
     assertFalse(Values.isMinKey(maxKeyValue));
@@ -669,8 +667,8 @@ public class ValuesTest {
   }
 
   /** Small helper class that uses ProtoValues for equals() and compareTo(). */
-  static class EqualsWrapper implements Comparable<EqualsWrapper> {
-    final Value proto;
+  public static class EqualsWrapper implements Comparable<EqualsWrapper> {
+    public final Value proto;
 
     EqualsWrapper(Value proto) {
       this.proto = proto;

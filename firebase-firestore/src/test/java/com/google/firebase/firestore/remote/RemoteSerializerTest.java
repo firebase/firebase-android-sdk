@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.DocumentReference;
@@ -376,8 +376,8 @@ public final class RemoteSerializerTest {
   }
 
   @Test
-  public void testEncodesBsonBinaryData() {
-    Value model = wrap(BsonBinaryData.fromBytes(127, new byte[] {1, 2, 3}));
+  public void testEncodesBlob() {
+    Value model = wrap(Blob.createBsonBinary(127, new byte[] {1, 2, 3}));
 
     Value proto =
         Value.newBuilder()

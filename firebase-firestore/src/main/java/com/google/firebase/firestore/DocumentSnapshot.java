@@ -581,18 +581,6 @@ public class DocumentSnapshot {
     return (BsonTimestamp) get(field);
   }
 
-  /**
-   * Returns the value of the field as a BsonBinaryData.
-   *
-   * @param field The path to the field.
-   * @throws RuntimeException if the value is not a BsonBinaryData.
-   * @return The value of the field.
-   */
-  @Nullable
-  public BsonBinaryData getBsonBinaryData(@NonNull String field) {
-    return (BsonBinaryData) get(field);
-  }
-
   @Nullable
   private <T> T getTypedValue(String field, Class<T> clazz) {
     checkNotNull(field, "Provided field must not be null.");

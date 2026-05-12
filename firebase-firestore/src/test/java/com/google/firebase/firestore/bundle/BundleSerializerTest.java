@@ -251,7 +251,7 @@ public class BundleSerializerTest {
   }
 
   @Test
-  public void testDecodesBsonBinaryDataValues() throws JSONException {
+  public void testDecodesBsonBlobValues() throws JSONException {
     String json = "{ mapValue: { fields: { __binary__: { bytesValue: 'AAECAw==' } } } }";
     Value.Builder proto = Value.newBuilder();
     proto.setMapValue(

@@ -205,7 +205,7 @@ public class IntegrationTestUtil {
 
   @NonNull
   public static DatabaseId testEnvDatabaseId() {
-    return DatabaseId.forProject(provider.projectId());
+    return DatabaseId.forDatabase(provider.projectId(), BuildConfig.TARGET_DATABASE_ID);
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
@@ -227,36 +227,6 @@ public class IntegrationTestUtil {
   /** Initializes a new Firestore instance that uses the default project. */
   public static FirebaseFirestore testFirestore() {
     return testFirestore(newTestSettings());
-  }
-
-  public static FirebaseFirestore testFirestoreOnNightly() {
-    FirebaseFirestoreSettings settings =
-        new FirebaseFirestoreSettings.Builder()
-            .setHost("test-firestore.sandbox.googleapis.com")
-            .setSslEnabled(true)
-            .build();
-
-    DatabaseId databaseId = DatabaseId.forDatabase("firestore-sdk-nightly", "(default)");
-
-    String persistenceKey = "db" + firestoreStatus.size();
-
-    return testFirestore(databaseId, Level.DEBUG, settings, persistenceKey);
-  }
-
-  public static CollectionReference testCollectionOnNightly() {
-    return testFirestoreOnNightly().collection(autoId());
-  }
-
-  public static DocumentReference testDocumentOnNightly() {
-    return testCollectionOnNightly().document();
-  }
-
-  public static CollectionReference testCollectionWithDocsOnNightly(
-      Map<String, Map<String, Object>> docs) {
-    CollectionReference collection = testCollectionOnNightly();
-    CollectionReference writer = testFirestoreOnNightly().collection(collection.getId());
-    writeAllDocs(writer, docs);
-    return collection;
   }
 
   /**
@@ -422,7 +392,7 @@ public class IntegrationTestUtil {
 
   public static void writeTestDocsOnCollection(
       CollectionReference collection, Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = testFirestoreOnNightly().collection(collection.getId());
+    CollectionReference writer = testFirestore().collection(collection.getId());
     writeAllDocs(writer, docs);
   }
 

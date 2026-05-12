@@ -244,12 +244,13 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsBsonBinaryValue() {
-    List<BsonBinaryData> testCases =
+    List<Blob> testCases =
         asList(
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2}),
-            BsonBinaryData.fromByteString(1, ByteString.EMPTY),
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2}));
-    for (BsonBinaryData p : testCases) {
+            Blob.createBsonBinary(1, new byte[] {1, 2}),
+            Blob.createBsonBinary(127, ByteString.EMPTY),
+            Blob.createBsonBinary(128, new byte[] {1, 2, 3}),
+            Blob.createBsonBinary(255, new byte[] {-1, -2}));
+    for (Blob p : testCases) {
       Value value = wrap(p);
       Object convertedValue = convertValue(value);
       assertEquals(p, convertedValue);

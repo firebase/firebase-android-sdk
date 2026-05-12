@@ -15,9 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionOnNightly;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocumentOnNightly;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -50,7 +48,7 @@ public class POJOTest {
     GeoPoint geoPoint;
     DocumentReference documentReference;
     BsonObjectId bsonObjectId;
-    BsonBinaryData bsonBinaryData;
+    Blob bsonBinaryData;
     BsonTimestamp bsonTimestamp;
     RegexValue regexValue;
     Int32Value int32Value;
@@ -71,7 +69,7 @@ public class POJOTest {
       this.blob = Blob.fromBytes(new byte[] {3, 1, 4, 1, 5});
       this.geoPoint = new GeoPoint(3.1415, 9.2653);
       this.bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
-      this.bsonBinaryData = BsonBinaryData.fromBytes(1, new byte[] {3, 1, 4, 1, 5});
+      this.bsonBinaryData = Blob.createBsonBinary(1, new byte[] {3, 1, 4, 1, 5});
       this.bsonTimestamp = new BsonTimestamp(1, 2);
       this.regexValue = new RegexValue("^foo", "i");
       this.int32Value = new Int32Value(1);
@@ -144,11 +142,11 @@ public class POJOTest {
       this.bsonObjectId = bsonObjectId;
     }
 
-    public BsonBinaryData getBsonBinaryData() {
+    public Blob getBsonBinary() {
       return bsonBinaryData;
     }
 
-    public void setBsonBinaryData(BsonBinaryData bsonBinaryData) {
+    public void setBsonBinary(Blob bsonBinaryData) {
       this.bsonBinaryData = bsonBinaryData;
     }
 
@@ -343,6 +341,26 @@ public class POJOTest {
     }
   }
 
+  @org.junit.Rule public org.junit.rules.TestName testName = new org.junit.rules.TestName();
+
+  @org.junit.Before
+  public void setUp() {
+    String name = testName.getMethodName();
+    if (name.startsWith("testWriteAndRead")
+        || name.startsWith("testSetMerge")
+        || name.startsWith("testAPIsAcceptPOJOsForFields")
+        || name.startsWith("testDocumentSnapshotGetWithPOJOs")) {
+      org.junit.Assume.assumeTrue(
+          "BSON types require Firestore Enterprise Database",
+          com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition()
+                  == com.google.firebase.firestore.testutil.IntegrationTestUtil.BackendEdition
+                      .ENTERPRISE
+              && com.google.firebase.firestore.testutil.IntegrationTestUtil.testEnvDatabaseId()
+                  .getDatabaseId()
+                  .startsWith("enterprise"));
+    }
+  }
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
@@ -350,7 +368,7 @@ public class POJOTest {
 
   @Test
   public void testWriteAndRead() {
-    CollectionReference collection = testCollectionOnNightly();
+    CollectionReference collection = testCollection();
     POJO data = new POJO(1.0, "a", collection.document());
     DocumentReference reference = waitFor(collection.add(data));
     DocumentSnapshot doc = waitFor(reference.get());
@@ -374,7 +392,7 @@ public class POJOTest {
 
   @Test
   public void testSetMerge() {
-    CollectionReference collection = testCollectionOnNightly();
+    CollectionReference collection = testCollection();
     POJO data = new POJO(1.0, "a", collection.document());
     DocumentReference reference = waitFor(collection.add(data));
     DocumentSnapshot doc = waitFor(reference.get());
@@ -391,7 +409,7 @@ public class POJOTest {
   // General smoke test that makes sure APIs accept POJOs.
   @Test
   public void testAPIsAcceptPOJOsForFields() {
-    DocumentReference ref = testDocumentOnNightly();
+    DocumentReference ref = testDocument();
     ArrayList<Task<?>> tasks = new ArrayList<>();
 
     // as Map<> entries in a set() call.
@@ -410,7 +428,7 @@ public class POJOTest {
 
     // as Query parameters.
     data.setBlob(null); // blobs are broken, see b/117680212
-    tasks.add(testCollectionOnNightly().whereEqualTo("field", data).get());
+    tasks.add(testCollection().whereEqualTo("field", data).get());
 
     waitFor(Tasks.whenAll(tasks));
   }

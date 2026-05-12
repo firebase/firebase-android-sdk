@@ -42,8 +42,8 @@ public class FieldValueTest {
     BsonTimestamp bsonTimestampDup = new BsonTimestamp(1, 2);
     BsonObjectId bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
     BsonObjectId bsonObjectIdDup = new BsonObjectId("507f191e810c19729de860ea");
-    BsonBinaryData bsonBinary = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
-    BsonBinaryData bsonBinaryDup = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
+    Blob bsonBinary = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
+    Blob bsonBinaryDup = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
     MinKey minKey = MinKey.instance();
     MinKey minKeyDup = MinKey.instance();
     MaxKey maxKey = MaxKey.instance();

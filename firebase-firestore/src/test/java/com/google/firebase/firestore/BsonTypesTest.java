@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,11 +58,11 @@ public class BsonTypesTest {
   }
 
   @Test
-  public void testBsonBinaryDataEquality() {
-    BsonBinaryData bsonBinaryData = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
-    BsonBinaryData bsonBinaryDataDup = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3});
-    BsonBinaryData differentSubtypeBinaryData = BsonBinaryData.fromBytes(2, new byte[] {1, 2, 3});
-    BsonBinaryData differentDataBinaryData = BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4});
+  public void testBsonBinaryEquality() {
+    Blob bsonBinaryData = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
+    Blob bsonBinaryDataDup = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
+    Blob differentSubtypeBinaryData = Blob.createBsonBinary(2, new byte[] {1, 2, 3});
+    Blob differentDataBinaryData = Blob.createBsonBinary(1, new byte[] {1, 2, 4});
 
     assertEquals(bsonBinaryData, bsonBinaryDataDup);
     assertNotEquals(bsonBinaryData, differentSubtypeBinaryData);
@@ -234,7 +235,61 @@ public class BsonTypesTest {
 
   @Test
   public void testThrows() {
-    assertThrows(
-        IllegalArgumentException.class, () -> BsonBinaryData.fromBytes(256, new byte[] {1}));
+    assertThrows(IllegalArgumentException.class, () -> Blob.createBsonBinary(256, new byte[] {1}));
+  }
+
+  @Test
+  public void testBsonBinaryDataValuesAndEquality() {
+    Blob b1 = Blob.createBsonBinary(127, new byte[] {1, 2, 3});
+    Blob b2 = Blob.createBsonBinary(127, new byte[] {1, 2, 3});
+    Blob b3 = Blob.createBsonBinary(1, new byte[] {1, 2, 3});
+    Blob b4 = Blob.createBsonBinary(127, new byte[] {1, 2, 4});
+
+    assertEquals(127, b1.getSubType());
+    assertTrue(java.util.Arrays.equals(new byte[] {1, 2, 3}, b1.toBytes()));
+    assertEquals(b1, b2);
+    assertNotEquals(b1, b3);
+    assertNotEquals(b1, b4);
+  }
+
+  @Test
+  public void testBlobEqualityWithSubtypes() {
+    byte[] data = new byte[] {1, 2, 3};
+    Blob nativeBlob1 = Blob.fromBytes(data);
+    Blob nativeBlob2 = Blob.fromBytes(data);
+    Blob bsonBlobSubtype0 = Blob.createBsonBinary(data);
+    Blob bsonBlobSubtype1 = Blob.createBsonBinary(1, data);
+    Blob bsonBlobSubtype1_differentData = Blob.createBsonBinary(1, new byte[] {1, 2, 4});
+
+    // Native blobs are equal to each other
+    assertEquals(nativeBlob1, nativeBlob2);
+
+    // Native blob is equal to BSON blob with subtype 0
+    assertEquals(nativeBlob1, bsonBlobSubtype0);
+    assertEquals(bsonBlobSubtype0, nativeBlob1);
+
+    // Native blob is NOT equal to BSON blob with subtype 1
+    assertNotEquals(nativeBlob1, bsonBlobSubtype1);
+
+    // BSON blobs with different subtypes are not equal
+    assertNotEquals(bsonBlobSubtype0, bsonBlobSubtype1);
+
+    // BSON blobs with same subtype but different data are not equal
+    assertNotEquals(bsonBlobSubtype1, bsonBlobSubtype1_differentData);
+  }
+
+  @Test
+  public void testBsonBinaryDataConstructorsEncodeToTheSameValue() {
+    byte[] bytes = new byte[] {1, 2, 3};
+    com.google.protobuf.ByteString byteString = com.google.protobuf.ByteString.copyFrom(bytes);
+    Blob b1 = Blob.createBsonBinary(127, byteString);
+    Blob b2 = Blob.createBsonBinary(127, bytes);
+    assertEquals(b1.toByteString(), b2.toByteString());
+    assertEquals(b1, b2);
+
+    Blob b3 = Blob.createBsonBinary(128, byteString);
+    Blob b4 = Blob.createBsonBinary(128, bytes);
+    assertEquals(b3.toByteString(), b4.toByteString());
+    assertEquals(b3, b4);
   }
 }

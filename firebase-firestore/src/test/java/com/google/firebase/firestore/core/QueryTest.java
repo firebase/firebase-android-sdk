@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -851,7 +850,7 @@ public class QueryTest {
         baseQuery.filter(filter("a", "<=", new BsonObjectId("foo"))),
         "collection|f:a<={__oid__:foo}|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery.filter(filter("a", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}))),
+        baseQuery.filter(filter("a", "<=", Blob.createBsonBinary(1, new byte[] {1, 2, 3}))),
         "collection|f:a<={__binary__:01010203}|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "<=", new BsonTimestamp(1, 2))),

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.BsonBinaryData;
+import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -1288,47 +1288,43 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
 
-    addDoc("coll/doc1", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
-    addDoc("coll/doc2", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
-    addDoc("coll/doc3", map("key", BsonBinaryData.fromBytes(1, new byte[] {2, 1, 2})));
+    addDoc("coll/doc1", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc2", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc3", map("key", Blob.createBsonBinary(1, new byte[] {2, 1, 2})));
 
     Query query = query("coll").orderBy(orderBy("key", "asc"));
     verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
 
     query =
-        query("coll")
-            .filter(filter("key", "==", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "==", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     verifyResults(query, "coll/doc1");
 
     query =
-        query("coll")
-            .filter(filter("key", "!=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "!=", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
     query =
-        query("coll")
-            .filter(filter("key", ">=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", ">=", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc2", "coll/doc3");
 
     query =
-        query("coll")
-            .filter(filter("key", "<=", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", "<=", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc1", "coll/doc2");
 
     query =
-        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", ">", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc3");
 
     query =
-        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
+        query("coll").filter(filter("key", "<", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
     verifyResults(query, "coll/doc1");
 
     query =
-        query("coll").filter(filter("key", ">", BsonBinaryData.fromBytes(1, new byte[] {2, 1, 2})));
+        query("coll").filter(filter("key", ">", Blob.createBsonBinary(1, new byte[] {2, 1, 2})));
     verifyResults(query);
 
     query =
-        query("coll").filter(filter("key", "<", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+        query("coll").filter(filter("key", "<", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     verifyResults(query);
   }
 
@@ -1604,8 +1600,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll/doc5", map("key", new Decimal128Value("-0.0")));
     addDoc("coll/doc6", map("key", new BsonTimestamp(1, 2)));
     addDoc("coll/doc7", map("key", new BsonTimestamp(1, 1)));
-    addDoc("coll/doc8", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 4})));
-    addDoc("coll/doc9", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/doc8", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 4})));
+    addDoc("coll/doc9", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     addDoc("coll/doc10", map("key", new BsonObjectId("507f191e810c19729de860eb")));
     addDoc("coll/doc11", map("key", new BsonObjectId("507f191e810c19729de860ea")));
     addDoc("coll/doc12", map("key", new RegexValue("a", "m")));
@@ -1648,7 +1644,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll/j", map("key", new BsonTimestamp(1, 2)));
     addDoc("coll/k", map("key", "string"));
     addDoc("coll/l", map("key", blob(1, 2, 3)));
-    addDoc("coll/m", map("key", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})));
+    addDoc("coll/m", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     addDoc("coll/n", map("key", ref("foo/bar")));
     addDoc("coll/o", map("key", new BsonObjectId("507f191e810c19729de860ea")));
     addDoc("coll/p", map("key", new GeoPoint(0, 1)));

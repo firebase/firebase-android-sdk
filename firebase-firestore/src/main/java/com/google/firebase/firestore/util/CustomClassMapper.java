@@ -22,7 +22,6 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.BsonBinaryData;
 import com.google.firebase.firestore.BsonObjectId;
 import com.google.firebase.firestore.BsonTimestamp;
 import com.google.firebase.firestore.Decimal128Value;
@@ -193,8 +192,7 @@ public class CustomClassMapper {
         || o instanceof Int32Value
         || o instanceof Decimal128Value
         || o instanceof BsonTimestamp
-        || o instanceof BsonObjectId
-        || o instanceof BsonBinaryData) {
+        || o instanceof BsonObjectId) {
       return o;
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && o instanceof Instant) {
       Instant instant = (Instant) o;
@@ -278,8 +276,6 @@ public class CustomClassMapper {
       return (T) convertBsonTimestamp(o, context);
     } else if (BsonObjectId.class.isAssignableFrom(clazz)) {
       return (T) convertBsonObjectId(o, context);
-    } else if (BsonBinaryData.class.isAssignableFrom(clazz)) {
-      return (T) convertBsonBinaryData(o, context);
     } else if (MinKey.class.isAssignableFrom(clazz)) {
       return (T) convertMinKey(o, context);
     } else if (MaxKey.class.isAssignableFrom(clazz)) {
@@ -634,17 +630,6 @@ public class CustomClassMapper {
       throw deserializeError(
           context.errorPath,
           "Failed to convert value of type " + o.getClass().getName() + " to BsonObjectId");
-    }
-  }
-
-  private static BsonBinaryData convertBsonBinaryData(Object o, DeserializeContext context) {
-
-    if (o instanceof BsonBinaryData) {
-      return (BsonBinaryData) o;
-    } else {
-      throw deserializeError(
-          context.errorPath,
-          "Failed to convert value of type " + o.getClass().getName() + " to BsonBinaryData");
     }
   }
 

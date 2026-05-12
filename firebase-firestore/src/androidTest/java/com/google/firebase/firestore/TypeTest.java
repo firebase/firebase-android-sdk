@@ -16,8 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.assertSDKQueryResultsConsistentWithBackend;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionOnNightly;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocumentOnNightly;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeTestDocsOnCollection;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
@@ -42,6 +41,39 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class TypeTest {
+
+  @org.junit.Rule public org.junit.rules.TestName testName = new org.junit.rules.TestName();
+
+  @org.junit.Before
+  public void setUp() {
+    String name = testName.getMethodName();
+    if (name.startsWith("testCanReadAndWriteMinKey")
+        || name.startsWith("testCanReadAndWriteMaxKey")
+        || name.startsWith("testCanReadAndWriteRegexValue")
+        || name.startsWith("testCanReadAndWriteInt32Value")
+        || name.startsWith("testCanReadAndWriteDecimal128Value")
+        || name.startsWith("testCanReadAndWriteBsonTimestampValue")
+        || name.startsWith("testCanReadAndWriteBsonObjectIdValue")
+        || name.startsWith("testCanReadAndWriteBsonBinaryValue")
+        || name.startsWith("testCanReadAndWriteBsonTypes")
+        || name.startsWith("invalidRegex")
+        || name.startsWith("invalidDecimal128")
+        || name.startsWith("invalidBsonObjectId")
+        || name.startsWith("invalidBlob")
+        || name.startsWith("invalidBsonTimestamp")
+        || name.startsWith("testCanUseTypedAccessors")
+        || name.startsWith("testTypeAccessorsCanReturnNull")
+        || name.startsWith("snapshotListenerSortsDifferentTypesSameAsServer")) {
+      org.junit.Assume.assumeTrue(
+          "BSON types require Firestore Enterprise Database",
+          com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition()
+                  == com.google.firebase.firestore.testutil.IntegrationTestUtil.BackendEdition
+                      .ENTERPRISE
+              && com.google.firebase.firestore.testutil.IntegrationTestUtil.testEnvDatabaseId()
+                  .getDatabaseId()
+                  .startsWith("enterprise"));
+    }
+  }
 
   @After
   public void tearDown() {
@@ -110,23 +142,22 @@ public class TypeTest {
 
   @Test
   public void testCanReadAndWriteMinKey() {
-    verifySuccessfulWriteReadCycle(map("minKey", MinKey.instance()), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("minKey", MinKey.instance()), testDocument());
   }
 
   @Test
   public void testCanReadAndWriteMaxKey() {
-    verifySuccessfulWriteReadCycle(map("maxKey", MaxKey.instance()), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("maxKey", MaxKey.instance()), testDocument());
   }
 
   @Test
   public void testCanReadAndWriteRegexValue() {
-    verifySuccessfulWriteReadCycle(
-        map("regex", new RegexValue("^foo", "i")), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("regex", new RegexValue("^foo", "i")), testDocument());
   }
 
   @Test
   public void testCanReadAndWriteInt32Value() {
-    verifySuccessfulWriteReadCycle(map("int32", new Int32Value(1)), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("int32", new Int32Value(1)), testDocument());
   }
 
   @Test
@@ -146,34 +177,30 @@ public class TypeTest {
             "decimalNaN", new Decimal128Value("NaN"),
             "decimalInfinityPositive", new Decimal128Value("Infinity"),
             "decimalInfinityNegative", new Decimal128Value("-Infinity"));
-    verifySuccessfulWriteReadCycle(decimal128Values, testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(decimal128Values, testDocument());
   }
 
   @Test
   public void testCanReadAndWriteBsonTimestampValue() {
-    verifySuccessfulWriteReadCycle(
-        map("bsonTimestamp", new BsonTimestamp(1, 2)), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("bsonTimestamp", new BsonTimestamp(1, 2)), testDocument());
   }
 
   @Test
   public void testCanReadAndWriteBsonObjectIdValue() {
     verifySuccessfulWriteReadCycle(
-        map("bsonObjectId", new BsonObjectId("507f191e810c19729de860ea")), testDocumentOnNightly());
+        map("bsonObjectId", new BsonObjectId("507f191e810c19729de860ea")), testDocument());
   }
 
   @Test
   public void testCanReadAndWriteBsonBinaryValue() {
     verifySuccessfulWriteReadCycle(
-        map("bsonBinary", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
-        testDocumentOnNightly());
+        map("bsonBinary", Blob.createBsonBinary(1, new byte[] {1, 2, 3})), testDocument());
 
     verifySuccessfulWriteReadCycle(
-        map("bsonBinary", BsonBinaryData.fromBytes(128, new byte[] {1, 2, 3})),
-        testDocumentOnNightly());
+        map("bsonBinary", Blob.createBsonBinary(128, new byte[] {1, 2, 3})), testDocument());
 
     verifySuccessfulWriteReadCycle(
-        map("bsonBinary", BsonBinaryData.fromByteString(255, ByteString.EMPTY)),
-        testDocumentOnNightly());
+        map("bsonBinary", Blob.createBsonBinary(255, ByteString.EMPTY)), testDocument());
   }
 
   @Test
@@ -183,13 +210,13 @@ public class TypeTest {
             new BsonObjectId("507f191e810c19729de860ea"),
             new RegexValue("^foo", "i"),
             new BsonTimestamp(1, 2),
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
             new Int32Value(1),
             new Decimal128Value("1.2e3"),
             MinKey.instance(),
             MaxKey.instance());
 
-    verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocument());
   }
 
   @Test
@@ -203,7 +230,7 @@ public class TypeTest {
             "bsonTimestamp",
             new BsonTimestamp(1, 2),
             "bsonBinary",
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
             "int32",
             new Int32Value(1),
             "decimal128",
@@ -213,14 +240,14 @@ public class TypeTest {
             "maxKey",
             MaxKey.instance());
 
-    verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocumentOnNightly());
+    verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocument());
   }
 
   @Test
   public void invalidRegexGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new RegexValue("foo", "a"))));
+      waitFor(testDocument().set(map("key", new RegexValue("foo", "a"))));
     } catch (Exception e) {
       error = e;
     }
@@ -236,7 +263,7 @@ public class TypeTest {
   public void invalidDecimal128ValueGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value(""))));
+      waitFor(testDocument().set(map("key", new Decimal128Value(""))));
     } catch (Exception e) {
       error = e;
     }
@@ -244,7 +271,7 @@ public class TypeTest {
     assertTrue(error.getMessage().contains("Invalid number"));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("abc"))));
+      waitFor(testDocument().set(map("key", new Decimal128Value("abc"))));
     } catch (Exception e) {
       error = e;
     }
@@ -252,7 +279,7 @@ public class TypeTest {
     assertTrue(error.getMessage().contains("Invalid number"));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("1 23.45"))));
+      waitFor(testDocument().set(map("key", new Decimal128Value("1 23.45"))));
     } catch (Exception e) {
       error = e;
     }
@@ -260,7 +287,7 @@ public class TypeTest {
     assertTrue(error.getMessage().contains("Invalid number"));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new Decimal128Value("1e1234567890"))));
+      waitFor(testDocument().set(map("key", new Decimal128Value("1e1234567890"))));
     } catch (Exception e) {
       error = e;
     }
@@ -273,7 +300,7 @@ public class TypeTest {
     Exception error = null;
     try {
       // bsonObjectId with length not equal to 24 gets rejected
-      waitFor(testDocumentOnNightly().set(map("key", new BsonObjectId("foobar"))));
+      waitFor(testDocument().set(map("key", new BsonObjectId("foobar"))));
     } catch (Exception e) {
       error = e;
     }
@@ -282,12 +309,10 @@ public class TypeTest {
   }
 
   @Test
-  public void invalidBsonBinaryDataGetsRejected() throws Exception {
+  public void invalidBlobGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(
-          testDocumentOnNightly()
-              .set(map("key", BsonBinaryData.fromBytes(1234, new byte[] {1, 2, 3}))));
+      waitFor(testDocument().set(map("key", Blob.createBsonBinary(1234, new byte[] {1, 2, 3}))));
     } catch (Exception e) {
       error = e;
     }
@@ -295,15 +320,14 @@ public class TypeTest {
     assertTrue(
         error
             .getMessage()
-            .contains(
-                "The subtype for BsonBinaryData must be a value in the inclusive [0, 255] range."));
+            .contains("The subtype for Blob must be a value in the inclusive [0, 255] range."));
   }
 
   @Test
   public void invalidBsonTimestampDataGetsRejected() throws Exception {
     Exception error = null;
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(-1, 1))));
+      waitFor(testDocument().set(map("key", new BsonTimestamp(-1, 1))));
     } catch (Exception e) {
       error = e;
     }
@@ -315,7 +339,7 @@ public class TypeTest {
                 "The field 'seconds' value (-1) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(4294967296L, 1))));
+      waitFor(testDocument().set(map("key", new BsonTimestamp(4294967296L, 1))));
     } catch (Exception e) {
       error = e;
     }
@@ -327,7 +351,7 @@ public class TypeTest {
                 "The field 'seconds' value (4294967296) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(1, -1))));
+      waitFor(testDocument().set(map("key", new BsonTimestamp(1, -1))));
     } catch (Exception e) {
       error = e;
     }
@@ -339,7 +363,7 @@ public class TypeTest {
                 "The field 'increment' value (-1) does not represent an unsigned 32-bit integer."));
 
     try {
-      waitFor(testDocumentOnNightly().set(map("key", new BsonTimestamp(1, 4294967296L))));
+      waitFor(testDocument().set(map("key", new BsonTimestamp(1, 4294967296L))));
     } catch (Exception e) {
       error = e;
     }
@@ -353,7 +377,7 @@ public class TypeTest {
 
   @Test
   public void testCanUseTypedAccessors() {
-    DocumentReference doc = testDocumentOnNightly();
+    DocumentReference doc = testDocument();
     Map<String, Object> data =
         map(
             "null",
@@ -393,7 +417,7 @@ public class TypeTest {
             "bsonObjectId",
             new BsonObjectId("507f191e810c19729de860ea"),
             "bsonBinary",
-            BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3}),
+            Blob.createBsonBinary(1, new byte[] {1, 2, 3}),
             "minKey",
             MinKey.instance(),
             "maxKey",
@@ -426,14 +450,14 @@ public class TypeTest {
     assertEquals(data.get("decimal128"), snapshot.getDecimal128Value("decimal128"));
     assertEquals(data.get("bsonTimestamp"), snapshot.getBsonTimestamp("bsonTimestamp"));
     assertEquals(data.get("bsonObjectId"), snapshot.getBsonObjectId("bsonObjectId"));
-    assertEquals(data.get("bsonBinary"), snapshot.getBsonBinaryData("bsonBinary"));
+    assertEquals(data.get("bsonBinary"), snapshot.getBlob("bsonBinary"));
     assertEquals(data.get("minKey"), snapshot.getMinKey("minKey"));
     assertEquals(data.get("maxKey"), snapshot.getMaxKey("maxKey"));
   }
 
   @Test
   public void testTypeAccessorsCanReturnNull() {
-    DocumentReference doc = testDocumentOnNightly();
+    DocumentReference doc = testDocument();
     Map<String, Object> data = map();
 
     waitFor(doc.set(data));
@@ -456,14 +480,14 @@ public class TypeTest {
     assertNull(snapshot.getDecimal128Value("missing"));
     assertNull(snapshot.getBsonTimestamp("missing"));
     assertNull(snapshot.getBsonObjectId("missing"));
-    assertNull(snapshot.getBsonBinaryData("missing"));
+    assertNull(snapshot.getBlob("missing"));
     assertNull(snapshot.getMinKey("missing"));
     assertNull(snapshot.getMaxKey("missing"));
   }
 
   @Test
   public void snapshotListenerSortsDifferentTypesSameAsServer() throws Exception {
-    CollectionReference colRef = testCollectionOnNightly();
+    CollectionReference colRef = testCollection();
     // Document reference needs to be created first to make sure it is using the same firestore
     // instance in creation
     DocumentReference docRef = colRef.document("testDocRef");
@@ -495,7 +519,7 @@ public class TypeTest {
             "bytes",
             map("value", blob(1, 2, 3)),
             "bsonBinary",
-            map("value", BsonBinaryData.fromBytes(1, new byte[] {1, 2, 3})),
+            map("value", Blob.createBsonBinary(1, new byte[] {1, 2, 3})),
             "reference",
             map("value", docRef),
             "bsonObjectId",
