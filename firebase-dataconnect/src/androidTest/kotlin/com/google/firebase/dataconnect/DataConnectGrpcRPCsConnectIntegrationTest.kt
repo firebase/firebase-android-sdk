@@ -130,7 +130,7 @@ private fun ExecuteResponse.shouldBeGetStringByKeyQueryResponse(
   expectedErrors: List<GraphqlErrorProto> = emptyList(),
 ) {
   assertSoftly {
-    withClue("data") { data.shouldBeGetStringByKeyQueryData(expectedName) }
+    withClue("data") { data.shouldNotBeNull().shouldBeGetStringByKeyQueryData(expectedName) }
     withClue("errors") { errors shouldContainExactlyInAnyOrder expectedErrors }
   }
 }

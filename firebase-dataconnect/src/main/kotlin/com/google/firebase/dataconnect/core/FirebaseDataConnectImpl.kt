@@ -69,6 +69,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val blockingDispatcher: CoroutineDispatcher
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
+  val serialization: DataConnectSerialization
 
   val connectorResourceName: String
   val grpcClient: DataConnectGrpcClient
@@ -106,6 +107,7 @@ internal class FirebaseDataConnectImpl(
 
   override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
+  override val serialization = DataConnectSerialization(nonBlockingDispatcher)
 
   override val coroutineScope = createSupervisorCoroutineScope(nonBlockingDispatcher, logger)
 
@@ -297,7 +299,7 @@ internal class FirebaseDataConnectImpl(
           RegisteredDataDeserializer(
             dataDeserializer = dataDeserializer,
             dataSerializersModule = dataSerializersModule,
-            blockingCoroutineDispatcher = blockingDispatcher,
+            serialization = serialization,
             parentLogger = parentLogger,
           )
       }
@@ -321,7 +323,13 @@ internal class FirebaseDataConnectImpl(
             parentLogger = parentLogger,
           )
       }
-    val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
+    val liveQueries =
+      LiveQueries(
+        liveQueryFactory,
+        serialization,
+        blockingDispatcher,
+        parentLogger = logger,
+      )
     return QueryManager(liveQueries)
   }
 

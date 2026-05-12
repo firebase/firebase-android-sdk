@@ -232,7 +232,7 @@ internal class DataConnectBidiConnectStream(
    * @property extensions Additional metadata or properties related to the execution.
    */
   class ExecuteResponse(
-    val data: Struct,
+    val data: Struct?,
     val errors: List<GraphqlErrorProto>,
     val extensions: List<DataConnectPropertiesProto>,
   ) {
@@ -329,7 +329,7 @@ internal class DataConnectBidiConnectStream(
         null
       } else {
         ExecuteResponse(
-          data = if (hasData()) data else Struct.getDefaultInstance(),
+          data = if (hasData()) data else null,
           errors = if (errorsCount > 0) errorsList else emptyList(),
           extensions =
             if (hasExtensions() && extensions.dataConnectCount > 0) extensions.dataConnectList
