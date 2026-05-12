@@ -623,57 +623,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         "Can't raise event for unknown SnapshotVersion");
     RemoteEvent remoteEvent = watchChangeAggregator.createRemoteEvent(snapshotVersion);
 
-    Map<RemoteTargetId, List<Integer>> remoteToSdkIds = new HashMap<>();
-    for (Entry<Integer, RemoteTargetId> entry : targetIdMapSdkToRemote.entrySet()) {
-      RemoteTargetId remoteTargetId = entry.getValue();
-      List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
-      if (sdkIds == null) {
-        sdkIds = new ArrayList<>();
-        remoteToSdkIds.put(remoteTargetId, sdkIds);
-      }
-      sdkIds.add(entry.getKey());
-    }
-
-    Map<Integer, TargetChange> duplicatedTargetChanges = new HashMap<>();
-    for (Entry<Integer, TargetChange> entry : remoteEvent.getTargetChanges().entrySet()) {
-      int sdkTargetId = entry.getKey();
-      RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
-      if (remoteTargetId != null) {
-        List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
-        if (sdkIds != null) {
-          for (int mappedSdkId : sdkIds) {
-            duplicatedTargetChanges.put(mappedSdkId, entry.getValue());
-          }
-        }
-      } else {
-        duplicatedTargetChanges.put(sdkTargetId, entry.getValue());
-      }
-    }
-
-    Map<Integer, QueryPurpose> duplicatedTargetMismatches = new HashMap<>();
-    for (Entry<Integer, QueryPurpose> entry : remoteEvent.getTargetMismatches().entrySet()) {
-      int sdkTargetId = entry.getKey();
-      RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
-      if (remoteTargetId != null) {
-        List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
-        if (sdkIds != null) {
-          for (int mappedSdkId : sdkIds) {
-            duplicatedTargetMismatches.put(mappedSdkId, entry.getValue());
-          }
-        }
-      } else {
-        duplicatedTargetMismatches.put(sdkTargetId, entry.getValue());
-      }
-    }
-
-    remoteEvent =
-        new RemoteEvent(
-            remoteEvent.getSnapshotVersion(),
-            Collections.unmodifiableMap(duplicatedTargetChanges),
-            Collections.unmodifiableMap(duplicatedTargetMismatches),
-            remoteEvent.getDocumentUpdates(),
-            remoteEvent.getResolvedLimboDocuments());
-
     // Update in-memory resume tokens. LocalStore will update the persistent view of these when
     // applying the completed RemoteEvent.
     for (Entry<Integer, TargetChange> entry : remoteEvent.getTargetChanges().entrySet()) {
