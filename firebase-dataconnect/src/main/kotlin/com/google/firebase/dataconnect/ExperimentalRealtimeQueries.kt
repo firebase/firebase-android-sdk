@@ -34,4 +34,4 @@ package com.google.firebase.dataconnect
     "This declaration is part of the experimental, not-yet-released " +
       "\"realtime query subscription updates\" feature"
 )
-public annotation class ExperimentalRealtimeQueries
+internal annotation class ExperimentalRealtimeQueries
