@@ -445,6 +445,25 @@ public class TestUtil {
     return activeLimboQueries(docKey, asList(targets));
   }
 
+  public static RemoteEvent<Integer> toSdkRemoteEvent(RemoteEvent<RemoteTargetId> remoteEvent) {
+    Map<Integer, TargetChange> targetChanges = new HashMap<>();
+    for (Map.Entry<RemoteTargetId, TargetChange> entry :
+        remoteEvent.getTargetChanges().entrySet()) {
+      targetChanges.put(entry.getKey().value(), entry.getValue());
+    }
+    Map<Integer, QueryPurpose> targetMismatches = new HashMap<>();
+    for (Map.Entry<RemoteTargetId, QueryPurpose> entry :
+        remoteEvent.getTargetMismatches().entrySet()) {
+      targetMismatches.put(entry.getKey().value(), entry.getValue());
+    }
+    return new RemoteEvent<>(
+        remoteEvent.getSnapshotVersion(),
+        targetChanges,
+        targetMismatches,
+        remoteEvent.getDocumentUpdates(),
+        remoteEvent.getResolvedLimboDocuments());
+  }
+
   public static RemoteEvent noChangeEvent(int targetId, int version) {
     return noChangeEvent(targetId, version, resumeToken(version));
   }
@@ -466,7 +485,7 @@ public class TestUtil {
         new WatchChange.WatchTargetChange(
             WatchChange.WatchTargetChangeType.NoChange, asList(targetId), resumeToken);
     aggregator.handleTargetChange(watchChange);
-    return aggregator.createRemoteEvent(version(version));
+    return toSdkRemoteEvent(aggregator.createRemoteEvent(version(version)));
   }
 
   public static RemoteEvent addedRemoteEvent(
@@ -492,7 +511,7 @@ public class TestUtil {
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
         new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
     aggregator.handleExistenceFilter(existenceFilterWatchChange);
-    return aggregator.createRemoteEvent(version(version));
+    return toSdkRemoteEvent(aggregator.createRemoteEvent(version(version)));
   }
 
   public static RemoteEvent addedRemoteEvent(
@@ -536,7 +555,7 @@ public class TestUtil {
       version = doc.getVersion().compareTo(version) > 0 ? doc.getVersion() : version;
     }
 
-    return aggregator.createRemoteEvent(version);
+    return toSdkRemoteEvent(aggregator.createRemoteEvent(version));
   }
 
   public static RemoteEvent addedRemoteEvent(MutableDocument doc, Integer targetId) {
@@ -586,7 +605,7 @@ public class TestUtil {
               }
             });
     aggregator.handleDocumentChange(change);
-    return aggregator.createRemoteEvent(doc.getVersion());
+    return toSdkRemoteEvent(aggregator.createRemoteEvent(doc.getVersion()));
   }
 
   public static SetMutation setMutation(String path, Map<String, Object> values) {

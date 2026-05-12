@@ -50,8 +50,6 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +78,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
      * any pending mutation batches that would become visible because of the snapshot version the
      * remote event contains.
      */
-    void handleRemoteEvent(RemoteEvent remoteEvent);
+    void handleRemoteEvent(RemoteEvent<Integer> remoteEvent);
 
     /**
      * Reject the listen for the given targetId. This can be triggered by the backend for any active
@@ -621,15 +619,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         !snapshotVersion.equals(SnapshotVersion.NONE),
         "Can't raise event for unknown SnapshotVersion");
-    RemoteEvent remoteEvent = watchChangeAggregator.createRemoteEvent(snapshotVersion);
+    RemoteEvent<RemoteTargetId> remoteEvent =
+        watchChangeAggregator.createRemoteEvent(snapshotVersion);
 
     // Update in-memory resume tokens. LocalStore will update the persistent view of these when
     // applying the completed RemoteEvent.
-    for (Entry<Integer, TargetChange> entry : remoteEvent.getTargetChanges().entrySet()) {
+    for (Entry<RemoteTargetId, TargetChange> entry : remoteEvent.getTargetChanges().entrySet()) {
       TargetChange targetChange = entry.getValue();
       if (!targetChange.getResumeToken().isEmpty()) {
-        int sdkTargetId = entry.getKey();
-        RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
+        RemoteTargetId remoteTargetId = entry.getKey();
         if (remoteTargetId != null) {
           RemoteTargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
           // A watched target might have been removed already.
@@ -644,9 +642,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     // Re-establish listens for the targets that have been invalidated by existence filter
     // mismatches.
-    for (Map.Entry<Integer, QueryPurpose> entry : remoteEvent.getTargetMismatches().entrySet()) {
-      int sdkTargetId = entry.getKey();
-      RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
+    for (Map.Entry<RemoteTargetId, QueryPurpose> entry :
+        remoteEvent.getTargetMismatches().entrySet()) {
+      RemoteTargetId remoteTargetId = entry.getKey();
       if (remoteTargetId != null) {
         RemoteTargetData remoteTargetData = this.listenTargets.get(remoteTargetId);
         // A watched target might have been removed already.
@@ -678,7 +676,43 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
 
     // Finally raise remote event
-    remoteStoreCallback.handleRemoteEvent(remoteEvent);
+    remoteStoreCallback.handleRemoteEvent(toSdkRemoteEvent(remoteEvent));
+  }
+
+  /**
+   * Convert a RemoteEvent with remote IDs to a RemoteEvent with
+   * SDK IDs and dropped updates
+   * for any targets we no longer track.
+   */
+  private RemoteEvent<Integer> toSdkRemoteEvent(RemoteEvent<RemoteTargetId> remoteEvent) {
+    Map<Integer, TargetChange> sdkTargetChanges = new HashMap<>();
+    for (Map.Entry<RemoteTargetId, TargetChange> entry :
+        remoteEvent.getTargetChanges().entrySet()) {
+      RemoteTargetId remoteTargetId = entry.getKey();
+      TargetChange change = entry.getValue();
+      Integer sdkTargetId = targetIdMapRemoteToSdk.get(remoteTargetId);
+      if (sdkTargetId != null) {
+        sdkTargetChanges.put(sdkTargetId, change);
+      }
+    }
+
+    Map<Integer, QueryPurpose> sdkTargetMismatches = new HashMap<>();
+    for (Map.Entry<RemoteTargetId, QueryPurpose> entry :
+        remoteEvent.getTargetMismatches().entrySet()) {
+      RemoteTargetId remoteTargetId = entry.getKey();
+      QueryPurpose purpose = entry.getValue();
+      Integer sdkTargetId = targetIdMapRemoteToSdk.get(remoteTargetId);
+      if (sdkTargetId != null) {
+        sdkTargetMismatches.put(sdkTargetId, purpose);
+      }
+    }
+
+    return new RemoteEvent<>(
+        remoteEvent.getSnapshotVersion(),
+        sdkTargetChanges,
+        sdkTargetMismatches,
+        remoteEvent.getDocumentUpdates(),
+        remoteEvent.getResolvedLimboDocuments());
   }
 
   private void processTargetError(WatchTargetChange targetChange) {

@@ -326,8 +326,8 @@ public class WatchChangeAggregator {
    * Converts the currently accumulated state into a remote event at the provided snapshot version.
    * Resets the accumulated changes before returning.
    */
-  public RemoteEvent createRemoteEvent(SnapshotVersion snapshotVersion) {
-    Map<Integer, TargetChange> targetChanges = new HashMap<>();
+  public RemoteEvent<RemoteTargetId> createRemoteEvent(SnapshotVersion snapshotVersion) {
+    Map<RemoteTargetId, TargetChange> targetChanges = new HashMap<>();
 
     for (Map.Entry<RemoteTargetId, TargetState> entry : targetStates.entrySet()) {
       RemoteTargetId targetId = entry.getKey();
@@ -349,8 +349,7 @@ public class WatchChangeAggregator {
         }
 
         if (targetState.hasChanges()) {
-          int sdkTargetId = targetMetadataProvider.getSdkTargetId(targetId);
-          targetChanges.put(sdkTargetId, targetState.toTargetChange());
+          targetChanges.put(targetId, targetState.toTargetChange());
           targetState.clearChanges();
         }
       }
@@ -386,14 +385,13 @@ public class WatchChangeAggregator {
       document.setReadTime(snapshotVersion);
     }
 
-    Map<Integer, QueryPurpose> translatedTargetMismatches = new HashMap<>();
+    Map<RemoteTargetId, QueryPurpose> translatedTargetMismatches = new HashMap<>();
     for (Map.Entry<RemoteTargetId, QueryPurpose> entry : pendingTargetResets.entrySet()) {
-      int sdkTargetId = targetMetadataProvider.getSdkTargetId(entry.getKey());
-      translatedTargetMismatches.put(sdkTargetId, entry.getValue());
+      translatedTargetMismatches.put(entry.getKey(), entry.getValue());
     }
 
-    RemoteEvent remoteEvent =
-        new RemoteEvent(
+    RemoteEvent<RemoteTargetId> remoteEvent =
+        new RemoteEvent<>(
             snapshotVersion,
             Collections.unmodifiableMap(targetChanges),
             Collections.unmodifiableMap(translatedTargetMismatches),

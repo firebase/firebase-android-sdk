@@ -39,6 +39,7 @@ import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.testutil.TestTargetMetadataProvider;
+import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.BitSequence;
 import com.google.firestore.v1.BloomFilter;
 import com.google.protobuf.ByteString;
@@ -104,7 +105,7 @@ public class RemoteEventTest {
 
     for (Map.Entry<Integer, Integer> entry : outstandingResponses.entrySet()) {
       for (int i = 0; i < entry.getValue(); ++i) {
-        aggregator.recordPendingTargetRequest(entry.getKey());
+        aggregator.recordPendingTargetRequest(RemoteTargetId.from(entry.getKey()));
       }
     }
 
@@ -146,7 +147,7 @@ public class RemoteEventTest {
       WatchChange... watchChanges) {
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, outstandingResponses, existingKeys, watchChanges);
-    return aggregator.createRemoteEvent(version(snapshotVersion));
+    return TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(snapshotVersion)));
   }
 
   @Test
@@ -295,7 +296,8 @@ public class RemoteEventTest {
     WatchTargetChange change = new WatchTargetChange(WatchTargetChangeType.Reset, asList(1));
     aggregator.handleTargetChange(change);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(0, event.getDocumentUpdates().size());
 
@@ -407,7 +409,8 @@ public class RemoteEventTest {
     WatchTargetChange change = new WatchTargetChange(WatchTargetChangeType.NoChange, asList(1));
     aggregator.handleTargetChange(change);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(0, event.getDocumentUpdates().size());
     assertEquals(1, event.getTargetChanges().size());
@@ -436,7 +439,8 @@ public class RemoteEventTest {
             change2,
             change3);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(2, event.getDocumentUpdates().size());
@@ -455,7 +459,7 @@ public class RemoteEventTest {
         new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1));
     aggregator.handleExistenceFilter(watchChange);
 
-    event = aggregator.createRemoteEvent(version(3));
+    event = TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     TargetChange mapping3 = targetChange(ByteString.EMPTY, false, null, null, asList(doc1, doc2));
     assertEquals(1, event.getTargetChanges().size());
@@ -484,7 +488,8 @@ public class RemoteEventTest {
             change2,
             change3);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(2, event.getDocumentUpdates().size());
@@ -511,7 +516,7 @@ public class RemoteEventTest {
         new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1, bloomFilter.build()));
     aggregator.handleExistenceFilter(watchChange);
 
-    event = aggregator.createRemoteEvent(version(3));
+    event = TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(1, event.getTargetChanges().size());
     assertEquals(0, event.getTargetMismatches().size());
@@ -538,7 +543,8 @@ public class RemoteEventTest {
             change2,
             change3);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(2, event.getDocumentUpdates().size());
@@ -565,7 +571,7 @@ public class RemoteEventTest {
         new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1, bloomFilter.build()));
     aggregator.handleExistenceFilter(watchChange);
 
-    event = aggregator.createRemoteEvent(version(3));
+    event = TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     TargetChange mapping3 = targetChange(ByteString.EMPTY, false, null, null, asList(doc1, doc2));
     assertEquals(1, event.getTargetChanges().size());
@@ -593,7 +599,8 @@ public class RemoteEventTest {
         new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(0));
     aggregator.handleExistenceFilter(existenceFilter);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(1, event.getDocumentUpdates().size());
@@ -618,7 +625,8 @@ public class RemoteEventTest {
 
     WatchChangeAggregator aggregator =
         createAggregator(targetMap, noOutstandingResponses, noExistingKeys, change1, change2);
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(2, event.getDocumentUpdates().size());
     assertEquals(doc1, event.getDocumentUpdates().get(doc1.getKey()));
@@ -640,7 +648,7 @@ public class RemoteEventTest {
     DocumentChange change5 = new DocumentChange(asList(1), emptyList(), doc3.getKey(), doc3);
     aggregator.handleDocumentChange(change5);
 
-    event = aggregator.createRemoteEvent(version(3));
+    event = TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(version(3), event.getSnapshotVersion());
     assertEquals(3, event.getDocumentUpdates().size());
@@ -674,7 +682,8 @@ public class RemoteEventTest {
         new WatchTargetChange(WatchTargetChangeType.Current, asList(2), resumeToken2);
     aggregator.handleTargetChange(change2);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(2, event.getTargetChanges().size());
 
@@ -705,7 +714,8 @@ public class RemoteEventTest {
         new WatchTargetChange(WatchTargetChangeType.Current, asList(2), resumeToken3);
     aggregator.handleTargetChange(change3);
 
-    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+    RemoteEvent<Integer> event =
+        TestUtil.toSdkRemoteEvent(aggregator.createRemoteEvent(version(3)));
 
     assertEquals(2, event.getTargetChanges().size());
 

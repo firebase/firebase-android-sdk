@@ -413,7 +413,8 @@ public final class LocalStore implements BundleCallback {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
+  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(
+      RemoteEvent<Integer> remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
