@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and BsonBinaryData. [#6928](//github.com/firebase/firebase-android-sdk/pull/6928)
+- [feature] [Crashlytics] Updating instrumented tests set up to avoid building errors due to Kotlin upgrade. (#8125)
+
 # 26.3.0
 
 - [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.

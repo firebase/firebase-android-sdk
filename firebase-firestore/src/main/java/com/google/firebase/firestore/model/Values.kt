@@ -18,6 +18,7 @@ import com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCo
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Quadruple
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.util.Assert
 import com.google.firebase.firestore.util.Util
@@ -36,17 +37,33 @@ import kotlin.math.min
 
 object Values {
   const val TYPE_KEY: String = "__type__"
+  const val RESERVED_VECTOR_KEY: String = "__vector__"
+  const val RESERVED_MIN_KEY: String = "__min__"
+  const val RESERVED_MAX_KEY: String = "__max__"
+  const val RESERVED_REGEX_KEY: String = "__regex__"
+  const val RESERVED_REGEX_PATTERN_KEY: String = "pattern"
+  const val RESERVED_REGEX_OPTIONS_KEY: String = "options"
+  const val RESERVED_OBJECT_ID_KEY: String = "__oid__"
+  const val RESERVED_INT32_KEY: String = "__int__"
+  const val RESERVED_DECIMAL128_KEY: String = "__decimal128__"
+  const val RESERVED_BSON_TIMESTAMP_KEY: String = "__request_timestamp__"
+  const val RESERVED_BSON_TIMESTAMP_SECONDS_KEY: String = "seconds"
+  const val RESERVED_BSON_TIMESTAMP_INCREMENT_KEY: String = "increment"
+  const val RESERVED_BSON_BINARY_KEY: String = "__binary__"
+  const val RESERVED_SERVER_TIMESTAMP_KEY: String = "server_timestamp"
+
   @JvmField val NAN_VALUE: Value = Value.newBuilder().setDoubleValue(Double.NaN).build()
   @JvmField val NULL_VALUE: Value = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
-  @JvmField val MIN_VALUE: Value = NULL_VALUE
-  @JvmField val MAX_VALUE_TYPE: Value = Value.newBuilder().setStringValue("__max__").build()
+  @JvmField val INTERNAL_MIN_VALUE: Value = NULL_VALUE
+  @JvmField val MAX_VALUE_TYPE: Value = Value.newBuilder().setStringValue(RESERVED_MAX_KEY).build()
   @JvmField
-  val MAX_VALUE: Value =
+  val INTERNAL_MAX_VALUE: Value =
     Value.newBuilder()
       .setMapValue(MapValue.newBuilder().putFields(TYPE_KEY, MAX_VALUE_TYPE))
       .build()
 
-  @JvmField val VECTOR_VALUE_TYPE: Value = Value.newBuilder().setStringValue("__vector__").build()
+  @JvmField
+  val VECTOR_VALUE_TYPE: Value = Value.newBuilder().setStringValue(RESERVED_VECTOR_KEY).build()
   const val VECTOR_MAP_VECTORS_KEY: String = "value"
   private val MIN_VECTOR_VALUE: Value =
     Value.newBuilder()
@@ -60,26 +77,120 @@ object Values {
       )
       .build()
 
+  private val MIN_BSON_BINARY_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(
+            RESERVED_BSON_BINARY_KEY,
+            Value.newBuilder().setBytesValue(ByteString.copyFrom(byteArrayOf(0))).build()
+          )
+      )
+      .build()
+
+  private val MIN_BSON_TIMESTAMP_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(
+            RESERVED_BSON_TIMESTAMP_KEY,
+            Value.newBuilder()
+              .setMapValue(
+                MapValue.newBuilder()
+                  .putFields(
+                    RESERVED_BSON_TIMESTAMP_SECONDS_KEY,
+                    Value.newBuilder().setIntegerValue(0L).build()
+                  )
+                  .putFields(
+                    RESERVED_BSON_TIMESTAMP_INCREMENT_KEY,
+                    Value.newBuilder().setIntegerValue(0L).build()
+                  )
+              )
+              .build()
+          )
+      )
+      .build()
+
+  private val MIN_BSON_OBJECT_ID_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(RESERVED_OBJECT_ID_KEY, Value.newBuilder().setStringValue("").build())
+      )
+      .build()
+
+  private val MIN_REGEX_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(
+            RESERVED_REGEX_KEY,
+            Value.newBuilder()
+              .setMapValue(
+                MapValue.newBuilder()
+                  .putFields(
+                    RESERVED_REGEX_PATTERN_KEY,
+                    Value.newBuilder().setStringValue("").build()
+                  )
+                  .putFields(
+                    RESERVED_REGEX_OPTIONS_KEY,
+                    Value.newBuilder().setStringValue("").build()
+                  )
+              )
+              .build()
+          )
+      )
+      .build()
+
+  @JvmField
+  val MIN_KEY_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(
+            RESERVED_MIN_KEY,
+            Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+          )
+      )
+      .build()
+
+  @JvmField
+  val MAX_KEY_VALUE: Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(
+            RESERVED_MAX_KEY,
+            Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+          )
+      )
+      .build()
+
   /**
    * The order of types in Firestore. This order is based on the backend's ordering, but modified to
-   * support server timestamps and [.MAX_VALUE].
+   * support server timestamps and [.INTERNAL_MAX_VALUE].
    */
   const val TYPE_ORDER_NULL: Int = 0
-  // UNSET is considered to have the same order as NULL.
   const val TYPE_ORDER_UNSET: Int = 0
 
+  const val TYPE_ORDER_MIN_KEY: Int = 1
   const val TYPE_ORDER_BOOLEAN: Int = 2
   const val TYPE_ORDER_NUMBER_NAN: Int = 3
   const val TYPE_ORDER_NUMBER: Int = 4
   const val TYPE_ORDER_TIMESTAMP: Int = 5
-  const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 6
-  const val TYPE_ORDER_STRING: Int = 7
-  const val TYPE_ORDER_BLOB: Int = 8
-  const val TYPE_ORDER_REFERENCE: Int = 10
+  const val TYPE_ORDER_BSON_TIMESTAMP: Int = 6
+  const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 7
+  const val TYPE_ORDER_STRING: Int = 8
+  const val TYPE_ORDER_BLOB: Int = 9
+  const val TYPE_ORDER_BSON_BINARY: Int = 10
+  const val TYPE_ORDER_REFERENCE: Int = 11
+  const val TYPE_ORDER_BSON_OBJECT_ID: Int = 12
   const val TYPE_ORDER_GEOPOINT: Int = 13
+  const val TYPE_ORDER_REGEX: Int = 14
   const val TYPE_ORDER_ARRAY: Int = 15
   const val TYPE_ORDER_VECTOR: Int = 16
   const val TYPE_ORDER_MAP: Int = 17
+  const val TYPE_ORDER_MAX_KEY: Int = 18
 
   const val TYPE_ORDER_MAX_VALUE: Int = Int.MAX_VALUE
 
@@ -104,16 +215,29 @@ object Values {
       ValueTypeCase.REFERENCE_VALUE -> TYPE_ORDER_REFERENCE
       ValueTypeCase.GEO_POINT_VALUE -> TYPE_ORDER_GEOPOINT
       ValueTypeCase.ARRAY_VALUE -> TYPE_ORDER_ARRAY
-      ValueTypeCase.MAP_VALUE ->
-        if (ServerTimestamps.isServerTimestamp(value)) {
-          TYPE_ORDER_SERVER_TIMESTAMP
-        } else if (isMaxValue(value)) {
-          TYPE_ORDER_MAX_VALUE
-        } else if (isVectorValue(value)) {
-          TYPE_ORDER_VECTOR
-        } else {
-          TYPE_ORDER_MAP
+      ValueTypeCase.MAP_VALUE -> {
+        val mapType = detectMapRepresentation(value)
+        when (mapType) {
+          MapRepresentation.SERVER_TIMESTAMP -> TYPE_ORDER_SERVER_TIMESTAMP
+          MapRepresentation.INTERNAL_MAX -> TYPE_ORDER_MAX_VALUE
+          MapRepresentation.VECTOR -> TYPE_ORDER_VECTOR
+          MapRepresentation.MIN_KEY -> TYPE_ORDER_MIN_KEY
+          MapRepresentation.MAX_KEY -> TYPE_ORDER_MAX_KEY
+          MapRepresentation.REGEX -> TYPE_ORDER_REGEX
+          MapRepresentation.BSON_TIMESTAMP -> TYPE_ORDER_BSON_TIMESTAMP
+          MapRepresentation.BSON_OBJECT_ID -> TYPE_ORDER_BSON_OBJECT_ID
+          MapRepresentation.BSON_BINARY -> TYPE_ORDER_BSON_BINARY
+          MapRepresentation.INT32 -> TYPE_ORDER_NUMBER
+          MapRepresentation.DECIMAL128 -> {
+            if (isDecimal128Nan(value)) {
+              TYPE_ORDER_NUMBER_NAN
+            } else {
+              TYPE_ORDER_NUMBER
+            }
+          }
+          else -> TYPE_ORDER_MAP
         }
+      }
       else -> throw Assert.fail("Invalid value type: " + value.valueTypeCase)
     }
   }
@@ -147,25 +271,7 @@ object Values {
     }
   }
 
-  private fun numberEquals(left: Value, right: Value): Boolean =
-    when (left.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE ->
-        when (right.valueTypeCase) {
-          ValueTypeCase.INTEGER_VALUE -> left.integerValue == right.integerValue
-          ValueTypeCase.DOUBLE_VALUE ->
-            firestoreCompareDoubleWithLong(right.doubleValue, left.integerValue) == 0
-          else -> false
-        }
-      ValueTypeCase.DOUBLE_VALUE ->
-        when (right.valueTypeCase) {
-          ValueTypeCase.INTEGER_VALUE ->
-            firestoreCompareDoubleWithLong(left.doubleValue, right.integerValue) == 0
-          ValueTypeCase.DOUBLE_VALUE ->
-            firestoreCompareDoubles(left.doubleValue, right.doubleValue) == 0
-          else -> false
-        }
-      else -> false
-    }
+  private fun numberEquals(left: Value, right: Value): Boolean = compareNumbers(left, right) == 0
 
   private fun arrayEquals(left: Value, right: Value): Boolean {
     val leftArray = left.arrayValue
@@ -271,11 +377,14 @@ object Values {
   private fun compareInternal(leftType: Int, left: Value, right: Value): Int =
     when (leftType) {
       TYPE_ORDER_NULL,
+      TYPE_ORDER_MIN_KEY,
+      TYPE_ORDER_MAX_KEY,
       TYPE_ORDER_NUMBER_NAN,
       TYPE_ORDER_MAX_VALUE -> 0
       TYPE_ORDER_BOOLEAN -> left.booleanValue.compareTo(right.booleanValue)
       TYPE_ORDER_NUMBER -> compareNumbers(left, right)
       TYPE_ORDER_TIMESTAMP -> compareTimestamps(left.timestampValue, right.timestampValue)
+      TYPE_ORDER_BSON_TIMESTAMP -> compareBsonTimestamp(left.mapValue, right.mapValue)
       TYPE_ORDER_SERVER_TIMESTAMP ->
         compareTimestamps(
           ServerTimestamps.getLocalWriteTime(left),
@@ -283,8 +392,11 @@ object Values {
         )
       TYPE_ORDER_STRING -> Util.compareUtf8Strings(left.stringValue, right.stringValue)
       TYPE_ORDER_BLOB -> Util.compareByteStrings(left.bytesValue, right.bytesValue)
+      TYPE_ORDER_BSON_BINARY -> compareBsonBinary(left.mapValue, right.mapValue)
       TYPE_ORDER_REFERENCE -> compareReferences(left.referenceValue, right.referenceValue)
+      TYPE_ORDER_BSON_OBJECT_ID -> compareBsonObjectId(left.mapValue, right.mapValue)
       TYPE_ORDER_GEOPOINT -> compareGeoPoints(left.geoPointValue, right.geoPointValue)
+      TYPE_ORDER_REGEX -> compareRegex(left.mapValue, right.mapValue)
       TYPE_ORDER_ARRAY -> compareArrays(left.arrayValue, right.arrayValue)
       TYPE_ORDER_MAP -> compareMaps(left.mapValue, right.mapValue)
       TYPE_ORDER_VECTOR -> compareVectors(left.mapValue, right.mapValue)
@@ -334,21 +446,100 @@ object Values {
   }
 
   private fun compareNumbers(left: Value, right: Value): Int {
-    if (left.hasDoubleValue()) {
-      if (right.hasDoubleValue()) {
-        return firestoreCompareDoubles(left.doubleValue, right.doubleValue)
-      } else if (right.hasIntegerValue()) {
-        return firestoreCompareDoubleWithLong(left.doubleValue, right.integerValue)
+    if (isDecimal128Value(left) || isDecimal128Value(right)) {
+      val leftQuadruple = convertNumberToQuadruple(left)
+      val rightQuadruple = convertNumberToQuadruple(right)
+      return Util.compareQuadruples(leftQuadruple, rightQuadruple)
+    }
+
+    if (isDouble(left)) {
+      val leftDouble = left.doubleValue
+      if (isDouble(right)) {
+        return firestoreCompareDoubles(leftDouble, right.doubleValue)
+      } else if (isIntegerValue(right)) {
+        return firestoreCompareDoubleWithLong(leftDouble, getIntegerValue(right))
       }
-    } else if (left.hasIntegerValue()) {
-      if (right.hasIntegerValue()) {
-        return java.lang.Long.compare(left.integerValue, right.integerValue)
-      } else if (right.hasDoubleValue()) {
-        return -1 * firestoreCompareDoubleWithLong(right.doubleValue, left.integerValue)
+    }
+
+    if (isIntegerValue(left)) {
+      val leftLong = getIntegerValue(left)
+      if (isIntegerValue(right)) {
+        return leftLong.compareTo(getIntegerValue(right))
+      } else if (isDouble(right)) {
+        return -1 * firestoreCompareDoubleWithLong(right.doubleValue, leftLong)
       }
     }
 
     throw Assert.fail("Unexpected values: %s vs %s", left, right)
+  }
+
+  private fun convertNumberToQuadruple(value: Value): Quadruple {
+    if (isDecimal128Value(value)) {
+      return Quadruple.fromString(value.mapValue.fieldsMap[RESERVED_DECIMAL128_KEY]!!.stringValue)
+    }
+    if (isDouble(value)) {
+      return Quadruple.fromDouble(value.doubleValue)
+    }
+    if (isIntegerValue(value)) {
+      return Quadruple.fromLong(getIntegerValue(value))
+    }
+    throw IllegalArgumentException("convertNumberToQuadruple called with non-numeric argument")
+  }
+
+  private fun getIntegerValue(value: Value): Long {
+    if (value.hasIntegerValue()) {
+      return value.integerValue
+    }
+    if (isInt32Value(value)) {
+      return value.mapValue.fieldsMap[RESERVED_INT32_KEY]!!.integerValue
+    }
+    throw IllegalArgumentException("getIntegerValue was called with a non-integer argument")
+  }
+
+  private fun isIntegerValue(value: Value): Boolean = value.hasIntegerValue() || isInt32Value(value)
+
+  private fun compareBsonBinary(left: MapValue, right: MapValue): Int {
+    val lhs = left.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    val rhs = right.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    return Util.compareByteStrings(lhs, rhs)
+  }
+
+  private fun compareBsonTimestamp(left: MapValue, right: MapValue): Int {
+    val leftFields = left.fieldsMap[RESERVED_BSON_TIMESTAMP_KEY]!!.mapValue.fieldsMap
+    val rightFields = right.fieldsMap[RESERVED_BSON_TIMESTAMP_KEY]!!.mapValue.fieldsMap
+    val cmp =
+      leftFields[RESERVED_BSON_TIMESTAMP_SECONDS_KEY]!!
+        .integerValue
+        .compareTo(rightFields[RESERVED_BSON_TIMESTAMP_SECONDS_KEY]!!.integerValue)
+    if (cmp != 0) {
+      return cmp
+    }
+    return leftFields[RESERVED_BSON_TIMESTAMP_INCREMENT_KEY]!!
+      .integerValue
+      .compareTo(rightFields[RESERVED_BSON_TIMESTAMP_INCREMENT_KEY]!!.integerValue)
+  }
+
+  private fun compareBsonObjectId(left: MapValue, right: MapValue): Int {
+    val lhs = left.fieldsMap[RESERVED_OBJECT_ID_KEY]!!.stringValue
+    val rhs = right.fieldsMap[RESERVED_OBJECT_ID_KEY]!!.stringValue
+    return Util.compareUtf8Strings(lhs, rhs)
+  }
+
+  private fun compareRegex(left: MapValue, right: MapValue): Int {
+    val leftFields = left.fieldsMap[RESERVED_REGEX_KEY]!!.mapValue.fieldsMap
+    val rightFields = right.fieldsMap[RESERVED_REGEX_KEY]!!.mapValue.fieldsMap
+    val cmp =
+      Util.compareUtf8Strings(
+        leftFields[RESERVED_REGEX_PATTERN_KEY]!!.stringValue,
+        rightFields[RESERVED_REGEX_PATTERN_KEY]!!.stringValue
+      )
+    if (cmp != 0) {
+      return cmp
+    }
+    return Util.compareUtf8Strings(
+      leftFields[RESERVED_REGEX_OPTIONS_KEY]!!.stringValue,
+      rightFields[RESERVED_REGEX_OPTIONS_KEY]!!.stringValue
+    )
   }
 
   private fun compareTimestamps(left: Timestamp, right: Timestamp): Int {
@@ -504,6 +695,8 @@ object Values {
     return value != null && value.hasIntegerValue()
   }
 
+  @JvmStatic fun isInt64Value(value: Value?): Boolean = isInteger(value)
+
   /** Returns true if `value` is a DOUBLE_VALUE. */
   @JvmStatic
   fun isDouble(value: Value?): Boolean {
@@ -535,6 +728,15 @@ object Values {
   @JvmStatic
   fun isNanValue(value: Value?): Boolean {
     return value != null && java.lang.Double.isNaN(value.doubleValue)
+  }
+
+  @JvmStatic
+  fun isDecimal128Nan(value: Value?): Boolean {
+    if (value == null || !isDecimal128Value(value)) {
+      return false
+    }
+    val str = value.mapValue.fieldsMap[RESERVED_DECIMAL128_KEY]!!.stringValue
+    return str.equals("NaN", ignoreCase = true)
   }
 
   @JvmStatic
@@ -587,8 +789,21 @@ object Values {
       ValueTypeCase.REFERENCE_VALUE -> MIN_REFERENCE
       ValueTypeCase.GEO_POINT_VALUE -> MIN_GEO_POINT
       ValueTypeCase.ARRAY_VALUE -> MIN_ARRAY
-      // VectorValue sorts after ArrayValue and before an empty MapValue
-      ValueTypeCase.MAP_VALUE -> if (isVectorValue(value)) MIN_VECTOR_VALUE else MIN_MAP
+      ValueTypeCase.MAP_VALUE -> {
+        val mapType = detectMapRepresentation(value)
+        when (mapType) {
+          MapRepresentation.VECTOR -> MIN_VECTOR_VALUE
+          MapRepresentation.BSON_OBJECT_ID -> MIN_BSON_OBJECT_ID_VALUE
+          MapRepresentation.BSON_TIMESTAMP -> MIN_BSON_TIMESTAMP_VALUE
+          MapRepresentation.BSON_BINARY -> MIN_BSON_BINARY_VALUE
+          MapRepresentation.REGEX -> MIN_REGEX_VALUE
+          MapRepresentation.INT32,
+          MapRepresentation.DECIMAL128 -> MIN_NUMBER
+          MapRepresentation.MIN_KEY -> MIN_KEY_VALUE
+          MapRepresentation.MAX_KEY -> MAX_KEY_VALUE
+          else -> MIN_MAP
+        }
+      }
       else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
     }
   }
@@ -597,18 +812,31 @@ object Values {
   @JvmStatic
   fun getUpperBound(value: Value): Value {
     return when (value.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> MIN_BOOLEAN
+      ValueTypeCase.NULL_VALUE -> MIN_KEY_VALUE
       ValueTypeCase.BOOLEAN_VALUE -> MIN_NUMBER
       ValueTypeCase.INTEGER_VALUE,
       ValueTypeCase.DOUBLE_VALUE -> MIN_TIMESTAMP
-      ValueTypeCase.TIMESTAMP_VALUE -> MIN_STRING
+      ValueTypeCase.TIMESTAMP_VALUE -> MIN_BSON_TIMESTAMP_VALUE
       ValueTypeCase.STRING_VALUE -> MIN_BYTES
-      ValueTypeCase.BYTES_VALUE -> MIN_REFERENCE
-      ValueTypeCase.REFERENCE_VALUE -> MIN_GEO_POINT
-      ValueTypeCase.GEO_POINT_VALUE -> MIN_ARRAY
+      ValueTypeCase.BYTES_VALUE -> MIN_BSON_BINARY_VALUE
+      ValueTypeCase.REFERENCE_VALUE -> MIN_BSON_OBJECT_ID_VALUE
+      ValueTypeCase.GEO_POINT_VALUE -> MIN_REGEX_VALUE
       ValueTypeCase.ARRAY_VALUE -> MIN_VECTOR_VALUE
-      // VectorValue sorts after ArrayValue and before an empty MapValue
-      ValueTypeCase.MAP_VALUE -> if (isVectorValue(value)) MIN_MAP else MAX_VALUE
+      ValueTypeCase.MAP_VALUE -> {
+        val mapType = detectMapRepresentation(value)
+        when (mapType) {
+          MapRepresentation.VECTOR -> MIN_MAP
+          MapRepresentation.BSON_OBJECT_ID -> MIN_GEO_POINT
+          MapRepresentation.BSON_TIMESTAMP -> MIN_STRING
+          MapRepresentation.BSON_BINARY -> MIN_REFERENCE
+          MapRepresentation.REGEX -> MIN_ARRAY
+          MapRepresentation.INT32,
+          MapRepresentation.DECIMAL128 -> MIN_TIMESTAMP
+          MapRepresentation.MIN_KEY -> MIN_BOOLEAN
+          MapRepresentation.MAX_KEY -> INTERNAL_MAX_VALUE
+          else -> MAX_KEY_VALUE
+        }
+      }
       else -> throw IllegalArgumentException("Unknown value type: " + value.valueTypeCase)
     }
   }
@@ -770,5 +998,134 @@ object Values {
     require(seconds in -62_135_596_800 until 253_402_300_800) {
       "Timestamp seconds out of range: $seconds"
     }
+  }
+  private fun isMapWithSingleFieldOfType(
+    value: Value?,
+    key: String,
+    typeCase: ValueTypeCase
+  ): Boolean {
+    if (value == null || !value.hasMapValue()) {
+      return false
+    }
+    val fields = value.mapValue.fieldsMap
+    return fields.size == 1 && fields.containsKey(key) && fields[key]!!.valueTypeCase == typeCase
+  }
+
+  @JvmStatic
+  fun isMinKey(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_MIN_KEY, ValueTypeCase.NULL_VALUE)
+
+  @JvmStatic
+  fun isMaxKey(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_MAX_KEY, ValueTypeCase.NULL_VALUE)
+
+  @JvmStatic
+  fun isInt32Value(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_INT32_KEY, ValueTypeCase.INTEGER_VALUE)
+
+  @JvmStatic
+  fun isDecimal128Value(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_DECIMAL128_KEY, ValueTypeCase.STRING_VALUE)
+
+  @JvmStatic
+  fun isBsonObjectId(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_OBJECT_ID_KEY, ValueTypeCase.STRING_VALUE)
+
+  @JvmStatic
+  fun isBsonBinaryData(value: Value?): Boolean =
+    isMapWithSingleFieldOfType(value, RESERVED_BSON_BINARY_KEY, ValueTypeCase.BYTES_VALUE)
+
+  @JvmStatic
+  fun isRegexValue(value: Value?): Boolean {
+    if (!isMapWithSingleFieldOfType(value, RESERVED_REGEX_KEY, ValueTypeCase.MAP_VALUE)) {
+      return false
+    }
+    val innerMapValue = value!!.mapValue.fieldsMap[RESERVED_REGEX_KEY]!!.mapValue
+    val values = innerMapValue.fieldsMap
+    return innerMapValue.fieldsCount == 2 &&
+      values.containsKey(RESERVED_REGEX_PATTERN_KEY) &&
+      values.containsKey(RESERVED_REGEX_OPTIONS_KEY) &&
+      values[RESERVED_REGEX_PATTERN_KEY]!!.hasStringValue() &&
+      values[RESERVED_REGEX_OPTIONS_KEY]!!.hasStringValue()
+  }
+
+  @JvmStatic
+  fun isBsonTimestamp(value: Value?): Boolean {
+    if (!isMapWithSingleFieldOfType(value, RESERVED_BSON_TIMESTAMP_KEY, ValueTypeCase.MAP_VALUE)) {
+      return false
+    }
+    val innerMapValue = value!!.mapValue.fieldsMap[RESERVED_BSON_TIMESTAMP_KEY]!!.mapValue
+    val values = innerMapValue.fieldsMap
+    return innerMapValue.fieldsCount == 2 &&
+      values.containsKey(RESERVED_BSON_TIMESTAMP_SECONDS_KEY) &&
+      values.containsKey(RESERVED_BSON_TIMESTAMP_INCREMENT_KEY) &&
+      values[RESERVED_BSON_TIMESTAMP_SECONDS_KEY]!!.hasIntegerValue() &&
+      values[RESERVED_BSON_TIMESTAMP_INCREMENT_KEY]!!.hasIntegerValue()
+  }
+
+  enum class MapRepresentation {
+    REGEX,
+    BSON_OBJECT_ID,
+    INT32,
+    DECIMAL128,
+    BSON_TIMESTAMP,
+    BSON_BINARY,
+    MIN_KEY,
+    MAX_KEY,
+    INTERNAL_MAX,
+    VECTOR,
+    SERVER_TIMESTAMP,
+    REGULAR_MAP
+  }
+
+  @JvmStatic
+  fun detectMapRepresentation(value: Value?): MapRepresentation {
+    if (value == null || !value.hasMapValue()) {
+      return MapRepresentation.REGULAR_MAP
+    }
+
+    // Check for BSON-related mappings
+    if (isRegexValue(value)) {
+      return MapRepresentation.REGEX
+    }
+    if (isBsonObjectId(value)) {
+      return MapRepresentation.BSON_OBJECT_ID
+    }
+    if (isInt32Value(value)) {
+      return MapRepresentation.INT32
+    }
+    if (isDecimal128Value(value)) {
+      return MapRepresentation.DECIMAL128
+    }
+    if (isBsonTimestamp(value)) {
+      return MapRepresentation.BSON_TIMESTAMP
+    }
+    if (isBsonBinaryData(value)) {
+      return MapRepresentation.BSON_BINARY
+    }
+    if (isMinKey(value)) {
+      return MapRepresentation.MIN_KEY
+    }
+    if (isMaxKey(value)) {
+      return MapRepresentation.MAX_KEY
+    }
+
+    val fields = value.mapValue.fieldsMap
+
+    // Check for type-based mappings
+    if (fields.containsKey(TYPE_KEY)) {
+      val typeString = fields[TYPE_KEY]!!.stringValue
+      if (typeString == RESERVED_VECTOR_KEY) {
+        return MapRepresentation.VECTOR
+      }
+      if (typeString == RESERVED_MAX_KEY) {
+        return MapRepresentation.INTERNAL_MAX
+      }
+      if (typeString == RESERVED_SERVER_TIMESTAMP_KEY) {
+        return MapRepresentation.SERVER_TIMESTAMP
+      }
+    }
+
+    return MapRepresentation.REGULAR_MAP
   }
 }
