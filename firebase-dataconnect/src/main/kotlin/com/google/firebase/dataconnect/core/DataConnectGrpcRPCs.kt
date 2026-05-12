@@ -436,6 +436,7 @@ internal class DataConnectGrpcRPCs(
     val result = lazyStreamingGrpcStub.get().runCatching { connect(outgoingRequestsFlow, metadata) }
 
     result.onFailure {
+      outgoingRequests.close(it)
       logger.logGrpcFailed(
         requestId = streamId,
         kotlinMethodName = kotlinMethodName,
