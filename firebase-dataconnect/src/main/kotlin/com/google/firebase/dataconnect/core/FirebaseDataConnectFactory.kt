@@ -38,7 +38,7 @@ internal class FirebaseDataConnectFactory(
 ) {
 
   // Use the same instance of IdStringGenerator for every FirebaseDataConnect instance so that
-  // all instances generated unique IDs.
+  // all instances generate unique IDs.
   private val idStringGenerator = IdStringGenerator(Random.Default)
 
   init {
