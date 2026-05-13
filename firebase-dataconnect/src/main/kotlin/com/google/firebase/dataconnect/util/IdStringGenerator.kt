@@ -26,19 +26,17 @@ internal class IdStringGenerator(private val random: Random) {
   private val nextSequenceNumber = AtomicLong(0)
 
   /**
-   * Generates and returns ID strings that are guaranteed to be unique within the process in which
-   * it is called.
+   * Generates and returns ID strings that are guaranteed to be unique for this instance.
    *
-   * This process-wide uniqueness is achieved by the following steps:
+   * This uniqueness is achieved by the following steps:
    *
    * 1. Generate random alphabetic characters (excluding hex digits) to use as padding.
    * 2. Generate a sequence number that is incremented atomically.
    * 3. Combining these two strings with the given prefix.
    *
-   * @receiver The [Random] object to use for generating random characters.
    * @param prefix a string that the returned string will start with.
    * @return a string of the form prefix + random-characters + sequence-number-in-hex, a string that
-   * will never be returned from future invocations of this function within this process.
+   * will never be returned from a future invocation of this method on this object.
    */
   internal fun next(prefix: String): String {
     val sequenceNumber = nextSequenceNumber.incrementAndGet()

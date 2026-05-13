@@ -43,7 +43,6 @@ import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
-import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -140,7 +139,7 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
-        idStringGenerator = IdStringGenerator(Random.Default),
+        idStringGenerator = idStringGenerator,
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
         logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
@@ -154,7 +153,7 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAppCheck: DataConnectAppCheck =
     DataConnectAppCheck(
         deferredAppCheckTokenProvider = deferredAppCheckProvider,
-        idStringGenerator = IdStringGenerator(Random.Default),
+        idStringGenerator = idStringGenerator,
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
         logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
