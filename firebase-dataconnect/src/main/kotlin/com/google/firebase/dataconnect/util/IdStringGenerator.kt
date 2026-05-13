@@ -51,7 +51,7 @@ private const val MIN_ID_STRING_LENGTH = 8
 
 private fun Random.nextAlphabeticChar(): Char = ALPHABETIC_ALPHABET.random(this)
 
-// The set of characters comprising the 26 lowercase letters of the English alphabet with some
-// characters removed that can look similar in different fonts, such as 'l', and 'i'.
-@Suppress("SpellCheckingInspection")
-private const val ALPHABETIC_ALPHABET = "abcdefghjkmnpqrstvwxyz"
+// The set of characters comprising the lowercase letters of the English alphabet minus hexadecimal
+// digits 'a' through 'f' and some characters that can look similar in different fonts, such as 'l',
+// and 'i'.
+@Suppress("SpellCheckingInspection") private const val ALPHABETIC_ALPHABET = "ghjkmnpqrstvwxyz"
