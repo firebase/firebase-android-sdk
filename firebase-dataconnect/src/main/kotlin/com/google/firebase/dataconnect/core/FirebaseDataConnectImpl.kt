@@ -367,7 +367,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun logEmulatorVersion(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = Random.nextIdString("gei")
+    val requestId = random.nextIdString("gei")
     logger.debug { "[rid=$requestId] Getting Data Connect Emulator information" }
 
     val job =
@@ -398,7 +398,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun streamEmulatorErrors(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = Random.nextIdString("see")
+    val requestId = random.nextIdString("see")
     logger.debug { "[rid=$requestId] Streaming Data Connect Emulator errors" }
 
     val job =
