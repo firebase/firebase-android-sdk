@@ -91,9 +91,9 @@ class IdStringGeneratorUnitTest {
 
   @Test
   fun `nextIdString() uses the receiver Random`() = runTest {
-    // Reduce the chance of the number of hex digits in the returned strings increasing during the
-    // test execution, as that would cause spurious failures.
-    repeat(0xffff) { Random.nextIdString("") }
+    // Warm up the global sequence number to ensure it has a stable hex string length
+    // (at least 5 digits) during the test, preventing mismatched random padding counts.
+    repeat(0x10000) { Random.nextIdString("") }
     checkAll(propTestConfig, Arb.randomSeed(), Arb.string(0..10), Arb.int(1..500)) {
       seed,
       prefix,
