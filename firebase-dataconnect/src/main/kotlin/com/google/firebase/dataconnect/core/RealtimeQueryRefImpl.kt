@@ -25,7 +25,6 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QueryResult
 import java.util.Objects
-import kotlin.random.Random
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -65,7 +64,7 @@ internal class RealtimeQueryRefImpl<Data, Variables>(
     TODO("RealtimeQueryRefImpl only implements subscribe() so far")
 
   override fun subscribe(): RealtimeQuerySubscriptionImpl<Data, Variables> =
-    RealtimeQuerySubscriptionImpl(this, Random)
+    RealtimeQuerySubscriptionImpl(this)
 
   override fun withDataConnect(
     dataConnect: FirebaseDataConnectInternal

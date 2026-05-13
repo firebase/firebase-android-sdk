@@ -6,6 +6,10 @@
   ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
 - [changed] Internal implementation of backend connection for realtime query results.
   ([#8141](https://github.com/firebase/firebase-android-sdk/pull/8141))
+- [changed] Internal change to replace `SecureRandom` with just `Random`
+  as the random numbers were not used in a security-sensitive context,
+  thus the performance costs of secure random number generation were unnecessary.
+  ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
 
 # 17.2.2
 
