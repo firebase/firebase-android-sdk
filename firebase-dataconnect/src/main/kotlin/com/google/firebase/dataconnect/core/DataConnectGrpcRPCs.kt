@@ -22,6 +22,7 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
@@ -385,6 +386,7 @@ internal class DataConnectGrpcRPCs(
     return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
+  @ExperimentalRealtimeQueries
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,

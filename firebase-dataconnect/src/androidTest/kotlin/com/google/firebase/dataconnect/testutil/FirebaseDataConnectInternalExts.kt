@@ -16,8 +16,12 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 
 suspend fun FirebaseDataConnect.awaitAuthReady() =
   (this as FirebaseDataConnectInternal).awaitAuthReady()
@@ -27,3 +31,19 @@ suspend fun FirebaseDataConnect.awaitAppCheckReady() =
 
 internal val FirebaseDataConnect.dataConnectGrpcRPCs
   get() = (this as FirebaseDataConnectInternal).grpcRPCs
+
+@ExperimentalRealtimeQueries
+internal fun <Data, Variables> FirebaseDataConnect.realtimeQuery(
+  operationName: String,
+  variables: Variables,
+  dataDeserializer: DeserializationStrategy<Data>,
+  variablesSerializer: SerializationStrategy<Variables>,
+  optionsBuilder: (FirebaseDataConnect.QueryRefOptionsBuilder<Data, Variables>.() -> Unit)? = null,
+): QueryRef<Data, Variables> =
+  (this as FirebaseDataConnectInternal).realtimeQuery(
+    operationName,
+    variables,
+    dataDeserializer,
+    variablesSerializer,
+    optionsBuilder,
+  )
