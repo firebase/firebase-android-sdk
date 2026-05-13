@@ -9,7 +9,7 @@
 - [changed] Internal change to replace `SecureRandom` with just `Random`
   as the random numbers were not used in a security-sensitive context,
   thus the performance costs of secure random number generation was unnecessary.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
 
 # 17.2.2
 
