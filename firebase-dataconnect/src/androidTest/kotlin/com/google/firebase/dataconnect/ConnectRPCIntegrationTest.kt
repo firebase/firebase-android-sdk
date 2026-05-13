@@ -16,8 +16,15 @@
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.Event
 import app.cash.turbine.test
+import app.cash.turbine.turbineScope
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.awaitError
+import com.google.firebase.dataconnect.testutil.awaitStatusException
+import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
@@ -28,12 +35,12 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.protobuf.Empty
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
-import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -51,6 +58,7 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.az
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
@@ -150,12 +158,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.send(streamRequest)
 
-        val exception = awaitError()
-
-        val statusException = exception.shouldBeInstanceOf<StatusException>()
-        statusException.status.code shouldBe Status.Code.INVALID_ARGUMENT
-        statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-          "invalid connector name"
+        awaitStatusException(Status.Code.INVALID_ARGUMENT) {
+          it.message shouldContainWithNonAbuttingTextIgnoringCase "invalid connector name"
+        }
       }
     }
   }
@@ -166,12 +171,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.outgoingRequests.close()
 
     streams.incomingResponses.test {
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -182,12 +184,9 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.incomingResponses.test {
       streams.outgoingRequests.close()
 
-      val exception = awaitError()
-
-      val statusException = exception.shouldBeInstanceOf<StatusException>()
-      statusException.status.code shouldBe Status.Code.UNKNOWN
-      statusException.message shouldContainWithNonAbuttingTextIgnoringCase
-        "failed to receive first request"
+      awaitStatusException(Status.Code.UNKNOWN) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "failed to receive first request"
+      }
     }
   }
 
@@ -215,10 +214,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(CancellationException("forced exception v5bgf9ppmm"))
 
-        val exception = awaitError()
-
-        val cancellationException = exception.shouldBeInstanceOf<CancellationException>()
-        cancellationException shouldHaveMessage "forced exception v5bgf9ppmm"
+        awaitError<CancellationException> { it shouldHaveMessage "forced exception v5bgf9ppmm" }
       }
     }
 
@@ -231,10 +227,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
       streams.incomingResponses.test {
         streams.outgoingRequests.close(TestException("forced exception gajhw85ajt"))
 
-        val exception = awaitError()
-
-        val testException = exception.shouldBeInstanceOf<TestException>()
-        testException shouldHaveMessage "forced exception gajhw85ajt"
+        awaitError<TestException> { it shouldHaveMessage "forced exception gajhw85ajt" }
       }
     }
 
@@ -300,6 +293,126 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
+  fun collectingFlowTwiceThrows() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+    val (streamRequest1, streamRequest2) = validStreamRequestArb().pair().sample()
+    streams.outgoingRequests.send(streamRequest1)
+
+    turbineScope {
+      val collectors = List(2) { streams.incomingResponses.testIn(backgroundScope) }
+      val events = collectors.map { it.awaitEvent() }
+
+      withClue("events=${events.print().value}") {
+        assertSoftly {
+          withClue("items") { events.count { it is Event.Item } shouldBe 1 }
+          withClue("errors") { events.count { it is Event.Error } shouldBe 1 }
+        }
+      }
+
+      // Make sure the "good" collector still works despite the other one failing.
+      val (collector, streamResponse1) =
+        collectors
+          .zip(events)
+          .mapNotNull { (collector, event) ->
+            (event as? Event.Item)?.let { Pair(collector, it.value) }
+          }
+          .single()
+      streamResponse1.requestId shouldBe streamRequest1.requestId
+      streams.outgoingRequests.send(streamRequest2)
+      collector.awaitItem().requestId shouldBe streamRequest2.requestId
+    }
+  }
+
+  @Test
+  fun registeringRequestIdTwiceThrows() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+    val requestId = requestIdArb().sample()
+    val (streamRequest1, streamRequest2) =
+      validSubscribeStreamRequestArb(
+          requestId = Arb.constant(requestId),
+          validExecuteQueryRequest =
+            @OptIn(DelicateKotest::class) validExecuteQueryRequestArb().distinct(),
+        )
+        .pair()
+        .sample()
+
+    check(streamRequest1.requestId == streamRequest2.requestId)
+    check(streamRequest1.subscribe != streamRequest2.subscribe)
+
+    streams.incomingResponses.test {
+      streams.outgoingRequests.send(streamRequest1)
+      awaitItem().requestId shouldBe requestId
+
+      streams.outgoingRequests.send(streamRequest2)
+      awaitStatusException(Status.Code.FAILED_PRECONDITION) {
+        it.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
+      }
+    }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectionEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.Call) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectDuringConnectRpcEstablishment() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+    streams.server.setListener { event ->
+      if (event is InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted) {
+        streams.server.grpcServer.shutdownNow()
+      }
+    }
+
+    streams.incomingResponses.test { awaitStatusException(Status.Code.CANCELLED) }
+  }
+
+  @Test
+  fun backendDisconnectMidStream() = runTest {
+    val streams = startAndConnectToInProcessDataConnectGrpcStreamingServer()
+
+    turbineScope {
+      val incomingResponseCollector =
+        streams.incomingResponses.testIn(backgroundScope, name = "incomingResponses")
+      val serverEventReceiver = streams.server.events.testIn(backgroundScope, name = "serverEvents")
+      streams.outgoingRequests.send(StreamRequest.getDefaultInstance())
+      val rpcStartedEvent: InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted =
+        serverEventReceiver.awaitUntilItemIsInstance()
+      serverEventReceiver.cancelAndIgnoreRemainingEvents()
+      rpcStartedEvent.responseObserver.onNext(StreamResponse.getDefaultInstance())
+      incomingResponseCollector.awaitItem()
+
+      streams.server.grpcServer.shutdownNow()
+
+      incomingResponseCollector.awaitStatusException(Status.Code.CANCELLED)
+    }
+  }
+
+  private data class InProcessConnectionStreams(
+    val server: InProcessDataConnectGrpcStreamingServer,
+    val outgoingRequests: SendChannel<StreamRequest>,
+    val incomingResponses: Flow<StreamResponse>,
+  )
+
+  private fun startAndConnectToInProcessDataConnectGrpcStreamingServer():
+    InProcessConnectionStreams {
+    val server = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server)
+    server.open()
+    val streams = connect(server)
+    return InProcessConnectionStreams(server, streams.outgoingRequests, streams.incomingResponses)
+  }
+
+  @Test
   fun testValidStreamRequestArb() = runTest {
     val streams = connect()
     streams.sendInitRequest()
@@ -310,6 +423,34 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
         val streamResponse = awaitItem()
         streamResponse.requestId shouldBe streamRequest.requestId
         streamResponse.errorsCount shouldBe 0
+
+        // Send a "cancel" message for any "subscribe" requests so that the backend doesn't attempt
+        // to deduplicate new "subscribe" requests with previous ones, as that deduplication would
+        // likely cause this test to fail.
+        if (streamRequest.requestKindCase == StreamRequest.RequestKindCase.SUBSCRIBE) {
+          streams.outgoingRequests.sendCancelRequest(streamRequest.requestId)
+        }
+      }
+    }
+  }
+
+  @Test
+  fun testValidSubscribeStreamRequestArb() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+
+    streams.incomingResponses.test {
+      checkAll(propTestConfig, validSubscribeStreamRequestArb()) { streamRequest ->
+        check(streamRequest.hasSubscribe())
+        streams.outgoingRequests.send(streamRequest)
+        val streamResponse = awaitItem()
+        streamResponse.requestId shouldBe streamRequest.requestId
+        streamResponse.errorsCount shouldBe 0
+
+        // Send a "cancel" message for each "subscribe" request so that the backend doesn't attempt
+        // to deduplicate new "subscribe" requests with previous ones, as that deduplication would
+        // likely cause this test to fail.
+        streams.outgoingRequests.sendCancelRequest(streamRequest.requestId)
       }
     }
   }
@@ -347,20 +488,23 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
    * Establishes a connection to the Data Connect `Connect` RPC and returns the streams for
    * communication.
    */
-  private fun connect(): ConnectionStreams {
-    val connector = RealtimeConnector.getInstance(dataConnectFactory)
+  private fun connect(backend: DataConnectBackend? = null): ConnectionStreams {
+    val connector = RealtimeConnector.getInstance(dataConnectFactory, backend)
     val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
-    val outgoingRequests = Channel<StreamRequest>(Channel.UNLIMITED)
+    val outgoingRequests = Channel<StreamRequest>(UNLIMITED)
     val stub = ConnectorStreamServiceCoroutineStub(grpcManagedChannel)
     val incomingResponses = stub.connect(outgoingRequests.consumeAsFlow())
     return ConnectionStreams(connector, outgoingRequests, incomingResponses)
   }
 
   /**
-   * Convenience extension function on [Arb] that gets a non-edge-case value using the [rs] property
-   * of the [DataConnectIntegrationTestBase] superclass for the randomness source.
+   * Establishes a connection to the Data Connect `Connect` RPC running in-process, represented by
+   * the given [inProcessServer], and returns the streams for communication.
    */
-  private fun <T> Arb<T>.sample(): T = sample(rs).value
+  private fun connect(inProcessServer: InProcessDataConnectGrpcStreamingServer): ConnectionStreams {
+    val backend = DataConnectBackend.Custom("localhost:${inProcessServer.port}", sslEnabled = false)
+    return connect(backend)
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -441,6 +585,21 @@ private fun SendChannel<StreamRequest>.sendInitRequest(
 }
 
 /**
+ * Sends a "cancel" request to the receiver [ConnectionStreams.outgoingRequests].
+ *
+ * @param requestId The "request ID" to send in the outgoing message.
+ */
+private fun SendChannel<StreamRequest>.sendCancelRequest(requestId: String) {
+  val streamRequest =
+    StreamRequest.newBuilder().let {
+      it.setRequestId(requestId)
+      it.setCancel(Empty.getDefaultInstance())
+      it.build()
+    }
+  sendNonBlockingOrThrow(streamRequest)
+}
+
+/**
  * Assertion to verify that a [StreamResponse] is successful and has data that matches the given
  * predicate.
  *
@@ -457,6 +616,7 @@ private inline fun <reified Data> StreamResponse.shouldHaveData(
 }
 
 private enum class ValidStreamRequestType {
+  SubscribeQuery,
   ExecuteQuery,
   ExecuteMutation,
 }
@@ -467,31 +627,66 @@ private enum class ValidStreamRequestType {
  */
 private fun validStreamRequestArb(
   requestId: Arb<String> = @OptIn(DelicateKotest::class) requestIdArb().distinct(),
-  name: Arb<String> = nameArb(),
-  key: Arb<RealtimeConnector.Key> = keyArb(),
+  validExecuteQueryRequest: Arb<ExecuteRequest> = validExecuteQueryRequestArb(),
+  validExecuteMutationRequest: Arb<ExecuteRequest> = validExecuteMutationRequestArb(),
   validStreamRequestType: Arb<ValidStreamRequestType> = Arb.enum<ValidStreamRequestType>(),
 ): Arb<StreamRequest> = arbitrary {
   val streamRequest = StreamRequest.newBuilder()
   streamRequest.setRequestId(requestId.bind())
 
   when (validStreamRequestType.bind()) {
-    ValidStreamRequestType.ExecuteQuery ->
-      streamRequest.setExecute(
-        ExecuteRequest.newBuilder().let { executeRequest ->
-          executeRequest.setOperationName(GetStringByKeyQuery.OPERATION_NAME)
-          executeRequest.setVariables(encodeToStruct(GetStringByKeyQuery.Variables(key.bind())))
-          executeRequest.build()
-        }
-      )
+    ValidStreamRequestType.SubscribeQuery ->
+      streamRequest.setSubscribe(validExecuteQueryRequest.bind())
+    ValidStreamRequestType.ExecuteQuery -> streamRequest.setExecute(validExecuteQueryRequest.bind())
     ValidStreamRequestType.ExecuteMutation ->
-      streamRequest.setExecute(
-        ExecuteRequest.newBuilder().let { executeRequest ->
-          executeRequest.setOperationName(InsertStringMutation.OPERATION_NAME)
-          executeRequest.setVariables(encodeToStruct(InsertStringMutation.Variables(name.bind())))
-          executeRequest.build()
-        }
-      )
+      streamRequest.setExecute(validExecuteMutationRequest.bind())
   }
 
+  streamRequest.build()
+}
+
+/**
+ * Creates and returns an [Arb] that generates [ExecuteRequest] objects that, when sent as the
+ * [StreamRequest.setExecute] or [StreamRequest.setSubscribe] member of a [StreamRequest] to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully run a query.
+ */
+private fun validExecuteQueryRequestArb(
+  key: Arb<RealtimeConnector.Key> = keyArb(),
+): Arb<ExecuteRequest> = arbitrary {
+  ExecuteRequest.newBuilder().let { executeRequest ->
+    executeRequest.setOperationName(GetStringByKeyQuery.OPERATION_NAME)
+    executeRequest.setVariables(encodeToStruct(GetStringByKeyQuery.Variables(key.bind())))
+    executeRequest.build()
+  }
+}
+
+/**
+ * Creates and returns an [Arb] that generates [ExecuteRequest] objects that, when sent as the
+ * [StreamRequest.setExecute] member of a [StreamRequest] to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully run a
+ * mutation.
+ */
+private fun validExecuteMutationRequestArb(
+  name: Arb<String> = nameArb(),
+): Arb<ExecuteRequest> = arbitrary {
+  ExecuteRequest.newBuilder().let { executeRequest ->
+    executeRequest.setOperationName(InsertStringMutation.OPERATION_NAME)
+    executeRequest.setVariables(encodeToStruct(InsertStringMutation.Variables(name.bind())))
+    executeRequest.build()
+  }
+}
+
+/**
+ * Creates and returns an [Arb] that generates [StreamRequest] objects that, when sent to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully register a
+ * query subscription.
+ */
+private fun validSubscribeStreamRequestArb(
+  requestId: Arb<String> = @OptIn(DelicateKotest::class) requestIdArb().distinct(),
+  validExecuteQueryRequest: Arb<ExecuteRequest> = validExecuteQueryRequestArb(),
+): Arb<StreamRequest> = arbitrary {
+  val streamRequest = StreamRequest.newBuilder()
+  streamRequest.setRequestId(requestId.bind())
+  streamRequest.setSubscribe(validExecuteQueryRequest.bind())
   streamRequest.build()
 }

@@ -23,9 +23,11 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder
 import com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -35,6 +37,7 @@ import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.util.nextAlphanumericString
@@ -43,14 +46,11 @@ import java.util.concurrent.Executor
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -71,6 +71,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val blockingDispatcher: CoroutineDispatcher
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
+  val serialization: DataConnectSerialization
 
   val connectorResourceName: String
   val grpcClient: DataConnectGrpcClient
@@ -79,6 +80,23 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
+
+  /**
+   * A temporary method that is similar to the public [query] method but the [QueryRef] that it
+   * returns supports "realtime subscription updates".
+   *
+   * "Realtime subscription updates" is currently a work-in-progress; however, when it is completed,
+   * this method will be deleted and the public [query] method will be modified to return [QueryRef]
+   * objects that support realtime subscription updates.
+   */
+  @ExperimentalRealtimeQueries
+  fun <Data, Variables> realtimeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)? = null,
+  ): QueryRef<Data, Variables>
 }
 
 internal class FirebaseDataConnectImpl(
@@ -108,20 +126,9 @@ internal class FirebaseDataConnectImpl(
 
   override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
+  override val serialization = DataConnectSerialization(nonBlockingDispatcher)
 
-  override val coroutineScope =
-    CoroutineScope(
-      SupervisorJob() +
-        nonBlockingDispatcher +
-        CoroutineName(instanceId) +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            val coroutineName = context[CoroutineName]?.name
-            "WARNING: uncaught exception from coroutine named \"$coroutineName\" " +
-              "(error code jszxcbe37k)"
-          }
-        }
-    )
+  override val coroutineScope = createSupervisorCoroutineScope(nonBlockingDispatcher, logger)
 
   override val connectorResourceName =
     "projects/$projectId/" +
@@ -276,6 +283,8 @@ internal class FirebaseDataConnectImpl(
         context = context,
         host = backendInfo.host,
         sslEnabled = backendInfo.sslEnabled,
+        connectorResourceName = connectorResourceName,
+        nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
         cacheSettings = cacheSettings,
@@ -292,7 +301,6 @@ internal class FirebaseDataConnectImpl(
 
   private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
     DataConnectGrpcClient(
-      connectorResourceName = connectorResourceName,
       grpcRPCs = grpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
@@ -310,7 +318,7 @@ internal class FirebaseDataConnectImpl(
           RegisteredDataDeserializer(
             dataDeserializer = dataDeserializer,
             dataSerializersModule = dataSerializersModule,
-            blockingCoroutineDispatcher = blockingDispatcher,
+            serialization = serialization,
             parentLogger = parentLogger,
           )
       }
@@ -334,7 +342,13 @@ internal class FirebaseDataConnectImpl(
             parentLogger = parentLogger,
           )
       }
-    val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
+    val liveQueries =
+      LiveQueries(
+        liveQueryFactory,
+        serialization,
+        blockingDispatcher,
+        parentLogger = logger,
+      )
     return QueryManager(liveQueries)
   }
 
@@ -419,6 +433,34 @@ internal class FirebaseDataConnectImpl(
     optionsBuilder?.let { it(options) }
 
     return QueryRefImpl(
+      dataConnect = this,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
+      variablesSerializersModule = options.variablesSerializersModule,
+      dataSerializersModule = options.dataSerializersModule,
+    )
+  }
+
+  @ExperimentalRealtimeQueries
+  override fun <Data, Variables> realtimeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)?,
+  ): RealtimeQueryRefImpl<Data, Variables> {
+    val options =
+      object : QueryRefOptionsBuilder<Data, Variables> {
+        override var callerSdkType: FirebaseDataConnect.CallerSdkType? = null
+        override var variablesSerializersModule: SerializersModule? = null
+        override var dataSerializersModule: SerializersModule? = null
+      }
+    optionsBuilder?.let { it(options) }
+
+    return RealtimeQueryRefImpl(
       dataConnect = this,
       operationName = operationName,
       variables = variables,
