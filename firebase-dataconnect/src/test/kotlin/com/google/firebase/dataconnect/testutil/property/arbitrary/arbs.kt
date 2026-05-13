@@ -57,7 +57,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
-import kotlin.random.Random
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -200,7 +199,6 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
   callerSdkType: Arb<CallerSdkType> = Arb.enum<CallerSdkType>(),
   variablesSerializersModule: Arb<SerializersModule?> = serializersModule(),
   dataSerializersModule: Arb<SerializersModule?> = serializersModule(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   MutationRefImpl(
     dataConnect = dataConnect.bind(),
@@ -211,14 +209,12 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = callerSdkType.bind(),
     variablesSerializersModule = variablesSerializersModule.bind(),
     dataSerializersModule = dataSerializersModule.bind(),
-    secureRandom = secureRandom.bind(),
   )
 }
 
 internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
   constructorArguments: Arb<OperationRefConstructorArguments<Data, Variables>> =
     operationRefConstructorArguments(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   val args = constructorArguments.bind()
   MutationRefImpl(
@@ -230,7 +226,6 @@ internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = args.callerSdkType,
     variablesSerializersModule = args.variablesSerializersModule,
     dataSerializersModule = args.dataSerializersModule,
-    secureRandom = secureRandom.bind(),
   )
 }
 
