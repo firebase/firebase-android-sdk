@@ -23,7 +23,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
@@ -33,7 +33,6 @@ import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -50,7 +49,6 @@ internal class LiveQuery(
   private val operationName: String,
   private val variables: Struct,
   parentCoroutineScope: CoroutineScope,
-  nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcClient: DataConnectGrpcClient,
   private val registeredDataDeserializerFactory: RegisteredDataDeserializerFactory,
   private val secureRandom: Random,
@@ -67,10 +65,8 @@ internal class LiveQuery(
     }
 
   private val coroutineScope =
-    createSupervisorCoroutineScope(
-      nonBlockingCoroutineDispatcher,
+    parentCoroutineScope.createChildSupervisorScope(
       logger,
-      parent = parentCoroutineScope.coroutineContext[Job],
       coroutineName = "LiveQuery[${logger.nameWithId}]",
     )
 

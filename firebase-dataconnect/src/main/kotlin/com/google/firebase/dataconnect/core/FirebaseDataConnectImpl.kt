@@ -335,7 +335,6 @@ internal class FirebaseDataConnectImpl(
             operationName = operationName,
             variables = variables,
             parentCoroutineScope = coroutineScope,
-            nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
             grpcClient = grpcClient,
             registeredDataDeserializerFactory = registeredDataDeserializerFactory,
             secureRandom = secureRandom,
