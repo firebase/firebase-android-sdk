@@ -49,7 +49,8 @@ class IdStringGeneratorUnitTest {
   @Test
   fun `nextIdString() returns strings beginning with the given prefix`() = runTest {
     checkAll(propTestConfig, Arb.random(), Arb.string(0..10)) { random, prefix ->
-      val result = random.nextIdString(prefix)
+      val idStringGenerator = IdStringGenerator(random)
+      val result = idStringGenerator.next(prefix)
       result shouldStartWith prefix
     }
   }
@@ -59,7 +60,8 @@ class IdStringGeneratorUnitTest {
     checkAll(propTestConfig, Arb.random(), Arb.string(0..10, Codepoint.nonHexLetters())) {
       random,
       prefix ->
-      val result = random.nextIdString(prefix)
+      val idStringGenerator = IdStringGenerator(random)
+      val result = idStringGenerator.next(prefix)
       val hexSuffix = result.filter { it in hexDigits }
       hexSuffix.shouldNotBeEmpty()
       result shouldEndWith hexSuffix
@@ -74,9 +76,10 @@ class IdStringGeneratorUnitTest {
       Arb.string(0..10, Codepoint.nonHexLetters()),
       Arb.int(2..500)
     ) { random, prefix, count ->
+      val idStringGenerator = IdStringGenerator(random)
       val hexSuffixes =
         List(count) {
-          val result = random.nextIdString(prefix)
+          val result = idStringGenerator.next(prefix)
           result.filter { it in hexDigits }
         }
       val parsedHexSuffixes = hexSuffixes.map { parseLong(it, 16) }
@@ -90,24 +93,22 @@ class IdStringGeneratorUnitTest {
       random,
       prefix,
       count ->
-      val results = List(count) { random.nextIdString(prefix) }
+      val idStringGenerator = IdStringGenerator(random)
+      val results = List(count) { idStringGenerator.next(prefix) }
       results.shouldBeUnique()
     }
   }
 
   @Test
   fun `nextIdString() uses the receiver Random`() = runTest {
-    // Warm up the global sequence number to ensure it has a stable hex string length
-    // (at least 5 digits) during the test, preventing mismatched random padding counts.
-    repeat(0x10000) { Random.nextIdString("") }
     checkAll(propTestConfig, Arb.randomSeed(), Arb.string(0..10), Arb.int(1..500)) {
       seed,
       prefix,
       count ->
       val (results1, results2) =
         List(2) {
-          val random = Random(seed)
-          List(count) { random.nextIdString(prefix).filterNot { it in hexDigits } }
+          val idStringGenerator = IdStringGenerator(Random(seed))
+          List(count) { idStringGenerator.next(prefix).filterNot { it in hexDigits } }
         }
       results1 shouldContainExactly results2
     }
@@ -116,7 +117,8 @@ class IdStringGeneratorUnitTest {
   @Test
   fun `nextIdString() returns strings with length at least prefix length plus 8`() = runTest {
     checkAll(propTestConfig, Arb.random(), Arb.string(0..10)) { random, prefix ->
-      val result = random.nextIdString(prefix)
+      val idStringGenerator = IdStringGenerator(random)
+      val result = idStringGenerator.next(prefix)
       result.length shouldBeGreaterThanOrEqual (prefix.length + 8)
     }
   }
@@ -127,7 +129,8 @@ class IdStringGeneratorUnitTest {
     checkAll(propTestConfig, Arb.random(), Arb.string(0..10, Codepoint.nonHexLetters())) {
       random,
       prefix ->
-      val result = random.nextIdString(prefix)
+      val idStringGenerator = IdStringGenerator(random)
+      val result = idStringGenerator.next(prefix)
       val hexSuffix = result.filter { it in hexDigits }
       val paddingAndPrefix = result.substring(0, result.length - hexSuffix.length)
       val padding = paddingAndPrefix.substring(prefix.length)
@@ -138,11 +141,12 @@ class IdStringGeneratorUnitTest {
   @Test
   fun `nextIdString() returns unique strings when called concurrently`() = runTest {
     val latch = SuspendingCountDownLatch(200)
+    val idStringGenerator = IdStringGenerator(Random)
     val jobs =
       List(latch.count) {
         async(Dispatchers.Default) {
           latch.countDown().await()
-          List(100) { Random.nextIdString("") }
+          List(100) { idStringGenerator.next("") }
         }
       }
     jobs.awaitAll().flatten().shouldBeUnique()

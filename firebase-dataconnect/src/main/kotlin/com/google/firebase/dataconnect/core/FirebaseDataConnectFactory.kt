@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
@@ -86,7 +87,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
-      random = Random.Default,
+      idStringGenerator = IdStringGenerator(Random.Default),
     )
 
   fun remove(instance: FirebaseDataConnect) {

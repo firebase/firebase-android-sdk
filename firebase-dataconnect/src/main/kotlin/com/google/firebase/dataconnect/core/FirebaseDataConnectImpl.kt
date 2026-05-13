@@ -38,9 +38,9 @@ import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
-import com.google.firebase.dataconnect.util.nextIdString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlin.random.Random
@@ -72,6 +72,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
   val serialization: DataConnectSerialization
+  val idStringGenerator: IdStringGenerator
 
   val connectorResourceName: String
   val grpcClient: DataConnectGrpcClient
@@ -110,7 +111,7 @@ internal class FirebaseDataConnectImpl(
   deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
-  private val random: Random,
+  override val idStringGenerator: IdStringGenerator,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -139,6 +140,7 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
+        idStringGenerator = IdStringGenerator(Random.Default),
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
         logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
@@ -152,6 +154,7 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAppCheck: DataConnectAppCheck =
     DataConnectAppCheck(
         deferredAppCheckTokenProvider = deferredAppCheckProvider,
+        idStringGenerator = IdStringGenerator(Random.Default),
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
         logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
@@ -337,7 +340,7 @@ internal class FirebaseDataConnectImpl(
             parentCoroutineScope = coroutineScope,
             grpcClient = grpcClient,
             registeredDataDeserializerFactory = registeredDataDeserializerFactory,
-            random = random,
+            idStringGenerator = idStringGenerator,
             parentLogger = parentLogger,
           )
       }
@@ -367,7 +370,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun logEmulatorVersion(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = random.nextIdString("gei")
+    val requestId = idStringGenerator.next("gei")
     logger.debug { "[rid=$requestId] Getting Data Connect Emulator information" }
 
     val job =
@@ -398,7 +401,7 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun streamEmulatorErrors(dataConnectGrpcRPCs: DataConnectGrpcRPCs) {
-    val requestId = random.nextIdString("see")
+    val requestId = idStringGenerator.next("see")
     logger.debug { "[rid=$requestId] Streaming Data Connect Emulator errors" }
 
     val job =
@@ -495,7 +498,6 @@ internal class FirebaseDataConnectImpl(
       callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
-      random = random,
     )
   }
 

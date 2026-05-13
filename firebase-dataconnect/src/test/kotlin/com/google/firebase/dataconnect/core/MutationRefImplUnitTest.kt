@@ -34,9 +34,9 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefIm
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
@@ -70,8 +70,6 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.spyk
-import io.mockk.verify
 import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -96,8 +94,7 @@ class MutationRefImplUnitTest {
   @Test
   fun `constructor should initialize properties to the given objects`() = runTest {
     val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb, Arb.random()) { args, random,
-      ->
+    checkAll(propTestConfig, argsArb) { args ->
       val mutationRefImpl =
         MutationRefImpl(
           dataConnect = args.dataConnect,
@@ -108,39 +105,9 @@ class MutationRefImplUnitTest {
           callerSdkType = args.callerSdkType,
           dataSerializersModule = args.dataSerializersModule,
           variablesSerializersModule = args.variablesSerializersModule,
-          random = random,
         )
 
       mutationRefImpl.shouldHavePropertiesEqualTo(args)
-    }
-  }
-
-  private class DelegatingRandom(private val delegate: Random) : Random() {
-    override fun nextBits(bitCount: Int) = delegate.nextBits(bitCount)
-  }
-
-  @Test
-  fun `should use the given random to generate request IDs`() = runTest {
-    val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb) { args ->
-      val mockRandom = spyk(Random.Default)
-
-      val mutationRefImpl =
-        MutationRefImpl(
-          dataConnect = args.dataConnect,
-          operationName = args.operationName,
-          variables = args.variables,
-          dataDeserializer = args.dataDeserializer,
-          variablesSerializer = args.variablesSerializer,
-          callerSdkType = args.callerSdkType,
-          dataSerializersModule = args.dataSerializersModule,
-          variablesSerializersModule = args.variablesSerializersModule,
-          random = DelegatingRandom(mockRandom),
-        )
-
-      repeat(5) { mutationRefImpl.randomRequestId() }
-
-      verify(atLeast = 1) { mockRandom.nextBits(any()) }
     }
   }
 
@@ -713,6 +680,7 @@ class MutationRefImplUnitTest {
     ): FirebaseDataConnectInternal {
       val dispatcher = UnconfinedTestDispatcher(testScheduler)
       return mockk {
+        every { idStringGenerator } returns IdStringGenerator(Random.Default)
         every { blockingDispatcher } returns dispatcher
         every { serialization } returns DataConnectSerialization(dispatcher)
         every { grpcClient } returns

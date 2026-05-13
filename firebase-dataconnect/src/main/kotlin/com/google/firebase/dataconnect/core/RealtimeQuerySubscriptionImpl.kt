@@ -19,9 +19,7 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
-import com.google.firebase.dataconnect.util.nextIdString
 import java.util.Objects
-import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -40,14 +38,13 @@ import kotlinx.coroutines.flow.map
 @ExperimentalRealtimeQueries
 internal class RealtimeQuerySubscriptionImpl<Data, Variables>(
   override val query: RealtimeQueryRefImpl<Data, Variables>,
-  private val random: Random,
 ) : QuerySubscription<Data, Variables> {
 
   override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = flow {
     emitAll(
       query.run {
         val serialization = dataConnect.serialization
-        val requestId = random.nextIdString("rid")
+        val requestId = query.dataConnect.idStringGenerator.next("rid")
 
         val connectionFlow =
           dataConnect.grpcClient.connect(
