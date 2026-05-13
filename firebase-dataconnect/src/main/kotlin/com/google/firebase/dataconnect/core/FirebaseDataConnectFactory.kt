@@ -37,6 +37,10 @@ internal class FirebaseDataConnectFactory(
   private val deferredAppCheckProvider: Deferred<InteropAppCheckTokenProvider>,
 ) {
 
+  // Use the same instance of IdStringGenerator for every FirebaseDataConnect instance so that
+  // all instances generated unique IDs.
+  private val idStringGenerator = IdStringGenerator(Random.Default)
+
   init {
     firebaseApp.addLifecycleEventListener { _, _ -> close() }
   }
@@ -87,7 +91,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
-      idStringGenerator = IdStringGenerator(Random.Default),
+      idStringGenerator = idStringGenerator,
     )
 
   fun remove(instance: FirebaseDataConnect) {
