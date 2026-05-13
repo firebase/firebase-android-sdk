@@ -16,12 +16,15 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeSorted
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.string.shouldStartWith
@@ -35,6 +38,9 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import java.lang.Long.parseLong
 import kotlin.random.Random
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -105,6 +111,41 @@ class IdStringGeneratorUnitTest {
         }
       results1 shouldContainExactly results2
     }
+  }
+
+  @Test
+  fun `nextIdString() returns strings with length at least prefix length plus 8`() = runTest {
+    checkAll(propTestConfig, Arb.random(), Arb.string(0..10)) { random, prefix ->
+      val result = random.nextIdString(prefix)
+      result.length shouldBeGreaterThanOrEqual (prefix.length + 8)
+    }
+  }
+
+  @Test
+  fun `nextIdString() returns strings where non-hex chars are from the allowed set`() = runTest {
+    @Suppress("SpellCheckingInspection") val allowedChars = "ghjkmnpqrstvwxyz".toSet()
+    checkAll(propTestConfig, Arb.random(), Arb.string(0..10, Codepoint.nonHexLetters())) {
+      random,
+      prefix ->
+      val result = random.nextIdString(prefix)
+      val hexSuffix = result.filter { it in hexDigits }
+      val paddingAndPrefix = result.substring(0, result.length - hexSuffix.length)
+      val padding = paddingAndPrefix.substring(prefix.length)
+      padding.all { it in allowedChars } shouldBe true
+    }
+  }
+
+  @Test
+  fun `nextIdString() returns unique strings when called concurrently`() = runTest {
+    val latch = SuspendingCountDownLatch(200)
+    val jobs =
+      List(latch.count) {
+        async(Dispatchers.Default) {
+          latch.countDown().await()
+          List(100) { Random.nextIdString("") }
+        }
+      }
+    jobs.awaitAll().flatten().shouldBeUnique()
   }
 }
 
