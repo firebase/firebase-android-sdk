@@ -64,7 +64,7 @@ suspend inline fun <T, reified U : T> ReceiveTurbine<T>.awaitUntilItemIsInstance
 
 suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
   exceptionDescriptionSuffix: String? = null,
-  predicate: (T) -> Unit = {}
+  validate: (T) -> Unit = {}
 ): T {
   val expectedText = buildString {
     append(T::class.qualifiedName)
@@ -78,10 +78,8 @@ suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
     when (val event = awaitEvent()) {
       Event.Complete -> fail("Flow completed normally, but expected it to throw $expectedText")
       is Event.Error -> event.throwable
-      is Event.Item<*> ->
-        fail(
-          "Flow produced item (${event.value.print()}), " + "but expected it to throw $expectedText"
-        )
+      is Event.Item ->
+        fail("Flow produced item (${event.value.print()}), but expected it to throw $expectedText")
     }
 
   if (exception !is T) {
@@ -92,14 +90,14 @@ suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
     )
   }
 
-  predicate(exception)
+  validate(exception)
 
   return exception
 }
 
 suspend inline fun ReceiveTurbine<*>.awaitStatusException(
   code: Status.Code?,
-  predicate: (StatusException) -> Unit = {}
+  validate: (StatusException) -> Unit = {}
 ): StatusException {
   val exceptionDescriptionSuffix = if (code === null) null else "with code $code"
   val statusException = awaitError<StatusException>(exceptionDescriptionSuffix)
@@ -114,7 +112,7 @@ suspend inline fun ReceiveTurbine<*>.awaitStatusException(
     }
   }
 
-  predicate(statusException)
+  validate(statusException)
 
   return statusException
 }
