@@ -36,12 +36,7 @@ import kotlin.random.Random
  */
 internal fun Random.nextIdString(prefix: String): String = buildString {
   val sequenceNumber = nextSequenceNumber.incrementAndGet()
-  if (sequenceNumber <= Int.MAX_VALUE) {
-    append(Integer.toHexString(sequenceNumber.toInt()))
-  } else {
-    append(Integer.toHexString((sequenceNumber ushr 32).toInt()))
-    append(Integer.toHexString(sequenceNumber.toInt()))
-  }
+  append(java.lang.Long.toHexString(sequenceNumber))
 
   while (length < MIN_ID_STRING_LENGTH) {
     append(nextAlphabeticChar())
