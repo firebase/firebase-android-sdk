@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.BuildConfig
+import java.lang.Long.toHexString
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
@@ -34,24 +36,48 @@ import kotlin.random.Random
  * @return a string of the form prefix + sequence-number-in-hex + random-characters, a string that
  * will never be returned from future invocations of this function within this process.
  */
-internal fun Random.nextIdString(prefix: String): String = buildString {
+internal fun Random.nextIdString(prefix: String): String {
   val sequenceNumber = nextSequenceNumber.incrementAndGet()
-  append(java.lang.Long.toHexString(sequenceNumber))
+  val sequenceNumberHexString = toHexString(sequenceNumber)
+  val randomCharCount = (MIN_ID_STRING_LENGTH - sequenceNumberHexString.length).coerceAtLeast(0)
+  val idStringLength = prefix.length + sequenceNumberHexString.length + randomCharCount
 
-  while (length < MIN_ID_STRING_LENGTH) {
-    append(nextAlphabeticChar())
+  val idString =
+    buildString(idStringLength) {
+      append(prefix)
+
+      repeat(randomCharCount) {
+        val randomChar = READABLE_NON_HEX_LETTERS.random(this@nextIdString)
+        append(randomChar)
+      }
+
+      append(sequenceNumberHexString)
+    }
+
+  // Fail loudly during tests if the calculation of `idStringLength` is incorrect.
+  // It's not a "correctness" issue but rather a "performance" issue, so no need to throw an
+  // exception outside a testing/development scenario.
+  if (BuildConfig.DEBUG) {
+    check(idString.length == idStringLength) {
+      "internal error e6xn2p8282: idString.length != idStringLength, " +
+        "but they are expected to be equal " +
+        "in order to avoid unnecessary allocations in buildString " +
+        "(idString=$idString, idString.length=${idString.length}, " +
+        "idStringLength=$idStringLength, prefix=$prefix, prefix.length=${prefix.length}, " +
+        "sequenceNumberHexString=$sequenceNumberHexString, " +
+        "sequenceNumberHexString.length=${sequenceNumberHexString.length}, " +
+        "randomCharCount=$randomCharCount)"
+    }
   }
 
-  insert(0, prefix)
+  return idString
 }
 
 private val nextSequenceNumber = AtomicLong(0)
 
 private const val MIN_ID_STRING_LENGTH = 8
 
-private fun Random.nextAlphabeticChar(): Char = ALPHABETIC_ALPHABET.random(this)
-
 // The set of characters comprising the lowercase letters of the English alphabet minus hexadecimal
 // digits 'a' through 'f' and some characters that can look similar in different fonts, such as 'l',
 // and 'i'.
-@Suppress("SpellCheckingInspection") private const val ALPHABETIC_ALPHABET = "ghjkmnpqrstvwxyz"
+@Suppress("SpellCheckingInspection") private const val READABLE_NON_HEX_LETTERS = "ghjkmnpqrstvwxyz"
