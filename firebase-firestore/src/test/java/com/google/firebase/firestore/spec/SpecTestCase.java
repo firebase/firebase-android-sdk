@@ -1080,11 +1080,13 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private int getRemoteTargetId(int sdkTargetId) {
+  private int getRemoteTargetId(int sdkTargetId, boolean isWatchStep) {
     List<Integer> actualIds = sdkTargetIdMapExpectedToActual.get(sdkTargetId);
     int actualId = sdkTargetId;
     if (actualIds != null && !actualIds.isEmpty()) {
-      if (currentRemoteTargetIndex != null && currentRemoteTargetIndex < actualIds.size()) {
+      if (isWatchStep
+          && currentRemoteTargetIndex != null
+          && currentRemoteTargetIndex < actualIds.size()) {
         actualId = actualIds.get(currentRemoteTargetIndex);
       } else {
         actualId = actualIds.get(actualIds.size() - 1);
@@ -1101,7 +1103,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       remoteIds.add(remoteTargetId.value());
     }
 
-    if (currentRemoteTargetIndex != null) {
+    if (isWatchStep && currentRemoteTargetIndex != null) {
       assertTrue(
           "Index "
               + currentRemoteTargetIndex
@@ -1118,6 +1120,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     assertTrue("No remote ID generated yet for target " + sdkTargetId, !remoteIds.isEmpty());
     return remoteIds.get(remoteIds.size() - 1);
+  }
+
+  private int getRemoteTargetId(int sdkTargetId) {
+    return getRemoteTargetId(sdkTargetId, true);
   }
 
   //
@@ -1419,26 +1425,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       return;
     }
 
-    // Create a copy and map remote target IDs to SDK target IDs
-    Map<Integer, TargetData> actualTargets = new HashMap<>();
-    for (Map.Entry<Integer, RemoteTargetData> entry : datastore.activeTargets().entrySet()) {
-      int remoteTargetId = entry.getKey();
-      Integer sdkTargetId = remoteStore.getSdkTargetId(RemoteTargetId.from(remoteTargetId));
-      if (sdkTargetId != null) {
-        RemoteTargetData remoteTargetData = entry.getValue();
-        TargetData sdkTargetData =
-            new TargetData(
-                remoteTargetData.getTarget(),
-                sdkTargetId,
-                remoteTargetData.getSequenceNumber(),
-                remoteTargetData.getPurpose(),
-                remoteTargetData.getSnapshotVersion(),
-                remoteTargetData.getLastLimboFreeSnapshotVersion(),
-                remoteTargetData.getResumeToken(),
-                remoteTargetData.getExpectedCount());
-        actualTargets.put(sdkTargetId, sdkTargetData);
-      }
-    }
+    // Create a copy of the actual targets from the datastore, keyed by remote target ID.
+    Map<Integer, RemoteTargetData> actualTargets = new HashMap<>(datastore.activeTargets());
 
     for (Map.Entry<Integer, List<TargetData>> expected : expectedActiveTargets.entrySet()) {
       int expectedId = expected.getKey();
@@ -1448,55 +1436,58 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       }
 
       for (int actualId : actualIds) {
-        if (actualTargets.containsKey(actualId)) {
-          List<TargetData> expectedQueries = expected.getValue();
-          TargetData expectedTarget = expectedQueries.get(0);
-          TargetData actualTarget = actualTargets.get(actualId);
+        int remoteId = getRemoteTargetId(actualId, false);
+        assertTrue(
+            "Expected active target not found: " + expected.getValue(),
+            actualTargets.containsKey(remoteId));
 
-          // TODO: Replace the assertEquals() checks on the individual properties of TargetData
-          // below
-          // with the single assertEquals on the TargetData objects themselves if the sequenceNumber
-          // is
-          // ever made to be consistent.
-          // assertEquals(expectedTarget, actualTarget);
-          assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
-          if (usePipelineMode
-              && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
-            boolean matched = false;
-            for (TargetData expTarget : expectedQueries) {
-              if (expTarget.getTarget().equals(actualTarget.getTarget())) {
-                matched = true;
-                break;
-              }
+        List<TargetData> expectedQueries = expected.getValue();
+        TargetData expectedTarget = expectedQueries.get(0);
+        RemoteTargetData actualTarget = actualTargets.get(remoteId);
+
+        // TODO: Replace the assertEquals() checks on the individual properties of TargetData
+        // below
+        // with the single assertEquals on the TargetData objects themselves if the sequenceNumber
+        // is
+        // ever made to be consistent.
+        // assertEquals(expectedTarget, actualTarget);
+        assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
+        if (usePipelineMode && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
+          boolean matched = false;
+          for (TargetData expTarget : expectedQueries) {
+            if (expTarget.getTarget().equals(actualTarget.getTarget())) {
+              matched = true;
+              break;
             }
-            assertTrue(
-                "Expected pipeline "
-                    + actualTarget.getTarget()
-                    + " not found in expected active list: "
-                    + expectedQueries,
-                matched);
-          } else {
-            assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
-          }
-          int expectedTargetId = expectedTarget.getTargetId();
-          List<Integer> expActualIds = sdkTargetIdMapExpectedToActual.get(expectedTargetId);
-          if (expActualIds == null) {
-            expActualIds = Collections.singletonList(expectedTargetId);
           }
           assertTrue(
-              "Expected target ID mapping not found for " + expectedTargetId,
-              expActualIds.contains(actualTarget.getTargetId()));
-          assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
-          assertEquals(
-              expectedTarget.getResumeToken().toStringUtf8(),
-              actualTarget.getResumeToken().toStringUtf8());
-
-          if (expectedTarget.getExpectedCount() != null) {
-            assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
-          }
-
-          actualTargets.remove(actualId);
+              "Expected pipeline "
+                  + actualTarget.getTarget()
+                  + " not found in expected active list: "
+                  + expectedQueries,
+              matched);
+        } else {
+          assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
         }
+        int expectedTargetId = expectedTarget.getTargetId();
+        List<Integer> expActualIds = sdkTargetIdMapExpectedToActual.get(expectedTargetId);
+        if (expActualIds == null) {
+          expActualIds = Collections.singletonList(expectedTargetId);
+        }
+        Integer actualTargetId = remoteStore.getSdkTargetId(actualTarget.getTargetId());
+        assertTrue(
+            "Expected target ID mapping not found for " + expectedTargetId,
+            actualTargetId != null && expActualIds.contains(actualTargetId));
+        assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
+        assertEquals(
+            expectedTarget.getResumeToken().toStringUtf8(),
+            actualTarget.getResumeToken().toStringUtf8());
+
+        if (expectedTarget.getExpectedCount() != null) {
+          assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+        }
+
+        actualTargets.remove(remoteId);
       }
     }
 
