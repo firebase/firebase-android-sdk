@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Made global attribute methods (`putAttribute`, `removeAttribute`, `getAttribute`, `getAttributes`) and related constants public on `FirebasePerformance`. Global attributes are now merged into all traces — built-in (`_app_start`, `_app_in_foreground`, `_app_in_background`, screen traces) and custom — as well as all network requests. Trace- or request-level attributes override global attributes on key conflicts. [#6664]
+- [feature] Made the global attribute methods (`putAttribute`, `removeAttribute`, `getAttribute`, `getAttributes`) and related constants (`MAX_TRACE_CUSTOM_ATTRIBUTES`, `MAX_ATTRIBUTE_KEY_LENGTH`, `MAX_ATTRIBUTE_VALUE_LENGTH`) public on `FirebasePerformance`. Global attributes set via these methods are attached to all traces — built-in (`_app_start`, `_app_in_foreground`, `_app_in_background`, screen traces) and custom — as well as all network requests. [#6664]
 - [changed] Bumped internal dependencies.
 
 # 22.0.4
