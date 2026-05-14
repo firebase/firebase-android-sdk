@@ -165,3 +165,11 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 }
+
+tasks.register<com.google.firebase.dataconnect.gradle.plugin.CreateEmulatorUpdatePrTask>("createEmulatorUpdatePr") {
+  jsonFile.set(
+    file("gradleplugin/plugin/src/main/resources/${DataConnectExecutableVersionsRegistry.PATH}")
+  )
+  workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
+}
+
