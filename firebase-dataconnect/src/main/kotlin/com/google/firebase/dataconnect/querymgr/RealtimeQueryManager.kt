@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -33,9 +34,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -51,8 +55,33 @@ internal class RealtimeQueryManager(
 
   private val coroutineScope =
     coroutineScope.createChildSupervisorScope(logger).also {
-      it.coroutineContext.job.invokeOnCompletion { state.set(State.Closed) }
+      it.launch(start = CoroutineStart.UNDISPATCHED) {
+        try {
+          awaitCancellation()
+        } finally {
+          logger.debug { "cancellation signal received; setting state to Closing" }
+          println("zzyzx cancellation signal received; setting state to Closing")
+          transitionToTerminalState(State.Closing)
+        }
+      }
+
+      it.coroutineContext.job.invokeOnCompletion {
+        logger.debug { "scope job is done; setting state to Closed" }
+        println("zzyzx scope job is done; setting state to Closed")
+        transitionToTerminalState(State.Closed)
+      }
     }
+
+  private fun transitionToTerminalState(newState: State) {
+    while (true) {
+      val currentState = state.get()
+      if (currentState == State.Closed) {
+        break
+      } else if (state.compareAndSet(currentState, newState)) {
+        break
+      }
+    }
+  }
 
   suspend fun subscribe(
     requestId: String,
@@ -60,7 +89,7 @@ internal class RealtimeQueryManager(
     variables: Struct,
     callerSdkType: CallerSdkType,
   ): Flow<DataConnectGrpcClient.OperationResult> {
-    val connection = ensureConnected(requestId, callerSdkType)
+    val connection = ensureConnected(requestId, callerSdkType) ?: return emptyFlow()
 
     val coroutineName = "${logger.nameWithId}-subscribe(rid=$requestId)[ecpvdvmzvj]"
     val job =
@@ -102,7 +131,7 @@ internal class RealtimeQueryManager(
   private suspend fun ensureConnected(
     requestId: String,
     callerSdkType: CallerSdkType
-  ): State.Connected {
+  ): State.Connected? {
     while (true) {
       val currentState = state.get()
 
@@ -123,7 +152,7 @@ internal class RealtimeQueryManager(
             State.Connected(stream)
           }
           is State.Connected -> return currentState
-          State.Closed -> error("${logger.nameWithId} has been closed")
+          State.Closing, State.Closed -> return null
         }
 
       state.compareAndSet(currentState, newState)
@@ -145,6 +174,10 @@ internal class RealtimeQueryManager(
         MutableMap<ImmutableByteArray, Flow<DataConnectGrpcClient.OperationResult>> =
         mutableMapOf()
       override fun toString() = "Connected"
+    }
+
+    object Closing : State {
+      override fun toString() = "Closing"
     }
 
     object Closed : State {

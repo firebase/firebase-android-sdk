@@ -31,10 +31,12 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.CompletedReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.TurbinePredicateResult
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.awaitError
@@ -70,9 +72,9 @@ import io.kotest.property.arbitrary.string
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -84,24 +86,24 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
+import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 class RealtimeQuerySubscriptionImplUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
   @get:Rule val testName = TestName()
-
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
-
-  private val rs: RandomSource by randomSeedTestRule.rs
 
   @get:Rule
   val firebaseAppFactory =
     FirebaseAppUnitTestingRule(
-      appNameKey = "ex2bk4bks2",
-      applicationIdKey = "2f2c3gdydn",
-      projectIdKey = "kzbqx23hhn"
+      appNameKey = "vt9xvmbqja",
+      applicationIdKey = "e9tnx2t8aa",
+      projectIdKey = "snbchrkbz8"
     )
+
+  private val rs: RandomSource by randomSeedTestRule.rs
 
   @Before
   fun registerPrinters() {
@@ -203,13 +205,11 @@ class RealtimeQuerySubscriptionImplUnitTest {
   @Test
   fun `flows for distinct operation name and variables pairs share same connection`() = runTest {
     val requestIds = distinctRequestIdArb().sampleList(10)
-    val subscriptionParameters =
-      distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(requestIds.size)
+    val subscriptionParameters = distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(requestIds.size)
     val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server, idStringGenerator)
-    val subscriptions =
-      subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }
+    val subscriptions = subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }.shuffled(rs.random)
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
@@ -296,39 +296,105 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   @Test
-  fun `new flow collectors can subscribe after old collectors are cancelled`() = runTest {
-    val operationName = Arb.dataConnect.operationName().sample()
-    val variables = testVariablesArb().sample()
+  fun `connection is closed when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
-    val (subscriptions1, subscriptions2) =
-      List(2) { List(5) { querySubscription(dataConnect, operationName, variables) } }
+    val subscription = querySubscription(dataConnect)
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-
-      val clientCollectors1 =
-        subscriptions1.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector1-$index")
-        }
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
       serverCollector.awaitUntilSubscribeStreamRequest()
-      serverCollector.awaitUntilResumeStreamRequest()
-      clientCollectors1.forEach { it.cancelAndIgnoreRemainingEvents() }
-      serverCollector.awaitUntilCancelStreamRequest()
 
-      val clientCollectors2 =
-        subscriptions2.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector2-$index")
-        }
+      dataConnect.close()
+      serverCollector.awaitUntilItem { it is CompletedReceived }
+
+      serverCollector.cancelAndIgnoreRemainingEvents()
+      clientCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `flows are cancelled when close() is called on dataConnect`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+
+    val latch = SuspendingCountDownLatch(2)
+    launch {
+      latch.countDown().await()
+      println("zzyzx dataConnect.close() starting")
+        dataConnect.runCatching { close() }.fold(
+          onSuccess = { println("zzyzx dataConnect.close() completed normally") },
+          onFailure = { println("zzyzx dataConnect.close() completed exceptionally: $it") },
+        )
+    }
+
+    subscription.flow
+      .onStart {
+        println("zzyzx onStart")
+        latch.countDown()
+      }
+      .collect()
+    println("zzyzx collect completed")
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
       serverCollector.awaitUntilSubscribeStreamRequest()
-      serverCollector.awaitUntilResumeStreamRequest()
-      clientCollectors2.forEach { it.cancelAndIgnoreRemainingEvents() }
-      serverCollector.awaitUntilCancelStreamRequest()
+
+      dataConnect.close()
+      while (true) {
+        clientCollector.awaitEvent().let {
+          println("zzyzx awaitEvent() returned $it")
+        }
+
+      }
+      clientCollector.awaitComplete()
+
+      serverCollector.cancelAndIgnoreRemainingEvents()
+      clientCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+
+  @Test
+  fun `connection is closed after the last subscriber unsubscribes`() = runTest {
+    val subscriptionParameters =
+      distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(10)
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscriptions = buildList {
+      subscriptionParameters.forEach { add(querySubscription(dataConnect, it.operationName, it.variables)) }
+      repeat(size/2) { add(get(it)) } // Add some duplicate subscriptions
+      shuffle(rs.random)
+    }
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollectors =
+        subscriptions.mapIndexed { index, subscription ->
+          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+        }
+
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      repeat(subscriptions.size - 1) {
+        serverCollector.awaitUntilResumeStreamRequest()
+      }
+
+      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+
+      dataConnect.close()
+      serverCollector.awaitUntilItem { it is CompletedReceived }
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
+
+
 
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()

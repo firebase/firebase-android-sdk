@@ -79,6 +79,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
   @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager
+  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManagerOrNullIfClosed: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -171,8 +172,7 @@ internal class FirebaseDataConnectImpl(
       constructor() : this(null)
     }
 
-    data class Initialized
-    constructor(
+    data class Initialized(
       val grpcRPCs: DataConnectGrpcRPCs,
       val grpcClient: DataConnectGrpcClient,
       val queryManager: QueryManager,
