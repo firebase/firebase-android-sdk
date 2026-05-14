@@ -1,5 +1,12 @@
 # Unreleased
 
+- [feature] Made the global attribute methods (`putAttribute`, `removeAttribute`, `getAttribute`,
+  `getAttributes`) and related constants (`MAX_TRACE_CUSTOM_ATTRIBUTES`, `MAX_ATTRIBUTE_KEY_LENGTH`,
+  `MAX_ATTRIBUTE_VALUE_LENGTH`) public on `FirebasePerformance`.
+
+  Global attributes set via these methods are attached to all traces — automatic (for eg.
+  _app_start, screen traces and network traces) and manual. [#6664]
+
 # 22.0.5
 
 - [changed] Bumped internal dependencies.
