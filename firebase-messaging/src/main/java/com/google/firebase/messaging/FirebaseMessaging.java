@@ -847,7 +847,7 @@ public class FirebaseMessaging {
       }
     }
 
-    return token == null || token.needsRefresh(metadata.getAppVersionCode());
+    return token == null || token.needsRefresh(metadata.getAppVersionCode()) || token.isFid();
   }
 
   private void invokeOnRegistrationChanged(String token, boolean isUnregistered) {
