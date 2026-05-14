@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.protobuf.Empty
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
@@ -40,7 +41,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onCompletion
@@ -172,84 +175,51 @@ internal class DataConnectBidiConnectStream(
         State.Closed -> error("DataConnectBidiConnectStream.close() has been called [rptkgcfzyz]")
       }
 
-    fun subscribeStreamRequest(): StreamRequestProto =
-      StreamRequestProto.newBuilder().let { streamRequest ->
-        streamRequest.setRequestId(requestId)
-        streamRequest.setSubscribe(
-          ExecuteRequest.newBuilder().let { executeRequest ->
-            executeRequest.setOperationName(operationName)
-            executeRequest.setVariables(variables)
-            executeRequest.build()
-          }
-        )
-        streamRequest.build()
-      }
+    val subscriptionStateManager =
+      SubscriptionStateManager(
+        requestId = requestId,
+        operationName = operationName,
+        variables,
+        streams.outgoingRequests
+      )
 
-    fun resumeStreamRequest(): StreamRequestProto =
-      StreamRequestProto.newBuilder().let { streamRequest ->
-        streamRequest.setRequestId(requestId)
-        streamRequest.setResume(ResumeRequest.getDefaultInstance())
-        streamRequest.build()
-      }
+    return flow {
+      val subscription = subscriptionStateManager.Subscriber()
 
-    val outgoingRequests = streams.outgoingRequests
-    val incomingResponses = streams.incomingResponses
-    val completedResponse = streams.completedResponse
-    val subscribedMutex = Mutex()
-    var subscribed = false
-
-    return incomingResponses
-      .onSubscription { emit(IncomingResponse.Subscribed) }
-      .transformWhile { incomingResponse ->
-        when (incomingResponse) {
-          is IncomingResponse.Subscribed -> {
-            val sendResult =
-              subscribedMutex.withLock {
-                val streamRequest =
-                  if (subscribed) {
-                    resumeStreamRequest()
-                  } else {
-                    subscribed = true
-                    subscribeStreamRequest()
+      emitAll(
+        streams.incomingResponses
+          .onSubscription { emit(IncomingResponse.Subscribed) }
+          .transformWhile { incomingResponse ->
+            when (incomingResponse) {
+              is IncomingResponse.Subscribed -> subscription.onSubscribed()
+              is IncomingResponse.Message -> {
+                if (incomingResponse.streamResponse.requestId != requestId) {
+                  true
+                } else {
+                  val executeResponse = incomingResponse.streamResponse.toExecuteResponse()
+                  if (executeResponse !== null) {
+                    emit(executeResponse)
                   }
-                outgoingRequests.trySend(streamRequest)
+                  !incomingResponse.streamResponse.cancelled
+                }
               }
-            when {
-              sendResult.isSuccess -> true
-              sendResult.isClosed -> false
-              else ->
-                error(
-                  "internal error xw3zdzycfq: outgoingRequests.trySend(streamRequest) " +
-                    "was unable to enqueue the streamRequest; this should never happen because " +
-                    "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
-                )
+              is IncomingResponse.Completed -> {
+                false // NOTE: The downstream onCompletion() looks after throwing the exception.
+              }
             }
           }
-          is IncomingResponse.Message -> {
-            if (incomingResponse.streamResponse.requestId != requestId) {
-              true
-            } else {
-              val executeResponse = incomingResponse.streamResponse.toExecuteResponse()
-              if (executeResponse !== null) {
-                emit(executeResponse)
+          .onCompletion { throwable ->
+            subscription.onCompleted()
+
+            if (throwable === null) {
+              val completed = streams.completedResponse.mapNotNull { it.ref }.first()
+              if (completed.throwable !== null) {
+                throw completed.throwable
               }
-              !incomingResponse.streamResponse.cancelled
             }
           }
-          is IncomingResponse.Completed -> {
-            // NOTE: The downstream onCompletion() callback looks after throwing the exception.
-            false
-          }
-        }
-      }
-      .onCompletion { throwable ->
-        if (throwable === null) {
-          val completed = completedResponse.mapNotNull { it.ref }.first()
-          if (completed.throwable !== null) {
-            throw completed.throwable
-          }
-        }
-      }
+      )
+    }
   }
 
   /**
@@ -348,6 +318,101 @@ internal class DataConnectBidiConnectStream(
      * started listening, leading to silently lost responses.
      */
     object Subscribed : IncomingResponse
+  }
+
+  private class SubscriptionStateManager(
+    requestId: String,
+    operationName: String,
+    variables: Struct,
+    private val outgoingRequests: SendChannel<StreamRequestProto>,
+  ) {
+
+    val mutex = Mutex()
+    var subscriberCount = 0
+
+    inner class Subscriber {
+      private var subscribed = false
+
+      suspend fun onSubscribed(): Boolean =
+        mutex.withLock {
+          val streamRequest =
+            if (subscriberCount == 0) {
+              subscribeStreamRequest
+            } else {
+              resumeStreamRequest
+            }
+
+          val sendResult = outgoingRequests.trySend(streamRequest)
+
+          when {
+            sendResult.isSuccess -> {
+              subscribed = true
+              subscriberCount++
+              true
+            }
+            sendResult.isClosed -> false
+            else ->
+              error(
+                "internal error xw3zdzycfq: outgoingRequests.trySend(subscribe or resume) " +
+                  "was unable to enqueue the streamRequest; this should never happen because " +
+                  "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
+              )
+          }
+        }
+
+      suspend fun onCompleted() {
+        mutex.withLock {
+          if (!subscribed) {
+            return
+          }
+
+          subscribed = false
+          subscriberCount--
+          check(subscriberCount >= 0) {
+            "internal error hpn3qsj746: subscriberCount should never be less than zero, " +
+              "but it is: $subscriberCount"
+          }
+
+          if (subscriberCount == 0) {
+            val sendResult = outgoingRequests.trySend(cancelStreamRequest)
+            if (sendResult.isFailure && !sendResult.isClosed) {
+              error(
+                "internal error mxcsq556tv: outgoingRequests.trySend(cancel) " +
+                  "was unable to enqueue the streamRequest; this should never happen because " +
+                  "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
+              )
+            }
+          }
+        }
+      }
+    }
+
+    private val subscribeStreamRequest =
+      StreamRequestProto.newBuilder().let { streamRequest ->
+        streamRequest.setRequestId(requestId)
+        streamRequest.setSubscribe(
+          ExecuteRequest.newBuilder().let { executeRequest ->
+            executeRequest.setOperationName(operationName)
+            executeRequest.setVariables(variables)
+            executeRequest.build()
+          }
+        )
+        streamRequest.build()
+      }
+
+    private val resumeStreamRequest =
+      StreamRequestProto.newBuilder().let { streamRequest ->
+        streamRequest.setRequestId(requestId)
+        streamRequest.setResume(ResumeRequest.getDefaultInstance())
+        streamRequest.build()
+      }
+
+    private val cancelStreamRequest =
+      StreamRequestProto.newBuilder().let { streamRequest ->
+        streamRequest.setRequestId(requestId)
+        streamRequest.setCancel(Empty.getDefaultInstance())
+        streamRequest.build()
+      }
   }
 
   private companion object {
