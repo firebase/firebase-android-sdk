@@ -1,0 +1,7 @@
+{
+    "name": "m180_1",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api"
+    ]
+}
