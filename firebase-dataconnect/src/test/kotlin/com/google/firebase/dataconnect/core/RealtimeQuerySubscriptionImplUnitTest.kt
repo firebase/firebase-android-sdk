@@ -268,6 +268,44 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
+  @Test
+  fun `cancel message is sent after last unsubscription for a query`() = runTest {
+    val requestIds = distinctRequestIdArb().sampleList(10)
+    val operationName = Arb.dataConnect.operationName().sample()
+    val variables = testVariablesArb().sample()
+    val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server, idStringGenerator)
+    val subscriptions =
+      List(requestIds.size) { querySubscription(dataConnect, operationName, variables) }
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollectors =
+        subscriptions.mapIndexed { index, subscription ->
+          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+        }
+
+      serverCollector.awaitUntilInitStreamRequest()
+      val subscribeRequest: StreamRequestReceived = serverCollector.awaitUntilItemIsInstance()
+      check(subscribeRequest.streamRequest.hasSubscribe())
+
+      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+
+      val cancelRequest =
+        serverCollector.awaitUntilItem {
+          if (it is StreamRequestReceived && it.streamRequest.hasCancel()) {
+            TurbinePredicateResult.Satisfied(it.streamRequest)
+          } else {
+            TurbinePredicateResult.Unsatisfied
+          }
+        }
+      cancelRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
@@ -313,14 +351,18 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   private fun idStringGeneratorThatGeneratesRequestId(requestId: String): IdStringGenerator =
-    idStringGeneratorThatGeneratesRequestIds(listOf(requestId))
+    idStringGeneratorThatGeneratesRequestIds(requestId)
 
   private fun idStringGeneratorThatGeneratesRequestIds(
-    requestIds: List<String>
+    requestIds: Collection<String>
+  ): IdStringGenerator = idStringGeneratorThatGeneratesRequestIds(*requestIds.toTypedArray())
+
+  private fun idStringGeneratorThatGeneratesRequestIds(
+    vararg requestIds: String
   ): IdStringGenerator =
     spyk(IdStringGenerator(Random.Default), name = "IdStringGenerator for ${testName.methodName}") {
       every { next("rid") }
-        .returnsMany(requestIds)
+        .returnsMany(requestIds.toList())
         .andThenThrows(
           IllegalStateException(
             "I only know how to generate ${requestIds.size} requestIds, " +
