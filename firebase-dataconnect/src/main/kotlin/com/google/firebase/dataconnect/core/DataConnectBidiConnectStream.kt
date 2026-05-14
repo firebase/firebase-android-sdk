@@ -25,6 +25,7 @@ import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
+import google.firebase.dataconnect.proto.ResumeRequest
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +49,8 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -169,7 +172,7 @@ internal class DataConnectBidiConnectStream(
         State.Closed -> error("DataConnectBidiConnectStream.close() has been called [rptkgcfzyz]")
       }
 
-    val streamRequest =
+    fun subscribeStreamRequest(): StreamRequestProto =
       StreamRequestProto.newBuilder().let { streamRequest ->
         streamRequest.setRequestId(requestId)
         streamRequest.setSubscribe(
@@ -182,16 +185,35 @@ internal class DataConnectBidiConnectStream(
         streamRequest.build()
       }
 
+    fun resumeStreamRequest(): StreamRequestProto =
+      StreamRequestProto.newBuilder().let { streamRequest ->
+        streamRequest.setRequestId(requestId)
+        streamRequest.setResume(ResumeRequest.getDefaultInstance())
+        streamRequest.build()
+      }
+
     val outgoingRequests = streams.outgoingRequests
     val incomingResponses = streams.incomingResponses
     val completedResponse = streams.completedResponse
+    val subscribedMutex = Mutex()
+    var subscribed = false
 
     return incomingResponses
       .onSubscription { emit(IncomingResponse.Subscribed) }
       .transformWhile { incomingResponse ->
         when (incomingResponse) {
           is IncomingResponse.Subscribed -> {
-            val sendResult = outgoingRequests.trySend(streamRequest)
+            val sendResult =
+              subscribedMutex.withLock {
+                val streamRequest =
+                  if (subscribed) {
+                    resumeStreamRequest()
+                  } else {
+                    subscribed = true
+                    subscribeStreamRequest()
+                  }
+                outgoingRequests.trySend(streamRequest)
+              }
             when {
               sendResult.isSuccess -> true
               sendResult.isClosed -> false

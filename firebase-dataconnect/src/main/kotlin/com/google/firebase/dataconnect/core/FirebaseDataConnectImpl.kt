@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.isDefaultHost
 import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.querymgr.RealtimeQueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
@@ -77,6 +78,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcClient: DataConnectGrpcClient
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
+  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -168,11 +170,15 @@ internal class FirebaseDataConnectImpl(
     data class New(val emulatorSettings: EmulatedServiceSettings?) : State {
       constructor() : this(null)
     }
-    data class Initialized(
+
+    data class Initialized
+    constructor(
       val grpcRPCs: DataConnectGrpcRPCs,
       val grpcClient: DataConnectGrpcClient,
-      val queryManager: QueryManager
+      val queryManager: QueryManager,
+      @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager,
     ) : State
+
     data class Closing(val grpcRPCs: DataConnectGrpcRPCs, val closeJob: Deferred<Unit>) : State
     object Closed : State
   }
@@ -186,6 +192,10 @@ internal class FirebaseDataConnectImpl(
   override val queryManager: QueryManager
     get() = initialize().queryManager
 
+  @OptIn(ExperimentalRealtimeQueries::class)
+  override val realtimeQueryManager: RealtimeQueryManager
+    get() = initialize().realtimeQueryManager
+
   private fun initialize(): State.Initialized {
     val newState =
       state.updateAndGet { currentState ->
@@ -194,7 +204,11 @@ internal class FirebaseDataConnectImpl(
             val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcClient)
-            State.Initialized(grpcRPCs, grpcClient, queryManager)
+
+            @OptIn(ExperimentalRealtimeQueries::class)
+            val realtimeQueryManager = createRealtimeQueryManager(grpcClient)
+            @OptIn(ExperimentalRealtimeQueries::class)
+            State.Initialized(grpcRPCs, grpcClient, queryManager, realtimeQueryManager)
           }
           is State.Initialized -> currentState
           is State.Closing -> currentState
@@ -353,6 +367,15 @@ internal class FirebaseDataConnectImpl(
     return QueryManager(liveQueries)
   }
 
+  @ExperimentalRealtimeQueries
+  private fun createRealtimeQueryManager(grpcClient: DataConnectGrpcClient): RealtimeQueryManager =
+    RealtimeQueryManager(
+      grpcClient = grpcClient,
+      coroutineScope = coroutineScope,
+      idStringGenerator = idStringGenerator,
+      logger = Logger("RealtimeQueryManager").apply { "created by ${logger.nameWithId}" },
+    )
+
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
     state.update { currentState ->
       when (currentState) {
@@ -383,7 +406,7 @@ internal class FirebaseDataConnectImpl(
         }
         emulatorInfo.servicesList.forEachIndexed { index, serviceInfo ->
           logger.debug {
-            "[rid=$requestId]  service #${index+1}:" +
+            "[rid=$requestId]  service #${index + 1}:" +
               " serviceId=${serviceInfo.serviceId}" +
               " connectionString=${serviceInfo.connectionString}"
           }
