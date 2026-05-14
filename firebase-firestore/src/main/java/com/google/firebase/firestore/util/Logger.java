@@ -40,6 +40,42 @@ public class Logger {
   private static void doLog(Level level, String tag, String toLog, Object... values) {
     if (level.ordinal() >= Logger.logLevel.ordinal()) {
       String prefix = String.format("(%s) [%s]: ", BuildConfig.VERSION_NAME, tag);
+
+      // Prevent massive objects from being evaluated
+      // by String.format(), which causes OOMs during .toString() generation.
+      if (values.length > 0) {
+        for (int i = 0; i < values.length; i++) {
+          Object val = values[i];
+          if (val == null) continue;
+
+          if (val instanceof com.google.protobuf.MessageLite) {
+            int protoSize = ((com.google.protobuf.MessageLite) val).getSerializedSize();
+
+            // If the message is larger than 128KB, don't stringify it
+            if (protoSize > 128 * 1024) {
+              String messageType = val.getClass().getSimpleName();
+
+              String readableSize;
+              if (protoSize >= 1024 * 1024) {
+                readableSize = String.format("%.2f MB", protoSize / (1024.0 * 1024.0));
+              } else {
+                readableSize = String.format("%.1f KB", protoSize / 1024.0);
+              }
+
+              values[i] =
+                  String.format("<%s truncated for logging (Size: %s)>", messageType, readableSize);
+            }
+          }
+          // Guard against standard massive Strings
+          else if (val instanceof String) {
+            String strVal = (String) val;
+            if (strVal.length() > 4096) {
+              values[i] = strVal.substring(0, 4096) + "... <String truncated>";
+            }
+          }
+        }
+      }
+
       String value = values.length > 0 ? String.format(toLog, values) : toLog;
       value = prefix + value;
       switch (level) {

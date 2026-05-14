@@ -16,11 +16,13 @@ package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,9 +33,12 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public final class SQLiteRemoteDocumentCacheTest extends RemoteDocumentCacheTestCase {
 
+  private SQLitePersistence db;
+
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    db = PersistenceTestHelpers.createSQLitePersistence();
+    return db;
   }
 
   @Test
@@ -85,5 +90,129 @@ public final class SQLiteRemoteDocumentCacheTest extends RemoteDocumentCacheTest
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAll("b", FieldIndex.IndexOffset.NONE, size);
     assertThat(results).hasSize(size);
+  }
+
+  @Test
+  public void testGetAllDocumentKeysWithMassiveDocument() {
+    int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
+    SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
+    try {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < 20; i++) {
+        sb.append("1234567890");
+      }
+      String largeString = sb.toString(); // 200 bytes
+
+      addTestDocumentAtPath("a/1", 1, 11, map("data", largeString));
+
+      Map<DocumentKey, MutableDocument> results =
+          remoteDocumentCache.getAll(Collections.singletonList(key("a/1")));
+
+      assertThat(results.keySet()).containsExactly(key("a/1"));
+      MutableDocument doc = results.get(key("a/1"));
+      assertThat(doc).isNotNull();
+      assertThat(
+              doc.getData()
+                  .get(com.google.firebase.firestore.model.FieldPath.fromSingleSegment("data"))
+                  .getStringValue())
+          .isEqualTo(largeString);
+    } finally {
+      SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = oldLimit;
+    }
+  }
+
+  @Test
+  public void testNextDocumentsFromCollectionGroupWithMassiveDocument() {
+    int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
+    SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
+    try {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < 20; i++) {
+        sb.append("1234567890");
+      }
+      String largeString = sb.toString(); // 200 bytes
+
+      addTestDocumentAtPath("a/1", 1, 11, map("data", largeString));
+
+      Map<DocumentKey, MutableDocument> results =
+          remoteDocumentCache.getAll("a", FieldIndex.IndexOffset.NONE, Integer.MAX_VALUE);
+
+      assertThat(results.keySet()).containsExactly(key("a/1"));
+      MutableDocument doc = results.get(key("a/1"));
+      assertThat(doc).isNotNull();
+      assertThat(
+              doc.getData()
+                  .get(com.google.firebase.firestore.model.FieldPath.fromSingleSegment("data"))
+                  .getStringValue())
+          .isEqualTo(largeString);
+    } finally {
+      SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = oldLimit;
+    }
+  }
+
+  @Test
+  public void testDocumentJustBelowLimitDoesNotChunk() {
+    int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
+    SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
+    try {
+      String data = "small_string"; // Definitely less than 100 bytes
+
+      addTestDocumentAtPath("a/1", 1, 11, map("data", data));
+
+      Map<DocumentKey, MutableDocument> results =
+          remoteDocumentCache.getAll(Collections.singletonList(key("a/1")));
+
+      assertThat(results.keySet()).containsExactly(key("a/1"));
+      assertThat(
+              results
+                  .get(key("a/1"))
+                  .getData()
+                  .get(com.google.firebase.firestore.model.FieldPath.fromSingleSegment("data"))
+                  .getStringValue())
+          .isEqualTo(data);
+    } finally {
+      SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = oldLimit;
+    }
+  }
+
+  @Test
+  public void testDocumentJustAboveLimitChunks() {
+    int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
+    SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
+    try {
+      StringBuilder sb = new StringBuilder();
+      for (int i = 0; i < 15; i++) {
+        sb.append("1234567890");
+      }
+      String data = sb.toString(); // 150 bytes, definitely > 100
+
+      addTestDocumentAtPath("a/1", 1, 11, map("data", data));
+
+      Map<DocumentKey, MutableDocument> results =
+          remoteDocumentCache.getAll(Collections.singletonList(key("a/1")));
+
+      assertThat(results.keySet()).containsExactly(key("a/1"));
+      assertThat(
+              results
+                  .get(key("a/1"))
+                  .getData()
+                  .get(com.google.firebase.firestore.model.FieldPath.fromSingleSegment("data"))
+                  .getStringValue())
+          .isEqualTo(data);
+    } finally {
+      SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = oldLimit;
+    }
+  }
+
+  @Test
+  public void testFetchMassiveDocumentInChunksThrowsWhenChunkMissing() {
+    SQLiteRemoteDocumentCache cache = (SQLiteRemoteDocumentCache) remoteDocumentCache;
+
+    try {
+      cache.fetchMassiveDocumentInChunks(db, "non-existent/path", 1000, 100);
+      org.junit.Assert.fail("Expected IllegalStateException");
+    } catch (IllegalStateException e) {
+      assertThat(e.getMessage()).contains("Failed to fetch chunk for massive document");
+    }
   }
 }
