@@ -1,6 +1,6 @@
 # Unreleased
 
-- [fixed] Fixed failing APK downloads due to an invalid file provider authority [#8136]
+- [changed] Bumped internal dependencies.
 
 # 16.0.0-beta18
 
