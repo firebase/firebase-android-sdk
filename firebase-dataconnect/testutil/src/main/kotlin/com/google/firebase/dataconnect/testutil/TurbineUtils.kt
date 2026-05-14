@@ -22,7 +22,6 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.fail
 import io.kotest.assertions.print.print
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Represents the result of evaluating a predicate on an item emitted from a [ReceiveTurbine].
@@ -75,20 +74,20 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
   onIgnoredItem: (T) -> Unit = {},
   predicate: (T) -> TurbinePredicateResult<R>,
 ): R {
-  val skippedItemCount = AtomicInteger(0)
+  var skippedItemCount = 0
 
   while (true) {
     when (val event = awaitEvent()) {
       Event.Complete ->
         fail(
-          "Flow completed normally after skipping ${skippedItemCount.get()} items produced " +
+          "Flow completed normally after skipping $skippedItemCount items produced " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
             "but expected it to produce an item that satisfied the predicate"
         )
       is Event.Error ->
         fail(
           "Flow failed with exception ${event.throwable} after skipping " +
-            "${skippedItemCount.get()} items produced " +
+            "$skippedItemCount items produced " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
             "but expected it to produce an item that satisfied the predicate"
         )
@@ -97,7 +96,7 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
           is TurbinePredicateResult.Satisfied -> return predicateResult.mappedValue
           TurbinePredicateResult.Unsatisfied -> {
             onIgnoredItem(event.value)
-            skippedItemCount.incrementAndGet()
+            skippedItemCount++
           }
         }
     }
