@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Global attributes set via these methods are attached to all traces — automatic
+  (for eg. _app_start, screen traces and network traces) and manual. [#6664]
+
 # 22.0.5
 
 - [changed] Bumped internal dependencies.
