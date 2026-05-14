@@ -253,7 +253,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
         }
 
       serverCollector.awaitUntilInitStreamRequest()
-      val subscribeRequest: StreamRequestReceived = serverCollector.awaitUntilItemIsInstance()
+      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
       subscribeRequest.streamRequest.requestId shouldBeIn requestIds
       subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
       repeat(subscriptions.size - 1) {
@@ -270,14 +270,11 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
   @Test
   fun `cancel message is sent after last unsubscription for a query`() = runTest {
-    val requestIds = distinctRequestIdArb().sampleList(10)
     val operationName = Arb.dataConnect.operationName().sample()
     val variables = testVariablesArb().sample()
-    val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server, idStringGenerator)
-    val subscriptions =
-      List(requestIds.size) { querySubscription(dataConnect, operationName, variables) }
+    val dataConnect = dataConnect(server)
+    val subscriptions = List(10) { querySubscription(dataConnect, operationName, variables) }
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
@@ -287,20 +284,47 @@ class RealtimeQuerySubscriptionImplUnitTest {
         }
 
       serverCollector.awaitUntilInitStreamRequest()
-      val subscribeRequest: StreamRequestReceived = serverCollector.awaitUntilItemIsInstance()
+      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
       check(subscribeRequest.streamRequest.hasSubscribe())
 
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
 
-      val cancelRequest =
-        serverCollector.awaitUntilItem {
-          if (it is StreamRequestReceived && it.streamRequest.hasCancel()) {
-            TurbinePredicateResult.Satisfied(it.streamRequest)
-          } else {
-            TurbinePredicateResult.Unsatisfied
-          }
+      val cancelRequest = serverCollector.awaitUntilCancelStreamRequest()
+      cancelRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `new flow collectors can subscribe after old collectors are cancelled`() = runTest {
+    val operationName = Arb.dataConnect.operationName().sample()
+    val variables = testVariablesArb().sample()
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val (subscriptions1, subscriptions2) =
+      List(2) { List(5) { querySubscription(dataConnect, operationName, variables) } }
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+
+      val clientCollectors1 =
+        subscriptions1.mapIndexed { index, subscription ->
+          subscription.flow.testIn(backgroundScope, name = "clientCollector1-$index")
         }
-      cancelRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      serverCollector.awaitUntilResumeStreamRequest()
+      clientCollectors1.forEach { it.cancelAndIgnoreRemainingEvents() }
+      serverCollector.awaitUntilCancelStreamRequest()
+
+      val clientCollectors2 =
+        subscriptions2.mapIndexed { index, subscription ->
+          subscription.flow.testIn(backgroundScope, name = "clientCollector2-$index")
+        }
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      serverCollector.awaitUntilResumeStreamRequest()
+      clientCollectors2.forEach { it.cancelAndIgnoreRemainingEvents() }
+      serverCollector.awaitUntilCancelStreamRequest()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
@@ -423,6 +447,30 @@ private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event
       }
     }
   }
+
+private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilStreamRequest(predicate: (StreamRequest) -> Boolean): StreamRequestReceived =
+  awaitUntilItem {
+    if (it is StreamRequestReceived && predicate(it.streamRequest)) {
+      TurbinePredicateResult.Satisfied(it)
+    } else {
+      TurbinePredicateResult.Unsatisfied
+    }
+  }
+
+private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilSubscribeStreamRequest(): StreamRequestReceived =
+  withClue("awaiting 'subscribe' StreamRequest message") {
+    awaitUntilStreamRequest { it.hasSubscribe() }
+  }
+
+private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilResumeStreamRequest(): StreamRequestReceived =
+  withClue("awaiting 'resume' StreamRequest message") { awaitUntilStreamRequest { it.hasResume() } }
+
+private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilCancelStreamRequest(): StreamRequestReceived =
+  withClue("awaiting 'cancel' StreamRequest message") { awaitUntilStreamRequest { it.hasCancel() } }
 
 private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   .awaitUntilStreamRequestWithRequestId(requestId: String): StreamRequestReceived {

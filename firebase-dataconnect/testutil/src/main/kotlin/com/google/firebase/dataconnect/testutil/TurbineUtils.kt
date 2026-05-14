@@ -22,6 +22,7 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.fail
 import io.kotest.assertions.print.print
+import kotlin.experimental.ExperimentalTypeInference
 
 /**
  * Represents the result of evaluating a predicate on an item emitted from a [ReceiveTurbine].
@@ -69,6 +70,9 @@ sealed interface TurbinePredicateResult<out T> {
  * @throws AssertionError if the flow completes, fails, or times out before emitting an item that
  * satisfies [predicate].
  */
+@JvmName("awaitUntilItem_TurbinePredicateResult")
+@OptIn(ExperimentalTypeInference::class)
+@OverloadResolutionByLambdaReturnType
 suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
   predicateDescription: String? = null,
   onIgnoredItem: (T) -> Unit = {},
@@ -102,6 +106,29 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
     }
   }
 }
+
+/**
+ * A simplification of the [awaitUntilItem] that uses [Boolean] predicates instead of
+ * [TurbinePredicateResult] for use cases that don't need the value mapping feature of the
+ * [TurbinePredicateResult] overload.
+ */
+@JvmName("awaitUntilItem_Boolean")
+suspend inline fun <T> ReceiveTurbine<T>.awaitUntilItem(
+  predicateDescription: String? = null,
+  onIgnoredItem: (T) -> Unit = {},
+  predicate: (T) -> Boolean,
+): T =
+  awaitUntilItem<T, T>(
+    predicateDescription = predicateDescription,
+    onIgnoredItem = onIgnoredItem,
+    predicate = {
+      if (predicate(it)) {
+        TurbinePredicateResult.Satisfied(it)
+      } else {
+        TurbinePredicateResult.Unsatisfied
+      }
+    }
+  )
 
 /**
  * Awaits events from the receiver [ReceiveTurbine] until an emitted item is an instance of type [U]
