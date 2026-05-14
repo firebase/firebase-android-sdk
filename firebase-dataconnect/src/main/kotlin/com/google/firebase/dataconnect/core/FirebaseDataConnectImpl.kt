@@ -373,7 +373,7 @@ internal class FirebaseDataConnectImpl(
       grpcClient = grpcClient,
       coroutineScope = coroutineScope,
       idStringGenerator = idStringGenerator,
-      logger = Logger("RealtimeQueryManager").apply { "created by ${logger.nameWithId}" },
+      logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
     )
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
