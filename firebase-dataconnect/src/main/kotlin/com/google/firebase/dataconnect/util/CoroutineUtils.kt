@@ -25,6 +25,8 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 
 internal object CoroutineUtils {
 
@@ -123,4 +125,25 @@ internal object CoroutineUtils {
     context: CoroutineContext = EmptyCoroutineContext,
     coroutineName: String? = null
   ): CoroutineScope = createChildSupervisorCoroutineScope(this, logger, context, coroutineName)
+
+  /** Returns a "send-only" wrapper around the receiver [SendChannel]. */
+  fun <T> SendChannel<T>.asSendChannel(): SendOnlySendChannel<T> =
+    when (this) {
+      is SendOnlySendChannel -> this
+      else -> SendOnlySendChannel(this)
+    }
+
+  /**
+   * A "send-only" wrapper around a [SendChannel], preventing it from being cast to another type,
+   * specifically [Channel], and, thus, allowing non-send methods to be called on it.
+   *
+   * The purpose of this wrapper is to prevent a [Channel] instance from being passed to a method
+   * that takes [SendChannel] and that [SendChannel] being cast back to [Channel] and having methods
+   * not defined in [SendChannel] called on it.
+   *
+   * This is similar in spirit to the [kotlinx.coroutines.flow.asSharedFlow] and
+   * [kotlinx.coroutines.flow.asStateFlow] extension functions that are defined in the official
+   * Kotlin coroutines library.
+   */
+  class SendOnlySendChannel<in T>(delegate: SendChannel<T>) : SendChannel<T> by delegate
 }
