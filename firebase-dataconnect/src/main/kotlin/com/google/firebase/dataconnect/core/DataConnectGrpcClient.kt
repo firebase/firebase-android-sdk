@@ -27,10 +27,6 @@ import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlError
 import io.grpc.Status
 import io.grpc.StatusException
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 
 internal class DataConnectGrpcClient(
   private val grpcRPCs: DataConnectGrpcRPCs,
@@ -99,43 +95,19 @@ internal class DataConnectGrpcClient(
   }
 
   @ExperimentalRealtimeQueries
-  fun connect(
+  suspend fun connect(
+    streamId: String,
     requestId: String,
-    operationName: String,
-    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Flow<OperationResult> = flow {
-    val connection =
-      grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
-        connect(
-          requestId,
-          callerSdkType,
-          authToken,
-          appCheckToken,
-        )
-      }
-
-    try {
-      val flow =
-        connection.subscribe(
-          requestId = requestId,
-          operationName = operationName,
-          variables = variables,
-        )
-
-      flow.collect { executeResponse: DataConnectBidiConnectStream.ExecuteResponse ->
-        emit(
-          OperationResult(
-            data = executeResponse.data,
-            errors = executeResponse.errors,
-            source = DataSource.SERVER,
-          )
-        )
-      }
-    } finally {
-      withContext(NonCancellable) { connection.close() }
+  ): DataConnectBidiConnectStream =
+    grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
+      connect(
+        requestId,
+        callerSdkType,
+        authToken,
+        appCheckToken,
+      )
     }
-  }
 
   private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,

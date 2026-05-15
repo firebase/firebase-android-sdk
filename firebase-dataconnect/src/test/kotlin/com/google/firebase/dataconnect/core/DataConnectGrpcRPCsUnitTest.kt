@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.newMockLogger
@@ -495,15 +496,10 @@ class DataConnectGrpcRPCsUnitTest {
 private val propTestConfig =
   PropTestConfig(iterations = 50, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
-data class OperationNameVariablesPair(
-  val operationName: String,
-  val variables: StructProto,
-)
-
 private fun operationNameVariablesPairArb(
   operationName: Arb<String> = Arb.dataConnect.operationName(),
   variables: Arb<ProtoArb.StructInfo> = Arb.proto.struct(),
-): Arb<OperationNameVariablesPair> =
+): Arb<OperationNameVariablesPair<StructProto>> =
   Arb.bind(operationName, variables.map { it.struct }, ::OperationNameVariablesPair)
 
 private fun StructProto.toExecuteQueryResponse(): ExecuteQueryResponse =

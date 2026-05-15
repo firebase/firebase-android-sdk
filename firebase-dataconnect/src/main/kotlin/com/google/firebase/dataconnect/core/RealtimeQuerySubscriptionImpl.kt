@@ -47,7 +47,7 @@ internal class RealtimeQuerySubscriptionImpl<Data, Variables>(
         val requestId = query.dataConnect.idStringGenerator.next("rid")
 
         val connectionFlow =
-          dataConnect.grpcClient.connect(
+          dataConnect.realtimeQueryManager.subscribe(
             requestId = requestId,
             operationName = operationName,
             variables =
