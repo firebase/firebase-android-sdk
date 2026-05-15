@@ -31,7 +31,6 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
-import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.CompletedReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ErrorReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
@@ -310,7 +309,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       serverCollector.awaitUntilSubscribeStreamRequest()
 
       dataConnect.close()
-      serverCollector.awaitUntilStatusExceptionReceived(Status.Code.CANCELLED)
+      serverCollector.awaitUntilClientClosesConnection()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollector.cancelAndIgnoreRemainingEvents()
@@ -386,7 +385,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
 
       dataConnect.close()
-      serverCollector.awaitUntilItem { it is CompletedReceived }
+      serverCollector.awaitUntilClientClosesConnection()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
@@ -530,7 +529,10 @@ private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServe
     }
   }
 
-private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilClientClosesConnection() = awaitUntilStatusExceptionReceived(Status.Code.CANCELLED)
+
+private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   .awaitUntilStatusExceptionReceived(code: Status.Code) =
   withClue("expecting ErrorReceived event with StatusException(code=$code)") {
     awaitUntilItem { event ->
@@ -539,15 +541,14 @@ private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServe
       }
       val exception = event.exception
       val status =
-        if (exception is StatusException) {
-          exception.status
-        } else if (exception is StatusRuntimeException) {
-          exception.status
-        } else {
-          fail(
-            "Got ErrorReceived event with exception=$exception, " +
-              "but expected StatusException with code=$code"
-          )
+        when (exception) {
+          is StatusException -> exception.status
+          is StatusRuntimeException -> exception.status
+          else ->
+            fail(
+              "Got ErrorReceived event with exception=$exception, " +
+                "but expected StatusException with code=$code"
+            )
         }
       if (status.code != code) {
         fail(

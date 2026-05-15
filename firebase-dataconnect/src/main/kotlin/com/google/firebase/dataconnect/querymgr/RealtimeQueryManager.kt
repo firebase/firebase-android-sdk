@@ -32,7 +32,6 @@ import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Struct
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -40,6 +39,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -120,7 +120,7 @@ internal class RealtimeQueryManager(
     callerSdkType: CallerSdkType,
   ): Flow<DataConnectGrpcClient.OperationResult> {
     val requestId = idStringGenerator.next("sub")
-    val connection = ensureConnected(requestId, callerSdkType)
+    val connection = ensureConnected(requestId, callerSdkType) ?: return emptyFlow()
 
     val coroutineName = "${logger.nameWithId}-subscribe(rid=$requestId)[ecpvdvmzvj]"
     val job =
@@ -162,7 +162,7 @@ internal class RealtimeQueryManager(
   private suspend fun ensureConnected(
     requestId: String,
     callerSdkType: CallerSdkType
-  ): State.Connected {
+  ): State.Connected? {
     while (true) {
       val currentState = state.get()
 
@@ -184,7 +184,7 @@ internal class RealtimeQueryManager(
           }
           is State.Connected -> return currentState
           State.Closing,
-          State.Closed -> throw CancellationException("RealtimeQueryManager has been closed")
+          State.Closed -> return null
         }
 
       state.compareAndSet(currentState, newState)
