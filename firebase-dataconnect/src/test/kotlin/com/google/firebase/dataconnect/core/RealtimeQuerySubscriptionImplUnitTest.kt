@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.CompletedReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ErrorReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
@@ -49,7 +50,11 @@ import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.fail
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -293,8 +298,6 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
   @Test
   fun `connection is closed when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
@@ -307,7 +310,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       serverCollector.awaitUntilSubscribeStreamRequest()
 
       dataConnect.close()
-      serverCollector.awaitUntilItem { it is CompletedReceived }
+      serverCollector.awaitUntilStatusExceptionReceived(Status.Code.CANCELLED)
 
       serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollector.cancelAndIgnoreRemainingEvents()
@@ -509,11 +512,50 @@ private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event
 
 private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   .awaitUntilStreamRequest(predicate: (StreamRequest) -> Boolean): StreamRequestReceived =
-  awaitUntilItem {
+  awaitUntilItem("event is StreamRequest") {
     if (it is StreamRequestReceived && predicate(it.streamRequest)) {
       TurbinePredicateResult.Satisfied(it)
     } else {
       TurbinePredicateResult.Unsatisfied
+    }
+  }
+
+private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilErrorReceived(predicate: (ErrorReceived) -> Boolean): ErrorReceived =
+  awaitUntilItem("event is ErrorReceived") {
+    if (it is ErrorReceived && predicate(it)) {
+      TurbinePredicateResult.Satisfied(it)
+    } else {
+      TurbinePredicateResult.Unsatisfied
+    }
+  }
+
+private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilStatusExceptionReceived(code: Status.Code) =
+  withClue("expecting ErrorReceived event with StatusException(code=$code)") {
+    awaitUntilItem { event ->
+      if (event !is ErrorReceived) {
+        return@awaitUntilItem false
+      }
+      val exception = event.exception
+      val status =
+        if (exception is StatusException) {
+          exception.status
+        } else if (exception is StatusRuntimeException) {
+          exception.status
+        } else {
+          fail(
+            "Got ErrorReceived event with exception=$exception, " +
+              "but expected StatusException with code=$code"
+          )
+        }
+      if (status.code != code) {
+        fail(
+          "Got ErrorReceived event with StatusException/StatusRuntimeException (as expected), " +
+            "but code=${status.code} (expected code: $code, exception=$exception)"
+        )
+      }
+      true
     }
   }
 
