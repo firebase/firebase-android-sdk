@@ -19,6 +19,9 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.Event
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
@@ -33,13 +36,20 @@ import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStr
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.InsertStringMutation
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Empty
+import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
+import io.grpc.CallOptions
+import io.grpc.ClientCall
+import io.grpc.ManagedChannel
+import io.grpc.Metadata
 import io.grpc.Status
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
@@ -66,17 +76,27 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.uuid
 import io.kotest.property.checkAll
 import java.util.UUID
+import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Test
 
@@ -505,6 +525,163 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     val backend = DataConnectBackend.Custom("localhost:${inProcessServer.port}", sslEnabled = false)
     return connect(backend)
   }
+
+  @Test
+  fun testManualConnect() = runTest {
+    val connector = RealtimeConnector.getInstance(dataConnectFactory)
+    val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
+    val rpc =
+      BidiConnectRPC(
+        grpcManagedChannel,
+        connector.resourceName,
+        IdStringGenerator(Random.Default),
+        Logger("BidiConnectRPC")
+      )
+  }
+
+  internal class BidiConnectRPC(
+    private val managedChannel: ManagedChannel,
+    private val connectorResourceName: String,
+    private val idStringGenerator: IdStringGenerator,
+    private val logger: Logger,
+  ) {
+
+    val flow: Flow<Event> = flow {
+      val connectionId = idStringGenerator.next("con")
+      val connectMethod = ConnectorStreamServiceGrpc.getConnectMethod()
+      val logger =
+        Logger("BidiConnectRPC[cid=$connectionId]").also {
+          it.debug { "created by ${logger.nameWithId} for RPC: ${connectMethod.fullMethodName}" }
+        }
+
+      val outgoingRequests =
+        Channel<StreamRequest>(capacity = UNLIMITED).also { channel ->
+          channel.trySend(initRequest).let {
+            check(it.isSuccess) {
+              "internal error zsv3pqtz5e: outgoingRequests.trySend(initRequest) should have succeeded " +
+                "since the Channel has capacity=UNLIMITED, but it did not: $it"
+            }
+          }
+        }
+      emit(Event.Started(outgoingRequests))
+
+      val call: ClientCall<StreamRequest, StreamResponse> = run {
+        val callOptions = CallOptions.DEFAULT.withExecutor(Dispatchers.IO.asExecutor())
+        managedChannel.newCall(connectMethod, callOptions)
+      }
+
+      // We maintain a buffer of size 1 so onMessage never has to block: it only gets called after
+      // we request a response from the server, which only happens when responses is empty and
+      // there is room in the buffer.
+      val incomingResponses = Channel<StreamResponse>(capacity = 1)
+
+      // A CONFLATED channel never suspends to send, and two notifications of readiness are
+      // equivalent to one
+      val onReadyCalled = Channel<Unit>(Channel.CONFLATED)
+      suspend fun awaitReady() {
+        while (!call.isReady) {
+          onReadyCalled.receive()
+        }
+      }
+
+      coroutineScope {
+        val metadata = Metadata()
+        val callListener =
+          object : ClientCall.Listener<StreamResponse>() {
+            override fun onHeaders(headers: Metadata) {
+              logger.debug { "onHeaders($headers)" }
+            }
+
+            override fun onMessage(message: StreamResponse) {
+              logger.debug { "onMessage(${message.toCompactString()})" }
+              incomingResponses.trySend(message).onFailure { exceptionOrNull ->
+                throw exceptionOrNull
+                  ?: error(
+                    "internal error hbmx9yxkcr: " +
+                      "incomingResponses.trySend(message) failed, but should NOT have failed " +
+                      "because onMessage() should not be called until call.request(1) is called, " +
+                      "and call.request(1) should not be called until incomingResponses is empty"
+                  )
+              }
+            }
+
+            override fun onClose(status: Status, trailers: Metadata) {
+              logger.debug { "onClose(status=$status, trailers=$trailers)" }
+              val cause =
+                when {
+                  status.isOk -> null
+                  status.cause is CancellationException -> status.cause
+                  else -> status.asException(trailers)
+                }
+              incomingResponses.close(cause)
+            }
+
+            override fun onReady() {
+              logger.debug { "onReady()" }
+              onReadyCalled.trySend(Unit).onFailure { exceptionOrNull ->
+                throw exceptionOrNull
+                  ?: error(
+                    "internal error adjtqkbnyv: " +
+                      "onReadyCalled.trySend(Unit) failed, but should NOT have failed " +
+                      "because onReadyCalled was created with capacity=CONFLATED"
+                  )
+              }
+            }
+          }
+
+        call.start(callListener, metadata.copy())
+
+        val requestsJob =
+          launch(CoroutineName("${logger.nameWithId}-requestsJob")) {
+            try {
+              awaitReady()
+              for (request in outgoingRequests) {
+                call.sendMessage(request)
+                awaitReady()
+              }
+              call.halfClose()
+            } catch (ex: Exception) {
+              call.cancel("Collection of requests completed exceptionally", ex)
+              throw ex // propagate failure upward
+            }
+          }
+
+        try {
+          call.request(1)
+          for (response in incomingResponses) {
+            emit(Event.Message(response))
+            call.request(1)
+          }
+        } catch (e: Exception) {
+          withContext(NonCancellable) {
+            requestsJob.cancel("Collection of responses completed exceptionally", e)
+            requestsJob.join()
+            // we want sender to be done cancelling before we cancel clientCall, or it might try
+            // sending to a dead call, which results in ugly exception messages
+            call.cancel("Collection of responses completed exceptionally", e)
+          }
+          throw e
+        }
+
+        if (!requestsJob.isCompleted) {
+          requestsJob.cancel("Collection of responses completed before collection of requests")
+        }
+      }
+    }
+
+    val initRequest: StreamRequest =
+      StreamRequest.newBuilder().run {
+        setRequestId("init")
+        setName(connectorResourceName)
+        build()
+      }
+
+    sealed interface Event {
+      class Started(val outgoingRequests: SendChannel<StreamRequest>) : Event
+
+      @JvmInline value class Message(val response: StreamResponse) : Event
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -690,3 +867,5 @@ private fun validSubscribeStreamRequestArb(
   streamRequest.setSubscribe(validExecuteQueryRequest.bind())
   streamRequest.build()
 }
+
+private fun Metadata.copy(): Metadata = Metadata().also { it.merge(this) }
