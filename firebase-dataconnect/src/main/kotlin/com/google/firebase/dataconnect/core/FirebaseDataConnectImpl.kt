@@ -79,7 +79,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
   @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager
-  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManagerOrNullIfClosed: RealtimeQueryManager?
+  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManagerOrNull: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -195,6 +195,18 @@ internal class FirebaseDataConnectImpl(
   @OptIn(ExperimentalRealtimeQueries::class)
   override val realtimeQueryManager: RealtimeQueryManager
     get() = initialize().realtimeQueryManager
+
+  @OptIn(ExperimentalRealtimeQueries::class)
+  override val realtimeQueryManagerOrNull: RealtimeQueryManager?
+    get() = initializedOrNull()?.realtimeQueryManager
+
+  private fun initializedOrNull(): State.Initialized? =
+    when (val currentState = state.value) {
+      is State.New -> null
+      is State.Initialized -> currentState
+      is State.Closing -> null
+      State.Closed -> null
+    }
 
   private fun initialize(): State.Initialized {
     val newState =
@@ -373,6 +385,7 @@ internal class FirebaseDataConnectImpl(
       grpcClient = grpcClient,
       coroutineScope = coroutineScope,
       idStringGenerator = idStringGenerator,
+      serialization = serialization,
       logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
     )
 

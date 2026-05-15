@@ -72,6 +72,7 @@ import io.kotest.property.arbitrary.string
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
@@ -86,7 +87,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 class RealtimeQuerySubscriptionImplUnitTest {
@@ -205,11 +205,15 @@ class RealtimeQuerySubscriptionImplUnitTest {
   @Test
   fun `flows for distinct operation name and variables pairs share same connection`() = runTest {
     val requestIds = distinctRequestIdArb().sampleList(10)
-    val subscriptionParameters = distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(requestIds.size)
+    val subscriptionParameters =
+      distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(requestIds.size)
     val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server, idStringGenerator)
-    val subscriptions = subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }.shuffled(rs.random)
+    val subscriptions =
+      subscriptionParameters
+        .map { querySubscription(dataConnect, it.operationName, it.variables) }
+        .shuffled(rs.random)
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
@@ -327,7 +331,9 @@ class RealtimeQuerySubscriptionImplUnitTest {
     launch {
       latch.countDown().await()
       println("zzyzx dataConnect.close() starting")
-        dataConnect.runCatching { close() }.fold(
+      dataConnect
+        .runCatching { close() }
+        .fold(
           onSuccess = { println("zzyzx dataConnect.close() completed normally") },
           onFailure = { println("zzyzx dataConnect.close() completed exceptionally: $it") },
         )
@@ -348,10 +354,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
       dataConnect.close()
       while (true) {
-        clientCollector.awaitEvent().let {
-          println("zzyzx awaitEvent() returned $it")
-        }
-
+        clientCollector.awaitEvent().let { println("zzyzx awaitEvent() returned $it") }
       }
       clientCollector.awaitComplete()
 
@@ -360,7 +363,6 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
-
   @Test
   fun `connection is closed after the last subscriber unsubscribes`() = runTest {
     val subscriptionParameters =
@@ -368,8 +370,10 @@ class RealtimeQuerySubscriptionImplUnitTest {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscriptions = buildList {
-      subscriptionParameters.forEach { add(querySubscription(dataConnect, it.operationName, it.variables)) }
-      repeat(size/2) { add(get(it)) } // Add some duplicate subscriptions
+      subscriptionParameters.forEach {
+        add(querySubscription(dataConnect, it.operationName, it.variables))
+      }
+      repeat(size / 2) { add(get(it)) } // Add some duplicate subscriptions
       shuffle(rs.random)
     }
 
@@ -381,9 +385,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
         }
 
       serverCollector.awaitUntilSubscribeStreamRequest()
-      repeat(subscriptions.size - 1) {
-        serverCollector.awaitUntilResumeStreamRequest()
-      }
+      repeat(subscriptions.size - 1) { serverCollector.awaitUntilResumeStreamRequest() }
 
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
 
@@ -393,8 +395,6 @@ class RealtimeQuerySubscriptionImplUnitTest {
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
-
-
 
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()

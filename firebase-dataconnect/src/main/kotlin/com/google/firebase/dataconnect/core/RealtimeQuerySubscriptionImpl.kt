@@ -19,10 +19,9 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
+import com.google.firebase.dataconnect.querymgr.subscribe
+import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -41,41 +40,18 @@ internal class RealtimeQuerySubscriptionImpl<Data, Variables>(
 ) : QuerySubscription<Data, Variables> {
 
   override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = flow {
-    emitAll(
-      query.run {
-        val serialization = dataConnect.serialization
-        val requestId = query.dataConnect.idStringGenerator.next("rid")
+    val realtimeQueryManager = query.dataConnect.realtimeQueryManagerOrNull ?: return@flow
 
-        val connectionFlow =
-          dataConnect.realtimeQueryManager.subscribe(
-            requestId = requestId,
-            operationName = operationName,
-            variables =
-              serialization.encodeVariables(
-                variables,
-                variablesSerializer,
-                variablesSerializersModule
-              ),
-            callerSdkType,
-          )
+    val dataResultFlow: Flow<Result<Data>> = realtimeQueryManager.subscribe(query)
 
-        connectionFlow.map { operationResult: DataConnectGrpcClient.OperationResult ->
-          operationResult.run {
-            val queryResult =
-              serialization.runCatching {
-                val decodedData = decodeData(data, errors, dataDeserializer, dataSerializersModule)
-                RealtimeQueryResultImpl(decodedData, DataSource.SERVER)
-              }
-
-            if (queryResult.exceptionOrNull() is CancellationException) {
-              currentCoroutineContext().ensureActive()
-            }
-
-            RealtimeQuerySubscriptionResultImpl(query, queryResult)
-          }
-        }
+    val queryResultFlow =
+      dataResultFlow.map { dataResult ->
+        dataResult.throwIfCancellationException()
+        val queryResult = dataResult.map { query.RealtimeQueryResultImpl(it, DataSource.SERVER) }
+        RealtimeQuerySubscriptionResultImpl(query, queryResult)
       }
-    )
+
+    emitAll(queryResultFlow)
   }
 
   override fun equals(other: Any?): Boolean = other === this
