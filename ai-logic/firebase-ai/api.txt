@@ -1847,7 +1847,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class TemplateToolConfig {
-    ctor public TemplateToolConfig();
     ctor public TemplateToolConfig(com.google.firebase.ai.type.RetrievalConfig? retrievalConfig = null);
   }
 
