@@ -128,7 +128,7 @@ internal constructor(
 
 /** Config for template tools to use with server prompts. */
 public class TemplateToolConfig
-public constructor(private val retrievalConfig: RetrievalConfig? = null) {
+public constructor(private val retrievalConfig: RetrievalConfig?) {
 
   public constructor() : this(null)
   internal fun toInternal(): ToolConfig.Internal {
