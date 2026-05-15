@@ -379,12 +379,16 @@ class RealtimeQuerySubscriptionImplUnitTest {
           subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
         }
 
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      repeat(subscriptions.size - 1) { serverCollector.awaitUntilResumeStreamRequest() }
+      repeat(subscriptions.size) {
+        serverCollector.awaitUntilItem {
+          it is StreamRequestReceived &&
+            it.streamRequest.let { streamRequest ->
+              streamRequest.hasSubscribe() || streamRequest.hasResume()
+            }
+        }
+      }
 
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-
-      dataConnect.close()
       serverCollector.awaitUntilClientClosesConnection()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
