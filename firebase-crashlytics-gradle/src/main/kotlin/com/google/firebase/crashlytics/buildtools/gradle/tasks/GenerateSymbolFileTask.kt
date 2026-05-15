@@ -200,17 +200,6 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
         )
 
         validateSymbolGeneratorType(project, crashlyticsExtension.symbolGeneratorType)
-
-        printDebugProperties()
       }
-  }
-
-  private fun printDebugProperties() {
-    logger.debug("GenerateSymbolFileTask:")
-    logger.debug("  unstrippedNativeLibsDirs: ${unstrippedNativeLibsDirs.asPath}")
-    logger.debug("  breakpadBinary: ${breakpadBinary.orNull?.asFile?.path}")
-    logger.debug("  symbolGeneratorType: ${symbolGeneratorType.orNull?.toString()}")
-    logger.debug("  breakpadExtractionDir: ${breakpadExtractionDir.orNull?.asFile?.path}")
-    logger.debug("  symbolFileOutputDir: ${symbolFileOutputDir.orNull?.asFile?.path}")
   }
 }
