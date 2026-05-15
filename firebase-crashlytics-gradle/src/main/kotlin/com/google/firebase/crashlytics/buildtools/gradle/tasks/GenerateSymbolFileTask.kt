@@ -30,13 +30,14 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.breakpad.Breakpad
 import com.google.firebase.crashlytics.buildtools.ndk.internal.csym.NdkCSymGenerator
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -53,6 +54,7 @@ import org.gradle.kotlin.dsl.register
 @Suppress("UnstableApiUsage") // SingleArtifact.MERGED_NATIVE_LIBS
 @CacheableTask
 abstract class GenerateSymbolFileTask : DefaultTask() {
+  @get:Input abstract val variantName: Property<String>
   @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE) SkipWhenEmpty]
   abstract val unstrippedNativeLibsDirs: ConfigurableFileCollection
   @get:[InputFile PathSensitive(PathSensitivity.NONE) Optional]
@@ -69,6 +71,8 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
 
   @TaskAction
   fun generateSymbolFiles() {
+    validatesUnstrippedNativeLibsDirs()
+
     val generator: NativeSymbolGenerator =
       when (symbolGeneratorType.get() as SymbolGeneratorType) {
         SymbolGeneratorType.BREAKPAD -> BreakpadSymbolGenerator(resolveBreakpadBinary())
@@ -84,49 +88,56 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
     }
   }
 
-  /**
-   * Sets and validates the unstripped native libs directories.
-   *
-   * Validate the [unstrippedNativeLibsOverride] does not contain a directory manually set to the
-   * output of the [SingleArtifact.MERGED_NATIVE_LIBS] without include the dependency.
-   *
-   * This happens because for a while the plugin did not properly handle product flavors, so
-   * customers would manually configure this to the output of the merged native libs task in a way
-   * that didn't include the task dependencies.
-   */
-  private fun validateUnstrippedNativeLibsDirs(
+  /** Sets a provider for the unstripped native libs directories. */
+  private fun setUnstrippedNativeLibsDirs(
     project: Project,
     variant: Variant,
     unstrippedNativeLibsOverride: ConfigurableFileCollection,
   ) {
-    if (unstrippedNativeLibsOverride.isEmpty) {
-      unstrippedNativeLibsDirs.setFrom(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
-      return
-    }
-
-    val mergedNativeLibsOutput = "build/intermediates/merged_native_libs/${variant.name}/out"
-    if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
-      val mergedNativeLibsTask = "merge${variant.name.capitalized()}NativeLibs"
-
-      val dependencies =
-        unstrippedNativeLibsOverride.buildDependencies
-          .getDependencies(null)
-          .mapNotNull { it?.name }
-          .toSet()
-
-      if (!dependencies.contains(mergedNativeLibsTask)) {
-        try {
-          dependsOn(project.tasks.getByPath(mergedNativeLibsTask))
-        } catch (ex: UnknownTaskException) {
-          logger.warn(
-            "The unstrippedNativeLibsDir manually overridden to output of $mergedNativeLibsTask " +
-              "task. This is not necessary, it is safe to remove $mergedNativeLibsOutput from " +
-              "the unstrippedNativeLibsDir override."
-          )
+    // Setting provider as a lazy mechanism which will be invoked at execution phase.
+    this.unstrippedNativeLibsDirs.setFrom(
+      project.provider {
+        if (unstrippedNativeLibsOverride.isEmpty) {
+          variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS)
+        } else {
+          unstrippedNativeLibsOverride
         }
       }
+    )
+  }
+
+  /**
+   * Validate the [unstrippedNativeLibsOverride] does not contain a directory manually set to the
+   * output of the [SingleArtifact.MERGED_NATIVE_LIBS] without include the dependency.
+   */
+  private fun validatesUnstrippedNativeLibsDirs() {
+    val currentVariant = variantName.get()
+    val mergedNativeLibsOutput = "build/intermediates/merged_native_libs/$currentVariant/out"
+
+    // Check to validate if merged dest is needed.
+    val reliesOnMergedLibs =
+      unstrippedNativeLibsDirs.any { it.path.contains(mergedNativeLibsOutput) }
+
+    // If mergedNativeLibsOutput is empty means that Gradle did not execute the merging task due to
+    // the lack of dependsOn.
+    val isMergedDestValid =
+      unstrippedNativeLibsDirs.files.any { file ->
+        file.exists() && (file.isFile || (file.isDirectory && file.list()?.isNotEmpty() == true))
+      }
+
+    if (reliesOnMergedLibs && !isMergedDestValid) {
+      throw GradleException(
+        """
+                Crashlytics Error: Missing Task Dependency.
+                The files in 'unstrippedNativeLibsDir' come from a Gradle generated directory ($mergedNativeLibsOutput),
+                but this task does not depend on the producer task.
+                
+                Fix this by adding an explicit 'dependsOn' to the merge task in your build script, 
+                or let Crashlytics handle it automatically by not overriding this property.
+                """
+          .trimIndent()
+      )
     }
-    unstrippedNativeLibsDirs.setFrom(unstrippedNativeLibsOverride)
   }
 
   /** Sets and validates the symbol generator type. */
@@ -180,8 +191,9 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
         }
         this.breakpadExtractionDir.set(buildDir(project, variant, "dump_syms"))
         this.symbolFileOutputDir.set(buildDir(project, variant, "nativeSymbols"))
+        this.variantName.set(variant.name)
 
-        validateUnstrippedNativeLibsDirs(
+        setUnstrippedNativeLibsDirs(
           project,
           variant,
           crashlyticsExtension.unstrippedNativeLibsOverride,
