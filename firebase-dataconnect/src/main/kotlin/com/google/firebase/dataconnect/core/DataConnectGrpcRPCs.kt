@@ -22,6 +22,7 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
@@ -30,6 +31,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
+import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
@@ -42,6 +44,8 @@ import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
+import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc
+import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt
 import google.firebase.dataconnect.proto.EmulatorInfo
 import google.firebase.dataconnect.proto.EmulatorIssuesResponse
 import google.firebase.dataconnect.proto.EmulatorServiceGrpc
@@ -53,6 +57,8 @@ import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
+import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -66,10 +72,15 @@ import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -78,6 +89,8 @@ internal class DataConnectGrpcRPCs(
   context: Context,
   host: String,
   sslEnabled: Boolean,
+  @get:VisibleForTesting val connectorResourceName: String,
+  nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val cacheSettings: CacheSettings?,
@@ -153,28 +166,50 @@ internal class DataConnectGrpcRPCs(
       ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
 
+  private val lazyStreamingGrpcStub =
+    SuspendingLazy(mutex) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
+      ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub(lazyGrpcChannel.getLocked())
+    }
+
   private val lazyEmulatorGrpcStub =
     SuspendingLazy(mutex) {
       check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
       EmulatorServiceGrpcKt.EmulatorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
 
+  private val connectCoroutineScope =
+    CoroutineUtils.createSupervisorCoroutineScope(
+      nonBlockingCoroutineDispatcher,
+      logger,
+      coroutineName = "connectCoroutineScope@${logger.nameWithId}"
+    )
+
   suspend fun executeMutation(
     requestId: String,
-    request: ExecuteMutationRequest,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
-    val kotlinMethodName = "executeMutation(${request.operationName})"
+    val kotlinMethodName = "executeMutation($operationName)"
+
+    val request =
+      ExecuteMutationRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteMutationRequest",
       authUid = authToken?.authUid,
     )
@@ -185,7 +220,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
+        response = { it.toStructProto() },
         responseTypeName = "ExecuteMutationResponse",
       )
     }
@@ -228,21 +263,30 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun executeQuery(
     requestId: String,
-    request: ExecuteQueryRequest,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteQueryResult {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
-    val kotlinMethodName = "executeQuery(${request.operationName})"
+    val kotlinMethodName = "executeQuery($operationName)"
+
+    val request =
+      ExecuteQueryRequest.newBuilder().let {
+        it.setName(connectorResourceName)
+        it.setOperationName(operationName)
+        it.setVariables(variables)
+        it.build()
+      }
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = { request.toStructProto() },
       requestTypeName = "ExecuteQueryRequest",
       authUid = authToken?.authUid,
     )
@@ -267,7 +311,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = response.toStructProto(),
+        response = { response.toStructProto() },
         responseTypeName = "ExecuteQueryResponse",
       )
 
@@ -342,6 +386,109 @@ internal class DataConnectGrpcRPCs(
     return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
+  @ExperimentalRealtimeQueries
+  suspend fun connect(
+    streamId: String,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+  ): DataConnectBidiConnectStream {
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
+    val kotlinMethodName = "connect()"
+
+    val initRequest: StreamRequest =
+      StreamRequest.newBuilder().run {
+        setRequestId("init")
+        setName(connectorResourceName)
+        build()
+      }
+
+    val outgoingRequests = Channel<StreamRequest>(capacity = UNLIMITED)
+
+    outgoingRequests.trySend(initRequest).let {
+      check(it.isSuccess) {
+        "internal error b2bs3s6n3c: outgoingRequests.trySend(initRequest) should have succeeded " +
+          "since the outgoingRequests Channel has capacity=UNLIMITED, but it did not: $it"
+      }
+    }
+
+    val outgoingRequestsFlow: Flow<StreamRequest> =
+      outgoingRequests.consumeAsFlow().onEach {
+        if (it === initRequest) {
+          logger.logGrpcSending(
+            requestId = streamId,
+            kotlinMethodName = kotlinMethodName,
+            grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
+            metadata = metadata,
+            request = { initRequest.toStructProto(authUid = authToken?.authUid) },
+            requestTypeName = "StreamRequest",
+            authUid = authToken?.authUid,
+          )
+        } else {
+          logger.logGrpcSending(
+            streamId = streamId,
+            requestId = it.requestId,
+            kotlinMethodName = kotlinMethodName,
+            request = { it.toStructProto(authUid = authToken?.authUid) },
+            requestTypeName = "StreamRequest",
+          )
+        }
+      }
+
+    val result = lazyStreamingGrpcStub.get().runCatching { connect(outgoingRequestsFlow, metadata) }
+
+    result.onFailure {
+      outgoingRequests.close(it)
+      logger.logGrpcFailed(
+        requestId = streamId,
+        kotlinMethodName = kotlinMethodName,
+        it,
+      )
+    }
+
+    val incomingResponses: Flow<StreamResponse> =
+      result
+        .getOrThrow()
+        .onEach {
+          logger.logGrpcReceived(
+            streamId = streamId,
+            requestId = it.requestId,
+            kotlinMethodName = kotlinMethodName,
+            response = { it.toStructProto() },
+            responseTypeName = "StreamResponse",
+          )
+        }
+        .onCompletion { throwable ->
+          outgoingRequests.close(
+            when (throwable) {
+              null -> CancellationException("stream $streamId completed")
+              is CancellationException -> throwable
+              else -> CancellationException("stream $streamId failed", throwable)
+            }
+          )
+
+          if (throwable === null) {
+            logger.logGrpcCompleted(
+              requestId = streamId,
+              kotlinMethodName = kotlinMethodName,
+            )
+          } else {
+            logger.logGrpcFailed(
+              requestId = streamId,
+              kotlinMethodName = kotlinMethodName,
+              throwable = throwable,
+            )
+          }
+        }
+
+    return DataConnectBidiConnectStream(
+      outgoingRequests,
+      incomingResponses,
+      connectCoroutineScope,
+      Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]"),
+    )
+  }
+
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
     val request = GetEmulatorInfoRequest.getDefaultInstance()
     val kotlinMethodName = "getEmulatorInfo()"
@@ -358,7 +505,7 @@ internal class DataConnectGrpcRPCs(
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
+        response = { it.toStructProto() },
         responseTypeName = "EmulatorInfo",
       )
     }
@@ -394,7 +541,7 @@ internal class DataConnectGrpcRPCs(
         logger.logGrpcReceived(
           requestId = requestId,
           kotlinMethodName = kotlinMethodName,
-          response = response.toStructProto(),
+          response = { response.toStructProto() },
           responseTypeName = "EmulatorIssuesResponse"
         )
       }
@@ -414,6 +561,7 @@ internal class DataConnectGrpcRPCs(
   suspend fun close() {
     logger.debug { "close()" }
     mutex.withLock { closed = true }
+    connectCoroutineScope.cancel("DataConnectGrpcRPCs.close() called [xn8dqn8dzm]")
 
     val grpcChannel = lazyGrpcChannel.initializedValueOrNull
     val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
@@ -444,6 +592,8 @@ internal class DataConnectGrpcRPCs(
     if (exceptions.isNotEmpty()) {
       throw exceptions.first().apply { exceptions.drop(1).forEach { addSuppressed(it) } }
     }
+
+    connectCoroutineScope.coroutineContext.job.join()
   }
 
   companion object {
@@ -489,19 +639,20 @@ internal class DataConnectGrpcRPCs(
       }
     }
 
-    private fun Logger.logGrpcSending(
+    private inline fun Logger.logGrpcSending(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
-      request: Struct,
+      request: () -> Struct,
       requestTypeName: String,
       authUid: String?,
     ) = debug {
+      val requestStruct = request()
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
         put("Metadata", metadata.toStructProto(authUid))
-        put(requestTypeName, request)
+        put(requestTypeName, requestStruct)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
       val keySortSelector: (String) -> String = {
@@ -513,6 +664,28 @@ internal class DataConnectGrpcRPCs(
         }
       }
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
+    }
+
+    private inline fun Logger.logGrpcSending(
+      streamId: String,
+      requestId: String,
+      kotlinMethodName: String,
+      request: () -> Struct,
+      requestTypeName: String,
+    ) = debug {
+      "$kotlinMethodName [sid=$streamId, rid=$requestId] sending $requestTypeName: " +
+        request().toCompactString()
+    }
+
+    private inline fun Logger.logGrpcReceived(
+      streamId: String,
+      requestId: String,
+      kotlinMethodName: String,
+      response: () -> Struct,
+      responseTypeName: String,
+    ) = debug {
+      "$kotlinMethodName [sid=$streamId, rid=$requestId] received $responseTypeName: " +
+        response().toCompactString()
     }
 
     private fun Logger.logGrpcReturningFromCache(
@@ -545,13 +718,14 @@ internal class DataConnectGrpcRPCs(
       kotlinMethodName: String,
     ) = debug { "$kotlinMethodName [rid=$requestId] completed" }
 
-    private fun Logger.logGrpcReceived(
+    private inline fun Logger.logGrpcReceived(
       requestId: String,
       kotlinMethodName: String,
-      response: Struct,
+      response: () -> Struct,
       responseTypeName: String
     ) = debug {
-      val struct = buildStructProto { put(responseTypeName, response) }
+      val responseStruct = response()
+      val struct = buildStructProto { put(responseTypeName, responseStruct) }
       "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
     }
 
