@@ -40,6 +40,7 @@ import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.copy
 import com.google.protobuf.Empty
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub
@@ -867,5 +868,3 @@ private fun validSubscribeStreamRequestArb(
   streamRequest.setSubscribe(validExecuteQueryRequest.bind())
   streamRequest.build()
 }
-
-private fun Metadata.copy(): Metadata = Metadata().also { it.merge(this) }
