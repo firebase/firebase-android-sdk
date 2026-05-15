@@ -36,32 +36,127 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * A utility object that facilitates the creation of a cold [Flow] representing a bidirectional gRPC
+ * streaming call.
+ *
+ * This utility coordinates the sending of requests and receiving of responses using coroutines and
+ * channels, and supports a [Listener] for fine-grained monitoring of the stream's lifecycle events.
+ *
+ * ### Key Behavioral Characteristics for Consumers:
+ * * **Cold Flow**: The returned [Flow] is cold. No network connection is established, and no gRPC
+ * call is initiated, until the flow collection actually starts.
+ * * **Multiple Collections**: The flow can be collected multiple times, either sequentially or
+ * concurrently. Each collection acts as a completely independent gRPC call with its own connection
+ * and unique connection ID.
+ * * **Initialization & Request Channel**: As the very first action upon collection, the flow emits
+ * an [Event.Started] containing a [SendChannel] (the `outgoingRequests` channel). Consumers must
+ * use this channel to send request messages to the server.
+ * * **Half-Closure**: Closing the `outgoingRequests` channel will half-close the gRPC call from the
+ * client side, signaling to the server that no more requests will be sent. The client will continue
+ * to receive responses from the server until the server closes its side of the stream.
+ * * **Backpressure**: The flow employs gRPC backpressure mechanisms by requesting only one response
+ * at a time from the server. If the collector is slow to process emissions, the server will be
+ * throttled, preventing memory bloat from unbuffered incoming messages.
+ * * **Cancellation & Teardown**:
+ * * Cancelling the coroutine scope in which the flow is being collected will immediately cancel the
+ * underlying gRPC call and gracefully shut down all internal worker coroutines.
+ * * If the server closes the call exceptionally, the flow will throw the corresponding exception to
+ * the collector. If closed normally, the flow completes normally.
+ */
 internal object GrpcBidiFlow {
 
+  /** Represents events emitted by the [Flow] created by [GrpcBidiFlow.create]. */
   sealed interface Event<in RequestT, out ResponseT> {
+    /**
+     * Emitted once when the gRPC flow collection starts.
+     *
+     * It provides a [SendChannel] that the caller can use to send requests to the server. Closing
+     * this channel will half-close the gRPC stream from the client side.
+     *
+     * @property outgoingRequests The channel to send requests to the server.
+     */
     class Started<in RequestT>(
       val outgoingRequests: SendChannel<RequestT>,
     ) : Event<RequestT, Nothing> {
       override fun toString() = "GrpcBidiFlow.Event.Started"
     }
 
-    class Message<out ResponseT>(val message: ResponseT) : Event<Any?, ResponseT> {
+    /**
+     * Emitted when a response message is received from the server.
+     *
+     * @property message The response message received from the server.
+     */
+    @JvmInline
+    value class Message<out ResponseT>(val message: ResponseT) : Event<Any?, ResponseT> {
       override fun toString() = "GrpcBidiFlow.Event.Message(message=$message)"
     }
   }
 
-  interface Listener {
-
+  /**
+   * A listener interface for monitoring the low-level lifecycle events of a bidirectional gRPC
+   * stream.
+   *
+   * **Threading and Blocking Behavior:** All callbacks defined in this interface are invoked
+   * synchronously from the critical path of the stream's execution (either from the gRPC thread
+   * pool or from the coroutine dispatchers). Implementations should return as quickly as possible
+   * and avoid performing any blocking or long-running operations. Blocking inside these callbacks
+   * will directly block progress of the stream (either stalling message sending or receiving).
+   *
+   * **Thread Safety:** The callbacks may be invoked on different threads, and even concurrently,
+   * and the exact threads used for each callback is undefined. Implementations must be thread-safe.
+   *
+   * **Exception Handling:** Implementations must strive to never throw exceptions from these
+   * callbacks. Any thrown will propagate into the stream's internal coroutine scope or gRPC
+   * listener, which will negatively impact the gRPC connection in undefined ways (typically
+   * resulting in abnormal termination of the call and/or coroutine cancellation).
+   */
+  interface Listener<RequestT, ResponseT> {
     fun onCollectStarted(connectionId: String)
+    fun sendingMessage(connectionId: String, message: RequestT)
+    fun sendingMessagesComplete(connectionId: String)
+    fun sendingMessagesFailed(connectionId: String, exception: Throwable)
+    fun receivedMessage(connectionId: String, message: ResponseT)
+    fun receivingMessagesComplete(connectionId: String)
+    fun receivingMessagesFailed(connectionId: String, exception: Throwable)
+
+    fun onMessage(connectionId: String, message: ResponseT)
+    fun onClose(
+      connectionId: String,
+      status: Status,
+      trailers: GrpcMetadata,
+      calculatedCause: Throwable?
+    )
+    fun onReady(connectionId: String)
   }
 
+  /**
+   * Creates a cold [Flow] that executes a bidirectional streaming gRPC method.
+   *
+   * The returned flow, when collected, will:
+   * 1. Start a new gRPC [ClientCall] for the specified [method].
+   * 2. Emit an [Event.Started] containing a [SendChannel] for sending requests.
+   * 3. Concurrently read responses from the server and emit them as [Event.Message].
+   * 4. Coordinate sending and receiving loops, ensuring proper backpressure and cancellation.
+   *
+   * Collecting the flow may fail with exceptions if the underlying call fails or is cancelled.
+   *
+   * @param grpcChannel The gRPC [GrpcChannel] to use for the call.
+   * @param method The descriptor of the bidirectional streaming method to call.
+   * @param callOptions The options to customize the call.
+   * @param headers The metadata headers to send with the initial request.
+   * @param idStringGenerator Generator used to create unique connection identifiers.
+   * @param listener Optional listener to receive lifecycle callbacks.
+   * @return A cold flow of [Event]s.
+   * @throws IllegalArgumentException if [method] is not a bidirectional streaming RPC.
+   */
   fun <RequestT, ResponseT> create(
     grpcChannel: GrpcChannel,
     method: MethodDescriptor<RequestT, ResponseT>,
     callOptions: CallOptions,
     headers: GrpcMetadata,
     idStringGenerator: IdStringGenerator,
-    listener: Listener? = null,
+    listener: Listener<RequestT, ResponseT>? = null,
   ): Flow<Event<RequestT, ResponseT>> {
     require(method.type == MethodDescriptor.MethodType.BIDI_STREAMING) {
       "method.type is ${method.type} but BIDI_STREAMING is required"
@@ -87,6 +182,7 @@ internal object GrpcBidiFlow {
       clientCall.start(
         object : ClientCall.Listener<ResponseT>() {
           override fun onMessage(message: ResponseT) {
+            listener?.onMessage(connectionId, message)
             responses.trySend(message).onFailure { e ->
               throw e ?: AssertionError("onMessage should never be called until responses is ready")
             }
@@ -99,10 +195,12 @@ internal object GrpcBidiFlow {
                 status.cause is CancellationException -> status.cause
                 else -> status.asException(trailers)
               }
-            responses.close(cause = cause)
+            listener?.onClose(connectionId, status, trailers, cause)
+            responses.close(cause)
           }
 
           override fun onReady() {
+            listener?.onReady(connectionId)
             readiness.onReady()
           }
         },
@@ -110,40 +208,55 @@ internal object GrpcBidiFlow {
       )
 
       coroutineScope {
-        val sender =
+        val sendJob =
           launch(CoroutineName("SendMessage worker for ${method.fullMethodName}")) {
-            try {
+            val sendingResult = runCatching {
               readiness.suspendUntilReady()
               for (request in requestChannel) {
+                listener?.sendingMessage(connectionId, request)
                 clientCall.sendMessage(request)
                 readiness.suspendUntilReady()
               }
+
+              listener?.sendingMessagesComplete(connectionId)
+
               clientCall.halfClose()
-            } catch (ex: Exception) {
-              clientCall.cancel("Collection of requests completed exceptionally", ex)
-              throw ex // propagate failure upward
             }
+
+            sendingResult.onFailure { exception ->
+              listener?.sendingMessagesFailed(connectionId, exception)
+              clientCall.cancel("Collection of requests completed exceptionally", exception)
+            }
+
+            sendingResult.getOrThrow()
           }
 
-        try {
+        val receiveResult = runCatching {
           clientCall.request(1)
           for (response in responses) {
+            listener?.receivedMessage(connectionId, response)
             emit(Event.Message(response))
             clientCall.request(1)
           }
-        } catch (e: Exception) {
-          withContext(NonCancellable) {
-            sender.cancel("Collection of responses completed exceptionally", e)
-            sender.join()
-            // we want sender to be done cancelling before we cancel clientCall, or it might try
-            // sending to a dead call, which results in ugly exception messages
-            clientCall.cancel("Collection of responses completed exceptionally", e)
-          }
-          throw e
+          listener?.receivingMessagesComplete(connectionId)
         }
 
-        if (!sender.isCompleted) {
-          sender.cancel("Collection of responses completed before collection of requests")
+        receiveResult.onFailure { exception ->
+          listener?.receivingMessagesFailed(connectionId, exception)
+
+          withContext(NonCancellable) {
+            sendJob.cancel("Collection of responses completed exceptionally", exception)
+            sendJob.join()
+            // we want sender to be done cancelling before we cancel clientCall, or it might try
+            // sending to a dead call, which results in ugly exception messages
+            clientCall.cancel("Collection of responses completed exceptionally", exception)
+          }
+        }
+
+        receiveResult.getOrThrow()
+
+        if (!sendJob.isCompleted) {
+          sendJob.cancel("Collection of responses completed before collection of requests")
         }
       }
     }
