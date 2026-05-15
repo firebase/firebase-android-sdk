@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig`
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
 
 - [feature] Added support for `ImageConfig` and `finishMessage`. (#8020)
 
