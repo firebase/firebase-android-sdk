@@ -30,8 +30,8 @@ class AIModels {
     lateinit var vertexAIFlashLiteModel: GenerativeModel
     lateinit var googleAIFlashModel: GenerativeModel
     lateinit var googleAIFlashLiteModel: GenerativeModel
-    lateinit var vertexAITemplateModel: TemplateModel
-    lateinit var googleAITemplateModel: TemplateModel
+    lateinit var vertexAITemplateModel: TemplateGenerativeModel
+    lateinit var googleAITemplateModel: TemplateGenerativeModel
 
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
@@ -44,14 +44,6 @@ class AIModels {
         googleAIFlashModel,
         googleAIFlashLiteModel
       )
-    }
-
-    /** Returns a list of template models to test */
-    fun getTemplateModels(): List<TemplateModel> {
-      if (app == null) {
-        setup()
-      }
-      return listOf(vertexAITemplateModel, googleAITemplateModel)
     }
 
     fun app(): FirebaseApp {
@@ -77,7 +69,7 @@ class AIModels {
       googleAIFlashModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
           .generativeModel(
-            modelName = "gemini-3-flash-preview",
+            modelName = "gemini-3.1-flash-lite",
           )
       googleAIFlashLiteModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
@@ -85,15 +77,9 @@ class AIModels {
             modelName = "gemini-2.5-flash-lite",
           )
       vertexAITemplateModel =
-        TemplateModel(
-          "vertex-ai",
-          FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
-        )
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
       googleAITemplateModel =
-        TemplateModel(
-          "google-ai",
-          FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
-        )
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
     }
   }
 }

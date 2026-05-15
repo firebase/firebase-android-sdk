@@ -16,13 +16,13 @@
 
 package com.google.firebase.ai
 
-import com.google.firebase.ai.AIModels.Companion.getTemplateModels
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.content
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
@@ -59,55 +59,87 @@ class ChatTemplateIntegrationTests {
   private val topic = "Firebase"
   private val inputs = mapOf("customerName" to customerName, "topic" to topic)
 
-  @Test
-  fun testTemplateChat_sendMessage() {
-    for (template in getTemplateModels()) {
-      runBlocking {
-        val chat = template.model.startChat("$templateId-${template.backend}", inputs)
-        val response = chat.sendMessage("which number is higher, one or ten?")
-
-        response.candidates.isNotEmpty() shouldBe true
-        response.text shouldContainIgnoringCase "ten"
-
-        chat.history.size shouldBe 2
-      }
-    }
+  @Before
+  fun setup() {
+    AIModels.setup()
   }
 
   @Test
-  fun testTemplateChat_sendMessageStream() {
-    for (template in getTemplateModels()) {
-      runBlocking {
-        val chat = template.model.startChat("$templateId-${template.backend}", inputs)
-        val responses = chat.sendMessageStream("which number is higher, one or ten?").toList()
-        responses.isNotEmpty() shouldBe true
-        responses.joinToString { it.text ?: "" } shouldContainIgnoringCase "ten"
-        chat.history.size shouldBe 2
-      }
-    }
+  fun testTemplateChat_sendMessage_googleAI(): Unit = runBlocking {
+    val chat = AIModels.googleAITemplateModel.startChat("$templateId-google-ai", inputs)
+    val response = chat.sendMessage("which number is higher, one or ten?")
+
+    response.candidates.isNotEmpty() shouldBe true
+    response.text shouldContainIgnoringCase "ten"
+
+    chat.history.size shouldBe 2
+  }
+  @Test
+  fun testTemplateChat_sendMessage_vertexAI(): Unit = runBlocking {
+    val chat = AIModels.vertexAITemplateModel.startChat("$templateId-vertex-ai", inputs)
+    val response = chat.sendMessage("which number is higher, one or ten?")
+
+    response.candidates.isNotEmpty() shouldBe true
+    response.text shouldContainIgnoringCase "ten"
+
+    chat.history.size shouldBe 2
   }
 
   @Test
-  fun testTemplateChat_withHistory() {
-    for (template in getTemplateModels()) {
-      runBlocking {
-        val history =
-          listOf(
-            content("user") { text("which number is higher, one or ten?") },
-            content("model") { text("Ten.") }
-          )
-        val chat = template.model.startChat("$templateId-${template.backend}", inputs, history)
-        chat.history.size shouldBe 2
-        val response =
-          chat.sendMessage(
-            "Please concatenate them both, first the smaller one, then the bigger one. Do not use punctuation or spaces."
-          )
+  fun testTemplateChat_sendMessageStream_googleAI(): Unit = runBlocking {
+    val chat = AIModels.googleAITemplateModel.startChat("$templateId-google-ai", inputs)
+    val responses = chat.sendMessageStream("which number is higher, one or ten?").toList()
+    responses.isNotEmpty() shouldBe true
+    responses.joinToString { it.text ?: "" } shouldContainIgnoringCase "ten"
+    chat.history.size shouldBe 2
+  }
 
-        response.candidates.isNotEmpty() shouldBe true
-        response.text?.replace(" ", "") shouldContainIgnoringCase "oneten"
+  @Test
+  fun testTemplateChat_sendMessageStream_vertexAI(): Unit = runBlocking {
+    val chat = AIModels.vertexAITemplateModel.startChat("$templateId-vertex-ai", inputs)
+    val responses = chat.sendMessageStream("which number is higher, one or ten?").toList()
+    responses.isNotEmpty() shouldBe true
+    responses.joinToString { it.text ?: "" } shouldContainIgnoringCase "ten"
+    chat.history.size shouldBe 2
+  }
 
-        chat.history.size shouldBe 4
-      }
-    }
+  @Test
+  fun testTemplateChat_withHistory_googleAI(): Unit = runBlocking {
+    val history =
+      listOf(
+        content("user") { text("which number is higher, one or ten?") },
+        content("model") { text("Ten.") }
+      )
+    val chat = AIModels.googleAITemplateModel.startChat("$templateId-google-ai", inputs, history)
+    chat.history.size shouldBe 2
+    val response =
+      chat.sendMessage(
+        "Please concatenate them both, first the smaller one, then the bigger one. Do not use punctuation or spaces."
+      )
+
+    response.candidates.isNotEmpty() shouldBe true
+    response.text?.replace(" ", "") shouldContainIgnoringCase "oneten"
+
+    chat.history.size shouldBe 4
+  }
+
+  @Test
+  fun testTemplateChat_withHistory_vertexAI(): Unit = runBlocking {
+    val history =
+      listOf(
+        content("user") { text("which number is higher, one or ten?") },
+        content("model") { text("Ten.") }
+      )
+    val chat = AIModels.googleAITemplateModel.startChat("$templateId-google-ai", inputs, history)
+    chat.history.size shouldBe 2
+    val response =
+      chat.sendMessage(
+        "Please concatenate them both, first the smaller one, then the bigger one. Do not use punctuation or spaces."
+      )
+
+    response.candidates.isNotEmpty() shouldBe true
+    response.text?.replace(" ", "") shouldContainIgnoringCase "oneten"
+
+    chat.history.size shouldBe 4
   }
 }
