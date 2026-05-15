@@ -50,6 +50,7 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue as ListValueProto
@@ -88,8 +89,11 @@ import io.kotest.property.checkAll
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -389,14 +393,19 @@ class DataConnectGrpcRPCsUnitTest {
     }
 
   @Test
-  fun `connect() eagerly sends init request`() = runTest {
+  fun `connect() lazily sends init request on subscribe`() = runTest {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
     server.open()
     val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
 
     server.events.test {
-      dataConnectGrpcRPCs.connect()
+      val stream = dataConnectGrpcRPCs.connect()
+
+      expectNoEvents()
+
+      val subscriptionFlow = stream.subscribe("req1", "opName", StructProto.getDefaultInstance())
+      backgroundScope.launch { subscriptionFlow.collect() }
 
       val streamRequest =
         awaitUntilItemIsInstance<
@@ -411,6 +420,7 @@ class DataConnectGrpcRPCsUnitTest {
           streamRequest.requestKindCase shouldBe StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET
         }
       }
+      cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -420,6 +430,7 @@ class DataConnectGrpcRPCsUnitTest {
       callerSdkType = Arb.enum<CallerSdkType>().next(rs),
       authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
       appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
+      idStringGenerator = IdStringGenerator(Random.Default),
     )
 
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")

@@ -175,6 +175,7 @@ internal class RealtimeQueryManager(
                   streamId = idStringGenerator.next("con"),
                   requestId = requestId,
                   callerSdkType = callerSdkType,
+                  idStringGenerator = idStringGenerator,
                 )
               }
             )

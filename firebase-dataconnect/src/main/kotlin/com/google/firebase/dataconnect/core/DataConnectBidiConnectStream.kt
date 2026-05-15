@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
+import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Empty
@@ -30,7 +31,10 @@ import google.firebase.dataconnect.proto.ResumeRequest
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -47,7 +51,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
@@ -55,6 +61,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -73,11 +80,12 @@ import kotlinx.coroutines.sync.withLock
  */
 @ExperimentalRealtimeQueries
 internal class DataConnectBidiConnectStream(
-  outgoingRequests: SendChannel<StreamRequestProto>,
-  incomingResponses: Flow<StreamResponseProto>,
+  flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto>>,
   coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
+
+  private val outgoingRequestsDeferred = CompletableDeferred<SendChannel<StreamRequestProto>>()
 
   private val state =
     MutableStateFlow<State>(
@@ -98,21 +106,29 @@ internal class DataConnectBidiConnectStream(
         }
 
         val incomingResponsesSharedFlow =
-          incomingResponses
+          flow
+            .onEach { event ->
+              if (event is GrpcBidiFlow.Event.Started) {
+                outgoingRequestsDeferred.complete(event.outgoingRequests)
+              }
+            }
+            .mapNotNull { event -> (event as? GrpcBidiFlow.Event.Message)?.message }
             .map<_, IncomingResponse>(IncomingResponse::Message)
             .onCompletion { throwable ->
               val completed = IncomingResponse.Completed(throwable)
               setCompletedResponse(completed)
-              if (throwable === null) {
+              if (throwable !== null) {
+                withContext(NonCancellable) { emit(completed) }
+              } else {
                 emit(completed)
               }
             }
             .catch { emit(IncomingResponse.Completed(throwable = it)) }
             .buffer(capacity = Channel.UNLIMITED)
-            .shareIn(collectCoroutineScope, started = SharingStarted.Eagerly, replay = 0)
+            .shareIn(collectCoroutineScope, started = SharingStarted.WhileSubscribed(), replay = 0)
 
         State.Open(
-          outgoingRequests = outgoingRequests,
+          outgoingRequests = outgoingRequestsDeferred,
           incomingResponses = incomingResponsesSharedFlow,
           completedResponse = completedResponse.asStateFlow(),
           coroutineScope = collectCoroutineScope
@@ -180,8 +196,7 @@ internal class DataConnectBidiConnectStream(
       SubscriptionStateManager(
         requestId = requestId,
         operationName = operationName,
-        variables,
-        streams.outgoingRequests
+        variables = variables,
       )
 
     return flow {
@@ -189,12 +204,16 @@ internal class DataConnectBidiConnectStream(
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
-        streams.incomingResponses
-          .onSubscription { emit(IncomingResponse.Subscribed) }
+        merge(
+            streams.incomingResponses.onSubscription { emit(IncomingResponse.Subscribed) },
+            streams.completedResponse.mapNotNull { it.ref }
+          )
           .transformWhile { incomingResponse ->
             when (incomingResponse) {
-              is IncomingResponse.Subscribed ->
-                subscriptionMutex.withLock { subscription.subscribe() }
+              is IncomingResponse.Subscribed -> {
+                val outgoingRequests = streams.outgoingRequests.await()
+                subscriptionMutex.withLock { subscription.subscribe(outgoingRequests) }
+              }
               is IncomingResponse.Message -> {
                 if (incomingResponse.streamResponse.requestId != requestId) {
                   true
@@ -212,11 +231,12 @@ internal class DataConnectBidiConnectStream(
             }
           }
           .onCompletion { throwable ->
-            subscriptionMutex.withLock { subscription.unsubscribe() }
+            val outgoingRequests = streams.outgoingRequests.await()
+            subscriptionMutex.withLock { subscription.unsubscribe(outgoingRequests) }
 
             if (throwable === null) {
               val completed = streams.completedResponse.mapNotNull { it.ref }.first()
-              if (completed.throwable !== null) {
+              if (completed.throwable !== null && completed.throwable !is CancellationException) {
                 throw completed.throwable
               }
             }
@@ -260,7 +280,7 @@ internal class DataConnectBidiConnectStream(
      * this scope must be canceled by [DataConnectBidiConnectStream.close].
      */
     class Open(
-      val outgoingRequests: SendChannel<StreamRequestProto>,
+      val outgoingRequests: Deferred<SendChannel<StreamRequestProto>>,
       val incomingResponses: SharedFlow<IncomingResponse>,
       val completedResponse: StateFlow<NullableReference<IncomingResponse.Completed>>,
       val coroutineScope: CoroutineScope,
@@ -336,7 +356,6 @@ internal class DataConnectBidiConnectStream(
     requestId: String,
     operationName: String,
     variables: Struct,
-    private val outgoingRequests: SendChannel<StreamRequestProto>,
   ) {
 
     private var subscriberCount = 0
@@ -344,7 +363,7 @@ internal class DataConnectBidiConnectStream(
     inner class Subscriber {
       private var subscribed = false
 
-      fun subscribe(): Boolean {
+      fun subscribe(outgoingRequests: SendChannel<StreamRequestProto>): Boolean {
         check(!subscribed) {
           "internal error hkjgvhnk27: subscribe() called when already subscribed " +
             "(is concurrent access to the SubscriptionStateManager properly serialized " +
@@ -376,7 +395,7 @@ internal class DataConnectBidiConnectStream(
         }
       }
 
-      fun unsubscribe() {
+      fun unsubscribe(outgoingRequests: SendChannel<StreamRequestProto>) {
         if (!subscribed) {
           return
         }

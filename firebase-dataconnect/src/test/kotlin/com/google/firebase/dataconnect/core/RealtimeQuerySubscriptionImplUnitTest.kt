@@ -36,7 +36,6 @@ import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamin
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.TurbinePredicateResult
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.awaitUntilItem
@@ -77,7 +76,6 @@ import io.mockk.spyk
 import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -322,35 +320,12 @@ class RealtimeQuerySubscriptionImplUnitTest {
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
 
-    val latch = SuspendingCountDownLatch(2)
-    launch {
-      latch.countDown().await()
-      println("zzyzx dataConnect.close() starting")
-      dataConnect
-        .runCatching { close() }
-        .fold(
-          onSuccess = { println("zzyzx dataConnect.close() completed normally") },
-          onFailure = { println("zzyzx dataConnect.close() completed exceptionally: $it") },
-        )
-    }
-
-    subscription.flow
-      .onStart {
-        println("zzyzx onStart")
-        latch.countDown()
-      }
-      .collect()
-    println("zzyzx collect completed")
-
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
       val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
       serverCollector.awaitUntilSubscribeStreamRequest()
 
       dataConnect.close()
-      while (true) {
-        clientCollector.awaitEvent().let { println("zzyzx awaitEvent() returned $it") }
-      }
       clientCollector.awaitComplete()
 
       serverCollector.cancelAndIgnoreRemainingEvents()

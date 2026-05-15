@@ -32,7 +32,10 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils
+import com.google.firebase.dataconnect.util.GrpcBidiFlow
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.LoggingGrpcBidiFlowListener
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
@@ -59,6 +62,7 @@ import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectPr
 import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
+import io.grpc.CallOptions
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -73,10 +77,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
@@ -392,98 +393,39 @@ internal class DataConnectGrpcRPCs(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "connect()"
 
-    val initRequest: StreamRequest =
-      StreamRequest.newBuilder().run {
-        setRequestId("init")
-        setName(connectorResourceName)
-        build()
-      }
-
-    val outgoingRequests = Channel<StreamRequest>(capacity = UNLIMITED)
-
-    outgoingRequests.trySend(initRequest).let {
-      check(it.isSuccess) {
-        "internal error b2bs3s6n3c: outgoingRequests.trySend(initRequest) should have succeeded " +
-          "since the outgoingRequests Channel has capacity=UNLIMITED, but it did not: $it"
-      }
-    }
-
-    val outgoingRequestsFlow: Flow<StreamRequest> =
-      outgoingRequests.consumeAsFlow().onEach {
-        if (it === initRequest) {
-          logger.logGrpcSending(
-            requestId = streamId,
-            kotlinMethodName = kotlinMethodName,
-            grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
-            metadata = metadata,
-            request = { initRequest.toStructProto(authUid = authToken?.authUid) },
-            requestTypeName = "StreamRequest",
-            authUid = authToken?.authUid,
-          )
-        } else {
-          logger.logGrpcSending(
-            streamId = streamId,
-            requestId = it.requestId,
-            kotlinMethodName = kotlinMethodName,
-            request = { it.toStructProto(authUid = authToken?.authUid) },
-            requestTypeName = "StreamRequest",
-          )
-        }
-      }
-
-    val result = lazyStreamingGrpcStub.get().runCatching { connect(outgoingRequestsFlow, metadata) }
-
-    result.onFailure {
-      outgoingRequests.close(it)
-      logger.logGrpcFailed(
-        requestId = streamId,
-        kotlinMethodName = kotlinMethodName,
-        it,
+    val loggingListener =
+      LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
+        Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]")
       )
-    }
 
-    val incomingResponses: Flow<StreamResponse> =
-      result
-        .getOrThrow()
-        .onEach {
-          logger.logGrpcReceived(
-            streamId = streamId,
-            requestId = it.requestId,
-            kotlinMethodName = kotlinMethodName,
-            response = { it.toStructProto() },
-            responseTypeName = "StreamResponse",
-          )
-        }
-        .onCompletion { throwable ->
-          outgoingRequests.close(
-            when (throwable) {
-              null -> CancellationException("stream $streamId completed")
-              is CancellationException -> throwable
-              else -> CancellationException("stream $streamId failed", throwable)
-            }
-          )
+    val flow =
+      GrpcBidiFlow.create(
+        grpcChannel = lazyGrpcChannel.get(),
+        method = ConnectorStreamServiceGrpc.getConnectMethod(),
+        callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
+        headers = { metadata },
+        idStringGenerator = idStringGenerator,
+        listener = loggingListener,
+      )
 
-          if (throwable === null) {
-            logger.logGrpcCompleted(
-              requestId = streamId,
-              kotlinMethodName = kotlinMethodName,
-            )
-          } else {
-            logger.logGrpcFailed(
-              requestId = streamId,
-              kotlinMethodName = kotlinMethodName,
-              throwable = throwable,
-            )
-          }
+    val initRequest =
+      StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
+
+    val flowWithInit =
+      flow.onEach { event ->
+        if (event is GrpcBidiFlow.Event.Started) {
+          val sendResult = event.outgoingRequests.trySend(initRequest)
+          check(sendResult.isSuccess) { "internal error: failed to send init request: $sendResult" }
         }
+      }
 
     return DataConnectBidiConnectStream(
-      outgoingRequests,
-      incomingResponses,
+      flowWithInit,
       connectCoroutineScope,
       Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]"),
     )

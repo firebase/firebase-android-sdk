@@ -189,7 +189,7 @@ internal object GrpcBidiFlow {
       listener?.collectStarted(connectionId)
 
       val requestHeaders = headers(connectionId)
-      val requestChannel = Channel<RequestT>()
+      val requestChannel = Channel<RequestT>(Channel.UNLIMITED)
       emit(Event.Started(connectionId, requestHeaders.copy(), requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
