@@ -40,7 +40,7 @@ internal class RealtimeQuerySubscriptionImpl<Data, Variables>(
 ) : QuerySubscription<Data, Variables> {
 
   override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = flow {
-    val realtimeQueryManager = query.dataConnect.realtimeQueryManagerOrNull ?: return@flow
+    val realtimeQueryManager = query.dataConnect.realtimeQueryManagerUnlessClosed ?: return@flow
 
     val dataResultFlow: Flow<Result<Data>> = realtimeQueryManager.subscribe(query)
 

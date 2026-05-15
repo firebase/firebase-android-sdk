@@ -39,13 +39,11 @@ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.TurbinePredicateResult
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
-import com.google.firebase.dataconnect.testutil.awaitError
 import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
-import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import google.firebase.dataconnect.proto.StreamRequest
@@ -111,15 +109,10 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `collecting flow after DataConnect is closed throws`() = runTest {
+  fun `collecting flow after DataConnect is closed completes immediately`() = runTest {
     val subscription = querySubscription()
     subscription.query.dataConnect.suspendingClose()
-
-    subscription.flow.test {
-      awaitError<IllegalStateException> {
-        it.message shouldContainWithNonAbuttingTextIgnoringCase "closed"
-      }
-    }
+    subscription.flow.test { awaitComplete() }
   }
 
   @Test
@@ -451,7 +444,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
     vararg requestIds: String
   ): IdStringGenerator =
     spyk(IdStringGenerator(Random.Default), name = "IdStringGenerator for ${testName.methodName}") {
-      every { next("rid") }
+      every { next("sub") }
         .returnsMany(requestIds.toList())
         .andThenThrows(
           IllegalStateException(

@@ -78,8 +78,9 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcClient: DataConnectGrpcClient
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
-  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager
-  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManagerOrNull: RealtimeQueryManager?
+
+  @OptIn(ExperimentalRealtimeQueries::class)
+  val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -193,22 +194,10 @@ internal class FirebaseDataConnectImpl(
     get() = initialize().queryManager
 
   @OptIn(ExperimentalRealtimeQueries::class)
-  override val realtimeQueryManager: RealtimeQueryManager
-    get() = initialize().realtimeQueryManager
+  override val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
+    get() = initializeUnlessClosed()?.realtimeQueryManager
 
-  @OptIn(ExperimentalRealtimeQueries::class)
-  override val realtimeQueryManagerOrNull: RealtimeQueryManager?
-    get() = initializedOrNull()?.realtimeQueryManager
-
-  private fun initializedOrNull(): State.Initialized? =
-    when (val currentState = state.value) {
-      is State.New -> null
-      is State.Initialized -> currentState
-      is State.Closing -> null
-      State.Closed -> null
-    }
-
-  private fun initialize(): State.Initialized {
+  private fun initializeUnlessClosed(): State.Initialized? {
     val newState =
       state.updateAndGet { currentState ->
         when (currentState) {
@@ -235,9 +224,13 @@ internal class FirebaseDataConnectImpl(
         )
       is State.Initialized -> newState
       is State.Closing,
-      State.Closed -> throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      State.Closed -> null
     }
   }
+
+  private fun initialize(): State.Initialized =
+    initializeUnlessClosed()
+      ?: throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
   private data class DataConnectBackendInfo(
     val host: String,

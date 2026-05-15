@@ -185,6 +185,7 @@ internal class DataConnectBidiConnectStream(
       )
 
     return flow {
+      val subscriptionMutex = Mutex()
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
@@ -192,7 +193,8 @@ internal class DataConnectBidiConnectStream(
           .onSubscription { emit(IncomingResponse.Subscribed) }
           .transformWhile { incomingResponse ->
             when (incomingResponse) {
-              is IncomingResponse.Subscribed -> subscription.onSubscribed()
+              is IncomingResponse.Subscribed ->
+                subscriptionMutex.withLock { subscription.subscribe() }
               is IncomingResponse.Message -> {
                 if (incomingResponse.streamResponse.requestId != requestId) {
                   true
@@ -210,7 +212,7 @@ internal class DataConnectBidiConnectStream(
             }
           }
           .onCompletion { throwable ->
-            subscription.onCompleted()
+            subscriptionMutex.withLock { subscription.unsubscribe() }
 
             if (throwable === null) {
               val completed = streams.completedResponse.mapNotNull { it.ref }.first()
@@ -321,6 +323,15 @@ internal class DataConnectBidiConnectStream(
     object Subscribed : IncomingResponse
   }
 
+  /**
+   * NOTE: This class is **NOT** thread safe.
+   *
+   * Concurrent access to a [SubscriptionStateManager] and all [Subscriber] instances created from
+   * it **MUST** be serialized with **the same** [Mutex], or else the behavior is undefined. The
+   * likely observable effect of unserialized concurrent access would be things like missing, extra,
+   * or out-of-order "subscribe", "resume" or "cancel" requests, which defeats the entire purpose of
+   * this class.
+   */
   private class SubscriptionStateManager(
     requestId: String,
     operationName: String,
@@ -328,61 +339,63 @@ internal class DataConnectBidiConnectStream(
     private val outgoingRequests: SendChannel<StreamRequestProto>,
   ) {
 
-    val mutex = Mutex()
-    var subscriberCount = 0
+    private var subscriberCount = 0
 
     inner class Subscriber {
       private var subscribed = false
 
-      suspend fun onSubscribed(): Boolean =
-        mutex.withLock {
-          val streamRequest =
-            if (subscriberCount == 0) {
-              subscribeStreamRequest
-            } else {
-              resumeStreamRequest
-            }
-
-          val sendResult = outgoingRequests.trySend(streamRequest)
-
-          when {
-            sendResult.isSuccess -> {
-              subscribed = true
-              subscriberCount++
-              true
-            }
-            sendResult.isClosed -> false
-            else ->
-              error(
-                "internal error xw3zdzycfq: outgoingRequests.trySend(subscribe or resume) " +
-                  "was unable to enqueue the streamRequest; this should never happen because " +
-                  "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
-              )
-          }
+      fun subscribe(): Boolean {
+        check(!subscribed) {
+          "internal error hkjgvhnk27: subscribe() called when already subscribed " +
+            "(is concurrent access to the SubscriptionStateManager properly serialized " +
+            "with a mutex?)"
         }
 
-      suspend fun onCompleted() {
-        mutex.withLock {
-          if (!subscribed) {
-            return
-          }
-
-          subscribed = false
-          subscriberCount--
-          check(subscriberCount >= 0) {
-            "internal error hpn3qsj746: subscriberCount should never be less than zero, " +
-              "but it is: $subscriberCount"
-          }
-
+        val streamRequest =
           if (subscriberCount == 0) {
-            val sendResult = outgoingRequests.trySend(cancelStreamRequest)
-            if (sendResult.isFailure && !sendResult.isClosed) {
-              error(
-                "internal error mxcsq556tv: outgoingRequests.trySend(cancel) " +
-                  "was unable to enqueue the streamRequest; this should never happen because " +
-                  "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
-              )
-            }
+            subscribeStreamRequest
+          } else {
+            resumeStreamRequest
+          }
+
+        val sendResult = outgoingRequests.trySend(streamRequest)
+
+        return when {
+          sendResult.isSuccess -> {
+            subscribed = true
+            subscriberCount++
+            true
+          }
+          sendResult.isClosed -> false
+          else ->
+            error(
+              "internal error xw3zdzycfq: outgoingRequests.trySend(subscribe or resume) " +
+                "was unable to enqueue the streamRequest; this should never happen because " +
+                "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
+            )
+        }
+      }
+
+      fun unsubscribe() {
+        if (!subscribed) {
+          return
+        }
+
+        subscribed = false
+        subscriberCount--
+        check(subscriberCount >= 0) {
+          "internal error hpn3qsj746: subscriberCount should never be less than zero, " +
+            "but it is: $subscriberCount"
+        }
+
+        if (subscriberCount == 0) {
+          val sendResult = outgoingRequests.trySend(cancelStreamRequest)
+          if (sendResult.isFailure && !sendResult.isClosed) {
+            error(
+              "internal error mxcsq556tv: outgoingRequests.trySend(cancel) " +
+                "was unable to enqueue the streamRequest; this should never happen because " +
+                "outgoingRequests is created with capacity=UNLIMITED (sendResult=$sendResult)"
+            )
           }
         }
       }
