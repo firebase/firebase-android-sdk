@@ -29,6 +29,7 @@ import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectPr
 import google.firebase.dataconnect.proto.ResumeRequest
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -172,7 +173,7 @@ internal class DataConnectBidiConnectStream(
       when (val currentState = this.state.value) {
         is State.Open -> currentState
         is State.Closing,
-        State.Closed -> error("DataConnectBidiConnectStream.close() has been called [rptkgcfzyz]")
+        State.Closed -> throw CancellationException("DataConnectBidiConnectStream is closed")
       }
 
     val subscriptionStateManager =
