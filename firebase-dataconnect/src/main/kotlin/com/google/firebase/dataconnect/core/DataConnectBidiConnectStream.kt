@@ -29,22 +29,27 @@ import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -65,6 +70,23 @@ internal class DataConnectBidiConnectStream(
   flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto>>,
   private val coroutineScope: CoroutineScope,
 ) {
+
+  private val scopeCompletedFlow: Flow<Event.Completed> = callbackFlow {
+    val job =
+      coroutineScope.coroutineContext[Job]
+        ?: run {
+          close()
+          return@callbackFlow
+        }
+
+    val disposableHandle =
+      job.invokeOnCompletion { throwable ->
+        trySend(Event.Completed(throwable))
+        close()
+      }
+
+    awaitClose { disposableHandle.dispose() }
+  }
 
   private val sharedFlow: SharedFlow<Event> =
     flow
@@ -110,8 +132,7 @@ internal class DataConnectBidiConnectStream(
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
-        sharedFlow
-          .onSubscription { emit(Event.Subscribed) }
+        merge(sharedFlow.onSubscription { emit(Event.Subscribed) }, scopeCompletedFlow)
           .transformWhile { event ->
             when (event) {
               is Event.Started -> {
