@@ -27,6 +27,8 @@ import io.grpc.Server
 import io.grpc.ServerCall
 import io.grpc.ServerCallHandler
 import io.grpc.ServerInterceptor
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
 import java.util.concurrent.CompletableFuture
@@ -140,7 +142,16 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
 
     /** Represents an error received from the client or the stream. */
     class ErrorReceived(val connectionId: ConnectionId, val exception: Throwable) : Event {
-      override fun toString() = "ErrorReceived($connectionId, ${exception::class.qualifiedName})"
+      override fun toString() = "ErrorReceived($connectionId, ${exceptionToString()})"
+
+      fun exceptionToString(): String =
+        when (exception) {
+          is StatusException ->
+            "StatusException(${exception.message}, code=${exception.status.code})"
+          is StatusRuntimeException ->
+            "StatusRuntimeException(${exception.message}, code=${exception.status.code})"
+          else -> "${exception::class.qualifiedName}(${exception.message})"
+        }
     }
 
     /** Represents the completion of the stream by the client. */

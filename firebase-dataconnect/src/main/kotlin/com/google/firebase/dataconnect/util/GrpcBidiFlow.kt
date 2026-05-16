@@ -31,6 +31,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.coroutineScope
@@ -168,6 +170,8 @@ internal object GrpcBidiFlow {
    * @param callOptions The options to customize the call.
    * @param headers The metadata headers to send with the initial request.
    * @param idStringGenerator Generator used to create unique connection identifiers.
+   * @param initRequests Optional requests to send on the [SendChannel] that will be given to the
+   * downstream collector via the [Event.Started] event ahead of the downstream collector.
    * @param listener Optional listener to receive lifecycle callbacks.
    * @return A cold flow of [Event]s.
    * @throws IllegalArgumentException if [method] is not a bidirectional streaming RPC.
@@ -178,22 +182,38 @@ internal object GrpcBidiFlow {
     callOptions: CallOptions,
     headers: (connectionId: String) -> GrpcMetadata,
     idStringGenerator: IdStringGenerator,
+    initRequests: Iterable<RequestT> = emptyList(),
     listener: Listener<RequestT, ResponseT>? = null,
   ): Flow<Event<RequestT, ResponseT>> {
     require(method.type == MethodDescriptor.MethodType.BIDI_STREAMING) {
       "method.type is ${method.type} but BIDI_STREAMING is required"
     }
 
+    // Save a local, immutable copy to prevent future changes to the list.
+    val initRequestsLists = initRequests.toList()
+
     return flow {
       val connectionId = idStringGenerator.next("con")
       listener?.collectStarted(connectionId)
 
+      val requestChannel = Channel<RequestT>(UNLIMITED)
+      initRequestsLists.forEachIndexed { index, initRequest: RequestT ->
+        requestChannel.trySend(initRequest).onFailure { exception ->
+          throw exception
+            ?: error(
+              "internal error pkynh7rc22: requestChannel.trySend(initRequest) " +
+                "should not have failed because `requestChannel` was created " +
+                "with capacity=UNLIMITED; connectionId=$connectionId, index=$index, " +
+                "initRequestsLists.size=${initRequestsLists}, initRequest=$initRequest"
+            )
+        }
+      }
+
       val requestHeaders = headers(connectionId)
-      val requestChannel = Channel<RequestT>(Channel.UNLIMITED)
       emit(Event.Started(connectionId, requestHeaders.copy(), requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
-      val readiness = Readiness(clientCall)
+      val readiness = Readiness(connectionId, clientCall)
       suspend fun ClientCall<*, *>.suspendUntilReady() {
         check(this === clientCall)
         readiness.suspendUntilReady()
@@ -211,8 +231,13 @@ internal object GrpcBidiFlow {
         object : ClientCall.Listener<ResponseT>() {
           override fun onMessage(message: ResponseT) {
             listener?.onMessage(connectionId, message)
-            responses.trySend(message).onFailure { e ->
-              throw e ?: AssertionError("onMessage should never be called until responses is ready")
+            responses.trySend(message).onFailure { exception ->
+              throw exception
+                ?: error(
+                  "internal error wtvhy3j987: responses.trySend(message) should not have failed " +
+                    "because onMessage() should never be called until `responses` is ready; " +
+                    "connectionId=$connectionId, message=$message"
+                )
             }
           }
 
@@ -259,7 +284,10 @@ internal object GrpcBidiFlow {
 
             sendingResult.onFailure { exception ->
               listener?.sendingMessagesFailed(connectionId, exception)
-              clientCall.cancel("Collection of requests completed exceptionally", exception)
+              clientCall.cancel(
+                "Collection of requests for connectionId=$connectionId completed exceptionally",
+                exception
+              )
             }
 
             sendingResult.getOrThrow()
@@ -279,33 +307,47 @@ internal object GrpcBidiFlow {
           listener?.receivingMessagesFailed(connectionId, exception)
 
           withContext(NonCancellable) {
-            sendJob.cancel("Collection of responses completed exceptionally", exception)
+            sendJob.cancel(
+              "Collection of responses for connectionId=$connectionId completed exceptionally",
+              exception
+            )
             sendJob.join()
-            // we want sender to be done cancelling before we cancel clientCall, or it might try
-            // sending to a dead call, which results in ugly exception messages
-            clientCall.cancel("Collection of responses completed exceptionally", exception)
           }
+
+          // we want sender to be done cancelling before we cancel clientCall, or it might try
+          // sending to a dead call, which results in ugly exception messages
+          clientCall.cancel(
+            "Collection of responses for connectionId=$connectionId completed exceptionally",
+            exception
+          )
         }
 
         receiveResult.getOrThrow()
 
         if (!sendJob.isCompleted) {
-          sendJob.cancel("Collection of responses completed before collection of requests")
+          sendJob.cancel(
+            "Collection of responses completed before collection of requests " +
+              "for connectionId=$connectionId"
+          )
         }
       }
     }
   }
 
-  private class Readiness(private val clientCall: ClientCall<*, *>) {
+  private class Readiness(
+    private val connectionId: String,
+    private val clientCall: ClientCall<*, *>,
+  ) {
     // A CONFLATED channel never suspends to send, and two notifications of readiness are equivalent
     // to one
-    private val channel = Channel<Unit>(Channel.CONFLATED)
+    private val channel = Channel<Unit>(CONFLATED)
 
     fun onReady() {
-      channel.trySend(Unit).onFailure { e ->
-        throw e
-          ?: AssertionError(
-            "Should be impossible; a CONFLATED channel should never return false on offer"
+      channel.trySend(Unit).onFailure { exception ->
+        throw exception
+          ?: error(
+            "internal error p8sv8ctgws: channel.trySend(Unit) should not have failed " +
+              "because `channel` was created with capacity=CONFLATED; connectionId=$connectionId"
           )
       }
     }

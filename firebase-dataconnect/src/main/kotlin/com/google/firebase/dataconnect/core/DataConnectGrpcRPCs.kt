@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -398,10 +399,30 @@ internal class DataConnectGrpcRPCs(
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "connect()"
 
+    // TODO: Log less noisily
+    //    val loggingListener =
+    //      LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
+    //        Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]")
+    //      )
     val loggingListener =
       LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
-        Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]")
+        object : Logger {
+          override val name = "GrpcConnectLogger"
+          override val id = "1234"
+          override val nameWithId = "GrpcConnectLogger@1234"
+
+          override fun log(exception: Throwable?, level: LogLevel, message: String) {
+            if (exception === null) {
+              println("zzyzx $nameWithId $message")
+            } else {
+              println("zzyzx $nameWithId $message ($exception)")
+            }
+          }
+        }
       )
+
+    val initRequest =
+      StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
     val flow =
       GrpcBidiFlow.create(
@@ -410,22 +431,12 @@ internal class DataConnectGrpcRPCs(
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
         headers = { metadata },
         idStringGenerator = idStringGenerator,
+        initRequests = listOf(initRequest),
         listener = loggingListener,
       )
 
-    val initRequest =
-      StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
-
-    val flowWithInit =
-      flow.onEach { event ->
-        if (event is GrpcBidiFlow.Event.Started) {
-          val sendResult = event.outgoingRequests.trySend(initRequest)
-          check(sendResult.isSuccess) { "internal error: failed to send init request: $sendResult" }
-        }
-      }
-
     return DataConnectBidiConnectStream(
-      flowWithInit,
+      flow,
       connectCoroutineScope,
       Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]"),
     )

@@ -20,7 +20,6 @@ import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
-import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Empty
 import com.google.protobuf.Struct
@@ -34,7 +33,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -42,26 +40,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -71,9 +61,8 @@ import kotlinx.coroutines.withContext
  * Closed), buffering, and correlation of incoming responses to their respective subscribers based
  * on `requestId`.
  *
- * @param outgoingRequests A [SendChannel] where all multiplexed outgoing [StreamRequestProto]
- * messages are sent.
- * @param incomingResponses A [Flow] of incoming [StreamResponseProto] messages from the server.
+ * @param flow The flow that, when collected, opens the bidirectional streaming "Connect" RPC with
+ * the backend and sends responses received from the backend downstream.
  * @param coroutineScope The [CoroutineScope] used to launch background collection and manage stream
  * lifecycle.
  * @param logger The [Logger] used for debug and error logging.
@@ -92,45 +81,29 @@ internal class DataConnectBidiConnectStream(
       run {
         val collectCoroutineScope = coroutineScope.createChildSupervisorScope(logger)
 
-        val completedResponse =
-          MutableStateFlow(NullableReference<IncomingResponse.Completed>(null))
-        fun setCompletedResponse(completed: IncomingResponse.Completed) {
-          completedResponse.update { currentValue ->
-            check(currentValue.ref === null) {
-              "internal error t67ss93fvp: completedResponse=${currentValue.ref}, " +
-                "but expected it to be null since IncomingResponse.Completed " +
-                "should only ever be emitted once by incomingResponsesSharedFlow"
-            }
-            NullableReference(completed)
-          }
-        }
-
         val incomingResponsesSharedFlow =
           flow
-            .onEach { event ->
-              if (event is GrpcBidiFlow.Event.Started) {
-                outgoingRequestsDeferred.complete(event.outgoingRequests)
+            .mapNotNull<_, IncomingResponse> { event ->
+              when (event) {
+                is GrpcBidiFlow.Event.Message -> IncomingResponse.Message(event.message)
+                is GrpcBidiFlow.Event.Started -> {
+                  outgoingRequestsDeferred.complete(event.outgoingRequests)
+                  null
+                }
               }
             }
-            .mapNotNull { event -> (event as? GrpcBidiFlow.Event.Message)?.message }
-            .map<_, IncomingResponse>(IncomingResponse::Message)
             .onCompletion { throwable ->
-              val completed = IncomingResponse.Completed(throwable)
-              setCompletedResponse(completed)
-              if (throwable !== null) {
-                withContext(NonCancellable) { emit(completed) }
-              } else {
-                emit(completed)
+              if (throwable === null) {
+                emit(IncomingResponse.Completed(null))
               }
             }
             .catch { emit(IncomingResponse.Completed(throwable = it)) }
             .buffer(capacity = Channel.UNLIMITED)
-            .shareIn(collectCoroutineScope, started = SharingStarted.WhileSubscribed(), replay = 0)
+            .shareIn(collectCoroutineScope, started = SharingStarted.WhileSubscribed(), replay = 1)
 
         State.Open(
           outgoingRequests = outgoingRequestsDeferred,
           incomingResponses = incomingResponsesSharedFlow,
-          completedResponse = completedResponse.asStateFlow(),
           coroutineScope = collectCoroutineScope
         )
       }
@@ -204,10 +177,8 @@ internal class DataConnectBidiConnectStream(
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
-        merge(
-            streams.incomingResponses.onSubscription { emit(IncomingResponse.Subscribed) },
-            streams.completedResponse.mapNotNull { it.ref }
-          )
+        streams.incomingResponses
+          .onSubscription { emit(IncomingResponse.Subscribed) }
           .transformWhile { incomingResponse ->
             when (incomingResponse) {
               is IncomingResponse.Subscribed -> {
@@ -226,20 +197,18 @@ internal class DataConnectBidiConnectStream(
                 }
               }
               is IncomingResponse.Completed -> {
-                false // NOTE: The downstream onCompletion() looks after throwing the exception.
+                incomingResponse.throwable?.let {
+                  if (it !is CancellationException) {
+                    throw it
+                  }
+                }
+                false
               }
             }
           }
           .onCompletion { throwable ->
             val outgoingRequests = streams.outgoingRequests.await()
             subscriptionMutex.withLock { subscription.unsubscribe(outgoingRequests) }
-
-            if (throwable === null) {
-              val completed = streams.completedResponse.mapNotNull { it.ref }.first()
-              if (completed.throwable !== null && completed.throwable !is CancellationException) {
-                throw completed.throwable
-              }
-            }
           }
       )
     }
@@ -274,7 +243,6 @@ internal class DataConnectBidiConnectStream(
      *
      * @property outgoingRequests The channel to which to send requests.
      * @property incomingResponses The shared flow containing processed [IncomingResponse] signals.
-     * @property completedResponse A reference that will set to the [IncomingResponse.Completed]
      * message _before_ the message is emitted from [incomingResponses].
      * @property coroutineScope The scope actively managing the collection of incoming responses;
      * this scope must be canceled by [DataConnectBidiConnectStream.close].
@@ -282,7 +250,6 @@ internal class DataConnectBidiConnectStream(
     class Open(
       val outgoingRequests: Deferred<SendChannel<StreamRequestProto>>,
       val incomingResponses: SharedFlow<IncomingResponse>,
-      val completedResponse: StateFlow<NullableReference<IncomingResponse.Completed>>,
       val coroutineScope: CoroutineScope,
     ) : State {
       override fun toString() = "Open"

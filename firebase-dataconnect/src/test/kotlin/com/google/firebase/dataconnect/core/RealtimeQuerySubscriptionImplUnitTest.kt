@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
@@ -93,6 +94,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
   @get:Rule val testName = TestName()
+  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
   @get:Rule
@@ -317,6 +319,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
   @Test
   fun `flows are cancelled when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
+    server.setListener { println("zzyzx InProcessDataConnectServer $it") }
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
 
