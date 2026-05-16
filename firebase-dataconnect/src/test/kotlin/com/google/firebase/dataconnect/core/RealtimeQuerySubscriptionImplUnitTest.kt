@@ -319,7 +319,6 @@ class RealtimeQuerySubscriptionImplUnitTest {
   @Test
   fun `flows are cancelled when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
-    server.setListener { println("zzyzx InProcessDataConnectServer $it") }
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
 
