@@ -33,6 +33,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -52,6 +53,7 @@ import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -206,9 +208,18 @@ internal class DataConnectBidiConnectStream(
               }
             }
           }
-          .onCompletion { throwable ->
-            val outgoingRequests = streams.outgoingRequests.await()
-            subscriptionMutex.withLock { subscription.unsubscribe(outgoingRequests) }
+          .onCompletion {
+            // If streams.outgoingRequests is _not_ completed then the upstream Flow didn't even
+            // receive the "Started" event yet, and never will; therefore, it's guaranteed that
+            // subscription.subscribe() was never called upstream, and we, therefore, do not need to
+            // call subscription.unsubscribe(). In fact, streams.outgoingRequests.await() would
+            // deadlock since the "Started" event will never be received.
+            if (streams.outgoingRequests.isCompleted) {
+              withContext(NonCancellable) {
+                val outgoingRequests = streams.outgoingRequests.await()
+                subscriptionMutex.withLock { subscription.unsubscribe(outgoingRequests) }
+              }
+            }
           }
       )
     }
