@@ -17,8 +17,6 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Empty
@@ -30,11 +28,7 @@ import google.firebase.dataconnect.proto.ResumeRequest
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
@@ -45,15 +39,14 @@ import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
-import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -65,87 +58,31 @@ import kotlinx.coroutines.withContext
  *
  * @param flow The flow that, when collected, opens the bidirectional streaming "Connect" RPC with
  * the backend and sends responses received from the backend downstream.
- * @param coroutineScope The [CoroutineScope] used to launch background collection and manage stream
- * lifecycle.
- * @param logger The [Logger] used for debug and error logging.
+ * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
  */
 @ExperimentalRealtimeQueries
 internal class DataConnectBidiConnectStream(
   flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto>>,
-  coroutineScope: CoroutineScope,
-  private val logger: Logger,
+  private val coroutineScope: CoroutineScope,
 ) {
 
-  private val outgoingRequestsDeferred = CompletableDeferred<SendChannel<StreamRequestProto>>()
-
-  private val state =
-    MutableStateFlow<State>(
-      run {
-        val collectCoroutineScope = coroutineScope.createChildSupervisorScope(logger)
-
-        val incomingResponsesSharedFlow =
-          flow
-            .mapNotNull<_, IncomingResponse> { event ->
-              when (event) {
-                is GrpcBidiFlow.Event.Message -> IncomingResponse.Message(event.message)
-                is GrpcBidiFlow.Event.Started -> {
-                  outgoingRequestsDeferred.complete(event.outgoingRequests)
-                  null
-                }
-              }
-            }
-            .onCompletion { throwable ->
-              if (throwable === null) {
-                emit(IncomingResponse.Completed(null))
-              }
-            }
-            .catch { emit(IncomingResponse.Completed(throwable = it)) }
-            .buffer(capacity = Channel.UNLIMITED)
-            .shareIn(collectCoroutineScope, started = SharingStarted.WhileSubscribed(), replay = 1)
-
-        State.Open(
-          outgoingRequests = outgoingRequestsDeferred,
-          incomingResponses = incomingResponsesSharedFlow,
-          coroutineScope = collectCoroutineScope
-        )
-      }
-    )
-
-  /**
-   * Closes the bidirectional stream gracefully.
-   *
-   * This method initiates the closure of the internal coroutine scope used for collecting incoming
-   * responses and suspends until the closure has completed. Once closed, the stream cannot be
-   * reopened and subsequent calls to [subscribe] will throw an exception.
-   *
-   * This method is safe to call many times. All calls will suspend until the closure has completed,
-   * just like the first call will. If the closure has already completed then this method will
-   * return immediately as if successful.
-   */
-  suspend fun close() {
-    logger.debug { "close()" }
-
-    while (true) {
-      val currentState = state.value
-
-      val newState =
-        when (currentState) {
-          is State.Open -> {
-            currentState.coroutineScope.cancel(
-              "DataConnectBidiConnectStream.close() called [fvj7hnfksd]"
-            )
-            State.Closing(currentState.coroutineScope)
-          }
-          is State.Closing -> {
-            currentState.coroutineScope.coroutineContext.job.join()
-            State.Closed
-          }
-          State.Closed -> return
+  private val sharedFlow: SharedFlow<Event> =
+    flow
+      .map { event ->
+        when (event) {
+          is GrpcBidiFlow.Event.ConnectionInfo -> Event.Started(event.outgoingRequests)
+          is GrpcBidiFlow.Event.Message ->
+            Event.Message(event.message, event.connectionInfo.outgoingRequests)
         }
-
-      state.compareAndSet(currentState, newState)
-    }
-  }
+      }
+      .onCompletion { throwable ->
+        if (throwable === null) {
+          emit(Event.Completed(null))
+        }
+      }
+      .catch { emit(Event.Completed(throwable = it)) }
+      .buffer(capacity = Channel.UNLIMITED)
+      .shareIn(coroutineScope, started = SharingStarted.WhileSubscribed(), replay = 1)
 
   /**
    * Starts a subscription for the query with the given [operationName] and [variables].
@@ -160,13 +97,8 @@ internal class DataConnectBidiConnectStream(
     operationName: String,
     variables: Struct,
   ): Flow<ExecuteResponse> {
-    val streams =
-      when (val currentState = this.state.value) {
-        is State.Open -> currentState
-        is State.Closing,
-        State.Closed -> throw CancellationException("DataConnectBidiConnectStream is closed")
-      }
-
+    // Note: `subscriptionStateManager` is shared by _all_ collectors of the returned flow;
+    // however, each flow collector gets its own `Subscriber` object from the manager.
     val subscriptionStateManager =
       SubscriptionStateManager(
         requestId = requestId,
@@ -175,31 +107,32 @@ internal class DataConnectBidiConnectStream(
       )
 
     return flow {
-      val subscriptionMutex = Mutex()
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
-        streams.incomingResponses
-          .onSubscription { emit(IncomingResponse.Subscribed) }
-          .transformWhile { incomingResponse ->
-            when (incomingResponse) {
-              is IncomingResponse.Subscribed -> {
-                val outgoingRequests = streams.outgoingRequests.await()
-                subscriptionMutex.withLock { subscription.subscribe(outgoingRequests) }
+        sharedFlow
+          .onSubscription { emit(Event.Subscribed) }
+          .transformWhile { event ->
+            when (event) {
+              is Event.Started -> {
+                subscription.setOutgoingRequests(event.outgoingRequests)
+                true
               }
-              is IncomingResponse.Message -> {
-                if (incomingResponse.streamResponse.requestId != requestId) {
+              is Event.Subscribed -> subscription.subscribe()
+              is Event.Message -> {
+                subscription.setOutgoingRequests(event.outgoingRequests)
+                if (event.streamResponse.requestId != requestId) {
                   true
                 } else {
-                  val executeResponse = incomingResponse.streamResponse.toExecuteResponse()
+                  val executeResponse = event.streamResponse.toExecuteResponse()
                   if (executeResponse !== null) {
                     emit(executeResponse)
                   }
-                  !incomingResponse.streamResponse.cancelled
+                  !event.streamResponse.cancelled
                 }
               }
-              is IncomingResponse.Completed -> {
-                incomingResponse.throwable?.let {
+              is Event.Completed -> {
+                event.throwable?.let {
                   if (it !is CancellationException) {
                     throw it
                   }
@@ -208,19 +141,7 @@ internal class DataConnectBidiConnectStream(
               }
             }
           }
-          .onCompletion {
-            // If streams.outgoingRequests is _not_ completed then the upstream Flow didn't even
-            // receive the "Started" event yet, and never will; therefore, it's guaranteed that
-            // subscription.subscribe() was never called upstream, and we, therefore, do not need to
-            // call subscription.unsubscribe(). In fact, streams.outgoingRequests.await() would
-            // deadlock since the "Started" event will never be received.
-            if (streams.outgoingRequests.isCompleted) {
-              withContext(NonCancellable) {
-                val outgoingRequests = streams.outgoingRequests.await()
-                subscriptionMutex.withLock { subscription.unsubscribe(outgoingRequests) }
-              }
-            }
-          }
+          .onCompletion { subscription.unsubscribe() }
       )
     }
   }
@@ -243,54 +164,26 @@ internal class DataConnectBidiConnectStream(
   }
 
   /**
-   * Represents the current operational state of the [DataConnectBidiConnectStream].
-   *
-   * State transitions flow from [Open] -> [Closing] -> [Closed].
-   */
-  private sealed interface State {
-    /**
-     * The stream is fully operational and accepting new subscriptions. This is the initial state of
-     * a newly-created [DataConnectBidiConnectStream] object.
-     *
-     * @property outgoingRequests The channel to which to send requests.
-     * @property incomingResponses The shared flow containing processed [IncomingResponse] signals.
-     * message _before_ the message is emitted from [incomingResponses].
-     * @property coroutineScope The scope actively managing the collection of incoming responses;
-     * this scope must be canceled by [DataConnectBidiConnectStream.close].
-     */
-    class Open(
-      val outgoingRequests: Deferred<SendChannel<StreamRequestProto>>,
-      val incomingResponses: SharedFlow<IncomingResponse>,
-      val coroutineScope: CoroutineScope,
-    ) : State {
-      override fun toString() = "Open"
-    }
-
-    /**
-     * The stream is in the process of shutting down and waiting for active jobs to complete.
-     *
-     * @property coroutineScope The scope that is undergoing cancellation.
-     */
-    class Closing(val coroutineScope: CoroutineScope) : State {
-      override fun toString() = "Closing"
-    }
-
-    /** The stream is completely shut down and inactive. */
-    object Closed : State {
-      override fun toString() = "Closed"
-    }
-  }
-
-  /**
    * Represents an internal wrapper around incoming server responses and lifecycle signals.
    *
    * This sealed interface allows the internal [SharedFlow] to multiplex actual response data
    * alongside control signals like completion, subscriber readiness, and buffer flushes.
    */
-  private sealed interface IncomingResponse {
+  private sealed interface Event {
+
+    /**
+     * The event emitted once per collection, that provides the channel to use to send requests over
+     * the bidirectional stream.
+     */
+    class Started(val outgoingRequests: SendChannel<StreamRequestProto>) : Event {
+      override fun toString() = "Started"
+    }
 
     /** Represents a standard data response from the server. */
-    class Message(val streamResponse: StreamResponseProto) : IncomingResponse {
+    class Message(
+      val streamResponse: StreamResponseProto,
+      val outgoingRequests: SendChannel<StreamRequestProto>,
+    ) : Event {
       override fun toString() = "Message(${streamResponse.toCompactString()})"
     }
 
@@ -303,7 +196,7 @@ internal class DataConnectBidiConnectStream(
      * @property throwable The exception that caused termination, or null if the stream completed
      * normally.
      */
-    class Completed(val throwable: Throwable?) : IncomingResponse {
+    class Completed(val throwable: Throwable?) : Event {
       override fun toString() = "Completed(throwable=$throwable)"
     }
 
@@ -318,7 +211,7 @@ internal class DataConnectBidiConnectStream(
      * the resulting [Message] is processed by the [SharedFlow] before the `subscribe` collector has
      * started listening, leading to silently lost responses.
      */
-    object Subscribed : IncomingResponse
+    object Subscribed : Event
   }
 
   /**
@@ -336,12 +229,54 @@ internal class DataConnectBidiConnectStream(
     variables: Struct,
   ) {
 
+    private val mutex = Mutex()
     private var subscriberCount = 0
 
     inner class Subscriber {
+      private val state = MutableStateFlow<State>(State.NotReady(pendingSubscribe = false))
+
       private var subscribed = false
 
-      fun subscribe(outgoingRequests: SendChannel<StreamRequestProto>): Boolean {
+      suspend fun setOutgoingRequests(outgoingRequests: SendChannel<StreamRequestProto>) {
+        val oldState =
+          state.getAndUpdate { currentState ->
+            when (currentState) {
+              is State.NotReady -> State.Ready(outgoingRequests)
+              is State.Ready -> {
+                check(currentState.outgoingRequests === outgoingRequests) {
+                  "internal error n99tc8qe2t: setOutgoingRequests() has already been called " +
+                    "with a different object"
+                }
+                currentState
+              }
+            }
+          }
+
+        if (oldState is State.NotReady && oldState.pendingSubscribe) {
+          mutex.withLock { subscribe(outgoingRequests) }
+        }
+      }
+
+      suspend fun subscribe(): Boolean {
+        while (true) {
+          when (val currentState = state.value) {
+            is State.NotReady -> {
+              check(!currentState.pendingSubscribe) {
+                "internal error szx94f63tz: subscribe() called when already subscribed"
+              }
+              if (state.compareAndSet(currentState, State.NotReady(pendingSubscribe = true))) {
+                return true
+              }
+            }
+            is State.Ready ->
+              mutex.withLock {
+                return subscribe(currentState.outgoingRequests)
+              }
+          }
+        }
+      }
+
+      private fun subscribe(outgoingRequests: SendChannel<StreamRequestProto>): Boolean {
         check(!subscribed) {
           "internal error hkjgvhnk27: subscribe() called when already subscribed " +
             "(is concurrent access to the SubscriptionStateManager properly serialized " +
@@ -373,7 +308,14 @@ internal class DataConnectBidiConnectStream(
         }
       }
 
-      fun unsubscribe(outgoingRequests: SendChannel<StreamRequestProto>) {
+      suspend fun unsubscribe() {
+        when (val currentState = state.value) {
+          is State.NotReady -> return
+          is State.Ready -> mutex.withLock { unsubscribe(currentState.outgoingRequests) }
+        }
+      }
+
+      private fun unsubscribe(outgoingRequests: SendChannel<StreamRequestProto>) {
         if (!subscribed) {
           return
         }
@@ -424,6 +366,16 @@ internal class DataConnectBidiConnectStream(
         streamRequest.setCancel(Empty.getDefaultInstance())
         streamRequest.build()
       }
+
+    private sealed interface State {
+      data class NotReady(val pendingSubscribe: Boolean) : State {
+        override fun toString() = "NotReady(pendingSubscribe=$pendingSubscribe)"
+      }
+
+      class Ready(val outgoingRequests: SendChannel<StreamRequestProto>) : State {
+        override fun toString() = "Ready"
+      }
+    }
   }
 
   private companion object {

@@ -435,11 +435,7 @@ internal class DataConnectGrpcRPCs(
         listener = loggingListener,
       )
 
-    return DataConnectBidiConnectStream(
-      flow,
-      connectCoroutineScope,
-      Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]"),
-    )
+    return DataConnectBidiConnectStream(flow, connectCoroutineScope)
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {

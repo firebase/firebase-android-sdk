@@ -55,8 +55,8 @@ import kotlinx.coroutines.withContext
  * concurrently. Each collection acts as a completely independent gRPC call with its own connection
  * and unique connection ID.
  * * **Initialization & Request Channel**: As the very first action upon collection, the flow emits
- * an [Event.Started] containing a [SendChannel] (the `outgoingRequests` channel). Consumers must
- * use this channel to send request messages to the server.
+ * an [Event.ConnectionInfo] containing a [SendChannel] (the `outgoingRequests` channel). Consumers
+ * must use this channel to send request messages to the server.
  * * **Half-Closure**: Closing the `outgoingRequests` channel will half-close the gRPC call from the
  * client side, signaling to the server that no more requests will be sent. The client will continue
  * to receive responses from the server until the server closes its side of the stream.
@@ -81,27 +81,28 @@ internal object GrpcBidiFlow {
      *
      * @property connectionId A unique identifier for this particular flow collection; it's provided
      * here mainly for debugging purposes, especially correlating with [Listener] callbacks.
-     * @property headers a copy of the request headers sent when opening the connection; this copy
-     * is owned by the [Started] object and may be freely modified without affecting the gRPC
-     * connection in any way.
      * @property outgoingRequests The channel to send requests to the server.
      */
-    class Started<in RequestT>(
+    class ConnectionInfo<in RequestT>(
       val connectionId: String,
-      val headers: GrpcMetadata,
       val outgoingRequests: SendChannel<RequestT>,
     ) : Event<RequestT, Nothing> {
-      override fun toString() = "GrpcBidiFlow.Event.Started(connectionId=$connectionId)"
+      override fun toString() = "ConnectionInfo(connectionId=$connectionId)"
     }
 
     /**
      * Emitted when a response message is received from the server.
      *
      * @property message The response message received from the server.
+     * @property message Information about the connection; it is included for convenience, such as
+     * in the case that subscribers of a [kotlinx.coroutines.flow.SharedFlow] join late and miss the
+     * [ConnectionInfo] event.
      */
-    @JvmInline
-    value class Message<out ResponseT>(val message: ResponseT) : Event<Any?, ResponseT> {
-      override fun toString() = "GrpcBidiFlow.Event.Message(message=$message)"
+    class Message<in RequestT, out ResponseT>(
+      val message: ResponseT,
+      val connectionInfo: ConnectionInfo<RequestT>,
+    ) : Event<RequestT, ResponseT> {
+      override fun toString() = "Message(message=$message)"
     }
   }
 
@@ -159,7 +160,7 @@ internal object GrpcBidiFlow {
    *
    * The returned flow, when collected, will:
    * 1. Start a new gRPC [ClientCall] for the specified [method].
-   * 2. Emit an [Event.Started] containing a [SendChannel] for sending requests.
+   * 2. Emit an [Event.ConnectionInfo] containing a [SendChannel] for sending requests.
    * 3. Concurrently read responses from the server and emit them as [Event.Message].
    * 4. Coordinate sending and receiving loops, ensuring proper backpressure and cancellation.
    *
@@ -171,7 +172,7 @@ internal object GrpcBidiFlow {
    * @param headers The metadata headers to send with the initial request.
    * @param idStringGenerator Generator used to create unique connection identifiers.
    * @param initRequests Optional requests to send on the [SendChannel] that will be given to the
-   * downstream collector via the [Event.Started] event ahead of the downstream collector.
+   * downstream collector via the [Event.ConnectionInfo] event ahead of the downstream collector.
    * @param listener Optional listener to receive lifecycle callbacks.
    * @return A cold flow of [Event]s.
    * @throws IllegalArgumentException if [method] is not a bidirectional streaming RPC.
@@ -209,8 +210,9 @@ internal object GrpcBidiFlow {
         }
       }
 
-      val requestHeaders = headers(connectionId)
-      emit(Event.Started(connectionId, requestHeaders.copy(), requestChannel.asSendChannel()))
+      val requestHeaders = headers(connectionId).copy()
+      val connectionInfo = Event.ConnectionInfo(connectionId, requestChannel.asSendChannel())
+      emit(connectionInfo)
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
       val readiness = Readiness(connectionId, clientCall)
@@ -297,7 +299,7 @@ internal object GrpcBidiFlow {
           clientCall.request(1)
           for (response in responses) {
             listener?.receivedMessage(connectionId, response)
-            emit(Event.Message(response))
+            emit(Event.Message(response, connectionInfo))
             clientCall.request(1)
           }
           listener?.receivingMessagesComplete(connectionId)
