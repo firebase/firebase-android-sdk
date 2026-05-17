@@ -425,6 +425,36 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
+  @Test
+  fun `later flow subscriptions do not return data from in-flight subscribe`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+    val testDataArb = testDataArb()
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      val responseSender = serverCollector.awaitResponseSender()
+      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+      val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
+
+      val testData1 = testDataArb.sample()
+      responseSender.onNext(requestId, testData1)
+      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
+
+      serverCollector.awaitUntilResumeStreamRequest()
+      val testData2 = testDataArb.sample()
+      responseSender.onNext(requestId, testData2)
+      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+      clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      clientCollector1.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
