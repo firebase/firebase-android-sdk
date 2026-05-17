@@ -180,13 +180,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       val testDataArb = testDataArb()
       repeat(5) {
         val testData = testDataArb.sample()
-
-        responseSender.onNext(
-          StreamResponse.newBuilder()
-            .setRequestId(subscribeRequestId)
-            .setData(encodeToStruct(testData))
-            .build()
-        )
+        responseSender.onNext(subscribeRequestId, testData)
 
         val querySubscriptionResult = clientCollector.awaitItem()
         withClue(querySubscriptionResult.print().value) {
@@ -392,16 +386,41 @@ class RealtimeQuerySubscriptionImplUnitTest {
       connection2.connectionId shouldNotBe connection1.connectionId
       val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
       val testData = testDataArb().sample()
-      connection2.responseObserver.onNext(
-        StreamResponse.newBuilder()
-          .setRequestId(requestId)
-          .setData(encodeToStruct(testData))
-          .build()
-      )
+      connection2.responseObserver.onNext(requestId, testData)
       val streamResponse = clientCollector2.awaitItem()
       streamResponse.result.shouldBeSuccess().data shouldBe testData
 
       clientCollector2.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `subsequent flow subscriptions return fresh data`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+    val testDataArb = testDataArb()
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+
+      val responseSender = serverCollector.awaitResponseSender()
+      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+      val testData1 = testDataArb.sample()
+      responseSender.onNext(requestId, testData1)
+      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
+
+      val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
+      serverCollector.awaitUntilResumeStreamRequest()
+      val testData2 = testDataArb.sample()
+      responseSender.onNext(requestId, testData2)
+      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+      clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      clientCollector1.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
@@ -666,4 +685,8 @@ private fun distinctOperationNameVariablesPairWithRepeatedComponentsArb(
     val variables = currentVariables.next()
     OperationNameVariablesPair(operationName, variables)
   }
+}
+
+private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestData) {
+  onNext(StreamResponse.newBuilder().setRequestId(requestId).setData(encodeToStruct(data)).build())
 }
