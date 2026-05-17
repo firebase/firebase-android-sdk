@@ -385,6 +385,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       val connection1 = serverCollector.awaitConnectRpcStarted()
       serverCollector.awaitUntilInitStreamRequest()
       clientCollector1.cancelAndIgnoreRemainingEvents()
+      serverCollector.awaitUntilClientClosesConnection()
 
       val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
       val connection2 = serverCollector.awaitConnectRpcStarted()

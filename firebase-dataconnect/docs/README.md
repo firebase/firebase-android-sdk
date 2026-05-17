@@ -49,8 +49,9 @@ When you need to make a significant architectural choice (e.g., choosing a libra
 
 ## Decision Registry
 
-| ID                                                         | Title                                                | Date                         | Status   | Tags                                        |
-|:-----------------------------------------------------------|:-----------------------------------------------------|:-----------------------------|:---------|:--------------------------------------------|
-| [0001](adr-0001-rewire-bidi-connection-to-grpcbidiflow.md) | Rewire Bidirectional gRPC Connection to GrpcBidiFlow | Fri May 15 18:33:07 EDT 2026 | accepted | network, grpc, coroutines, reactive-streams |
+| ID                                                                     | Title                                                | Date                         | Status   | Tags                                              |
+|:-----------------------------------------------------------------------|:-----------------------------------------------------|:-----------------------------|:---------|:--------------------------------------------------|
+| [0001](adr-0001-rewire-bidi-connection-to-grpcbidiflow.md)             | Rewire Bidirectional gRPC Connection to GrpcBidiFlow | Fri May 15 18:33:07 EDT 2026 | accepted | network, grpc, coroutines, reactive-streams       |
+| [0002](adr-0002-use-replay-expiration-millis-0-in-while-subscribed.md) | Use replayExpirationMillis = 0 in WhileSubscribed    | Sat May 16 22:34:19 EDT 2026 | accepted | network, grpc, coroutines, flow, reactive-streams |
 
 *(Add new records to this table in chronological order. Refer to the status lifecycle: `proposed` -> `accepted` -> `superseded`/`deprecated`)*

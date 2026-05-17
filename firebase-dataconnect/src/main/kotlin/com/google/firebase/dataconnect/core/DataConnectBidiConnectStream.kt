@@ -104,7 +104,11 @@ internal class DataConnectBidiConnectStream(
       }
       .catch { emit(Event.Completed(throwable = it)) }
       .buffer(capacity = Channel.UNLIMITED)
-      .shareIn(coroutineScope, started = SharingStarted.WhileSubscribed(), replay = 1)
+      .shareIn(
+        coroutineScope,
+        started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+        replay = 1
+      )
 
   /**
    * Starts a subscription for the query with the given [operationName] and [variables].
