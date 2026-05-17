@@ -396,7 +396,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `subsequent flow subscriptions return fresh data`() = runTest {
+  fun `later flow subscriptions do not return data from previous subscribe result`() = runTest {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)

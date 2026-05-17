@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Empty
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
@@ -49,7 +50,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
-import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -92,9 +92,13 @@ internal class DataConnectBidiConnectStream(
     flow
       .map { event ->
         when (event) {
-          is GrpcBidiFlow.Event.ConnectionInfo -> Event.Started(event.outgoingRequests)
+          is GrpcBidiFlow.Event.ConnectionInfo -> Event.Ready(event.outgoingRequests)
           is GrpcBidiFlow.Event.Message ->
-            Event.Message(event.message, event.connectionInfo.outgoingRequests)
+            Event.Message(
+              nextSequenceNumber(),
+              event.message,
+              event.connectionInfo.outgoingRequests
+            )
         }
       }
       .onCompletion { throwable ->
@@ -133,20 +137,23 @@ internal class DataConnectBidiConnectStream(
       )
 
     return flow {
+      val flowCollectorStartSequenceNumber = nextSequenceNumber()
       val subscription = subscriptionStateManager.Subscriber()
 
       emitAll(
         merge(sharedFlow.onSubscription { emit(Event.Subscribed) }, scopeCompletedFlow)
           .transformWhile { event ->
             when (event) {
-              is Event.Started -> {
+              is Event.Ready -> {
                 subscription.setOutgoingRequests(event.outgoingRequests)
                 true
               }
               is Event.Subscribed -> subscription.subscribe()
               is Event.Message -> {
                 subscription.setOutgoingRequests(event.outgoingRequests)
-                if (event.streamResponse.requestId != requestId) {
+                if (event.sequenceNumber < flowCollectorStartSequenceNumber) {
+                  true
+                } else if (event.streamResponse.requestId != requestId) {
                   true
                 } else {
                   val executeResponse = event.streamResponse.toExecuteResponse()
@@ -200,12 +207,13 @@ internal class DataConnectBidiConnectStream(
      * The event emitted once per collection, that provides the channel to use to send requests over
      * the bidirectional stream.
      */
-    class Started(val outgoingRequests: SendChannel<StreamRequestProto>) : Event {
+    class Ready(val outgoingRequests: SendChannel<StreamRequestProto>) : Event {
       override fun toString() = "Started"
     }
 
     /** Represents a standard data response from the server. */
     class Message(
+      val sequenceNumber: Long,
       val streamResponse: StreamResponseProto,
       val outgoingRequests: SendChannel<StreamRequestProto>,
     ) : Event {
