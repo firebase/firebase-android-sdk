@@ -28,6 +28,18 @@ import java.util.concurrent.atomic.AtomicReference
  * side effects. If the new value returned by [block] is referentially identical (`===`) to the
  * current value, the update is aborted early to avoid unnecessary write operations.
  *
+ * **Important Concurrency Note (Memory Visibility):** If the new value is referentially identical
+ * (`===`) to the current value, the update is aborted early and no write operation is performed.
+ *
+ * In multithreaded programming, writing to an atomic variable typically guarantees that all
+ * previous changes made by this thread (even to regular, non-atomic variables) become visible to
+ * other threads that subsequently read this atomic variable (known as a "happens-before"
+ * relationship).
+ *
+ * Because this function skips the write operation when the value doesn't change, **it does not
+ * guarantee that other threads will see prior changes to other variables.** Do not rely on this
+ * function to "publish" changes to other variables if the atomic reference itself does not change.
+ *
  * @param T the type of the value held by the reference.
  * @param block the function to calculate the next value based on the current value.
  */
@@ -43,5 +55,37 @@ internal inline fun <T> AtomicReference<T>.update(block: (currentValue: T) -> T)
     if (compareAndSet(currentValue, newValue)) {
       break
     }
+  }
+}
+
+/**
+ * Identical to [update] with a [Unit] return value, but instead returns the old value and updated
+ * value, making this function slightly less performant than its [Unit]-returning counterpart due to
+ * the allocation of the [AtomicReferenceUpdateResult] return value in the case of an update.
+ */
+internal inline fun <T> AtomicReference<T>.updateWithResult(
+  block: (currentValue: T) -> T
+): AtomicReferenceUpdateResult<T> {
+  while (true) {
+    val currentValue = get()
+    val newValue = block(currentValue)
+
+    if (currentValue === newValue) {
+      return AtomicReferenceUpdateResult.NotUpdated
+    }
+
+    if (compareAndSet(currentValue, newValue)) {
+      return AtomicReferenceUpdateResult.Updated(currentValue, newValue)
+    }
+  }
+}
+
+internal sealed interface AtomicReferenceUpdateResult<out T> {
+  object NotUpdated : AtomicReferenceUpdateResult<Nothing> {
+    override fun toString() = "NoChange"
+  }
+
+  class Updated<out T>(val oldValue: T, val newValue: T) : AtomicReferenceUpdateResult<T> {
+    override fun toString() = "Updated"
   }
 }
