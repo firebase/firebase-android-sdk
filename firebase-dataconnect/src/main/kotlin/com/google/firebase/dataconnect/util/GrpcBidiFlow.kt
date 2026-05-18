@@ -93,11 +93,14 @@ internal object GrpcBidiFlow {
      * Emitted when a response message is received from the server.
      *
      * @property message The response message received from the server.
+     * @property connectionInfo Information about the connection; it is included for convenience,
+     * such as in the case that subscribers of a [kotlinx.coroutines.flow.SharedFlow] join late and
+     * miss the [ConnectionInfo] event.
      */
-    class Message<out ResponseT>(
-      connectionId: String,
+    class Message<in RequestT, out ResponseT>(
       val message: ResponseT,
-    ) : Event<Any?, ResponseT>(connectionId) {
+      val connectionInfo: ConnectionInfo<RequestT>,
+    ) : Event<RequestT, ResponseT>(connectionInfo.connectionId) {
       override fun toString() = "Message(message=$message)"
     }
   }
@@ -203,7 +206,8 @@ internal object GrpcBidiFlow {
       }
 
       val requestHeaders = headers(connectionId).copy()
-      emit(Event.ConnectionInfo(connectionId, requestChannel.asSendChannel()))
+      val connectionInfo = Event.ConnectionInfo(connectionId, requestChannel.asSendChannel())
+      emit(connectionInfo)
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
       val readiness = Readiness(connectionId, clientCall)
@@ -290,7 +294,7 @@ internal object GrpcBidiFlow {
           clientCall.request(1)
           for (response in responses) {
             collectionListener?.receivedMessage(response)
-            emit(Event.Message(connectionId, response))
+            emit(Event.Message(response, connectionInfo))
             clientCall.request(1)
           }
           collectionListener?.receivingMessagesComplete()
