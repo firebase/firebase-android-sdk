@@ -68,6 +68,9 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
 import java.lang.System.currentTimeMillis
@@ -399,30 +402,117 @@ internal class DataConnectGrpcRPCs(
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "connect()"
 
-    // TODO: Log less noisily
-    //    val loggingListener =
-    //      LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
-    //        Logger("${logger.nameWithId} $kotlinMethodName [sid=$streamId]")
-    //      )
-    val loggingListener =
-      LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
-        object : Logger {
-          override val name = "GrpcConnectLogger"
-          override val id = "1234"
-          override val nameWithId = "GrpcConnectLogger@1234"
-
-          override fun log(exception: Throwable?, level: LogLevel, message: String) {
-            if (exception === null) {
-              println("zzyzx $nameWithId $message")
-            } else {
-              println("zzyzx $nameWithId $message ($exception)")
-            }
-          }
-        }
-      )
-
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
+
+    val loggingListener =
+      object : GrpcBidiFlow.Listener<StreamRequest, StreamResponse> {
+
+        override fun collectStarted(connectionId: String) =
+          object : GrpcBidiFlow.Listener.CollectorListener<StreamRequest, StreamResponse> {
+            override fun collectCompleted(exception: Throwable?) {
+              TODO("Not yet implemented")
+            }
+
+            override fun connectionStarting(
+              method: MethodDescriptor<StreamRequest, StreamResponse>,
+              callOptions: CallOptions,
+              headers: Metadata
+            ) {
+              TODO("Not yet implemented")
+            }
+
+            override fun sendingMessage(message: StreamRequest) {
+              if (message === initRequest) {
+                logger.logGrpcSending(
+                  requestId = streamId,
+                  kotlinMethodName = kotlinMethodName,
+                  grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
+                  metadata = metadata,
+                  request = { initRequest.toStructProto(authUid = authToken?.authUid) },
+                  requestTypeName = "StreamRequest",
+                  authUid = authToken?.authUid,
+                )
+              } else {
+                logger.logGrpcSending(
+                  streamId = streamId,
+                  requestId = message.requestId,
+                  kotlinMethodName = kotlinMethodName,
+                  request = { message.toStructProto(authUid = authToken?.authUid) },
+                  requestTypeName = "StreamRequest",
+                )
+              }
+            }
+
+            override fun sendingMessagesComplete() {
+              TODO("Not yet implemented")
+            }
+
+            override fun sendingMessagesFailed(exception: Throwable) {
+              TODO("Not yet implemented")
+            }
+
+            override fun receivedMessage(message: StreamResponse) {
+              TODO("Not yet implemented")
+            }
+
+            override fun receivingMessagesComplete() {
+              TODO("Not yet implemented")
+            }
+
+            override fun receivingMessagesFailed(exception: Throwable) {
+              TODO("Not yet implemented")
+            }
+
+            override fun onCallReady() {
+              TODO("Not yet implemented")
+            }
+
+            override fun onCallMessage(message: StreamResponse) {
+              logger.logGrpcReceived(
+                streamId = streamId,
+                requestId = message.requestId,
+                kotlinMethodName = kotlinMethodName,
+                response = { message.toStructProto() },
+                responseTypeName = "StreamResponse",
+              )
+            }
+
+            override fun onCallClose(
+              status: Status,
+              trailers: Metadata,
+              calculatedCause: Throwable?
+            ) {
+              if (calculatedCause === null) {
+                logger.logGrpcCompleted(
+                  requestId = streamId,
+                  kotlinMethodName = kotlinMethodName,
+                )
+              } else {
+                logger.logGrpcFailed(
+                  requestId = streamId,
+                  kotlinMethodName = kotlinMethodName,
+                  calculatedCause,
+                )
+              }
+            }
+          }
+      }
+    LoggingGrpcBidiFlowListener<StreamRequest, StreamResponse>(
+      object : Logger {
+        override val name = "GrpcConnectLogger"
+        override val id = "1234"
+        override val nameWithId = "GrpcConnectLogger@1234"
+
+        override fun log(exception: Throwable?, level: LogLevel, message: String) {
+          if (exception === null) {
+            println("zzyzx $nameWithId $message")
+          } else {
+            println("zzyzx $nameWithId $message ($exception)")
+          }
+        }
+      }
+    )
 
     val flow =
       GrpcBidiFlow.create(
@@ -682,7 +772,17 @@ internal class DataConnectGrpcRPCs(
       requestId: String,
       kotlinMethodName: String,
       throwable: Throwable,
-    ) = warn(throwable) { "$kotlinMethodName [rid=$requestId] FAILED: $throwable" }
+    ) =
+      warn(throwable) {
+        val status =
+          when (throwable) {
+            is StatusException -> throwable.status
+            is StatusRuntimeException -> throwable.status
+            else -> null
+          }
+        val statusString = status?.let { " with gRPC code=${status.code}" } ?: ""
+        "$kotlinMethodName [rid=$requestId] FAILED$statusString: $throwable"
+      }
   }
 }
 

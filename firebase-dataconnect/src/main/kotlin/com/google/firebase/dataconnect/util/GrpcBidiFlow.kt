@@ -144,9 +144,9 @@ internal object GrpcBidiFlow {
       fun receivingMessagesComplete()
       fun receivingMessagesFailed(exception: Throwable)
 
-      fun onResponseReady()
-      fun onResponseMessage(message: ResponseT)
-      fun onResponseClose(status: Status, trailers: GrpcMetadata, calculatedCause: Throwable?)
+      fun onCallReady()
+      fun onCallMessage(message: ResponseT)
+      fun onCallClose(status: Status, trailers: GrpcMetadata, calculatedCause: Throwable?)
     }
   }
 
@@ -227,7 +227,7 @@ internal object GrpcBidiFlow {
       clientCall.start(
         object : ClientCall.Listener<ResponseT>() {
           override fun onMessage(message: ResponseT) {
-            collectionListener?.onResponseMessage(message)
+            collectionListener?.onCallMessage(message)
             responses.trySend(message).onFailure { exception ->
               throw exception
                 ?: error(
@@ -245,12 +245,12 @@ internal object GrpcBidiFlow {
                 status.cause is CancellationException -> status.cause
                 else -> status.asException(trailers)
               }
-            collectionListener?.onResponseClose(status, trailers, cause)
+            collectionListener?.onCallClose(status, trailers, cause)
             responses.close(cause)
           }
 
           override fun onReady() {
-            collectionListener?.onResponseReady()
+            collectionListener?.onCallReady()
             readiness.onReady()
           }
         },
@@ -425,25 +425,25 @@ internal class LoggingGrpcBidiFlowListener<RequestT, ResponseT>(
     override fun receivingMessagesFailed(exception: Throwable) =
       logger.debug(exception) { "receivingMessagesFailed($connectionId, exception=$exception)" }
 
-    override fun onResponseMessage(message: ResponseT) =
+    override fun onCallMessage(message: ResponseT) =
       logger.debug {
         val formattedMessage = formatter?.onMessageMessage(message) ?: message
-        "onResponseMessage($connectionId, message=$formattedMessage)"
+        "onCallMessage($connectionId, message=$formattedMessage)"
       }
 
-    override fun onResponseClose(
+    override fun onCallClose(
       status: Status,
       trailers: GrpcMetadata,
       calculatedCause: Throwable?,
     ) =
       logger.debug {
         val formattedTrailers = formatter?.onCloseTrailers(trailers) ?: trailers
-        "onResponseClose($connectionId, status=$status, trailers=$formattedTrailers, " +
+        "onCallClose($connectionId, status=$status, trailers=$formattedTrailers, " +
           "calculatedCause=$calculatedCause)"
       }
 
-    override fun onResponseReady() {
-      logger.debug { "onResponseClose($connectionId)" }
+    override fun onCallReady() {
+      logger.debug { "onCallReady($connectionId)" }
     }
   }
 }
