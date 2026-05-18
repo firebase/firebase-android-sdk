@@ -268,33 +268,25 @@ internal class DataConnectBidiConnectStream(
     inner class Subscriber {
       private var state: State = State.NotReady(pendingSubscribe = false)
 
-      private var subscribed = false
-
       suspend fun setOutgoingRequests(outgoingRequests: SendChannel<StreamRequestProto>) {
-        val currentState = state
-        val wasPendingSubscribe =
-          when (currentState) {
-            is State.NotReady -> {
-              state = State.Ready(outgoingRequests)
-              currentState.pendingSubscribe
-            }
-            is State.Ready -> {
-              check(currentState.outgoingRequests === outgoingRequests) {
-                "internal error n99tc8qe2t: setOutgoingRequests() has already been called " +
-                  "with a different object"
-              }
-              false
+        when (val currentState = state) {
+          is State.NotReady -> {
+            val readyState = State.Ready(outgoingRequests)
+            state = readyState
+            if (currentState.pendingSubscribe) {
+              mutex.withLock { subscribe(readyState) }
             }
           }
-
-        if (wasPendingSubscribe) {
-          mutex.withLock { subscribe(outgoingRequests) }
+          is State.Ready ->
+            check(currentState.outgoingRequests === outgoingRequests) {
+              "internal error n99tc8qe2t: setOutgoingRequests() has already been called " +
+                "with a different object"
+            }
         }
       }
 
       suspend fun subscribe(): Boolean {
-        val currentState = state
-        return when (currentState) {
+        return when (val currentState = state) {
           is State.NotReady -> {
             check(!currentState.pendingSubscribe) {
               "internal error szx94f63tz: subscribe() called when already subscribed"
@@ -304,13 +296,13 @@ internal class DataConnectBidiConnectStream(
           }
           is State.Ready ->
             mutex.withLock {
-              return subscribe(currentState.outgoingRequests)
+              return subscribe(currentState)
             }
         }
       }
 
-      private fun subscribe(outgoingRequests: SendChannel<StreamRequestProto>): Boolean {
-        check(!subscribed) {
+      private fun subscribe(readyState: State.Ready): Boolean {
+        check(!readyState.subscribed) {
           "internal error hkjgvhnk27: subscribe() called when already subscribed " +
             "(is concurrent access to the SubscriptionStateManager properly serialized " +
             "with a mutex?)"
@@ -323,11 +315,11 @@ internal class DataConnectBidiConnectStream(
             resumeStreamRequest
           }
 
-        val sendResult = outgoingRequests.trySend(streamRequest)
+        val sendResult = readyState.outgoingRequests.trySend(streamRequest)
 
         return when {
           sendResult.isSuccess -> {
-            subscribed = true
+            readyState.subscribed = true
             subscriberCount++
             true
           }
@@ -342,25 +334,21 @@ internal class DataConnectBidiConnectStream(
       }
 
       suspend fun unsubscribe() {
-        val currentState = state
-        when (currentState) {
-          is State.NotReady -> {
+        when (val currentState = state) {
+          is State.NotReady ->
             if (currentState.pendingSubscribe) {
               state = State.NotReady(pendingSubscribe = false)
             }
-          }
-          is State.Ready -> {
-            mutex.withLock { unsubscribe(currentState.outgoingRequests) }
-          }
+          is State.Ready -> mutex.withLock { unsubscribe(currentState) }
         }
       }
 
-      private fun unsubscribe(outgoingRequests: SendChannel<StreamRequestProto>) {
-        if (!subscribed) {
+      private fun unsubscribe(readyState: State.Ready) {
+        if (!readyState.subscribed) {
           return
         }
 
-        subscribed = false
+        readyState.subscribed = false
         subscriberCount--
         check(subscriberCount >= 0) {
           "internal error hpn3qsj746: subscriberCount should never be less than zero, " +
@@ -368,7 +356,7 @@ internal class DataConnectBidiConnectStream(
         }
 
         if (subscriberCount == 0) {
-          val sendResult = outgoingRequests.trySend(cancelStreamRequest)
+          val sendResult = readyState.outgoingRequests.trySend(cancelStreamRequest)
           if (sendResult.isFailure && !sendResult.isClosed) {
             error(
               "internal error mxcsq556tv: outgoingRequests.trySend(cancel) " +
@@ -412,8 +400,12 @@ internal class DataConnectBidiConnectStream(
         override fun toString() = "NotReady(pendingSubscribe=$pendingSubscribe)"
       }
 
-      class Ready(val outgoingRequests: SendChannel<StreamRequestProto>) : State {
-        override fun toString() = "Ready"
+      class Ready(
+        val outgoingRequests: SendChannel<StreamRequestProto>,
+        // NOTE: @Volatile is applied to `subscribed` so that toString() can safely read its value.
+        @Volatile var subscribed: Boolean = false,
+      ) : State {
+        override fun toString() = "Ready(subscribed=$subscribed)"
       }
     }
   }
