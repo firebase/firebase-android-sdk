@@ -83,7 +83,9 @@ public class CrashlyticsCore {
   private CrashlyticsFileMarker initializationMarker;
   private CrashlyticsFileMarker crashMarker;
   private boolean didCrashOnPreviousExecution;
-  private boolean didANROnPreviousExecution;
+
+  private final Object didANROnPreviousExecutionLock = new Object();
+  @Nullable private volatile Boolean didANROnPreviousExecutionCached;
 
   private CrashlyticsController controller;
   private final IdManager idManager;
@@ -197,7 +199,10 @@ public class CrashlyticsCore {
       final boolean initializeSynchronously = didPreviousInitializationFail();
 
       checkForPreviousCrash();
-      checkForPreviousAnr();
+
+      // Must run before enableExceptionHandling and finalizeSessions, since both alter the
+      // set of open sessions. didANROnPreviousExecution() uses the captured ID later.
+      controller.capturePreviousExecutionSessionId();
 
       controller.enableExceptionHandling(
           sessionIdentifier, Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
@@ -504,27 +509,31 @@ public class CrashlyticsCore {
     return didCrashOnPreviousExecution;
   }
 
-  private void checkForPreviousAnr() {
-    Future<Boolean> future =
-        crashlyticsWorkers
-            .common
-            .getExecutor()
-            .submit(() -> controller.didANROnPreviousExecution());
-
-    Boolean result;
-    try {
-      result = future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
-    } catch (Exception ex) {
-      Logger.getLogger().v("Error checking for previous ANR: " + ex.getMessage());
-      didANROnPreviousExecution = false;
-      return;
-    }
-
-    didANROnPreviousExecution = Boolean.TRUE.equals(result);
-  }
-
   public boolean didANROnPreviousExecution() {
-    return didANROnPreviousExecution;
+    Boolean cached = didANROnPreviousExecutionCached;
+    if (cached != null) {
+      return cached;
+    }
+    synchronized (didANROnPreviousExecutionLock) {
+      if (didANROnPreviousExecutionCached != null) {
+        return didANROnPreviousExecutionCached;
+      }
+      Future<Boolean> future =
+          crashlyticsWorkers
+              .common
+              .getExecutor()
+              .submit(() -> controller.didANROnPreviousExecution());
+
+      Boolean result;
+      try {
+        result = future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+      } catch (Exception ex) {
+        Logger.getLogger().v("Error checking for previous ANR: " + ex.getMessage());
+        result = false;
+      }
+      didANROnPreviousExecutionCached = Boolean.TRUE.equals(result);
+      return didANROnPreviousExecutionCached;
+    }
   }
 
   // endregion

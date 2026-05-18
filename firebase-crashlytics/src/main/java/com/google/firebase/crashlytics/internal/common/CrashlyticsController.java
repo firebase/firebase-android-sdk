@@ -119,6 +119,10 @@ class CrashlyticsController {
   // A token to make sure that checkForUnsentReports only gets called once.
   final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
+  // Captured before the previous session is finalized, so didANROnPreviousExecution() can
+  // still resolve the correct session ID after the user calls it later.
+  @Nullable private volatile String previousExecutionSessionId;
+
   CrashlyticsController(
       Context context,
       IdManager idManager,
@@ -944,13 +948,23 @@ class CrashlyticsController {
     }
   }
 
-  /** This function must be called before opening the first session. */
+  /**
+   * Captures the previous run's session ID on the common worker so {@link
+   * #didANROnPreviousExecution} can resolve it later. SDK-internal: the call site (currently
+   * {@link CrashlyticsCore#onPreExecute}) must queue this before {@link #enableExceptionHandling}
+   * (which opens a new session) and before {@link #finalizeSessions} (which removes the previous
+   * one); after either runs, {@link #getCurrentSessionId} no longer refers to the previous run.
+   */
+  void capturePreviousExecutionSessionId() {
+    crashlyticsWorkers.common.submit(() -> previousExecutionSessionId = getCurrentSessionId());
+  }
+
   boolean didANROnPreviousExecution() {
     CrashlyticsWorkers.checkBackgroundThread();
     if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       return false;
     }
-    final String sessionId = getCurrentSessionId();
+    final String sessionId = previousExecutionSessionId;
     if (sessionId == null) {
       return false;
     }
