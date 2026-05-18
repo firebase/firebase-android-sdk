@@ -77,6 +77,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlin.random.Random
+import kotlin.time.Duration
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -454,6 +455,64 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
       clientCollector2.cancelAndIgnoreRemainingEvents()
       clientCollector1.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `flow completes if server complete the RPC mid-stream`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      val responseSender = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      responseSender.onCompleted()
+
+      clientCollector.awaitComplete()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `late subscriber to completed RPC also completes`() =
+    runTest(timeout = Duration.INFINITE) {
+      val server = runningInProcessDataConnectServer()
+      val dataConnect = dataConnect(server)
+      val subscription = querySubscription(dataConnect)
+
+      turbineScope(timeout = Duration.INFINITE) {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        val responseSender = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        responseSender.onCompleted()
+        clientCollector1.awaitComplete()
+
+        val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        clientCollector2.awaitComplete()
+
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
+    }
+
+  @Test
+  fun `flow reports error if server completes the RPC mid-stream`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      val responseSender = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      responseSender.onCompleted()
+
+      clientCollector.awaitComplete()
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
