@@ -208,7 +208,7 @@ internal class DataConnectBidiConnectStream(
      * the bidirectional stream.
      */
     class Ready(val outgoingRequests: SendChannel<StreamRequestProto>) : Event {
-      override fun toString() = "Started"
+      override fun toString() = "Ready"
     }
 
     /** Represents a standard data response from the server. */
@@ -244,7 +244,9 @@ internal class DataConnectBidiConnectStream(
      * the resulting [Message] is processed by the [SharedFlow] before the `subscribe` collector has
      * started listening, leading to silently lost responses.
      */
-    object Subscribed : Event
+    object Subscribed : Event {
+      override fun toString() = "Subscribed"
+    }
   }
 
   /**
