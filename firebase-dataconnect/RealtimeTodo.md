@@ -56,7 +56,7 @@ wasting bandwidth and server resources.
 Implement a reference-counting mechanism or a cleanup callback upon flow completion to remove the
 query from `flowByQueryId` once the active collector count drops to zero.
 
-### TODO 3: Memory and Resource Leak of Subscription Flows in `flowByQueryId`
+### TODO 4: Late Subscribers Hang Indefinitely on Completed Stream
 
 * **File:** DataConnectBidiConnectStream.kt
 * **Severity:** `HIGH`
