@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
+import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
@@ -28,24 +29,25 @@ import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectPr
 import google.firebase.dataconnect.proto.ResumeRequest
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.sync.Mutex
@@ -69,48 +71,43 @@ internal class DataConnectBidiConnectStream(
   private val coroutineScope: CoroutineScope,
 ) {
 
-  private val scopeCompletedFlow: Flow<Event.Completed> = callbackFlow {
-    val job =
-      coroutineScope.coroutineContext[Job]
-        ?: run {
-          close()
-          return@callbackFlow
+  private val sharedFlow: SharedFlow<SubscriptionEvent>
+
+  init {
+    val scopeCompletedFlow: Flow<SubscriptionEvent.ScopeCompleted> =
+      coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
+
+    val connectionState =
+      MutableStateFlow<SubscriptionEvent.Connection>(SubscriptionEvent.Disconnected)
+
+    val messageFlow: Flow<SubscriptionEvent.Message> =
+      flow
+        .onEach { event ->
+          if (event is GrpcBidiFlow.Event.ConnectionInfo) {
+            connectionState.value = SubscriptionEvent.Connected(event)
+          }
+        }
+        .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto>>()
+        .map(SubscriptionEvent::Message)
+        .onCompletion { connectionState.value = SubscriptionEvent.Disconnected }
+        .retryWhen { _, attempt ->
+          if (attempt < 2) {
+            false
+          } else {
+            delay(1.seconds)
+            true
+          }
         }
 
-    val disposableHandle =
-      job.invokeOnCompletion { throwable ->
-        trySend(Event.Completed(throwable))
-        close()
-      }
-
-    awaitClose { disposableHandle.dispose() }
+    sharedFlow =
+      merge(scopeCompletedFlow, connectionState, messageFlow)
+        .buffer(capacity = Channel.UNLIMITED)
+        .shareIn(
+          coroutineScope,
+          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+          replay = 0,
+        )
   }
-
-  private val sharedFlow: SharedFlow<Event> =
-    flow
-      .map { event ->
-        when (event) {
-          is GrpcBidiFlow.Event.ConnectionInfo -> Event.Ready(event.outgoingRequests)
-          is GrpcBidiFlow.Event.Message ->
-            Event.Message(
-              nextSequenceNumber(),
-              event.message,
-              event.connectionInfo.outgoingRequests
-            )
-        }
-      }
-      .onCompletion { throwable ->
-        if (throwable === null) {
-          emit(Event.Completed(null))
-        }
-      }
-      .catch { emit(Event.Completed(throwable = it)) }
-      .buffer(capacity = Channel.UNLIMITED)
-      .shareIn(
-        coroutineScope,
-        started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
-        replay = 1
-      )
 
   /**
    * Starts a subscription for the query with the given [operationName] and [variables].
@@ -193,57 +190,35 @@ internal class DataConnectBidiConnectStream(
     operator fun component3() = extensions
   }
 
-  /**
-   * Represents an internal wrapper around incoming server responses and lifecycle signals.
-   *
-   * This sealed interface allows the internal [SharedFlow] to multiplex actual response data
-   * alongside control signals like completion, subscriber readiness, and buffer flushes.
-   */
-  private sealed interface Event {
+  private sealed interface SubscriptionEvent {
 
-    /**
-     * The event emitted once per collection, that provides the channel to use to send requests over
-     * the bidirectional stream.
-     */
-    class Ready(val outgoingRequests: SendChannel<StreamRequestProto>) : Event {
-      override fun toString() = "Ready"
+    class Message(val connectionId: String, val message: StreamResponseProto) : SubscriptionEvent {
+      constructor(
+        event: GrpcBidiFlow.Event.Message<StreamResponseProto>
+      ) : this(event.connectionId, event.message)
+      override fun toString() =
+        "Message(connectionId=$connectionId, message=${message.toCompactString()})"
     }
 
-    /** Represents a standard data response from the server. */
-    class Message(
-      val sequenceNumber: Long,
-      val streamResponse: StreamResponseProto,
+    object ScopeCompleted : SubscriptionEvent {
+      override fun toString() = "ScopeCompleted"
+    }
+
+    sealed interface Connection : SubscriptionEvent
+
+    class Connected(
+      val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
-    ) : Event {
-      override fun toString() = "Message(${streamResponse.toCompactString()})"
+    ) : Connection {
+      constructor(
+        event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto>
+      ) : this(event.connectionId, event.outgoingRequests)
+
+      override fun toString() = "Connected(connectionId=$connectionId)"
     }
 
-    /**
-     * Represents the termination of the incoming stream, either naturally or due to an error.
-     *
-     * By placing this in the [SharedFlow], new or existing subscribers can be notified immediately
-     * if the underlying stream is disconnected.
-     *
-     * @property throwable The exception that caused termination, or null if the stream completed
-     * normally.
-     */
-    class Completed(val throwable: Throwable?) : Event {
-      override fun toString() = "Completed(throwable=$throwable)"
-    }
-
-    /**
-     * A control signal used to synchronize the start of outgoing requests with the readiness of the
-     * collector.
-     *
-     * Emitted locally inside the [subscribe] method's `onSubscription` block. This guarantees that
-     * the collector in `transformWhile` is fully registered and actively listening to the
-     * [SharedFlow] *before* the [StreamRequestProto] is actually sent to the server. Without this
-     * signal, there is a race condition where the server might respond to the request so fast that
-     * the resulting [Message] is processed by the [SharedFlow] before the `subscribe` collector has
-     * started listening, leading to silently lost responses.
-     */
-    object Subscribed : Event {
-      override fun toString() = "Subscribed"
+    object Disconnected : Connection {
+      override fun toString() = "Disconnected"
     }
   }
 
