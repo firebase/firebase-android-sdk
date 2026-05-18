@@ -72,21 +72,20 @@ import kotlinx.coroutines.withContext
 internal object GrpcBidiFlow {
 
   /** Represents events emitted by the [Flow] created by [GrpcBidiFlow.create]. */
-  sealed interface Event<in RequestT, out ResponseT> {
+  sealed class Event<in RequestT, out ResponseT>(val connectionId: String) {
     /**
      * Emitted once when the gRPC flow collection starts.
      *
      * It provides a [SendChannel] that the caller can use to send requests to the server. Closing
      * this channel will half-close the gRPC stream from the client side.
      *
-     * @property connectionId A unique identifier for this particular flow collection; it's provided
-     * here mainly for debugging purposes, especially correlating with [Listener] callbacks.
+     * @param connectionId The unique identifier associated with this particular flow collection.
      * @property outgoingRequests The channel to send requests to the server.
      */
     class ConnectionInfo<in RequestT>(
-      val connectionId: String,
+      connectionId: String,
       val outgoingRequests: SendChannel<RequestT>,
-    ) : Event<RequestT, Nothing> {
+    ) : Event<RequestT, Nothing>(connectionId) {
       override fun toString() = "ConnectionInfo(connectionId=$connectionId)"
     }
 
@@ -94,14 +93,11 @@ internal object GrpcBidiFlow {
      * Emitted when a response message is received from the server.
      *
      * @property message The response message received from the server.
-     * @property message Information about the connection; it is included for convenience, such as
-     * in the case that subscribers of a [kotlinx.coroutines.flow.SharedFlow] join late and miss the
-     * [ConnectionInfo] event.
      */
     class Message<in RequestT, out ResponseT>(
+      connectionId: String,
       val message: ResponseT,
-      val connectionInfo: ConnectionInfo<RequestT>,
-    ) : Event<RequestT, ResponseT> {
+    ) : Event<RequestT, ResponseT>(connectionId) {
       override fun toString() = "Message(message=$message)"
     }
   }
@@ -125,34 +121,30 @@ internal object GrpcBidiFlow {
    * resulting in abnormal termination of the call and/or coroutine cancellation).
    */
   interface Listener<RequestT, ResponseT> {
-    fun collectStarted(connectionId: String)
-    fun collectCompleted(connectionId: String, exception: Throwable?)
 
-    fun connectionStarting(
-      connectionId: String,
-      method: MethodDescriptor<RequestT, ResponseT>,
-      callOptions: CallOptions,
-      headers: GrpcMetadata,
-    )
+    fun collectStarted(connectionId: String): CollectorListener<RequestT, ResponseT>
 
-    fun sendingMessage(connectionId: String, message: RequestT)
-    fun sendingMessagesComplete(connectionId: String)
-    fun sendingMessagesFailed(connectionId: String, exception: Throwable)
+    interface CollectorListener<RequestT, ResponseT> {
+      fun collectCompleted(exception: Throwable?)
 
-    fun receivedMessage(connectionId: String, message: ResponseT)
-    fun receivingMessagesComplete(connectionId: String)
-    fun receivingMessagesFailed(connectionId: String, exception: Throwable)
+      fun connectionStarting(
+        method: MethodDescriptor<RequestT, ResponseT>,
+        callOptions: CallOptions,
+        headers: GrpcMetadata,
+      )
 
-    fun onReady(connectionId: String)
+      fun sendingMessage(message: RequestT)
+      fun sendingMessagesComplete()
+      fun sendingMessagesFailed(exception: Throwable)
 
-    fun onMessage(connectionId: String, message: ResponseT)
+      fun receivedMessage(message: ResponseT)
+      fun receivingMessagesComplete()
+      fun receivingMessagesFailed(exception: Throwable)
 
-    fun onClose(
-      connectionId: String,
-      status: Status,
-      trailers: GrpcMetadata,
-      calculatedCause: Throwable?,
-    )
+      fun onResponseReady()
+      fun onResponseMessage(message: ResponseT)
+      fun onResponseClose(status: Status, trailers: GrpcMetadata, calculatedCause: Throwable?)
+    }
   }
 
   /**
@@ -195,7 +187,7 @@ internal object GrpcBidiFlow {
 
     return flow {
       val connectionId = idStringGenerator.next("con")
-      listener?.collectStarted(connectionId)
+      val collectionListener = listener?.collectStarted(connectionId)
 
       val requestChannel = Channel<RequestT>(UNLIMITED)
       initRequestsLists.forEachIndexed { index, initRequest: RequestT ->
@@ -211,8 +203,7 @@ internal object GrpcBidiFlow {
       }
 
       val requestHeaders = headers(connectionId).copy()
-      val connectionInfo = Event.ConnectionInfo(connectionId, requestChannel.asSendChannel())
-      emit(connectionInfo)
+      emit(Event.ConnectionInfo(connectionId, requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
       val readiness = Readiness(connectionId, clientCall)
@@ -228,11 +219,11 @@ internal object GrpcBidiFlow {
        */
       val responses = Channel<ResponseT>(1)
 
-      listener?.connectionStarting(connectionId, method, callOptions, requestHeaders)
+      collectionListener?.connectionStarting(method, callOptions, requestHeaders)
       clientCall.start(
         object : ClientCall.Listener<ResponseT>() {
           override fun onMessage(message: ResponseT) {
-            listener?.onMessage(connectionId, message)
+            collectionListener?.onResponseMessage(message)
             responses.trySend(message).onFailure { exception ->
               throw exception
                 ?: error(
@@ -250,12 +241,12 @@ internal object GrpcBidiFlow {
                 status.cause is CancellationException -> status.cause
                 else -> status.asException(trailers)
               }
-            listener?.onClose(connectionId, status, trailers, cause)
+            collectionListener?.onResponseClose(status, trailers, cause)
             responses.close(cause)
           }
 
           override fun onReady() {
-            listener?.onReady(connectionId)
+            collectionListener?.onResponseReady()
             readiness.onReady()
           }
         },
@@ -265,7 +256,7 @@ internal object GrpcBidiFlow {
       coroutineScope {
         if (listener !== null) {
           coroutineContext[Job]?.invokeOnCompletion { exception ->
-            listener.collectCompleted(connectionId, exception)
+            collectionListener?.collectCompleted(exception)
           }
         }
 
@@ -274,18 +265,18 @@ internal object GrpcBidiFlow {
             val sendingResult = runCatching {
               clientCall.suspendUntilReady()
               for (request in requestChannel) {
-                listener?.sendingMessage(connectionId, request)
+                collectionListener?.sendingMessage(request)
                 clientCall.sendMessage(request)
                 clientCall.suspendUntilReady()
               }
 
-              listener?.sendingMessagesComplete(connectionId)
+              collectionListener?.sendingMessagesComplete()
 
               clientCall.halfClose()
             }
 
             sendingResult.onFailure { exception ->
-              listener?.sendingMessagesFailed(connectionId, exception)
+              collectionListener?.sendingMessagesFailed(exception)
               clientCall.cancel(
                 "Collection of requests for connectionId=$connectionId completed exceptionally",
                 exception
@@ -298,15 +289,15 @@ internal object GrpcBidiFlow {
         val receiveResult = runCatching {
           clientCall.request(1)
           for (response in responses) {
-            listener?.receivedMessage(connectionId, response)
-            emit(Event.Message(response, connectionInfo))
+            collectionListener?.receivedMessage(response)
+            emit(Event.Message(connectionId, response))
             clientCall.request(1)
           }
-          listener?.receivingMessagesComplete(connectionId)
+          collectionListener?.receivingMessagesComplete()
         }
 
         receiveResult.onFailure { exception ->
-          listener?.receivingMessagesFailed(connectionId, exception)
+          collectionListener?.receivingMessagesFailed(exception)
 
           withContext(NonCancellable) {
             sendJob.cancel(
@@ -384,67 +375,71 @@ internal class LoggingGrpcBidiFlowListener<RequestT, ResponseT>(
     fun onMessageMessage(message: ResponseT): String
   }
 
-  override fun collectStarted(connectionId: String) =
+  override fun collectStarted(connectionId: String): CollectorListenerImpl {
     logger.debug { "collectStarted($connectionId)" }
+    return CollectorListenerImpl(connectionId)
+  }
 
-  override fun collectCompleted(connectionId: String, exception: Throwable?) =
-    logger.debug(exception) { "collectCompleted($connectionId, exception=$exception)" }
+  inner class CollectorListenerImpl(private val connectionId: String) :
+    GrpcBidiFlow.Listener.CollectorListener<RequestT, ResponseT> {
 
-  override fun connectionStarting(
-    connectionId: String,
-    method: MethodDescriptor<RequestT, ResponseT>,
-    callOptions: CallOptions,
-    headers: GrpcMetadata,
-  ) =
-    logger.debug {
-      val formattedHeaders = formatter?.connectionStartingHeaders(headers) ?: headers
-      "connectionStarting($connectionId, method=${method.fullMethodName}, " +
-        "callOptions=$callOptions, headers=$formattedHeaders)"
+    override fun collectCompleted(exception: Throwable?) =
+      logger.debug(exception) { "collectCompleted($connectionId, exception=$exception)" }
+
+    override fun connectionStarting(
+      method: MethodDescriptor<RequestT, ResponseT>,
+      callOptions: CallOptions,
+      headers: GrpcMetadata,
+    ) =
+      logger.debug {
+        val formattedHeaders = formatter?.connectionStartingHeaders(headers) ?: headers
+        "connectionStarting($connectionId, method=${method.fullMethodName}, " +
+          "callOptions=$callOptions, headers=$formattedHeaders)"
+      }
+
+    override fun sendingMessage(message: RequestT) =
+      logger.debug {
+        val formattedMessage = formatter?.sendingMessageMessage(message) ?: message
+        "sendingMessage($connectionId, message=$formattedMessage)"
+      }
+
+    override fun sendingMessagesComplete() =
+      logger.debug { "sendingMessagesComplete($connectionId)" }
+
+    override fun sendingMessagesFailed(exception: Throwable) =
+      logger.debug(exception) { "sendingMessagesFailed($connectionId, exception=$exception)" }
+
+    override fun receivedMessage(message: ResponseT) =
+      logger.debug {
+        val formattedMessage = formatter?.receivedMessageMessage(message) ?: message
+        "receivedMessage($connectionId, message=$formattedMessage)"
+      }
+
+    override fun receivingMessagesComplete() =
+      logger.debug { "receivingMessagesComplete($connectionId)" }
+
+    override fun receivingMessagesFailed(exception: Throwable) =
+      logger.debug(exception) { "receivingMessagesFailed($connectionId, exception=$exception)" }
+
+    override fun onResponseMessage(message: ResponseT) =
+      logger.debug {
+        val formattedMessage = formatter?.onMessageMessage(message) ?: message
+        "onResponseMessage($connectionId, message=$formattedMessage)"
+      }
+
+    override fun onResponseClose(
+      status: Status,
+      trailers: GrpcMetadata,
+      calculatedCause: Throwable?,
+    ) =
+      logger.debug {
+        val formattedTrailers = formatter?.onCloseTrailers(trailers) ?: trailers
+        "onResponseClose($connectionId, status=$status, trailers=$formattedTrailers, " +
+          "calculatedCause=$calculatedCause)"
+      }
+
+    override fun onResponseReady() {
+      logger.debug { "onResponseClose($connectionId)" }
     }
-
-  override fun sendingMessage(connectionId: String, message: RequestT) =
-    logger.debug {
-      val formattedMessage = formatter?.sendingMessageMessage(message) ?: message
-      "sendingMessage($connectionId, message=$formattedMessage)"
-    }
-
-  override fun sendingMessagesComplete(connectionId: String) =
-    logger.debug { "sendingMessagesComplete($connectionId)" }
-
-  override fun sendingMessagesFailed(connectionId: String, exception: Throwable) =
-    logger.debug(exception) { "sendingMessagesFailed($connectionId, exception=$exception)" }
-
-  override fun receivedMessage(connectionId: String, message: ResponseT) =
-    logger.debug {
-      val formattedMessage = formatter?.receivedMessageMessage(message) ?: message
-      "receivedMessage($connectionId, message=$formattedMessage)"
-    }
-
-  override fun receivingMessagesComplete(connectionId: String) =
-    logger.debug { "receivingMessagesComplete($connectionId)" }
-
-  override fun receivingMessagesFailed(connectionId: String, exception: Throwable) =
-    logger.debug(exception) { "receivingMessagesFailed($connectionId, exception=$exception)" }
-
-  override fun onMessage(connectionId: String, message: ResponseT) =
-    logger.debug {
-      val formattedMessage = formatter?.onMessageMessage(message) ?: message
-      "onMessage($connectionId, message=$formattedMessage)"
-    }
-
-  override fun onClose(
-    connectionId: String,
-    status: Status,
-    trailers: GrpcMetadata,
-    calculatedCause: Throwable?,
-  ) =
-    logger.debug {
-      val formattedTrailers = formatter?.onCloseTrailers(trailers) ?: trailers
-      "onClose($connectionId, status=$status, trailers=$formattedTrailers, " +
-        "calculatedCause=$calculatedCause)"
-    }
-
-  override fun onReady(connectionId: String) {
-    logger.debug { "onReady($connectionId)" }
   }
 }
