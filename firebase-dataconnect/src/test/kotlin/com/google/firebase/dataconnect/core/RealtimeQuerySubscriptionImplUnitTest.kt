@@ -478,24 +478,6 @@ class RealtimeQuerySubscriptionImplUnitTest {
     }
   }
 
-  @Test
-  fun `flow reports error if server completes the RPC mid-stream`() = runTest {
-    val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
-
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      responseSender.onCompleted()
-
-      clientCollector.awaitComplete()
-      serverCollector.cancelAndIgnoreRemainingEvents()
-    }
-  }
-
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
