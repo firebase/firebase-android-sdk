@@ -35,7 +35,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
@@ -43,7 +42,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
@@ -268,46 +266,46 @@ internal class DataConnectBidiConnectStream(
     private var subscriberCount = 0
 
     inner class Subscriber {
-      private val state = MutableStateFlow<State>(State.NotReady(pendingSubscribe = false))
+      private var state: State = State.NotReady(pendingSubscribe = false)
 
       private var subscribed = false
 
       suspend fun setOutgoingRequests(outgoingRequests: SendChannel<StreamRequestProto>) {
-        val oldState =
-          state.getAndUpdate { currentState ->
-            when (currentState) {
-              is State.NotReady -> State.Ready(outgoingRequests)
-              is State.Ready -> {
-                check(currentState.outgoingRequests === outgoingRequests) {
-                  "internal error n99tc8qe2t: setOutgoingRequests() has already been called " +
-                    "with a different object"
-                }
-                currentState
+        val currentState = state
+        val wasPendingSubscribe =
+          when (currentState) {
+            is State.NotReady -> {
+              state = State.Ready(outgoingRequests)
+              currentState.pendingSubscribe
+            }
+            is State.Ready -> {
+              check(currentState.outgoingRequests === outgoingRequests) {
+                "internal error n99tc8qe2t: setOutgoingRequests() has already been called " +
+                  "with a different object"
               }
+              false
             }
           }
 
-        if (oldState is State.NotReady && oldState.pendingSubscribe) {
+        if (wasPendingSubscribe) {
           mutex.withLock { subscribe(outgoingRequests) }
         }
       }
 
       suspend fun subscribe(): Boolean {
-        while (true) {
-          when (val currentState = state.value) {
-            is State.NotReady -> {
-              check(!currentState.pendingSubscribe) {
-                "internal error szx94f63tz: subscribe() called when already subscribed"
-              }
-              if (state.compareAndSet(currentState, State.NotReady(pendingSubscribe = true))) {
-                return true
-              }
+        val currentState = state
+        return when (currentState) {
+          is State.NotReady -> {
+            check(!currentState.pendingSubscribe) {
+              "internal error szx94f63tz: subscribe() called when already subscribed"
             }
-            is State.Ready ->
-              mutex.withLock {
-                return subscribe(currentState.outgoingRequests)
-              }
+            state = State.NotReady(pendingSubscribe = true)
+            true
           }
+          is State.Ready ->
+            mutex.withLock {
+              return subscribe(currentState.outgoingRequests)
+            }
         }
       }
 
@@ -344,22 +342,15 @@ internal class DataConnectBidiConnectStream(
       }
 
       suspend fun unsubscribe() {
-        while (true) {
-          when (val currentState = state.value) {
-            is State.Ready -> {
-              mutex.withLock { unsubscribe(currentState.outgoingRequests) }
-              return
+        val currentState = state
+        when (currentState) {
+          is State.NotReady -> {
+            if (currentState.pendingSubscribe) {
+              state = State.NotReady(pendingSubscribe = false)
             }
-            is State.NotReady -> {
-              if (!currentState.pendingSubscribe) {
-                return
-              } else {
-                val newState = State.NotReady(pendingSubscribe = false)
-                if (state.compareAndSet(currentState, newState)) {
-                  return
-                }
-              }
-            }
+          }
+          is State.Ready -> {
+            mutex.withLock { unsubscribe(currentState.outgoingRequests) }
           }
         }
       }
