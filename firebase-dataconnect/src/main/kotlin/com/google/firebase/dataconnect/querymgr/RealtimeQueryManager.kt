@@ -74,8 +74,8 @@ internal class RealtimeQueryManager(
       }
 
       it.coroutineContext.job.invokeOnCompletion {
-        logger.debug { "scope job is done; setting state to Closed" }
-        state.set(State.Closing)
+        logger.debug { "scope Job is completed; setting state to Closed" }
+        state.set(State.Closed)
       }
     }
 
