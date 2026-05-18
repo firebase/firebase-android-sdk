@@ -524,10 +524,10 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
 ) {
 
   open class Formatter<RequestT, ResponseT> {
-    fun connectionStartingHeaders(headers: GrpcMetadata): String = headers.toString()
-    fun onCloseTrailers(trailers: GrpcMetadata): String = trailers.toString()
-    fun request(message: RequestT): String = message.toString()
-    fun response(message: ResponseT): String = message.toString()
+    open fun connectionStartingHeaders(headers: GrpcMetadata): String = headers.toString()
+    open fun onCloseTrailers(trailers: GrpcMetadata): String = trailers.toString()
+    open fun request(message: RequestT): String = message.toString()
+    open fun response(message: ResponseT): String = message.toString()
   }
 
   fun collectStarted(connectionId: String): String = "collectStarted(cid=$connectionId)"

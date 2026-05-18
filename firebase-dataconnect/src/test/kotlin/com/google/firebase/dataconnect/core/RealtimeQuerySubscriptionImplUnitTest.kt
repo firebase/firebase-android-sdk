@@ -33,14 +33,20 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
-import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ErrorReceived
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.TurbinePredicateResult
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
+import com.google.firebase.dataconnect.testutil.awaitConnectRpcStarted
+import com.google.firebase.dataconnect.testutil.awaitResponseSender
+import com.google.firebase.dataconnect.testutil.awaitUntilCancelStreamRequest
+import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
+import com.google.firebase.dataconnect.testutil.awaitUntilResumeStreamRequest
+import com.google.firebase.dataconnect.testutil.awaitUntilStatusExceptionReceived
+import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequestWithRequestId
+import com.google.firebase.dataconnect.testutil.awaitUntilSubscribeStreamRequest
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -50,11 +56,7 @@ import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
-import io.grpc.StatusException
-import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
-import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.fail
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -598,108 +600,8 @@ private fun testVariablesArb(stringValue: Arb<String> = alphabeticStringArb()): 
 
 private fun testDataArb(intValue: Arb<Int> = Arb.int()): Arb<TestData> = intValue.map(::TestData)
 
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilInitStreamRequest(): StreamRequestReceived =
-  withClue("awaiting 'init' StreamRequest message") {
-    awaitUntilItemIsInstance<_, StreamRequestReceived>().also { event ->
-      val streamRequest = event.streamRequest
-      withClue("request=${streamRequest.print().value}") {
-        assertSoftly {
-          streamRequest.requestId shouldBe "init"
-          streamRequest.requestKindCase shouldBe RequestKindCase.REQUESTKIND_NOT_SET
-        }
-      }
-    }
-  }
-
-private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilStreamRequest(predicate: (StreamRequest) -> Boolean): StreamRequestReceived =
-  awaitUntilItem("event is StreamRequest") {
-    if (it is StreamRequestReceived && predicate(it.streamRequest)) {
-      TurbinePredicateResult.Satisfied(it)
-    } else {
-      TurbinePredicateResult.Unsatisfied
-    }
-  }
-
-private suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilErrorReceived(predicate: (ErrorReceived) -> Boolean): ErrorReceived =
-  awaitUntilItem("event is ErrorReceived") {
-    if (it is ErrorReceived && predicate(it)) {
-      TurbinePredicateResult.Satisfied(it)
-    } else {
-      TurbinePredicateResult.Unsatisfied
-    }
-  }
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   .awaitUntilClientClosesConnection() = awaitUntilStatusExceptionReceived(Status.Code.CANCELLED)
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilStatusExceptionReceived(code: Status.Code) =
-  withClue("expecting ErrorReceived event with StatusException(code=$code)") {
-    awaitUntilItem { event ->
-      if (event !is ErrorReceived) {
-        return@awaitUntilItem false
-      }
-      val exception = event.exception
-      val status =
-        when (exception) {
-          is StatusException -> exception.status
-          is StatusRuntimeException -> exception.status
-          else ->
-            fail(
-              "Got ErrorReceived event with exception=$exception, " +
-                "but expected StatusException with code=$code"
-            )
-        }
-      if (status.code != code) {
-        fail(
-          "Got ErrorReceived event with StatusException/StatusRuntimeException (as expected), " +
-            "but code=${status.code} (expected code: $code, exception=$exception)"
-        )
-      }
-      true
-    }
-  }
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilSubscribeStreamRequest(): StreamRequestReceived =
-  withClue("awaiting 'subscribe' StreamRequest message") {
-    awaitUntilStreamRequest { it.hasSubscribe() }
-  }
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilResumeStreamRequest(): StreamRequestReceived =
-  withClue("awaiting 'resume' StreamRequest message") { awaitUntilStreamRequest { it.hasResume() } }
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilCancelStreamRequest(): StreamRequestReceived =
-  withClue("awaiting 'cancel' StreamRequest message") { awaitUntilStreamRequest { it.hasCancel() } }
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilStreamRequestWithRequestId(requestId: String): StreamRequestReceived {
-  val predicateDescription = "StreamRequest with requestId=$requestId"
-  return withClue("awaiting $predicateDescription") {
-    awaitUntilItem(predicateDescription) {
-      when (it) {
-        is StreamRequestReceived ->
-          if (it.streamRequest.requestId == requestId) {
-            TurbinePredicateResult.Satisfied(it)
-          } else {
-            TurbinePredicateResult.Unsatisfied
-          }
-        else -> TurbinePredicateResult.Unsatisfied
-      }
-    }
-  }
-}
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitResponseSender(): StreamObserver<StreamResponse> = awaitConnectRpcStarted().responseObserver
-
-private suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitConnectRpcStarted(): ConnectRpcStarted = awaitUntilItemIsInstance<_, ConnectRpcStarted>()
 
 private fun StreamRequest.shouldBeSubscribeRequestFor(
   queryRef: QueryRef<TestData, TestVariables>,

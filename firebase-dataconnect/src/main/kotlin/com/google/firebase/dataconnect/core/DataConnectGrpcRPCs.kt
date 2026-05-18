@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
+import com.google.firebase.dataconnect.util.GrpcBidiFlowListenerMessageFormatter
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
@@ -396,6 +397,8 @@ internal class DataConnectGrpcRPCs(
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
+    // For low-level debugging, swap this `grpcBidiFlowListener` out for
+    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(authToken?.authUid))
     val grpcBidiFlowListener =
       ConnectGrpcBidiFlowListener(
         streamId = streamId,
@@ -464,29 +467,17 @@ internal class DataConnectGrpcRPCs(
         }
       }
 
-      override fun sendingMessagesComplete() {
-        TODO("Not yet implemented")
-      }
+      override fun sendingMessagesComplete() {}
 
-      override fun sendingMessagesFailed(exception: Throwable) {
-        TODO("Not yet implemented")
-      }
+      override fun sendingMessagesFailed(exception: Throwable) {}
 
-      override fun receivedMessage(message: StreamResponse) {
-        TODO("Not yet implemented")
-      }
+      override fun receivedMessage(message: StreamResponse) {}
 
-      override fun receivingMessagesComplete() {
-        TODO("Not yet implemented")
-      }
+      override fun receivingMessagesComplete() {}
 
-      override fun receivingMessagesFailed(exception: Throwable) {
-        TODO("Not yet implemented")
-      }
+      override fun receivingMessagesFailed(exception: Throwable) {}
 
-      override fun onCallReady() {
-        TODO("Not yet implemented")
-      }
+      override fun onCallReady() {}
 
       override fun onCallMessage(message: StreamResponse) {
         logger.logGrpcReceived(
@@ -513,6 +504,20 @@ internal class DataConnectGrpcRPCs(
         }
       }
     }
+  }
+
+  @Suppress("unused")
+  private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: String?) :
+    GrpcBidiFlowListenerMessageFormatter.Formatter<StreamRequest, StreamResponse>() {
+    override fun connectionStartingHeaders(headers: Metadata): String =
+      headers.toStructProto(authUid).toCompactString()
+
+    override fun onCloseTrailers(trailers: Metadata): String =
+      trailers.toStructProto(authUid).toCompactString()
+
+    override fun request(message: StreamRequest): String = message.toCompactString(authUid)
+
+    override fun response(message: StreamResponse): String = message.toCompactString()
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {

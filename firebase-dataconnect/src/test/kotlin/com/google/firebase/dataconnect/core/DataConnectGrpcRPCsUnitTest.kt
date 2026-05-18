@@ -34,7 +34,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
+import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -401,17 +401,13 @@ class DataConnectGrpcRPCsUnitTest {
 
     server.events.test {
       val stream = dataConnectGrpcRPCs.connect()
-
       expectNoEvents()
 
       val subscriptionFlow = stream.subscribe("req1", "opName", StructProto.getDefaultInstance())
-      backgroundScope.launch { subscriptionFlow.collect() }
+      expectNoEvents()
 
-      val streamRequest =
-        awaitUntilItemIsInstance<
-            _, InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
-          >()
-          .streamRequest
+      backgroundScope.launch { subscriptionFlow.collect() }
+      val streamRequest: StreamRequest = awaitUntilInitStreamRequest().streamRequest
 
       withClue("streamRequest=${streamRequest.print().value}") {
         withClue("requestId") { streamRequest.requestId shouldBe "init" }
