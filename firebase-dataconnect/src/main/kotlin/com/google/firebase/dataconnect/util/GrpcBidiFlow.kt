@@ -94,10 +94,10 @@ internal object GrpcBidiFlow {
      *
      * @property message The response message received from the server.
      */
-    class Message<in RequestT, out ResponseT>(
+    class Message<out ResponseT>(
       connectionId: String,
       val message: ResponseT,
-    ) : Event<RequestT, ResponseT>(connectionId) {
+    ) : Event<Any?, ResponseT>(connectionId) {
       override fun toString() = "Message(message=$message)"
     }
   }
