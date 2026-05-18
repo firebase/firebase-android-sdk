@@ -344,9 +344,23 @@ internal class DataConnectBidiConnectStream(
       }
 
       suspend fun unsubscribe() {
-        when (val currentState = state.value) {
-          is State.NotReady -> return
-          is State.Ready -> mutex.withLock { unsubscribe(currentState.outgoingRequests) }
+        while (true) {
+          when (val currentState = state.value) {
+            is State.Ready -> {
+              mutex.withLock { unsubscribe(currentState.outgoingRequests) }
+              return
+            }
+            is State.NotReady -> {
+              if (!currentState.pendingSubscribe) {
+                return
+              } else {
+                val newState = State.NotReady(pendingSubscribe = false)
+                if (state.compareAndSet(currentState, newState)) {
+                  return
+                }
+              }
+            }
+          }
         }
       }
 
