@@ -81,11 +81,16 @@ internal inline fun <T> AtomicReference<T>.updateWithResult(
 }
 
 internal sealed interface AtomicReferenceUpdateResult<out T> {
+
+  val updated: Boolean
+
   object NotUpdated : AtomicReferenceUpdateResult<Nothing> {
+    override val updated = false
     override fun toString() = "NoChange"
   }
 
   class Updated<out T>(val oldValue: T, val newValue: T) : AtomicReferenceUpdateResult<T> {
+    override val updated = true
     override fun toString() = "Updated"
   }
 }
