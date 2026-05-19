@@ -13,92 +13,118 @@ supersedes: [0002, 0003]
 
 ## Context
 
-In previous designs (documented in ADR 0002 and ADR 0003), we shared the multiplexed bidirectional
-gRPC connection flow using `replay = 1` to allow late subscribers to join an active connection.
-This introduced a critical issue where new subscribers immediately received stale connection
-lifecycle and data events from the replay cache.
+The Data Connect SDK manages a multiplexed bidirectional gRPC connection to support realtime query
+subscriptions. Historically, query multiplexing was achieved using a single, connection-level
+shared flow (the **"upper" shared flow**), while the tracking of active query subscribers, their
+individual states, and the orchestration of `subscribe`, `resume`, and `cancel` requests was
+managed manually by a complex utility called `SubscriptionStateManager`.
 
-We attempted to solve this by setting `replayExpirationMillis = 0` to clear the cache when
-subscribers dropped to zero (ADR 0002), and by introducing a client-side sequence number filter
-to discard stale replayed data when new subscribers joined while the stream was already active
-(ADR 0003).
+To support late subscribers joining active queries, the connection flow used `replay = 1`. This,
+however, introduced a critical issue where new subscribers immediately received stale events from
+the replay cache. We attempted to mitigate this with `replayExpirationMillis = 0` (ADR 0002) and
+client-side sequence number filtering (ADR 0003).
 
-However, there was a severe, latent **in-flight request race condition** (documented in ADR 0003)
-that the sequence number approach could not address: if a new subscriber joined exactly between
-another subscriber's `subscribe` request and its corresponding response from the server, the new
-subscriber would incorrectly consume that in-flight response, as its sequence number was valid.
-
-Additionally, the state management implemented by `SubscriptionStateManager` and
-`SubscriptionStateManager.Subscriber` was highly complex, fragile, and difficult to serialize
-safely under concurrent access.
+Despite these workarounds, the architecture remained fragile. It suffered from a latent
+**in-flight request race condition** (documented in ADR 0003) where a late subscriber could consume
+an in-flight response intended for a different subscriber, because sequence numbers could not
+physically differentiate responses. Furthermore, `SubscriptionStateManager` was highly complex,
+hard to maintain, and had extremely subtle, error-prone multithreading requirements.
 
 ## Decision
 
-We will:
-1.  **Disable Replay Cache**: Share the connection flow in `DataConnectBidiConnectStream.kt` with
-`replay = 0`, completely eliminating the replay cache.
-2.  **Remove Sequence Numbers**: Completely remove the sequence number tracking and filtering
-from the codebase since there is no longer a replay cache to filter.
-3.  **Retire SubscriptionStateManager**: Completely delete the `SubscriptionStateManager` and its
-nested `Subscriber` class.
-4.  **Introduce `ConflatedSignal`**: Introduce a new internal coroutine utility, `ConflatedSignal`,
-to coordinate subscription events.
-5.  **Implement `SubscriptionState` Machine**: Manage connection states via a robust, lock-free
-`AtomicReference<SubscriptionState>` state machine with three states:
+We will completely redesign the multiplexing and connection lifecycle architecture to utilize **two
+levels of `SharedFlow`** coordinated by a lock-free connection state machine and a new
+`ConflatedSignal` utility.
+
+Specifically, we will:
+1.  **Establish Two Levels of SharedFlow**:
+*   **Upper Shared Flow (`connectionFlow`)**: Maintains the active bidirectional gRPC connection
+with the server. Shared using `replay = 0` and `SharingStarted.WhileSubscribed(0)`.
+*   **Lower Shared Flows**: Spawned per unique query (cached in `RealtimeQueryManager`'s
+`flowByQueryId`). Each lower flow is shared using `replay = 0` and `WhileSubscribed(0)`.
+It multiplexes all active local subscribers for queries sharing the exact same operation
+name and variables.
+2.  **Retire `SubscriptionStateManager` and Sequence Numbers**: Completely delete the fragile,
+manual subscriber-tracking class and remove all sequence number filtering logic.
+3.  **Coordinate via `ConflatedSignal`**: Introduce a thread-safe, lock-free coroutine utility
+`ConflatedSignal` to coordinate `subscribe` and `resume` requests.
+4.  **Implement `SubscriptionState` Machine**: Manage query-specific connection states via an
+`AtomicReference<SubscriptionState>` transitioning through:
 *   `Disconnected`: No active connection and no pending subscriptions.
-*   `DisconnectedWithPendingSubscription`: Disconnected, but has a subscription that needs to
-be sent once reconnected.
-*   `Connected`: Active stream connection, holding reference to the outgoing channel, a
-`ConflatedSignal` for request coordination, and a lazy `subscribeOrResumeLoop` coroutine job.
+*   `DisconnectedWithPendingSubscription`: Disconnected, but has an active subscriber waiting
+for reconnection.
+*   `Connected`: Connected, holding the channel, a `ConflatedSignal`, and running a lazy
+`subscribeOrResumeLoop` coroutine.
 
 ## Rationale
 
-* **Eliminating Stale Data by Design**: By setting `replay = 0`, we resolve all stale-cache
-  bugs fundamentally. Late subscribers can no longer receive stale events because the stream
-  maintains no replay history.
-* **Simplified Architecture**: Removing `SubscriptionStateManager` and sequence number
-  filtering drastically reduces code complexity, making the codebase much easier to maintain
-  and debug.
-* **Race-Resistant Coordination**: Instead of relying on the flow's replay cache to distribute
-  the `outgoingRequests` channel to subscribers (so they can send their own requests), we
-  inverted the responsibility:
-  * Subscribers simply signal the connection's `ConflatedSignal` that they want to subscribe
-    or resume.
-  * The `Connected` state runs a dedicated, serialized `subscribeOrResumeLoop` that collects
-    these signals and safely sends the appropriate `subscribe` or `resume` requests over the
-    channel.
-  * This ensures that all request transmissions are naturally coordinated.
-* **Resilient Reconnection**: The `SubscriptionState` explicitly tracks if a subscription was
-  pending when a disconnect occurred (`DisconnectedWithPendingSubscription`). Upon reconnection,
-  it immediately triggers `subscribeOrResumeSignal.signal()`, seamlessly resuming the
-  subscription.
+The entire two-level `SharedFlow` design was motivated by the desire to leverage **standard,
+declarative coroutines library operators** that perfectly express our desired semantics, rather
+than building and maintaining complex custom synchronization logic.
+
+### Leveraging Built-In Coroutine Operators
+
+* **`WhileSubscribed(replayExpirationMillis = 0)`**: By using this policy at both the upper and
+  lower flow levels, we let the coroutines library handle the subscription reference-counting
+  natively. The connection automatically opens when the first query is subscribed to, and closes
+  when the last subscriber leaves. Similarly, the query-level resources automatically clean up
+  when a query has zero active collectors.
+* **`retryWhen`**: Relying on standard flow sharing allows us to use `retryWhen` on the upper flow.
+  This provides a clean, robust, and standardized hook to implement upcoming reliability
+  features, such as exponential backoff and instant reconnection on system network state change
+  events.
+
+### Bypassing Stale Cache and Race Conditions by Design (`replay = 0`)
+
+By setting `replay = 0` at both levels, we eliminate the replay cache entirely. New query
+subscribers no longer receive stale replayed messages. Because they wait for fresh emissions
+originating from the newly coordinated `subscribe` or `resume` requests, the latent "in-flight"
+race condition is naturally avoided for subsequent subscribers.
+
+### Rationale for `resume` on Late Subscribers
+
+When a new subscriber joins an already active query flow, the lower flow's `onSubscription` block
+triggers and signals the connection's `ConflatedSignal`. Because we are already subscribed to the
+query, the `subscribeOrResumeLoop` sends a `resume` request to the server.
+
+This `resume` request kicks the server to immediately re-run the query and send an updated result
+down the stream. This is highly valuable because:
+1.  **Data Freshness**: Some queries are not "fully" real-time and may not emit updates frequently. A
+`resume` ensures the late subscriber does not receive stale data that has been residing on the
+client.
+2.  **User Intent Proxy**: A new local subscriber (e.g., a user navigating to a new screen) is a
+strong proxy for user intent indicating they want the absolute latest results.
 
 ## Options Considered
 
-* **Option A: Maintain `replay = 1` and implement complex request-response correlation**
-  * *Pros:* Keeps the existing flow distribution structure.
-  * *Cons:* Requires server-side protocol changes to echo back correlation tokens in
-    `StreamResponse` to solve the in-flight race condition. This is highly impractical for
-    a pure client-side SDK update.
-  * *Reason for Rejection:* It is not feasible to require server-side protocol changes, and
-    any client-side attempt to serialize requests without changing `replay = 1` was
-    excessively complex.
-* **Option B: Rebuild connection flow on every subscription**
+* **Option A: The Old Code (Single Shared Flow + Manual `SubscriptionStateManager`)**
+  * *Pros:* Avoids the minor overhead of creating multiple `SharedFlow` and `Job` instances
+    per query.
+  * *Cons:* Extremely complex, fragile, and required custom multithreading locks. The team was
+    effectively rebuilding `WhileSubscribed` logic manually, which is highly error-prone.
+  * *Reason for Rejection:* The manual state tracking was too fragile. The benefits of delegating
+    concurrency and lifecycle to standard, battle-tested library operators far outweighed the
+    minimal overhead of secondary flows.
+* **Option B: Rebuilding Connection Flow on every subscription**
   * *Pros:* Simple 1-to-1 connection-to-subscriber mapping.
-  * *Cons:* Bypasses multiplexing entirely. We would open multiple costly gRPC connections
-    for identical queries, wasting client and server resources.
-  * *Reason for Rejection:* Multiplexing queries over a single connection is a core
-    performance requirement of the Data Connect SDK.
+  * *Cons:* Severely wastes server and client resources by opening multiple distinct gRPC
+    connections for identical or overlapping queries.
+  * *Reason for Rejection:* Multiplexing over a single connection is a hard performance
+    requirement of the SDK.
 
 ## Consequences
 
 * **Positive:**
-  * Complete elimination of stale replay cache bugs.
-  * Significant code reduction (deleted `SubscriptionStateManager` and sequence filtering).
-  * Native, elegant support for automatic reconnection and subscription resumption.
-* **Negative/Risks / Known Limitations:**
-  * Requires maintaining a new concurrency utility (`ConflatedSignal`), though this class is
-    lightweight, heavily unit-tested, and stable.
+  * Massive complexity reduction by replacing fragile custom state with standard operators
+    (`WhileSubscribed` and `retryWhen`).
+  * Complete eradication of stale replay cache bugs.
+  * Seamless, native support for automatic reconnection and subscription resumption.
+  * Clean foundation for implementing robust exponential backoff in the future.
+* **Negative/Risks / Tradeoffs:**
+  * Requires developers to have a highly sophisticated and intricate understanding of
+    `SharedFlow` internals (such as subscription counters, start policies, and cache expiration).
+    However, this is a necessary tradeoff, as implementing these concurrency semantics manually
+    would require the same deep knowledge and result in far more fragile code.
   * The **"in-flight request" race condition** (where a late subscriber can consume a response
     intended for a different subscriber) remains unresolved. Because we removed sequence
     numbers and have no alternative correlation mechanism, this remains a known limitation
