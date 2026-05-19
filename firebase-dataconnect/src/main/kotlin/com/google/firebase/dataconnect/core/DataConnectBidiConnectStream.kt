@@ -110,7 +110,7 @@ internal class DataConnectBidiConnectStream(
             true
           }
         }
-        .buffer(capacity = Channel.UNLIMITED)
+        .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
         .shareIn(
           coroutineScope,
           started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
@@ -168,7 +168,7 @@ internal class DataConnectBidiConnectStream(
         }
         .transformToMessage(requestId, operationName, variables, state)
         .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
-        .buffer(capacity = Channel.UNLIMITED)
+        .buffer(capacity = Channel.CONFLATED) // use CONFLATED to drop stale data
         .shareIn(
           coroutineScope,
           started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
