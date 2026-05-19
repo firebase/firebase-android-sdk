@@ -37,8 +37,8 @@ network comes back.
 
 Replace the simplistic retry logic with:
 1. **Exponential Backoff**: Increase the delay between retries exponentially (with jitter) to avoid
-   overwhelming the server and the client.
+overwhelming the server and the client.
 2. **Network State Integration**: Integrate with the OS network state monitoring (e.g., Android's
-   `ConnectivityManager`) to proactively trigger a reconnection attempt as soon as the device
-   regains internet connectivity, rather than waiting for a backoff timer.
+`ConnectivityManager`) to proactively trigger a reconnection attempt as soon as the device
+regains internet connectivity, rather than waiting for a backoff timer.
 
