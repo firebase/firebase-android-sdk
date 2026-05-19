@@ -21,6 +21,7 @@ import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.C
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -215,6 +216,132 @@ class TypicalAppFunctionalTests {
       .contains(
         "injectMappingFileIdIntoResource - com_google_firebase_crashlytics_mappingfileid.xml test321"
       )
+  }
+
+  @Test
+  fun `injectCrashlyticsMappingFileIdRelease is UP_TO_DATE on second invocation`() {
+    val first =
+      GradleRunner.create()
+        .withGradleVersion("8.1")
+        .withProjectDir(projectDir)
+        .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+        .build()
+
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val second =
+      GradleRunner.create()
+        .withGradleVersion("8.1")
+        .withProjectDir(projectDir)
+        .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+        .build()
+
+    assertThat(second.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(UP_TO_DATE)
+  }
+
+  @Test
+  fun `release mapping file id resource is preserved across rebuilds`() {
+    GradleRunner.create()
+      .withGradleVersion("8.1")
+      .withProjectDir(projectDir)
+      .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+      .build()
+
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+    val resourceFile =
+      File(
+        projectDir,
+        "build/generated/res/injectCrashlyticsMappingFileIdRelease/values/" +
+          "com_google_firebase_crashlytics_mappingfileid.xml",
+      )
+
+    val idBefore = idFile.readText()
+    val resourceBefore = resourceFile.readText()
+
+    GradleRunner.create()
+      .withGradleVersion("8.1")
+      .withProjectDir(projectDir)
+      .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+      .build()
+
+    assertThat(idFile.readText()).isEqualTo(idBefore)
+    assertThat(resourceFile.readText()).isEqualTo(resourceBefore)
+  }
+
+  @Test
+  fun `task re-runs after clean`() {
+    GradleRunner.create()
+      .withGradleVersion("8.1")
+      .withProjectDir(projectDir)
+      .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+      .build()
+
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+
+    val rerun =
+      GradleRunner.create()
+        .withGradleVersion("8.1")
+        .withProjectDir(projectDir)
+        .withArguments(
+          ":clean",
+          ":injectCrashlyticsMappingFileIdRelease",
+          "--configuration-cache",
+        )
+        .build()
+
+    assertThat(rerun.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    assertThat(idFile.exists()).isTrue()
+    assertThat(idFile.readText()).isNotEmpty()
+  }
+
+  @Test
+  fun `toggling mappingFileUploadEnabled invalidates the task`() {
+    val first =
+      GradleRunner.create()
+        .withGradleVersion("8.1")
+        .withProjectDir(projectDir)
+        .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+        .build()
+
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+    assertThat(idFile.readText()).isEqualTo("test321")
+
+    buildFile.writeText(
+      """
+        import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+
+        plugins {
+          id("com.android.application") version "8.1.4"
+          id("com.google.gms.google-services") version "4.4.1"
+          id("com.google.firebase.crashlytics") version "$pluginVersion"
+        }
+
+        android {
+          compileSdk = 33
+          namespace = "com.google.firebase.testing.crashlytics"
+
+          buildTypes {
+            release {
+              configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+              }
+              isMinifyEnabled = true
+            }
+          }
+        }
+      """
+    )
+
+    val second =
+      GradleRunner.create()
+        .withGradleVersion("8.1")
+        .withProjectDir(projectDir)
+        .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+        .build()
+
+    assertThat(second.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    assertThat(idFile.readText()).isEqualTo("00000000000000000000000000000000")
   }
 
   @BeforeEach
