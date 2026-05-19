@@ -50,8 +50,14 @@ typeset -A match_submodules
 typeset -A match_types
 
 # Determine input format
-typeset -r input_format=$([[ "$test_input" == *.* ]] && sayn "FullyQualifiedClassName" || sayn "SimpleClassName")
-typeset -r relative_path_suffix=$([[ "$input_format" == "FullyQualifiedClassName" ]] && sayn "${test_input//.//}" || sayn "")
+if [[ "$test_input" == *.* ]]; then
+  typeset -r input_format="FullyQualifiedClassName"
+  typeset -r relative_path_suffix="${test_input//.//}"
+else
+  typeset -r input_format="SimpleClassName"
+  typeset -r relative_path_suffix=""
+fi
+
 
 for config in "${test_configurations[@]}"; do
   typeset -a parts
