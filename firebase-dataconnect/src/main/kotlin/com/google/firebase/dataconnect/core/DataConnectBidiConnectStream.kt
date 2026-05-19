@@ -20,7 +20,17 @@ import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.update
+import com.google.protobuf.Empty as EmptyProto
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.ExecuteRequest as ExecuteRequestProto
+import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
+import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
+import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
+import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -49,15 +59,6 @@ import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration.Companion.seconds
-import com.google.protobuf.Empty as EmptyProto
-import google.firebase.dataconnect.proto.ExecuteRequest as ExecuteRequestProto
-import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
-import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
-import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
-import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
-import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -128,66 +129,82 @@ internal class DataConnectBidiConnectStream(
     operationName: String,
     variables: Struct,
   ): Flow<ExecuteResponse> {
-    val state =
-      AtomicReference<SubscriptionState>(
-        SubscriptionState.Disconnected(pendingSubscription = false)
-      )
+    val state = AtomicReference<SubscriptionState>(SubscriptionState.Disconnected)
 
-    val x =
-      sharedFlow
-        .transformToMessage(requestId, operationName, variables, state)
-        .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
-        .buffer(capacity = Channel.UNLIMITED)
-        .shareIn(
-          coroutineScope,
-          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
-          replay = 0,
-        )
-        .onSubscription { emit(MessageOrSubscribe.Subscribed) }
-        .transform { messageOrSubscribe ->
-          when (messageOrSubscribe) {
-            is MessageOrSubscribe.Message -> emit(messageOrSubscribe.message)
-            MessageOrSubscribe.Subscribed -> {
-              while (true) {
-                when (val currentState = state.get()) {
-                  is SubscriptionState.Disconnected ->
-                    if (currentState.pendingSubscription) {
-                      break
-                    } else if (state.compareAndSet(currentState, SubscriptionState.Disconnected(pendingSubscription = true))) {
-                      break
-                    }
-                  is SubscriptionState.Connected -> {
-                    currentState.enqueueSubscribeOrResume()
-                  }
-                }
-              }
+    fun sendSubscribeOrResume() {
+      while (true) {
+        when (val currentState = state.get()) {
+          is SubscriptionState.Connected -> {
+            currentState.enqueueSubscribeOrResume()
+          }
+          SubscriptionState.DisconnectedWithPendingSubscription -> break
+          SubscriptionState.Disconnected ->
+            if (
+              state.compareAndSet(
+                currentState,
+                SubscriptionState.DisconnectedWithPendingSubscription
+              )
+            ) {
+              break
+            }
+        }
+      }
+    }
+
+    return sharedFlow
+      .onCompletion {
+        state.update { currentState ->
+          if (currentState is SubscriptionState.Connected) {
+            currentState.cancelSubscribeOrResumeJob("all subscribers have unsubscribed")
+          }
+          SubscriptionState.Disconnected
+        }
+      }
+      .transformToMessage(requestId, operationName, variables, state)
+      .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
+      .buffer(capacity = Channel.UNLIMITED)
+      .shareIn(
+        coroutineScope,
+        started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+        replay = 0,
+      )
+      .onSubscription { emit(MessageOrSubscribe.Subscribed) }
+      .transform { messageOrSubscribe ->
+        when (messageOrSubscribe) {
+          MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
+          is MessageOrSubscribe.Message -> {
+            val executeResponse = messageOrSubscribe.message.toExecuteResponse()
+            if (executeResponse !== null) {
+              emit(executeResponse)
             }
           }
         }
-
-    TODO()
+      }
   }
 
   private sealed interface MessageOrSubscribe {
+
+    object Subscribed : MessageOrSubscribe
 
     class Message(val message: StreamResponseProto) : MessageOrSubscribe {
       constructor(event: SubscriptionEvent.Message) : this(event.message)
       override fun toString() = "Message(message=${message.toCompactString()}"
     }
-
-    object Subscribed : MessageOrSubscribe
-
   }
 
-  private sealed interface SubscriptionState {
+  sealed interface SubscriptionState {
 
-    class Disconnected(val pendingSubscription: Boolean) : SubscriptionState {
-      override fun toString(): String = "Disconnected(pendingSubscription=$pendingSubscription)"
+    object Disconnected : SubscriptionState {
+      override fun toString() = "Disconnected"
+    }
+
+    object DisconnectedWithPendingSubscription : SubscriptionState {
+      override fun toString() = "DisconnectedWithPendingSubscription"
     }
 
     class Connected(
       val outgoingRequests: SendChannel<StreamRequestProto>,
-      val wasPendingSubscription: Boolean,
+      private val hadPendingSubscription: Boolean,
       private val enqueuedSubscribeOrResume: MutableStateFlow<Boolean>,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
@@ -201,13 +218,18 @@ internal class DataConnectBidiConnectStream(
         subscribeOrResumeJob.cancel(message)
       }
 
+      fun wasSubscribeOrResumeJobStarted(): Boolean =
+        subscribeOrResumeJob.run {
+          hadPendingSubscription || isActive || isCompleted || isCancelled
+        }
+
       override fun toString(): String =
         "Connected(" +
-            "wasPendingSubscription=$wasPendingSubscription " +
-            "enqueuedSubscribeOrResume=${enqueuedSubscribeOrResume.value} " +
-            "subscribeOrResumeJob={isActive=${subscribeOrResumeJob.isActive}, " +
-            "isCancelled=${subscribeOrResumeJob.isCancelled}, " +
-            "isCompleted=${subscribeOrResumeJob.isCompleted}})"
+          "hadPendingSubscription=$hadPendingSubscription, " +
+          "enqueuedSubscribeOrResume=${enqueuedSubscribeOrResume.value} " +
+          "subscribeOrResumeJob={isActive=${subscribeOrResumeJob.isActive}, " +
+          "isCancelled=${subscribeOrResumeJob.isCancelled}, " +
+          "isCompleted=${subscribeOrResumeJob.isCompleted}})"
     }
   }
 
@@ -263,13 +285,12 @@ internal class DataConnectBidiConnectStream(
     }
   }
 
-  private fun SharedFlow<SubscriptionEvent>.transformToMessage(
+  private fun Flow<SubscriptionEvent>.transformToMessage(
     requestId: String,
     operationName: String,
     variables: Struct,
     state: AtomicReference<SubscriptionState>,
   ): Flow<SubscriptionEvent.Message> {
-
     val subscribeRequest =
       StreamRequestProto.newBuilder().let { streamRequest ->
         streamRequest.setRequestId(requestId)
@@ -297,36 +318,59 @@ internal class DataConnectBidiConnectStream(
         streamRequest.build()
       }
 
-    suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(authUid: String?, enqueuedSubscribeOrResume: MutableStateFlow<Boolean>) {
-      fun sendRequest(request: StreamRequestProto) {
-        val sendResult = trySend(request)
-        sendResult.onFailure { exception ->
-          if (!sendResult.isClosed) {
-            throw exception
-              ?: error(
-                "internal error gt2ms5wwby: outgoingRequests.trySend() failed, " +
+    return transformToMessage(
+      state,
+      subscribeRequest = subscribeRequest,
+      resumeRequest = resumeRequest,
+      cancelRequest = cancelRequest,
+    )
+  }
+
+  private fun Flow<SubscriptionEvent>.transformToMessage(
+    state: AtomicReference<SubscriptionState>,
+    subscribeRequest: StreamRequestProto,
+    resumeRequest: StreamRequestProto,
+    cancelRequest: StreamRequestProto,
+  ): Flow<SubscriptionEvent.Message> {
+
+    fun SendChannel<StreamRequestProto>.trySendOrThrow(
+      authUid: String?,
+      request: StreamRequestProto
+    ) {
+      val sendResult = trySend(request)
+      sendResult.onFailure { exception ->
+        if (!sendResult.isClosed) {
+          throw exception
+            ?: error(
+              "internal error gt2ms5wwby: outgoingRequests.trySend() failed, " +
                 "but should have succeeded because outgoingRequests is created " +
-                    "with capacity=UNLIMITED (request=${request.toCompactString(authUid)})"
-              )
-          }
+                "with capacity=UNLIMITED (request=${request.toCompactString(authUid)})"
+            )
         }
       }
+    }
 
+    suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
+      authUid: String?,
+      enqueuedSubscribeOrResume: MutableStateFlow<Boolean>
+    ) {
       var subscribed = false
       try {
-        enqueuedSubscribeOrResume.filter { it }.collect {
-          enqueuedSubscribeOrResume.value = false
-          if (! subscribed) {
-            sendRequest(subscribeRequest)
-            subscribed = true
-          } else {
-            sendRequest(resumeRequest)
+        enqueuedSubscribeOrResume
+          .filter { it }
+          .collect {
+            enqueuedSubscribeOrResume.value = false
+            if (!subscribed) {
+              trySendOrThrow(authUid, subscribeRequest)
+              subscribed = true
+            } else {
+              trySendOrThrow(authUid, resumeRequest)
+            }
           }
-        }
       } finally {
         withContext(NonCancellable) {
           if (subscribed) {
-            sendRequest(cancelRequest)
+            trySendOrThrow(authUid, cancelRequest)
           }
         }
       }
@@ -334,29 +378,37 @@ internal class DataConnectBidiConnectStream(
 
     fun transitionToConnectedState(event: SubscriptionEvent.Connected) {
       while (true) {
-        when (val currentState = state.get()) {
-          is SubscriptionState.Connected ->
-            error(
-              "internal error nqe9gre3ny: got event $event, " +
-                "but state=$currentState (expected state=Disconnected)"
-            )
-          is SubscriptionState.Disconnected -> {
-            val enqueuedSubscribeOrResume = MutableStateFlow(currentState.pendingSubscription)
-            val newState =
-              SubscriptionState.Connected(
-                event.outgoingRequests,
-                wasPendingSubscription = currentState.pendingSubscription,
-                enqueuedSubscribeOrResume = enqueuedSubscribeOrResume,
-                subscribeOrResumeJob =
-                  coroutineScope.launch(start = CoroutineStart.LAZY) {
-                    event.outgoingRequests.subscribeOrResumeLoop(event.authUid, enqueuedSubscribeOrResume)
-                  }
+        val currentState = state.get()
+
+        val isPendingSubscription =
+          when (currentState) {
+            is SubscriptionState.Connected ->
+              error(
+                "internal error nqe9gre3ny: got event $event, " +
+                  "but state=$currentState (expected state=Disconnected)"
               )
-            if (state.compareAndSet(currentState, newState)) {
-              newState.enqueueSubscribeOrResume()
-              break
-            }
+            is SubscriptionState.Disconnected -> false
+            is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
+
+        val enqueuedSubscribeOrResume = MutableStateFlow(isPendingSubscription)
+        val subscribeOrResumeJob =
+          coroutineScope.launch(start = CoroutineStart.LAZY) {
+            event.outgoingRequests.subscribeOrResumeLoop(event.authUid, enqueuedSubscribeOrResume)
+          }
+
+        val newState =
+          SubscriptionState.Connected(
+            event.outgoingRequests,
+            enqueuedSubscribeOrResume = enqueuedSubscribeOrResume,
+            hadPendingSubscription = isPendingSubscription,
+            subscribeOrResumeJob = subscribeOrResumeJob,
+          )
+        if (state.compareAndSet(currentState, newState)) {
+          if (isPendingSubscription) {
+            subscribeOrResumeJob.start()
+          }
+          break
         }
       }
     }
@@ -364,7 +416,8 @@ internal class DataConnectBidiConnectStream(
     fun transitionToDisconnectedState(@Suppress("unused") event: SubscriptionEvent.Disconnected) {
       while (true) {
         when (val currentState = state.get()) {
-          is SubscriptionState.Disconnected ->
+          SubscriptionState.Disconnected,
+          SubscriptionState.DisconnectedWithPendingSubscription ->
             error(
               "internal error vv4verqchm: got Disconnected event, " +
                 "but state=$currentState (expected state=Connected)"
@@ -372,9 +425,11 @@ internal class DataConnectBidiConnectStream(
           is SubscriptionState.Connected -> {
             currentState.cancelSubscribeOrResumeJob("got Disconnected event")
             val newState =
-              SubscriptionState.Disconnected(
-                pendingSubscription = currentState.wasPendingSubscription
-              )
+              if (currentState.wasSubscribeOrResumeJobStarted()) {
+                SubscriptionState.DisconnectedWithPendingSubscription
+              } else {
+                SubscriptionState.Disconnected
+              }
             if (state.compareAndSet(currentState, newState)) {
               break
             }
