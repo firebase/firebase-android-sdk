@@ -63,7 +63,7 @@ class BeePlusGradleProject extends ExternalResource {
       java.util.logging.Logger.getLogger(BeePlusGradleProject.class.getName());
 
   static {
-    LOGGER.info("Production compatibility tests using versions:");
+    LOGGER.info("Production compat tests using versions:");
     LOGGER.info("Latest Gradle Version: " + LATEST_GRADLE_VERSION);
     LOGGER.info("Latest AGP Version: " + LATEST_AGP_VERSION);
   }
