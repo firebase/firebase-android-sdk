@@ -16,13 +16,12 @@
 
 package com.google.firebase.ai
 
-import com.google.firebase.ai.AIModels.Companion.getTemplateModels
 import com.google.firebase.ai.type.PublicPreviewAPI
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.string.shouldContainIgnoringCase
-import io.kotest.matchers.string.shouldNotBeEmpty
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
@@ -51,32 +50,56 @@ class TemplateIntegrationTests {
   private val topic = "Firebase"
   private val inputs = mapOf("customerName" to customerName, "topic" to topic)
 
-  @Test
-  fun testTemplateGenerateContent() {
-    for (model in getTemplateModels()) {
-      runBlocking {
-        val response = model.generateContent(templateId, inputs)
-
-        response.candidates.shouldNotBeEmpty()
-        response.text shouldContainIgnoringCase customerName
-        response.text shouldContainIgnoringCase topic
-      }
-    }
+  @Before
+  fun setup() {
+    AIModels.setup()
   }
 
   @Test
-  fun testTemplateGenerateContentStream() {
-    for (model in getTemplateModels()) {
-      runBlocking {
-        val responses = model.generateContentStream(templateId, inputs).toList()
-        responses
-          .joinToString { it.text ?: "" }
-          .lowercase()
-          .let {
-            it shouldContainIgnoringCase customerName
-            it shouldContainIgnoringCase topic
-          }
+  fun testTemplateGenerateContent_googleAI(): Unit = runBlocking {
+    val response = AIModels.googleAITemplateModel.generateContent("$templateId-google-ai", inputs)
+
+    response.candidates.shouldNotBeEmpty()
+    response.text shouldContainIgnoringCase customerName
+    response.text shouldContainIgnoringCase topic
+  }
+
+  @Test
+  fun testTemplateGenerateContent_vertexAI(): Unit = runBlocking {
+    val response = AIModels.vertexAITemplateModel.generateContent("$templateId-vertex-ai", inputs)
+
+    response.candidates.shouldNotBeEmpty()
+    response.text shouldContainIgnoringCase customerName
+    response.text shouldContainIgnoringCase topic
+  }
+
+  @Test
+  fun testTemplateGenerateContentStream_googleAI(): Unit = runBlocking {
+    val responses =
+      AIModels.googleAITemplateModel.generateContentStream("$templateId-google-ai", inputs).toList()
+    responses
+      .joinToString { it.text ?: "" }
+      .lowercase()
+      .replace(",", "")
+      .replace("  ", " ") // Model sometimes doubles spacing
+      .let {
+        it shouldContainIgnoringCase customerName
+        it shouldContainIgnoringCase topic
       }
-    }
+  }
+
+  @Test
+  fun testTemplateGenerateContentStream_vertexAI(): Unit = runBlocking {
+    val responses =
+      AIModels.vertexAITemplateModel.generateContentStream("$templateId-vertex-ai", inputs).toList()
+    responses
+      .joinToString { it.text ?: "" }
+      .lowercase()
+      .replace(",", "")
+      .replace("  ", " ") // Model sometimes doubles spacing
+      .let {
+        it shouldContainIgnoringCase customerName
+        it shouldContainIgnoringCase topic
+      }
   }
 }

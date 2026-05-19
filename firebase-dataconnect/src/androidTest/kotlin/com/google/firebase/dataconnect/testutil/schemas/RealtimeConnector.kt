@@ -18,10 +18,12 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import io.kotest.assertions.print.print
 import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -29,6 +31,9 @@ import kotlinx.serialization.serializer
 class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataConnectInternal) {
 
   val dataConnect: FirebaseDataConnect = dataConnectInternal
+
+  internal val dataConnectGrpcRPCs: DataConnectGrpcRPCs by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { dataConnectInternal.grpcRPCs }
 
   val resourceName: String = dataConnectInternal.connectorResourceName
 
@@ -57,10 +62,14 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     fun queryRef(variables: Variables) =
       connector.dataConnect.query(OPERATION_NAME, variables, serializer<Data>(), serializer())
 
-    @Serializable data class Variables(val key: Key)
+    @Serializable
+    data class Variables(val key: Key) {
+      constructor(id: UUID) : this(Key(id))
+    }
 
     @Serializable
     data class Data(val item: Item?) {
+      constructor(name: String) : this(Item(name))
       @Serializable data class Item(val name: String)
     }
 
@@ -134,6 +143,16 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
       backend: DataConnectBackend? = null,
     ): RealtimeConnector {
       val dataConnect = dataConnectFactory.newInstance(config, backend)
+      return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
+    }
+
+    fun getInstance(dataConnect: FirebaseDataConnect): RealtimeConnector {
+      require(dataConnect.config == config) {
+        "The given FirebaseDataConnect has a config that " +
+          "does not match the config required for RealtimeConnector: " +
+          "actual=${dataConnect.config.print().value}, " +
+          "expected=${config.print().value}"
+      }
       return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
     }
   }

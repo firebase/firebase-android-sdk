@@ -1,6 +1,7 @@
 # Unreleased
-
 - [feature] Added support for `minimum` and `maximum` FieldValue operations.
+
+# 26.3.0
 - [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.
 - [feature] Added support for Pipeline expressions `arraySlice`, `arraySliceToEnd`, `arrayFilter`, `arrayTransform` and `arrayTransformWithIndex`.
   [#7989](https://github.com/firebase/firebase-android-sdk/pull/7989)
