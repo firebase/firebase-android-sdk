@@ -267,7 +267,7 @@ internal object GrpcBidiFlow {
             readiness.onReady()
           }
         },
-        requestHeaders,
+        requestHeaders ?: GrpcMetadata(),
       )
 
       coroutineScope {
