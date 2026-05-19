@@ -43,8 +43,8 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.INTEG_TESTS_FAD_FIREBASE_TOKEN }}
         run: |
           ./gradlew \
-          :firebase-appdistribution-gradle:integrationTest \
-          :firebase-appdistribution-gradle:prodTest
+          :firebase-appdistribution-gradle:prodTest \
+          :firebase-appdistribution-gradle:integrationTest
 
       - name: Upload Test Report
         if: failure()
