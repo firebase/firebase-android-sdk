@@ -56,7 +56,11 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
       if (useBlankMappingFileId.get()) {
         CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
       } else {
-        CrashlyticsBuildtools.generateMappingFileId()
+        // Reuse the on-disk id when valid so release builds stay reproducible and don't invalidate
+        // downstream tasks (mergeResources, R8, packaging, bundling). A fresh UUID is only minted
+        // on the first build or after `clean`.
+        existingMappingFileId()?.takeUnless { it == CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID }
+          ?: CrashlyticsBuildtools.generateMappingFileId()
       }
     mappingFileIdFile.get().asFile.writeText(mappingFileId)
 
@@ -67,12 +71,14 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
   }
 
   /**
-   * Check if a mapping file id file already exists, and that the mapping file id is blank - meaning
-   * no obfuscation is enabled. The Crashlytics SDK always needs a mapping file id.
+   * Returns the mapping file id currently stored on disk, or null if the file is missing or empty.
+   * Used to keep the task up-to-date across builds and to avoid generating a new random id on
+   * every release build.
    */
-  private fun blankMappingFileIdExists(): Boolean {
+  private fun existingMappingFileId(): String? {
     val file: File = mappingFileIdFile.get().asFile
-    return file.exists() && file.readText() == CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
+    if (!file.exists()) return null
+    return file.readText().trim().ifEmpty { null }
   }
 
   internal companion object {
@@ -91,7 +97,14 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
           )
           this.mappingFileIdFile.set(buildFile(project, variant, "mappingFileId.txt"))
 
-          outputs.upToDateWhen { useBlankMappingFileId.get() && blankMappingFileIdExists() }
+          outputs.upToDateWhen {
+            val existing = existingMappingFileId()
+            if (useBlankMappingFileId.get()) {
+              existing == CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
+            } else {
+              existing != null && existing != CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
+            }
+          }
         }
 
       // It is not possible to disable Android resources in the AGP app plugin.
