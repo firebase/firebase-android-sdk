@@ -48,15 +48,10 @@ class BeePlusGradleProject extends ExternalResource {
   private static String getRequiredSystemProperty(String propertyName) {
     String value = System.getProperty(propertyName);
     if (isNullOrEmpty(value)) {
-      String errorMsg =
+      throw new IllegalStateException(
           String.format(
-              "\n\n========================================\n"
-                  + "ERROR: %s system property not set!\n"
-                  + "This is required for running App Distribution production compatibility tests.\n"
-                  + "========================================\n\n",
-              propertyName);
-      System.err.println(errorMsg);
-      throw new IllegalStateException(errorMsg);
+              "\n\n%s system property not set. This is required for production tests.\n",
+              propertyName));
     }
     return value;
   }
