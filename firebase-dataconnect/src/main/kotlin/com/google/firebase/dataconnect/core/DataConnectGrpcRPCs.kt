@@ -418,7 +418,13 @@ internal class DataConnectGrpcRPCs(
         listener = grpcBidiFlowListener,
       )
 
-    return DataConnectBidiConnectStream(flow, connectCoroutineScope)
+    return DataConnectBidiConnectStream(
+      flow,
+      connectCoroutineScope,
+      Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
+        it.debug { "created by ${logger.nameWithId}" }
+      }
+    )
   }
 
   private inner class ConnectGrpcBidiFlowListener(

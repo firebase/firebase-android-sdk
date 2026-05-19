@@ -76,6 +76,7 @@ import kotlinx.coroutines.launch
 internal class DataConnectBidiConnectStream(
   flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, String?>>,
   private val coroutineScope: CoroutineScope,
+  private val logger: Logger,
 ) {
 
   /**
