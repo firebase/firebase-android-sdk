@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
 import com.google.protobuf.Struct
@@ -35,7 +36,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -59,7 +59,6 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -221,12 +220,12 @@ internal class DataConnectBidiConnectStream(
     class Connected(
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
-      private val enqueuedSubscribeOrResume: MutableStateFlow<Boolean>,
+      private val subscribeOrResumeSignal: ConflatedSignal,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
 
       fun enqueueSubscribeOrResume() {
-        enqueuedSubscribeOrResume.value = true
+        subscribeOrResumeSignal.signal()
         subscribeOrResumeJob.start()
       }
 
@@ -242,7 +241,7 @@ internal class DataConnectBidiConnectStream(
       override fun toString(): String =
         "Connected(" +
           "hadPendingSubscription=$hadPendingSubscription, " +
-          "enqueuedSubscribeOrResume=${enqueuedSubscribeOrResume.value} " +
+          "subscribeOrResumeSignal.hasPendingSignal=${subscribeOrResumeSignal.hasPendingSignal}, " +
           "subscribeOrResumeJob={isActive=${subscribeOrResumeJob.isActive}, " +
           "isCancelled=${subscribeOrResumeJob.isCancelled}, " +
           "isCompleted=${subscribeOrResumeJob.isCompleted}})"
@@ -362,26 +361,21 @@ internal class DataConnectBidiConnectStream(
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: String?,
-      enqueuedSubscribeOrResume: MutableStateFlow<Boolean>
+      subscribeOrResumeSignal: ConflatedSignal,
     ) {
       var subscribed = false
       try {
-        enqueuedSubscribeOrResume
-          .filter { it }
-          .collect {
-            enqueuedSubscribeOrResume.value = false
-            if (!subscribed) {
-              trySendOrThrow(authUid, subscribeRequest)
-              subscribed = true
-            } else {
-              trySendOrThrow(authUid, resumeRequest)
-            }
+        subscribeOrResumeSignal.signals.collect {
+          if (!subscribed) {
+            trySendOrThrow(authUid, subscribeRequest)
+            subscribed = true
+          } else {
+            trySendOrThrow(authUid, resumeRequest)
           }
+        }
       } finally {
-        withContext(NonCancellable) {
-          if (subscribed) {
-            trySendOrThrow(authUid, cancelRequest)
-          }
+        if (subscribed) {
+          trySendOrThrow(authUid, cancelRequest)
         }
       }
     }
@@ -401,17 +395,20 @@ internal class DataConnectBidiConnectStream(
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
 
-        val enqueuedSubscribeOrResume = MutableStateFlow(isPendingSubscription)
+        val subscribeOrResumeSignal = ConflatedSignal()
+        if (isPendingSubscription) {
+          subscribeOrResumeSignal.signal()
+        }
         val subscribeOrResumeJob =
           coroutineScope.launch(start = CoroutineStart.LAZY) {
-            event.outgoingRequests.subscribeOrResumeLoop(event.authUid, enqueuedSubscribeOrResume)
+            event.outgoingRequests.subscribeOrResumeLoop(event.authUid, subscribeOrResumeSignal)
           }
 
         val newState =
           SubscriptionState.Connected(
             event.outgoingRequests,
-            enqueuedSubscribeOrResume = enqueuedSubscribeOrResume,
             hadPendingSubscription = isPendingSubscription,
+            subscribeOrResumeSignal = subscribeOrResumeSignal,
             subscribeOrResumeJob = subscribeOrResumeJob,
           )
         if (state.compareAndSet(currentState, newState)) {
