@@ -27,7 +27,7 @@ if (( # != 1 )); then
     say "Example 1: ${0:t} RealtimeQuerySubscriptionImplUnitTest"
     say "Example 2: ${0:t} com.google.firebase.dataconnect.core.RealtimeQuerySubscriptionImplUnitTest"
   } >&2
-  exit 1
+  exit 2
 fi
 
 typeset -r test_input="$1"
@@ -69,8 +69,11 @@ for config in "${test_configurations[@]}"; do
   typeset -a dir_matches
   if [[ "$input_format" == "FullyQualifiedClassName" ]]; then
     dir_matches=( ${project_root_dir}/firebase-dataconnect/${source_root}/**/${relative_path_suffix}.kt(N) )
-  else
+  elif [[ "$input_format" == "SimpleClassName" ]]; then
     dir_matches=( ${project_root_dir}/firebase-dataconnect/${source_root}/**/${test_input}.kt(N) )
+  else
+    say_error "INTERNAL ERROR: unsupported value for input_format: $input_format" >&2
+    exit 1
   fi
 
   for file in "${dir_matches[@]}"; do
@@ -103,7 +106,7 @@ typeset -r test_type="${match_types[$matched_file]}"
 # Extract or assign fully-qualified class name
 if [[ "$input_format" == "FullyQualifiedClassName" ]]; then
   typeset -r fully_qualified_class="${test_input}"
-else
+elif [[ "$input_format" == "SimpleClassName" ]]; then
   typeset package_name=""
   typeset package_line
   package_line=$(grep -m 1 "^[[:space:]]*package[[:space:]]" "$matched_file") || :
@@ -119,6 +122,9 @@ else
     exit 1
   fi
   typeset -r fully_qualified_class="${package_name}.${test_input}"
+else
+  say_error "INTERNAL ERROR: unsupported value for input_format: $input_format" >&2
+  exit 1
 fi
 
 # Construct gradle arguments
@@ -132,7 +138,7 @@ if [[ "$test_type" == "unit" ]]; then
     "--tests"
     "${fully_qualified_class}"
   )
-else
+elif [[ "$test_type" == "integration" ]]; then
   typeset -ra args=(
     "${project_root_dir}/gradlew"
     "-p"
@@ -141,6 +147,9 @@ else
     "${submodule}:connectedDebugAndroidTest"
     "-Pandroid.testInstrumentationRunnerArguments.class=${fully_qualified_class}"
   )
+else
+  say_error "INTERNAL ERROR: unsupported value for test_type: $test_type" >&2
+  exit 1
 fi
 
 say_args "${args[@]}"
