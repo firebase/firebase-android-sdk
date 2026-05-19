@@ -199,6 +199,10 @@ task prodTest(type: Test) {
       environment 'FIREBASE_TOKEN', token
     }
   }
+
+  testLogging {
+    showStandardStreams = true
+  }
 }
 
 test {

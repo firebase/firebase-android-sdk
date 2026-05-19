@@ -44,7 +44,7 @@ jobs:
         run: |
           ./gradlew \
           :firebase-appdistribution-gradle:prodTest \
-          :firebase-appdistribution-gradle:integrationTest
+          :firebase-appdistribution-gradle:integrationTest --continue
 
       - name: Upload Test Report
         if: failure()
