@@ -134,7 +134,7 @@ find_package_line() {
   # Explicitly clear IFS for 'read' to preserve exact line contents
   while IFS= read -r line; do
     # Relies on 'extendedglob' (already set at the top of the script)
-    if [[ "$line" == [[:space:]]#package[[:space:]]#* ]]; then
+    if [[ "$line" == [[:space:]]#package[[:space:]]##* ]]; then
       say "$line"
       return 0
     fi
