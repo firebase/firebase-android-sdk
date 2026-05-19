@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.util.coroutines
 
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -58,7 +59,15 @@ import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
  */
 internal class ConflatedSignal {
 
+  private val signalState = AtomicBoolean(false)
   private val channel = Channel<Unit>(CONFLATED)
+
+  /**
+   * Whether there is a pending signal from a call to [signal] that has not yet been consumed by a
+   * call to [await].
+   */
+  val hasPendingSignal: Boolean
+    get() = signalState.get()
 
   /**
    * Emits a signal to resume a suspended waiter, if one is present, or buffers the signal for the
@@ -72,6 +81,7 @@ internal class ConflatedSignal {
    * of coroutines).
    */
   fun signal() {
+    signalState.set(true)
     channel.trySend(Unit)
   }
 
@@ -93,6 +103,11 @@ internal class ConflatedSignal {
    * indeterminate manner, will be resumed when [signal] is called.
    */
   suspend fun await() {
-    channel.receive()
+    while (true) {
+      if (signalState.compareAndSet(true, false)) {
+        break
+      }
+      channel.receive()
+    }
   }
 }

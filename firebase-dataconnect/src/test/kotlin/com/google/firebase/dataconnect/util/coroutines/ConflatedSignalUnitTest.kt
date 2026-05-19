@@ -109,4 +109,45 @@ class ConflatedSignalUnitTest {
       }
     }
   }
+
+  @Test
+  fun `hasPendingSignal is initially false`() {
+    val signal = ConflatedSignal()
+    signal.hasPendingSignal shouldBe false
+  }
+
+  @Test
+  fun `hasPendingSignal is true after signal is called`() {
+    val signal = ConflatedSignal()
+    signal.signal()
+    signal.hasPendingSignal shouldBe true
+  }
+
+  @Test
+  fun `hasPendingSignal transitions to false after await completes`() = runTest {
+    val signal = ConflatedSignal()
+    signal.signal()
+    signal.hasPendingSignal shouldBe true
+
+    signal.await()
+    signal.hasPendingSignal shouldBe false
+  }
+
+  @Test
+  fun `hasPendingSignal remains true after multiple signals`() {
+    val signal = ConflatedSignal()
+    repeat(5) { signal.signal() }
+    signal.hasPendingSignal shouldBe true
+  }
+
+  @Test
+  fun `hasPendingSignal remains false when multiple awaiters`() = runTest {
+    val signal = ConflatedSignal()
+    repeat(5) { backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() } }
+
+    repeat(100) {
+      signal.hasPendingSignal shouldBe false
+      yield()
+    }
+  }
 }
