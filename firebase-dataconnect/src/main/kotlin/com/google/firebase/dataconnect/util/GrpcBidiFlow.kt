@@ -200,7 +200,7 @@ internal object GrpcBidiFlow {
               "internal error pkynh7rc22: requestChannel.trySend(initRequest) " +
                 "should not have failed because `requestChannel` was created " +
                 "with capacity=UNLIMITED; connectionId=$connectionId, index=$index, " +
-                "initRequestsLists.size=${initRequestsLists}, initRequest=$initRequest"
+                "initRequestsLists.size=${initRequestsLists.size}, initRequest=$initRequest"
             )
         }
       }
