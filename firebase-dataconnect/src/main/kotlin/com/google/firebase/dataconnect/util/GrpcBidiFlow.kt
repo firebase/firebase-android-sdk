@@ -77,7 +77,7 @@ internal object GrpcBidiFlow {
    * @property connectionId The "connectionId" to uniquely identify a connection to the remote
    * server, especially for correlation with invocations of [Listener.collectStarted].
    */
-  sealed class Event<in RequestT, out ResponseT>(val connectionId: String) {
+  sealed class Event<in RequestT, out ResponseT, out ConnectionContext>(val connectionId: String) {
     /**
      * Emitted once when the gRPC flow collection starts.
      *
@@ -87,11 +87,13 @@ internal object GrpcBidiFlow {
      * @param connectionId The unique identifier associated with this particular flow collection.
      * @property outgoingRequests The channel to send requests to the server.
      */
-    class ConnectionInfo<in RequestT>(
+    class ConnectionInfo<in RequestT, out ConnectionContext>(
       connectionId: String,
+      val connectionContext: ConnectionContext,
       val outgoingRequests: SendChannel<RequestT>,
-    ) : Event<RequestT, Nothing>(connectionId) {
-      override fun toString() = "ConnectionInfo(connectionId=$connectionId)"
+    ) : Event<RequestT, Nothing, ConnectionContext>(connectionId) {
+      override fun toString() =
+        "ConnectionInfo(connectionId=$connectionId, connectionContext=$connectionContext)"
     }
 
     /**
@@ -102,7 +104,7 @@ internal object GrpcBidiFlow {
     class Message<out ResponseT>(
       connectionId: String,
       val message: ResponseT,
-    ) : Event<Any?, ResponseT>(connectionId) {
+    ) : Event<Any?, ResponseT, Nothing>(connectionId) {
       override fun toString() = "Message(message=$message)"
     }
   }
@@ -174,15 +176,15 @@ internal object GrpcBidiFlow {
    * @return A cold flow of [Event]s.
    * @throws IllegalArgumentException if [method] is not a bidirectional streaming RPC.
    */
-  fun <RequestT, ResponseT> create(
+  fun <RequestT, ResponseT, ConnectionContext> create(
     grpcChannel: GrpcChannel,
     method: MethodDescriptor<RequestT, ResponseT>,
     callOptions: CallOptions,
-    headers: (connectionId: String) -> GrpcMetadata,
+    headers: (connectionId: String) -> Pair<GrpcMetadata, ConnectionContext>,
     idStringGenerator: IdStringGenerator,
     initRequests: Iterable<RequestT> = emptyList(),
     listener: Listener<RequestT, ResponseT>? = null,
-  ): Flow<Event<RequestT, ResponseT>> {
+  ): Flow<Event<RequestT, ResponseT, ConnectionContext>> {
     require(method.type == MethodDescriptor.MethodType.BIDI_STREAMING) {
       "method.type is ${method.type} but BIDI_STREAMING is required"
     }
@@ -207,8 +209,8 @@ internal object GrpcBidiFlow {
         }
       }
 
-      val requestHeaders = headers(connectionId).copy()
-      emit(Event.ConnectionInfo(connectionId, requestChannel.asSendChannel()))
+      val (requestHeaders, connectionContext) = headers(connectionId).copy()
+      emit(Event.ConnectionInfo(connectionId, connectionContext, requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
       val readiness = Readiness(connectionId, clientCall)

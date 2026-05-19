@@ -412,7 +412,7 @@ internal class DataConnectGrpcRPCs(
         grpcChannel = lazyGrpcChannel.get(),
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
-        headers = { metadata },
+        headers = { Pair(metadata, authToken?.authUid) },
         idStringGenerator = idStringGenerator,
         initRequests = listOf(initRequest),
         listener = grpcBidiFlowListener,
