@@ -56,6 +56,8 @@ import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -507,7 +509,42 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow retries if server completes the RPC gracefully mid-stream`() = runTest {
+  fun `flow retries if server completes the RPC gracefully mid-stream`() =
+    testFlowReconnectsUponConnectionClosure {
+      it.onCompleted()
+    }
+
+  @Test
+  fun `flow retries if server aborts the RPC mid-stream with StatusException`() {
+    Status.Code.entries.forEach { code ->
+      withClue("code=$code") {
+        testFlowReconnectsUponConnectionClosure { it.onError(StatusException(code.toStatus())) }
+      }
+    }
+  }
+
+  @Test
+  fun `flow retries if server aborts the RPC mid-stream with StatusRuntimeException`() {
+    Status.Code.entries.forEach { code ->
+      withClue("code=$code") {
+        testFlowReconnectsUponConnectionClosure {
+          it.onError(StatusRuntimeException(code.toStatus()))
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `flow retries if server aborts with a non-grpc Exception`() {
+    class TestException(message: String) : Exception(message)
+    testFlowReconnectsUponConnectionClosure {
+      it.onError(TestException(Arb.dataConnect.string().sample()))
+    }
+  }
+
+  private fun testFlowReconnectsUponConnectionClosure(
+    abort: (StreamObserver<StreamResponse>) -> Unit
+  ) = runTest {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
@@ -518,10 +555,9 @@ class RealtimeQuerySubscriptionImplUnitTest {
       val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
       serverCollector.awaitResponseSender().let { responseSender ->
         serverCollector.awaitUntilSubscribeStreamRequest()
-        responseSender.onCompleted()
+        abort(responseSender)
       }
 
-      // Client should restart the connection since the closure was unprovoked and unexpected.
       serverCollector.awaitResponseSender().let { responseSender ->
         val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
         responseSender.onNext(requestId, testData)
@@ -530,6 +566,37 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
       clientCollector.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `flow retries if server connection is lost`() = runTest {
+    val server1 = runningInProcessDataConnectServer()
+    val server2 = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server2)
+    val dataConnect = dataConnect(server1)
+    val subscription = querySubscription(dataConnect)
+    val testData = testDataArb().sample()
+
+    turbineScope {
+      val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
+      val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      server1Collector.awaitResponseSender().let { responseSender ->
+        server1Collector.awaitUntilSubscribeStreamRequest()
+        server1.close()
+        server2.open(server1.port)
+      }
+
+      server2Collector.awaitResponseSender().let { responseSender ->
+        val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        responseSender.onNext(requestId, testData)
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      server2Collector.cancelAndIgnoreRemainingEvents()
+      server1Collector.cancelAndIgnoreRemainingEvents()
     }
   }
 
