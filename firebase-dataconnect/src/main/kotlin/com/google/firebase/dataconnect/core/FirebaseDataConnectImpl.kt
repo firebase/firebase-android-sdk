@@ -78,7 +78,9 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcClient: DataConnectGrpcClient
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
-  @OptIn(ExperimentalRealtimeQueries::class) val realtimeQueryManager: RealtimeQueryManager
+
+  @OptIn(ExperimentalRealtimeQueries::class)
+  val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -171,8 +173,7 @@ internal class FirebaseDataConnectImpl(
       constructor() : this(null)
     }
 
-    data class Initialized
-    constructor(
+    data class Initialized(
       val grpcRPCs: DataConnectGrpcRPCs,
       val grpcClient: DataConnectGrpcClient,
       val queryManager: QueryManager,
@@ -193,10 +194,10 @@ internal class FirebaseDataConnectImpl(
     get() = initialize().queryManager
 
   @OptIn(ExperimentalRealtimeQueries::class)
-  override val realtimeQueryManager: RealtimeQueryManager
-    get() = initialize().realtimeQueryManager
+  override val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
+    get() = initializeUnlessClosed()?.realtimeQueryManager
 
-  private fun initialize(): State.Initialized {
+  private fun initializeUnlessClosed(): State.Initialized? {
     val newState =
       state.updateAndGet { currentState ->
         when (currentState) {
@@ -223,9 +224,13 @@ internal class FirebaseDataConnectImpl(
         )
       is State.Initialized -> newState
       is State.Closing,
-      State.Closed -> throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      State.Closed -> null
     }
   }
+
+  private fun initialize(): State.Initialized =
+    initializeUnlessClosed()
+      ?: throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
   private data class DataConnectBackendInfo(
     val host: String,
@@ -373,6 +378,7 @@ internal class FirebaseDataConnectImpl(
       grpcClient = grpcClient,
       coroutineScope = coroutineScope,
       idStringGenerator = idStringGenerator,
+      serialization = serialization,
       logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
     )
 
