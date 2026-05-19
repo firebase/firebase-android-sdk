@@ -136,6 +136,7 @@ internal class DataConnectBidiConnectStream(
         when (val currentState = state.get()) {
           is SubscriptionState.Connected -> {
             currentState.enqueueSubscribeOrResume()
+            break
           }
           SubscriptionState.DisconnectedWithPendingSubscription -> break
           SubscriptionState.Disconnected ->
