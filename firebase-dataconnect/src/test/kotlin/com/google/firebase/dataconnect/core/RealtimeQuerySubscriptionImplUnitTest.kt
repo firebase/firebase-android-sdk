@@ -287,27 +287,47 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
   @Test
   fun `cancel message is sent after last unsubscription for a query`() = runTest {
-    val operationName = Arb.dataConnect.operationName().sample()
-    val variables = testVariablesArb().sample()
+    val subscriptionParameters =
+      distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(10)
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
-    val subscriptions = List(10) { querySubscription(dataConnect, operationName, variables) }
+    val subscriptions =
+      subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
       val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+        List(2) {
+          subscriptions
+            .mapIndexed { index, subscription ->
+              subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+            }
+            .shuffled(rs.random)
+        }
+      val requestIds =
+        MutableList(subscriptions.size) {
+          serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
         }
 
-      serverCollector.awaitUntilInitStreamRequest()
-      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
-      check(subscribeRequest.streamRequest.hasSubscribe())
+      clientCollectors[0].forEach { clientCollector ->
+        clientCollector.cancelAndIgnoreRemainingEvents()
+      }
+      while (true) {
+        yield()
+        val event = serverCollector.asChannel().tryReceive().getOrNull() ?: break
+        if (event is StreamRequestReceived) {
+          event.streamRequest.requestKindCase shouldNotBe RequestKindCase.CANCEL
+        }
+      }
 
-      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-
-      val cancelRequest = serverCollector.awaitUntilCancelStreamRequest()
-      cancelRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+      // Specify drop(1) so that we don't close the very last connection as that will shut down
+      // the entire connection, confusing the logic below.
+      clientCollectors[1].drop(1).forEach { clientCollector ->
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
+        requestId shouldBeIn requestIds
+        requestIds.removeAt(requestIds.indexOf(requestId))
+      }
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
