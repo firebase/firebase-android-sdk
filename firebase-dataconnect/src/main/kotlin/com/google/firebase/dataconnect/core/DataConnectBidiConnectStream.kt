@@ -42,10 +42,7 @@ import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
@@ -81,28 +78,20 @@ internal class DataConnectBidiConnectStream(
   private val coroutineScope: CoroutineScope,
 ) {
 
-  private val scopeCompletedFlow: Flow<SubscriptionEvent.ScopeCompleted> =
-    coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
-
-  private val sharedFlow: SharedFlow<SubscriptionEvent>
-
-  private val connectionState: StateFlow<SubscriptionEvent.Connection>
-
-  init {
-    val mutableConnectionState =
+  private val connectionFlow: Flow<SubscriptionEvent> = run {
+    val connectionStateFlow =
       MutableStateFlow<SubscriptionEvent.Connection>(SubscriptionEvent.Disconnected)
-    connectionState = mutableConnectionState.asStateFlow()
 
-    sharedFlow =
+    val sharedFlow =
       flow
         .onEach { event ->
           if (event is GrpcBidiFlow.Event.ConnectionInfo) {
-            mutableConnectionState.value = SubscriptionEvent.Connected(event)
+            connectionStateFlow.value = SubscriptionEvent.Connected(event)
           }
         }
         .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto>>()
         .map(SubscriptionEvent::Message)
-        .onCompletion { mutableConnectionState.value = SubscriptionEvent.Disconnected }
+        .onCompletion { connectionStateFlow.value = SubscriptionEvent.Disconnected }
         .retryWhen { _, attempt ->
           if (attempt > 2) {
             false
@@ -117,6 +106,10 @@ internal class DataConnectBidiConnectStream(
           started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
           replay = 0,
         )
+
+    val scopeCompletedFlow = coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
+
+    merge(scopeCompletedFlow, connectionStateFlow, sharedFlow)
   }
 
   /**
@@ -154,7 +147,7 @@ internal class DataConnectBidiConnectStream(
       }
     }
 
-    return merge(sharedFlow, connectionState, scopeCompletedFlow)
+    return connectionFlow
       .onCompletion {
         state.update { currentState ->
           if (currentState is SubscriptionState.Connected) {
