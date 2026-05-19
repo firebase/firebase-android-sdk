@@ -598,6 +598,7 @@ internal class DataConnectGrpcRPCs(
     val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
 
     if (grpcChannel === null && cacheDb === null) {
+      connectCoroutineScope.coroutineContext.job.join()
       return
     }
 

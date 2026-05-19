@@ -78,6 +78,12 @@ internal class DataConnectBidiConnectStream(
   private val coroutineScope: CoroutineScope,
 ) {
 
+  /**
+   * A flow that emits `null` when [coroutineScope] is canceled, which happens when
+   * [com.google.firebase.dataconnect.FirebaseDataConnect.close] is called.
+   */
+  private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
+
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
       MutableStateFlow<SubscriptionEvent.Connection>(SubscriptionEvent.Disconnected)
@@ -107,9 +113,7 @@ internal class DataConnectBidiConnectStream(
           replay = 0,
         )
 
-    val scopeCompletedFlow = coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
-
-    merge(scopeCompletedFlow, connectionStateFlow, sharedFlow)
+    merge(connectionStateFlow, sharedFlow)
   }
 
   /**
@@ -147,41 +151,54 @@ internal class DataConnectBidiConnectStream(
       }
     }
 
-    return connectionFlow
-      .onCompletion {
-        state.update { currentState ->
-          if (currentState is SubscriptionState.Connected) {
-            currentState.cancelSubscribeOrResumeJob("all subscribers have unsubscribed")
+    val subscriptionFlow =
+      connectionFlow
+        .onCompletion {
+          state.update { currentState ->
+            if (currentState is SubscriptionState.Connected) {
+              currentState.cancelSubscribeOrResumeJob("all subscribers have unsubscribed")
+            }
+            SubscriptionState.Disconnected
           }
-          SubscriptionState.Disconnected
         }
-      }
-      .transformToMessage(requestId, operationName, variables, state)
-      .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
-      .buffer(capacity = Channel.UNLIMITED)
-      .shareIn(
-        coroutineScope,
-        started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
-        replay = 0,
-      )
-      .onSubscription { emit(MessageOrSubscribe.Subscribed) }
-      .transform { messageOrSubscribe ->
-        when (messageOrSubscribe) {
-          MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
-          is MessageOrSubscribe.Message -> emit(messageOrSubscribe.message)
+        .transformToMessage(requestId, operationName, variables, state)
+        .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
+        .buffer(capacity = Channel.UNLIMITED)
+        .shareIn(
+          coroutineScope,
+          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+          replay = 0,
+        )
+        .onSubscription { emit(MessageOrSubscribe.Subscribed) }
+        .transform { messageOrSubscribe ->
+          when (messageOrSubscribe) {
+            MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
+            is MessageOrSubscribe.Message -> emit(messageOrSubscribe.message)
+          }
         }
+        .filter { it.requestId == requestId }
+        .mapNotNull { it.toExecuteResponse() }
+
+    // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called.
+    return merge(subscriptionFlow, scopeCompletedFlow).transformWhile {
+      if (it !== null && coroutineScope.isActive) {
+        emit(it)
+        true
+      } else {
+        false
       }
-      .filter { it.requestId == requestId }
-      .mapNotNull { it.toExecuteResponse() }
+    }
   }
 
   private sealed interface MessageOrSubscribe {
 
-    object Subscribed : MessageOrSubscribe
+    object Subscribed : MessageOrSubscribe {
+      override fun toString() = "Subscribed"
+    }
 
     class Message(val message: StreamResponseProto) : MessageOrSubscribe {
       constructor(event: SubscriptionEvent.Message) : this(event.message)
-      override fun toString() = "Message(message=${message.toCompactString()}"
+      override fun toString() = "Message(message=${message.toCompactString()})"
     }
   }
 
@@ -245,13 +262,7 @@ internal class DataConnectBidiConnectStream(
 
   private sealed interface SubscriptionEvent {
 
-    object ScopeCompleted : SubscriptionEvent {
-      override fun toString() = "ScopeCompleted"
-    }
-
-    sealed interface ScopeNotCompleted : SubscriptionEvent
-
-    class Message(val connectionId: String, val message: StreamResponseProto) : ScopeNotCompleted {
+    class Message(val connectionId: String, val message: StreamResponseProto) : SubscriptionEvent {
       constructor(
         event: GrpcBidiFlow.Event.Message<StreamResponseProto>
       ) : this(event.connectionId, event.message)
@@ -259,7 +270,7 @@ internal class DataConnectBidiConnectStream(
         "Message(connectionId=$connectionId, message=${message.toCompactString()})"
     }
 
-    sealed interface Connection : ScopeNotCompleted
+    sealed interface Connection : SubscriptionEvent
 
     class Connected(
       val connectionId: String,
@@ -427,17 +438,12 @@ internal class DataConnectBidiConnectStream(
       }
     }
 
-    return transformWhile { event ->
-      if (!coroutineScope.isActive) {
-        return@transformWhile false
-      }
+    return transform { event ->
       when (event) {
-        is SubscriptionEvent.ScopeCompleted -> return@transformWhile false
         is SubscriptionEvent.Connected -> transitionToConnectedState(event)
         is SubscriptionEvent.Disconnected -> transitionToDisconnectedState(event)
         is SubscriptionEvent.Message -> emit(event)
       }
-      true
     }
   }
 
