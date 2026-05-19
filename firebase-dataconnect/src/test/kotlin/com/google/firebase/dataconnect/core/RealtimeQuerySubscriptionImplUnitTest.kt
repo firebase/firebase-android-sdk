@@ -41,10 +41,10 @@ import com.google.firebase.dataconnect.testutil.awaitConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.awaitResponseSender
 import com.google.firebase.dataconnect.testutil.awaitUntilCancelStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
-import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.awaitUntilResumeStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilStatusExceptionReceived
+import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequestWithRequestId
 import com.google.firebase.dataconnect.testutil.awaitUntilSubscribeStreamRequest
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -74,6 +74,7 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.mockk.every
 import io.mockk.mockk
@@ -254,17 +255,18 @@ class RealtimeQuerySubscriptionImplUnitTest {
       val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
       val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
       val testData = testDataArb().let { arb -> List(requestIds.size) { arb.sample() } }
-      val respondJob = launch {
-        val requestId = subscribeRequest.streamRequest.requestId
-        val testDataIterator = testData.iterator()
-        while (true) {
-          responseObserver.onNext(requestId, testDataIterator.next())
-          val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
-          resumeRequest.connectionId shouldBe subscribeRequest.connectionId
-          resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
-          resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+      val respondJob =
+        backgroundScope.launch {
+          val requestId = subscribeRequest.streamRequest.requestId
+          val testDataIterator = testData.iterator()
+          while (true) {
+            responseObserver.onNext(requestId, testDataIterator.next())
+            val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
+            resumeRequest.connectionId shouldBe subscribeRequest.connectionId
+            resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+            resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+          }
         }
-      }
 
       subscribeRequest.streamRequest.requestId shouldBeIn requestIds
       subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
@@ -384,6 +386,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       repeat(size / 2) { add(get(it)) } // Add some duplicate subscriptions
       shuffle(rs.random)
     }
+    val testData = testDataArb().let { arb -> List(subscriptions.size) { arb.next(rs) } }
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
@@ -392,14 +395,19 @@ class RealtimeQuerySubscriptionImplUnitTest {
           subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
         }
 
-      repeat(subscriptions.size) {
-        serverCollector.awaitUntilItem {
-          it is StreamRequestReceived &&
-            it.streamRequest.let { streamRequest ->
-              streamRequest.hasSubscribe() || streamRequest.hasResume()
+      val respondJob =
+        backgroundScope.launch {
+          val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
+          val testDataIterator = testData.iterator()
+          while (true) {
+            val streamRequest = serverCollector.awaitUntilStreamRequest().streamRequest
+            if (streamRequest.hasSubscribe() || streamRequest.hasResume()) {
+              responseObserver.onNext(streamRequest.requestId, testDataIterator.next())
             }
+          }
         }
-      }
+      clientCollectors.forEach { clientCollector -> clientCollector.awaitItem() }
+      respondJob.cancelAndJoin()
 
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
       serverCollector.awaitUntilClientClosesConnection()
