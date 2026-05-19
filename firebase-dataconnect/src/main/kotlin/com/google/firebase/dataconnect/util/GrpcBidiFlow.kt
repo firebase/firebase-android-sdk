@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.asSendChannel
+import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import io.grpc.CallOptions
 import io.grpc.Channel as GrpcChannel
 import io.grpc.ClientCall
@@ -31,7 +32,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
@@ -223,10 +223,14 @@ internal object GrpcBidiFlow {
       emit(Event.ConnectionInfo(connectionId, connectionCookie, requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
-      val readiness = Readiness(connectionId, clientCall)
-      suspend fun ClientCall<*, *>.suspendUntilReady() {
-        check(this === clientCall)
-        readiness.suspendUntilReady()
+
+      val clientCallReadySignal = ConflatedSignal()
+      suspend fun suspendUntilClientCallReady() {
+        // Spurious "ready" signals are possible, so check clientCall.isReady to verify.
+        // See the documentation for ClientCall.Listener.onReady() for details.
+        while (!clientCall.isReady) {
+          clientCallReadySignal.await()
+        }
       }
 
       /*
@@ -264,7 +268,7 @@ internal object GrpcBidiFlow {
 
           override fun onReady() {
             collectionListener?.onCallReady()
-            readiness.onReady()
+            clientCallReadySignal.signal()
           }
         },
         requestHeaders ?: GrpcMetadata(),
@@ -280,11 +284,11 @@ internal object GrpcBidiFlow {
         val sendJob =
           launch(CoroutineName("SendMessage worker for ${method.fullMethodName}")) {
             val sendingResult = runCatching {
-              clientCall.suspendUntilReady()
+              suspendUntilClientCallReady()
               for (request in requestChannel) {
                 collectionListener?.sendingMessage(request)
                 clientCall.sendMessage(request)
-                clientCall.suspendUntilReady()
+                suspendUntilClientCallReady()
               }
 
               collectionListener?.sendingMessagesComplete()
@@ -340,31 +344,6 @@ internal object GrpcBidiFlow {
               "for connectionId=$connectionId"
           )
         }
-      }
-    }
-  }
-
-  private class Readiness(
-    private val connectionId: String,
-    private val clientCall: ClientCall<*, *>,
-  ) {
-    // A CONFLATED channel never suspends to send, and two notifications of readiness are equivalent
-    // to one
-    private val channel = Channel<Unit>(CONFLATED)
-
-    fun onReady() {
-      channel.trySend(Unit).onFailure { exception ->
-        throw exception
-          ?: error(
-            "internal error p8sv8ctgws: channel.trySend(Unit) should not have failed " +
-              "because `channel` was created with capacity=CONFLATED; connectionId=$connectionId"
-          )
-      }
-    }
-
-    suspend fun suspendUntilReady() {
-      while (!clientCall.isReady) {
-        channel.receive()
       }
     }
   }
