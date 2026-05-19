@@ -40,7 +40,7 @@ jobs:
           ./gradlew \
             -Dmaven.repo.local=${ARTIFACTS} \
             :firebase-appdistribution-gradle:publishToMavenLocal
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: firebase-appdistribution-gradle
           path: ${{ env.ARTIFACTS }}
@@ -68,7 +68,7 @@ jobs:
             -Dmaven.repo.local=${ARTIFACTS} \
             :firebase-crashlytics-buildtools:publishToMavenLocal \
             :firebase-crashlytics-gradle:publishToMavenLocal
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: firebase-crashlytics-gradle-and-buildtools
           path: ${{ env.ARTIFACTS }}
@@ -95,7 +95,7 @@ jobs:
           ./gradlew \
             -Dmaven.repo.local=${ARTIFACTS} \
             :firebase-perf-gradle:publishToMavenLocal
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: firebase-perf-gradle
           path: ${{ env.ARTIFACTS }}

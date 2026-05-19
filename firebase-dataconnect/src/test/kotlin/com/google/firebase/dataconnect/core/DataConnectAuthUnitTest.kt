@@ -37,6 +37,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import io.kotest.assertions.asClue
@@ -66,6 +67,7 @@ import io.mockk.slot
 import io.mockk.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
@@ -579,8 +581,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.close()
 
     withClue("result=$result") { result.shouldBeNull() }
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("$testException")
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh", testException)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "${dataConnectAuth.instanceId} whenAvailable"
     )
@@ -643,6 +644,7 @@ class DataConnectAuthUnitTest {
   ) =
     DataConnectAuth(
       deferredAuthProvider = deferredInternalAuthProvider,
+      idStringGenerator = IdStringGenerator(Random.Default),
       parentCoroutineScope = newBackgroundScopeThatAdvancesLikeForeground(),
       blockingDispatcher =
         StandardTestDispatcher(testScheduler, name = "4jg7adscn6_DataConnectAuth_TestDispatcher"),

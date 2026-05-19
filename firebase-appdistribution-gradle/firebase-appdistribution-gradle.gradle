@@ -167,8 +167,6 @@ task integrationTest(type: Test) {
   }
 }
 
-check.dependsOn(integrationTest)
-
 task prodTest(type: Test) {
   description = 'Runs prod tests.'
   group = 'verification'

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import app.cash.turbine.ReceiveTurbine
-import javax.annotation.CheckReturnValue
-
-@CheckReturnValue
-suspend fun <T> ReceiveTurbine<T>.skipItemsWhere(predicate: (T) -> Boolean): T {
-  while (true) {
-    val item = awaitItem()
-    if (!predicate(item)) {
-      return item
-    }
-  }
-}
+data class OperationNameVariablesPair<T>(
+  val operationName: String,
+  val variables: T,
+)
