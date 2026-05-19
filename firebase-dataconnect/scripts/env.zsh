@@ -80,7 +80,7 @@ run_dataconnect_script() {
 
   # Execute the script with the remaining arguments.
   typeset -r args=("${target_file}" "${remaining_args[@]}")
-  builtin print -r -- "${(q)args}"
+  builtin print -r -- "${(q)args[@]}"
   "${args[@]}"
 }
 
@@ -102,4 +102,8 @@ rut() {
 
 sp() {
   run_dataconnect_script spotlessApply.zsh "$@"
+}
+
+te() {
+  run_dataconnect_script test_execute.zsh "$@"
 }
