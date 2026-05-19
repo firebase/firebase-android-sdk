@@ -18,8 +18,10 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import app.cash.turbine.ReceiveTurbine
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc.ConnectorStreamServiceImplBase
 import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.InsecureServerCredentials
 import io.grpc.Metadata
@@ -27,8 +29,16 @@ import io.grpc.Server
 import io.grpc.ServerCall
 import io.grpc.ServerCallHandler
 import io.grpc.ServerInterceptor
+import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.fail
+import io.kotest.assertions.print.print
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicInteger
@@ -140,7 +150,16 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
 
     /** Represents an error received from the client or the stream. */
     class ErrorReceived(val connectionId: ConnectionId, val exception: Throwable) : Event {
-      override fun toString() = "ErrorReceived($connectionId, ${exception::class.qualifiedName})"
+      override fun toString() = "ErrorReceived($connectionId, ${exceptionToString()})"
+
+      fun exceptionToString(): String =
+        when (exception) {
+          is StatusException ->
+            "StatusException(${exception.message}, code=${exception.status.code})"
+          is StatusRuntimeException ->
+            "StatusRuntimeException(${exception.message}, code=${exception.status.code})"
+          else -> "${exception::class.qualifiedName}(${exception.message})"
+        }
     }
 
     /** Represents the completion of the stream by the client. */
@@ -293,3 +312,107 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
 }
 
 private val connectionSequenceNumber = AtomicLong(0)
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilInitStreamRequest():
+  InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  withClue("awaiting 'init' StreamRequest message") {
+    awaitUntilItemIsInstance<
+        _, InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
+      >()
+      .also { event ->
+        val streamRequest = event.streamRequest
+        withClue("request=${streamRequest.print().value}") {
+          assertSoftly {
+            streamRequest.requestId shouldBe "init"
+            streamRequest.requestKindCase shouldBe RequestKindCase.REQUESTKIND_NOT_SET
+          }
+        }
+      }
+  }
+
+suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilStreamRequest(
+  predicate: (StreamRequest) -> Boolean = { true }
+): InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  awaitUntilItem("event is StreamRequest") {
+    if (
+      it is InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived &&
+        predicate(it.streamRequest)
+    ) {
+      TurbinePredicateResult.Satisfied(it)
+    } else {
+      TurbinePredicateResult.Unsatisfied
+    }
+  }
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilStatusExceptionReceived(code: Status.Code) =
+  withClue("expecting ErrorReceived event with StatusException(code=$code)") {
+    awaitUntilItem { event ->
+      if (event !is InProcessDataConnectGrpcStreamingServer.Event.ErrorReceived) {
+        return@awaitUntilItem false
+      }
+      val exception = event.exception
+      val status =
+        when (exception) {
+          is StatusException -> exception.status
+          is StatusRuntimeException -> exception.status
+          else ->
+            fail(
+              "Got ErrorReceived event with exception=$exception, " +
+                "but expected StatusException with code=$code"
+            )
+        }
+      if (status.code != code) {
+        fail(
+          "Got ErrorReceived event with StatusException/StatusRuntimeException (as expected), " +
+            "but code=${status.code} (expected code: $code, exception=$exception)"
+        )
+      }
+      true
+    }
+  }
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilSubscribeStreamRequest():
+  InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  withClue("awaiting 'subscribe' StreamRequest message") {
+    awaitUntilStreamRequest { it.hasSubscribe() }
+  }
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilResumeStreamRequest():
+  InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  withClue("awaiting 'resume' StreamRequest message") { awaitUntilStreamRequest { it.hasResume() } }
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilCancelStreamRequest():
+  InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  withClue("awaiting 'cancel' StreamRequest message") { awaitUntilStreamRequest { it.hasCancel() } }
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
+  .awaitUntilStreamRequestWithRequestId(
+  requestId: String
+): InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived {
+  val predicateDescription = "StreamRequest with requestId=$requestId"
+  return withClue("awaiting $predicateDescription") {
+    awaitUntilItem(predicateDescription) {
+      when (it) {
+        is InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived ->
+          if (it.streamRequest.requestId == requestId) {
+            TurbinePredicateResult.Satisfied(it)
+          } else {
+            TurbinePredicateResult.Unsatisfied
+          }
+        else -> TurbinePredicateResult.Unsatisfied
+      }
+    }
+  }
+}
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitResponseSender():
+  StreamObserver<StreamResponse> = awaitConnectRpcStarted().responseObserver
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitConnectRpcStarted():
+  InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted = awaitUntilItemIsInstance()

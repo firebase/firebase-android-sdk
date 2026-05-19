@@ -75,12 +75,20 @@ internal object LoggerGlobals {
       logger.logChanges(logLevelFlow.value, logLevelFlow, GlobalScope)
     }
 
+  inline fun Logger.debug(exception: Throwable?, message: () -> Any?) {
+    if (logLevel.value <= LogLevel.DEBUG) debug(exception, "${message()}")
+  }
+
   inline fun Logger.debug(message: () -> Any?) {
     if (logLevel.value <= LogLevel.DEBUG) debug("${message()}")
   }
 
   fun Logger.debug(message: String) {
     if (logLevel.value <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
+  }
+
+  fun Logger.debug(exception: Throwable?, message: String) {
+    if (logLevel.value <= LogLevel.DEBUG) log(exception, LogLevel.DEBUG, message)
   }
 
   inline fun Logger.warn(message: () -> Any?) {
