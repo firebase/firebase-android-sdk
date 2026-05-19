@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -30,7 +31,6 @@ import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectPr
 import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
-import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -100,14 +100,14 @@ internal class DataConnectBidiConnectStream(
         .map(SubscriptionEvent::Message)
         .onCompletion { throwable ->
           connectionStateFlow.value = SubscriptionEvent.Disconnected
-          // Throw an exception to trigger the `retryWhen` logic.
-          throw throwable ?: IOException("server closed the stream gracefully? that's unexpected")
+          throw throwable ?: Exception("to be handled by retryWhen")
         }
         .retryWhen { _, attempt ->
           if (attempt > 2) {
             false
           } else {
             delay(1.seconds)
+            logger.debug { "retrying connection" }
             true
           }
         }
