@@ -42,7 +42,7 @@ Setting `replayExpirationMillis = 0` guarantees that:
 
 ### Supporting Late Subscribers with Replay = 1
 
-To support late subscribers joining an already active connection without forcing a reconnect, the `sharedFlow` uses `replay = 1`. 
+To support late subscribers joining an already active connection without forcing a reconnect, the `sharedFlow` uses `replay = 1`.
 
 Because of this, the first event a late subscriber receives from the `sharedFlow` replay cache is the last emitted event. If the connection is already active and messages have been exchanged, this replayed event will be an `Event.Message`, not the initial `Event.Ready`.
 
