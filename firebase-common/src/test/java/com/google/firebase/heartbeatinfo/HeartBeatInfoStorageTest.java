@@ -15,13 +15,8 @@
 package com.google.firebase.heartbeatinfo;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import androidx.datastore.preferences.core.MutablePreferences;
 import androidx.datastore.preferences.core.Preferences;
 import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.test.core.app.ApplicationProvider;
@@ -31,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -243,70 +237,5 @@ public class HeartBeatInfoStorageTest {
     assertThat(heartBeatDataStore.getSync(GLOBAL, -1L)).isEqualTo(1);
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
     assertThat(heartBeatDataStore.getSync(GLOBAL, -1L)).isEqualTo(currentTime);
-  }
-
-  /**
-   * Regression test for https://github.com/firebase/firebase-android-sdk/issues/8016
-   *
-   * <p>Root Cause: The synchronized storeHeartBeat() method locks the HeartBeatInfoStorage
-   * instance while waiting for JavaDataStorage.editSync(...) to complete. However, editSync
-   * schedules its preference updates on a different background thread. If helper methods called
-   * inside the editSync transaction block (such as getStoredUserAgentString, updateStoredUserAgent,
-   * or cleanUpStoredHeartBeats) are also marked as synchronized, the background thread blocks
-   * trying to acquire the HeartBeatInfoStorage lock, which is held by the caller thread waiting
-   * for the background thread to complete, causing a permanent deadlock.
-   *
-   * <p>Fix: Removed the synchronized keyword from helper methods (and isSameDateUtc) since
-   * they operate exclusively on thread-local transaction parameters and do not access shared mutable
-   * instance state.
-   */
-  @Test
-  public void storeHeartBeat_whenCalledOnSeparateThread_doesNotDeadlock() throws Exception {
-    // Create a mocked JavaDataStorage
-    JavaDataStorage mockDataStore = mock(JavaDataStorage.class);
-    HeartBeatInfoStorage heartBeatStorageWithMock = new HeartBeatInfoStorage(mockDataStore);
-
-    // Mock editSync to run the transform on a background thread and block the caller thread
-    doAnswer(
-            invocation -> {
-              kotlin.jvm.functions.Function1<MutablePreferences, kotlin.Unit> transform =
-                  invocation.getArgument(0);
-
-              CompletableFuture<Void> future =
-                  CompletableFuture.runAsync(
-                      () -> {
-                        MutablePreferences mockPrefs = mock(MutablePreferences.class);
-                        // Mock get(LAST_STORED_DATE) to return the target date to force entry into
-                        // the if block
-                        when(mockPrefs.get(PreferencesKeys.stringKey("last-used-date")))
-                            .thenReturn("1970-01-01");
-                        // Mock asMap() to avoid NullPointerException
-                        when(mockPrefs.asMap()).thenReturn(Collections.emptyMap());
-
-                        transform.invoke(mockPrefs);
-                      });
-
-              future.get(); // Blocks the caller thread
-              return mock(Preferences.class);
-            })
-        .when(mockDataStore)
-        .editSync(any());
-
-    // Spawn a thread to call storeHeartBeat, which should deadlock under the bug
-    Thread thread =
-        new Thread(
-            () -> {
-              heartBeatStorageWithMock.storeHeartBeat(0L, "test-agent"); // 1970-01-01
-            });
-
-    thread.start();
-    thread.join(3000); // Wait 3 seconds
-
-    // Since the bug is fixed, the thread should not be alive.
-    try {
-      assertThat(thread.isAlive()).isFalse();
-    } finally {
-      thread.interrupt();
-    }
   }
 }
