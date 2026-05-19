@@ -1,5 +1,7 @@
 # Unreleased
 
+# 25.0.2
+
 - [changed] Fix ANR in SharedPreferencesQueue by reducing lock contention
 - [feature] Added support for FCM registration using Firebase Installation ID as token
 - [deprecated] Existing getToken, deleteToken, onNewToken api(s) are deprecated
@@ -95,9 +97,9 @@ Kotlin extensions library has no additional updates.
 
 # 23.4.0
 
-* [changed] Called messageHandled() after a message has been handled to indicate
+- [changed] Called messageHandled() after a message has been handled to indicate
   that the message has been handled successfully.
-* [changed] Added an internal identifier to Firelog logging for compliance.
+- [changed] Added an internal identifier to Firelog logging for compliance.
 
 # 23.3.1
 

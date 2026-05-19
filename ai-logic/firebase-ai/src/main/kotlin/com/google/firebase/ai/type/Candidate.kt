@@ -69,14 +69,15 @@ internal constructor(
 
     @OptIn(PublicPreviewAPI::class)
     internal fun toPublic(): Candidate {
+      val content = this.content?.toPublic() ?: content("model") {}
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
-      val citations = citationMetadata?.toPublic()
+      val citations = citationMetadata?.toPublic(content)
       val finishReason = finishReason?.toPublic()
-      val groundingMetadata = groundingMetadata?.toPublic()
+      val groundingMetadata = groundingMetadata?.toPublic(content)
       val urlContextMetadata = urlContextMetadata?.toPublic()
 
       return Candidate(
-        this.content?.toPublic() ?: content("model") {},
+        content,
         safetyRatings,
         citations,
         finishReason,
@@ -169,7 +170,8 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
   @OptIn(ExperimentalSerializationApi::class)
   internal constructor(@JsonNames("citations") val citationSources: List<Citation.Internal>) {
 
-    internal fun toPublic() = CitationMetadata(citationSources.map { it.toPublic() })
+    internal fun toPublic(content: Content) =
+      CitationMetadata(citationSources.map { it.toPublic(content) })
   }
 }
 
@@ -209,7 +211,7 @@ internal constructor(
     val publicationDate: Date? = null,
   ) {
 
-    internal fun toPublic(): Citation {
+    internal fun toPublic(content: Content): Citation {
       val publicationDateAsCalendar =
         publicationDate?.let {
           val calendar = Calendar.getInstance()
@@ -226,8 +228,8 @@ internal constructor(
         }
       return Citation(
         title = title,
-        startIndex = startIndex,
-        endIndex = endIndex,
+        startIndex = convertUtf8IndexToUtf16(content, startIndex),
+        endIndex = convertUtf8IndexToUtf16(content, endIndex),
         uri = uri,
         license = license,
         publicationDate = publicationDateAsCalendar
@@ -431,14 +433,15 @@ public class GroundingMetadata(
     val groundingChunks: List<GroundingChunk.Internal>?,
     val groundingSupports: List<GroundingSupport.Internal>?,
   ) {
-    internal fun toPublic() =
+    internal fun toPublic(content: Content) =
       GroundingMetadata(
         webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
         retrievalQueries = retrievalQueries.orEmpty(),
-        groundingAttribution = groundingAttribution?.map { it.toPublic() }.orEmpty(),
+        groundingAttribution = groundingAttribution?.map { it.toPublic(content) }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
-        groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty().filterNotNull()
+        groundingSupports =
+          groundingSupports?.map { it.toPublic(content) }.orEmpty().filterNotNull()
       )
   }
 }
@@ -551,12 +554,12 @@ public class GroundingSupport(
     val segment: Segment.Internal?,
     val groundingChunkIndices: List<Int>?,
   ) {
-    internal fun toPublic(): GroundingSupport? {
+    internal fun toPublic(content: Content): GroundingSupport? {
       if (segment == null) {
         return null
       }
       return GroundingSupport(
-        segment = segment.toPublic(),
+        segment = segment.toPublic(content),
         groundingChunkIndices = groundingChunkIndices.orEmpty(),
       )
     }
@@ -574,8 +577,8 @@ public class GroundingAttribution(
     val segment: Segment.Internal,
     val confidenceScore: Float?,
   ) {
-    internal fun toPublic() =
-      GroundingAttribution(segment = segment.toPublic(), confidenceScore = confidenceScore)
+    internal fun toPublic(content: Content) =
+      GroundingAttribution(segment = segment.toPublic(content), confidenceScore = confidenceScore)
   }
 }
 
@@ -586,11 +589,11 @@ public class GroundingAttribution(
  * @property partIndex The zero-based index of the [Part] object within the `parts` array of its
  * parent [Content] object. This identifies which part of the content the segment belongs to.
  * @property startIndex The zero-based start index of the segment within the specified [Part],
- * measured in UTF-8 bytes. This offset is inclusive, starting from 0 at the beginning of the part's
- * content.
+ * measured in UTF-16 characters. This offset is inclusive, starting from 0 at the beginning of the
+ * part's content.
  * @property endIndex The zero-based end index of the segment within the specified [Part], measured
- * in UTF-8 bytes. This offset is exclusive, meaning the character at this index is not included in
- * the segment.
+ * in UTF-16 characters. This offset is exclusive, meaning the character at this index is not
+ * included in the segment.
  * @property text The text corresponding to the segment from the response.
  */
 public class Segment(
@@ -606,13 +609,17 @@ public class Segment(
     val partIndex: Int?,
     val text: String?,
   ) {
-    internal fun toPublic() =
-      Segment(
-        startIndex = startIndex ?: 0,
-        endIndex = endIndex ?: 0,
-        partIndex = partIndex ?: 0,
+    internal fun toPublic(content: Content): Segment {
+      val partIndex = this.partIndex ?: 0
+      val part = content.parts.getOrNull(partIndex)
+      val fakeContent = Content(content.role, if (part == null) emptyList() else listOf(part))
+      return Segment(
+        startIndex = convertUtf8IndexToUtf16(fakeContent, startIndex ?: 0),
+        endIndex = convertUtf8IndexToUtf16(fakeContent, endIndex ?: 0),
+        partIndex = partIndex,
         text = text ?: ""
       )
+    }
   }
 }
 
@@ -695,3 +702,45 @@ private constructor(public val name: String, public val ordinal: Int) {
     @JvmField public val UNSAFE: UrlRetrievalStatus = UrlRetrievalStatus("UNSAFE", 4)
   }
 }
+
+/**
+ * The APIs for citation provide indices in UTF-8 bytes. Java and Kotlin internally represent a
+ * character as UTF-16, meaning that UTF-8 indices do not map cleanly and need to be manually
+ * converted. While native solutions exist for encoding strings, the cost of searching for an index
+ * is larger than necessary, so this linear approach seeks an index instead of encoding repeatedly.
+ */
+internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int {
+  if (originalIndex == 0) {
+    return 0
+  }
+  var sumIndex = 0
+  var progress = 0
+  for (part in content.parts) {
+    val text = part.asTextOrNull() ?: ""
+    var i = 0
+    while (i < text.length) {
+      text[i].isHighSurrogate()
+      val ch = text[i]
+      progress +=
+        when {
+          ch.isAscii() -> 1
+          ch.isTwoByte() -> 2
+          ch.isHighSurrogate() -> 4
+          else -> 3
+        }
+      if (ch.isHighSurrogate() && i + 1 < text.length) {
+        i++ // Skip the low surrogate
+      }
+      i++
+      if (progress >= originalIndex) {
+        return sumIndex + i
+      }
+    }
+    sumIndex += text.length
+  }
+  return originalIndex
+}
+
+private fun Char.isAscii() = this.code < 0x80
+
+private fun Char.isTwoByte() = this.code in 0x80..0x7FF

@@ -148,7 +148,9 @@ public class InstallActivity extends AppCompatActivity {
       Uri apkUri =
           FileProvider.getUriForFile(
               getApplicationContext(),
-              getApplicationContext().getPackageName() + ".FirebaseAppDistributionFileProvider",
+              String.format(
+                  "%s.%s",
+                  getApplicationContext().getPackageName(), "FirebaseAppDistributionFileProvider"),
               apkFile);
       intent.setDataAndType(apkUri, APK_MIME_TYPE);
       intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

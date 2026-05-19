@@ -1,13 +1,24 @@
 # Unreleased
 
+- [changed] Internal change to add protos for realtime query updates.
+  ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
+- [changed] Fixed wasteful computation that is only for debug logging.
+  ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
+- [changed] Internal implementation of backend connection for realtime query results.
+  ([#8141](https://github.com/firebase/firebase-android-sdk/pull/8141))
+- [changed] Internal change to replace `SecureRandom` with just `Random`
+  as the random numbers were not used in a security-sensitive context,
+  thus the performance costs of secure random number generation were unnecessary.
+  ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
+
+# 17.2.2
+
 - [changed] Internal refactor for calculating debug logging strings.
   ([#8024](https://github.com/firebase/firebase-android-sdk/pull/8024))
 - [changed] Internal refactor to use more descriptive variable names.
   ([#8025](https://github.com/firebase/firebase-android-sdk/pull/8025))
 - [changed] Internal refactor to use token objects instead of strings.
   ([#8027](https://github.com/firebase/firebase-android-sdk/pull/8027))
-- [changed] Internal change to add protos for realtime query updates.
-  ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
 
 # 17.2.1
 
