@@ -107,14 +107,14 @@ public class GmsRegistrationClient {
 
             // For V1 registration, the token received should be the same as the FID.
             if (!TextUtils.isEmpty(registrationToken)
-                && registrationToken.contains(installationId)) {
+                && registrationToken.endsWith(installationId)) {
               // The registration token will be in format projects/**/$fid. But the actual token
               // for sending messages to will be the FID. So returning the FID.
               taskCompletionSource.setResult(installationId);
             } else {
               taskCompletionSource.setException(
                   new ExecutionException(
-                      new IllegalArgumentException("FID not matching with received token!")));
+                      new IllegalArgumentException("Unexpected Error: FID NOT matching!")));
             }
           } catch (ExecutionException | InterruptedException e) {
             taskCompletionSource.setException(e);

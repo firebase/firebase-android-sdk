@@ -854,33 +854,34 @@ public class FirebaseMessaging {
     // onNewToken() is only invoked for the default app as there is no parameter to identify which
     // app the token is for. We could add a new method onNewToken(FirebaseApp app, String token) or
     // the like to handle multiple apps better.
-    if (FirebaseApp.DEFAULT_APP_NAME.equals(firebaseApp.getName())) {
-      if (Log.isLoggable(TAG, Log.DEBUG)) {
-        Log.d(TAG, "Invoking onNewToken for app: " + firebaseApp.getName());
-      }
-
-      boolean isV1Registration = gmsRegistrationClient.isV1RegistrationEnabled();
-      Intent messagingIntent = new Intent();
-      messagingIntent.putExtra(FirebaseMessagingService.EXTRA_TOKEN, token);
-      if (isV1Registration) {
-        if (isUnregistered) {
-          messagingIntent.setAction(FirebaseMessagingService.ACTION_FCM_UNREGISTERED);
-        } else {
-          messagingIntent.setAction(FirebaseMessagingService.ACTION_FCM_REGISTERED);
-        }
-      } else {
-        if (!isUnregistered) {
-          messagingIntent.setAction(FirebaseMessagingService.ACTION_NEW_TOKEN);
-        } else {
-          // No callback methods to notify deletetoken/unregister for legacy registration.
-          return;
-        }
-      }
-      // Previously this sent to the FIIDReceiver, which forwarded to the service.
-      // Send directly to service using the old FIIDReceiver mechanism to keep the change
-      // simple.
-      new FcmBroadcastProcessor(context).process(messagingIntent);
+    if (!FirebaseApp.DEFAULT_APP_NAME.equals(firebaseApp.getName())) {
+      return;
     }
+
+    if (Log.isLoggable(TAG, Log.DEBUG)) {
+      Log.d(TAG, "Invoking onNewToken for app: " + firebaseApp.getName());
+    }
+
+    boolean isV1Registration = gmsRegistrationClient.isV1RegistrationEnabled();
+    Intent messagingIntent = new Intent();
+    messagingIntent.putExtra(FirebaseMessagingService.EXTRA_TOKEN, token);
+    if (isV1Registration) {
+      messagingIntent.setAction(
+          isUnregistered
+              ? FirebaseMessagingService.ACTION_FCM_UNREGISTERED
+              : FirebaseMessagingService.ACTION_FCM_REGISTERED);
+    } else {
+      if (!isUnregistered) {
+        messagingIntent.setAction(FirebaseMessagingService.ACTION_NEW_TOKEN);
+      } else {
+        // No callback methods to notify deletetoken/unregister for legacy registration.
+        return;
+      }
+    }
+    // Previously this sent to the FIIDReceiver, which forwarded to the service.
+    // Send directly to service using the old FIIDReceiver mechanism to keep the change
+    // simple.
+    new FcmBroadcastProcessor(context).process(messagingIntent);
   }
 
   private class AutoInit {
