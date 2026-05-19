@@ -507,19 +507,28 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow completes if server complete the RPC mid-stream`() = runTest {
+  fun `flow retries if server completes the RPC gracefully mid-stream`() = runTest {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
+    val testData = testDataArb().sample()
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
       val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      responseSender.onCompleted()
+      serverCollector.awaitResponseSender().let { responseSender ->
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        responseSender.onCompleted()
+      }
 
-      clientCollector.awaitComplete()
+      // Client should restart the connection since the closure was unprovoked and unexpected.
+      serverCollector.awaitResponseSender().let { responseSender ->
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        responseSender.onNext(requestId, testData)
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
