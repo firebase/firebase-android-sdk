@@ -509,42 +509,46 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow retries if server completes the RPC gracefully mid-stream`() =
-    testFlowReconnectsUponConnectionClosure {
-      it.onCompleted()
-    }
+  fun `flow retries if server completes the RPC gracefully mid-stream`() = runTest {
+    testFlowReconnectsUponConnectionClosure { it.onCompleted() }
+  }
 
   @Test
-  fun `flow retries if server aborts the RPC mid-stream with StatusException`() {
-    Status.Code.entries.forEach { code ->
-      withClue("code=$code") {
-        testFlowReconnectsUponConnectionClosure { it.onError(StatusException(code.toStatus())) }
-      }
+  fun `flow retries if server aborts the RPC mid-stream with StatusException`() = runTest {
+    testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode {
+      StatusException(it.toStatus())
     }
   }
 
   @Test
-  fun `flow retries if server aborts the RPC mid-stream with StatusRuntimeException`() {
-    Status.Code.entries.forEach { code ->
-      withClue("code=$code") {
-        testFlowReconnectsUponConnectionClosure {
-          it.onError(StatusRuntimeException(code.toStatus()))
-        }
-      }
+  fun `flow retries if server aborts the RPC mid-stream with StatusRuntimeException`() = runTest {
+    testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode {
+      StatusRuntimeException(it.toStatus())
     }
   }
 
   @Test
-  fun `flow retries if server aborts with a non-grpc Exception`() {
+  fun `flow retries if server aborts with a non-grpc Exception`() = runTest {
     class TestException(message: String) : Exception(message)
     testFlowReconnectsUponConnectionClosure {
       it.onError(TestException(Arb.dataConnect.string().sample()))
     }
   }
 
-  private fun testFlowReconnectsUponConnectionClosure(
+  private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
+    createException: (Status.Code) -> Throwable
+  ) {
+    failureGrpcStatusCodes.forEach { code ->
+      withClue("code=$code") {
+        val exception = createException(code)
+        testFlowReconnectsUponConnectionClosure { it.onError(exception) }
+      }
+    }
+  }
+
+  private suspend fun TestScope.testFlowReconnectsUponConnectionClosure(
     abort: (StreamObserver<StreamResponse>) -> Unit
-  ) = runTest {
+  ) {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
@@ -582,11 +586,10 @@ class RealtimeQuerySubscriptionImplUnitTest {
       val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
       val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
       val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      server1Collector.awaitResponseSender().let { responseSender ->
-        server1Collector.awaitUntilSubscribeStreamRequest()
-        server1.close()
-        server2.open(server1.port)
-      }
+      server1Collector.awaitConnectRpcStarted()
+      server1Collector.awaitUntilSubscribeStreamRequest()
+      server1.close()
+      server2.open(server1.port)
 
       server2Collector.awaitResponseSender().let { responseSender ->
         val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
@@ -765,3 +768,6 @@ private fun distinctOperationNameVariablesPairWithRepeatedComponentsArb(
 private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestData) {
   onNext(StreamResponse.newBuilder().setRequestId(requestId).setData(encodeToStruct(data)).build())
 }
+
+private val failureGrpcStatusCodes: List<Status.Code> =
+  Status.Code.entries.filterNot { it == Status.Code.OK }
