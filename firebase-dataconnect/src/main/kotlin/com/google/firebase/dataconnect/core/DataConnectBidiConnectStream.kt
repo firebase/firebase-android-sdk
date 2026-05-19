@@ -410,11 +410,7 @@ internal class DataConnectBidiConnectStream(
       while (true) {
         when (val currentState = state.get()) {
           SubscriptionState.Disconnected,
-          SubscriptionState.DisconnectedWithPendingSubscription ->
-            error(
-              "internal error vv4verqchm: got Disconnected event, " +
-                "but state=$currentState (expected state=Connected)"
-            )
+          SubscriptionState.DisconnectedWithPendingSubscription -> break
           is SubscriptionState.Connected -> {
             currentState.cancelSubscribeOrResumeJob("got Disconnected event")
             val newState =
