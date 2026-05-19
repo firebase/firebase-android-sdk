@@ -44,10 +44,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
@@ -78,36 +81,36 @@ internal class DataConnectBidiConnectStream(
   private val coroutineScope: CoroutineScope,
 ) {
 
+  private val scopeCompletedFlow: Flow<SubscriptionEvent.ScopeCompleted> =
+    coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
+
   private val sharedFlow: SharedFlow<SubscriptionEvent>
 
+  private val connectionState: StateFlow<SubscriptionEvent.Connection>
+
   init {
-    val scopeCompletedFlow: Flow<SubscriptionEvent.ScopeCompleted> =
-      coroutineScope.completedFlow().map { SubscriptionEvent.ScopeCompleted }
-
-    val connectionState =
+    val mutableConnectionState =
       MutableStateFlow<SubscriptionEvent.Connection>(SubscriptionEvent.Disconnected)
+    connectionState = mutableConnectionState.asStateFlow()
 
-    val messageFlow: Flow<SubscriptionEvent.Message> =
+    sharedFlow =
       flow
         .onEach { event ->
           if (event is GrpcBidiFlow.Event.ConnectionInfo) {
-            connectionState.value = SubscriptionEvent.Connected(event)
+            mutableConnectionState.value = SubscriptionEvent.Connected(event)
           }
         }
         .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto>>()
         .map(SubscriptionEvent::Message)
-        .onCompletion { connectionState.value = SubscriptionEvent.Disconnected }
+        .onCompletion { mutableConnectionState.value = SubscriptionEvent.Disconnected }
         .retryWhen { _, attempt ->
-          if (attempt < 2) {
+          if (attempt > 2) {
             false
           } else {
             delay(1.seconds)
             true
           }
         }
-
-    sharedFlow =
-      merge(scopeCompletedFlow, connectionState, messageFlow)
         .buffer(capacity = Channel.UNLIMITED)
         .shareIn(
           coroutineScope,
@@ -151,7 +154,7 @@ internal class DataConnectBidiConnectStream(
       }
     }
 
-    return sharedFlow
+    return merge(sharedFlow, connectionState, scopeCompletedFlow)
       .onCompletion {
         state.update { currentState ->
           if (currentState is SubscriptionState.Connected) {
@@ -172,14 +175,11 @@ internal class DataConnectBidiConnectStream(
       .transform { messageOrSubscribe ->
         when (messageOrSubscribe) {
           MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
-          is MessageOrSubscribe.Message -> {
-            val executeResponse = messageOrSubscribe.message.toExecuteResponse()
-            if (executeResponse !== null) {
-              emit(executeResponse)
-            }
-          }
+          is MessageOrSubscribe.Message -> emit(messageOrSubscribe.message)
         }
       }
+      .filter { it.requestId == requestId }
+      .mapNotNull { it.toExecuteResponse() }
   }
 
   private sealed interface MessageOrSubscribe {
@@ -275,7 +275,7 @@ internal class DataConnectBidiConnectStream(
     ) : Connection {
       constructor(
         event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, String?>
-      ) : this(event.connectionId, event.connectionContext, event.outgoingRequests)
+      ) : this(event.connectionId, event.connectionCookie, event.outgoingRequests)
 
       override fun toString() = "Connected(connectionId=$connectionId)"
     }
