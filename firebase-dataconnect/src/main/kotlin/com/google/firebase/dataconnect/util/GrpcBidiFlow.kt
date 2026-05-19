@@ -71,7 +71,12 @@ import kotlinx.coroutines.withContext
  */
 internal object GrpcBidiFlow {
 
-  /** Represents events emitted by the [Flow] created by [GrpcBidiFlow.create]. */
+  /**
+   * Represents events emitted by the [Flow] created by [GrpcBidiFlow.create].
+   *
+   * @property connectionId The "connectionId" to uniquely identify a connection to the remote
+   * server, especially for correlation with invocations of [Listener.collectStarted].
+   */
   sealed class Event<in RequestT, out ResponseT>(val connectionId: String) {
     /**
      * Emitted once when the gRPC flow collection starts.
@@ -93,14 +98,11 @@ internal object GrpcBidiFlow {
      * Emitted when a response message is received from the server.
      *
      * @property message The response message received from the server.
-     * @property connectionInfo Information about the connection; it is included for convenience,
-     * such as in the case that subscribers of a [kotlinx.coroutines.flow.SharedFlow] join late and
-     * miss the [ConnectionInfo] event.
      */
-    class Message<in RequestT, out ResponseT>(
+    class Message<out ResponseT>(
+      connectionId: String,
       val message: ResponseT,
-      val connectionInfo: ConnectionInfo<RequestT>,
-    ) : Event<RequestT, ResponseT>(connectionInfo.connectionId) {
+    ) : Event<Any?, ResponseT>(connectionId) {
       override fun toString() = "Message(message=$message)"
     }
   }
@@ -206,8 +208,7 @@ internal object GrpcBidiFlow {
       }
 
       val requestHeaders = headers(connectionId).copy()
-      val connectionInfo = Event.ConnectionInfo(connectionId, requestChannel.asSendChannel())
-      emit(connectionInfo)
+      emit(Event.ConnectionInfo(connectionId, requestChannel.asSendChannel()))
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
       val readiness = Readiness(connectionId, clientCall)
@@ -294,7 +295,7 @@ internal object GrpcBidiFlow {
           clientCall.request(1)
           for (response in responses) {
             collectionListener?.receivedMessage(response)
-            emit(Event.Message(response, connectionInfo))
+            emit(Event.Message(connectionId, response))
             clientCall.request(1)
           }
           collectionListener?.receivingMessagesComplete()
