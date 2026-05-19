@@ -24,7 +24,7 @@ Furthermore, the low-level gRPC coroutines implementation hides execution detail
 
 We will rewire `DataConnectGrpcRPCs.connect` to use a custom `GrpcBidiFlow.create` utility instead of the standard coroutine stubs.
 
-The core code of `GrpcBidiFlow.kt` was initially copied verbatim from `ClientCalls.kt` inside the gRPC Kotlin library and then adapted. Instead of accepting a request flow from the caller, the adapted `GrpcBidiFlow` takes responsibility for creating a `kotlinx.coroutines.channels.Channel` for the outgoing requests. It then "sends" this channel downstream to the collector as part of an `Event.Started` lifecycle event. This makes the correlation between the request stream and the response stream perfectly clear and reliable.
+The core code of `GrpcBidiFlow.kt` was initially copied verbatim from `ClientCalls.kt` inside the gRPC Kotlin library and then adapted. Instead of accepting a request flow from the caller, the adapted `GrpcBidiFlow` takes responsibility for creating a `kotlinx.coroutines.channels.Channel` for the outgoing requests. It then "sends" this channel downstream to the collector as part of a `GrpcBidiFlow.Event.ConnectionInfo` lifecycle event (which the stream maps to `Event.Ready` internally). This makes the correlation between the request stream and the response stream perfectly clear and reliable.
 
 Using this new correlation model, we will modify `DataConnectBidiConnectStream` to use `SharingStarted.WhileSubscribed()` for sharing the response flow, ensuring robust, lazy, and self-cleaning connection behavior.
 
@@ -32,7 +32,7 @@ We also introduce a robust `Listener` interface in `GrpcBidiFlow` to enable fine
 
 ## Rationale
 
-- **Lifecycle Correlation**: By having `GrpcBidiFlow` construct the request channel and pass it downstream upon connection startup, it resolves the challenge where a flow collector could not easily get the exact request channel corresponding to its own collection lifecycle. This reliable correlation enables the use of `SharingStarted.WhileSubscribed()`.
+- **Lifecycle Correlation**: By having `GrpcBidiFlow` construct the request channel and pass it downstream upon connection startup (via `ConnectionInfo` / `Ready`), it resolves the challenge where a flow collector could not easily get the exact request channel corresponding to its own collection lifecycle. This reliable correlation enables the use of `SharingStarted.WhileSubscribed()`.
 - **Observability and Comprehension**: The `GrpcBidiFlow` implementation inlines several necessary but previously deeply-nested abstractions from the gRPC codebase. This makes the connection pipeline far easier for humans to comprehend, and makes setting breakpoints in lower-level logic simple.
 - **Fine-Grained Debugging**: The introduced `Listener` interface allows us to log highly detailed connection transitions and raw frame exchanges.
 
