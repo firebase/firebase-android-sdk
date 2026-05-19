@@ -584,5 +584,5 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
       "calculatedCause=$calculatedCause)"
   }
 
-  fun onCallReady(connectionId: String): String = "[cid=$connectionId] onCallReady($connectionId)"
+  fun onCallReady(connectionId: String): String = "[cid=$connectionId] onCallReady()"
 }
