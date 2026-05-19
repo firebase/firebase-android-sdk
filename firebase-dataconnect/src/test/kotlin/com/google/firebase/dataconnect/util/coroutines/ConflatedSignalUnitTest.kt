@@ -19,6 +19,9 @@ package com.google.firebase.dataconnect.util.coroutines
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -233,6 +236,29 @@ class ConflatedSignalUnitTest {
       val flowGotSignal = flowEvents.count { it is app.cash.turbine.Event.Item } == 1
 
       (flowGotSignal xor awaitCompleted) shouldBe true
+    }
+  }
+
+  @Test
+  fun `toString contains hasPendingSignal=false initially`() {
+    val signal = ConflatedSignal()
+    check(!signal.hasPendingSignal)
+
+    assertSoftly {
+      signal.toString() shouldContainWithNonAbuttingText "ConflatedSignal"
+      signal.toString() shouldContainWithNonAbuttingTextIgnoringCase "hasPendingSignal=false"
+    }
+  }
+
+  @Test
+  fun `toString contains hasPendingSignal=true after signal`() {
+    val signal = ConflatedSignal()
+    signal.signal()
+    check(signal.hasPendingSignal)
+
+    assertSoftly {
+      signal.toString() shouldContainWithNonAbuttingText "ConflatedSignal"
+      signal.toString() shouldContainWithNonAbuttingTextIgnoringCase "hasPendingSignal=true"
     }
   }
 }

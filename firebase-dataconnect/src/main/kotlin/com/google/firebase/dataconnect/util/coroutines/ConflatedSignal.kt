@@ -134,4 +134,6 @@ internal class ConflatedSignal {
       channel.receive()
     }
   }
+
+  override fun toString() = "ConflatedSignal(hasPendingSignal=$hasPendingSignal)"
 }
