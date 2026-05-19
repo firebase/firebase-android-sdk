@@ -80,11 +80,13 @@ import io.mockk.mockk
 import io.mockk.spyk
 import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Assume.assumeTrue
@@ -246,24 +248,40 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
-        }
+      val clientCollector0 =
+        subscriptions[0].flow.testIn(backgroundScope, name = "clientCollector0")
 
-      serverCollector.awaitUntilInitStreamRequest()
+      val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
       val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
-      subscribeRequest.streamRequest.requestId shouldBeIn requestIds
-      subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
-      repeat(subscriptions.size - 1) {
-        val resumeRequest: StreamRequestReceived = serverCollector.awaitUntilItemIsInstance()
-        resumeRequest.connectionId shouldBe subscribeRequest.connectionId
-        resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
-        resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+      val testData = testDataArb().let { arb -> List(requestIds.size) { arb.sample() } }
+      val respondJob = launch {
+        val requestId = subscribeRequest.streamRequest.requestId
+        val testDataIterator = testData.iterator()
+        while (true) {
+          responseObserver.onNext(requestId, testDataIterator.next())
+          val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
+          resumeRequest.connectionId shouldBe subscribeRequest.connectionId
+          resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+          resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+        }
       }
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
+      subscribeRequest.streamRequest.requestId shouldBeIn requestIds
+      subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
+      clientCollector0.awaitItem()
+      val clientCollectors =
+        subscriptions.drop(1).mapIndexed { index, subscription ->
+          if (rs.random.nextBoolean()) yield() // let some of the resume requests coalesce
+          subscription.flow.testIn(backgroundScope, name = "clientCollector${index+1}")
+        }
+      clientCollectors.forEach { clientCollector ->
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBeIn testData
+      }
+
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+      respondJob.cancelAndJoin()
+      clientCollector0.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
