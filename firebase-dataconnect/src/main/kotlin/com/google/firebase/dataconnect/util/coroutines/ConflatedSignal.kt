@@ -20,37 +20,37 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * A coroutine-based signaling mechanism that allows a waiter to suspend until notified by a sender,
  * conflating multiple signals into one signal.
  *
  * This class is designed to coordinate execution flow between asynchronous operations (such as a
- * producer and a consumer). A consumer call to [await] will suspend if no signal is available, and
- * will resume immediately once a producer calls [signal].
- *
- * **Intended Use & Example Workflow:**
- * 1. A background worker (sender) performs tasks in a loop, and calls [signal] after each task is
- * complete.
- * 2. A consumer (waiter) calls [await] to block/suspend its execution until the worker signals that
- * some work is done.
+ * producer and a consumer). A consumer can wait for a signal either by calling the suspending
+ * method [await] or by collecting from the [signals] flow. In both cases, the consumer will resume
+ * immediately once a producer calls [signal].
  *
  * ### Key Behavioral Characteristics
  *
- * * **Single Signal Delivery:** If multiple coroutines are suspended in [await] then exactly _one_
- * of them will be resumed upon [signal] being called. This is *not* a broadcast event or a
- * `signalAll` style primitive.
+ * * **Single Signal Delivery / Competing Consumers:** If multiple coroutines are waiting for a
+ * signal, whether they are suspended in [await] or collecting from the [signals] flow, then exactly
+ * _one_ of them will be resumed/notified upon [signal] being called, chosen indeterminately. This
+ * is *not* a broadcast event or a `signalAll` style primitive. Waiters and flow collectors
+ * **compete** for signals.
  * * **Signal Conflation:** The signal is conflated and persistent until consumed. If [signal] is
- * called multiple times before any coroutine awaits, only a single signal permit is retained. The
- * first subsequent call to [await] will consume the signal and resume immediately, while any
- * further calls to [await] will suspend.
+ * called multiple times before any coroutine awaits, only a single signal is retained. The first
+ * subsequent waiter (either via [await] or [signals] collection) will consume the signal and resume
+ * immediately, while any further waiters will suspend.
  *
  * ### Prompt cancellation guarantee
  *
- * All suspending functions in this class provide **prompt cancellation guarantee**. If the job was
- * canceled while [await] was suspended, it will not resume successfully, even if it already
- * received a signal, but throws a [CancellationException]. See the documentation regarding "Prompt
- * cancellation guarantee" in [Channel] for further details.
+ * All suspending functions and flows in this class provide a **prompt cancellation guarantee**. If
+ * the job was canceled while suspended in [await] (or while collecting from [signals]), it will not
+ * resume successfully, even if it already received a signal, but will throw [CancellationException]
+ * . See the documentation regarding "Prompt cancellation guarantee" in [Channel] for further
+ * details.
  *
  * ### Safe for concurrent use
  *
@@ -63,8 +63,29 @@ internal class ConflatedSignal {
   private val channel = Channel<Unit>(CONFLATED)
 
   /**
+   * A cold [Flow] that emits [Unit] every time a signal is received.
+   *
+   * ### Important Concurrency & Competing-Consumer Semantics
+   *
+   * This is a **competing-consumer** flow. Because [ConflatedSignal] only resumes one waiter per
+   * signal, collectors of this flow **compete** for signals with each other and with direct callers
+   * of [await].
+   *
+   * Specifically, if multiple collectors are actively collecting this flow concurrently, or if some
+   * coroutines are suspended in [await], a single call to [signal] will notify exactly **one** of
+   * them (either resuming a direct [await] caller or emitting to a single flow collector). It will
+   * *not* broadcast the signal to all collectors.
+   */
+  val signals: Flow<Unit> = flow {
+    while (true) {
+      await()
+      emit(Unit)
+    }
+  }
+
+  /**
    * Whether there is a pending signal from a call to [signal] that has not yet been consumed by a
-   * call to [await].
+   * call to [await] or a collector of [signals].
    */
   val hasPendingSignal: Boolean
     get() = signalState.get()
@@ -74,8 +95,9 @@ internal class ConflatedSignal {
    * next waiter if none are currently awaiting.
    *
    * Because this signal is conflated, multiple sequential calls to [signal] without intervening
-   * calls to [await] will be merged into a single signal. Only one [await] call will be resumed
-   * immediately, regardless of how many times [signal] was called.
+   * calls to [await] (or collectors of [signal]) will be merged into a single signal. Only one
+   * [await] call (or [signals] collector) will be resumed immediately, regardless of how many times
+   * [signal] was called.
    *
    * This method is non-blocking, thread-safe, and safe to call from any context (including outside
    * of coroutines).
@@ -91,16 +113,18 @@ internal class ConflatedSignal {
    * If a signal has already been emitted and not yet consumed, this method returns immediately,
    * consuming that signal.
    *
+   * ### Important Concurrency & Competing-Consumer Semantics
+   *
+   * Direct callers of [await] **compete** for signals with each other and with active collectors of
+   * the [signals] flow. Specifically, if multiple coroutines are waiting (either suspended in
+   * [await] or collecting from [signals]), a single call to [signal] will resume/notify exactly
+   * **one** of them, chosen indeterminately. It will *not* broadcast the signal to all.
+   *
    * ### Prompt cancellation guarantee
    *
    * This function provides **prompt cancellation guarantee**. That is, if the job is canceled while
    * [await] is suspended, it will not resume successfully, even if it consumed a signal, but throws
    * a [CancellationException].
-   *
-   * ### Concurrent Waiters
-   *
-   * If multiple coroutines are concurrently suspended in [await], only one of them, chosen in an
-   * indeterminate manner, will be resumed when [signal] is called.
    */
   suspend fun await() {
     while (true) {

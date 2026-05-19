@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.util.coroutines
 
+import app.cash.turbine.test
+import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -148,6 +150,89 @@ class ConflatedSignalUnitTest {
     repeat(100) {
       signal.hasPendingSignal shouldBe false
       yield()
+    }
+  }
+
+  @Test
+  fun `signals flow emits immediately if there is a pending signal`() = runTest {
+    val signal = ConflatedSignal()
+    signal.signal()
+
+    signal.signals.test {
+      awaitItem() shouldBe Unit
+      cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `signals flow collection suspends if there is NO pending signal`() = runTest {
+    val signal = ConflatedSignal()
+
+    val job =
+      backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.signals.collect {} }
+
+    job.isCompleted shouldBe false
+  }
+
+  @Test
+  fun `signals flow emits when signal is called`() = runTest {
+    val signal = ConflatedSignal()
+
+    signal.signals.test {
+      signal.signal()
+      awaitItem() shouldBe Unit
+      cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `multiple signals are conflated in the signals flow`() = runTest {
+    val signal = ConflatedSignal()
+    repeat(10) { signal.signal() }
+
+    signal.signals.test {
+      awaitItem() shouldBe Unit
+      expectNoEvents()
+    }
+  }
+
+  @Test
+  fun `multiple collectors of signals flow compete for signals`() = runTest {
+    val signal = ConflatedSignal()
+
+    turbineScope {
+      val collector1 = signal.signals.testIn(backgroundScope, name = "collector1")
+      val collector2 = signal.signals.testIn(backgroundScope, name = "collector2")
+
+      signal.signal()
+      yield()
+
+      val events1 = collector1.cancelAndConsumeRemainingEvents()
+      val events2 = collector2.cancelAndConsumeRemainingEvents()
+
+      val itemsCount1 = events1.count { it is app.cash.turbine.Event.Item }
+      val itemsCount2 = events2.count { it is app.cash.turbine.Event.Item }
+      (itemsCount1 + itemsCount2) shouldBe 1
+    }
+  }
+
+  @Test
+  fun `signals flow collectors compete with direct awaiters`() = runTest {
+    val signal = ConflatedSignal()
+
+    turbineScope {
+      val collector = signal.signals.testIn(backgroundScope, name = "collector")
+      val awaitJob = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
+
+      signal.signal()
+      yield()
+
+      val flowEvents = collector.cancelAndConsumeRemainingEvents()
+      val awaitCompleted = awaitJob.isCompleted
+
+      val flowGotSignal = flowEvents.count { it is app.cash.turbine.Event.Item } == 1
+
+      (flowGotSignal xor awaitCompleted) shouldBe true
     }
   }
 }
