@@ -88,10 +88,33 @@ sourceSets {
     }
   }
 
-  // Source set for integration tests
-  integrationTest
+  test {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
-  prodTest
+  // Source set for integration tests
+  integrationTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
+
+  prodTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
   // Source set for Gradle Runner test build. Gradle Runner test builds are run in separate
   // processes i.e. test build does not share same class paths as test process. So we need
