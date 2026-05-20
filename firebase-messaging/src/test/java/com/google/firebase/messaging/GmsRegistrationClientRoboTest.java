@@ -30,6 +30,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -194,5 +195,63 @@ public class GmsRegistrationClientRoboTest {
     Task<?> task = client.unregister();
 
     assertThat(awaitTaskOnBackground(task)).isNull();
+  }
+
+  @Test
+  public void testRegister_v1Flow_withSupport_success() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    Task<String> task = client.register();
+
+    assertThat(awaitTaskOnBackground(task)).isEqualTo(TEST_FID);
+  }
+
+  @Test
+  public void testRegister_v1Flow_getTokenFailure() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    // Mock getToken to fail
+    Exception exception = new Exception("Simulated FIS Failure");
+    when(mockFirebaseInstallationsApi.getToken(false)).thenReturn(Tasks.forException(exception));
+
+    Task<String> task = client.register();
+
+    try {
+      awaitTaskOnBackground(task);
+      org.junit.Assert.fail("Expected ExecutionException");
+    } catch (ExecutionException e) {
+      assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
+    }
+  }
+
+  @Test
+  public void testUnregister_v1Flow_withSupport_success() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    Task<?> task = client.unregister();
+
+    assertThat(awaitTaskOnBackground(task)).isNull();
+  }
+
+  @Test
+  public void testUnregister_v1Flow_getTokenFailure() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    // Mock getToken to fail
+    Exception exception = new Exception("Simulated FIS Failure");
+    when(mockFirebaseInstallationsApi.getToken(false)).thenReturn(Tasks.forException(exception));
+
+    Task<?> task = client.unregister();
+
+    try {
+      awaitTaskOnBackground(task);
+      org.junit.Assert.fail("Expected ExecutionException");
+    } catch (ExecutionException e) {
+      assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
+    }
   }
 }

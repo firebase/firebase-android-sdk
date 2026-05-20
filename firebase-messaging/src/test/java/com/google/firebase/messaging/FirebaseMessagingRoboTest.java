@@ -1035,6 +1035,49 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
+  public void testRegister_v1Flow_getTokenFailure_propagatesException() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    Metadata mockMetadata = mock(Metadata.class);
+    when(mockMetadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_fid"));
+    // Mock mockFis.getToken(false) to fail
+    Exception fisException = new Exception("Simulated FIS Failure");
+    when(mockFis.getToken(false)).thenReturn(Tasks.forException(fisException));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            mockMetadata,
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.register();
+    ShadowLooper.idleMainLooper();
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IOException.class);
+    assertThat(task.getException()).hasMessageThat().contains("FCM Registration failed!");
+    assertThat(task.getException().getCause()).isInstanceOf(ExecutionException.class);
+    assertThat(task.getException().getCause().getCause())
+        .hasMessageThat()
+        .contains("Simulated FIS Failure");
+  }
+
+  @Test
   public void testUnregister_v1Flow_success() throws Exception {
     resetForTokenTests();
     editManifestApplicationMetadata()
@@ -1067,6 +1110,53 @@ public final class FirebaseMessagingRoboTest {
     Tasks.await(task, 5, SECONDS);
     verifyOnUnregisteredInvoked("fake_token");
     assertThat(messaging.getTokenWithoutTriggeringSync()).isNull();
+  }
+
+  @Test
+  public void testUnregister_v1Flow_getTokenFailure_propagatesException() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    writeTokenToStore("fake_token");
+
+    Metadata mockMetadata = mock(Metadata.class);
+    when(mockMetadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_fid"));
+    // Mock mockFis.getToken(false) to fail
+    Exception fisException = new Exception("Simulated FIS Failure");
+    when(mockFis.getToken(false)).thenReturn(Tasks.forException(fisException));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            mockMetadata,
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.unregister();
+    ShadowLooper.idleMainLooper();
+
+    try {
+      Tasks.await(task, 5, SECONDS);
+      org.junit.Assert.fail("Expected ExecutionException");
+    } catch (Exception e) {
+      Throwable rootCause = e;
+      while (rootCause.getCause() != null) {
+        rootCause = rootCause.getCause();
+      }
+      assertThat(rootCause).hasMessageThat().contains("Simulated FIS Failure");
+    }
   }
 
   @Test
