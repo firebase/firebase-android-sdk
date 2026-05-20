@@ -2,7 +2,7 @@
 
 - [feature] `QuerySubscription.flow` gains
   [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))
 - [changed] Internal fix of wasteful computation only meant for debug logging.
   ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
 - [changed] Internal change to replace `SecureRandom` with just `Random`
