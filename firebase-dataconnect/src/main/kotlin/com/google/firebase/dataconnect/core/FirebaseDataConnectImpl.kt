@@ -76,6 +76,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcClient: DataConnectGrpcClient
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
+  val queryManagerUnlessClosed: QueryManager?
   val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
@@ -171,6 +172,8 @@ internal class FirebaseDataConnectImpl(
     get() = initialize().grpcRPCs
   override val queryManager: QueryManager
     get() = initialize().queryManager
+  override val queryManagerUnlessClosed: QueryManager?
+    get() = initializeUnlessClosed()?.queryManager
   override val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
     get() = initializeUnlessClosed()?.realtimeQueryManager
 
