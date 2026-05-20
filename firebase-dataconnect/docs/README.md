@@ -20,7 +20,13 @@ Before modifying any significant component, starting a new feature, or refactori
 When you need to make a significant architectural choice (e.g., choosing a library, changing data flow, defining a new component boundary):
 1.  Create a new file in this directory named `adr-NNNN-short-description.md`, starting from `adr-0001.md`.
 2.  Use the template in [adr-template.md](adr-template.md).
-3.  Fill out the sections honestly and concisely.
+3.  Fill out the sections honestly and concisely. Prioritize explaining the **WHY** behind the
+decisions, the benefits, and why the choices are valid and worthwhile. **AVOID** merely repeating
+the technical choices without any justifications (developers can just read the git commit
+history for what changed; ADRs exist to capture the reasoning). If the rationale, trade-offs,
+or benefits are not fully known or clear, **liberally ask the user for clarification** before
+writing. It is of paramount importance that these details are recorded accurately and are
+absolutely correct.
 4.  Update the **Decision Registry** in this file (`docs/README.md`) to list your new ADR.
 
 ---
@@ -45,14 +51,29 @@ When you need to make a significant architectural choice (e.g., choosing a libra
 > (Or `../scripts/spotlessApply.zsh` if running from within the `docs/` directory).
 > A task is NOT considered complete until the files have been successfully formatted by this script.
 
+### 3. Focus on the "Why" (Rationale and Benefits)
+
+> [!IMPORTANT]
+> When writing ADRs, prioritize explaining the **rationale, trade-offs, and benefits** of the
+> decisions. Do not just repeat the technical implementation details—explain **WHY** they were
+> chosen and why the solutions are valid. ADRs are design documents meant to convey historical
+> context and reasoning, not code diff summaries (which can be read in the git commit history).
+>
+> **CRITICAL**: If the rationale, trade-offs, or benefits of a decision are not fully known or are
+> unclear to you, **you MUST liberally ask the user for clarification** before writing the document.
+> It is of paramount importance that these architectural details are recorded accurately and are
+> absolutely correct. Do not make assumptions or guess.
+
 ---
 
 ## Decision Registry
 
-| ID                                                                     | Title                                                | Date                         | Status   | Tags                                              |
-|:-----------------------------------------------------------------------|:-----------------------------------------------------|:-----------------------------|:---------|:--------------------------------------------------|
-| [0001](adr-0001-rewire-bidi-connection-to-grpcbidiflow.md)             | Rewire Bidirectional gRPC Connection to GrpcBidiFlow | Fri May 15 18:33:07 EDT 2026 | accepted | network, grpc, coroutines, reactive-streams       |
-| [0002](adr-0002-use-replay-expiration-millis-0-in-while-subscribed.md) | Use replayExpirationMillis = 0 in WhileSubscribed    | Sat May 16 22:34:19 EDT 2026 | accepted | network, grpc, coroutines, flow, reactive-streams |
-| [0003](adr-0003-sequence-number-filtering-for-stale-replayed-data.md)  | Sequence Number Filtering for Stale Replayed Data    | Sun May 17 00:02:50 EDT 2026 | accepted | network, grpc, coroutines, flow, multiplexing     |
+| ID                                                                                          | Title                                                                   | Date                         | Status     | Tags                                                       |
+|:--------------------------------------------------------------------------------------------|:------------------------------------------------------------------------|:-----------------------------|:-----------|:-----------------------------------------------------------|
+| [0001](adr-0001-rewire-bidi-connection-to-grpcbidiflow.md)                                  | Rewire Bidirectional gRPC Connection to GrpcBidiFlow                    | Fri May 15 18:33:07 EDT 2026 | accepted   | network, grpc, coroutines, reactive-streams                |
+| [0002](adr-0002-use-replay-expiration-millis-0-in-while-subscribed.md)                      | Use replayExpirationMillis = 0 in WhileSubscribed                       | Sat May 16 22:34:19 EDT 2026 | superseded | network, grpc, coroutines, flow, reactive-streams          |
+| [0003](adr-0003-sequence-number-filtering-for-stale-replayed-data.md)                       | Sequence Number Filtering for Stale Replayed Data                       | Sun May 17 00:02:50 EDT 2026 | superseded | network, grpc, coroutines, flow, multiplexing              |
+| [0004](adr-0004-coordinate-multiplexed-subscriptions-using-conflatedsignal-and-replay-0.md) | Coordinate Multiplexed Subscriptions using ConflatedSignal and Replay=0 | Tue May 19 15:58:34 EDT 2026 | accepted   | network, grpc, coroutines, flow, multiplexing              |
+| [0005](adr-0005-configure-flow-control-and-conflation-for-realtime-queries.md)              | Configure Flow Control and Conflation for Realtime Queries              | Tue May 19 17:28:33 EDT 2026 | accepted   | network, grpc, coroutines, flow, backpressure, performance |
 
 *(Add new records to this table in chronological order. Refer to the status lifecycle: `proposed` -> `accepted` -> `superseded`/`deprecated`)*

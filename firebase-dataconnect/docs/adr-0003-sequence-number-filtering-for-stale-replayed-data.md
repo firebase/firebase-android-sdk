@@ -3,7 +3,7 @@
 id: 0003
 title: Sequence Number Filtering for Stale Replayed Data
 date: Sun May 17 00:02:50 EDT 2026
-status: accepted
+status: obsolete
 deciders: [Jetski, dconeybe]
 tags: [network, grpc, coroutines, flow, multiplexing]
 -----------------------------------------------------
@@ -83,4 +83,28 @@ A potential client-side mitigation that builds upon the sequence number approach
   * Clear documentation of the protocol's limitations.
 * **Negative/Risks:**
   * A late subscriber that starts collecting *exactly* in the small window between another subscriber's request and its response will still receive that in-flight response. This is mitigated by the fact that the data is still technically the "latest" data, but in unit tests asserting strict deterministic sequence of distinct datasets, this causes test failures.
+
+---
+
+## Amendment (May 19, 2026)
+
+### Status: Obsolete (Implementation Retired)
+
+This ADR is now **obsolete** and has been retired. The sequence number filtering mechanism was
+completely **removed** from `DataConnectBidiConnectStream.kt` as an implementation detail.
+
+**Why it was removed:**
+We refactored the stream sharing policy from `replay = 1` to `replay = 0` (as documented in
+[ADR 0004](adr-0004-coordinate-multiplexed-subscriptions-using-conflatedsignal-and-replay-0.md)).
+Because the replay cache was eliminated entirely, the "stale replayed data" issue (which sequence
+numbers originally filtered) no longer exists.
+
+**Outstanding Race Condition:**
+It is **IMPORTANT** to note that the **"in-flight request" race condition** described in this ADR
+has **NOT** been resolved by these changes. Because sequence numbers were removed and no
+alternative correlation mechanism was introduced, concurrently starting subscribers sharing the
+same query can still consume in-flight responses intended for other subscribers.
+
+This remains a known, outstanding limitation that will likely require server-side protocol
+cooperation (e.g., transaction/correlation IDs echoed in `StreamResponse`) to fully resolve.
 

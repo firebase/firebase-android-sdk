@@ -412,13 +412,19 @@ internal class DataConnectGrpcRPCs(
         grpcChannel = lazyGrpcChannel.get(),
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
-        headers = { metadata },
+        headers = { GrpcBidiFlow.HeadersResult(metadata, authToken?.authUid) },
         idStringGenerator = idStringGenerator,
         initRequests = listOf(initRequest),
         listener = grpcBidiFlowListener,
       )
 
-    return DataConnectBidiConnectStream(flow, connectCoroutineScope)
+    return DataConnectBidiConnectStream(
+      flow,
+      connectCoroutineScope,
+      Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
+        it.debug { "created by ${logger.nameWithId}" }
+      }
+    )
   }
 
   private inner class ConnectGrpcBidiFlowListener(
@@ -440,9 +446,9 @@ internal class DataConnectGrpcRPCs(
       override fun connectionStarting(
         method: MethodDescriptor<StreamRequest, StreamResponse>,
         callOptions: CallOptions,
-        headers: Metadata,
+        headers: Metadata?,
       ) {
-        this.headers = headers.copy()
+        this.headers = headers?.copy()
       }
 
       override fun sendingMessage(message: StreamRequest) {
@@ -509,8 +515,8 @@ internal class DataConnectGrpcRPCs(
   @Suppress("unused")
   private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: String?) :
     GrpcBidiFlowListenerMessageFormatter.Formatter<StreamRequest, StreamResponse>() {
-    override fun connectionStartingHeaders(headers: Metadata): String =
-      headers.toStructProto(authUid).toCompactString()
+    override fun connectionStartingHeaders(headers: Metadata?): String =
+      headers?.toStructProto(authUid)?.toCompactString().toString()
 
     override fun onCloseTrailers(trailers: Metadata): String =
       trailers.toStructProto(authUid).toCompactString()
@@ -598,6 +604,7 @@ internal class DataConnectGrpcRPCs(
     val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
 
     if (grpcChannel === null && cacheDb === null) {
+      connectCoroutineScope.coroutineContext.job.join()
       return
     }
 
