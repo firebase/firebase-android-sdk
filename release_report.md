@@ -1,14 +1,4 @@
 # Release Report
-## firebase-appdistribution
-
-* Use String.format in cases where firebase-vendor plugin transforms hardcoded strings (#8155)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8155) [commit](https://github.com/firebase/firebase-android-sdk/commit/1dfa16a54c3ef4dedd934939ac0df97cb510aa9e)  [Lee Kellogg]
-
-## firebase-appdistribution-api
-
-* Update CHANGELOG.md for firebase-appdistribution-api (#8161)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8161) [commit](https://github.com/firebase/firebase-android-sdk/commit/b63eda267a05ea08a800bfcf587cfa08befd54e7)  [Lee Kellogg]
-
 ## firebase-dataconnect
 
 * dataconnect(feat): realtime query subscriptions (#8186)   
