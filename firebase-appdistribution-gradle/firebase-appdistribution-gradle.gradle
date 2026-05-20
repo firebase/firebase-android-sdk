@@ -89,9 +89,23 @@ sourceSets {
   }
 
   // Source set for integration tests
-  integrationTest
+  integrationTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
-  prodTest
+  prodTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
   // Source set for Gradle Runner test build. Gradle Runner test builds are run in separate
   // processes i.e. test build does not share same class paths as test process. So we need
@@ -184,6 +198,10 @@ task prodTest(type: Test) {
     if (token) {
       environment 'FIREBASE_TOKEN', token
     }
+  }
+
+  testLogging {
+    showStandardStreams = true
   }
 }
 
