@@ -392,9 +392,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
     PersistedInstallationEntry updatedPrefs;
+    boolean isNewFID = false;
     try {
       if (prefs.isErrored() || prefs.isUnregistered()) {
         updatedPrefs = registerFidWithServer(prefs);
+        isNewFID = true;
       } else if (forceRefresh || utils.isAuthTokenExpired(prefs)) {
         updatedPrefs = fetchAuthTokenFromServer(prefs);
       } else {
@@ -409,8 +411,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Store the prefs to persist the result of the previous step.
     insertOrUpdatePrefs(updatedPrefs);
 
-    // Update FidListener if a fid has changed.
-    updateFidListener(prefs, updatedPrefs);
+    // Update FidListener if a fid is new or has changed.
+    if (isNewFID
+        || !TextUtils.equals(
+            prefs.getFirebaseInstallationId(), updatedPrefs.getFirebaseInstallationId())) {
+      updateFidListener(updatedPrefs);
+    }
 
     prefs = updatedPrefs;
 
@@ -431,11 +437,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  private synchronized void updateFidListener(
-      PersistedInstallationEntry prefs, PersistedInstallationEntry updatedPrefs) {
-    if (fidListeners.size() != 0
-        && !TextUtils.equals(
-            prefs.getFirebaseInstallationId(), updatedPrefs.getFirebaseInstallationId())) {
+  private synchronized void updateFidListener(@NonNull PersistedInstallationEntry updatedPrefs) {
+    if (!fidListeners.isEmpty()
+        && !TextUtils.isEmpty(updatedPrefs.getFirebaseInstallationId())
+        && updatedPrefs.isRegistered()) {
       // Update all the registered FidListener about fid changes.
       for (FidListener listener : fidListeners) {
         listener.onFidChanged(updatedPrefs.getFirebaseInstallationId());
