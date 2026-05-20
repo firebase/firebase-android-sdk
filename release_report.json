@@ -1,0 +1,357 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "1dfa16a54c3ef4dedd934939ac0df97cb510aa9e",
+                "prId": "8155",
+                "author": "Lee Kellogg",
+                "message": "Use String.format in cases where firebase-vendor plugin transforms hardcoded strings (#8155)\n\nStarting with `16.0.0-beta18`, the vendor plugin is renaming strings in\nthe app distro SDK:\n\n```\n> Task :firebase-appdistribution:releaseVendorTransform\n...\nChanged \".FirebaseAppDistributionFileProvider\" -> \"com.google.firebase.appdistribution.impl..FirebaseAppDistributionFileProvider\"\nChanged \".apk\" -> \"com.google.firebase.appdistribution.impl..apk\"\n...\n```\n\nThis is causing the SDK functionality to fail due to malformed strings:\nhttps://github.com/firebase/firebase-android-sdk/issues/8136\n\nI don't know the root cause, but this does fix the issue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1dfa16a54c3ef4dedd934939ac0df97cb510aa9e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8155"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "b63eda267a05ea08a800bfcf587cfa08befd54e7",
+                "prId": "8161",
+                "author": "Lee Kellogg",
+                "message": "Update CHANGELOG.md for firebase-appdistribution-api (#8161)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b63eda267a05ea08a800bfcf587cfa08befd54e7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8161"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "eea8178bfb9011f416dcbe4565b0c435af419224",
+                "prId": "8186",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(feat): realtime query subscriptions (#8186)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eea8178bfb9011f416dcbe4565b0c435af419224",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8186"
+            },
+            {
+                "commitId": "f5b1aba097e39536d8f598c1514ae43e3c2c57c0",
+                "prId": "8184",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): Refactor realtime queries to use SharedFlow features (#8184)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f5b1aba097e39536d8f598c1514ae43e3c2c57c0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8184"
+            },
+            {
+                "commitId": "c786a429a21eb36a743665f67df298bb6fd57d55",
+                "prId": "8183",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): improve test_execute.zsh with auto-suffix fallback and robust package detection (#8183)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c786a429a21eb36a743665f67df298bb6fd57d55",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8183"
+            },
+            {
+                "commitId": "698a341993921eb976b2672c3150750637409754",
+                "prId": "8180",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): test_execute.zsh added, to easily run tests by name from the command line (#8180)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/698a341993921eb976b2672c3150750637409754",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8180"
+            },
+            {
+                "commitId": "83da1bb4b5744662ac1095599e90dc6c2321e989",
+                "prId": "8179",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): rewrite bidirectional gRPC connection to use a custom class rather than generated stubs (#8179)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/83da1bb4b5744662ac1095599e90dc6c2321e989",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8179"
+            },
+            {
+                "commitId": "bb58ac10d6dbb1e3bad2d60280686a27e270caf4",
+                "prId": "8158",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): RealtimeQueryManager.kt added with basic logic to multiplex connection stream (#8158)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bb58ac10d6dbb1e3bad2d60280686a27e270caf4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8158"
+            },
+            {
+                "commitId": "711698a59be3466aeccd9917614a1053d98a74aa",
+                "prId": "8159",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.8 (was 3.4.7) and firebase-tools to 15.18.0 (was 15.17.0) (#8159)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/711698a59be3466aeccd9917614a1053d98a74aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8159"
+            },
+            {
+                "commitId": "0807bfb7aeaeb6f1f72ab9df89cc8dc541e970f4",
+                "prId": "8156",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): TurbineUtils.kt: minor tweaks (#8156)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0807bfb7aeaeb6f1f72ab9df89cc8dc541e970f4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8156"
+            },
+            {
+                "commitId": "9f88524642a79d9be4ef7ed5799f5585ff0c8d19",
+                "prId": "8154",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Replace `SecureRandom` with process-unique ID generation (#8154)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9f88524642a79d9be4ef7ed5799f5585ff0c8d19",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8154"
+            },
+            {
+                "commitId": "ef12004b57e8a866d8c6261a3c946bb39813207e",
+                "prId": "8151",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): factor out repeated logic for creating CoroutineScope objects (#8151)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ef12004b57e8a866d8c6261a3c946bb39813207e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8151"
+            },
+            {
+                "commitId": "c97fcf5e3c7babe02edbe31ed5ad987f96da870e",
+                "prId": "8144",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): wire up RealtimeQuerySubscriptionImpl to basic realtime subscription functionality (#8144)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c97fcf5e3c7babe02edbe31ed5ad987f96da870e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8144"
+            },
+            {
+                "commitId": "f9817b0fecaf91b13ba8d1b48b6d831155b66760",
+                "prId": "8153",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(ci): downgrade fdc emulator version to 3.4.7 (was 3.4.9) (#8153)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9817b0fecaf91b13ba8d1b48b6d831155b66760",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8153"
+            },
+            {
+                "commitId": "a214af0c111d18f4102d68b00a6df1bf71ae4ec9",
+                "prId": "8142",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): refactor variable encoding and data decoding logic into a single class (#8142)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a214af0c111d18f4102d68b00a6df1bf71ae4ec9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8142"
+            },
+            {
+                "commitId": "5981a99e1590d5137a4f79e432ab477d9ebdc296",
+                "prId": "8141",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Added internal logic: DataConnectGrpcRPCs.connect() to open a bidi streaming connection for realtime query updates (#8141)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5981a99e1590d5137a4f79e432ab477d9ebdc296",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8141"
+            },
+            {
+                "commitId": "2e2d42e4e53a3b5959f98f6a32d0129e30005772",
+                "prId": "8139",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix CHANGELOG entries incorrectly moved to 17.2.2 header by PR #8124 (m180 mergeback) (#8139)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2e2d42e4e53a3b5959f98f6a32d0129e30005772",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8139"
+            },
+            {
+                "commitId": "ab34a82a4080819bfc7e8647a6e3ffaa45740fd2",
+                "prId": "8138",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): env.zsh added (#8138)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ab34a82a4080819bfc7e8647a6e3ffaa45740fd2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8138"
+            },
+            {
+                "commitId": "ced2ffc2054b79ba5c4090e626b6718f4ebcd46f",
+                "prId": "8129",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): DataConnectGrpcClientUnitTest.kt: fix flaky tests for retry on UNAUTHENTICATED (#8129)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ced2ffc2054b79ba5c4090e626b6718f4ebcd46f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8129"
+            },
+            {
+                "commitId": "c6f15210aea00d4e0b3c81fba02959304fe8178a",
+                "prId": "8133",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): CoroutineUtils.kt added with function createSupervisorCoroutineScope() (#8133)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c6f15210aea00d4e0b3c81fba02959304fe8178a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8133"
+            },
+            {
+                "commitId": "52485045e1aa62f2799bc00805f99d7620598284",
+                "prId": "8131",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ConnectRPCIntegrationTest.kt: fix flaky tests due to backend deduplication of \"subscribe\" requests (#8131)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/52485045e1aa62f2799bc00805f99d7620598284",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8131"
+            },
+            {
+                "commitId": "e2f733d2f88a02093f63d039a5b4dbe3abfbba23",
+                "prId": "8132",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(build): fix CopySharedWithAndroidTestFiles.kt to delete the output directory before writing to it (#8132)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e2f733d2f88a02093f63d039a5b4dbe3abfbba23",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8132"
+            },
+            {
+                "commitId": "d1dfe153ca6fbe76cf65e8f8f0bc05ee49760b96",
+                "prId": "8130",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): RandomSeedTestRule: add seeded constructor, and implementation cleanup (#8130)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d1dfe153ca6fbe76cf65e8f8f0bc05ee49760b96",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8130"
+            },
+            {
+                "commitId": "d4a1a621a47b40b98f7f83c3b7ff997a399c3945",
+                "prId": "8127",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): DataConnectGrpcRPCs.kt: take connectorResourceName as constructor parameter (#8127)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d4a1a621a47b40b98f7f83c3b7ff997a399c3945",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8127"
+            },
+            {
+                "commitId": "7fdcceb1480f0ef9eb1a35b22028283f6443b716",
+                "prId": "8126",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): DataConnectGrpcRPCs.kt: fix wasteful conversion to Struct only used for debug logging (#8126)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7fdcceb1480f0ef9eb1a35b22028283f6443b716",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8126"
+            },
+            {
+                "commitId": "1525d2426c95cd5b1562d1c2f9253b18db1eea23",
+                "prId": "8113",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ConnectRPCIntegrationTest.kt finished (#8113)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1525d2426c95cd5b1562d1c2f9253b18db1eea23",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8113"
+            },
+            {
+                "commitId": "10761f6d2d4ff4899ec4cd117097904e0a590033",
+                "prId": "8106",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.9 (was 3.4.5) and firebase-tools to 15.17.0 (was 15.15.0) (#8106)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/10761f6d2d4ff4899ec4cd117097904e0a590033",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8106"
+            },
+            {
+                "commitId": "b53a55c2fbdb3035268fbc0f5b23827cea6a2d0b",
+                "prId": "8105",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ConnectRPCIntegrationTest.kt: add some more tests (#8105)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b53a55c2fbdb3035268fbc0f5b23827cea6a2d0b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8105"
+            },
+            {
+                "commitId": "81d9a1c33c6de95088b65a8171513cae67ee8716",
+                "prId": "8102",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ConnectRPCIntegrationTest.kt: add more tests (#8102)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/81d9a1c33c6de95088b65a8171513cae67ee8716",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8102"
+            },
+            {
+                "commitId": "a68cdf39328c09d567caeb37a8be66111d3b83a4",
+                "prId": "8098",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: add gradle plugin that enables sharing code from src/test to src/androidTest (#8098)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a68cdf39328c09d567caeb37a8be66111d3b83a4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8098"
+            },
+            {
+                "commitId": "534ef3ba0fe980b116adce28e79a82229d557647",
+                "prId": "8097",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ConnectRPCIntegrationTest.kt added with its first test (#8097)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/534ef3ba0fe980b116adce28e79a82229d557647",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8097"
+            },
+            {
+                "commitId": "607382b5f058babcf9704579a81feead0595930b",
+                "prId": "8095",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing connector added for future realtime testing (#8095)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/607382b5f058babcf9704579a81feead0595930b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8095"
+            },
+            {
+                "commitId": "b9c7771675810ca0dd538d46b49fa855f71de076",
+                "prId": "8090",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: emulator.zsh: fix run_command() function to actually _run_ the command (#8090)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b9c7771675810ca0dd538d46b49fa855f71de076",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8090"
+            },
+            {
+                "commitId": "de76cecaef5872884e691338ddc057394c8426d1",
+                "prId": "8084",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): convert helper bash scripts to zsh (#8084)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/de76cecaef5872884e691338ddc057394c8426d1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8084"
+            },
+            {
+                "commitId": "c663292e7b4f03939bccc33be88e4ce40c8dc6ed",
+                "prId": "8081",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): add connector_stream_service.proto to the build (#8081)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c663292e7b4f03939bccc33be88e4ce40c8dc6ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8081"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "87bbe13a4ed116200838353a6c374d779c572a60",
+                "prId": "8140",
+                "author": "emilypgoogle",
+                "message": "Adjust AI Logic testing for model deprecation (#8140)\n\nAdjust Google AI testing to use `gemini-3-flash-preview` instead of\n`gemini-2.5-flash`. No changes to tests were required for this\nmigration.\n\nAdditionally, coincides with internal changes to our templates to allow\ndifferent backends to run different templates, using different model\nversions. This also moves away from `gemini-2.5-flash` for our Google AI\nmodels while staying on it for Vertex AI models (later versions are not\nreleased for Vertex).\n\nSome template testing was adjusted to deal with variable output\n(punctuation, spacing) that could not be resolved easily on the template\nend.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87bbe13a4ed116200838353a6c374d779c572a60",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8140"
+            },
+            {
+                "commitId": "ce2ceac7a6123f7a338193b2fdc08a17b7106188",
+                "prId": "8056",
+                "author": "emilypgoogle",
+                "message": "[ALF] Add index adjustment for UTF-8 indices (#8056)\n\nThe AI Logic endpoints return citation indices based on UTF-8 bytes, but\nJava and Kotlin use UTF-16 natively. This means that the provided\nindices are often offset from actual content and can even point out of\nbounds, making them very difficult to use.\n\nApplies both to citation metadata and grounding.\n\nTesting was added for all validation to ensure that grounding indices\nmatch completely with what is provided, currently passing all extant\ntesting. Further testing was added to force grounding with citation\nusing strings which will differ in length in UTF-8 and UTF-16 (the\ndegree symbol and accented letters are multi-byte unicode characters).\n\nManual testing was done for accurate indices in practice, exhaustive\ntesting is difficult, as citation is generally rarer. Grounding is easy\nto force and test.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ce2ceac7a6123f7a338193b2fdc08a17b7106188",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8056"
+            },
+            {
+                "commitId": "5ed3b92ee999036cfca02f3b8fe5380c8f4a5533",
+                "prId": "8093",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update KDoc links to Markdown style (#8093)\n\nChanged KDoc external links in `GoogleMaps.kt` and `Tool.kt` from\n`{@link ... | ...}` syntax to Markdown-style `[...](...)` for\ncorrectness.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5ed3b92ee999036cfca02f3b8fe5380c8f4a5533",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8093"
+            },
+            {
+                "commitId": "d2950a5fd2544d0bc72fd48f045b917101285cba",
+                "prId": "8085",
+                "author": "Vinay Guthal",
+                "message": "Deprecate Template Imagen class and the methods in it (#8085)\n\nTemplateImagen class was missed while deprecating imagen. This PR adds\nthe deprecation message to that class and its underlying methods. Also\nupdate the deprecation message to include details about migrating to use\nthe new gemini image model.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2950a5fd2544d0bc72fd48f045b917101285cba",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8085"
+            },
+            {
+                "commitId": "d735cfa0b974bc6a8e6f5aa3092db832453d155e",
+                "prId": "8092",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update AI SDK metadata and changelog (#8092)\n\nUpdated release notes `name` and `versionName` properties for\n`firebase-ai-ondevice` for consistency.\nRevised the changelog entry for Maps Grounding in `firebase-ai` to be\nmore descriptive.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d735cfa0b974bc6a8e6f5aa3092db832453d155e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8092"
+            },
+            {
+                "commitId": "840b3f260c76f620c9af540aa4eb48c29ede9d10",
+                "prId": "8086",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Introduce OnDeviceExtension for GenerativeModel (#8086)\n\nAdds `OnDeviceExtension` to `GenerativeModel` in `firebase-ai`,\ncentralizing on-device model management. This extension provides methods\nfor `checkStatus`, `download`, and `warmUp` for on-device models. This\nremoves the need for `firebase-ai-ondevice` SDK to have a public API.\n\nKey changes include:\n* Defining: new `DownloadStatus` and `OnDeviceModelStatus` classes in\n`firebase-ai` for public consumption, marked as `PublicPreviewAPI`.\n* Creating: corresponding `DownloadStatusInterop` and\n`OnDeviceModelStatusInterop` classes in `firebase-ai-ondevice-interop`\nfor internal interop with ML Kit.\n* Implementing: `checkStatus` and `download` on the `GenerativeModel`\ninterop interface in `firebase-ai-ondevice`, utilizing ML Kit's APIs and\nnew converter functions.\n* Deprecating: the old `FirebaseAIOnDevice.checkStatus`,\n`FirebaseAIOnDevice.download`, `DownloadStatus`,\n`OnDeviceModelStatus`, and `OnDeviceModelOption` in\n`firebase-ai-ondevice`.\n* Deprecating: the top-level `GenerativeModel.warmUp()` method in\n`firebase-ai` in favor of `onDeviceExtension?.warmUp()`.\n* Adding: new unit tests for the `OnDeviceExtension` functionality.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/840b3f260c76f620c9af540aa4eb48c29ede9d10",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8086"
+            },
+            {
+                "commitId": "490a8f53cecba175e064535b5c199af1192c2c07",
+                "prId": "8082",
+                "author": "Mila",
+                "message": "[Fix] debug testResumption (#8082)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/490a8f53cecba175e064535b5c199af1192c2c07",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8082"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-firestore",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop",
+        ":appcheck:firebase-appcheck-recaptchaenterprise"
+    ]
+}
