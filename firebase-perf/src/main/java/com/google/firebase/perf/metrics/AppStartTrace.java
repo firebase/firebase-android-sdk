@@ -76,8 +76,19 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
   // If the `mainThreadRunnableTime` was set within this duration, the assumption
   // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
-  // See b/339891952.
-  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
+  //
+  // On API 34+, Android may drain posted main-thread runnables before processing the
+  // Activity-launch Binder transaction even during a genuine cold foreground start. The
+  // resulting gap between `StartFromBackgroundRunnable` firing and the first
+  // `onActivityCreated` is dominated by system scheduling, not by app work, and has been
+  // measured at ~316ms on a minimal repro app and ~204ms on a large production app on
+  // physical Pixel devices. The threshold must therefore comfortably exceed these
+  // real-world gaps; 1000ms provides ~5x headroom over the worst measured cold-start gap
+  // while still being two orders of magnitude below `MAX_LATENCY_BEFORE_UI_INIT` so that
+  // genuine warm starts (where the process was forked for background work seconds-to-
+  // minutes before any activity launch) remain correctly suppressed.
+  // See b/339891952 and https://github.com/firebase/firebase-android-sdk/issues/8103.
+  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(1000);
 
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;

@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed `_app_start` traces being suppressed on API 34+ devices for typical
+  real-world apps by widening the foreground/background-start timing window to account
+  for Android's main-thread vs Binder scheduling on physical devices. [#8103]
+
 # 22.0.5
 
 - [changed] Bumped internal dependencies.

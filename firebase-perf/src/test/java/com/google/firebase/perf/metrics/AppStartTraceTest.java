@@ -239,7 +239,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testStartFromBackground_within50ms() {
+  public void testStartFromBackground_within1000ms() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
@@ -248,7 +248,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.setMainThreadRunnableTime(fakeTimer);
 
     // See AppStartTrace.MAX_BACKGROUND_RUNNABLE_DELAY.
-    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(50) - 1);
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(1000) - 1);
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNotNull(trace.getOnCreateTime());
     ++currentTime;
@@ -267,7 +267,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testStartFromBackground_moreThan50ms() {
+  public void testStartFromBackground_moreThan1000ms() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
@@ -276,7 +276,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.setMainThreadRunnableTime(fakeTimer);
 
     // See AppStartTrace.MAX_BACKGROUND_RUNNABLE_DELAY.
-    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(50) + 1);
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(1000) + 1);
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());
     ++currentTime;
@@ -286,6 +286,63 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityResumed(activity1);
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
+    fakeExecutorService.runAll();
+    verify(transportManager, times(0))
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
+  }
+
+  // Regression test for https://github.com/firebase/firebase-android-sdk/issues/8103.
+  // On API 34+ physical devices, the gap between StartFromBackgroundRunnable firing and the
+  // first onActivityCreated has been measured at ~204-316ms on real apps; the previous 50ms
+  // threshold misclassified these as background starts and suppressed _app_start traces.
+  @Test
+  public void testStartFromBackground_largeAppGap_isForegroundStart() {
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    Timer fakeTimer = spy(new Timer(currentTime));
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
+    trace.setMainThreadRunnableTime(fakeTimer);
+
+    // Simulates the API 34+ scheduling gap observed in real-world apps.
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.MILLISECONDS.toMicros(300));
+    trace.onActivityCreated(activity1, bundle);
+    Assert.assertNotNull(trace.getOnCreateTime());
+    ++currentTime;
+    trace.onActivityStarted(activity1);
+    Assert.assertNotNull(trace.getOnStartTime());
+    ++currentTime;
+    trace.onActivityResumed(activity1);
+    Assert.assertNotNull(trace.getOnResumeTime());
+    fakeExecutorService.runAll();
+    verify(transportManager, times(1))
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
+  }
+
+  // Genuine warm starts (process alive for background work, activity launched seconds later)
+  // must still be classified as background and suppressed.
+  @Test
+  public void testStartFromBackground_warmStart_stillSuppressed() {
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    Timer fakeTimer = spy(new Timer(currentTime));
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
+    trace.setMainThreadRunnableTime(fakeTimer);
+
+    when(fakeTimer.getDurationMicros()).thenReturn(TimeUnit.SECONDS.toMicros(10));
+    trace.onActivityCreated(activity1, bundle);
+    Assert.assertNull(trace.getOnCreateTime());
+    ++currentTime;
+    trace.onActivityStarted(activity1);
+    Assert.assertNull(trace.getOnStartTime());
+    ++currentTime;
+    trace.onActivityResumed(activity1);
+    Assert.assertNull(trace.getOnResumeTime());
     fakeExecutorService.runAll();
     verify(transportManager, times(0))
         .log(
