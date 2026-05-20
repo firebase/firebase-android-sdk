@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-@file:OptIn(FlowPreview::class, ExperimentalFirebaseDataConnect::class)
+@file:OptIn(ExperimentalFirebaseDataConnect::class)
 
 package com.google.firebase.dataconnect
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
-import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.SuspendingFlag
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
@@ -32,7 +31,6 @@ import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import kotlin.time.Duration.Companion.seconds
@@ -63,33 +61,6 @@ import org.junit.Test
 class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val schema by lazy { PersonSchema(dataConnectFactory) }
-
-  @Test
-  fun lastResult_should_be_null_on_new_instance() {
-    val querySubscription =
-      schema.getPerson(id = "42").subscribe()
-        as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-    querySubscription.lastResult.shouldBeNull()
-  }
-
-  @Test
-  fun lastResult_should_be_equal_to_the_last_collected_result() = runTest {
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    schema.createPerson(id = personId, name = "Name1").execute()
-    val querySubscription =
-      schema.getPerson(id = personId).subscribe()
-        as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-
-    querySubscription.flow.test { withClue("result1A") { awaitPersonWithName("Name1") } }
-
-    schema.updatePerson(id = personId, name = "Name2", age = 2).execute()
-
-    querySubscription.flow.distinctUntilChanged().test {
-      val result1B = awaitItem()
-      withClue("result1B") { result1B shouldBe querySubscription.lastResult }
-      withClue("result2") { awaitPersonWithName("Name2") }
-    }
-  }
 
   @Test
   fun reload_should_notify_collecting_flows() = runTest {
@@ -218,7 +189,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       flow2Started.await()
 
       schema.updatePerson(id = personId, name = "NewName").execute()
-      (querySubscription1 as QuerySubscriptionInternal<*, *>).reload()
+      querySubscription1.query.execute()
 
       withClue("flow1a-1") { flow1a.awaitPersonWithName("OriginalName") }
       withClue("flow1a-2") { flow1a.awaitPersonWithName("NewName") }
@@ -293,6 +264,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
         // Flow on Dispatchers.Default so that the timeout actually works, since the default
         // dispatcher is the _test_ dispatcher, which skips delays/timeouts.
+        @OptIn(FlowPreview::class)
         val results =
           asChannel()
             .receiveAsFlow()
@@ -309,99 +281,6 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
         }
       }
     }
-
-  @Test
-  fun update_changes_variables_and_triggers_reload() = runTest {
-    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
-    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
-    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
-    schema.createPerson(id = person1Id, name = "Name1").execute()
-    schema.createPerson(id = person2Id, name = "Name2").execute()
-    schema.createPerson(id = person3Id, name = "Name3").execute()
-    val query = schema.getPerson(id = person1Id)
-    val querySubscription =
-      query.subscribe() as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-
-    querySubscription.flow.distinctUntilChanged().test {
-      withClue("result1") {
-        val result1 = awaitPersonWithName("Name1")
-        result1.query shouldBeSameInstanceAs query
-        result1.result.getOrThrow().ref shouldBeSameInstanceAs query
-      }
-
-      val variables2 = GetPersonQuery.Variables(person2Id)
-      querySubscription.update(variables2)
-
-      withClue("result2") {
-        val result2 = awaitPersonWithName("Name2")
-        result2.query.variables shouldBe variables2
-        result2.result.getOrThrow().ref shouldBeSameInstanceAs result2.query
-      }
-
-      val variables3 = GetPersonQuery.Variables(person3Id)
-      querySubscription.update(variables3)
-
-      withClue("result3") {
-        val result3 = awaitPersonWithName("Name3")
-        result3.query.variables shouldBe variables3
-        result3.result.getOrThrow().ref shouldBeSameInstanceAs result3.query
-      }
-    }
-  }
-
-  @Test
-  fun reload_updates_last_result_even_if_no_active_collectors() = runTest {
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    schema.createPerson(id = personId, name = "Name1").execute()
-    val query = schema.getPerson(id = personId)
-    val querySubscription =
-      query.subscribe() as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-
-    querySubscription.reload()
-
-    withClue("lastResult") {
-      querySubscription.lastResult.shouldNotBeNull().shouldHavePersonWithName("Name1")
-    }
-
-    schema.updatePerson(id = personId, name = "Name2").execute()
-
-    querySubscription.flow.distinctUntilChanged().test {
-      // Ensure that the first result comes from cache, followed by the updated result received from
-      // the server when a reload was triggered by the flow's collection.
-      awaitPersonWithName("Name1")
-      awaitPersonWithName("Name2")
-    }
-  }
-
-  @Test
-  fun update_updates_last_result_even_if_no_active_collectors() = runTest {
-    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
-    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
-    schema.createPerson(id = person1Id, name = "Name1").execute()
-    schema.createPerson(id = person2Id, name = "Name2").execute()
-    val querySubscription =
-      schema.getPerson(id = person1Id).subscribe()
-        as QuerySubscriptionInternal<GetPersonQuery.Data, GetPersonQuery.Variables>
-
-    val newVariables = GetPersonQuery.Variables(person2Id)
-    querySubscription.update(newVariables)
-
-    withClue("lastResult") {
-      val lastResult = querySubscription.lastResult.shouldNotBeNull()
-      lastResult.shouldHavePersonWithName("Name2")
-      lastResult.query.variables shouldBe newVariables
-      lastResult.result.getOrThrow().ref shouldBeSameInstanceAs lastResult.query
-    }
-
-    schema.updatePerson(id = person2Id, name = "NewName2").execute()
-
-    querySubscription.flow.distinctUntilChanged().test {
-      // Ensure that the first result comes from cache, followed by the updated result received from
-      // the server when a reload was triggered by the flow's collection.
-      awaitPersonWithName("Name2")
-      awaitPersonWithName("NewName2")
-    }
-  }
 
   @Test
   fun collect_gets_an_update_on_error() = runTest {
