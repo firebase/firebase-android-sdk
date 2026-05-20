@@ -121,10 +121,6 @@ tasks.withType(KotlinCompile).configureEach {
   compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
 }
 
-tasks.withType(Test).configureEach {
-  outputs.upToDateWhen { false }
-}
-
 // Write the gradleRunnerTestBuild runtime classpath to a file. This will be used by the Gradle
 // Runner test build during integration tests
 task createClasspathManifest {
@@ -175,6 +171,10 @@ task integrationTest(type: Test) {
   description = 'Runs integration tests.'
   group = 'verification'
 
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
+
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
 
@@ -188,6 +188,10 @@ task integrationTest(type: Test) {
 task prodTest(type: Test) {
   description = 'Runs prod tests.'
   group = 'verification'
+
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
 
   testClassesDirs = sourceSets.prodTest.output.classesDirs
   classpath = sourceSets.prodTest.runtimeClasspath
