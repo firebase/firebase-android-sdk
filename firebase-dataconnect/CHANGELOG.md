@@ -1,11 +1,10 @@
 # Unreleased
 
-- [changed] Internal change to add protos for realtime query updates.
-  ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
-- [changed] Fixed wasteful computation that is only for debug logging.
+- [feature] `QuerySubscription.flow` gains
+  [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+- [changed] Internal fix of wasteful computation only meant for debug logging.
   ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
-- [changed] Internal implementation of backend connection for realtime query results.
-  ([#8141](https://github.com/firebase/firebase-android-sdk/pull/8141))
 - [changed] Internal change to replace `SecureRandom` with just `Random`
   as the random numbers were not used in a security-sensitive context,
   thus the performance costs of secure random number generation were unnecessary.
