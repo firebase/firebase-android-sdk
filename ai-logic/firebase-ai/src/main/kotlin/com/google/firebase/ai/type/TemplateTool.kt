@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -23,10 +24,13 @@ import kotlinx.serialization.Serializable
  * to.
  */
 public class TemplateTool
-@OptIn(PublicPreviewAPI::class)
+@OptIn(PublicPreviewAPI::class, InternalSerializationApi::class)
 internal constructor(
   internal val functionDeclarations: List<TemplateFunctionDeclaration>?,
   internal val autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
+  internal val urlContext: UrlContext?,
+  internal val googleSearch: GoogleSearch?,
+  internal val googleMaps: GoogleMaps?,
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -36,11 +40,17 @@ internal constructor(
         functionDeclarations?.let { addAll(it.map { it.toInternal() }) }
         autoFunctionDeclarations?.let { addAll(it.map { it.toInternal() }) }
       },
+      urlContext?.toInternal(),
+      googleSearch?.toInternal(),
+      googleMaps?.toInternal(),
     )
 
   @Serializable
   internal data class Internal(
     val templateFunctions: List<TemplateFunctionDeclaration.Internal>? = null,
+    val urlContext: UrlContext.Internal? = null,
+    val googleSearch: GoogleSearch.Internal? = null,
+    val googleMaps: GoogleMaps.Internal? = null,
   )
 
   public companion object {
@@ -56,7 +66,63 @@ internal constructor(
       functionDeclarations: List<TemplateFunctionDeclaration>,
       autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
     ): TemplateTool {
-      return TemplateTool(functionDeclarations, autoFunctionDeclarations)
+      return TemplateTool(functionDeclarations, autoFunctionDeclarations, null, null, null)
+    }
+
+    /**
+     * Creates a [TemplateTool] instance that allows you to provide additional context to the models
+     * in the form of public web URLs. By including URLs in your request, the Gemini model will
+     * access the content from those pages to inform and enhance its response.
+     *
+     * @param urlContext Specifies the URL context configuration.
+     * @return A [TemplateTool] configured for URL context.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun urlContext(urlContext: UrlContext = UrlContext()): TemplateTool {
+      return TemplateTool(null, null, urlContext, null, null)
+    }
+
+    /**
+     * Creates a [TemplateTool] instance that allows the model to use grounding with Google Search.
+     *
+     * Grounding with Google Search can be used to allow the model to connect to Google Search to
+     * access and incorporate up-to-date information from the web into its responses.
+     *
+     * When using this feature, you are required to comply with the "grounding with Google Search"
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
+     * or Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
+     *
+     * @param googleSearch An empty [GoogleSearch] object. The presence of this object in the list
+     * of tools enables the model to use Google Search.
+     * @return A [TemplateTool] configured for Google Search.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): TemplateTool {
+      return TemplateTool(null, null, null, googleSearch, null)
+    }
+
+    /**
+     * Creates a [TemplateTool] instance that allows the model to use grounding with Google Maps.
+     *
+     * Grounding with Google Maps can be used to allow the model to connect to Google Maps to
+     * incorporate location-based information into its responses.
+     *
+     * When using this feature, you are required to comply with the "Grounding with Google Maps"
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
+     * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
+     *
+     * @return A [TemplateTool] configured for Google Maps.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun googleMaps(googleMaps: GoogleMaps = GoogleMaps()): TemplateTool {
+      return TemplateTool(null, null, null, null, googleMaps)
     }
   }
 }
@@ -127,8 +193,13 @@ internal constructor(
 }
 
 /** Config for template tools to use with server prompts. */
-public class TemplateToolConfig {
-  internal fun toInternal(): ToolConfig.Internal? {
-    return null // Empty config payload as defined in flutter API
+public class TemplateToolConfig public constructor(private val retrievalConfig: RetrievalConfig?) {
+
+  public constructor() : this(null)
+  internal fun toInternal(): ToolConfig.Internal {
+    return ToolConfig.Internal(
+      functionCallingConfig = null,
+      retrievalConfig = retrievalConfig?.toInternal()
+    )
   }
 }

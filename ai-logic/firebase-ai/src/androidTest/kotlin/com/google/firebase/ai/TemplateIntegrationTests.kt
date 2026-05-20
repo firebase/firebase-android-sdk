@@ -16,7 +16,12 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.LatLng
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.RetrievalConfig
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.string.shouldContainIgnoringCase
 import kotlinx.coroutines.flow.toList
@@ -101,5 +106,31 @@ class TemplateIntegrationTests {
         it shouldContainIgnoringCase customerName
         it shouldContainIgnoringCase topic
       }
+  }
+
+  @Test
+  fun testTemplateGroundingCity_googleAI(): Unit = runBlocking {
+    val model =
+      FirebaseAI.getInstance(AIModels.app(), GenerativeBackend.googleAI())
+        .templateGenerativeModel(
+          tools = listOf(TemplateTool.googleMaps()),
+          toolConfig =
+            TemplateToolConfig(
+              RetrievalConfig(
+                latLng = LatLng(latitude = 30.2672, longitude = -97.7431),
+                languageCode = "en_US",
+              )
+            )
+        )
+    val responses =
+      model
+        .generateContentStream("maps-test-template-google-ai", mapOf("landmark" to "city"))
+        .toList()
+    responses
+      .joinToString { it.text ?: "" }
+      .lowercase()
+      .replace(",", "")
+      .replace("  ", " ") // Model sometimes doubles spacing
+      .let { it shouldContainIgnoringCase "new york" }
   }
 }
