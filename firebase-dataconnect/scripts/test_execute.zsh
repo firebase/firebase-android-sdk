@@ -130,6 +130,7 @@ find_package_line() {
 
   local -r file_path="$1"
   local line
+  local IFS
 
   # Explicitly clear IFS for 'read' to preserve exact line contents
   while IFS= read -r line; do
