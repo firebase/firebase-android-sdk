@@ -1,6 +1,7 @@
 ### Unreleased
 
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects when enabling nativeSymbolUploadEnabled. [#8037]
+- [fixed] Stopped regenerating the mapping file id on every minified release build. `injectCrashlyticsMappingFileId<Variant>` now reuses the on-disk id when valid for the current mode, so release builds can be `UP-TO-DATE` and downstream tasks (`mergeResources`, `processResources`, R8, packaging) are no longer invalidated on every build. A new id is still generated on the first build, after `clean`, or when `mappingFileUploadEnabled` is toggled. [#6770]
 
 ### Crashlytics Gradle plugin version 3.0.7
 
