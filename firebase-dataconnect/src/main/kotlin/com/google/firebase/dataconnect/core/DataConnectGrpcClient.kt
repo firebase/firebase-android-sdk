@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataSource
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
@@ -95,9 +94,7 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  @ExperimentalRealtimeQueries
   suspend fun connect(
-    streamId: String,
     requestId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     idStringGenerator: IdStringGenerator,

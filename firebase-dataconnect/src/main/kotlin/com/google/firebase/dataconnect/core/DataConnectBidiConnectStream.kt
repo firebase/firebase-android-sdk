@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
@@ -72,7 +71,6 @@ import kotlinx.coroutines.launch
  * the backend and sends responses received from the backend downstream.
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
  */
-@ExperimentalRealtimeQueries
 internal class DataConnectBidiConnectStream(
   flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, String?>>,
   private val coroutineScope: CoroutineScope,
