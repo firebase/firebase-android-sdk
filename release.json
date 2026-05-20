@@ -1,8 +1,6 @@
 {
     "name": "m181",
     "libraries": [
-        ":firebase-appdistribution",
-        ":firebase-appdistribution-api",
         ":firebase-dataconnect",
         ":ai-logic:firebase-ai"
     ]
