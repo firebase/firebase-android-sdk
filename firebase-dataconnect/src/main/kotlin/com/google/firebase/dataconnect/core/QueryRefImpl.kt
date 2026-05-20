@@ -23,7 +23,6 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QueryResult
-import com.google.firebase.dataconnect.QuerySubscription
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -58,7 +57,7 @@ internal class QueryRefImpl<Data, Variables>(
       QueryResultImpl(data, source)
     }
 
-  override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
+  override fun subscribe() = QuerySubscriptionImpl(this)
 
   override fun withDataConnect(
     dataConnect: FirebaseDataConnectInternal
