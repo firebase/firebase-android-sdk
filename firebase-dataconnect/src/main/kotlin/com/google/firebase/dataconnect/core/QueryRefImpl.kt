@@ -57,7 +57,7 @@ internal class QueryRefImpl<Data, Variables>(
       QueryResultImpl(data, source)
     }
 
-  override fun subscribe() = QuerySubscriptionImpl(this)
+  override fun subscribe(): QuerySubscriptionImpl<Data, Variables> = QuerySubscriptionImpl(this)
 
   override fun withDataConnect(
     dataConnect: FirebaseDataConnectInternal
