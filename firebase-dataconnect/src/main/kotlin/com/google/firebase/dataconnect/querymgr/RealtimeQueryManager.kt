@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectSerialization
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.CoroutineUtils.asSendChannel
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -37,9 +38,14 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -76,6 +82,21 @@ internal class RealtimeQueryManager(
         state.set(State.Closed)
       }
     }
+
+  // This is a temporary workaround until executeQuery() is built into this class.
+  suspend fun inject(
+    requestId: String,
+    queryId: String,
+    operationResult: DataConnectGrpcClient.OperationResult,
+  ) {
+    val connection = (state.get() as? State.Connected) ?: return
+    val coroutineName = "${logger.nameWithId}-inject(rid=$requestId)[dbnb5g2gwd]"
+    val job =
+      coroutineScope.async(CoroutineName(coroutineName)) {
+        connection.inject(queryId = queryId, operationResult)
+      }
+    job.await()
+  }
 
   suspend fun <Data, Variables> subscribe(
     operationName: String,
@@ -126,7 +147,7 @@ internal class RealtimeQueryManager(
         connection.subscribe(requestId = requestId, operationName = operationName, variables)
       }
 
-    return job.await()
+    return job.await().flow
   }
 
   // NOTE: This method MUST be called on a coroutine running in this.coroutineScope.
@@ -134,7 +155,7 @@ internal class RealtimeQueryManager(
     requestId: String,
     operationName: String,
     variables: Struct,
-  ): Flow<DataConnectGrpcClient.OperationResult> {
+  ): FlowRegistration {
     // calculateSha512() is a CPU intensive operation that should NOT be performed on the main
     // thread. This is the first reason why this method assumes it's running in this.coroutineScope.
     val queryId = variables.calculateSha512(preamble = operationName)
@@ -144,13 +165,43 @@ internal class RealtimeQueryManager(
     // thread that acquires the lock.
     mutex.withLock {
       return flowByQueryId.getOrPut(queryId) {
-        val executeResponseFlow = stream.subscribe(requestId, operationName, variables)
+        val executeResponses =
+          stream.subscribe(requestId, operationName, variables).map { executeResponse ->
+            DataConnectGrpcClient.OperationResult(
+              data = executeResponse.data,
+              errors = executeResponse.errors,
+              source = DataSource.SERVER,
+            )
+          }
 
-        executeResponseFlow.map { executeResponse ->
-          DataConnectGrpcClient.OperationResult(
-            data = executeResponse.data,
-            errors = executeResponse.errors,
-            source = DataSource.SERVER,
+        val injectedResults = Channel<DataConnectGrpcClient.OperationResult>(Channel.CONFLATED)
+
+        FlowRegistration(
+          flow = merge(executeResponses, injectedResults.consumeAsFlow()),
+          injectedResults.asSendChannel(),
+        )
+      }
+    }
+  }
+
+  // NOTE: This method MUST be called on a coroutine running in this.coroutineScope.
+  private suspend fun State.Connected.inject(
+    queryId: String,
+    operationResult: DataConnectGrpcClient.OperationResult,
+  ) {
+    // Acquiring the lock by an arbitrary thread could result in priority inversion. This is the
+    // reason why this method assumes it's running in this.coroutineScope: control over the thread
+    // that acquires the lock.
+    val injectedResults = mutex.withLock { flowByQueryId.get(queryId)?.injectedResults }
+
+    if (injectedResults !== null) {
+      val sendResult = injectedResults.trySend(operationResult)
+      sendResult.onFailure { throwable ->
+        if (!sendResult.isClosed) {
+          error(
+            "internal error t4y3dtg6mh: injectedResults.trySend(operationResult) failed " +
+              "with error $throwable, but it should _never_ fail in this manner because " +
+              "it was created with capacity=CONFLATED"
           )
         }
       }
@@ -212,9 +263,7 @@ internal class RealtimeQueryManager(
 
     class Connected(val stream: DataConnectBidiConnectStream) : State {
       val mutex = Mutex()
-      val flowByQueryId:
-        MutableMap<ImmutableByteArray, Flow<DataConnectGrpcClient.OperationResult>> =
-        mutableMapOf()
+      val flowByQueryId: MutableMap<ImmutableByteArray, FlowRegistration> = mutableMapOf()
       override fun toString() = "Connected"
     }
 
@@ -228,6 +277,11 @@ internal class RealtimeQueryManager(
       override fun toString() = "Closed"
     }
   }
+
+  private class FlowRegistration(
+    val flow: Flow<DataConnectGrpcClient.OperationResult>,
+    val injectedResults: SendChannel<DataConnectGrpcClient.OperationResult>,
+  )
 }
 
 internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
