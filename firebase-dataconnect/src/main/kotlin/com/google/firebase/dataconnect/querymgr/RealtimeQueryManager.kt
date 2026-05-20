@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.DataSource
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
@@ -49,7 +48,6 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-@ExperimentalRealtimeQueries
 internal class RealtimeQueryManager(
   private val grpcClient: DataConnectGrpcClient,
   coroutineScope: CoroutineScope,
@@ -196,7 +194,6 @@ internal class RealtimeQueryManager(
     State.Connecting(
       coroutineScope.async(start = CoroutineStart.LAZY) {
         grpcClient.connect(
-          streamId = idStringGenerator.next("con"),
           requestId = requestId,
           callerSdkType = callerSdkType,
           idStringGenerator = idStringGenerator,
@@ -233,7 +230,6 @@ internal class RealtimeQueryManager(
   }
 }
 
-@OptIn(ExperimentalRealtimeQueries::class)
 internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
   queryRef: QueryRef<Data, Variables>
 ): Flow<Result<Data>> =

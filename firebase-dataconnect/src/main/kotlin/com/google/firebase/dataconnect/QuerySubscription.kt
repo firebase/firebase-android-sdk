@@ -22,11 +22,38 @@ import kotlinx.coroutines.flow.*
  * A facility to subscribe to a query to be notified of updates to the query's data when the query
  * is executed.
  *
- * ### Notifications are _not_ realtime
+ * ### Realtime updates (May 2026)
  *
- * At this time the notifications are _not_ realtime, and are _not_ pushed from the server. Instead,
- * the notifications are sent whenever the query is explicitly executed by calling
+ * Starting with SDK version 17.3.0 (May 2026) query subscriptions gained support for realtime
+ * updates. See
+ * [Get real-time updates from SQL Connect](https://firebase.google.com/docs/sql-connect/realtime)
+ * for details about this feature in the entire product.
+ *
+ * Prior to SDK version 17.3.0, updates were _not_ realtime, and were _not_ pushed from the server.
+ * Instead, the notifications were sent whenever the query was explicitly executed by calling
  * [QueryRef.execute].
+ *
+ * ### Realtime updates setup and requirements
+ *
+ * In order for the server to send realtime updates, caching *must* be configured in your
+ * `connector.yaml` file. For example:
+ *
+ * ```
+ * connectorId: coolstuff
+ * authMode: PUBLIC
+ * generate:
+ *   kotlinSdk:
+ *     package: com.mycompany.coolstuff
+ *     clientCache:
+ *       maxAge: 1h
+ * ```
+ *
+ * Without this setting the server simply will not send realtime updates.
+ *
+ * Then, in the `.gql` files for your connector that define the operations, you will need to add
+ * `@refresh` directives to the queries for which you want realtime updates. Some very simple
+ * queries will automatically gain an implicit `@refresh` directive; however, even mildly complex
+ * queries will need the directive added in order to get realtime updates on clients.
  *
  * ### Safe for concurrent use
  *
@@ -46,8 +73,8 @@ public interface QuerySubscription<Data, Variables> {
   /**
    * A cold flow that collects the query results as they become available.
    *
-   * At this time the updates are _not_ realtime, and are _not_ pushed from the server. Instead,
-   * updates are sent whenever the query is explicitly executed by calling [QueryRef.execute].
+   * Starting with SDK version 17.3.0 (May 2026) query subscriptions gained support for realtime
+   * updates. See [QuerySubscription] for details.
    */
   public val flow: Flow<QuerySubscriptionResult<Data, Variables>>
 

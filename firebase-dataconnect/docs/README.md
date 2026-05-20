@@ -75,5 +75,6 @@ absolutely correct.
 | [0003](adr-0003-sequence-number-filtering-for-stale-replayed-data.md)                       | Sequence Number Filtering for Stale Replayed Data                       | Sun May 17 00:02:50 EDT 2026 | superseded | network, grpc, coroutines, flow, multiplexing              |
 | [0004](adr-0004-coordinate-multiplexed-subscriptions-using-conflatedsignal-and-replay-0.md) | Coordinate Multiplexed Subscriptions using ConflatedSignal and Replay=0 | Tue May 19 15:58:34 EDT 2026 | accepted   | network, grpc, coroutines, flow, multiplexing              |
 | [0005](adr-0005-configure-flow-control-and-conflation-for-realtime-queries.md)              | Configure Flow Control and Conflation for Realtime Queries              | Tue May 19 17:28:33 EDT 2026 | accepted   | network, grpc, coroutines, flow, backpressure, performance |
+| [0006](adr-0006-hybrid-multiplexing-of-realtime-and-non-realtime-query-managers.md)         | Hybrid Multiplexing of Realtime and Non-Realtime Query Managers         | Wed May 20 00:28:23 EDT 2026 | accepted   | network, grpc, coroutines, flow, multiplexing              |
 
 *(Add new records to this table in chronological order. Refer to the status lifecycle: `proposed` -> `accepted` -> `superseded`/`deprecated`)*

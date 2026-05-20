@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalRealtimeQueries::class)
-
 package com.google.firebase.dataconnect.core
 
 import android.content.Context.CONNECTIVITY_SERVICE
@@ -25,7 +22,6 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
@@ -100,7 +96,7 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class RealtimeQuerySubscriptionImplUnitTest {
+class QuerySubscriptionImplUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
   @get:Rule val testName = TestName()
@@ -672,15 +668,15 @@ class RealtimeQuerySubscriptionImplUnitTest {
     dataConnect: FirebaseDataConnectImpl? = null,
     operationName: String? = null,
     variables: TestVariables? = null,
-  ): RealtimeQuerySubscriptionImpl<TestData, TestVariables> =
+  ): QuerySubscriptionImpl<TestData, TestVariables> =
     queryRef(dataConnect, operationName, variables).subscribe()
 
   private fun TestScope.queryRef(
     dataConnect: FirebaseDataConnectImpl? = null,
     operationName: String? = null,
     variables: TestVariables? = null,
-  ): RealtimeQueryRefImpl<TestData, TestVariables> =
-    RealtimeQueryRefImpl(
+  ): QueryRefImpl<TestData, TestVariables> =
+    QueryRefImpl(
       dataConnect = dataConnect ?: dataConnect(),
       operationName = operationName ?: "opName_${alphabeticStringArb().sample()}",
       variables = variables ?: testVariablesArb().sample(),
