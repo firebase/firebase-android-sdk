@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -23,10 +24,11 @@ import kotlinx.serialization.Serializable
  * to.
  */
 public class TemplateTool
-@OptIn(PublicPreviewAPI::class)
+@OptIn(PublicPreviewAPI::class, InternalSerializationApi::class)
 internal constructor(
   internal val functionDeclarations: List<TemplateFunctionDeclaration>?,
   internal val autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
+  internal val googleMaps: GoogleMaps? = null,
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -36,11 +38,13 @@ internal constructor(
         functionDeclarations?.let { addAll(it.map { it.toInternal() }) }
         autoFunctionDeclarations?.let { addAll(it.map { it.toInternal() }) }
       },
+      googleMaps?.toInternal(),
     )
 
   @Serializable
   internal data class Internal(
     val templateFunctions: List<TemplateFunctionDeclaration.Internal>? = null,
+    val googleMaps: GoogleMaps.Internal? = null,
   )
 
   public companion object {
@@ -57,6 +61,26 @@ internal constructor(
       autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
     ): TemplateTool {
       return TemplateTool(functionDeclarations, autoFunctionDeclarations)
+    }
+
+    /**
+     * Creates a [Tool] instance that allows the model to use grounding with Google Maps.
+     *
+     * Grounding with Google Maps can be used to allow the model to connect to Google Maps to
+     * incorporate location-based information into its responses.
+     *
+     * When using this feature, you are required to comply with the "Grounding with Google Maps"
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
+     * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
+     *
+     * @return A [Tool] configured for Google Maps.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun googleMaps(googleMaps: GoogleMaps = GoogleMaps()): TemplateTool {
+      return TemplateTool(null, null, googleMaps)
     }
   }
 }
