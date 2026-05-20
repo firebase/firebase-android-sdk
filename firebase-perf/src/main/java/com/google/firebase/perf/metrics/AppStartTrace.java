@@ -347,7 +347,25 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * before `onActivityCreated`, the
    * assumption is that it was called immediately before the activity lifecycle callbacks in a
    * foreground start.
-   * See b/339891952.
+   * See b/339891952 and https://github.com/firebase/firebase-android-sdk/issues/8103.
+   *
+   * <p>TODO(b/339891952): Replace this timing-window heuristic with a causal signal.
+   * The current approach infers "was the process forked to launch an Activity?" from the
+   * ordering of a posted runnable vs the first onActivityCreated callback, which is
+   * inherently fragile (its calibration depends on Android scheduling behavior that has
+   * already shifted once on API 34+ and could shift again). Better candidates:
+   * <ul>
+   *   <li>API 35+: use {@code ActivityManager.getHistoricalProcessStartReasons} /
+   *       {@code ApplicationStartInfo}, which authoritatively reports the start reason
+   *       ({@code START_REASON_LAUNCHER}, {@code START_REASON_SERVICE},
+   *       {@code START_REASON_CONTENT_PROVIDER}, etc.). This removes the heuristic
+   *       entirely on supported devices.
+   *   <li>API 34: capture {@code ActivityManager.RunningAppProcessInfo.importanceReasonCode}
+   *       and {@code .importance} once early in {@code FirebasePerfEarly} (before any of
+   *       our own ContentProvider work mutates the cause), and combine with the timing
+   *       window as a fallback for ambiguous cases.
+   * </ul>
+   * Adopting either of these would also let the API-34-vs-pre-34 branch below collapse.
    */
   private void resolveIsStartedFromBackground() {
     // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
