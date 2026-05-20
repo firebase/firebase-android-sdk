@@ -72,8 +72,8 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
 
   /**
    * Returns the mapping file id currently stored on disk, or null if the file is missing or empty.
-   * Used to keep the task up-to-date across builds and to avoid generating a new random id on
-   * every release build.
+   * Used to keep the task up-to-date across builds and to avoid generating a new random id on every
+   * release build.
    */
   private fun existingMappingFileId(): String? {
     val file: File = mappingFileIdFile.get().asFile
