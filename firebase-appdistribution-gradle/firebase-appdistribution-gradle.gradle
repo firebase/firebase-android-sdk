@@ -121,6 +121,10 @@ tasks.withType(KotlinCompile).configureEach {
   compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
 }
 
+tasks.withType(Test).configureEach {
+  outputs.upToDateWhen { false }
+}
+
 // Write the gradleRunnerTestBuild runtime classpath to a file. This will be used by the Gradle
 // Runner test build during integration tests
 task createClasspathManifest {
