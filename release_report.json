@@ -1,25 +1,5 @@
 {
     "changesByLibraryName": {
-        "firebase-appdistribution": [
-            {
-                "commitId": "1dfa16a54c3ef4dedd934939ac0df97cb510aa9e",
-                "prId": "8155",
-                "author": "Lee Kellogg",
-                "message": "Use String.format in cases where firebase-vendor plugin transforms hardcoded strings (#8155)\n\nStarting with `16.0.0-beta18`, the vendor plugin is renaming strings in\nthe app distro SDK:\n\n```\n> Task :firebase-appdistribution:releaseVendorTransform\n...\nChanged \".FirebaseAppDistributionFileProvider\" -> \"com.google.firebase.appdistribution.impl..FirebaseAppDistributionFileProvider\"\nChanged \".apk\" -> \"com.google.firebase.appdistribution.impl..apk\"\n...\n```\n\nThis is causing the SDK functionality to fail due to malformed strings:\nhttps://github.com/firebase/firebase-android-sdk/issues/8136\n\nI don't know the root cause, but this does fix the issue.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1dfa16a54c3ef4dedd934939ac0df97cb510aa9e",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8155"
-            }
-        ],
-        "firebase-appdistribution-api": [
-            {
-                "commitId": "b63eda267a05ea08a800bfcf587cfa08befd54e7",
-                "prId": "8161",
-                "author": "Lee Kellogg",
-                "message": "Update CHANGELOG.md for firebase-appdistribution-api (#8161)",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b63eda267a05ea08a800bfcf587cfa08befd54e7",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8161"
-            }
-        ],
         "firebase-dataconnect": [
             {
                 "commitId": "eea8178bfb9011f416dcbe4565b0c435af419224",
