@@ -18,20 +18,35 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
+import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.querymgr.subscribe
 import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 internal class QuerySubscriptionImpl<Data, Variables>(
   override val query: QueryRefImpl<Data, Variables>,
 ) : QuerySubscription<Data, Variables> {
 
-  override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = flow {
-    val realtimeQueryManager = query.dataConnect.realtimeQueryManagerUnlessClosed ?: return@flow
+  override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
+    val realtimeQueryManager =
+      query.dataConnect.realtimeQueryManagerUnlessClosed ?: return@channelFlow
+    val nonRealtimeQueryManager = query.dataConnect.queryManagerUnlessClosed ?: return@channelFlow
+
+    // TODO: Modify RealtimeQueryManager to produce updates when queries are executed.
+    //  This "hack" essentially "injects" the executeQuery responses in to the subscription to
+    //  mimic the pre-existing behavior.
+    val nonRealtimeJob = launch {
+      nonRealtimeQueryManager.subscribe(query, executeQuery = false) { sequencedResult ->
+        val dataResult: Result<DataSourcePair<Data>> = sequencedResult.ref
+        dataResult.throwIfCancellationException()
+        val queryResult = dataResult.map { query.QueryResultImpl(it.data, it.source) }
+        send(QuerySubscriptionResultImpl(query, queryResult))
+      }
+    }
 
     val dataResultFlow: Flow<Result<Data>> = realtimeQueryManager.subscribe(query)
 
@@ -42,7 +57,11 @@ internal class QuerySubscriptionImpl<Data, Variables>(
         QuerySubscriptionResultImpl(query, queryResult)
       }
 
-    emitAll(queryResultFlow)
+    try {
+      queryResultFlow.collect { send(it) }
+    } finally {
+      nonRealtimeJob.cancel()
+    }
   }
 
   override fun equals(other: Any?): Boolean = other === this
