@@ -86,7 +86,7 @@ internal class RealtimeQueryManager(
   // This is a temporary workaround until executeQuery() is built into this class.
   suspend fun inject(
     requestId: String,
-    queryId: String,
+    queryId: ImmutableByteArray,
     operationResult: DataConnectGrpcClient.OperationResult,
   ) {
     val connection = (state.get() as? State.Connected) ?: return
@@ -186,7 +186,7 @@ internal class RealtimeQueryManager(
 
   // NOTE: This method MUST be called on a coroutine running in this.coroutineScope.
   private suspend fun State.Connected.inject(
-    queryId: String,
+    queryId: ImmutableByteArray,
     operationResult: DataConnectGrpcClient.OperationResult,
   ) {
     // Acquiring the lock by an arbitrary thread could result in priority inversion. This is the
