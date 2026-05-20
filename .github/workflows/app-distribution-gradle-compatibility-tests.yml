@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   app-distribution-plugin:
@@ -52,3 +53,13 @@ jobs:
         with:
           name: integration-test-report
           path: firebase-appdistribution-gradle/build/reports/tests/
+      
+      - name: Create GitHub Issue on Failure
+        if: failure() && (github.event_name == 'schedule')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "[firebase-appdistribution] Gradle Compatibility Tests Failed" \
+            --body "The daily compatibility tests failed on the main branch. Please check the workflow logs here to diagnose the failure: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --label "bug,ci-failure"
