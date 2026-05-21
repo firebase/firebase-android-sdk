@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] FIDchangelistener not getting invoked when a FID is created.
+
 # 19.1.0
 
 - [fixed] Mitigated FIS ID duplication issue from backup data. (#7025)
