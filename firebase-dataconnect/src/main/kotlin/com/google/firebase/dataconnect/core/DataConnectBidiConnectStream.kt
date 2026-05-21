@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
@@ -72,7 +73,7 @@ import kotlinx.coroutines.launch
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
  */
 internal class DataConnectBidiConnectStream(
-  flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, String?>>,
+  flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, AuthUid?>>,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -278,11 +279,11 @@ internal class DataConnectBidiConnectStream(
 
     class Connected(
       val connectionId: String,
-      val authUid: String?,
+      val authUid: AuthUid?,
       val outgoingRequests: SendChannel<StreamRequestProto>,
     ) : Connection {
       constructor(
-        event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, String?>
+        event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, AuthUid?>
       ) : this(event.connectionId, event.connectionCookie, event.outgoingRequests)
 
       override fun toString() = "Connected(connectionId=$connectionId)"
@@ -342,7 +343,7 @@ internal class DataConnectBidiConnectStream(
   ): Flow<SubscriptionEvent.Message> {
 
     fun SendChannel<StreamRequestProto>.trySendOrThrow(
-      authUid: String?,
+      authUid: AuthUid?,
       request: StreamRequestProto
     ) {
       val sendResult = trySend(request)
@@ -359,7 +360,7 @@ internal class DataConnectBidiConnectStream(
     }
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
-      authUid: String?,
+      authUid: AuthUid?,
       subscribeOrResumeSignal: ConflatedSignal,
     ) {
       var subscribed = false

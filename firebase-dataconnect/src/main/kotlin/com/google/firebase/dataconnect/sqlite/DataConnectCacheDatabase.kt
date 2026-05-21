@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
@@ -198,7 +199,7 @@ internal class DataConnectCacheDatabase(
 
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
     execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
     return rawQuery(
       logger,
@@ -451,7 +452,7 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun getQueryResult(
-    authUid: String?,
+    authUid: AuthUid?,
     queryId: ImmutableByteArray,
     currentTimeMillis: Long,
     staleResult: KClass<out GetQueryResultResult>,
@@ -524,7 +525,7 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun insertQueryResult(
-    authUid: String?,
+    authUid: AuthUid?,
     queryId: ImmutableByteArray,
     queryData: Struct,
     maxAge: DurationProto,
