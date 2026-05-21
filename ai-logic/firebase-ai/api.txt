@@ -1841,10 +1841,6 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
     method public static com.google.firebase.ai.type.TemplateTool googleMaps();
     method public static com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
-    method public static com.google.firebase.ai.type.TemplateTool googleSearch();
-    method public static com.google.firebase.ai.type.TemplateTool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
-    method public static com.google.firebase.ai.type.TemplateTool urlContext();
-    method public static com.google.firebase.ai.type.TemplateTool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.TemplateTool.Companion Companion;
   }
 
@@ -1852,10 +1848,6 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
     method public com.google.firebase.ai.type.TemplateTool googleMaps();
     method public com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
-    method public com.google.firebase.ai.type.TemplateTool googleSearch();
-    method public com.google.firebase.ai.type.TemplateTool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
-    method public com.google.firebase.ai.type.TemplateTool urlContext();
-    method public com.google.firebase.ai.type.TemplateTool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }
 
   public final class TemplateToolConfig {
