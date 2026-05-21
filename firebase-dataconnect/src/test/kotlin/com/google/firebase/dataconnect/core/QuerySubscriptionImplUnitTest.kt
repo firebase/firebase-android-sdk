@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalRealtimeQueries::class)
-
 package com.google.firebase.dataconnect.core
 
 import android.content.Context.CONNECTIVITY_SERVICE
@@ -25,7 +22,6 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
@@ -41,10 +37,10 @@ import com.google.firebase.dataconnect.testutil.awaitConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.awaitResponseSender
 import com.google.firebase.dataconnect.testutil.awaitUntilCancelStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
-import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
 import com.google.firebase.dataconnect.testutil.awaitUntilResumeStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilStatusExceptionReceived
+import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequestWithRequestId
 import com.google.firebase.dataconnect.testutil.awaitUntilSubscribeStreamRequest
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -56,6 +52,8 @@ import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.Status
+import io.grpc.StatusException
+import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -74,17 +72,20 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Assume.assumeTrue
@@ -95,7 +96,7 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class RealtimeQuerySubscriptionImplUnitTest {
+class QuerySubscriptionImplUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
   @get:Rule val testName = TestName()
@@ -246,50 +247,87 @@ class RealtimeQuerySubscriptionImplUnitTest {
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+      val clientCollector0 =
+        subscriptions[0].flow.testIn(backgroundScope, name = "clientCollector0")
+
+      val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
+      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
+      val testData = testDataArb().let { arb -> List(requestIds.size) { arb.sample() } }
+      val respondJob =
+        backgroundScope.launch {
+          val requestId = subscribeRequest.streamRequest.requestId
+          val testDataIterator = testData.iterator()
+          while (true) {
+            responseObserver.onNext(requestId, testDataIterator.next())
+            val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
+            resumeRequest.connectionId shouldBe subscribeRequest.connectionId
+            resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+            resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+          }
         }
 
-      serverCollector.awaitUntilInitStreamRequest()
-      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
       subscribeRequest.streamRequest.requestId shouldBeIn requestIds
       subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
-      repeat(subscriptions.size - 1) {
-        val resumeRequest: StreamRequestReceived = serverCollector.awaitUntilItemIsInstance()
-        resumeRequest.connectionId shouldBe subscribeRequest.connectionId
-        resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
-        resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+      clientCollector0.awaitItem()
+      val clientCollectors =
+        subscriptions.drop(1).mapIndexed { index, subscription ->
+          if (rs.random.nextBoolean()) yield() // let some of the resume requests coalesce
+          subscription.flow.testIn(backgroundScope, name = "clientCollector${index+1}")
+        }
+      clientCollectors.forEach { clientCollector ->
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBeIn testData
       }
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+      respondJob.cancelAndJoin()
+      clientCollector0.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
   @Test
   fun `cancel message is sent after last unsubscription for a query`() = runTest {
-    val operationName = Arb.dataConnect.operationName().sample()
-    val variables = testVariablesArb().sample()
+    val subscriptionParameters =
+      distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(10)
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
-    val subscriptions = List(10) { querySubscription(dataConnect, operationName, variables) }
+    val subscriptions =
+      subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
       val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+        List(2) {
+          subscriptions
+            .mapIndexed { index, subscription ->
+              subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+            }
+            .shuffled(rs.random)
+        }
+      val requestIds =
+        MutableList(subscriptions.size) {
+          serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
         }
 
-      serverCollector.awaitUntilInitStreamRequest()
-      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
-      check(subscribeRequest.streamRequest.hasSubscribe())
+      clientCollectors[0].forEach { clientCollector ->
+        clientCollector.cancelAndIgnoreRemainingEvents()
+      }
+      while (true) {
+        yield()
+        val event = serverCollector.asChannel().tryReceive().getOrNull() ?: break
+        if (event is StreamRequestReceived) {
+          event.streamRequest.requestKindCase shouldNotBe RequestKindCase.CANCEL
+        }
+      }
 
-      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-
-      val cancelRequest = serverCollector.awaitUntilCancelStreamRequest()
-      cancelRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
+      // Specify drop(1) so that we don't close the very last connection as that will shut down
+      // the entire connection, confusing the logic below.
+      clientCollectors[1].drop(1).forEach { clientCollector ->
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
+        requestId shouldBeIn requestIds
+        requestIds.removeAt(requestIds.indexOf(requestId))
+      }
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
@@ -346,6 +384,7 @@ class RealtimeQuerySubscriptionImplUnitTest {
       repeat(size / 2) { add(get(it)) } // Add some duplicate subscriptions
       shuffle(rs.random)
     }
+    val testData = testDataArb().let { arb -> List(subscriptions.size) { arb.next(rs) } }
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
@@ -354,14 +393,19 @@ class RealtimeQuerySubscriptionImplUnitTest {
           subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
         }
 
-      repeat(subscriptions.size) {
-        serverCollector.awaitUntilItem {
-          it is StreamRequestReceived &&
-            it.streamRequest.let { streamRequest ->
-              streamRequest.hasSubscribe() || streamRequest.hasResume()
+      val respondJob =
+        backgroundScope.launch {
+          val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
+          val testDataIterator = testData.iterator()
+          while (true) {
+            val streamRequest = serverCollector.awaitUntilStreamRequest().streamRequest
+            if (streamRequest.hasSubscribe() || streamRequest.hasResume()) {
+              responseObserver.onNext(streamRequest.requestId, testDataIterator.next())
             }
+          }
         }
-      }
+      clientCollectors.forEach { clientCollector -> clientCollector.awaitItem() }
+      respondJob.cancelAndJoin()
 
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
       serverCollector.awaitUntilClientClosesConnection()
@@ -461,20 +505,97 @@ class RealtimeQuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow completes if server complete the RPC mid-stream`() = runTest {
+  fun `flow retries if server completes the RPC gracefully mid-stream`() = runTest {
+    testFlowReconnectsUponConnectionClosure { it.onCompleted() }
+  }
+
+  @Test
+  fun `flow retries if server aborts the RPC mid-stream with StatusException`() = runTest {
+    testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode {
+      StatusException(it.toStatus())
+    }
+  }
+
+  @Test
+  fun `flow retries if server aborts the RPC mid-stream with StatusRuntimeException`() = runTest {
+    testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode {
+      StatusRuntimeException(it.toStatus())
+    }
+  }
+
+  @Test
+  fun `flow retries if server aborts with a non-grpc Exception`() = runTest {
+    class TestException(message: String) : Exception(message)
+    testFlowReconnectsUponConnectionClosure {
+      it.onError(TestException(Arb.dataConnect.string().sample()))
+    }
+  }
+
+  private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
+    createException: (Status.Code) -> Throwable
+  ) {
+    failureGrpcStatusCodes.forEach { code ->
+      withClue("code=$code") {
+        val exception = createException(code)
+        testFlowReconnectsUponConnectionClosure { it.onError(exception) }
+      }
+    }
+  }
+
+  private suspend fun TestScope.testFlowReconnectsUponConnectionClosure(
+    abort: (StreamObserver<StreamResponse>) -> Unit
+  ) {
     val server = runningInProcessDataConnectServer()
     val dataConnect = dataConnect(server)
     val subscription = querySubscription(dataConnect)
+    val testData = testDataArb().sample()
 
     turbineScope {
       val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
       val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      responseSender.onCompleted()
+      serverCollector.awaitResponseSender().let { responseSender ->
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        abort(responseSender)
+      }
 
-      clientCollector.awaitComplete()
+      serverCollector.awaitResponseSender().let { responseSender ->
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        responseSender.onNext(requestId, testData)
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `flow retries if server connection is lost`() = runTest {
+    val server1 = runningInProcessDataConnectServer()
+    val server2 = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server2)
+    val dataConnect = dataConnect(server1)
+    val subscription = querySubscription(dataConnect)
+    val testData = testDataArb().sample()
+
+    turbineScope {
+      val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
+      val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      server1Collector.awaitConnectRpcStarted()
+      server1Collector.awaitUntilSubscribeStreamRequest()
+      server1.close()
+      server2.open(server1.port)
+
+      server2Collector.awaitResponseSender().let { responseSender ->
+        val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        responseSender.onNext(requestId, testData)
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      server2Collector.cancelAndIgnoreRemainingEvents()
+      server1Collector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -547,15 +668,15 @@ class RealtimeQuerySubscriptionImplUnitTest {
     dataConnect: FirebaseDataConnectImpl? = null,
     operationName: String? = null,
     variables: TestVariables? = null,
-  ): RealtimeQuerySubscriptionImpl<TestData, TestVariables> =
+  ): QuerySubscriptionImpl<TestData, TestVariables> =
     queryRef(dataConnect, operationName, variables).subscribe()
 
   private fun TestScope.queryRef(
     dataConnect: FirebaseDataConnectImpl? = null,
     operationName: String? = null,
     variables: TestVariables? = null,
-  ): RealtimeQueryRefImpl<TestData, TestVariables> =
-    RealtimeQueryRefImpl(
+  ): QueryRefImpl<TestData, TestVariables> =
+    QueryRefImpl(
       dataConnect = dataConnect ?: dataConnect(),
       operationName = operationName ?: "opName_${alphabeticStringArb().sample()}",
       variables = variables ?: testVariablesArb().sample(),
@@ -643,3 +764,6 @@ private fun distinctOperationNameVariablesPairWithRepeatedComponentsArb(
 private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestData) {
   onNext(StreamResponse.newBuilder().setRequestId(requestId).setData(encodeToStruct(data)).build())
 }
+
+private val failureGrpcStatusCodes: List<Status.Code> =
+  Status.Code.entries.filterNot { it == Status.Code.OK }

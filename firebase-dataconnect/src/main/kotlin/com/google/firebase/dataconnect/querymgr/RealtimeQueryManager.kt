@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.DataSource
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
@@ -49,7 +48,6 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-@ExperimentalRealtimeQueries
 internal class RealtimeQueryManager(
   private val grpcClient: DataConnectGrpcClient,
   coroutineScope: CoroutineScope,
@@ -163,34 +161,45 @@ internal class RealtimeQueryManager(
     requestId: String,
     callerSdkType: CallerSdkType
   ): State.Connected? {
+    var connectionAttempted = false
+
     while (true) {
-      val currentState = state.get()
-
-      val newState =
-        when (currentState) {
-          State.Disconnected ->
-            State.Connecting(
-              coroutineScope.async(start = CoroutineStart.LAZY) {
-                grpcClient.connect(
-                  streamId = idStringGenerator.next("con"),
-                  requestId = requestId,
-                  callerSdkType = callerSdkType,
-                  idStringGenerator = idStringGenerator,
-                )
-              }
-            )
-          is State.Connecting -> {
-            val stream = currentState.job.await()
-            State.Connected(stream)
-          }
-          is State.Connected -> return currentState
-          State.Closing,
-          State.Closed -> return null
+      when (val currentState = state.get()) {
+        State.Disconnected -> {
+          val newState: State.Connecting = createConnectingState(requestId, callerSdkType)
+          state.compareAndSet(currentState, newState)
         }
-
-      state.compareAndSet(currentState, newState)
+        is State.Connecting -> {
+          val connectResult = currentState.job.runCatching { await() }
+          val newState = connectResult.map(State::Connected).getOrElse { State.Disconnected }
+          state.compareAndSet(currentState, newState)
+          connectResult.onFailure { exception ->
+            if (connectionAttempted) {
+              throw exception
+            }
+            connectionAttempted = true
+          }
+        }
+        is State.Connected -> return currentState
+        State.Closing,
+        State.Closed -> return null
+      }
     }
   }
+
+  private fun createConnectingState(
+    requestId: String,
+    callerSdkType: CallerSdkType,
+  ) =
+    State.Connecting(
+      coroutineScope.async(start = CoroutineStart.LAZY) {
+        grpcClient.connect(
+          requestId = requestId,
+          callerSdkType = callerSdkType,
+          idStringGenerator = idStringGenerator,
+        )
+      }
+    )
 
   private sealed interface State {
     object Disconnected : State {
@@ -221,7 +230,6 @@ internal class RealtimeQueryManager(
   }
 }
 
-@OptIn(ExperimentalRealtimeQueries::class)
 internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
   queryRef: QueryRef<Data, Variables>
 ): Flow<Result<Data>> =

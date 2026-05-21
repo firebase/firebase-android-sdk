@@ -63,9 +63,9 @@ internal inline fun <T> AtomicReference<T>.update(block: (currentValue: T) -> T)
  * value, making this function slightly less performant than its [Unit]-returning counterpart due to
  * the allocation of the [AtomicReferenceUpdateResult] return value in the case of an update.
  */
-internal inline fun <T> AtomicReference<T>.updateWithResult(
-  block: (currentValue: T) -> T
-): AtomicReferenceUpdateResult<T> {
+internal inline fun <T, R : T> AtomicReference<T>.updateWithResult(
+  block: (currentValue: T) -> R
+): AtomicReferenceUpdateResult<T, R> {
   while (true) {
     val currentValue = get()
     val newValue = block(currentValue)
@@ -80,16 +80,17 @@ internal inline fun <T> AtomicReference<T>.updateWithResult(
   }
 }
 
-internal sealed interface AtomicReferenceUpdateResult<out T> {
+internal sealed interface AtomicReferenceUpdateResult<out T, out R> {
 
   val updated: Boolean
 
-  object NotUpdated : AtomicReferenceUpdateResult<Nothing> {
+  object NotUpdated : AtomicReferenceUpdateResult<Nothing, Nothing> {
     override val updated = false
     override fun toString() = "NoChange"
   }
 
-  class Updated<out T>(val oldValue: T, val newValue: T) : AtomicReferenceUpdateResult<T> {
+  class Updated<out T, out R>(val oldValue: T, val newValue: R) :
+    AtomicReferenceUpdateResult<T, R> {
     override val updated = true
     override fun toString() = "Updated"
   }

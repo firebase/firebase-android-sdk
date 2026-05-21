@@ -49,39 +49,117 @@ typeset -a matches
 typeset -A match_submodules
 typeset -A match_types
 
-# Determine input format
-if [[ "$test_input" == *.* ]]; then
-  typeset -r input_format="FullyQualifiedClassName"
-  typeset -r relative_path_suffix="${test_input//.//}"
-else
-  typeset -r input_format="SimpleClassName"
-  typeset -r relative_path_suffix=""
-fi
-
-
-for config in "${test_configurations[@]}"; do
-  typeset -a parts
-  parts=( ${=config} )
-  typeset source_root="${parts[1]}"
-  typeset config_submodule="${parts[2]}"
-  typeset config_type="${parts[3]}"
-
-  typeset -a dir_matches
-  if [[ "$input_format" == "FullyQualifiedClassName" ]]; then
-    dir_matches=( ${project_root_dir}/firebase-dataconnect/${source_root}/**/${relative_path_suffix}.kt(N) )
-  elif [[ "$input_format" == "SimpleClassName" ]]; then
-    dir_matches=( ${project_root_dir}/firebase-dataconnect/${source_root}/**/${test_input}.kt(N) )
-  else
-    say_error "INTERNAL ERROR: unsupported value for input_format: $input_format" >&2
-    exit 1
+###############################################################################
+# Function: search_for_test_class
+#
+# Searches for a test class name pattern across all configured test source
+# directories.
+#
+# Arguments:
+#   1: The search pattern. This should be a simple class name (e.g. "MyTest")
+#      or a path-like suffix (e.g. "com/google/firebase/dataconnect/MyTest")
+#      without the ".kt" extension.
+#
+# Outputs:
+#   This function does not write to stdout.
+#
+# Results / Side Effects:
+#   The results of the search are appended to the following global variables:
+#     - matches: An array of absolute file paths to the matching test files.
+#     - match_submodules: An associative array mapping each matched file path
+#       to its corresponding Gradle submodule.
+#     - match_types: An associative array mapping each matched file path
+#       to its test type ("unit" or "integration").
+#
+# Returns:
+#   0 if the search completed successfully (even if no matches were found).
+#   2 if the arguments to the function were invalid.
+###############################################################################
+search_for_test_class() {
+  if (( # != 1 )); then
+    say_error "$0: expected exactly 1 argument, but got $#: $*" >&2
+    return 2
   fi
 
-  for file in "${dir_matches[@]}"; do
-    matches+=( "$file" )
-    match_submodules[$file]="$config_submodule"
-    match_types[$file]="$config_type"
+  typeset -r search_pattern="$1"
+  local config
+  local -a parts
+  local source_root
+  local gradle_submodule
+  local test_type
+  local -a dir_matches
+  local file
+
+  for config in "${test_configurations[@]}"; do
+    parts=( ${=config} )
+    source_root="${parts[1]}"
+    gradle_submodule="${parts[2]}"
+    test_type="${parts[3]}"
+
+    dir_matches=( ${project_root_dir}/firebase-dataconnect/${source_root}/**/${search_pattern}.kt(N) )
+
+    for file in "${dir_matches[@]}"; do
+      matches+=( "$file" )
+      match_submodules[$file]="$gradle_submodule"
+      match_types[$file]="$test_type"
+    done
   done
-done
+}
+
+###############################################################################
+# Function: find_package_line
+#
+# Reads a file and finds the first line that declares a Kotlin package name.
+#
+# Arguments:
+#   1: The absolute path of the file to read.
+#
+# Outputs:
+#   Prints the matching package line to stdout if found.
+#
+# Returns:
+#   0 if the package line was successfully found and printed.
+#   1 if no package line was found in the file.
+#   2 if the arguments to the function were invalid.
+###############################################################################
+find_package_line() {
+  if (( # != 1 )); then
+    say_error "$0: expected exactly 1 argument, but got $#: $*" >&2
+    return 2
+  fi
+
+  local -r file_path="$1"
+  local line
+  local IFS
+
+  # Explicitly clear IFS for 'read' to preserve exact line contents
+  while IFS= read -r line; do
+    # Relies on 'extendedglob' (already set at the top of the script)
+    if [[ "$line" == [[:space:]]#package[[:space:]]##* ]]; then
+      say "$line"
+      return 0
+    fi
+  done < "$file_path"
+
+  return 1
+}
+
+# Determine input format and search pattern
+if [[ "$test_input" == *.* ]]; then
+  typeset -r input_format="FullyQualifiedClassName"
+  typeset -r search_pattern="${test_input//.//}" # Replace "." with "/"
+else
+  typeset -r input_format="SimpleClassName"
+  typeset -r search_pattern="$test_input"
+fi
+
+search_for_test_class "$search_pattern"
+
+# If simple class name not found and lacks "Test" suffix, try fallback with UnitTest and IntegrationTest
+if [[ "$input_format" == "SimpleClassName" && ${#matches} == 0 && "$test_input" != *Test ]]; then
+  search_for_test_class "${test_input}UnitTest"
+  search_for_test_class "${test_input}IntegrationTest"
+fi
 
 # Handle matches
 if [[ ${#matches} == 0 ]]; then
@@ -92,7 +170,7 @@ elif [[ ${#matches} > 1 ]]; then
     say_error "Multiple matching test classes found for: ${test_input}"
     typeset -i i=1
     for match in "${matches[@]}"; do
-      say "  $i. ${match#${project_root_dir}/}"
+      say "  $i. ${match:t:r} (${match#${project_root_dir}/})"
       ((i++))
     done
   } >&2
@@ -109,7 +187,7 @@ if [[ "$input_format" == "FullyQualifiedClassName" ]]; then
 elif [[ "$input_format" == "SimpleClassName" ]]; then
   typeset package_name=""
   typeset package_line
-  package_line=$(grep -m 1 "^[[:space:]]*package[[:space:]]" "$matched_file") || :
+  package_line=$(find_package_line "$matched_file") || :
 
   if [[ -n "$package_line" ]]; then
     typeset -a parts
@@ -121,7 +199,7 @@ elif [[ "$input_format" == "SimpleClassName" ]]; then
     say_error "Could not determine package name from file: ${matched_file}" >&2
     exit 1
   fi
-  typeset -r fully_qualified_class="${package_name}.${test_input}"
+  typeset -r fully_qualified_class="${package_name}.${matched_file:t:r}"
 else
   say_error "INTERNAL ERROR: unsupported value for input_format: $input_format" >&2
   exit 1
