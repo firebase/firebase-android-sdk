@@ -21,7 +21,7 @@ on:
 
 env:
   FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.18.0' }}
+  FDC_INPUT_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
@@ -38,7 +38,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          sparse-checkout: firebase-dataconnect/demo
+          sparse-checkout: |
+            firebase-dataconnect/demo
+            firebase-dataconnect/ci/
+
+      - name: Initialize FDC_FIREBASE_TOOLS_VERSION environment variable
+        run: |
+          set -euo pipefail
+          if [[ -n "$FDC_INPUT_FIREBASE_TOOLS_VERSION" ]]; then
+            version="$FDC_INPUT_FIREBASE_TOOLS_VERSION"
+          else
+            version="$(cat firebase-dataconnect/ci/firebase-tools-version.txt)"
+          fi
+          echo "FDC_FIREBASE_TOOLS_VERSION=${version}" >> "$GITHUB_ENV"
 
       - name: Create Cache Key Files
         run: |
