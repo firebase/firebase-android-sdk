@@ -118,7 +118,7 @@ internal class DataConnectGrpcMetadata(
             values.map {
               when (key.name()) {
                 firebaseAuthTokenHeader.name() ->
-                  it.toScrubbedAccessToken() + " (authUid=${authUid?.authUid})"
+                  it.toScrubbedAccessToken() + " (authUid=${authUid?.string})"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }
@@ -155,7 +155,7 @@ internal class DataConnectGrpcMetadata(
             value?.let {
               when (key) {
                 firebaseAuthTokenHeader.name() ->
-                  it.toScrubbedAccessToken() + " (authUid=${authUid?.authUid})"
+                  it.toScrubbedAccessToken() + " (authUid=${authUid?.string})"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }

@@ -200,16 +200,16 @@ internal class DataConnectCacheDatabase(
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
   private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
-    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.authUid))
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.string))
     return rawQuery(
       logger,
       "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
-      if (authUid === null) emptyArray() else arrayOf(authUid.authUid),
+      if (authUid === null) emptyArray() else arrayOf(authUid.string),
     ) { cursor ->
       if (cursor.moveToNext()) {
         SqliteUserId(cursor.getLong(0))
       } else {
-        throw AuthUidNotFoundException("authUid=${authUid?.authUid} (internal error m5m52ahrxz)")
+        throw AuthUidNotFoundException("authUid=${authUid?.string} (internal error m5m52ahrxz)")
       }
     }
   }

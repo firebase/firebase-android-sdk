@@ -57,8 +57,8 @@ internal class DataConnectAuth(
     }
 
   @JvmInline
-  value class AuthUid(val authUid: String) {
-    override fun toString() = "AuthUid($authUid)"
+  value class AuthUid(val string: String) {
+    override fun toString() = "AuthUid($string)"
   }
 
   data class GetAuthTokenResult(override val token: String?, val authUid: AuthUid?) :
