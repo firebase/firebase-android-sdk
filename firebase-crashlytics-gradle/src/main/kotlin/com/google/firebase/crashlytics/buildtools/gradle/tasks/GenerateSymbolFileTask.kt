@@ -31,7 +31,6 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.csym.NdkCSymGener
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -99,34 +98,40 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
     variant: Variant,
     unstrippedNativeLibsOverride: ConfigurableFileCollection,
   ) {
-    if (unstrippedNativeLibsOverride.isEmpty) {
-      unstrippedNativeLibsDirs.setFrom(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
-      return
-    }
+    // Extract default provider outside the lambda to avoid closure capture,
+    // thus preventing possible Gradle serialization issues.
+    val defaultMergedNativeLibs = variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS)
 
-    val mergedNativeLibsOutput = "build/intermediates/merged_native_libs/${variant.name}/out"
-    if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
-      val mergedNativeLibsTask = "merge${variant.name.capitalized()}NativeLibs"
-
-      val dependencies =
-        unstrippedNativeLibsOverride.buildDependencies
-          .getDependencies(null)
-          .mapNotNull { it?.name }
-          .toSet()
-
-      if (!dependencies.contains(mergedNativeLibsTask)) {
-        try {
-          dependsOn(project.tasks.getByPath(mergedNativeLibsTask))
-        } catch (ex: UnknownTaskException) {
-          logger.warn(
-            "The unstrippedNativeLibsDir manually overridden to output of $mergedNativeLibsTask " +
-              "task. This is not necessary, it is safe to remove $mergedNativeLibsOutput from " +
-              "the unstrippedNativeLibsDir override."
-          )
+    // Setting provider as a lazy mechanism which will be invoked at execution phase.
+    this.unstrippedNativeLibsDirs.setFrom(
+      project.provider {
+        if (unstrippedNativeLibsOverride.isEmpty) {
+          defaultMergedNativeLibs
+        } else {
+          unstrippedNativeLibsOverride
         }
       }
+    )
+
+    if (!unstrippedNativeLibsOverride.isEmpty) {
+      val currentVariant = variant.name
+
+      // Resolve the build directory name dynamically to support custom build directories.
+      val buildDirName = project.layout.buildDirectory.get().asFile.name
+      val mergedNativeLibsOutput =
+        "$buildDirName/intermediates/merged_native_libs/$currentVariant/out"
+
+      if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
+        logger.warn(
+          """
+                  The unstrippedNativeLibsDir is manually overridden to output of ($mergedNativeLibsOutput).
+                  This is unnecessary, it is safe to remove ($mergedNativeLibsOutput) from the unstrippedNativeLibsDir override
+                  in the CrashlyticsExtension configuration block.
+              """
+            .trimIndent()
+        )
+      }
     }
-    unstrippedNativeLibsDirs.setFrom(unstrippedNativeLibsOverride)
   }
 
   /** Sets and validates the symbol generator type. */
