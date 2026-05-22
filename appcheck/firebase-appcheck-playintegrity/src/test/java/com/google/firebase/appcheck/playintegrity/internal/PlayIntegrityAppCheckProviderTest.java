@@ -132,6 +132,8 @@ public class PlayIntegrityAppCheckProviderTest {
     String exchangePlayIntegrityTokenRequestJsonString =
         new String(exchangePlayIntegrityTokenRequestCaptor.getValue());
     assertThat(exchangePlayIntegrityTokenRequestJsonString).contains(INTEGRITY_TOKEN);
+    JSONObject jsonObject = new JSONObject(exchangePlayIntegrityTokenRequestJsonString);
+    assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
   }
 
   @Test
@@ -224,6 +226,50 @@ public class PlayIntegrityAppCheckProviderTest {
     String exchangePlayIntegrityTokenRequestJsonString =
         new String(exchangePlayIntegrityTokenRequestCaptor.getValue());
     assertThat(exchangePlayIntegrityTokenRequestJsonString).contains(INTEGRITY_TOKEN);
+  }
+
+  @Test
+  public void getLimitedUseToken_onSuccess_setsTaskResult() throws Exception {
+    when(mockNetworkClient.generatePlayIntegrityChallenge(any(), eq(mockRetryManager)))
+        .thenReturn(createGeneratePlayIntegrityChallengeResponse());
+    when(mockIntegrityManager.requestIntegrityToken(any()))
+        .thenReturn(Tasks.forResult(mockIntegrityTokenResponse));
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.PLAY_INTEGRITY), eq(mockRetryManager)))
+        .thenReturn(mockAppCheckTokenResponse);
+
+    PlayIntegrityAppCheckProvider provider =
+        new PlayIntegrityAppCheckProvider(
+            PROJECT_NUMBER,
+            mockIntegrityManager,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getLimitedUseToken();
+
+    AppCheckToken token = task.getResult();
+    assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
+
+    verify(mockNetworkClient).generatePlayIntegrityChallenge(any(), eq(mockRetryManager));
+
+    verify(mockIntegrityManager).requestIntegrityToken(integrityTokenRequestCaptor.capture());
+    assertThat(integrityTokenRequestCaptor.getValue().cloudProjectNumber())
+        .isEqualTo(Long.parseLong(PROJECT_NUMBER));
+    assertThat(integrityTokenRequestCaptor.getValue().nonce()).isEqualTo(CHALLENGE);
+
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(
+            exchangePlayIntegrityTokenRequestCaptor.capture(),
+            eq(NetworkClient.PLAY_INTEGRITY),
+            eq(mockRetryManager));
+    String exchangePlayIntegrityTokenRequestJsonString =
+        new String(exchangePlayIntegrityTokenRequestCaptor.getValue());
+    assertThat(exchangePlayIntegrityTokenRequestJsonString).contains(INTEGRITY_TOKEN);
+    JSONObject jsonObject = new JSONObject(exchangePlayIntegrityTokenRequestJsonString);
+    assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isEqualTo(true);
   }
 
   private static String createGeneratePlayIntegrityChallengeResponse() throws Exception {

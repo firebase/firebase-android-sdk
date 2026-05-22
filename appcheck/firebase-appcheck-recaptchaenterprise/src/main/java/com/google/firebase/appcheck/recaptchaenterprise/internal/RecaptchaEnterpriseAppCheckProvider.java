@@ -103,12 +103,23 @@ public class RecaptchaEnterpriseAppCheckProvider implements AppCheckProvider {
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
+    return getToken(/* isLimitedUseToken= */ false);
+  }
+
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getLimitedUseToken() {
+    return getToken(/* isLimitedUseToken= */ true);
+  }
+
+  private Task<AppCheckToken> getToken(boolean isLimitedUseToken) {
     return getRecaptchaEnterpriseAttestation()
         .onSuccessTask(
             liteExecutor,
             recaptchaEnterpriseToken -> {
               ExchangeRecaptchaEnterpriseTokenRequest request =
-                  new ExchangeRecaptchaEnterpriseTokenRequest(recaptchaEnterpriseToken);
+                  new ExchangeRecaptchaEnterpriseTokenRequest(
+                      recaptchaEnterpriseToken, isLimitedUseToken);
               return Tasks.call(
                   blockingExecutor,
                   () ->

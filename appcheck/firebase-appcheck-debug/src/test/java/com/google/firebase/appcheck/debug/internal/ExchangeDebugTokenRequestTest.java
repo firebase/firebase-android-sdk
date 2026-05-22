@@ -16,6 +16,7 @@ package com.google.firebase.appcheck.debug.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,12 +30,30 @@ public class ExchangeDebugTokenRequestTest {
   @Test
   public void toJsonString_expectSerialized() throws Exception {
     ExchangeDebugTokenRequest exchangeDebugTokenRequest =
-        new ExchangeDebugTokenRequest(DEBUG_TOKEN);
+        new ExchangeDebugTokenRequest(DEBUG_TOKEN, false);
 
     String jsonString = exchangeDebugTokenRequest.toJsonString();
     JSONObject jsonObject = new JSONObject(jsonString);
 
     assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
         .isEqualTo(DEBUG_TOKEN);
+
+    assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
+        .isEqualTo(DEBUG_TOKEN);
+    assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
+  }
+
+  @Test
+  public void toJsonString_limitedUse_expectSerialized() throws Exception {
+    ExchangeDebugTokenRequest exchangeDebugTokenRequest =
+        new ExchangeDebugTokenRequest(DEBUG_TOKEN, true);
+
+    String jsonString = exchangeDebugTokenRequest.toJsonString();
+    JSONObject jsonObject = new JSONObject(jsonString);
+
+    assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
+        .isEqualTo(DEBUG_TOKEN);
+    assertThat(jsonObject.getBoolean(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isEqualTo(true);
   }
 }

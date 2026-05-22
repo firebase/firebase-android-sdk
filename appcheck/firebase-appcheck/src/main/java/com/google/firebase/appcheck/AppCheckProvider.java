@@ -31,4 +31,11 @@ public interface AppCheckProvider {
    */
   @NonNull
   Task<AppCheckToken> getToken();
+
+  /**
+   * Returns a {@link Task} which resolves to a valid, limited-use {@link AppCheckToken} or an
+   * {@link Exception} in the case that an unexpected failure occurred while getting the token.
+   */
+  @NonNull
+  Task<AppCheckToken> getLimitedUseToken();
 }

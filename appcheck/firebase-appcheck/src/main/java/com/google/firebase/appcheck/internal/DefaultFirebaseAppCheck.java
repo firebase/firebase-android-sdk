@@ -274,7 +274,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     // We explicitly do not call the fetchTokenFromProvider helper method, as that method includes
     // side effects such as notifying listeners, updating the cached token, and scheduling token
     // refresh.
-    return appCheckProvider.getToken();
+    return appCheckProvider.getLimitedUseToken();
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
