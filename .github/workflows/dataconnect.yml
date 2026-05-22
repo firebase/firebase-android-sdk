@@ -413,6 +413,7 @@ jobs:
     needs:
       - 'integration-test'
       - 'actionlint-dataconnect-yml'
+      - 'zshellcheck'
       - 'python-ci-unit-tests'
       - 'python-ci-lint'
       - 'python-ci-format'
@@ -438,6 +439,7 @@ jobs:
           cat >'${{ runner.temp }}/job_results.txt' <<EOF
           integration-test:${{ needs.integration-test.result }}
           actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
+          zshellcheck:${{ needs.zshellcheck.result }}
           python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
           python-ci-lint:${{ needs.python-ci-lint.result }}
           python-ci-format:${{ needs.python-ci-format.result }}
