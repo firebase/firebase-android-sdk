@@ -37,5 +37,7 @@ public interface AppCheckProvider {
    * {@link Exception} in the case that an unexpected failure occurred while getting the token.
    */
   @NonNull
-  default Task<AppCheckToken> getLimitedUseToken() { return getToken(); }
+  default Task<AppCheckToken> getLimitedUseToken() {
+    return getToken();
+  }
 }
