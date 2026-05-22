@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectSerialization
@@ -48,7 +47,6 @@ import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalRealtimeQueries::class)
 class RealtimeQueryManagerUnitTest {
 
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
@@ -74,7 +72,7 @@ class RealtimeQueryManagerUnitTest {
       )
 
     class TestException(message: String) : Exception(message)
-    coEvery { grpcClient.connect(any(), any(), any(), any()) } answers
+    coEvery { grpcClient.connect(any(), any(), any()) } answers
       {
         throw TestException("simulated connection failure ${nextSequenceNumber()} mxrceswed8")
       }
@@ -110,7 +108,7 @@ class RealtimeQueryManagerUnitTest {
       )
 
     class TestException(message: String) : Exception(message)
-    coEvery { grpcClient.connect(any(), any(), any(), any()) } answers
+    coEvery { grpcClient.connect(any(), any(), any()) } answers
       {
         throw TestException("simulated connection failure ${nextSequenceNumber()} ddx8543vf9")
       }

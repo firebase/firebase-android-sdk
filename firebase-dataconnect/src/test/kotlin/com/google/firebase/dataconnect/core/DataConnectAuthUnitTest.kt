@@ -23,6 +23,7 @@ import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DelayedDeferred
@@ -326,7 +327,7 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    result.shouldNotBeNull().authUid shouldBe uid
+    result.shouldNotBeNull().authUid shouldBe AuthUid(uid)
   }
 
   @Test

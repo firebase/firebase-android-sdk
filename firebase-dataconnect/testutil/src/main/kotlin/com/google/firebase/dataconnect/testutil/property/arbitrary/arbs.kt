@@ -146,9 +146,6 @@ object DataConnectArb {
     }
   }
 
-  fun authUid(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
-    string.map { "authUid_${it.lowercase()}" }
-
   fun authToken(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     string.map { "authToken_${it.lowercase()}" }
 

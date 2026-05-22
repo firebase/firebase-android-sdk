@@ -171,6 +171,10 @@ task integrationTest(type: Test) {
   description = 'Runs integration tests.'
   group = 'verification'
 
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
+
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
 
@@ -184,6 +188,10 @@ task integrationTest(type: Test) {
 task prodTest(type: Test) {
   description = 'Runs prod tests.'
   group = 'verification'
+
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
 
   testClassesDirs = sourceSets.prodTest.output.classesDirs
   classpath = sourceSets.prodTest.runtimeClasspath

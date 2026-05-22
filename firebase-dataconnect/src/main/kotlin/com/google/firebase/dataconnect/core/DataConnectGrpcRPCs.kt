@@ -22,9 +22,9 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -241,7 +241,7 @@ internal class DataConnectGrpcRPCs(
 
   private class QueryCacheInfo(
     val cacheDb: DataConnectCacheDatabase,
-    val authUid: String?,
+    val authUid: AuthUid?,
     val queryId: ImmutableByteArray,
     val maxAge: DurationProto,
   )
@@ -384,7 +384,6 @@ internal class DataConnectGrpcRPCs(
     return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
-  @ExperimentalRealtimeQueries
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
@@ -429,7 +428,7 @@ internal class DataConnectGrpcRPCs(
 
   private inner class ConnectGrpcBidiFlowListener(
     private val streamId: String,
-    private val authUid: String?,
+    private val authUid: AuthUid?,
     private val initRequest: StreamRequest,
     private val kotlinMethodName: String,
   ) : GrpcBidiFlow.Listener<StreamRequest, StreamResponse> {
@@ -513,7 +512,7 @@ internal class DataConnectGrpcRPCs(
   }
 
   @Suppress("unused")
-  private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: String?) :
+  private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: AuthUid?) :
     GrpcBidiFlowListenerMessageFormatter.Formatter<StreamRequest, StreamResponse>() {
     override fun connectionStartingHeaders(headers: Metadata?): String =
       headers?.toStructProto(authUid)?.toCompactString().toString()
@@ -684,7 +683,7 @@ internal class DataConnectGrpcRPCs(
       metadata: Metadata?,
       request: () -> Struct,
       requestTypeName: String,
-      authUid: String?,
+      authUid: AuthUid?,
     ) = debug {
       val requestStruct = request()
       val struct = buildStructProto {
