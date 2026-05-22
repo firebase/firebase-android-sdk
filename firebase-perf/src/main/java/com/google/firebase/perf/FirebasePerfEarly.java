@@ -15,6 +15,7 @@
 package com.google.firebase.perf;
 
 import android.content.Context;
+import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
@@ -48,7 +49,12 @@ public class FirebasePerfEarly {
     if (startupTime != null) {
       AppStartTrace appStartTrace = AppStartTrace.getInstance();
       appStartTrace.registerActivityLifecycleCallbacks(context);
-      uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+      // The posted runnable feeds AppStartTrace's pre-API-34 background-start check.
+      // On API 34+ the runnable's output is unused (the causal signal owns the
+      // decision), so we skip the main-thread post.
+      if (Build.VERSION.SDK_INT < 34) {
+        uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+      }
     }
 
     // TODO: Bring back Firebase Sessions dependency to watch for updates to sessions.

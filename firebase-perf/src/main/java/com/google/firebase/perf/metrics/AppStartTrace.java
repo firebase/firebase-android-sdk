@@ -74,11 +74,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
-  // If the `mainThreadRunnableTime` was set within this duration, the assumption
-  // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
-  // See b/339891952.
-  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
-
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
@@ -133,6 +128,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private int onDrawCount = 0;
   private final DrawCounter onDrawCounterListener = new DrawCounter();
   private boolean systemForegroundCheck = false;
+
+  // OS-reported reason this process was forked. Captured once during
+  // registerActivityLifecycleCallbacks; consulted by resolveIsStartedFromBackground on
+  // API 34+.
+  private @Nullable ProcessStartCause processStartCause = null;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -224,6 +224,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
       systemForegroundCheck = systemForegroundCheck || isAnyAppProcessInForeground(appContext);
+      // Capture the OS-reported start cause as early as possible (this method runs from
+      // FirebasePerfEarly during the ContentProvider init chain).
+      processStartCause = ProcessStartCause.capture(appContext);
       isRegisteredForLifecycleCallbacks = true;
       this.appContext = appContext;
     }
@@ -327,37 +330,30 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   /**
-   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnableTime` was set
-   * from the `StartFromBackgroundRunnable`.
-   * <p>
-   * If it's prior to API 34, it's always set to true if `mainThreadRunnableTime` was set.
-   * <p>
-   * If it's on or after API 34, and it was called less than `MAX_BACKGROUND_RUNNABLE_DELAY`
-   * before `onActivityCreated`, the
-   * assumption is that it was called immediately before the activity lifecycle callbacks in a
-   * foreground start.
-   * See b/339891952.
+   * Decide whether this process was background-only and, if so, set
+   * {@link #isStartedFromBackground} so the activity-lifecycle callbacks suppress the
+   * {@code _app_start} trace.
+   *
+   * API < 34: legacy pre-bug ordering. If {@link StartFromBackgroundRunnable} fired
+   *   before the first {@code onActivityCreated}, suppress.
+   *
+   * API 34+: {@link ProcessStartCause} owns the decision. {@code FOREGROUND} lets the
+   *   trace through; {@code UNKNOWN} or null suppresses.
+   *
+   * See b/339891952 and https://github.com/firebase/firebase-android-sdk/issues/8103.
    */
   private void resolveIsStartedFromBackground() {
-    // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
-    // already been made.
-    if (mainThreadRunnableTime == null) {
+    if (Build.VERSION.SDK_INT < 34) {
+      if (mainThreadRunnableTime != null) {
+        isStartedFromBackground = true;
+        mainThreadRunnableTime = null;
+      }
       return;
     }
-
-    // If the `mainThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
-    // a background start.
-    // Otherwise it's assumed to be a background start if the runnable was set more than
-    // `MAX_BACKGROUND_RUNNABLE_DELAY`
-    // before the first `onActivityCreated` call.
-    // TODO(b/339891952): Investigate removing the API check.
-    if ((Build.VERSION.SDK_INT < 34)
-        || (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY)) {
+    if (processStartCause == null
+        || processStartCause.cause != ProcessStartCause.Cause.FOREGROUND) {
       isStartedFromBackground = true;
     }
-
-    // Set this to null to prevent additional checks.
-    mainThreadRunnableTime = null;
   }
 
   @Override
@@ -632,5 +628,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   @VisibleForTesting
   void setMainThreadRunnableTime(Timer timer) {
     mainThreadRunnableTime = timer;
+  }
+
+  @VisibleForTesting
+  void setProcessStartCauseForTest(@Nullable ProcessStartCause cause) {
+    this.processStartCause = cause;
+  }
+
+  @VisibleForTesting
+  @Nullable
+  ProcessStartCause getProcessStartCauseForTest() {
+    return processStartCause;
   }
 }

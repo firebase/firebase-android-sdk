@@ -1,5 +1,10 @@
 # Unreleased
 
+- [fixed] Fixed `_app_start` traces being suppressed on API 34+ devices for typical
+  real-world apps. The previous timing-window heuristic has been replaced on API 34+ by
+  `RunningAppProcessInfo.importance` at first capture, which indicates whether the
+  process was forked to launch an activity. Pre-API-34 behavior is unchanged. [#8103]
+
 # 22.0.5
 
 - [changed] Bumped internal dependencies.
