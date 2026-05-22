@@ -36,7 +36,7 @@ public class ExchangeDebugTokenRequestTest {
 
     assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
         .isEqualTo(DEBUG_TOKEN);
-    assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
+    assertThat(jsonObject.opt(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
   }
 
   @Test
