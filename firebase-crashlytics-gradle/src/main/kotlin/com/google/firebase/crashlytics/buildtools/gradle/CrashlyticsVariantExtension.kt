@@ -59,16 +59,5 @@ constructor(config: VariantExtensionConfig<*>) : VariantExtension, Serializable 
         )
       }
     }
-
-    printDebugProperties(config)
-  }
-
-  private fun printDebugProperties(config: VariantExtensionConfig<*>) {
-    logger.debug("CrashlyticsVariantExtension for variant: ${config.variant.name}")
-    logger.debug("  mappingFileUploadEnabled: ${mappingFileUploadEnabled.orNull}")
-    logger.debug("  nativeSymbolUploadEnabled: ${nativeSymbolUploadEnabled.orNull}")
-    logger.debug("  unstrippedNativeLibsOverride: ${unstrippedNativeLibsOverride.asPath}")
-    logger.debug("  symbolGeneratorType: ${symbolGeneratorType.orNull}")
-    logger.debug("  breakpadBinary: ${breakpadBinary.orNull?.asFile?.path}")
   }
 }
