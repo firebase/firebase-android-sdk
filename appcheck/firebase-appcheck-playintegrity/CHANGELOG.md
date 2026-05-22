@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed issue preventing limited use tokens from being correctly generated. (#8204)
+
 # 19.0.2
 
 - [unchanged] Updated to keep [app_check] SDK versions aligned.
@@ -60,4 +62,3 @@
 
 - [feature] Added support for [Play Integrity](https://developer.android.com/google/play/integrity)
   as an attestation provider.
-

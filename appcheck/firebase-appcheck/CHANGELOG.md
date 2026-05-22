@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed issue preventing limited use tokens from being correctly generated. (#8204)
+
 # 19.0.2
 
 - [fixed] Fixed a bug causing custom `AppCheckProvider` returning errors without a message to throw an exception.
@@ -157,4 +159,3 @@ Kotlin extensions library has the following additional updates:
 # 16.0.0-beta01
 
 - [feature] Initial beta release of the [app_check] SDK with abuse reduction features.
-
