@@ -24,9 +24,6 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 class AIModels {
 
   companion object {
-    private val API_KEY: String = ""
-    private val APP_ID: String = ""
-    private val PROJECT_ID: String = "fireescape-integ-tests"
     // General purpose models
     var app: FirebaseApp? = null
     lateinit var vertexAIFlashModel: GenerativeModel
@@ -47,14 +44,6 @@ class AIModels {
         googleAIFlashModel,
         googleAIFlashLiteModel
       )
-    }
-
-    /** Returns a list of template models to test */
-    fun getTemplateModels(): List<TemplateGenerativeModel> {
-      if (app == null) {
-        setup()
-      }
-      return listOf(vertexAITemplateModel, googleAITemplateModel)
     }
 
     fun app(): FirebaseApp {
@@ -80,7 +69,7 @@ class AIModels {
       googleAIFlashModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
           .generativeModel(
-            modelName = "gemini-2.5-flash",
+            modelName = "gemini-3.1-flash-lite",
           )
       googleAIFlashLiteModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
@@ -94,3 +83,6 @@ class AIModels {
     }
   }
 }
+
+@OptIn(PublicPreviewAPI::class)
+data class TemplateModel(val backend: String, val model: TemplateGenerativeModel)

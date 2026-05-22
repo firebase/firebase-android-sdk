@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.core
+package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.*
+import io.grpc.Metadata as GrpcMetadata
 
-internal interface QuerySubscriptionInternal<Data, Variables> : QuerySubscription<Data, Variables> {
-  val lastResult: QuerySubscriptionResult<Data, Variables>?
-
-  suspend fun reload()
-
-  suspend fun update(variables: Variables)
-}
+/**
+ * Creates and returns a shallow copy of the receiver.
+ *
+ * Since [io.grpc.Metadata] instances are mutable and not thread safe, gRPC generally recommends to
+ * retain a _copy_ rather than a _reference_ when received as a method argument. This helper
+ * function makes it easy to create such a copy.
+ */
+internal fun GrpcMetadata.copy(): GrpcMetadata = GrpcMetadata().also { it.merge(this) }

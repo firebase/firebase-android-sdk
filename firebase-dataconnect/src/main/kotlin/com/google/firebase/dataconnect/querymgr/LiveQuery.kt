@@ -250,7 +250,10 @@ internal class LiveQuery(
           }
       }
 
-  data class Key(val operationName: String, val variablesHash: ImmutableByteArray)
+  data class Key(val operationName: String, val variablesHash: ImmutableByteArray) {
+    override fun toString() =
+      "LiveQuery.Key(operationName=$operationName, variablesHash=${variablesHash.to0xHexString()})"
+  }
 
   override fun close() {
     logger.debug("close() called")

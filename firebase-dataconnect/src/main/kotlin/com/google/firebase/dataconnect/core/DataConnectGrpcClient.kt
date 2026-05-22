@@ -17,12 +17,12 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataSource
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlError
 import io.grpc.Status
@@ -94,11 +94,10 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  @ExperimentalRealtimeQueries
   suspend fun connect(
-    streamId: String,
     requestId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream =
     grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
       connect(
@@ -106,6 +105,7 @@ internal class DataConnectGrpcClient(
         callerSdkType,
         authToken,
         appCheckToken,
+        idStringGenerator,
       )
     }
 

@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
@@ -198,17 +199,17 @@ internal class DataConnectCacheDatabase(
 
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
-    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.string))
     return rawQuery(
       logger,
       "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
-      if (authUid === null) emptyArray() else arrayOf(authUid),
+      if (authUid === null) emptyArray() else arrayOf(authUid.string),
     ) { cursor ->
       if (cursor.moveToNext()) {
         SqliteUserId(cursor.getLong(0))
       } else {
-        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
+        throw AuthUidNotFoundException("authUid=${authUid?.string} (internal error m5m52ahrxz)")
       }
     }
   }
@@ -451,7 +452,7 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun getQueryResult(
-    authUid: String?,
+    authUid: AuthUid?,
     queryId: ImmutableByteArray,
     currentTimeMillis: Long,
     staleResult: KClass<out GetQueryResultResult>,
@@ -524,7 +525,7 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun insertQueryResult(
-    authUid: String?,
+    authUid: AuthUid?,
     queryId: ImmutableByteArray,
     queryData: Struct,
     maxAge: DurationProto,
