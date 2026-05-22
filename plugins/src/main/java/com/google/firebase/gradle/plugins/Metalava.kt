@@ -119,8 +119,11 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
 
   @get:org.gradle.api.tasks.Optional
   @get:org.gradle.api.tasks.OutputDirectory
-  val assetDocsDir: File?
-    get() = if (project.name == "firebase-firestore") project.file("src/main/assets") else null
+  val agentDocsDir: File?
+    get() =
+      if (project.name == "firebase-firestore")
+        project.file("${project.layout.buildDirectory.get().asFile}/agent-docs")
+      else null
 
   @get:Input abstract val updateBaseline: Property<Boolean>
 
@@ -160,7 +163,7 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
       val classPathString = classPathList.joinToString(":")
       val fsSourcePath = project.file("src/main/java").absolutePath
 
-      generateAssetDocs(
+      generateAgentDocs(
         targetFiles =
           listOf(project.file("src/main/java/com/google/firebase/firestore/Pipeline.kt")),
         stubDirName = "doc-stubs-pipeline",
@@ -169,7 +172,7 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
         sourcePath = fsSourcePath,
       )
 
-      generateAssetDocs(
+      generateAgentDocs(
         targetFiles =
           listOf(
             project.file("src/main/java/com/google/firebase/firestore/pipeline/expressions.kt"),
@@ -183,7 +186,7 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
     }
   }
 
-  private fun generateAssetDocs(
+  private fun generateAgentDocs(
     targetFiles: List<File>,
     stubDirName: String,
     outputFileName: String,
@@ -209,8 +212,9 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
       ignoreFailure = false,
     )
 
-    val assetsDocsFile = project.file("src/main/assets/$outputFileName")
-    project.file("src/main/assets").mkdirs()
+    val agentDocsFile =
+      project.file("${project.layout.buildDirectory.get().asFile}/agent-docs/$outputFileName")
+    project.file("${project.layout.buildDirectory.get().asFile}/agent-docs").mkdirs()
     val content = buildString {
       docStubsDir
         .walkTopDown()
@@ -222,7 +226,7 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
           append("\n\n")
         }
     }
-    assetsDocsFile.writeText(content)
+    agentDocsFile.writeText(content)
   }
 }
 
