@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.debug.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,9 +36,6 @@ public class ExchangeDebugTokenRequestTest {
 
     assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
         .isEqualTo(DEBUG_TOKEN);
-
-    assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
-        .isEqualTo(DEBUG_TOKEN);
     assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
   }
 
@@ -53,7 +49,6 @@ public class ExchangeDebugTokenRequestTest {
 
     assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
         .isEqualTo(DEBUG_TOKEN);
-    assertThat(jsonObject.getBoolean(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY))
-        .isEqualTo(true);
+    assertThat(jsonObject.getBoolean(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY)).isTrue();
   }
 }

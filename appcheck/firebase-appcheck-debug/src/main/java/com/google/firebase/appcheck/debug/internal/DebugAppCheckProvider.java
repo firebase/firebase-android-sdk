@@ -110,13 +110,13 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
-    return getToken(false);
+    return getToken(/* isLimitedUseToken= */ false);
   }
 
   @NonNull
   @Override
   public Task<AppCheckToken> getLimitedUseToken() {
-    return getToken(true);
+    return getToken(/* isLimitedUseToken= */ true);
   }
 
   private Task<AppCheckToken> getToken(boolean isLimitedUseToken) {

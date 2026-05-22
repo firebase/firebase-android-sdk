@@ -476,8 +476,6 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getLimitedUseToken())
         .thenReturn(Tasks.forException(new Exception((String) null)));
-    when(mockAppCheckProvider.getLimitedUseToken())
-        .thenReturn(Tasks.forException(new Exception((String) null)));
 
     Task<AppCheckTokenResult> tokenTask = defaultFirebaseAppCheck.getLimitedUseToken();
     assertThat(tokenTask.isComplete()).isTrue();
