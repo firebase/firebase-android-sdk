@@ -30,8 +30,8 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.breakpad.Breakpad
 import com.google.firebase.crashlytics.buildtools.ndk.internal.csym.NdkCSymGenerator
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -99,34 +99,65 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
     variant: Variant,
     unstrippedNativeLibsOverride: ConfigurableFileCollection,
   ) {
-    if (unstrippedNativeLibsOverride.isEmpty) {
-      unstrippedNativeLibsDirs.setFrom(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
-      return
-    }
+    val currentVariant = variant.name
 
-    val mergedNativeLibsOutput = "build/intermediates/merged_native_libs/${variant.name}/out"
-    if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
-      val mergedNativeLibsTask = "merge${variant.name.capitalized()}NativeLibs"
+    // Resolve the build directory name dynamically to support custom build directories.
+    val buildDirName = project.layout.buildDirectory.get().asFile.name
+    val mergedNativeLibsOutput =
+      "$buildDirName/intermediates/merged_native_libs/$currentVariant/out"
 
-      val dependencies =
-        unstrippedNativeLibsOverride.buildDependencies
-          .getDependencies(null)
-          .mapNotNull { it?.name }
-          .toSet()
+    // Extract default providers and collections OUTSIDE the lambda to avoid closure capture,
+    // thus preventing possible Gradle serialization issues.
+    val defaultMergedNativeLibs = variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS)
+    val defaultMergedNativeLibsCollection = project.files(defaultMergedNativeLibs)
 
-      if (!dependencies.contains(mergedNativeLibsTask)) {
-        try {
-          dependsOn(project.tasks.getByPath(mergedNativeLibsTask))
-        } catch (ex: UnknownTaskException) {
-          logger.warn(
-            "The unstrippedNativeLibsDir manually overridden to output of $mergedNativeLibsTask " +
-              "task. This is not necessary, it is safe to remove $mergedNativeLibsOutput from " +
-              "the unstrippedNativeLibsDir override."
-          )
+    this.unstrippedNativeLibsDirs.setFrom(
+      project.provider {
+        // Perform validation only at Gradle Realization Phase.
+        val filesCollection =
+          if (unstrippedNativeLibsOverride.isEmpty) {
+            defaultMergedNativeLibsCollection
+          } else {
+            unstrippedNativeLibsOverride
+          }
+
+        // Perform validation only if the user actually provided an override.
+        // If they did not, Gradle's default provider handles task dependencies automatically.
+        if (!unstrippedNativeLibsOverride.isEmpty) {
+          // Safely isolate and inspect paths using invariantSeparatorsPath (Windows safe).
+          val generatedLibsDir =
+            filesCollection.files.find {
+              it.invariantSeparatorsPath.contains(mergedNativeLibsOutput)
+            }
+
+          val reliesOnMergedLibs = generatedLibsDir != null
+
+          val isGeneratedDestPopulated =
+            reliesOnMergedLibs &&
+              generatedLibsDir.exists() &&
+              (generatedLibsDir.isFile ||
+                (generatedLibsDir.isDirectory && generatedLibsDir.list()?.isNotEmpty() == true))
+
+          // Throw the Exception only when user manually override it incorrectly.
+          if (reliesOnMergedLibs && !isGeneratedDestPopulated) {
+            throw GradleException(
+              """
+              Crashlytics Error: Missing Task Dependency.
+              The files in 'unstrippedNativeLibsDir' come from a Gradle generated directory ($mergedNativeLibsOutput),
+              but this task does not depend on the producer task.
+              
+              Fix this by adding an explicit 'dependsOn' to the merge task in your build script, 
+              or let Crashlytics handle it automatically by not overriding this property.
+              """
+                .trimIndent()
+            )
+          }
         }
+
+        // Returning the collection to Gradle so @SkipWhenEmpty works flawlessly
+        filesCollection
       }
-    }
-    unstrippedNativeLibsDirs.setFrom(unstrippedNativeLibsOverride)
+    )
   }
 
   /** Sets and validates the symbol generator type. */
