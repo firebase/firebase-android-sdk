@@ -115,7 +115,12 @@ class CrashlyticsExtensionTests {
     // Verify warning is only present when manual overrides points to mergeDebugNativeLibs output.
     assertThat(result.output)
       .contains(
-        "This is unnecessary, it is safe to remove (build/intermediates/merged_native_libs/debug/out)"
+        """
+    The unstrippedNativeLibsDir is manually overridden.
+    This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 
+    override in the CrashlyticsExtension configuration block.
+        """
+          .trimIndent()
       )
   }
 

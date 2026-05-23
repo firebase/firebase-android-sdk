@@ -113,24 +113,19 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
       }
     )
 
-    if (!unstrippedNativeLibsOverride.isEmpty) {
-      val currentVariant = variant.name
+    // Check if overridden path contains a reference for mergeNativeLibs path.
+    val logOverrideWarn =
+      unstrippedNativeLibsOverride.any { it.path.contains("/intermediates/merged_native_libs/") }
 
-      // Resolve the build directory name dynamically to support custom build directories.
-      val buildDirName = project.layout.buildDirectory.get().asFile.name
-      val mergedNativeLibsOutput =
-        "$buildDirName/intermediates/merged_native_libs/$currentVariant/out"
-
-      if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
-        logger.warn(
-          """
-                  The unstrippedNativeLibsDir is manually overridden to output of ($mergedNativeLibsOutput).
-                  This is unnecessary, it is safe to remove ($mergedNativeLibsOutput) from the unstrippedNativeLibsDir override
-                  in the CrashlyticsExtension configuration block.
+    if (logOverrideWarn) {
+      logger.warn(
+        """
+                  The unstrippedNativeLibsDir is manually overridden.
+                  This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 
+                  override in the CrashlyticsExtension configuration block.
               """
-            .trimIndent()
-        )
-      }
+          .trimIndent()
+      )
     }
   }
 
