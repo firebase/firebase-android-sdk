@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed issue preventing limited use tokens from being correctly generated. (#8204)
+
 # 19.0.2
 
 - [unchanged] Updated to keep [app_check] SDK versions aligned.
