@@ -172,17 +172,20 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
    * Opens and starts the gRPC server. If the server is already opened, it blocks until it is fully
    * started and returns the instance.
    *
+   * @param port The TCP port to which to bind; a value of 0 (the default) picks a random available
+   * port, whose value can be retrieved from the [port] property of this object after this method
+   * returns, or the [Server.getPort] method of the returned server.
    * @return The started gRPC [Server] instance.
    * @throws IllegalStateException if [close] has been called.
    */
-  fun open(): Server {
+  fun open(port: Int = 0): Server {
     while (true) {
       when (val currentState = state.get()) {
         is State.Unopened -> {
           val future = CompletableFuture<Unit>()
           val eventHandler = EventHandler(_events, listener)
           val server =
-            OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+            OkHttpServerBuilder.forPort(port, InsecureServerCredentials.create())
               .addService(ConnectorStreamingServiceImpl(eventHandler))
               .intercept(ServerInterceptorImpl(eventHandler))
               .build()

@@ -78,3 +78,25 @@ This design guarantees that the subscription request is sent exactly once, safel
 * **Negative/Risks:**
   * If a subscriber disconnects and immediately reconnects within less than a millisecond, they might not get the replay cache, but since they want a fresh reconnection anyway when the stream is closed, this is the desirable behavior.
 
+---
+
+## Amendment (May 19, 2026)
+
+### Status: Superseded
+
+The design described in this ADR has been **superseded** by the architecture documented in
+[ADR 0004](adr-0004-coordinate-multiplexed-subscriptions-using-conflatedsignal-and-replay-0.md).
+
+**Key changes since this decision:**
+- The internal `sharedFlow` was changed from `replay = 1` to `replay = 0` (disabling the replay
+cache completely).
+- `SubscriptionStateManager` and `Subscriber` were removed.
+- A new thread-safe utility `ConflatedSignal` was introduced to coordinate `subscribe` and
+`resume` requests.
+- The connection state is now managed via `SubscriptionState` (`Disconnected`,
+`DisconnectedWithPendingSubscription`, `Connected`).
+
+By switching to `replay = 0` and using `ConflatedSignal`, we completely eliminated the stale
+replay cache issues, rendering the complex `replayExpirationMillis = 0` cache clearance and the
+`SubscriptionStateManager` obsolete.
+

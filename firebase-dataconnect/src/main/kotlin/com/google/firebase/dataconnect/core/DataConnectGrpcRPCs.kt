@@ -22,9 +22,9 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -241,7 +241,7 @@ internal class DataConnectGrpcRPCs(
 
   private class QueryCacheInfo(
     val cacheDb: DataConnectCacheDatabase,
-    val authUid: String?,
+    val authUid: AuthUid?,
     val queryId: ImmutableByteArray,
     val maxAge: DurationProto,
   )
@@ -384,7 +384,6 @@ internal class DataConnectGrpcRPCs(
     return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
-  @ExperimentalRealtimeQueries
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
@@ -412,18 +411,24 @@ internal class DataConnectGrpcRPCs(
         grpcChannel = lazyGrpcChannel.get(),
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
-        headers = { metadata },
+        headers = { GrpcBidiFlow.HeadersResult(metadata, authToken?.authUid) },
         idStringGenerator = idStringGenerator,
         initRequests = listOf(initRequest),
         listener = grpcBidiFlowListener,
       )
 
-    return DataConnectBidiConnectStream(flow, connectCoroutineScope)
+    return DataConnectBidiConnectStream(
+      flow,
+      connectCoroutineScope,
+      Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
+        it.debug { "created by ${logger.nameWithId}" }
+      }
+    )
   }
 
   private inner class ConnectGrpcBidiFlowListener(
     private val streamId: String,
-    private val authUid: String?,
+    private val authUid: AuthUid?,
     private val initRequest: StreamRequest,
     private val kotlinMethodName: String,
   ) : GrpcBidiFlow.Listener<StreamRequest, StreamResponse> {
@@ -440,9 +445,9 @@ internal class DataConnectGrpcRPCs(
       override fun connectionStarting(
         method: MethodDescriptor<StreamRequest, StreamResponse>,
         callOptions: CallOptions,
-        headers: Metadata,
+        headers: Metadata?,
       ) {
-        this.headers = headers.copy()
+        this.headers = headers?.copy()
       }
 
       override fun sendingMessage(message: StreamRequest) {
@@ -507,10 +512,10 @@ internal class DataConnectGrpcRPCs(
   }
 
   @Suppress("unused")
-  private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: String?) :
+  private class ConnectGrpcBidiFlowListenerFormatter(private val authUid: AuthUid?) :
     GrpcBidiFlowListenerMessageFormatter.Formatter<StreamRequest, StreamResponse>() {
-    override fun connectionStartingHeaders(headers: Metadata): String =
-      headers.toStructProto(authUid).toCompactString()
+    override fun connectionStartingHeaders(headers: Metadata?): String =
+      headers?.toStructProto(authUid)?.toCompactString().toString()
 
     override fun onCloseTrailers(trailers: Metadata): String =
       trailers.toStructProto(authUid).toCompactString()
@@ -598,6 +603,7 @@ internal class DataConnectGrpcRPCs(
     val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
 
     if (grpcChannel === null && cacheDb === null) {
+      connectCoroutineScope.coroutineContext.job.join()
       return
     }
 
@@ -677,7 +683,7 @@ internal class DataConnectGrpcRPCs(
       metadata: Metadata?,
       request: () -> Struct,
       requestTypeName: String,
-      authUid: String?,
+      authUid: AuthUid?,
     ) = debug {
       val requestStruct = request()
       val struct = buildStructProto {
