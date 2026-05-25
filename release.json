@@ -1,0 +1,13 @@
+{
+    "name": "m181",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-dataconnect",
+        ":ai-logic:firebase-ai",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity"
+    ]
+}
