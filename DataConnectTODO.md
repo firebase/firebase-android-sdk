@@ -34,3 +34,4 @@ I can run a bunch of emulators on a remote linux box and run the integration tes
 https://medium.com/mesmerhq/shard-your-android-espresso-tests-for-faster-execution-in-parallel-e66f1b5061ae
 
 Ask gemini to spit out the ssh and adb commands to forward the ports from the remote emulators
+
