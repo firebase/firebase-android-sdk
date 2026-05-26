@@ -88,6 +88,8 @@ https://chat.google.com/room/AAAAlocx6vc/Ir33EH3Bxks/Ir33EH3Bxks?cls=10
 
 Also, grpc provides a BoM `grpc-bom` that we should use instead of manual grpc version management.
 
+On May 26, 2026 a customer reported issue requests a gRPC upgrade: https://github.com/firebase/firebase-ios-sdk/issues/16203
+
 ## FirebaseDataConnect.close() refactor
 
 Re-evaluate the public APIs of FirebaseDataConnect.close().
