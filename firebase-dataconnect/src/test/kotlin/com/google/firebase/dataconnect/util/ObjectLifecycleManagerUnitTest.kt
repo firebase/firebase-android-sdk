@@ -312,12 +312,15 @@ class ObjectLifecycleManagerUnitTest {
     testScope.runTest {
       val latch1 = SuspendingCountDownLatch(2)
       val latch2 = SuspendingCountDownLatch(2)
-      val awaitException = AtomicReference<Throwable>(null)
+      val awaitException = AtomicReference<Throwable?>(null)
       val objectLifecycleManager =
         TestObjectLifecycleManager(
           initializeImpl = {
-            latch1.countDown().await()
-            latch2.countDown().runCatching { await() }.onFailure { awaitException.set(it) }
+            runCatching {
+                latch1.countDown().await()
+                latch2.countDown().await()
+              }
+              .onFailure { awaitException.set(it) }
           }
         )
       backgroundScope.launch(Dispatchers.Default) {
