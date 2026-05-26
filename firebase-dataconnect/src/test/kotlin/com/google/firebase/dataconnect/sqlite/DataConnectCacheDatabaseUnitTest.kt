@@ -84,6 +84,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +112,7 @@ class DataConnectCacheDatabaseUnitTest {
   private val lazyDataConnectCacheDatabase = lazy {
     val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
     val mockLogger: Logger = mockk(relaxed = true)
-    DataConnectCacheDatabase(dbFile, mockLogger)
+    DataConnectCacheDatabase(dbFile, Dispatchers.Default, mockLogger)
   }
 
   private val dataConnectCacheDatabase: DataConnectCacheDatabase by
@@ -133,7 +134,7 @@ class DataConnectCacheDatabaseUnitTest {
   fun `initialize() should create the database at the file given to the constructor`() = runTest {
     val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
     val mockLogger: Logger = mockk(relaxed = true)
-    val dataConnectCacheDatabase = DataConnectCacheDatabase(dbFile, mockLogger)
+    val dataConnectCacheDatabase = DataConnectCacheDatabase(dbFile, Dispatchers.Default, mockLogger)
 
     dataConnectCacheDatabase.initialize()
 
@@ -151,7 +152,7 @@ class DataConnectCacheDatabaseUnitTest {
   fun `initialize() should create an in-memory database if a null file given to the constructor`() =
     runTest {
       val mockLogger: Logger = mockk(relaxed = true)
-      val dataConnectCacheDatabase = DataConnectCacheDatabase(null, mockLogger)
+      val dataConnectCacheDatabase = DataConnectCacheDatabase(null, Dispatchers.Default, mockLogger)
 
       dataConnectCacheDatabase.initialize()
 

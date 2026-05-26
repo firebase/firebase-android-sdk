@@ -41,6 +41,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -53,6 +54,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Provides and manages access to the sqlite database used to stored cached query results for
@@ -65,6 +67,7 @@ import kotlinx.coroutines.sync.withLock
  */
 internal class DataConnectCacheDatabase(
   private val dbFile: File?,
+  private val cpuDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
 
@@ -533,16 +536,23 @@ internal class DataConnectCacheDatabase(
     require(queryId.bytes.size > 0) {
       "queryId.bytes.size=${queryId.bytes.size}, but must be greater than zero [ab4em538tb]"
     }
-    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
-    val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
 
-    val expiryProtoBytes =
-      QueryResultExpiry.newBuilder().let {
-        val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
-        it.setMaxAge(maxAge)
-        it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
-        ImmutableByteArray.adopt(it.build().toByteArray())
-      }
+    val queryResultProtoBytes: ImmutableByteArray
+    val expiryProtoBytes: ImmutableByteArray
+    val entityStructById: Map<String, Struct>
+    withContext(cpuDispatcher) {
+      val dehydratedQueryResult = dehydrateQueryResult(queryData, getEntityIdForPath)
+      entityStructById = dehydratedQueryResult.entityStructById
+      queryResultProtoBytes = ImmutableByteArray.adopt(dehydratedQueryResult.proto.toByteArray())
+
+      expiryProtoBytes =
+        QueryResultExpiry.newBuilder().let {
+          val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
+          it.setMaxAge(maxAge)
+          it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
+          ImmutableByteArray.adopt(it.build().toByteArray())
+        }
+    }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
