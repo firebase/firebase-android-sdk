@@ -26,3 +26,11 @@ Make sure the document in `CpuDispatcher` that long-running CPU operations shoul
 thread interruption and wrap the call to a non-suspend function in runInterruptibly so that
 they release the thread if cancelled eagerly. The former is preferred because it also
 enables cooperative thread sharing
+
+## Instrumentation test sharding
+
+I can run a bunch of emulators on a remote linux box and run the integration tests in parallel.
+
+https://medium.com/mesmerhq/shard-your-android-espresso-tests-for-faster-execution-in-parallel-e66f1b5061ae
+
+Ask gemini to spit out the ssh and adb commands to forward the ports from the remote emulators
