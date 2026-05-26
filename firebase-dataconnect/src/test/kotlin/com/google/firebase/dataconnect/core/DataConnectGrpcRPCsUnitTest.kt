@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.CacheSettings
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResult
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
@@ -494,7 +493,7 @@ class DataConnectGrpcRPCsUnitTest {
       nonBlockingCoroutineDispatcher = Dispatchers.Default,
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.next(rs),
-      cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
+      cache = DataConnectCache(newDbFile(), maxAge = 1.hours, Dispatchers.Default, mockLogger),
       parentLogger = mockLogger,
     )
 }
