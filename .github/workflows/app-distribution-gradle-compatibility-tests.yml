@@ -62,4 +62,4 @@ jobs:
           gh issue create \
             --title "[firebase-appdistribution] Gradle Compatibility Tests Failed" \
             --body "The daily compatibility tests failed on the main branch. Please check the workflow logs here to diagnose the failure: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --label "bug,ci-failure,api: appdistribution"
+            --label "api: appdistribution"
