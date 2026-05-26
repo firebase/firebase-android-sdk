@@ -35,10 +35,8 @@ import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlowListenerMessageFormatter
 import com.google.firebase.dataconnect.util.IdStringGenerator
-import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
@@ -94,7 +92,7 @@ internal class DataConnectGrpcRPCs(
   host: String,
   sslEnabled: Boolean,
   @get:VisibleForTesting val connectorResourceName: String,
-  nonBlockingCoroutineDispatcher: CoroutineDispatcher,
+  private val nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val cacheSettings: CacheSettings?,
@@ -242,22 +240,27 @@ internal class DataConnectGrpcRPCs(
   private class QueryCacheInfo(
     val cacheDb: DataConnectCacheDatabase,
     val authUid: AuthUid?,
-    val queryId: ImmutableByteArray,
+    val queryId: QueryId,
     val maxAge: DurationProto,
   )
 
   private suspend fun queryCacheInfo(
     authToken: DataConnectAuth.GetAuthTokenResult?,
     request: ExecuteQueryRequest,
-  ) =
-    lazyCacheDb.get().ref?.let { (cacheDb, maxAge) ->
+  ): QueryCacheInfo? {
+    val queryId =
+      withContext(nonBlockingCoroutineDispatcher) {
+        calculateQueryId(request.operationName, request.variables)
+      }
+    return lazyCacheDb.get().ref?.let { (cacheDb, maxAge) ->
       QueryCacheInfo(
         cacheDb,
         authUid = authToken?.authUid,
-        queryId = request.calculateQueryId(),
+        queryId = queryId,
         maxAge = maxAge,
       )
     }
+  }
 
   suspend fun executeQuery(
     requestId: String,
@@ -783,9 +786,6 @@ internal class DataConnectGrpcRPCs(
       }
   }
 }
-
-private fun ExecuteQueryRequest.calculateQueryId(): ImmutableByteArray =
-  variables.calculateSha512(preamble = operationName)
 
 @JvmName("getEntityIdForPathFunction_ExecuteQueryResponse")
 private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? =
