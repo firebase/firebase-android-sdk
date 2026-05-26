@@ -392,11 +392,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
     PersistedInstallationEntry updatedPrefs;
-    boolean isNewFID = false;
     try {
       if (prefs.isErrored() || prefs.isUnregistered()) {
         updatedPrefs = registerFidWithServer(prefs);
-        isNewFID = true;
       } else if (forceRefresh || utils.isAuthTokenExpired(prefs)) {
         updatedPrefs = fetchAuthTokenFromServer(prefs);
       } else {
@@ -412,9 +410,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     insertOrUpdatePrefs(updatedPrefs);
 
     // Update FidListener if a fid is new or has changed.
-    if (isNewFID
-        || !TextUtils.equals(
-            prefs.getFirebaseInstallationId(), updatedPrefs.getFirebaseInstallationId())) {
+    if (shouldNotifyFidListener(prefs, updatedPrefs)) {
       updateFidListener(updatedPrefs);
     }
 
@@ -435,6 +431,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     } else {
       triggerOnStateReached(prefs);
     }
+  }
+
+  private boolean shouldNotifyFidListener(
+      PersistedInstallationEntry prefs, PersistedInstallationEntry updatedPrefs) {
+    if (updatedPrefs.isRegistered()
+        && !TextUtils.isEmpty(updatedPrefs.getFirebaseInstallationId())) {
+      if (!TextUtils.equals(
+          prefs.getFirebaseInstallationId(), updatedPrefs.getFirebaseInstallationId())) {
+        // Fid has changed
+        return true;
+      }
+      // A new FID is just registered/An errored FID got registered/re-registered.
+      return !prefs.isRegistered();
+    }
+    return false;
   }
 
   private synchronized void updateFidListener(@NonNull PersistedInstallationEntry updatedPrefs) {
