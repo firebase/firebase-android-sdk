@@ -2,7 +2,7 @@ name: App Distribution Gradle Compatibility Tests
 
 on:
   schedule:
-    - cron: '0 6 * * *' # Run daily at 6 AM
+    - cron: '0 6 * * *' # Run daily at 6:00 am UTC
   pull_request:
     paths:
       - 'firebase-appdistribution/**'
@@ -55,7 +55,7 @@ jobs:
           path: firebase-appdistribution-gradle/build/reports/tests/
       
       - name: Create GitHub Issue on Failure
-        if: failure() && (github.event_name == 'schedule')
+        if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
