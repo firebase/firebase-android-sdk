@@ -11,7 +11,7 @@
   ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
 - [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
   if local caching is not enabled, instead of behaving like SERVER_ONLY.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
 
 # 17.2.2
 
