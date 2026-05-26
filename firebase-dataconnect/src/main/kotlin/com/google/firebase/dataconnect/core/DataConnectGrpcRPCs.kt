@@ -279,6 +279,15 @@ internal class DataConnectGrpcRPCs(
         it.build()
       }
 
+    val cacheInfo = queryCacheInfo(authToken, request)
+    if (cacheInfo == null && fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      throw CachedDataNotFoundException(
+        "FetchPolicy.CACHE_ONLY cannot be used because local caching is not configured. " +
+          "To use CACHE_ONLY, specify a DataConnectSettings object with a non-null `cacheSettings` " +
+          "property to FirebaseDataConnect.getInstance() [sz664hyg7t]"
+      )
+    }
+
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
@@ -288,8 +297,6 @@ internal class DataConnectGrpcRPCs(
       requestTypeName = "ExecuteQueryRequest",
       authUid = authToken?.authUid,
     )
-
-    val cacheInfo = queryCacheInfo(authToken, request)
 
     if (fetchPolicy != FetchPolicy.SERVER_ONLY) {
       val cachedResult: ExecuteQueryResult.FromCache? =
@@ -301,6 +308,17 @@ internal class DataConnectGrpcRPCs(
       if (cachedResult !== null) {
         return cachedResult
       }
+    }
+
+    if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      val exception =
+        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        throwable = exception,
+      )
+      throw exception
     }
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
@@ -369,17 +387,6 @@ internal class DataConnectGrpcRPCs(
         }
         is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
       }
-
-    if (cachedData === null && fetchPolicy == FetchPolicy.CACHE_ONLY) {
-      val exception =
-        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
-      logger.logGrpcFailed(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        throwable = exception,
-      )
-      throw exception
-    }
 
     return cachedData?.let(ExecuteQueryResult::FromCache)
   }
