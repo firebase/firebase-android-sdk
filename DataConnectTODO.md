@@ -35,3 +35,7 @@ https://medium.com/mesmerhq/shard-your-android-espresso-tests-for-faster-executi
 
 Ask gemini to spit out the ssh and adb commands to forward the ports from the remote emulators
 
+## Test stability of cache database name
+
+Add tests to verify that the algorithm used by FirebaseDataConnectImpl.createDataConnectCache()
+to calculate the database path NEVER changes.
