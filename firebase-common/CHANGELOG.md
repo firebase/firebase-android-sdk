@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Resolved a thread deadlock in HeartBeatInfoStorage when using Jetpack DataStore background executors.(#8182)
+
 # 22.0.1
 
 - [changed] Improve datastore support (#7277)
