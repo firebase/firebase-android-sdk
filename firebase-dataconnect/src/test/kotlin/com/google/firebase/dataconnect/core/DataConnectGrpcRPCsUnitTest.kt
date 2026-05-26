@@ -262,6 +262,48 @@ class DataConnectGrpcRPCsUnitTest {
   }
 
   @Test
+  fun `executeQuery(fetchPolicy=CACHE_ONLY) with null cacheSettings throws CachedDataNotFoundException`() =
+    runTest {
+      startServer().use { server ->
+        val dataConnectGrpcRPCs =
+          DataConnectGrpcRPCs(
+            context = RuntimeEnvironment.getApplication(),
+            host = "localhost:${server.port}",
+            sslEnabled = false,
+            connectorResourceName = connectorResourceNameArb.next(rs),
+            nonBlockingCoroutineDispatcher = Dispatchers.Default,
+            blockingCoroutineDispatcher = Dispatchers.IO,
+            grpcMetadata = grpcMetadataArb.next(rs),
+            cache = null,
+            parentLogger = mockLogger,
+          )
+        val request = operationNameVariablesPairArb.next(rs)
+
+        val exception =
+          shouldThrow<CachedDataNotFoundException> {
+            dataConnectGrpcRPCs.executeQuery(
+              requestIdArb.next(rs),
+              request.operationName,
+              request.variables,
+              callerSdkTypeArb.next(rs),
+              FetchPolicy.CACHE_ONLY,
+              Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(rs),
+              Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(rs),
+            )
+          }
+
+        assertSoftly {
+          withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 0 }
+          exception.message shouldContainWithNonAbuttingText "sz664hyg7t"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "FetchPolicy.CACHE_ONLY cannot be used"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "DataConnectSettings object with a non-null `cacheSettings`"
+        }
+      }
+    }
+
+  @Test
   fun `executeQuery(fetchPolicy!=SERVER_ONLY) returns non-normalized query results from cache`() =
     runTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
