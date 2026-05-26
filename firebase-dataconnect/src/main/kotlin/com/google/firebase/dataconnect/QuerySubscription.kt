@@ -24,10 +24,10 @@ import kotlinx.coroutines.flow.*
  *
  * ### Realtime updates (May 2026)
  *
- * Starting with SDK version 17.3.0 (May 2026) query subscriptions gained support for realtime
- * updates. See
+ * Starting with SDK version 17.3.0 (Firebase BoM 34.13.0, May 2026) query subscriptions gained
+ * support for realtime updates. See
  * [Get real-time updates from SQL Connect](https://firebase.google.com/docs/sql-connect/realtime)
- * for details about this feature in the entire product.
+ * for details.
  *
  * Prior to SDK version 17.3.0, updates were _not_ realtime, and were _not_ pushed from the server.
  * Instead, the notifications were sent whenever the query was explicitly executed by calling
@@ -73,8 +73,8 @@ public interface QuerySubscription<Data, Variables> {
   /**
    * A cold flow that collects the query results as they become available.
    *
-   * Starting with SDK version 17.3.0 (May 2026) query subscriptions gained support for realtime
-   * updates. See [QuerySubscription] for details.
+   * Starting with SDK version 17.3.0 (Firebase BoM 34.13.0, May 2026) query subscriptions gained
+   * support for realtime updates. See [QuerySubscription] for details.
    */
   public val flow: Flow<QuerySubscriptionResult<Data, Variables>>
 

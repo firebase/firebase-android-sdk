@@ -41,13 +41,13 @@ Follow these steps sequentially:
 7. **Fetch Latest firebase-tools Version:**
    Determine the latest release version number of the `firebase-tools` repository using the GitHub CLI `gh` or by fetching the latest release for `Firebase/firebase-tools`. Do not include the 'v' prefix in the version number (e.g., use `15.8.0` instead of `v15.8.0`).
 
-8. **Update GitHub Actions YAML Files:**
-   Edit `../.github/workflows/dataconnect.yml` and `../.github/workflows/dataconnect_demo_app.yml`. Change the default `FDC_FIREBASE_TOOLS_VERSION` value to the latest release version number determined in the previous step. Note what the previous version was.
+8. **Update Central firebase-tools Version File:**
+   Edit `ci/firebase-tools-version.txt`. Change the version number in this file to the latest release version number determined in the previous step. Note what the previous version was.
 
 9. **Commit firebase-tools Update:**
-   Add the YAML files and git commit the changes using a commit message that conforms exactly to this template:
-   `dataconnect.yml/dataconnect_demo_app.yml: updated firebase-tools to <new_tools_version> (was <old_tools_version>)`
-   *Example: `dataconnect.yml/dataconnect_demo_app.yml: updated firebase-tools to 15.8.0 (was 15.6.0)`*
+   Add the version file and git commit the changes using a commit message that conforms exactly to this template:
+   `firebase-tools-version.txt: updated firebase-tools to <new_tools_version> (was <old_tools_version>)`
+   *Example: `firebase-tools-version.txt: updated firebase-tools to 15.8.0 (was 15.6.0)`*
 
 10. **Push Changes to GitHub:**
     Push the changes up to the remote origin by running this exact command, substituting `Emulator_X_Y_Z` appropriately:

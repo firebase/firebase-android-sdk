@@ -26,7 +26,8 @@ public class ExchangeRecaptchaEnterpriseTokenRequestTest {
   @Test
   public void toJsonString_expectSerialized() throws Exception {
     ExchangeRecaptchaEnterpriseTokenRequest exchangeRecaptchaEnterpriseTokenRequest =
-        new ExchangeRecaptchaEnterpriseTokenRequest(RECAPTCHA_ENTERPRISE_TOKEN);
+        new ExchangeRecaptchaEnterpriseTokenRequest(
+            RECAPTCHA_ENTERPRISE_TOKEN, /* isLimitedUseToken= */ false);
 
     String jsonString = exchangeRecaptchaEnterpriseTokenRequest.toJsonString();
     JSONObject jsonObject = new JSONObject(jsonString);
@@ -35,5 +36,24 @@ public class ExchangeRecaptchaEnterpriseTokenRequestTest {
             jsonObject.getString(
                 ExchangeRecaptchaEnterpriseTokenRequest.RECAPTCHA_ENTERPRISE_TOKEN_KEY))
         .isEqualTo(RECAPTCHA_ENTERPRISE_TOKEN);
+    assertThat(jsonObject.opt(ExchangeRecaptchaEnterpriseTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isNull();
+  }
+
+  @Test
+  public void toJsonString_limitedUse_expectSerialized() throws Exception {
+    ExchangeRecaptchaEnterpriseTokenRequest exchangeRecaptchaEnterpriseTokenRequest =
+        new ExchangeRecaptchaEnterpriseTokenRequest(
+            RECAPTCHA_ENTERPRISE_TOKEN, /* isLimitedUseToken= */ true);
+
+    String jsonString = exchangeRecaptchaEnterpriseTokenRequest.toJsonString();
+    JSONObject jsonObject = new JSONObject(jsonString);
+
+    assertThat(
+            jsonObject.getString(
+                ExchangeRecaptchaEnterpriseTokenRequest.RECAPTCHA_ENTERPRISE_TOKEN_KEY))
+        .isEqualTo(RECAPTCHA_ENTERPRISE_TOKEN);
+    assertThat(jsonObject.optBoolean(ExchangeRecaptchaEnterpriseTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isTrue();
   }
 }

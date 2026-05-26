@@ -28,16 +28,24 @@ public class ExchangeRecaptchaEnterpriseTokenRequest {
   @VisibleForTesting
   static final String RECAPTCHA_ENTERPRISE_TOKEN_KEY = "recaptchaEnterpriseToken";
 
-  private final String recaptchaEnterpriseToken;
+  @VisibleForTesting static final String LIMITED_USE_TOKEN_KEY = "limited_use";
 
-  public ExchangeRecaptchaEnterpriseTokenRequest(@NonNull String recaptchaEnterpriseToken) {
+  private final String recaptchaEnterpriseToken;
+  private final boolean isLimitedUseToken;
+
+  public ExchangeRecaptchaEnterpriseTokenRequest(
+      @NonNull String recaptchaEnterpriseToken, boolean isLimitedUseToken) {
     this.recaptchaEnterpriseToken = recaptchaEnterpriseToken;
+    this.isLimitedUseToken = isLimitedUseToken;
   }
 
   @NonNull
   public String toJsonString() throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(RECAPTCHA_ENTERPRISE_TOKEN_KEY, recaptchaEnterpriseToken);
+    if (isLimitedUseToken) {
+      jsonObject.put(LIMITED_USE_TOKEN_KEY, true);
+    }
 
     return jsonObject.toString();
   }

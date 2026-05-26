@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Found
@@ -276,7 +277,7 @@ class DataConnectCacheDatabaseUnitTest {
       Arb.proto.struct()
     ) { authUid, queryId, maxAge, structSample ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId.bytes,
         structSample.struct,
         maxAge = maxAge,
@@ -286,7 +287,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       val result =
         dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -309,7 +310,7 @@ class DataConnectCacheDatabaseUnitTest {
     ) { authUid, queryId, maxAge, structSamples ->
       structSamples.forEach {
         dataConnectCacheDatabase.insertQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId.bytes,
           it.struct,
           maxAge = maxAge,
@@ -320,7 +321,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       val result =
         dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -342,7 +343,7 @@ class DataConnectCacheDatabaseUnitTest {
       Arb.twoValues(Arb.proto.struct())
     ) { (authUid1, authUid2), queryId, maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid1.string,
+        authUid1.authUid,
         queryId.bytes,
         structSample1.struct,
         maxAge = maxAge,
@@ -350,7 +351,7 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
-        authUid2.string,
+        authUid2.authUid,
         queryId.bytes,
         structSample2.struct,
         maxAge = maxAge,
@@ -360,7 +361,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       val result1 =
         dataConnectCacheDatabase.getQueryResult(
-          authUid1.string,
+          authUid1.authUid,
           queryId.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -368,7 +369,7 @@ class DataConnectCacheDatabaseUnitTest {
       val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
       val result2 =
         dataConnectCacheDatabase.getQueryResult(
-          authUid2.string,
+          authUid2.authUid,
           queryId.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -393,7 +394,7 @@ class DataConnectCacheDatabaseUnitTest {
       Arb.twoValues(Arb.proto.struct())
     ) { authUid, (queryId1, queryId2), maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId1.bytes,
         structSample1.struct,
         maxAge = maxAge,
@@ -401,7 +402,7 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId2.bytes,
         structSample2.struct,
         maxAge = maxAge,
@@ -411,7 +412,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       val result1 =
         dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId1.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -419,7 +420,7 @@ class DataConnectCacheDatabaseUnitTest {
       val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
       val result2 =
         dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId2.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -444,7 +445,7 @@ class DataConnectCacheDatabaseUnitTest {
       QueryResultArb(entityCountRange = 1..5),
     ) { authUid, queryId, maxAge, queryResult ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId.bytes,
         queryResult.hydratedStruct,
         maxAge = maxAge,
@@ -454,7 +455,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       val result =
         dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId.bytes,
           currentTimeMillis = 0L,
           staleResult = Stale::class,
@@ -497,7 +498,7 @@ class DataConnectCacheDatabaseUnitTest {
       queryResultsByAuthUid.forEach { (authUid, queryResults) ->
         queryIds.zip(queryResults).forEach { (queryId, queryResult) ->
           dataConnectCacheDatabase.insertQueryResult(
-            authUid.string,
+            authUid.authUid,
             queryId.bytes,
             queryResult.hydratedStruct,
             maxAge = maxAge,
@@ -512,7 +513,7 @@ class DataConnectCacheDatabaseUnitTest {
           queryIds.zip(queryResults).forEachIndexed { queryIdIndex, (queryId, queryResult) ->
             val result =
               dataConnectCacheDatabase.getQueryResult(
-                authUid.string,
+                authUid.authUid,
                 queryId.bytes,
                 currentTimeMillis = 0L,
                 staleResult = Stale::class,
@@ -548,7 +549,7 @@ class DataConnectCacheDatabaseUnitTest {
 
       queryIds.zip(queryResults).forEach { (queryId, queryResult) ->
         dataConnectCacheDatabase.insertQueryResult(
-          authUid.string,
+          authUid.authUid,
           queryId.bytes,
           queryResult.hydratedStruct,
           maxAge = maxAge,
@@ -560,7 +561,7 @@ class DataConnectCacheDatabaseUnitTest {
       queryIds.zip(queryResults).forEachIndexed { index, (queryId, queryResult) ->
         val result =
           dataConnectCacheDatabase.getQueryResult(
-            authUid.string,
+            authUid.authUid,
             queryId.bytes,
             currentTimeMillis = 0L,
             staleResult = Stale::class,
@@ -592,7 +593,7 @@ class DataConnectCacheDatabaseUnitTest {
       val queryResult2 = queryResultArb.bind()
 
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId1.bytes,
         queryResult1.hydratedStruct,
         maxAge = maxAge,
@@ -600,7 +601,7 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = queryResult1::getEntityIdForPath,
       )
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId2.bytes,
         queryResult2.hydratedStruct,
         maxAge = maxAge,
@@ -611,7 +612,7 @@ class DataConnectCacheDatabaseUnitTest {
       withClue("query2") {
         val result =
           dataConnectCacheDatabase.getQueryResult(
-            authUid.string,
+            authUid.authUid,
             queryId2.bytes,
             currentTimeMillis = 0L,
             staleResult = Stale::class,
@@ -622,7 +623,7 @@ class DataConnectCacheDatabaseUnitTest {
       withClue("query1") {
         val result =
           dataConnectCacheDatabase.getQueryResult(
-            authUid.string,
+            authUid.authUid,
             queryId1.bytes,
             currentTimeMillis = 0L,
             staleResult = Stale::class,
@@ -858,7 +859,7 @@ class DataConnectCacheDatabaseUnitTest {
     verifyResult: (GetQueryResultResult) -> Unit,
   ) {
     dataConnectCacheDatabase.insertQueryResult(
-      authUid.string,
+      authUid.authUid,
       queryId.bytes,
       queryResultData,
       maxAge = maxAge,
@@ -868,7 +869,7 @@ class DataConnectCacheDatabaseUnitTest {
 
     val result =
       dataConnectCacheDatabase.getQueryResult(
-        authUid.string,
+        authUid.authUid,
         queryId.bytes,
         currentTimeMillis = time2,
         staleResult,
@@ -886,10 +887,12 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off
   )
 
-private data class AuthUidSample(val string: String?)
+private data class AuthUidSample(val authUid: AuthUid?)
 
 private fun authUidArb(): Arb<AuthUidSample> =
-  Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
+  Arb.proto.structKey().orNull(nullProbability = 0.33).map {
+    AuthUidSample(if (it !== null) AuthUid(it) else null)
+  }
 
 private data class QueryIdSample(val bytes: ImmutableByteArray) {
   override fun toString() = "QueryIdSample(bytes=${bytes.to0xHexString()})"
