@@ -9,6 +9,9 @@
   as the random numbers were not used in a security-sensitive context,
   thus the performance costs of secure random number generation were unnecessary.
   ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
+  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
 
 # 17.2.2
 
