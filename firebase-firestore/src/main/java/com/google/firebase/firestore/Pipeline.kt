@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -51,6 +52,7 @@ import com.google.firebase.firestore.pipeline.RawStage
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
+import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
@@ -72,16 +74,23 @@ import com.google.firestore.v1.Value
  * A `Pipeline` is composed of a sequence of stages. Each stage processes the output from the
  * previous one, and the final stage's output is the result of the pipeline's execution.
  *
- * <p><b>Example usage:</b> <pre>{@code Pipeline pipeline = firestore.pipeline()
- * .collection("books") .where(Field("rating").isGreaterThan(4.5))
- * .sort(Field("rating").descending()) .limit(2); }</pre>
+ * **Example usage:**
  *
- * <p><b>Note on Execution:</b> The stages are conceptual. The Firestore backend may optimize
- * execution (e.g., reordering or merging stages) as long as the final result remains the same.
+ * ```kotlin
+ * val pipeline = firestore.pipeline()
+ *   .collection("books")
+ *   .where(field("rating").greaterThan(4.5))
+ *   .sort(field("rating").descending())
+ *   .limit(2)
+ * ```
  *
- * <p><b>Important Limitations:</b> <ul> <li>Pipelines operate on a <b>request/response basis
- * only</b>. <li>They do <b>not</b> utilize or update the local SDK cache. <li>They do <b>not</b>
- * support realtime snapshot listeners. </ul>
+ * **Note on Execution:** The stages are conceptual. The Firestore backend may optimize execution
+ * (e.g., reordering or merging stages) as long as the final result remains the same.
+ *
+ * **Important Limitations:**
+ * - Pipelines operate on a **request/response basis only**.
+ * - They do **not** utilize or update the local SDK cache.
+ * - They do **not** support realtime snapshot listeners.
  */
 class Pipeline
 internal constructor(
@@ -143,7 +152,7 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(
+  internal fun toStructuredPipelineProto(
     options: InternalOptions?,
     userDataReader: UserDataReader
   ): StructuredPipeline {
@@ -159,7 +168,7 @@ internal constructor(
       .build()
   }
 
-  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+  internal fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
     checkNotNull(firestore) {
       "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
     }
@@ -257,12 +266,12 @@ internal constructor(
    * [Expr.alias]
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("books")
    *   .addFields(
    *     field("rating").as("bookRating"), // Rename 'rating' to 'bookRating'
    *     add(5, field("quantity")).as("totalCost")  // Calculate 'totalCost'
-   *   );
+   *   )
    * ```
    *
    * @param field The first field to add to the documents, specified as a [Selectable].
@@ -276,11 +285,11 @@ internal constructor(
    * Remove fields from outputs of previous stages.
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("books")
    *   .removeFields(
    *     field("rating"), field("cost")
-   *   );
+   *   )
    * ```
    *
    * @param field The first [Field] to remove.
@@ -294,11 +303,11 @@ internal constructor(
    * Remove fields from outputs of previous stages.
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("books")
    *   .removeFields(
    *     "rating", "cost"
-   *   );
+   *   )
    * ```
    *
    * @param field The first [String] name of field to remove.
@@ -326,12 +335,12 @@ internal constructor(
    * instead if only additions are desired.
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("books")
    *   .select(
    *     field("name"),
    *     field("address").toUppercase().as("upperAddress"),
-   *   );
+   *   )
    * ```
    *
    * @param selection The first field to include in the output documents, specified as a
@@ -357,13 +366,13 @@ internal constructor(
    * instead if only additions are desired.
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.collection("books")
-   *   .select("name", "address");
+   *   .select("name", "address")
    *
    * // The above is a shorthand of this:
    * firestore.pipeline().collection("books")
-   *    .select(field("name"), field("address"));
+   *    .select(field("name"), field("address"))
    * ```
    *
    * @param fieldName The first field to include in the output documents, specified as a string
@@ -385,13 +394,13 @@ internal constructor(
    * unspecified.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Sort books by rating in descending order, and then by title in ascending order for books with the same rating
    * firestore.pipeline().collection("books")
    *     .sort(
    *         Ordering.of("rating").descending(),
    *         Ordering.of("title")  // Ascending order is the default
-   *     );
+   *     )
    * ```
    *
    * @param order The first [Ordering] instance specifying the sorting criteria.
@@ -416,14 +425,14 @@ internal constructor(
    * - advanced functions: [Expr.regexMatch], [Expr.arrayContains], etc.
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("books")
    *   .where(
    *     and(
    *         gt("rating", 4.0),   // Filter for ratings greater than 4.0
    *         field("genre").equal("Science Fiction") // Equivalent to equal("genre", "Science Fiction")
    *     )
-   *   );
+   *   )
    * ```
    *
    * @param condition The [BooleanExpression] to apply.
@@ -439,12 +448,12 @@ internal constructor(
    * page.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Retrieve the second page of 20 results
    * firestore.pipeline().collection("books")
    *     .sort(field("published").descending())
    *     .offset(20)  // Skip the first 20 results
-   *     .limit(20);   // Take the next 20 results
+   *     .limit(20)   // Take the next 20 results
    * ```
    *
    * @param offset The number of documents to skip.
@@ -463,11 +472,11 @@ internal constructor(
    * especially when dealing with large collections.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Limit the results to the top 10 highest-rated books
    * firestore.pipeline().collection("books")
    *     .sort(field("rating").descending())
-   *     .limit(10);
+   *     .limit(10)
    * ```
    *
    * @param limit The maximum number of documents to return.
@@ -489,11 +498,11 @@ internal constructor(
    * [Expr.alias]
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Get a list of unique author names in uppercase and genre combinations.
    * firestore.pipeline().collection("books")
    *     .distinct(toUppercase(field("author")).as("authorName"), field("genre"))
-   *     .select("authorName");
+   *     .select("authorName")
    * ```
    *
    * @param group The [Selectable] expression to consider when determining distinct value
@@ -521,10 +530,10 @@ internal constructor(
    * [Expr.alias]
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Get a list of unique genres.
    * firestore.pipeline().collection("books")
-   *     .distinct("genre");
+   *     .distinct("genre")
    * ```
    *
    * @param groupField The [String] representing field name.
@@ -547,13 +556,13 @@ internal constructor(
    * calling [AggregateFunction.alias] on [AggregateFunction] instances.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Calculate the average rating and the total number of books
    * firestore.pipeline().collection("books")
    *     .aggregate(
    *         field("rating").average().as("averageRating"),
    *         countAll().as("totalBooks")
-   *     );
+   *     )
    * ```
    *
    * @param accumulator The first [AliasedAggregate] expression, wrapping an [AggregateFunction]
@@ -584,13 +593,13 @@ internal constructor(
    * (e.g., sum, average, count) based on the documents within its group.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Calculate the average rating for each genre.
    * firestore.pipeline().collection("books")
    *   .aggregate(
    *     Aggregate
    *       .withAccumulators(average("rating").as("avg_rating"))
-   *       .withGroups("genre"));
+   *       .withGroups("genre"))
    * ```
    *
    * @param aggregateStage An [AggregateStage] object that specifies the grouping fields (if any)
@@ -664,13 +673,13 @@ internal constructor(
    * set.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Find books with similar "topicVectors" to the given targetVector
    * firestore.pipeline().collection("books")
    *     .findNearest("topicVectors", targetVector, FindNearest.DistanceMeasure.COSINE,
-   *        new FindNearestOptions()
+   *        FindNearestOptions()
    *          .withLimit(10)
-   *          .withDistanceField("distance"));
+   *          .withDistanceField("distance"))
    * ```
    *
    * @param vectorField A field name that contains vector to search on.
@@ -695,7 +704,7 @@ internal constructor(
    * the document that contains the corresponding value.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Input.
    * // {
    * //  "name": "John Doe Jr.",
@@ -705,7 +714,7 @@ internal constructor(
    * // }
    *
    * // Emit parents as document.
-   * firestore.pipeline().collection("people").replaceWith("parents");
+   * firestore.pipeline().collection("people").replaceWith("parents")
    *
    * // Output
    * // {
@@ -726,7 +735,7 @@ internal constructor(
    * the document that contains the corresponding value.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Input.
    * // {
    * //  "name": "John Doe Jr.",
@@ -736,7 +745,7 @@ internal constructor(
    * // }
    *
    * // Emit parents as document.
-   * firestore.pipeline().collection("people").replaceWith(field("parents"));
+   * firestore.pipeline().collection("people").replaceWith(field("parents"))
    *
    * // Output
    * // {
@@ -760,10 +769,10 @@ internal constructor(
    * sample of exactly size entries where any sample is equally likely.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Sample 10 books, if available.
    * firestore.pipeline().collection("books")
-   *     .sample(10);
+   *     .sample(10)
    * ```
    *
    * @param documents The number of documents to emit.
@@ -775,14 +784,14 @@ internal constructor(
    * Performs a pseudo-random sampling of the input documents.
    *
    * Examples:
-   * ```
+   * ```kotlin
    * // Sample 10 books, if available.
    * firestore.pipeline().collection("books")
-   *     .sample(Sample.withDocLimit(10));
+   *     .sample(Sample.withDocLimit(10))
    *
    * // Sample 50% of books.
    * firestore.pipeline().collection("books")
-   *     .sample(Sample.withPercentage(0.5));
+   *     .sample(Sample.withPercentage(0.5))
    * ```
    *
    * @param sample An [SampleStage] object that specifies how sampling is performed.
@@ -798,10 +807,10 @@ internal constructor(
    * from this stage is undefined.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Emit documents from books collection and magazines collection.
    * firestore.pipeline().collection("books")
-   *     .union(firestore.pipeline().collection("magazines"));
+   *     .union(firestore.pipeline().collection("magazines"))
    * ```
    *
    * @param other The other [Pipeline] that is part of union.
@@ -820,13 +829,13 @@ internal constructor(
    * parameter on the augmented document.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Input:
    * // { "title": "The Hitchhiker's Guide to the Galaxy", "tags": [ "comedy", "space", "adventure" ], ... }
    *
    * // Emit a book document for each tag of the book.
    * firestore.pipeline().collection("books")
-   *     .unnest("tags", "tag");
+   *     .unnest("tags", "tag")
    *
    * // Output:
    * // { "title": "The Hitchhiker's Guide to the Galaxy", "tag": "comedy", ... }
@@ -870,13 +879,13 @@ internal constructor(
    * replaced with the individual element.
    *
    * Example:
-   * ```
+   * ```kotlin
    * // Input:
    * // { "title": "The Hitchhiker's Guide to the Galaxy", "tags": [ "comedy", "space", "adventure" ], ... }
    *
    * // Emit a book document for each tag of the book.
    * firestore.pipeline().collection("books")
-   *     .unnest("tags", "tag", new UnnestOptions().withIndexField("tagIndex"));
+   *     .unnest("tags", "tag", UnnestOptions().withIndexField("tagIndex"))
    *
    * // Output:
    * // { "title": "The Hitchhiker's Guide to the Galaxy", "tagIndex": 0, "tag": "comedy", ... }
@@ -1076,6 +1085,28 @@ internal constructor(
   fun toScalarExpression(): Expression {
     return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
   }
+
+  /**
+   * Add a search stage to the Pipeline.
+   *
+   * Note: This must be the first stage of the pipeline.
+   *
+   * A limited set of expressions are supported in the search stage.
+   *
+   * @example
+   * ```kotlin
+   * db.pipeline().collection("restaurants").search(
+   *   SearchStage(
+   *     query = documentMatches("waffles OR pancakes"),
+   *     sort = arrayOf(score().descending())
+   *   )
+   * )
+   * ```
+   *
+   * @param searchStage An object that specifies how search is performed.
+   * @return A new `Pipeline` object with this stage appended to the stage list.
+   */
+  @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 }
 
 /** Start of a Firestore Pipeline */
@@ -1240,7 +1271,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
      *     .addFields(
      *         PipelineSource.subcollection("reviews")
      *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
-     *             .toScalarExpression().as("average_rating"));
+     *             .toScalarExpression().as("average_rating"))
      * ```
      *
      * @param path The path of the subcollection.
@@ -1261,7 +1292,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
      *     .addFields(
      *         PipelineSource.subcollection(SubcollectionSource.of("reviews"))
      *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
-     *             .toScalarExpression().as("average_rating"));
+     *             .toScalarExpression().as("average_rating"))
      * ```
      *
      * @param source The subcollection that will be the source of this pipeline.

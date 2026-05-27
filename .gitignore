@@ -14,6 +14,7 @@ smoke-tests/build-debug-headGit-smoke-test
 smoke-tests/firehorn.log
 macrobenchmark-output.json
 vertexai-sdk-test-data/
+/subprojects.local.cfg
 
 # generated Terraform docs
 .terraform/*
@@ -24,3 +25,6 @@ firebase-appdistribution-gradle/service-credentials.json
 
 # Ignore generated credentials from google-github-actions/auth
 gha-creds-*.json
+
+# Jetski CLI artifacts
+.jetskicli/

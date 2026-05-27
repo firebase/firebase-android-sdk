@@ -27,8 +27,8 @@ firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_ai_logic_ondevice}}")
-    versionName.set("ai_ondevice")
+    name.set("{{firebase_ai_logic_ondevice_android}}")
+    versionName.set("ai-ondevice")
   }
 }
 
@@ -68,7 +68,7 @@ kotlin {
 
 dependencies {
   implementation(libs.genai.prompt)
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta01")
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta02")
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

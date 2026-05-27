@@ -25,11 +25,16 @@ import com.google.firebase.ai.ImagenModel;
 import com.google.firebase.ai.InferenceMode;
 import com.google.firebase.ai.LiveGenerativeModel;
 import com.google.firebase.ai.OnDeviceConfig;
+import com.google.firebase.ai.TemplateChat;
+import com.google.firebase.ai.TemplateGenerativeModel;
 import com.google.firebase.ai.java.ChatFutures;
 import com.google.firebase.ai.java.GenerativeModelFutures;
 import com.google.firebase.ai.java.ImagenModelFutures;
 import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
+import com.google.firebase.ai.java.TemplateChatFutures;
+import com.google.firebase.ai.java.TemplateGenerativeModelFutures;
+import com.google.firebase.ai.type.AspectRatio;
 import com.google.firebase.ai.type.BlockReason;
 import com.google.firebase.ai.type.Candidate;
 import com.google.firebase.ai.type.Citation;
@@ -47,7 +52,9 @@ import com.google.firebase.ai.type.GenerationConfig;
 import com.google.firebase.ai.type.HarmCategory;
 import com.google.firebase.ai.type.HarmProbability;
 import com.google.firebase.ai.type.HarmSeverity;
+import com.google.firebase.ai.type.ImageConfig;
 import com.google.firebase.ai.type.ImagePart;
+import com.google.firebase.ai.type.ImageSize;
 import com.google.firebase.ai.type.ImagenBackgroundMask;
 import com.google.firebase.ai.type.ImagenEditMode;
 import com.google.firebase.ai.type.ImagenEditingConfig;
@@ -55,6 +62,7 @@ import com.google.firebase.ai.type.ImagenInlineImage;
 import com.google.firebase.ai.type.ImagenMaskReference;
 import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
+import com.google.firebase.ai.type.LatLng;
 import com.google.firebase.ai.type.LiveGenerationConfig;
 import com.google.firebase.ai.type.LiveServerContent;
 import com.google.firebase.ai.type.LiveServerMessage;
@@ -67,10 +75,12 @@ import com.google.firebase.ai.type.Part;
 import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.PublicPreviewAPI;
 import com.google.firebase.ai.type.ResponseModality;
+import com.google.firebase.ai.type.RetrievalConfig;
 import com.google.firebase.ai.type.SafetyRating;
 import com.google.firebase.ai.type.Schema;
 import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
+import com.google.firebase.ai.type.ToolConfig;
 import com.google.firebase.ai.type.UsageMetadata;
 import com.google.firebase.ai.type.Voice;
 import com.google.firebase.concurrent.FirebaseExecutors;
@@ -105,7 +115,7 @@ public class JavaCompileTests {
             getGenerationConfig(),
             /* safetySettings */ null,
             /* tools */ null,
-            /* toolConfig */ null,
+            /* toolConfig */ new ToolConfig(null),
             /* systemInstruction */ null,
             /* requestOptions */ null,
             new OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE, /* maxOutputTokens */ 500));
@@ -114,6 +124,14 @@ public class JavaCompileTests {
     LiveModelFutures liveFutures = LiveModelFutures.from(live);
     testFutures(futures);
     testLiveFutures(liveFutures);
+
+    TemplateGenerativeModel templateModel = vertex.templateGenerativeModel();
+    TemplateGenerativeModelFutures templateFutures =
+        TemplateGenerativeModelFutures.from(templateModel);
+    TemplateChat templateChat =
+        templateModel.startChat("fake-template", Collections.emptyMap(), Collections.emptyList());
+    TemplateChatFutures templateChatFutures = TemplateChatFutures.from(templateChat);
+    testTemplateChatFutures(templateChatFutures);
   }
 
   private GenerationConfig getGenerationConfig() {
@@ -129,6 +147,11 @@ public class JavaCompileTests {
         .setResponseMimeType("image/jxl")
         .setResponseModalities(List.of(ResponseModality.TEXT, ResponseModality.TEXT))
         .setResponseSchema(getSchema())
+        .setImageConfig(
+            ImageConfig.builder()
+                .setAspectRatio(AspectRatio.LANDSCAPE_21x9)
+                .setImageSize(ImageSize.SIZE_512)
+                .build())
         .build();
   }
 
@@ -227,6 +250,49 @@ public class JavaCompileTests {
             complete = true;
           }
         });
+  }
+
+  private void testTemplateChatFutures(TemplateChatFutures futures) throws Exception {
+    Content content =
+        new Content.Builder()
+            .setParts(new ArrayList<>())
+            .addText("Fake prompt")
+            .setRole("user")
+            .build();
+    ListenableFuture<GenerateContentResponse> generateResponse = futures.sendMessage(content);
+    validateGenerateContentResponse(generateResponse.get());
+    Publisher<GenerateContentResponse> responsePublisher = futures.sendMessageStream(content);
+    responsePublisher.subscribe(
+        new Subscriber<GenerateContentResponse>() {
+          private boolean complete = false;
+
+          @Override
+          public void onSubscribe(Subscription s) {
+            s.request(Long.MAX_VALUE);
+          }
+
+          @Override
+          public void onNext(GenerateContentResponse response) {
+            Assert.assertFalse(complete);
+            validateGenerateContentResponse(response);
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            // Ignore
+          }
+
+          @Override
+          public void onComplete() {
+            complete = true;
+          }
+        });
+  }
+
+  public void testMapsGrounding() {
+    RetrievalConfig retrievalConfig =
+        RetrievalConfig.builder().setLatLng(new LatLng(10, 10)).setLanguageCode("en_US").build();
+    ToolConfig toolConfig = new ToolConfig(null, retrievalConfig);
   }
 
   public void validateCountTokensResponse(CountTokensResponse response) {

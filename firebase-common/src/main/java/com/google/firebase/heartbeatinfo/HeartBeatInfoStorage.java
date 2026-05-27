@@ -128,7 +128,7 @@ class HeartBeatInfoStorage {
     return heartBeatResults;
   }
 
-  private synchronized Preferences.Key<Set<String>> getStoredUserAgentString(
+  private Preferences.Key<Set<String>> getStoredUserAgentString(
       MutablePreferences preferences, String dateString) {
     for (Map.Entry<Preferences.Key<?>, Object> entry : preferences.asMap().entrySet()) {
       if (entry.getValue() instanceof Set) {
@@ -143,7 +143,7 @@ class HeartBeatInfoStorage {
     return null;
   }
 
-  private synchronized void updateStoredUserAgent(
+  private void updateStoredUserAgent(
       MutablePreferences preferences, Preferences.Key<Set<String>> userAgent, String dateString) {
     removeStoredDate(preferences, dateString);
     Set<String> userAgentDateSet =
@@ -152,7 +152,7 @@ class HeartBeatInfoStorage {
     preferences.set(userAgent, userAgentDateSet);
   }
 
-  private synchronized void removeStoredDate(MutablePreferences preferences, String dateString) {
+  private void removeStoredDate(MutablePreferences preferences, String dateString) {
     // Find stored heartbeat and clear it.
     Preferences.Key<Set<String>> userAgent = getStoredUserAgentString(preferences, dateString);
     if (userAgent == null) {
@@ -179,7 +179,7 @@ class HeartBeatInfoStorage {
         });
   }
 
-  private synchronized String getFormattedDate(long millis) {
+  private String getFormattedDate(long millis) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       Instant instant = new Date(millis).toInstant();
       LocalDateTime ldt = instant.atOffset(ZoneOffset.UTC).toLocalDateTime();
@@ -226,7 +226,7 @@ class HeartBeatInfoStorage {
         });
   }
 
-  private synchronized long cleanUpStoredHeartBeats(MutablePreferences preferences) {
+  private long cleanUpStoredHeartBeats(MutablePreferences preferences) {
     long heartBeatCount = JavaDataStorageKt.getOrDefault(preferences, HEART_BEAT_COUNT_TAG, 0L);
 
     String lowestDate = null;
@@ -264,7 +264,7 @@ class HeartBeatInfoStorage {
         });
   }
 
-  synchronized boolean isSameDateUtc(long base, long target) {
+  boolean isSameDateUtc(long base, long target) {
     return getFormattedDate(base).equals(getFormattedDate(target));
   }
 

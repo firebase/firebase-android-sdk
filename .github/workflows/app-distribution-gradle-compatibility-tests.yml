@@ -1,0 +1,65 @@
+name: App Distribution Gradle Compatibility Tests
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Run daily at 6:00 am UTC
+  pull_request:
+    paths:
+      - 'firebase-appdistribution/**'
+      - 'firebase-appdistribution-api/**'
+      - 'firebase-appdistribution-gradle/**'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  app-distribution-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+
+      - name: Setup local.properties for prodTest
+        run: |
+          echo "${{ secrets.INTEG_TESTS_FAD_GRADLE_PROD_TEST_PROPERTIES }}" > local.properties
+    
+      - name: Add FAD service-credentials.json
+        env:
+          INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
+        if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
+        run: |
+          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/service-credentials.json
+
+      - name: Run tests
+        id: tests
+        env:
+          FIREBASE_TOKEN: ${{ secrets.INTEG_TESTS_FAD_FIREBASE_TOKEN }}
+        run: |
+          ./gradlew \
+          :firebase-appdistribution-gradle:prodTest \
+          :firebase-appdistribution-gradle:integrationTest --continue
+
+      - name: Upload Test Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-report
+          path: firebase-appdistribution-gradle/build/reports/tests/
+      
+      - name: Create GitHub Issue on Failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "[firebase-appdistribution] Gradle Compatibility Tests Failed" \
+            --body "The daily compatibility tests failed on the main branch. Please check the workflow logs here to diagnose the failure: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --label "api: appdistribution"

@@ -1,5 +1,17 @@
 # Unreleased
 
+# 26.3.0
+
+- [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.
+- [feature] Added support for Pipeline expressions `arraySlice`, `arraySliceToEnd`, `arrayFilter`, `arrayTransform` and `arrayTransformWithIndex`.
+  [#7989](https://github.com/firebase/firebase-android-sdk/pull/7989)
+
+# 26.2.0
+
+- [feature] Added support for `parent` Pipeline expression.
+  [#7999](https://github.com/firebase/firebase-android-sdk/pull/7999)
+- [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
+  [#7976](https://github.com/firebase/firebase-android-sdk/pull/7976)
 - [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
   [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
@@ -11,6 +23,14 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for `isType` Pipeline expression.
+  [#7985](https://github.com/firebase/firebase-android-sdk/pull/7985)
+- [feature] Add public preview support for full-text search and geo search.
+  [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
+- [feature] Added support for `ltrim`, `rtrim`, `stringIndexOf`, `stringRepeat`, `stringReplaceOne`, and `stringReplaceAll` Pipeline expressions.
+  [#7978](https://github.com/firebase/firebase-android-sdk/pull/7978)
+- [feature] Added support for `mapGet` `mapSet`, `mapEntries`, and `mapKeys` Pipeline expressions.
+  [#7987](https://github.com/firebase/firebase-android-sdk/pull/7987)
 
 # 26.1.2
 

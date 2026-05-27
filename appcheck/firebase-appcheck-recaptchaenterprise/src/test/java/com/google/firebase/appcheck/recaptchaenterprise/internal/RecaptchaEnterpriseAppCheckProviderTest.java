@@ -120,6 +120,9 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
     verify(mockNetworkClient)
         .exchangeAttestationForAppCheckToken(
             requestCaptor.capture(), eq(NetworkClient.RECAPTCHA_ENTERPRISE), eq(mockRetryManager));
+    JSONObject jsonObject = new JSONObject(new String(requestCaptor.getValue(), "UTF-8"));
+    assertThat(jsonObject.opt(ExchangeRecaptchaEnterpriseTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isNull();
   }
 
   @Test
@@ -160,5 +163,39 @@ public class RecaptchaEnterpriseAppCheckProviderTest {
     Task<AppCheckToken> task = provider.getToken();
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isEqualTo(exception);
+  }
+
+  @Test
+  public void getLimitedUseToken_onSuccess_setsTaskResult() throws Exception {
+    when(mockRecaptchaTasksClient.executeTask(any(RecaptchaAction.class)))
+        .thenReturn(Tasks.forResult(RECAPTCHA_ENTERPRISE_TOKEN));
+    String jsonResponse =
+        new JSONObject().put("token", APP_CHECK_TOKEN).put("ttl", 3600).toString();
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(byte[].class), eq(NetworkClient.RECAPTCHA_ENTERPRISE), eq(mockRetryManager)))
+        .thenReturn(AppCheckTokenResponse.fromJsonString(jsonResponse));
+
+    RecaptchaEnterpriseAppCheckProvider provider =
+        new RecaptchaEnterpriseAppCheckProvider(
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager,
+            mockNetworkClient,
+            mockRecaptchaTasksClient);
+    Task<AppCheckToken> task = provider.getLimitedUseToken();
+
+    assertThat(task.isSuccessful()).isTrue();
+    AppCheckToken token = task.getResult();
+    assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
+
+    verify(mockRecaptchaTasksClient).executeTask(recaptchaActionCaptor.capture());
+    assertThat(recaptchaActionCaptor.getValue().getAction()).isEqualTo("fire_app_check");
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(
+            requestCaptor.capture(), eq(NetworkClient.RECAPTCHA_ENTERPRISE), eq(mockRetryManager));
+    JSONObject jsonObject = new JSONObject(new String(requestCaptor.getValue(), "UTF-8"));
+    assertThat(jsonObject.opt(ExchangeRecaptchaEnterpriseTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isEqualTo(true);
   }
 }

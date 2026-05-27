@@ -30,6 +30,7 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
+import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
@@ -66,6 +67,10 @@ object DataConnectArb {
       // Do not produce character code 0 because it's not supported by Postgresql:
       // https://www.postgresql.org/docs/current/datatype-character.html
       .filterNot { it.value == 0 }
+
+  fun alphabeticString(length: IntRange = 0..10): Arb<String> = Arb.string(length, Codepoint.az())
+
+  fun alphabeticString(length: Int): Arb<String> = alphabeticString(length..length)
 
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
@@ -145,14 +150,26 @@ object DataConnectArb {
     }
   }
 
-  fun accessToken(
+  fun authToken(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    string.map { "authToken_${it.lowercase()}" }
+
+  fun appCheckToken(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-  ): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
+  ): Arb<String> = string.map { "appCheckToken_${it.lowercase()}" }
 
   fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {
       "requestId_${string.bind()}"
     }
+
+  fun streamId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "streamId_${string.bind()}"
+    }
+
+  fun connectorResourceName(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.az())
+  ): Arb<String> = arbitrary { "connectorResourceName_${string.bind()}" }
 
   fun operationName(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
