@@ -13,3 +13,27 @@ headless_android_emulator_run.zsh SmallPhoneAPI36 -- -memory 8192 -cores 4 -read
 headless_android_emulator_run.zsh SmallPhoneAPI36 -- -memory 8192 -cores 4 -read-only -ports 5556,5557
 headless_android_emulator_run.zsh SmallPhoneAPI36 -- -memory 8192 -cores 4 -read-only -ports 5558,5559
 headless_android_emulator_run.zsh SmallPhoneAPI36 -- -memory 8192 -cores 4 -read-only -ports 5560,5561
+
+
+
+~/.ssh/config
+
+Host lbemu
+  User dconeybe
+  Hostname dconeybe2.c.googlers.com
+  ControlMaster no
+  ExitOnForwardFailure yes
+
+  LocalForward 5554 localhost:5554
+  LocalForward 5555 localhost:5555
+  LocalForward 5556 localhost:5556
+  LocalForward 5557 localhost:5557
+  LocalForward 5558 localhost:5558
+  LocalForward 5559 localhost:5559
+  LocalForward 5560 localhost:5560
+  LocalForward 5561 localhost:5561
+
+
+Then run:
+
+ssh -N lbemu
