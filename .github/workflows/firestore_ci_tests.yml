@@ -94,7 +94,7 @@ jobs:
             ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="standard" -PtargetDatabaseId="(default)"
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: logcat.txt
           path: logcat.txt
@@ -188,9 +188,9 @@ jobs:
             ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="enterprise" -PtargetDatabaseId="enterprise"
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: named-db-logcat.txt
+          name: enterprise-db-logcat.txt
           path: logcat.txt
           retention-days: 7
           if-no-files-found: ignore
@@ -254,7 +254,7 @@ jobs:
             ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly" -PbackendEdition="enterprise" -PtargetDatabaseId="enterprise"
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nightly-logcat.txt
           path: logcat.txt
@@ -331,7 +331,7 @@ jobs:
             ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="emulator" -PbackendEdition="enterprise"
       - name: Upload logs
         if: failure()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: emulator-logcat.txt
           path: logcat.txt

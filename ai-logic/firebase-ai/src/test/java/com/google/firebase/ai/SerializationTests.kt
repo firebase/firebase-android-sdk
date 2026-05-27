@@ -27,6 +27,7 @@ import com.google.firebase.ai.type.GroundingAttribution
 import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
+import com.google.firebase.ai.type.ImageConfig
 import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.LiveServerGoAway
 import com.google.firebase.ai.type.ModalityTokenCount
@@ -144,7 +145,7 @@ internal class SerializationTests {
         "finishReason": {
           "type": "string",
           "enum": [
-                      "UNKNOWN",
+            "UNKNOWN",
             "UNSPECIFIED",
             "STOP",
             "MAX_TOKENS",
@@ -154,7 +155,17 @@ internal class SerializationTests {
             "BLOCKLIST",
             "PROHIBITED_CONTENT",
             "SPII",
-            "MALFORMED_FUNCTION_CALL"
+            "MALFORMED_FUNCTION_CALL",
+            "IMAGE_SAFETY",
+            "IMAGE_PROHIBITED_CONTENT",
+            "IMAGE_OTHER",
+            "NO_IMAGE",
+            "IMAGE_RECITATION",
+            "LANGUAGE",
+            "UNEXPECTED_TOOL_CALL",
+            "TOO_MANY_TOOL_CALLS",
+            "MISSING_THOUGHT_SIGNATURE",
+            "MALFORMED_RESPONSE"
           ]
         },
         "safetyRatings": {
@@ -171,12 +182,37 @@ internal class SerializationTests {
             },
         "urlContextMetadata": {
           "${'$'}ref": "UrlContextMetadata"
+        },
+        "finishMessage": {
+          "type": "string"
         }
       }
     }
       """
         .trimIndent()
     val actualJson = descriptorToJson(Candidate.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test ImageConfig serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "ImageConfig",
+        "type": "object",
+        "properties": {
+          "aspect_ratio": {
+            "type": "string"
+          },
+          "image_size": {
+            "type": "string"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(ImageConfig.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -229,7 +265,8 @@ internal class SerializationTests {
       "id": "GroundingChunk",
       "type": "object",
       "properties": {
-        "web": { "${'$'}ref": "WebGroundingChunk" }
+        "web": { "${'$'}ref": "WebGroundingChunk" },
+        "maps": { "${'$'}ref": "GoogleMapsGroundingChunk" }
       }
     }
       """
@@ -506,6 +543,9 @@ internal class SerializationTests {
           },
           "urlContext": {
             "${'$'}ref": "UrlContext"
+          },
+          "googleMaps": {
+            "${'$'}ref": "GoogleMaps"
           }
         }
       }

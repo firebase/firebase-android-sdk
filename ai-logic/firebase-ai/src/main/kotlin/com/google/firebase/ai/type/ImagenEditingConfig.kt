@@ -26,7 +26,7 @@ import kotlinx.serialization.Serializable
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
-@Deprecated("All Imagen models are deprecated.")
+@Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
 @PublicPreviewAPI
 public class ImagenEditingConfig(
   internal val editMode: ImagenEditMode? = null,

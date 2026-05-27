@@ -35,6 +35,7 @@ public object FirebaseAIOnDevice {
    *
    * @return An [OnDeviceModelStatus] object indicating the current state of the model.
    */
+  @Deprecated("Use `GenerativeModel.OnDeviceExtension` from `firebase-ai` instead")
   public suspend fun checkStatus(): OnDeviceModelStatus {
     return OnDeviceModelStatus.fromFeatureStatus(Generation.getClient().checkStatus())
   }
@@ -48,11 +49,14 @@ public object FirebaseAIOnDevice {
    *
    * @return A [Flow] of [DownloadStatus] objects representing the download lifecycle.
    */
-  public fun download(): Flow<DownloadStatus> =
-    Generation.getClient().download().map { DownloadStatus.fromMlKit(it) }
+  @Deprecated("Use `GenerativeModel.OnDeviceExtension` from `firebase-ai` instead")
+  public fun download(): Flow<DownloadStatus> {
+    return Generation.getClient().download().map { DownloadStatus.fromMlKit(it) }
+  }
 }
 
 /** Represents the current status of the on-device AI model. */
+@Deprecated("Use `GenerativeModel.OnDeviceExtension` from `firebase-ai` instead")
 public class OnDeviceModelStatus private constructor(private val status: Int) {
   public companion object {
     /** The on-device model is unavailable on the device. */
@@ -88,6 +92,7 @@ public class OnDeviceModelStatus private constructor(private val status: Int) {
  * This class has several concrete subclasses, each representing a specific stage or outcome of the
  * download process.
  */
+@Deprecated("Use `GenerativeModel.OnDeviceExtension` from `firebase-ai` instead")
 public abstract class DownloadStatus {
   /**
    * Represents when a download has just started.

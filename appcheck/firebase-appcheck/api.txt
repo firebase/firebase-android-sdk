@@ -2,6 +2,7 @@
 package com.google.firebase.appcheck {
 
   public interface AppCheckProvider {
+    method public default com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckToken!> getLimitedUseToken();
     method public com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckToken!> getToken();
   }
 

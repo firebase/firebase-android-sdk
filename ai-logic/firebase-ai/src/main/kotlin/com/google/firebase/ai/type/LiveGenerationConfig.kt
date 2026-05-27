@@ -75,6 +75,7 @@ private constructor(
   internal val speechConfig: SpeechConfig?,
   internal val inputAudioTranscription: AudioTranscriptionConfig?,
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
+  internal val contextWindowCompression: ContextWindowCompressionConfig?,
 ) {
 
   /**
@@ -102,6 +103,8 @@ private constructor(
    * @property inputAudioTranscription see [LiveGenerationConfig.inputAudioTranscription]
    *
    * @property outputAudioTranscription see [LiveGenerationConfig.outputAudioTranscription]
+   *
+   * @property contextWindowCompression see [LiveGenerationConfig.contextWindowCompression]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
@@ -114,6 +117,7 @@ private constructor(
     @JvmField public var speechConfig: SpeechConfig? = null
     @JvmField public var inputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
+    @JvmField public var contextWindowCompression: ContextWindowCompressionConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -144,6 +148,11 @@ private constructor(
       this.outputAudioTranscription = config
     }
 
+    public fun setContextWindowCompression(config: ContextWindowCompressionConfig?): Builder =
+      apply {
+        this.contextWindowCompression = config
+      }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(
@@ -157,6 +166,7 @@ private constructor(
         responseModality = responseModality,
         inputAudioTranscription = inputAudioTranscription,
         outputAudioTranscription = outputAudioTranscription,
+        contextWindowCompression = contextWindowCompression,
       )
   }
 

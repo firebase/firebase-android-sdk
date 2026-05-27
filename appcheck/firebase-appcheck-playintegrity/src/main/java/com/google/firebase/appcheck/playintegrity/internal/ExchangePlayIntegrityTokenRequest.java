@@ -26,17 +26,24 @@ import org.json.JSONObject;
 class ExchangePlayIntegrityTokenRequest {
 
   @VisibleForTesting static final String PLAY_INTEGRITY_TOKEN_KEY = "playIntegrityToken";
+  @VisibleForTesting static final String LIMITED_USE_TOKEN_KEY = "limited_use";
 
   private final String playIntegrityToken;
+  private final boolean isLimitedUseToken;
 
-  public ExchangePlayIntegrityTokenRequest(@NonNull String playIntegrityToken) {
+  public ExchangePlayIntegrityTokenRequest(
+      @NonNull String playIntegrityToken, boolean isLimitedUseToken) {
     this.playIntegrityToken = playIntegrityToken;
+    this.isLimitedUseToken = isLimitedUseToken;
   }
 
   @NonNull
   public String toJsonString() throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(PLAY_INTEGRITY_TOKEN_KEY, playIntegrityToken);
+    if (isLimitedUseToken) {
+      jsonObject.put(LIMITED_USE_TOKEN_KEY, true);
+    }
 
     return jsonObject.toString();
   }
