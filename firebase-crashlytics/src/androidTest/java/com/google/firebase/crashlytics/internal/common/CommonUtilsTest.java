@@ -152,6 +152,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   @Test
   public void testIsRooted() {
     final Context mockContext = mock(Context.class);
+    when(mockContext.getPackageManager()).thenReturn(mock(PackageManager.class));
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.
     final boolean isRooted = CommonUtils.isRooted(mockContext);
@@ -178,6 +179,8 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   public void testGetDeviceState() {
 
     final Context mockContext = mock(Context.class);
+    when(mockContext.getPackageManager()).thenReturn(mock(PackageManager.class));
+
     final int state = CommonUtils.getDeviceState(mockContext);
     Log.d(Logger.TAG, "testGetDeviceState: state=" + state);
 
