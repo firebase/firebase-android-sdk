@@ -2,6 +2,7 @@
 
 - [feature] Added support for reading the `recaptcha_site_key` value from the `google-services.json`
   file. (#8216)
+- [fixed] Resolved a thread deadlock in HeartBeatInfoStorage when using Jetpack DataStore background executors.(#8182)
 
 # 22.0.1
 
