@@ -96,6 +96,7 @@ public class FirebaseMessaging {
   private static Store store;
 
   private final FirebaseApp firebaseApp;
+  @Nullable private final FirebaseInstanceIdInternal iid;
   private final Context context;
   private final GmsRpc gmsRpc;
   private final GmsRegistrationClient gmsRegistrationClient;
@@ -207,6 +208,7 @@ public class FirebaseMessaging {
     FirebaseMessaging.transportFactory = transportFactory;
 
     this.firebaseApp = firebaseApp;
+    this.iid = iid;
     autoInit = new AutoInit(subscriber);
     context = firebaseApp.getApplicationContext();
     this.lifecycleCallbacks = new FcmLifecycleCallbacks();
@@ -470,6 +472,10 @@ public class FirebaseMessaging {
                   + " android:value=\"true\" />} from your app's manifest."));
     }
 
+    if (iid != null) {
+      return iid.getTokenTask();
+    }
+
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     initExecutor.execute(
         () -> {
@@ -553,6 +559,20 @@ public class FirebaseMessaging {
                   + " removing {@code <meta-data"
                   + " android:name=\"firebase_messaging_installation_id_enabled\""
                   + " android:value=\"true\" />} from your app's manifest."));
+    }
+
+    if (iid != null) {
+      TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+      initExecutor.execute(
+          () -> {
+            try {
+              iid.deleteToken(Metadata.getDefaultSenderId(firebaseApp), INSTANCE_ID_SCOPE);
+              taskCompletionSource.setResult(null);
+            } catch (Exception e) {
+              taskCompletionSource.setException(e);
+            }
+          });
+      return taskCompletionSource.getTask();
     }
 
     Store.Token token = getTokenWithoutTriggeringSync();

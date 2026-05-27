@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2026 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 /** A client for the CloudMessaging API to make FCM registration calls. */
-public class GmsRegistrationClient {
+class GmsRegistrationClient {
   static final String MANIFEST_METADATA_FIREBASE_MESSAGING_INSTALLATION_ID_ENABLED =
       "firebase_messaging_installation_id_enabled";
   private static final int GMS_VERSION_Y2026W12 = 261200000;
@@ -116,7 +116,7 @@ public class GmsRegistrationClient {
         () -> {
           try {
             String installationId = Tasks.await(firebaseInstallations.getId());
-            String registrationToken = Tasks.await(registerOverV1(installationId));
+            String registrationToken = registerOverV1(installationId);
 
             // For V1 registration, the token received should be the same as the FID.
             if (!TextUtils.isEmpty(registrationToken)
@@ -138,7 +138,8 @@ public class GmsRegistrationClient {
   }
 
   @NonNull
-  private Task<String> registerOverV1(String installationId)
+  @WorkerThread
+  private String registerOverV1(String installationId)
       throws ExecutionException, InterruptedException {
     String installationAuthToken = Tasks.await(firebaseInstallations.getToken(false)).getToken();
     String apiKey = app.getOptions().getApiKey();
@@ -149,7 +150,7 @@ public class GmsRegistrationClient {
     RegisterRequest request =
         new RegisterRequest(
             senderId, gmpAppId, apiKey, installationId, installationAuthToken, sdkVersion);
-    return client.register(request);
+    return Tasks.await(client.register(request));
   }
 
   /** Unregisters this app from receiving push messages. */
@@ -168,7 +169,7 @@ public class GmsRegistrationClient {
     executorService.execute(
         () -> {
           try {
-            Tasks.await(unregisterOverV1());
+            unregisterOverV1();
             taskCompletionSource.setResult(null);
           } catch (ExecutionException | InterruptedException e) {
             taskCompletionSource.setException(e);
@@ -178,9 +179,8 @@ public class GmsRegistrationClient {
     return taskCompletionSource.getTask();
   }
 
-  @NonNull
   @WorkerThread
-  private Task<Void> unregisterOverV1() throws ExecutionException, InterruptedException {
+  private void unregisterOverV1() throws ExecutionException, InterruptedException {
     String installationId = Tasks.await(firebaseInstallations.getId());
     String installationAuthToken = Tasks.await(firebaseInstallations.getToken(false)).getToken();
     String apiKey = app.getOptions().getApiKey();
@@ -188,6 +188,6 @@ public class GmsRegistrationClient {
 
     UnregisterRequest request =
         new UnregisterRequest(projectId, apiKey, installationId, installationAuthToken);
-    return client.unregister(request);
+    Tasks.await(client.unregister(request));
   }
 }
