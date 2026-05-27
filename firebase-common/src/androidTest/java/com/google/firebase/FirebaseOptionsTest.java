@@ -41,7 +41,7 @@ public class FirebaseOptionsTest {
           .setGaTrackingId(GA_TRACKING_ID)
           .setGcmSenderId(GCM_SENDER_ID)
           .setStorageBucket(STORAGE_BUCKET)
-          .set
+          .setRecaptchaSiteKey(RECAPTCHA_SITE_KEY)
           .setProjectId(GCP_PROJECT_ID)
           .build();
 
