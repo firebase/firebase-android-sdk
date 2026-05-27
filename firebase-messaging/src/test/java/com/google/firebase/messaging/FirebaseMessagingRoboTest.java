@@ -25,7 +25,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -337,7 +337,8 @@ public final class FirebaseMessagingRoboTest {
 
     ShadowLooper.idleMainLooper();
     assertThat(Tasks.await(getTokenTask, 5, SECONDS)).isEqualTo("fake_token");
-    verify(mockGmsRpc).getToken(false);
+    verify(mockFiid).getTokenTask();
+    verifyNoInteractions(mockGmsRpc);
   }
 
   @Test
@@ -387,15 +388,17 @@ public final class FirebaseMessagingRoboTest {
             Runnable::run);
 
     writeTokenToStore("fake_token");
-    when(mockGmsRpc.deleteToken(false)).thenReturn(Tasks.forResult(null));
     Task<Void> deleteTokenTask = messaging.deleteToken();
 
     ShadowLooper.idleMainLooper();
     Tasks.await(deleteTokenTask, 5, SECONDS);
     ShadowLooper.idleMainLooper();
     Tasks.await(deleteTokenTask, 5, SECONDS);
-    verify(mockGmsRpc).deleteToken(false);
-    verifyNoMoreInteractions(mockGmsRpc);
+    verify(mockFiid)
+        .deleteToken(
+            Metadata.getDefaultSenderId(FirebaseApp.getInstance()),
+            FirebaseMessaging.INSTANCE_ID_SCOPE);
+    verifyNoInteractions(mockGmsRpc);
   }
 
   @Test
