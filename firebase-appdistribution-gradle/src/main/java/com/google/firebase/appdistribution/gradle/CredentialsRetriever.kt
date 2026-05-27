@@ -16,37 +16,32 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.HttpTransport
 import com.google.firebase.appdistribution.gradle.AppDistributionEnvironment.Companion.ENV_FIREBASE_TOKEN
 import com.google.firebase.appdistribution.gradle.AppDistributionEnvironment.Companion.ENV_GOOGLE_APPLICATION_CREDENTIALS
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.REFRESH_TOKEN_ERROR
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.SERVICE_CREDENTIALS_NOT_FOUND
 import com.google.firebase.appdistribution.gradle.OptionsUtils.ensureFileExists
 import com.google.firebase.appdistribution.gradle.models.ServiceAccountCredentials
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.GoogleCredentials
 import java.io.IOException
 import org.gradle.api.logging.Logging
 
 /** Helper class for retrieving auth credentials from one of the four possible auth mechanisms. */
 class CredentialsRetriever(
-  private val httpTransport: HttpTransport = GoogleNetHttpTransport.newTrustedTransport(),
   private val appDistributionEnvironment: AppDistributionEnvironment =
-    AppDistributionEnvironmentImpl()
+    AppDistributionEnvironmentImpl(),
+  private val adcCredentialsProvider: () -> GoogleCredentials = { GoogleCredentials.getApplicationDefault() }
 ) {
 
-  internal constructor(
-    appDistributionEnvironment: AppDistributionEnvironment
-  ) : this(GoogleNetHttpTransport.newTrustedTransport(), appDistributionEnvironment)
-
   /** Returns the auth credential, if found. Otherwise returns null. */
-  fun getAuthCredential(serviceCredentialsPath: String? = null): Credential? {
+  fun getAuthCredential(serviceCredentialsPath: String? = null): HttpCredentialsAdapter? {
     // Check the explicitly passed in service credentials first
     if (serviceCredentialsPath != null) {
       val serviceCredentialsFile =
         ensureFileExists(serviceCredentialsPath, SERVICE_CREDENTIALS_NOT_FOUND)
       return try {
-        ServiceAccountCredentials.fromFile(serviceCredentialsFile).googleCredential
+        ServiceAccountCredentials.fromFile(serviceCredentialsFile).credentialsAdapter
       } catch (e: IOException) {
         throw AppDistributionException(
           SERVICE_CREDENTIALS_NOT_FOUND,
@@ -64,7 +59,7 @@ class CredentialsRetriever(
           "Using credentials token specified by environment variable {}",
           ENV_FIREBASE_TOKEN
         )
-        RefreshToken(envRefreshToken, httpTransport).generateNewCredentials()
+        RefreshToken(envRefreshToken).generateNewCredentials()
       } catch (e: Exception) {
         throw AppDistributionException(
           REFRESH_TOKEN_ERROR,
@@ -75,8 +70,7 @@ class CredentialsRetriever(
     }
 
     // Then check for cached Firebase CLI tokens
-    val firebaseCliLoginCreds =
-      appDistributionEnvironment.getFirebaseCliLoginCredentials(httpTransport)
+    val firebaseCliLoginCreds = appDistributionEnvironment.getFirebaseCliLoginCredentials()
     if (firebaseCliLoginCreds != null) {
       logger.info("Using cached Firebase CLI credentials")
       return firebaseCliLoginCreds
@@ -95,7 +89,7 @@ class CredentialsRetriever(
       return try {
         val envServiceAccountCredentials =
           ServiceAccountCredentials.fromFile(serviceCredentialsFile)
-        envServiceAccountCredentials.googleCredential
+        envServiceAccountCredentials.credentialsAdapter
       } catch (e: IOException) {
         throw AppDistributionException(
           SERVICE_CREDENTIALS_NOT_FOUND,
@@ -103,6 +97,15 @@ class CredentialsRetriever(
           extraInformation = envGoogleCredentialsPath
         )
       }
+    }
+
+    // Lastly, check for standard Application Default Credentials (ADC) as a fallback
+    try {
+      val credentials = adcCredentialsProvider().createScoped(ApiEndpoints.SCOPES)
+      logger.info("Using Application Default Credentials (ADC)")
+      return HttpCredentialsAdapter(credentials)
+    } catch (e: IOException) {
+      logger.debug("Failed to load Application Default Credentials (ADC)", e)
     }
 
     // If we reach this point, we were unable to find valid credentials

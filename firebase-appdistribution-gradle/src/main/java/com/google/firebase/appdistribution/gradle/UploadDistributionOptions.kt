@@ -16,9 +16,7 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.HttpTransport
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.common.base.Splitter
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.Companion.binaryNotFoundError
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.INVALID_APP_ID
@@ -47,7 +45,6 @@ internal constructor(
   val debug: Boolean = false,
   val testNonBlocking: Boolean = false,
   binaryPath: String,
-  transport: HttpTransport = GoogleNetHttpTransport.newTrustedTransport(),
   appDistributionEnvironment: AppDistributionEnvironment = AppDistributionEnvironmentImpl(),
   serviceCredentialsFile: String? = null,
   releaseNotesValue: String? = null,
@@ -71,8 +68,8 @@ internal constructor(
   val testers = extractValues(testersValue, testersPath)
   val groups = extractValues(groupsValue, groupsPath)
   val testDevices = extractTestDevices(testDevicesValue, testDevicesPath)
-  val credential: Credential? =
-    CredentialsRetriever(transport, appDistributionEnvironment)
+  val credential: HttpCredentialsAdapter? =
+    CredentialsRetriever(appDistributionEnvironment)
       .getAuthCredential(serviceCredentialsFile)
   val testCases = extractValues(testCasesValue, testCasesPath)
 
