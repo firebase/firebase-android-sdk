@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.QueryId
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
@@ -39,6 +41,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -51,6 +54,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Provides and manages access to the sqlite database used to stored cached query results for
@@ -63,6 +67,7 @@ import kotlinx.coroutines.sync.withLock
  */
 internal class DataConnectCacheDatabase(
   private val dbFile: File?,
+  private val cpuDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
 
@@ -198,17 +203,17 @@ internal class DataConnectCacheDatabase(
 
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
-    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.string))
     return rawQuery(
       logger,
       "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
-      if (authUid === null) emptyArray() else arrayOf(authUid),
+      if (authUid === null) emptyArray() else arrayOf(authUid.string),
     ) { cursor ->
       if (cursor.moveToNext()) {
         SqliteUserId(cursor.getLong(0))
       } else {
-        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
+        throw AuthUidNotFoundException("authUid=${authUid?.string} (internal error m5m52ahrxz)")
       }
     }
   }
@@ -221,14 +226,11 @@ internal class DataConnectCacheDatabase(
     val expiryProto: QueryResultExpiry,
   )
 
-  private fun SQLiteDatabase.getQuery(
-    user: SqliteUserId,
-    queryId: ImmutableByteArray
-  ): GetQueryResult? =
+  private fun SQLiteDatabase.getQuery(user: SqliteUserId, queryId: QueryId): GetQueryResult? =
     rawQuery(
       logger,
       "SELECT id, data, expiry, flags FROM queries WHERE user_id=? AND query_id=?",
-      bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
+      bindArgs = arrayOf(user.sqliteRowId, queryId.bytes.peek()),
     ) { cursor ->
       if (!cursor.moveToNext()) {
         null
@@ -254,7 +256,7 @@ internal class DataConnectCacheDatabase(
         parseResult.onFailure {
           logger.warn(it) {
             "Parsing QueryResultProto failed for id=$id, user=$user, " +
-              "queryId=${queryId.to0xHexString()}, flags=$flags [ykb2vwrcge]"
+              "queryId=$queryId, flags=$flags [ykb2vwrcge]"
           }
         }
 
@@ -263,7 +265,7 @@ internal class DataConnectCacheDatabase(
         expiryParseResult.onFailure {
           logger.warn(it) {
             "Parsing QueryResultExpiry failed for id=$id, user=$user, " +
-              "queryId=${queryId.to0xHexString()}, flags=$flags [x9k2c3b8y1]"
+              "queryId=$queryId, flags=$flags [x9k2c3b8y1]"
           }
         }
 
@@ -273,7 +275,7 @@ internal class DataConnectCacheDatabase(
 
   private fun SQLiteDatabase.insertQuery(
     user: SqliteUserId,
-    queryId: ImmutableByteArray,
+    queryId: QueryId,
     queryResultProtoBytes: ImmutableByteArray,
     expiryProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
@@ -286,7 +288,7 @@ internal class DataConnectCacheDatabase(
       """,
       arrayOf(
         user.sqliteRowId,
-        queryId.peek(),
+        queryId.bytes.peek(),
         queryResultProtoBytes.peek(),
         expiryProtoBytes.peek()
       )
@@ -451,8 +453,8 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun getQueryResult(
-    authUid: String?,
-    queryId: ImmutableByteArray,
+    authUid: AuthUid?,
+    queryId: QueryId,
     currentTimeMillis: Long,
     staleResult: KClass<out GetQueryResultResult>,
   ): GetQueryResultResult {
@@ -508,7 +510,7 @@ internal class DataConnectCacheDatabase(
         rehydrateResult.onFailure {
           logger.warn {
             "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
-              "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+              "queryId=$queryId [knpe3t4f5b]"
           }
         }
 
@@ -524,26 +526,33 @@ internal class DataConnectCacheDatabase(
   }
 
   suspend fun insertQueryResult(
-    authUid: String?,
-    queryId: ImmutableByteArray,
+    authUid: AuthUid?,
+    queryId: QueryId,
     queryData: Struct,
     maxAge: DurationProto,
     currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
-    require(queryId.size > 0) {
-      "queryId.size=${queryId.size}, but must be greater than zero [ab4em538tb]"
+    require(queryId.bytes.size > 0) {
+      "queryId.bytes.size=${queryId.bytes.size}, but must be greater than zero [ab4em538tb]"
     }
-    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
-    val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
 
-    val expiryProtoBytes =
-      QueryResultExpiry.newBuilder().let {
-        val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
-        it.setMaxAge(maxAge)
-        it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
-        ImmutableByteArray.adopt(it.build().toByteArray())
-      }
+    val queryResultProtoBytes: ImmutableByteArray
+    val expiryProtoBytes: ImmutableByteArray
+    val entityStructById: Map<String, Struct>
+    withContext(cpuDispatcher) {
+      val dehydratedQueryResult = dehydrateQueryResult(queryData, getEntityIdForPath)
+      entityStructById = dehydratedQueryResult.entityStructById
+      queryResultProtoBytes = ImmutableByteArray.adopt(dehydratedQueryResult.proto.toByteArray())
+
+      expiryProtoBytes =
+        QueryResultExpiry.newBuilder().let {
+          val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
+          it.setMaxAge(maxAge)
+          it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
+          ImmutableByteArray.adopt(it.build().toByteArray())
+        }
+    }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
