@@ -1121,7 +1121,10 @@ public final class RemoteSerializer {
         }
         watchChange =
             new WatchTargetChange(
-                changeType, targetChange.getTargetIdsList(), targetChange.getResumeToken(), cause);
+                changeType,
+                RemoteTargetId.from(targetChange.getTargetIdsList()),
+                targetChange.getResumeToken(),
+                cause);
         break;
       case DOCUMENT_CHANGE:
         DocumentChange docChange = protoChange.getDocumentChange();
@@ -1133,7 +1136,12 @@ public final class RemoteSerializer {
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = ObjectValue.fromMap(docChange.getDocument().getFieldsMap());
         MutableDocument document = MutableDocument.newFoundDocument(key, version, data);
-        watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
+        watchChange =
+            new WatchChange.DocumentChange(
+                RemoteTargetId.from(added),
+                RemoteTargetId.from(removed),
+                document.getKey(),
+                document);
         break;
       case DOCUMENT_DELETE:
         DocumentDelete docDelete = protoChange.getDocumentDelete();
@@ -1143,19 +1151,22 @@ public final class RemoteSerializer {
         version = decodeVersion(docDelete.getReadTime());
         MutableDocument doc = MutableDocument.newNoDocument(key, version);
         watchChange =
-            new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
+            new WatchChange.DocumentChange(
+                Collections.emptyList(), RemoteTargetId.from(removed), doc.getKey(), doc);
         break;
       case DOCUMENT_REMOVE:
         DocumentRemove docRemove = protoChange.getDocumentRemove();
         removed = docRemove.getRemovedTargetIdsList();
         key = decodeKey(docRemove.getDocument());
-        watchChange = new WatchChange.DocumentChange(Collections.emptyList(), removed, key, null);
+        watchChange =
+            new WatchChange.DocumentChange(
+                Collections.emptyList(), RemoteTargetId.from(removed), key, null);
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
         ExistenceFilter filter =
             new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
-        int targetId = protoFilter.getTargetId();
+        RemoteTargetId targetId = RemoteTargetId.from(protoFilter.getTargetId());
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;
       case RESPONSETYPE_NOT_SET:

@@ -106,8 +106,7 @@ public class WatchChangeAggregator {
     MutableDocument document = documentChange.getNewDocument();
     DocumentKey documentKey = documentChange.getDocumentKey();
 
-    for (int targetId : documentChange.getUpdatedTargetIds()) {
-      RemoteTargetId remoteTargetId = RemoteTargetId.from(targetId);
+    for (RemoteTargetId remoteTargetId : documentChange.getUpdatedTargetIds()) {
       if (document != null && document.isFoundDocument()) {
         addDocumentToTarget(remoteTargetId, document);
       } else {
@@ -115,8 +114,7 @@ public class WatchChangeAggregator {
       }
     }
 
-    for (int targetId : documentChange.getRemovedTargetIds()) {
-      RemoteTargetId remoteTargetId = RemoteTargetId.from(targetId);
+    for (RemoteTargetId remoteTargetId : documentChange.getRemovedTargetIds()) {
       removeDocumentFromTarget(remoteTargetId, documentKey, documentChange.getNewDocument());
     }
   }
@@ -181,15 +179,17 @@ public class WatchChangeAggregator {
    * in the change or the targetIds of all currently active targets.
    */
   private Collection<RemoteTargetId> getTargetIds(WatchTargetChange targetChange) {
-    List<Integer> targetIds = targetChange.getTargetIds();
+    List<RemoteTargetId> targetIds = targetChange.getTargetIds();
     if (!targetIds.isEmpty()) {
-      List<RemoteTargetId> result = new ArrayList<>(targetIds.size());
-      for (int id : targetIds) {
-        result.add(RemoteTargetId.from(id));
-      }
-      return result;
+      return targetIds;
     } else {
-      return targetStates.keySet();
+      List<RemoteTargetId> activeIds = new ArrayList<>();
+      for (RemoteTargetId id : targetStates.keySet()) {
+        if (isActiveTarget(id)) {
+          activeIds.add(id);
+        }
+      }
+      return activeIds;
     }
   }
 
@@ -198,7 +198,7 @@ public class WatchChangeAggregator {
    * invalidated by filter mismatches are added to `pendingTargetResets`.
    */
   public void handleExistenceFilter(ExistenceFilterWatchChange watchChange) {
-    RemoteTargetId targetId = RemoteTargetId.from(watchChange.getTargetId());
+    RemoteTargetId targetId = watchChange.getTargetId();
     int expectedCount = watchChange.getExistenceFilter().getCount();
 
     RemoteTargetData targetData = queryDataForActiveTarget(targetId);
@@ -290,7 +290,7 @@ public class WatchChangeAggregator {
       BloomFilter bloomFilter, ExistenceFilterWatchChange watchChange, int currentCount) {
     int expectedCount = watchChange.getExistenceFilter().getCount();
 
-    RemoteTargetId remoteTargetId = RemoteTargetId.from(watchChange.getTargetId());
+    RemoteTargetId remoteTargetId = watchChange.getTargetId();
     int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, remoteTargetId);
 
     return (expectedCount == (currentCount - removedDocumentCount))

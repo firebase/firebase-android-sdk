@@ -43,7 +43,7 @@ public class MockDatastore extends Datastore {
     private boolean open;
 
     /** Tracks the currently active watch targets as sent over the watch stream. */
-    private final Map<Integer, RemoteTargetData> activeTargets = new HashMap<>();
+    private final Map<RemoteTargetId, RemoteTargetData> activeTargets = new HashMap<>();
 
     MockWatchStream(AsyncQueue workerQueue, WatchStream.Callback listener) {
       super(/* channel= */ null, workerQueue, serializer, listener);
@@ -93,7 +93,7 @@ public class MockDatastore extends Datastore {
       }
 
       watchStreamRequestCount += 1;
-      this.activeTargets.put(targetData.getTargetId().value(), sentTargetData);
+      this.activeTargets.put(targetData.getTargetId(), sentTargetData);
     }
 
     @Override
@@ -113,7 +113,7 @@ public class MockDatastore extends Datastore {
       if (change instanceof WatchTargetChange) {
         WatchTargetChange targetChange = (WatchTargetChange) change;
         if (targetChange.getCause() != null && !targetChange.getCause().isOk()) {
-          for (Integer targetId : targetChange.getTargetIds()) {
+          for (RemoteTargetId targetId : targetChange.getTargetIds()) {
             if (!activeTargets.containsKey(targetId)) {
               // Technically removing an unknown target is valid (e.g. it could race with a
               // server-side removal), but we want to pay extra careful attention in tests
@@ -276,7 +276,7 @@ public class MockDatastore extends Datastore {
   }
 
   /** Returns the map of active targets on the watch stream, keyed by target ID. */
-  public Map<Integer, RemoteTargetData> activeTargets() {
+  public Map<RemoteTargetId, RemoteTargetData> activeTargets() {
     // Make a defensive copy as the watch stream continues to modify the Map of active targets.
     return new HashMap<>(watchStream.activeTargets);
   }

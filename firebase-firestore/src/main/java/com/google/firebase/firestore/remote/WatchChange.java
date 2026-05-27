@@ -41,10 +41,10 @@ public abstract class WatchChange {
   public static final class DocumentChange extends WatchChange {
     // TODO: figure out if we can actually use arrays here for efficiency
     /** The new document applies to all of these targets. */
-    private final List<Integer> updatedTargetIds;
+    private final List<RemoteTargetId> updatedTargetIds;
 
     /** The new document is removed from all of these targets. */
-    private final List<Integer> removedTargetIds;
+    private final List<RemoteTargetId> removedTargetIds;
 
     /** The key of the document for this change. */
     private final DocumentKey documentKey;
@@ -56,8 +56,8 @@ public abstract class WatchChange {
     @Nullable private final MutableDocument newDocument;
 
     public DocumentChange(
-        List<Integer> updatedTargetIds,
-        List<Integer> removedTargetIds,
+        List<RemoteTargetId> updatedTargetIds,
+        List<RemoteTargetId> removedTargetIds,
         DocumentKey key,
         @Nullable MutableDocument document) {
       this.updatedTargetIds = updatedTargetIds;
@@ -67,12 +67,12 @@ public abstract class WatchChange {
     }
 
     /** The target IDs for which this document should be updated/added */
-    public List<Integer> getUpdatedTargetIds() {
+    public List<RemoteTargetId> getUpdatedTargetIds() {
       return updatedTargetIds;
     }
 
     /** The target IDs for which this document is no longer relevant */
-    public List<Integer> getRemovedTargetIds() {
+    public List<RemoteTargetId> getRemovedTargetIds() {
       return removedTargetIds;
     }
 
@@ -138,17 +138,17 @@ public abstract class WatchChange {
    * client state against expected state sent from the server.
    */
   public static final class ExistenceFilterWatchChange extends WatchChange {
-    private final int targetId;
+    private final RemoteTargetId targetId;
 
     private final ExistenceFilter existenceFilter;
 
-    public ExistenceFilterWatchChange(int targetId, ExistenceFilter existenceFilter) {
+    public ExistenceFilterWatchChange(RemoteTargetId targetId, ExistenceFilter existenceFilter) {
       this.targetId = targetId;
       this.existenceFilter = existenceFilter;
     }
 
     /** The target ID this existence filter applies to */
-    public int getTargetId() {
+    public RemoteTargetId getTargetId() {
       return targetId;
     }
 
@@ -179,24 +179,24 @@ public abstract class WatchChange {
   /** The state of a target has changed. This can mean removal, addition, current or reset. */
   public static final class WatchTargetChange extends WatchChange {
     private final WatchTargetChangeType changeType;
-    private final List<Integer> targetIds;
+    private final List<RemoteTargetId> targetIds;
     private final ByteString resumeToken;
 
     /** The cause, only valid if changeType == Removal */
     @Nullable private final Status cause;
 
-    public WatchTargetChange(WatchTargetChangeType changeType, List<Integer> targetIds) {
+    public WatchTargetChange(WatchTargetChangeType changeType, List<RemoteTargetId> targetIds) {
       this(changeType, targetIds, WatchStream.EMPTY_RESUME_TOKEN, null);
     }
 
     public WatchTargetChange(
-        WatchTargetChangeType changeType, List<Integer> targetIds, ByteString resumeToken) {
+        WatchTargetChangeType changeType, List<RemoteTargetId> targetIds, ByteString resumeToken) {
       this(changeType, targetIds, resumeToken, null);
     }
 
     public WatchTargetChange(
         WatchTargetChangeType changeType,
-        List<Integer> targetIds,
+        List<RemoteTargetId> targetIds,
         ByteString resumeToken,
         @Nullable Status cause) {
       // cause != null implies removal
@@ -221,7 +221,7 @@ public abstract class WatchChange {
     }
 
     /** The list of targets this change applies to */
-    public List<Integer> getTargetIds() {
+    public List<RemoteTargetId> getTargetIds() {
       return targetIds;
     }
 

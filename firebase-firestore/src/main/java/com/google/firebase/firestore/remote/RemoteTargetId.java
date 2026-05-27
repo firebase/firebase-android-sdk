@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Represents a transient, session-specific target ID used strictly over the watch stream. */
 public final class RemoteTargetId implements Comparable<RemoteTargetId> {
@@ -26,6 +28,14 @@ public final class RemoteTargetId implements Comparable<RemoteTargetId> {
 
   public static RemoteTargetId from(int value) {
     return new RemoteTargetId(value);
+  }
+
+  public static List<RemoteTargetId> from(List<Integer> values) {
+    List<RemoteTargetId> result = new ArrayList<>(values.size());
+    for (Integer value : values) {
+      result.add(from(value));
+    }
+    return result;
   }
 
   public int value() {

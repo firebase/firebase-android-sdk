@@ -405,9 +405,9 @@ public class TestUtil {
     return targetChange(ByteString.EMPTY, true, Arrays.asList(docs), null, null);
   }
 
-  public static Map<Integer, RemoteTargetData> activeQueries(Iterable<Integer> targets) {
+  public static Map<RemoteTargetId, RemoteTargetData> activeQueries(Iterable<Integer> targets) {
     Query query = query("foo");
-    Map<Integer, RemoteTargetData> listenMap = new HashMap<>();
+    Map<RemoteTargetId, RemoteTargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
       RemoteTargetData targetData =
           new RemoteTargetData(
@@ -415,32 +415,33 @@ public class TestUtil {
               RemoteTargetId.from(targetId),
               ARBITRARY_SEQUENCE_NUMBER,
               QueryPurpose.LISTEN);
-      listenMap.put(targetId, targetData);
+      listenMap.put(RemoteTargetId.from(targetId), targetData);
     }
     return listenMap;
   }
 
-  public static Map<Integer, RemoteTargetData> activeQueries(Integer... targets) {
+  public static Map<RemoteTargetId, RemoteTargetData> activeQueries(Integer... targets) {
     return activeQueries(asList(targets));
   }
 
-  public static Map<Integer, RemoteTargetData> activeLimboQueries(
+  public static Map<RemoteTargetId, RemoteTargetData> activeLimboQueries(
       String docKey, Iterable<Integer> targets) {
     Query query = query(docKey);
-    Map<Integer, RemoteTargetData> listenMap = new HashMap<>();
+    Map<RemoteTargetId, RemoteTargetData> listenMap = new HashMap<>();
     for (Integer targetId : targets) {
+      RemoteTargetId remoteTargetId = RemoteTargetId.from(targetId);
       RemoteTargetData targetData =
           new RemoteTargetData(
               new TargetOrPipeline.TargetWrapper(query.toTarget()),
-              RemoteTargetId.from(targetId),
+              remoteTargetId,
               ARBITRARY_SEQUENCE_NUMBER,
               QueryPurpose.LIMBO_RESOLUTION);
-      listenMap.put(targetId, targetData);
+      listenMap.put(remoteTargetId, targetData);
     }
     return listenMap;
   }
 
-  public static Map<Integer, RemoteTargetData> activeLimboQueries(
+  public static Map<RemoteTargetId, RemoteTargetData> activeLimboQueries(
       String docKey, Integer... targets) {
     return activeLimboQueries(docKey, asList(targets));
   }
@@ -483,22 +484,29 @@ public class TestUtil {
 
     WatchChange.WatchTargetChange watchChange =
         new WatchChange.WatchTargetChange(
-            WatchChange.WatchTargetChangeType.NoChange, asList(targetId), resumeToken);
+            WatchChange.WatchTargetChangeType.NoChange,
+            RemoteTargetId.from(asList(targetId)),
+            resumeToken);
     aggregator.handleTargetChange(watchChange);
     return toSdkRemoteEvent(aggregator.createRemoteEvent(version(version)));
   }
 
   public static RemoteEvent addedRemoteEvent(
-      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MutableDocument doc,
+      List<RemoteTargetId> updatedInTargets,
+      List<RemoteTargetId> removedFromTargets) {
     return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent existenceFilterEvent(
-      int targetId, ImmutableSortedSet<DocumentKey> syncedKeys, int remoteCount, int version) {
+      RemoteTargetId targetId,
+      ImmutableSortedSet<DocumentKey> syncedKeys,
+      int remoteCount,
+      int version) {
     RemoteTargetData targetData =
         new RemoteTargetData(
             new TargetOrPipeline.TargetWrapper(query("foo").toTarget()),
-            RemoteTargetId.from(targetId),
+            targetId,
             ARBITRARY_SEQUENCE_NUMBER,
             QueryPurpose.LISTEN);
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
@@ -516,8 +524,8 @@ public class TestUtil {
 
   public static RemoteEvent addedRemoteEvent(
       List<MutableDocument> docs,
-      List<Integer> updatedInTargets,
-      List<Integer> removedFromTargets) {
+      List<RemoteTargetId> updatedInTargets,
+      List<RemoteTargetId> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -558,23 +566,33 @@ public class TestUtil {
     return toSdkRemoteEvent(aggregator.createRemoteEvent(version));
   }
 
-  public static RemoteEvent addedRemoteEvent(MutableDocument doc, Integer targetId) {
+  public static RemoteEvent addedRemoteEvent(MutableDocument doc, RemoteTargetId targetId) {
     return addedRemoteEvent(singletonList(doc), singletonList(targetId), emptyList());
   }
 
+  public static RemoteEvent addedRemoteEvent(MutableDocument doc, int remoteTargetId) {
+    return addedRemoteEvent(doc, RemoteTargetId.from(remoteTargetId));
+  }
+
   public static RemoteEvent updateRemoteEvent(
-      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    List<Integer> activeTargets = new ArrayList<>();
+      MutableDocument doc,
+      List<RemoteTargetId> updatedInTargets,
+      List<RemoteTargetId> removedFromTargets) {
+    List<RemoteTargetId> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);
     return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets);
   }
 
+  public static List<RemoteTargetId> asRemoteTargetIdList(Integer... a) {
+    return RemoteTargetId.from(asList(a));
+  }
+
   public static RemoteEvent updateRemoteEvent(
       MutableDocument doc,
-      List<Integer> updatedInTargets,
-      List<Integer> removedFromTargets,
-      List<Integer> activeTargets) {
+      List<RemoteTargetId> updatedInTargets,
+      List<RemoteTargetId> removedFromTargets,
+      List<RemoteTargetId> activeTargets) {
     DocumentChange change =
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
@@ -589,7 +607,7 @@ public class TestUtil {
 
               @Override
               public RemoteTargetData getTargetDataForTarget(RemoteTargetId targetId) {
-                return activeTargets.contains(targetId.value())
+                return activeTargets.contains(targetId)
                     ? new RemoteTargetData(
                         new TargetOrPipeline.TargetWrapper(
                             Query.atPath(doc.getKey().getPath()).toTarget()),

@@ -717,8 +717,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void processTargetError(WatchTargetChange targetChange) {
     hardAssert(targetChange.getCause() != null, "Processing target error without a cause");
-    for (Integer targetId : targetChange.getTargetIds()) {
-      RemoteTargetId remoteTargetId = RemoteTargetId.from(targetId);
+    for (RemoteTargetId remoteTargetId : targetChange.getTargetIds()) {
       // Ignore targets that have been removed already.
       if (listenTargets.containsKey(remoteTargetId)) {
         listenTargets.remove(remoteTargetId);

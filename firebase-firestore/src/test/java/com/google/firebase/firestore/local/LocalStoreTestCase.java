@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.TestUtil.DATABASE_ID;
 import static com.google.firebase.firestore.TestUtil.firestore;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.asRemoteTargetIdList;
 import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -79,6 +80,7 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -458,7 +460,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 2, map("it", "changed")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
@@ -519,7 +522,8 @@ public abstract class LocalStoreTestCase {
     assertNotContains("bar/baz");
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 2, map("it", "changed")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("it", "changed")));
     assertContains(doc("foo/bar", 2, map("it", "changed")));
     assertNotContains("bar/baz");
@@ -529,7 +533,8 @@ public abstract class LocalStoreTestCase {
   public void testHandlesDeletedDocumentThenSetMutationThenAck() {
     Query query = query("foo");
     int targetId = allocateQuery(query);
-    applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(deletedDoc("foo/bar", 2), asRemoteTargetIdList(targetId), emptyList()));
     assertRemoved("foo/bar");
     // Under eager GC, there is no longer a reference for the document, and it should be
     // deleted.
@@ -560,7 +565,8 @@ public abstract class LocalStoreTestCase {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
-    applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(deletedDoc("foo/bar", 2), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
@@ -570,7 +576,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 2, map("it", "base")), asList(targetId), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 2, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("it", "base")));
     assertContains(doc("foo/bar", 2, map("it", "base")));
 
@@ -584,7 +591,8 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 3, map("foo", "bar")).setHasCommittedMutations());
 
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 3, map("it", "changed")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 3, map("it", "changed")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 3, map("it", "changed")));
     assertContains(doc("foo/bar", 3, map("it", "changed")));
   }
@@ -616,7 +624,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
 
@@ -627,7 +636,9 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("foo", "bar", "it", "base")), asList(targetId), emptyList()));
+            doc("foo/bar", 2, map("foo", "bar", "it", "base")),
+            asRemoteTargetIdList(targetId),
+            emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar", "it", "base")));
     assertContains(doc("foo/bar", 2, map("foo", "bar", "it", "base")));
   }
@@ -651,7 +662,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("it", "base")));
     assertContains(doc("foo/bar", 1, map("it", "base")));
   }
@@ -677,7 +689,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("it", "base")));
     assertContains(doc("foo/bar", 1, map("it", "base")));
 
@@ -705,7 +718,8 @@ public abstract class LocalStoreTestCase {
     assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertRemoved("foo/bar");
     assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
 
@@ -726,18 +740,21 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("it", "base")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("it", "base")));
     assertContains(doc("foo/bar", 1, map("it", "base")));
 
-    applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(deletedDoc("foo/bar", 2), asRemoteTargetIdList(targetId), emptyList()));
     assertRemoved("foo/bar");
     if (!garbageCollectorIsEager()) {
       assertContains(deletedDoc("foo/bar", 2));
     }
 
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 3, map("it", "changed")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 3, map("it", "changed")), asRemoteTargetIdList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 3, map("it", "changed")));
     assertContains(doc("foo/bar", 3, map("it", "changed")));
   }
@@ -756,7 +773,10 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList(), asList(targetId)));
+            doc("foo/bar", 1, map("it", "base")),
+            asRemoteTargetIdList(targetId),
+            emptyList(),
+            asRemoteTargetIdList(targetId)));
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
 
@@ -849,12 +869,16 @@ public abstract class LocalStoreTestCase {
 
     int targetId = 1;
     applyRemoteEvent(
-        updateRemoteEvent(deletedDoc("foo/bar", 2), emptyList(), emptyList(), asList(targetId)));
+        updateRemoteEvent(
+            deletedDoc("foo/bar", 2), emptyList(), emptyList(), asRemoteTargetIdList(targetId)));
     assertNotContains("foo/bar");
 
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("foo", "bar")), emptyList(), emptyList(), asList(targetId)));
+            doc("foo/bar", 2, map("foo", "bar")),
+            emptyList(),
+            emptyList(),
+            asRemoteTargetIdList(targetId)));
     assertNotContains("foo/bar");
   }
 
@@ -866,8 +890,8 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    List<Integer> none = asList();
-    List<Integer> two = asList(2);
+    List<RemoteTargetId> none = asList();
+    List<RemoteTargetId> two = asRemoteTargetIdList(2);
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("foo", "bar")), two, none));
     assertContains(doc("foo/bar", 2, map("foo", "bar")));
 
@@ -883,7 +907,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("foo", "old")), asRemoteTargetIdList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     releaseTarget(targetId);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
@@ -915,7 +940,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("foo", "old")), asRemoteTargetIdList(targetId), emptyList()));
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     // Release the query so that our target count goes back to 0 and we are considered up-to-date.
     releaseTarget(targetId);
@@ -951,15 +977,27 @@ public abstract class LocalStoreTestCase {
 
     List<Integer> none = asList();
     List<Integer> two = asList(2);
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), two, none));
+    applyRemoteEvent(
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("foo", "bar")),
+            RemoteTargetId.from(two),
+            RemoteTargetId.from(none)));
     writeMutation(setMutation("foo/baz", map("foo", "baz")));
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
 
     notifyLocalViewChanges(
         viewChanges(2, /* fromCache= */ false, asList("foo/bar", "foo/baz"), emptyList()));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), none, two));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 2, map("foo", "baz")), two, none));
+    applyRemoteEvent(
+        updateRemoteEvent(
+            doc("foo/bar", 1, map("foo", "bar")),
+            RemoteTargetId.from(none),
+            RemoteTargetId.from(two)));
+    applyRemoteEvent(
+        updateRemoteEvent(
+            doc("foo/baz", 2, map("foo", "baz")),
+            RemoteTargetId.from(two),
+            RemoteTargetId.from(none)));
     acknowledgeMutation(2);
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
     assertContains(doc("foo/baz", 2, map("foo", "baz")));
@@ -980,7 +1018,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         updateRemoteEvent(
             doc("foo/bar", 1, map()),
-            /* updatedInTargets= */ asList(unknownTargetID),
+            /* updatedInTargets= */ asRemoteTargetIdList(unknownTargetID),
             /* removedFromTargets= */ emptyList(),
             /* activeTargets= */ emptyList()));
     assertNotContains("foo/bar");
@@ -1022,8 +1060,10 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/baz", 10, map("a", "b")), asRemoteTargetIdList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asRemoteTargetIdList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
     executeQuery(query);
@@ -1039,8 +1079,10 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     allocateQuery(query);
 
-    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map()), asList(2), emptyList()));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/baz", 10, map()), asRemoteTargetIdList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/bar", 20, map()), asRemoteTargetIdList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map()));
 
     resetPersistenceStats();
@@ -1102,8 +1144,10 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/baz", 10, map("a", "b")), asRemoteTargetIdList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 20, map("a", "b")), asRemoteTargetIdList(2), emptyList()));
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
     ImmutableSortedSet<DocumentKey> keys = localStore.getRemoteDocumentKeys(2);
@@ -1185,7 +1229,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 10, map("matches", true))),
-            asList(targetId),
+            asRemoteTargetIdList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
@@ -1213,7 +1257,9 @@ public abstract class LocalStoreTestCase {
     // Persist a mapping with a single document
     applyRemoteEvent(
         addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+            asList(doc("foo/a", 10, map("matches", true))),
+            asRemoteTargetIdList(targetId),
+            emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
 
@@ -1222,7 +1268,8 @@ public abstract class LocalStoreTestCase {
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
-    applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
+    applyRemoteEvent(
+        existenceFilterEvent(RemoteTargetId.from(targetId), keySet(key("foo/a")), 2, 20));
     cachedTargetData = localStore.getTargetData(targetOrPipeline);
     Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
     Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
@@ -1276,7 +1323,8 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/a", 10, map("matches", true)), RemoteTargetId.from(targetId)));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
 
@@ -1308,7 +1356,8 @@ public abstract class LocalStoreTestCase {
     Query filteredQuery = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(filteredQuery);
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/a", 10, map("matches", true)), RemoteTargetId.from(targetId)));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
     releaseTarget(targetId);
@@ -1319,7 +1368,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", true))),
-            asList(targetId),
+            asRemoteTargetIdList(targetId),
             emptyList()));
     releaseTarget(targetId);
 
@@ -1344,7 +1393,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 10, map("matches", true))),
-            asList(targetId),
+            asRemoteTargetIdList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
@@ -1356,7 +1405,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/a", 10, map("matches", true)), doc("foo/b", 20, map("matches", false))),
-            asList(targetId),
+            asRemoteTargetIdList(targetId),
             emptyList()));
     releaseTarget(targetId);
 
@@ -1376,7 +1425,8 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
     assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 0)), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 1, map("sum", 0)), asRemoteTargetIdList(2), emptyList()));
     acknowledgeMutation(1);
     assertChanged(doc("foo/bar", 1, map("sum", 0)));
     assertContains(doc("foo/bar", 1, map("sum", 0)));
@@ -1386,7 +1436,9 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
     // The value in this remote event gets ignored since we still have a pending transform mutation.
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(
+            doc("foo/bar", 2, map("sum", 1337)), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations());
 
@@ -1422,7 +1474,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             doc("foo/bar", 1, map("sum", 0, "array_union", new ArrayList<>())),
-            asList(2),
+            asRemoteTargetIdList(2),
             emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 0, "array_union", new ArrayList<>())));
 
@@ -1440,7 +1492,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(
             doc("foo/bar", 2, map("sum", 1337, "array_union", Collections.singletonList("bar"))),
-            asList(2),
+            asRemoteTargetIdList(2),
             emptyList()));
     assertChanged(
         doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
@@ -1471,7 +1523,9 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
     assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("sum", 1337)), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
   }
@@ -1489,7 +1543,9 @@ public abstract class LocalStoreTestCase {
     // Note: This test reflects the current behavior, but it may be preferable to replay the
     // mutation once we receive the first value from the remote event.
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("sum", 1337)), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
   }
@@ -1510,7 +1566,9 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
+    applyRemoteEvent(
+        addedRemoteEvent(
+            doc("foo/bar", 2, map("sum", 1337)), asRemoteTargetIdList(2), emptyList()));
     assertContains(doc("foo/bar", 2, map("sum", 1337)));
 
     bundleDocuments(doc("foo/bar", 1, map("sum", 1337)), deletedDoc("foo/bar1", 1));
@@ -1528,7 +1586,8 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("val", "to-delete")), asList(2), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("val", "to-delete")), asRemoteTargetIdList(2), emptyList()));
     assertContains(doc("foo/bar", 1, map("val", "to-delete")));
 
     bundleDocuments(doc("foo/new", 1, map("sum", 1336)), deletedDoc("foo/bar", 2));
@@ -1546,7 +1605,8 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("val", "old")), asList(2), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("val", "old")), asRemoteTargetIdList(2), emptyList()));
     assertContains(doc("foo/bar", 1, map("val", "old")));
 
     bundleDocuments(doc("foo/bar", 1, map("val", "new")));
@@ -1682,14 +1742,15 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("val", "old")), asList(2), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("val", "old")), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("val", "old")));
     assertContains(doc("foo/bar", 1, map("val", "old")));
 
     applyRemoteEvent(
         addedRemoteEvent(
             asList(doc("foo/bar", 1, map("val", "new")), doc("foo/baz", 2, map("val", "new"))),
-            asList(2),
+            asRemoteTargetIdList(2),
             emptyList()));
 
     assertChanged(doc("foo/baz", 2, map("val", "new")));
@@ -1722,7 +1783,8 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("likes", 0, "stars", 0)), asList(2), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("likes", 0, "stars", 0)), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
     assertContains(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
 
@@ -1746,7 +1808,8 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     applyRemoteEvent(
-        addedRemoteEvent(doc("foo/bar", 1, map("likes", 0, "stars", 0)), asList(2), emptyList()));
+        addedRemoteEvent(
+            doc("foo/bar", 1, map("likes", 0, "stars", 0)), asRemoteTargetIdList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
     assertContains(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
 
@@ -1785,8 +1848,10 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     allocateQuery(query);
 
-    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", 1)), asList(2), emptyList()));
-    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/baz", 10, map("a", 1)), asRemoteTargetIdList(2), emptyList()));
+    applyRemoteEvent(
+        updateRemoteEvent(doc("foo/bar", 20, map()), asRemoteTargetIdList(2), emptyList()));
     writeMutation(patchMutation("foo/baz", map("b", 2)));
 
     resetPersistenceStats();

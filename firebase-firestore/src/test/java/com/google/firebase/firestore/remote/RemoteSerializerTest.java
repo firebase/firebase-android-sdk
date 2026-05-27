@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.model.Values.refValue;
 import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
+import static com.google.firebase.firestore.testutil.TestUtil.asRemoteTargetIdList;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -1326,7 +1327,8 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testConvertsTargetChangeWithAdded() {
-    WatchTargetChange expected = new WatchTargetChange(WatchTargetChangeType.Added, asList(1, 4));
+    WatchTargetChange expected =
+        new WatchTargetChange(WatchTargetChangeType.Added, asRemoteTargetIdList(1, 4));
     WatchTargetChange actual =
         (WatchTargetChange)
             serializer.decodeWatchChange(
@@ -1345,7 +1347,7 @@ public final class RemoteSerializerTest {
     WatchTargetChange expected =
         new WatchTargetChange(
             WatchTargetChangeType.Removed,
-            asList(1, 4),
+            asRemoteTargetIdList(1, 4),
             ByteString.copyFrom(new byte[] {0, 1, 2}),
             Status.PERMISSION_DENIED);
     WatchTargetChange actual =
@@ -1366,7 +1368,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testConvertsTargetChangeWithNoChange() {
     WatchTargetChange expected =
-        new WatchTargetChange(WatchTargetChangeType.NoChange, asList(1, 4));
+        new WatchTargetChange(WatchTargetChangeType.NoChange, asRemoteTargetIdList(1, 4));
     WatchTargetChange actual =
         (WatchTargetChange)
             serializer.decodeWatchChange(
@@ -1384,7 +1386,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithTargetIds() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(1, 2), asList(), key("coll/1"), doc("coll/1", 5, map("foo", "bar")));
+            asRemoteTargetIdList(1, 2),
+            asRemoteTargetIdList(),
+            key("coll/1"),
+            doc("coll/1", 5, map("foo", "bar")));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1409,7 +1414,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithRemovedTargetIds() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(2), asList(1), key("coll/1"), doc("coll/1", 5, map("foo", "bar")));
+            asRemoteTargetIdList(2),
+            asRemoteTargetIdList(1),
+            key("coll/1"),
+            doc("coll/1", 5, map("foo", "bar")));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1434,7 +1442,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithDeletions() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(), asList(1, 2), key("coll/1"), deletedDoc("coll/1", 5));
+            asRemoteTargetIdList(),
+            asRemoteTargetIdList(1, 2),
+            key("coll/1"),
+            deletedDoc("coll/1", 5));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1454,7 +1465,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testConvertsDocumentChangeWithRemoves() {
     WatchChange.DocumentChange expected =
-        new WatchChange.DocumentChange(asList(), asList(1, 2), key("coll/1"), null);
+        new WatchChange.DocumentChange(asList(), asRemoteTargetIdList(1, 2), key("coll/1"), null);
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
