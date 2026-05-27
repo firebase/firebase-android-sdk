@@ -318,34 +318,97 @@ public class CommonUtils {
         || Build.HARDWARE.contains(RANCHU);
   }
 
-  public static boolean isRooted() {
+  /**
+   * Utility method intended for root status validation within a local scope.
+   * <p>
+   * NOTE: Root detection is complex; compromised devices may spoof results
+   * to bypass these basic security checks.
+   * For high-security requirements, integrate solutions like Google Play Integrity API.
+   * <p>
+   * @return true if any rule is met.
+   */
+  public static boolean isRooted(Context context) {
     // No reliable way to determine if an android phone is rooted, since a rooted phone could
     // always disguise itself as non-rooted. Some common approaches can be found on SO:
-    //   http://stackoverflow.com/questions/1101380/determine-if-running-on-a-rooted-device
+    // http://stackoverflow.com/questions/1101380/determine-if-running-on-a-rooted-device
     //
     // http://stackoverflow.com/questions/3576989/how-can-you-detect-if-the-device-is-rooted-in-the-app
     //
     // http://stackoverflow.com/questions/7727021/how-can-androids-copy-protection-check-if-the-device-is-rooted
+
+    // Validate custom ROMs.
     final boolean isEmulator = isEmulator();
     final String buildTags = Build.TAGS;
     if (!isEmulator && buildTags != null && buildTags.contains("test-keys")) {
       return true;
     }
 
-    // Superuser.apk would only exist on a rooted device:
-    File file = new File("/system/app/Superuser.apk");
-    if (file.exists()) {
-      return true;
+    // Check for common Root-Related files and binaries.
+    String[] paths = {
+      "/system/app/Superuser.apk",
+      "/sbin/su",
+      "/system/bin/su",
+      "/system/xbin/su",
+      "/data/local/xbin/su",
+      "/data/local/bin/su",
+      "/system/sd/xbin/su",
+      "/system/bin/failsafe/su",
+      "/data/local/su",
+      "/su/bin/su",
+      "/su/xbin/su",
+      "/su/bin/daemonsu",
+      "/system/xbin/daemonsu",
+      "/system/etc/init.d/99SuperSUDaemon",
+      "/dev/com.koushikdutta.superuser.daemon/",
+      "/system/xbin/busybox",
+      "/data/magisk.img",
+      "/sbin/.core/img/magisk.img",
+      "/system/lib/libmagisk.so"
+    };
+    for (String path : paths) {
+      if (new File(path).exists()) {
+        return true;
+      }
     }
 
-    // su is only available on a rooted device (or the emulator)
-    // The user could rename or move to a non-standard location, but in that case they
-    // probably don't want us to know they're root and they can pretty much subvert
-    // any check anyway.
-    file = new File("/system/xbin/su");
-    if (!isEmulator && file.exists()) {
-      return true;
+    // Check if 'su' Executable is in the PATH.
+    String pathVar = System.getenv("PATH");
+    if (pathVar != null) {
+      for (String pathDir : pathVar.split(":")) {
+        if (new File(pathDir, "su").exists()) {
+          return true;
+        }
+      }
     }
+
+    // Check for Installed Root Manager packages.
+    // NOTE: For Android 11+, this requires <queries> declared in the app's AndroidManifest.xml.
+    // See https://developer.android.com/training/package-visibility for more details.
+    if (context != null) {
+      String[] knownRootPackages = {
+        "com.noshufou.android.su",
+        "com.thirdparty.superuser",
+        "eu.chainfire.supersu",
+        "com.koushikdutta.superuser",
+        "com.zachspong.repodroid",
+        "com.ramdroid.repodroid",
+        "com.topjohnwu.magisk"
+      };
+      PackageManager pm = context.getPackageManager();
+      for (String pkg : knownRootPackages) {
+        try {
+          pm.getPackageInfo(pkg, 0);
+          return true;
+        } catch (PackageManager.NameNotFoundException e) {
+          // Package is not installed or not visible.
+          Logger.getLogger()
+              .d(
+                  "Root check failed due to missing package or limited visibility. Further details: "
+                      + e.getMessage());
+        }
+      }
+    }
+
     return false;
   }
 
@@ -361,13 +424,13 @@ public class CommonUtils {
   public static final int DEVICE_STATE_VENDORINTERNAL = 1 << 4;
   public static final int DEVICE_STATE_COMPROMISEDLIBRARIES = 1 << 5;
 
-  public static int getDeviceState() {
+  public static int getDeviceState(Context context) {
     int deviceState = 0;
     if (CommonUtils.isEmulator()) {
       deviceState |= DEVICE_STATE_ISSIMULATOR;
     }
 
-    if (CommonUtils.isRooted()) {
+    if (CommonUtils.isRooted(context)) {
       deviceState |= DEVICE_STATE_JAILBROKEN;
     }
 
