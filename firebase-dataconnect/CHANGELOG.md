@@ -14,7 +14,7 @@
   ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
 - [changed] Realtime query results now update the local cache as query
   results are received.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
 
 # 17.2.2
 
