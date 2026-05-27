@@ -236,8 +236,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private Map<Integer, List<RemoteTargetId>> sdkToRemoteTargetIds;
 
-  private Map<Integer, List<Integer>> sdkTargetIdMapExpectedToActual;
-
   private Integer currentRemoteTargetIndex;
   private boolean allowUnlistedTargetRemoval;
 
@@ -329,7 +327,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     initClient();
 
     sdkToRemoteTargetIds = new HashMap<>();
-    sdkTargetIdMapExpectedToActual = new HashMap<>();
     currentRemoteTargetIndex = null;
 
     // Set up internal event tracking for the spec tests.
@@ -678,12 +675,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           syncEngine.loadBundle(bundleReader, bundleTask);
           bundleTask.addOnFailureListener(e -> log("Loading bundle failed with " + e));
         });
-    if (!bundleTask.isSuccessful()) {
-      if (bundleTask.getException() != null) {
-        bundleTask.getException().printStackTrace();
-      }
-      Assert.fail("Bundle task was not successful");
-    }
+      assertTrue(bundleTask.isSuccessful());
   }
 
   private void doMutation(Mutation mutation) throws Exception {
