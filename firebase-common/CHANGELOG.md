@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for reading the `recaptcha_site_key` value from the `google-services.json`
+  file. (#8216)
+
 # 22.0.1
 
 - [changed] Improve datastore support (#7277)
