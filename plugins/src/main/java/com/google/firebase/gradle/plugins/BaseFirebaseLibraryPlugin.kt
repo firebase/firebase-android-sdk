@@ -178,12 +178,23 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   }
 
   protected fun getGenerateApiTxt(project: Project, srcDirs: ConfigurableFileCollection) =
-    project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
-      sources.from(project.provider { srcDirs })
-      apiTxtFile.set(project.file("api.txt"))
-      baselineFile.set(project.file("baseline.txt"))
-      updateBaseline.set(project.hasProperty("updateBaseline"))
-    }
+    project.tasks
+      .register<GenerateApiTxtTask>("generateApiTxtFile") {
+        sources.from(project.provider { srcDirs })
+        apiTxtFile.set(project.file("api.txt"))
+        baselineFile.set(project.file("baseline.txt"))
+        updateBaseline.set(project.hasProperty("updateBaseline"))
+      }
+      .also { taskProvider ->
+        if (project.name == "firebase-firestore") {
+          project.tasks.withType(org.gradle.api.tasks.bundling.Jar::class.java).configureEach {
+            if (name == "sourceReleaseJar") {
+              from(project.layout.buildDirectory.dir("agent-docs"))
+              dependsOn(taskProvider)
+            }
+          }
+        }
+      }
 
   protected fun getDocStubs(project: Project, srcDirs: ConfigurableFileCollection) =
     project.tasks.register<GenerateStubsTask>("docStubs") {
@@ -218,7 +229,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
             pom(firebaseLibrary.customizePomAction)
             firebaseLibrary.applyPomTransformations(pom)
-            from(components.findByName(firebaseLibrary.type.componentName))
+            from(components.findByName(firebaseLibrary.componentName))
           }
         }
       }

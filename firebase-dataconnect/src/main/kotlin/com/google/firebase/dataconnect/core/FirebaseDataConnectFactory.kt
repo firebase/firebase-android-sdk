@@ -21,10 +21,12 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.random.Random
 
 internal class FirebaseDataConnectFactory(
   private val context: Context,
@@ -34,6 +36,10 @@ internal class FirebaseDataConnectFactory(
   private val deferredAuthProvider: Deferred<InternalAuthProvider>,
   private val deferredAppCheckProvider: Deferred<InteropAppCheckTokenProvider>,
 ) {
+
+  // Use the same instance of IdStringGenerator for every FirebaseDataConnect instance so that
+  // all instances generate unique IDs.
+  private val idStringGenerator = IdStringGenerator(Random.Default)
 
   init {
     firebaseApp.addLifecycleEventListener { _, _ -> close() }
@@ -72,7 +78,7 @@ internal class FirebaseDataConnectFactory(
 
   private fun FirebaseDataConnect.Companion.newInstance(
     config: ConnectorConfig,
-    settings: DataConnectSettings?
+    settings: DataConnectSettings?,
   ) =
     FirebaseDataConnectImpl(
       context = context,
@@ -85,6 +91,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
+      idStringGenerator = idStringGenerator,
     )
 
   fun remove(instance: FirebaseDataConnect) {

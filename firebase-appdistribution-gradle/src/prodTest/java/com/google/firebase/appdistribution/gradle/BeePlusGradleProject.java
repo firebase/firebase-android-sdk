@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.gradle.testkit.runner.BuildResult;
@@ -56,10 +57,17 @@ class BeePlusGradleProject extends ExternalResource {
   }
 
   static final String PACKAGE_NAME = "com.firebase.appdistribution.prober";
-  // Also remember to update the latest AGP/gradle versions in UploadDistributionTaskTest.kt
-  // firebase-appdistribution-gradle/src/integrationTest/java/com/google/firebase/appdistribution/gradle/UploadDistributionTaskTest.kt#L724-L726
-  static final String LATEST_AGP_VERSION = "9.1.0-alpha07";
-  static final String LATEST_GRADLE_VERSION = "9.3.1";
+  static final String LATEST_AGP_VERSION = VersionUtils.INSTANCE.fetchLatestAgpVersion();
+  static final String LATEST_GRADLE_VERSION = VersionUtils.INSTANCE.fetchLatestGradleVersion();
+
+  private static final Logger LOGGER = Logger.getLogger(BeePlusGradleProject.class.getName());
+
+  static {
+    LOGGER.info("Production compat tests using versions:");
+    LOGGER.info("Latest Gradle Version: " + LATEST_GRADLE_VERSION);
+    LOGGER.info("Latest AGP Version: " + LATEST_AGP_VERSION);
+  }
+
   // The project number for App Distro Probes. We need to use this project
   // because this is the one that's actually linked to play for BeePlus,
   // which is required for AAB uploads.
@@ -184,7 +192,7 @@ class BeePlusGradleProject extends ExternalResource {
 
   private String getToken() {
     String token = System.getenv("FIREBASE_TOKEN");
-    if (token == null || token.isEmpty()) {
+    if (isNullOrEmpty(token)) {
       throw new IllegalStateException(
           "FIREBASE_TOKEN environment variable not set. This is required for production tests.");
     }

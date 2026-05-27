@@ -101,7 +101,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final String DROP_GLOBAL_LOG_EVENT_STATE_SQL =
       "DROP TABLE IF EXISTS global_log_event_state";
 
-  static int SCHEMA_VERSION = 8;
+  static int SCHEMA_VERSION = 9;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
       (db) -> {
@@ -153,6 +153,11 @@ final class SchemaManager extends SQLiteOpenHelper {
         db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_encrypted_list_blob BLOB");
       };
 
+  private static final SchemaManager.Migration MIGRATE_TO_V9 =
+      db -> {
+        db.execSQL("ALTER TABLE events ADD COLUMN pseudonymous_id_update_receiver_class_name TEXT");
+      };
+
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
       Arrays.asList(
           MIGRATE_TO_V1,
@@ -162,7 +167,8 @@ final class SchemaManager extends SQLiteOpenHelper {
           MIGRATION_TO_V5,
           MIGRATE_TO_V6,
           MIGRATE_TO_V7,
-          MIGRATE_TO_V8);
+          MIGRATE_TO_V8,
+          MIGRATE_TO_V9);
 
   @Inject
   SchemaManager(

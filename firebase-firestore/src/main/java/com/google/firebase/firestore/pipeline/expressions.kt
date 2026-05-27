@@ -57,7 +57,6 @@ import java.util.Date
  * The [Expression] class provides a fluent API for building expressions. You can chain together
  * method calls to create complex expressions.
  */
-@Beta
 abstract class Expression internal constructor() {
 
   internal abstract fun canonicalId(): String
@@ -67,9 +66,11 @@ abstract class Expression internal constructor() {
     override fun evaluateFunction(context: EvaluationContext) = { _: MutableDocument ->
       EvaluateResultValue(value)
     }
+
     override fun toString(): String {
       return canonicalId()
     }
+
     override fun canonicalId() = "cst(${canonicalId(value)})"
 
     override fun equals(other: Any?): Boolean {
@@ -118,6 +119,7 @@ abstract class Expression internal constructor() {
               .toTypedArray()
           )
         is List<*> -> array(value)
+        is Pipeline -> PipelineValueExpression(value)
         else -> null
       }
     }
@@ -412,6 +414,55 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun or(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
       BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
+
+    /**
+     * Creates an expression that performs a logical 'NOR' operation.
+     *
+     * ```kotlin
+     * // Check if 'status' is neither "new" nor "open"
+     * nor(field("status").equal("new"), field("status").equal("open"))
+     * ```
+     *
+     * @param condition The first [BooleanExpression].
+     * @param conditions Additional [BooleanExpression]s.
+     * @return A new [BooleanExpression] representing the logical 'NOR' operation.
+     */
+    @JvmStatic
+    fun nor(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
+      BooleanFunctionExpression("nor", notImplemented, condition, *conditions)
+
+    /**
+     * Creates an expression that evaluates to the result corresponding to the first true condition.
+     *
+     * This function behaves like a `switch` statement. It accepts an alternating sequence of
+     * conditions and their corresponding results. If an odd number of arguments is provided, the
+     * final argument serves as a default fallback result. If no default is provided and no
+     * condition evaluates to true, it throws an error.
+     *
+     * ```kotlin
+     * // Return "Active" if field "status" is 1, "Pending" if field "status" is 2,
+     * // and default to "Unknown" if none of the conditions are true.
+     * switchOn(
+     *   field("status").equal(1), constant("Active"),
+     *   field("status").equal(2), constant("Pending"),
+     *   constant("Unknown")
+     * )
+     * ```
+     *
+     * @param condition The first condition to check.
+     * @param result The result if the first condition is true.
+     * @param others Additional conditions and results, and optionally a default value.
+     * @return A new [Expression] representing the switch operation.
+     */
+    @JvmStatic
+    fun switchOn(condition: BooleanExpression, result: Any, vararg others: Any): Expression =
+      FunctionExpression(
+        "switch_on",
+        notImplemented,
+        condition,
+        toExprOrConstant(result),
+        *toArrayOfExprOrConstant(others)
+      )
 
     /**
      * Creates an expression that performs a logical 'XOR' operation.
@@ -911,6 +962,110 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Expression): Expression =
       FunctionExpression("round", evaluateRoundToPrecision, numericField, decimalPlace)
+
+    /**
+     * Creates an expression that truncates [numericExpr] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc(field("rating"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericExpr: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr)
+
+    /**
+     * Creates an expression that truncates [numericField] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc("rating")
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericField: String): Expression =
+      FunctionExpression("trunc", notImplemented, numericField)
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision(field("rating"), 2)
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision("rating", 2)
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision(field("rating"), field("precision"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, decimalPlace)
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision("rating", field("precision"))
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, decimalPlace)
 
     /**
      * Creates an expression that returns the smallest integer that isn't less than [numericExpr].
@@ -1786,6 +1941,48 @@ abstract class Expression internal constructor() {
     fun type(fieldName: String): Expression = FunctionExpression("type", notImplemented, fieldName)
 
     /**
+     * Creates an expression that checks if the result of an expression is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType(field("age"), "int64")
+     * ```
+     *
+     * @param expr The expression to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(expr: Expression, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, expr, constant(type))
+
+    /**
+     * Creates an expression that checks if the value of a field is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType("age", "int64")
+     * ```
+     *
+     * @param fieldName The name of the field to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(fieldName: String, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, fieldName, constant(type))
+
+    /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
      * expression.
      *
@@ -2115,7 +2312,7 @@ abstract class Expression internal constructor() {
      *
      * @return A new [Expression] representing the random number operation.
      */
-    @JvmStatic internal fun rand(): Expression = FunctionExpression("rand", notImplemented)
+    @JvmStatic fun rand(): Expression = FunctionExpression("rand", notImplemented)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -2851,8 +3048,9 @@ abstract class Expression internal constructor() {
     fun trim(fieldName: String): Expression = FunctionExpression("trim", evaluateTrim, fieldName)
 
     /**
-     * Creates an expression that removes leading and trailing values from a expression. The
-     * accepted values types are string and blob.
+     * Creates an expression that removes a set of leading and trailing values from an expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim specified characters from the 'userInput' field
@@ -2870,10 +3068,12 @@ abstract class Expression internal constructor() {
       FunctionExpression("trim", notImplemented, stringExpression, valueToTrim)
 
     /**
-     * Creates an expression that removes leading and trailing characters from a string field.
+     * Creates an expression that removes a set of leading and trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim '-', and '_' from the beginning and the end of 'userInput' field
+     * // Trim all '-', and '_' characters from the beginning and the end of 'userInput' field
      * trimValue("userInput", "-_")
      * ```
      *
@@ -2885,6 +3085,530 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun trimValue(fieldName: String, valueToTrim: String): Expression =
       FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
+
+    /**
+     * Creates an expression that removes leading whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(stringExpression: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes leading whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(fieldName: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(stringExpression: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(fieldName: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat(field("name"), 3)
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, constant(count))
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat(field("name"), field("count"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, count)
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat("name", 3)
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), constant(count))
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat("name", field("count"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), count)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf(field("text"), field("search"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf(field("text"), "world")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, constant(substring))
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf("text", field("search"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf("text", "world")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), constant(substring))
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -2969,6 +3693,50 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun map(elements: Map<String, Any>): Expression =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param expression The expression evaluating to a map or document.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, key: String): Expression =
+      FunctionExpression("get_field", notImplemented, expression, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, key: String): Expression =
+      FunctionExpression("get_field", notImplemented, fieldName, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param expression The expression evaluating to a Map or Document.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, keyExpression: Expression): Expression =
+      FunctionExpression("get_field", notImplemented, expression, keyExpression)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, keyExpression: Expression): Expression =
+      FunctionExpression("get_field", notImplemented, fieldName, keyExpression)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -3159,6 +3927,227 @@ abstract class Expression internal constructor() {
     fun mapRemove(mapField: String, key: String): Expression =
       FunctionExpression("map_remove", notImplemented, mapField, key)
 
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapExpr The expression representing the map.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, mapExpr, key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), "city", "San Francisco");
+     * ```
+     *
+     * @param mapExpr The map field to set entries in.
+     * @param key The key to set.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        mapExpr,
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", constant("city"), constant("San Francisco"))
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, field(mapField), key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", "city", "San Francisco")
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(mapField: String, key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        field(mapField),
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of a map expression.
+     * mapKeys(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapExpr: Expression): Expression =
+      FunctionExpression("map_keys", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of the 'metadata' map field.
+     * mapKeys("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapField: String): Expression =
+      FunctionExpression("map_keys", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of a map expression.
+     * mapValues(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapExpr: Expression): Expression =
+      FunctionExpression("map_values", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of the 'metadata' map field.
+     * mapValues("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapField: String): Expression =
+      FunctionExpression("map_values", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps, where each map
+     * contains a "k" property for the key and a "v" property for the value.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of a map expression.
+     * mapEntries(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapExpr: Expression): Expression =
+      FunctionExpression("map_entries", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of the 'metadata' map field.
+     * mapEntries("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapField: String): Expression =
+      FunctionExpression("map_entries", notImplemented, field(mapField))
     /**
      * Calculates the Cosine distance between two vector expressions.
      *
@@ -3914,7 +4903,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -3927,7 +4916,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: String,
       timezone: String
@@ -3947,7 +4936,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -3960,7 +4949,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: Expression,
       timezone: String
@@ -3980,7 +4969,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", "day", "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -3993,7 +4982,11 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(fieldName: String, granularity: String, timezone: String): Expression =
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: String
+    ): Expression =
       FunctionExpression(
         "timestamp_trunc",
         notImplemented,
@@ -4009,7 +5002,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -4022,7 +5015,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       fieldName: String,
       granularity: Expression,
       timezone: String
@@ -4034,6 +5027,496 @@ abstract class Expression internal constructor() {
         granularity,
         constant(timezone)
       )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        timestamp,
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, timestamp, granularity, timezone)
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        field(fieldName),
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, field(fieldName), granularity, timezone)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference between the fields 'endAt' and the field 'startAt' in unit specified by
+     * // the 'unit' field.
+     * timestampDiff(field("endAt"), field("startAt"), field("unit"))
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: Expression): Expression =
+      FunctionExpression("timestamp_diff", notImplemented, end, start, unit)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' field and 'startAt' field.
+     * timestampDiff(field("endAt"), field("startAt"), "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: String): Expression =
+      timestampDiff(end, start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", "startAt", "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, startFieldName: String, unit: String): Expression =
+      timestampDiff(field(endFieldName), field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", field("startAt"), "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, start: Expression, unit: String): Expression =
+      timestampDiff(field(endFieldName), start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff(field("endAt"), "startAt", "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, startFieldName: String, unit: String): Expression =
+      timestampDiff(end, field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract(field("createdAt"), field("part"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: Expression): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp returned by the expression.
+     * timestampExtract(field("createdAt"), "day")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: String): Expression =
+      timestampExtract(timestamp, constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract("createdAt", field("part"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: Expression): Expression =
+      timestampExtract(field(fieldName), part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field.
+     * timestampExtract("createdAt", "day")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: String): Expression =
+      timestampExtract(field(fieldName), constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by
+     * // the field 'tz'.
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: String
+    ): Expression =
+      timestampExtractWithTimezone(field(fieldName), constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", field("part"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), constant(part), timezone)
 
     /**
      * Creates an expression that checks if two expressions are equal.
@@ -4650,6 +6133,308 @@ abstract class Expression internal constructor() {
       FunctionExpression("array_reverse", evaluateArrayReverse, arrayFieldName)
 
     /**
+     * Filters an [array] expression based on a predicate.
+     *
+     * ```kotlin
+     * // Filter 'scores' array to include only values greater than 50
+     * arrayFilter(field("scores"), "score", greaterThan(variable("score"), 50))
+     * ```
+     *
+     * @param array The array expression to filter.
+     * @param alias The alias to use for the current element in the filter expression.
+     * @param filter The predicate boolean expression used to filter the elements.
+     * @return A new [Expression] representing the arrayFilter operation.
+     */
+    @JvmStatic
+    fun arrayFilter(array: Expression, alias: String, filter: BooleanExpression): Expression =
+      FunctionExpression("array_filter", notImplemented, array, constant(alias), filter)
+
+    /**
+     * Filters an array field based on a predicate.
+     *
+     * ```kotlin
+     * // Filter 'scores' array to include only values greater than 50
+     * arrayFilter("scores", "score", greaterThan(variable("score"), 50))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains array to filter.
+     * @param alias The alias to use for the current element in the filter expression.
+     * @param filter The predicate boolean expression used to filter the elements.
+     * @return A new [Expression] representing the arrayFilter operation.
+     */
+    @JvmStatic
+    fun arrayFilter(arrayFieldName: String, alias: String, filter: BooleanExpression): Expression =
+      FunctionExpression("array_filter", notImplemented, arrayFieldName, constant(alias), filter)
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by multiplying each score by 10
+     * arrayTransform(field("scores"), "score", multiply(variable("score"), 10))
+     * ```
+     *
+     * @param array The array expression to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransform(array: Expression, elementAlias: String, transform: Expression): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        array,
+        constant(elementAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by multiplying each score by 10
+     * arrayTransform("scores", "score", multiply(variable("score"), 10))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains array to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransform(
+      arrayFieldName: String,
+      elementAlias: String,
+      transform: Expression
+    ): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        arrayFieldName,
+        constant(elementAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array,
+     * providing the element's index to the transformation expression.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by adding the index
+     * arrayTransformWithIndex(field("scores"), "score", "i", add(variable("score"), variable("i")))
+     * ```
+     *
+     * @param array The array expression to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param indexAlias The alias to use for the current index.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransformWithIndex operation.
+     */
+    @JvmStatic
+    fun arrayTransformWithIndex(
+      array: Expression,
+      elementAlias: String,
+      indexAlias: String,
+      transform: Expression
+    ): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        array,
+        constant(elementAlias),
+        constant(indexAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array,
+     * providing the element's index to the transformation expression.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by adding the index
+     * arrayTransformWithIndex("scores", "score", "i", add(variable("score"), variable("i")))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains array to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param indexAlias The alias to use for the current index.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransformWithIndex operation.
+     */
+    @JvmStatic
+    fun arrayTransformWithIndex(
+      arrayFieldName: String,
+      elementAlias: String,
+      indexAlias: String,
+      transform: Expression
+    ): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        arrayFieldName,
+        constant(elementAlias),
+        constant(indexAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySliceToEnd(field("items"), 2)
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(array: Expression, offset: Int): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting at an offset defined by a field
+     * arraySliceToEnd(field("items"), field("startIdx"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(array: Expression, offset: Expression): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an array field to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySliceToEnd("items", 2)
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(arrayFieldName: String, offset: Int): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an array field to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting at an offset defined by a field
+     * arraySliceToEnd("items", field("startIdx"))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(arrayFieldName: String, offset: Expression): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression.
+     *
+     * ```kotlin
+     * // Get 5 elements from the 'items' array starting from index 2
+     * arraySlice(field("items"), 2, 5)
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(array: Expression, offset: Int, length: Int): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        array,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
+
+    /**
+     * Creates an expression that returns a slice of an array field.
+     *
+     * ```kotlin
+     * // Get 5 elements from the 'items' array starting from index 2
+     * arraySlice("items", 2, 5)
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(arrayFieldName: String, offset: Int, length: Int): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        arrayFieldName,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array using expressions for offset and length
+     * arraySlice(field("items"), field("startIdx"), field("length"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(array: Expression, offset: Expression, length: Expression): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        array,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
+
+    /**
+     * Creates an expression that returns a slice of an array field.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array using expressions for offset and length
+     * arraySlice("items", field("startIdx"), field("length"))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(arrayFieldName: String, offset: Expression, length: Expression): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        arrayFieldName,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
+
+    /**
      * Creates an expression that returns the sum of the elements in an array.
      *
      * ```kotlin
@@ -4933,6 +6718,556 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun arrayLength(arrayFieldName: String): Expression =
       FunctionExpression("array_length", evaluateArrayLength, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first element of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst(field("myArray"))
+     * ```
+     *
+     * @param array The array expression to get the first element from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(array: Expression): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, array)
+
+    /**
+     * Creates an expression that returns the first element of an array field.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first element
+     * from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(arrayFieldName: String): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first 3 elements of the 'myArray' field.
+     * arrayFirstN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(array: Expression, n: Int): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(array: Expression, n: Expression): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` elements
+     * from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` elements
+     * from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the last element of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last element of the 'myArray' field.
+     * arrayLast(field("myArray"))
+     * ```
+     *
+     * @param array The array expression to get the last element from.
+     * @return A new [Expression] representing the last element.
+     */
+    @JvmStatic
+    fun arrayLast(array: Expression): Expression =
+      FunctionExpression("array_last", evaluateArrayLast, array)
+
+    /**
+     * Creates an expression that returns the last element of an array field.
+     *
+     * ```kotlin
+     * // Get the last element of the 'myArray' field.
+     * arrayLast("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last element from.
+     * @return A new [Expression] representing the last element.
+     */
+    @JvmStatic
+    fun arrayLast(arrayFieldName: String): Expression =
+      FunctionExpression("array_last", evaluateArrayLast, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last 3 elements of the 'myArray' field.
+     * arrayLastN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(array: Expression, n: Int): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the last `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(array: Expression, n: Expression): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, array, n)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last `n` elements
+     * from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last `n` elements
+     * from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the minimum element of the [array].
+     *
+     * ```kotlin
+     * // Get the minimum element of the 'myArray' field.
+     * arrayMinimum(field("myArray"))
+     * ```
+     *
+     * @param array The array expression.
+     * @return A new [Expression] representing the minimum element.
+     */
+    @JvmStatic
+    fun arrayMinimum(array: Expression): Expression =
+      FunctionExpression("minimum", evaluateArrayMinimum, array)
+
+    /**
+     * Creates an expression that returns the minimum element of an array field.
+     *
+     * ```kotlin
+     * // Get the minimum element of the 'myArray' field.
+     * arrayMinimum("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the minimum element
+     * from.
+     * @return A new [Expression] representing the minimum element.
+     */
+    @JvmStatic
+    fun arrayMinimum(arrayFieldName: String): Expression =
+      FunctionExpression("minimum", evaluateArrayMinimum, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 smallest elements of the 'myArray' field.
+     * arrayMinimumN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(array: Expression, n: Int): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n smallest elements of the 'myArray' field.
+     * arrayMinimumN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(array: Expression, n: Expression): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n smallest elements of the 'myArray' field.
+     * arrayMinimumN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` smallest
+     * elements from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 smallest elements of the 'myArray' field.
+     * arrayMinimumN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` smallest
+     * elements from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the maximum element of the [array].
+     *
+     * ```kotlin
+     * // Get the maximum element of the 'myArray' field.
+     * arrayMaximum(field("myArray"))
+     * ```
+     *
+     * @param array The array expression.
+     * @return A new [Expression] representing the maximum element.
+     */
+    @JvmStatic
+    fun arrayMaximum(array: Expression): Expression =
+      FunctionExpression("maximum", evaluateArrayMaximum, array)
+
+    /**
+     * Creates an expression that returns the maximum element of an array field.
+     *
+     * ```kotlin
+     * // Get the maximum element of the 'myArray' field.
+     * arrayMaximum("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the maximum element
+     * from.
+     * @return A new [Expression] representing the maximum element.
+     */
+    @JvmStatic
+    fun arrayMaximum(arrayFieldName: String): Expression =
+      FunctionExpression("maximum", evaluateArrayMaximum, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 largest elements of the 'myArray' field.
+     * arrayMaximumN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(array: Expression, n: Int): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n largest elements of the 'myArray' field.
+     * arrayMaximumN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(array: Expression, n: Expression): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 largest elements of the 'myArray' field.
+     * arrayMaximumN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` largest
+     * elements from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n largest elements of the 'myArray' field.
+     * arrayMaximumN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` largest
+     * elements from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the index of the first occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the index of 'foo' in the 'tags' array field.
+     * arrayIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the index of the value.
+     */
+    @JvmStatic
+    fun arrayIndexOf(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        array,
+        toExprOrConstant(value),
+        constant("first")
+      )
+
+    /**
+     * Creates an expression that returns the index of the first occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the index of 'foo' in the 'tags' array field.
+     * arrayIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the index of the value
+     * from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the index of the value.
+     */
+    @JvmStatic
+    fun arrayIndexOf(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        arrayFieldName,
+        toExprOrConstant(value),
+        constant("first")
+      )
+
+    /**
+     * Creates an expression that returns the index of the last occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the last index of 'foo' in the 'tags' array field.
+     * arrayLastIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the last index of the value.
+     */
+    @JvmStatic
+    fun arrayLastIndexOf(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        array,
+        toExprOrConstant(value),
+        constant("last")
+      )
+
+    /**
+     * Creates an expression that returns the index of the last occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the last index of 'foo' in the 'tags' array field.
+     * arrayLastIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last index of the
+     * value from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the last index of the value.
+     */
+    @JvmStatic
+    fun arrayLastIndexOf(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        arrayFieldName,
+        toExprOrConstant(value),
+        constant("last")
+      )
+
+    /**
+     * Creates an expression that returns a list of all indices where the specified [value] occurs
+     * in the [array].
+     *
+     * ```kotlin
+     * // Get all indices of 'foo' in the 'tags' array field.
+     * arrayIndexOfAll(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the list of indices.
+     */
+    @JvmStatic
+    fun arrayIndexOfAll(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of_all",
+        evaluateArrayIndexOfAll,
+        array,
+        toExprOrConstant(value)
+      )
+
+    /**
+     * Creates an expression that returns a list of all indices where the specified [value] occurs
+     * in the [array].
+     *
+     * ```kotlin
+     * // Get all indices of 'foo' in the 'tags' array field.
+     * arrayIndexOfAll(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the indices of the
+     * value from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the list of indices.
+     */
+    @JvmStatic
+    fun arrayIndexOfAll(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of_all",
+        evaluateArrayIndexOfAll,
+        arrayFieldName,
+        toExprOrConstant(value)
+      )
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -5221,6 +7556,120 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
+
+    /**
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param expression The first expression to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(expression: Expression, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param fieldName The name of the first field to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
+
+    /**
      * Creates an expression that returns the collection ID from a path.
      *
      * ```kotlin
@@ -5283,7 +7732,334 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the documentId operation.
      */
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(field("__path__"))
+     * ```
+     *
+     * @param documentPath An expression evaluating to a document reference.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic
+    fun parent(documentPath: Expression): Expression =
+      FunctionExpression("parent", notImplemented, documentPath)
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent("projects/p/databases/d/documents/c/d")
+     * ```
+     *
+     * @param documentPath A string path to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(documentPath: String): Expression = parent(constant(documentPath))
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(myDocumentReference)
+     * ```
+     *
+     * @param docRef A [DocumentReference] to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(docRef: DocumentReference): Expression = parent(constant(docRef))
+
+    /**
+     * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
+     *
+     * Example:
+     * ```kotlin
+     * firestore.pipeline().collection("products")
+     *     .define(
+     *         multiply(field("price"), 0.9).as("discountedPrice"),
+     *         add(field("stock"), 10).as("newStock")
+     *     )
+     *     .where(lessThan(variable("discountedPrice"), 100))
+     *     .select(field("name"), variable("newStock"));
+     * ```
+     *
+     * @param name The name of the variable to retrieve.
+     * @return An [Expression] representing the variable's value.
+     */
+    @JvmStatic fun variable(name: String): Expression = Variable(name)
+
+    /**
+     * Creates an expression that represents the current document being processed.
+     *
+     * Example:
+     * ```kotlin
+     * // Define the current document as a variable "doc"
+     * firestore.pipeline().collection("books")
+     *     .define(currentDocument().alias("doc"))
+     *     // Access a field from the defined document variable
+     *     .select(variable("doc").getField("title"))
+     * ```
+     *
+     * @return An [Expression] representing the current document.
+     */
+    @JvmStatic
+    fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
+
+    /**
+     * Evaluates to the distance in meters between the location in the specified field and the query
+     * location.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance("location", GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param fieldName Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
+     * @param location Compute distance to this GeoPoint.
+     */
+    @Beta
+    @JvmStatic
+    fun geoDistance(fieldName: String, location: GeoPoint): Expression =
+      geoDistance(field(fieldName), location)
+
+    /**
+     * Evaluates to the distance in meters between the location in the specified field and the query
+     * location.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance(field("location"), GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param field Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
+     * @param location Compute distance to this GeoPoint.
+     */
+    @Beta
+    @JvmStatic
+    fun geoDistance(field: Field, location: GeoPoint): Expression =
+      FunctionExpression("geo_distance", notImplemented, field, constant(location))
+
+    /**
+     * Perform a full-text search on all indexed search fields in the document.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles OR pancakes"))
+     * )
+     * ```
+     *
+     * @param rquery Define the search query using the search DSL.
+     */
+    @Beta
+    @JvmStatic
+    fun documentMatches(rquery: String): BooleanExpression =
+      BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
+
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches("menu", "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(fieldName: String, rquery: String): BooleanExpression =
+    //      matches(field(fieldName), rquery)
+    //
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches(field("menu"), "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param field Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(field: Field, rquery: String): BooleanExpression =
+    //      BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
+
+    /**
+     * Evaluates to the search score that reflects the topicality of the document to all of the text
+     * predicates (for example: `documentMatches`) in the search query. If `SearchStage.query` is
+     * not set or does not contain any text predicates, then this score will always be `0`.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(score().descending()))
+     * )
+     * ```
+     */
+    @Beta @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
+
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = documentMatches("waffles"), addFields = arrayOf(snippet("menu",
+    // "waffles").alias("snippet")))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    @Beta
+    //    @JvmStatic
+    //    fun snippet(fieldName: String, rquery: String): Expression =
+    //      FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
+
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param options Define how the snippet is generated.
+    //     */
+    //    // TODO(search) snippet with options is internal and unimplemented until supported by the
+    //    // backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
+    //      throw NotImplementedError("Not implemented")
+    //    }
+
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the evaluated
+    // values
+    //     * for `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    // TODO(search) between is internal and unimplemented until supported by the backend
+    //    @JvmStatic
+    //    internal fun between(
+    //      fieldName: String,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
+
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the values for
+    //     * `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any):
+    // BooleanExpression =
+    //      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the results of
+    // `lowerBound`
+    //     * (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
+
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the `lowerBound`
+    // (inclusive)
+    //     * and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Any,
+    //      upperBound: Any
+    //    ): BooleanExpression =
+    //      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
   }
+
+  //  // TODO(search) SnippetOptions is internal until supported by the backend
+  //  @Beta
+  //  internal class SnippetOptions private constructor(options: InternalOptions) :
+  //    AbstractOptions<SnippetOptions>(options) {
+  //    /** Creates a new, empty `SnippetOptions` object. */
+  //    constructor(rquery: String) : this(InternalOptions.EMPTY.with("query", encodeValue(rquery)))
+  //
+  //    fun withMaxSnippetWidth(max: Int): SnippetOptions {
+  //      return with("max_snippet_width", encodeValue(max))
+  //    }
+  //
+  //    fun withMaxSnippets(max: Int): SnippetOptions {
+  //      return with("max_snippets", encodeValue(max))
+  //    }
+  //
+  //    fun withSeparator(separator: String): SnippetOptions {
+  //      return with("separator", encodeValue(separator))
+  //    }
+  //
+  //    internal override fun self(options: InternalOptions): SnippetOptions {
+  //      return SnippetOptions(options)
+  //    }
+  //  }
 
   /**
    * Creates an expression that applies a bitwise AND operation with other expression.
@@ -5450,6 +8226,19 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the documentId operation.
    */
   fun documentId(): Expression = Companion.documentId(this)
+
+  /**
+   * Creates an expression that returns the parent document reference of this document reference
+   * expression.
+   *
+   * ```kotlin
+   * // Get the parent document reference of the 'path' field.
+   * field("path").parent()
+   * ```
+   *
+   * @return A new [Expression] representing the parent operation.
+   */
+  fun parent(): Expression = Companion.parent(this)
 
   /**
    * Creates an expression that returns the collection ID from this path expression.
@@ -5665,6 +8454,51 @@ abstract class Expression internal constructor() {
    */
   fun roundToPrecision(decimalPlace: Expression): Expression =
     Companion.roundToPrecision(this, decimalPlace)
+
+  /**
+   * Creates an expression that truncates this numeric expression to an integer.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field.
+   * field("rating").trunc()
+   * ```
+   *
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun trunc(): Expression = Companion.trunc(this)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to 2 decimal places.
+   * field("rating").truncToPrecision(2)
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Int): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+   * // 'precision' field.
+   * field("rating").truncToPrecision(field("precision"))
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Expression): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
 
   /**
    * Creates an expression that returns the smallest integer that isn't less than this numeric
@@ -5893,7 +8727,25 @@ abstract class Expression internal constructor() {
    *
    * @return A new [Expression] representing the type operation.
    */
-  fun type(): Expression = type(this)
+  fun type(): Expression = Companion.type(this)
+
+  /**
+   * Creates an expression that checks if the result of this expression is of the given type.
+   *
+   * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp", "geo_point",
+   * "number", "int32", "int64", "float64", "decimal128", "map", "reference", "string", "vector",
+   * "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+   *
+   * ```kotlin
+   * // Check if the 'age' field is an integer
+   * field("age").isType("int64")
+   * ```
+   *
+   * @param type The type to check for.
+   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+   * given type, false otherwise.
+   */
+  fun isType(type: String): BooleanExpression = Companion.isType(this, type)
 
   /**
    * Creates an expression that splits this string or blob expression by a delimiter.
@@ -6257,31 +9109,234 @@ abstract class Expression internal constructor() {
   fun trim() = Companion.trim(this)
 
   /**
-   * Creates an expression that removes leading and trailing characters from this string expression.
+   * Creates an expression that removes a set of leading and trailing values from this string
+   * expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim '_' and '-' from the 'userInput' field
+   * // Trim all '_' and '-' characters from the 'userInput' field
    * field("userInput").trimValue("-_")
    * ```
    *
-   * @param valueToTrim The characters to trim from the string.
+   * @param valueToTrim The set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: String) = Companion.trimValue(this, constant(valueToTrim))
 
   /**
-   * Creates an expression that removes leading and trailing value from this expression. The
-   * accepted types are string and blob.
+   * Creates an expression that removes a set of leading and trailing values from this expression.
+   * The accepted types are string and blob.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim specified characters from the 'userInput' field
    * field("userInput").trimValue(field("trimChars"))
    * ```
    *
-   * @param valueToTrim The expression representing the characters to trim from the string.
+   * @param valueToTrim The expression representing the set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
+
+  /**
+   * Creates an expression that removes leading whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading whitespace from the 'text' field.
+   * field("text").ltrim()
+   * ```
+   *
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrim(): Expression = Companion.ltrim(this)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all leading '-' and '_' characters from the 'text' field.
+   * field("text").ltrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The string of characters to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: String): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim leading characters defined by the 'chars' field from the 'text' field.
+   * field("text").ltrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: Expression): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes trailing whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing whitespace from the 'text' field.
+   * field("text").rtrim()
+   * ```
+   *
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrim(): Expression = Companion.rtrim(this)
+
+  /**
+   * Creates an expression that removes a set of trailing characters from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all trailing '-' and '_' characters from the 'text' field.
+   * field("text").rtrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: String): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of trailing values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+   * field("text").rtrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: Expression): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field 3 times.
+   * field("name").stringRepeat(3)
+   * ```
+   *
+   * @param count The number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Int): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field the number of times specified in the 'count' field.
+   * field("name").stringRepeat(field("count"))
+   * ```
+   *
+   * @param count The expression representing the number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Expression): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceAll("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceAll(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceOne("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceOne(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of "world" within the 'text' field.
+   * field("text").stringIndexOf("world")
+   * ```
+   *
+   * @param substring The substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: String): Expression = Companion.stringIndexOf(this, substring)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of the 'search' field within the 'text' field.
+   * field("text").stringIndexOf(field("search"))
+   * ```
+   *
+   * @param substring The expression representing the substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: Expression): Expression = Companion.stringIndexOf(this, substring)
 
   /**
    * Creates an expression that concatenates string expressions together.
@@ -6374,6 +9429,22 @@ abstract class Expression internal constructor() {
     Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
+   * Accesses a field/property of a document or Map using the provided [key].
+   *
+   * @param key The string key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(key: String): Expression = Companion.getField(this, key)
+
+  /**
+   * Accesses a field/property of a document or Map using the provided [keyExpression].
+   *
+   * @param keyExpression The expression evaluating to the key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
+
+  /**
    * Creates an expression that removes a key from this map expression.
    *
    * ```kotlin
@@ -6398,6 +9469,88 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * - Only performs shallow updates to the map.
+   * - Setting a value to `null` will retain the key with a `null` value. To remove a key entirely,
+   * use `mapRemove`.
+   *
+   * ```kotlin
+   * // Set the 'category' key to the value of the 'newCategory' field.
+   * field("metadata").mapSet(field("keyField"), field("newCategory"))
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: Expression, value: Expression, vararg moreKeyValues: Expression): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * ```kotlin
+   * // Set the 'category' key to "Electronics" and 'active' to true.
+   * field("metadata").mapSet("category", "Electronics", "active", true)
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns the keys of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the keys of the 'metadata' map field.
+   * field("metadata").mapKeys()
+   * ```
+   *
+   * @return A new [Expression] representing the keys of the map.
+   */
+  fun mapKeys(): Expression = Companion.mapKeys(this)
+
+  /**
+   * Creates an expression that returns the values of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the values of the 'metadata' map field.
+   * field("metadata").mapValues()
+   * ```
+   *
+   * @return A new [Expression] representing the values of the map.
+   */
+  fun mapValues(): Expression = Companion.mapValues(this)
+
+  /**
+   * Creates an expression that returns the entries of this map expression as an array of maps,
+   * where each map contains a "k" property for the key and a "v" property for the value.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the entries of the 'metadata' map field.
+   * field("metadata").mapEntries()
+   * ```
+   *
+   * @return A new [Expression] representing the entries of the map.
+   */
+  fun mapEntries(): Expression = Companion.mapEntries(this)
 
   /**
    * Calculates the Cosine distance between this and another vector expressions.
@@ -6673,6 +9826,254 @@ abstract class Expression internal constructor() {
     Expression.timestampTruncate(this, granularity)
 
   /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), field("tz"))
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference determined by fields 'startAt' and 'unit'.
+   * field("endAt").timestampDiff(field("startAt"), field("unit"))
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: Expression): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff(field("startAt"), "day")
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: String): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff("startAt", "day")
+   * ```
+   *
+   * @param startFieldName The starting timestamp field name.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(startFieldName: String, unit: String): Expression =
+    Expression.timestampDiff(this, startFieldName, unit)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp'.
+   * field("timestamp").timestampExtract(field("part"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: Expression): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field.
+   * field("timestamp").timestampExtract("day")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: String): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
    *
    * ```kotlin
@@ -6775,6 +10176,108 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the arrayReverse operation.
    */
   fun arrayReverse() = Companion.arrayReverse(this)
+
+  /**
+   * Filters this array expression based on a predicate.
+   *
+   * ```kotlin
+   * // Filter 'scores' array to include only values greater than 50
+   * field("scores").arrayFilter("score", greaterThan(variable("score"), 50))
+   * ```
+   *
+   * @param alias The alias to use for the current element in the filter expression.
+   * @param filter The predicate boolean expression used to filter the elements.
+   * @return A new [Expression] representing the arrayFilter operation.
+   */
+  fun arrayFilter(alias: String, filter: BooleanExpression) =
+    Companion.arrayFilter(this, alias, filter)
+
+  /**
+   * Creates an expression that applies a provided transformation to each element in an array.
+   *
+   * ```kotlin
+   * // Transform 'scores' array by multiplying each score by 10
+   * field("scores").arrayTransform("score", multiply(variable("score"), 10))
+   * ```
+   *
+   * @param elementAlias The alias to use for the current element in the transform expression.
+   * @param transform The expression used to transform the elements.
+   * @return A new [Expression] representing the arrayTransform operation.
+   */
+  fun arrayTransform(elementAlias: String, transform: Expression) =
+    Companion.arrayTransform(this, elementAlias, transform)
+
+  /**
+   * Creates an expression that applies a provided transformation to each element in an array,
+   * providing the element's index to the transformation expression.
+   *
+   * ```kotlin
+   * // Transform 'scores' array by adding the index
+   * field("scores").arrayTransformWithIndex("score", "i", add(variable("score"), variable("i")))
+   * ```
+   *
+   * @param elementAlias The alias to use for the current element in the transform expression.
+   * @param indexAlias The alias to use for the current index.
+   * @param transform The expression used to transform the elements.
+   * @return A new [Expression] representing the arrayTransformWithIndex operation.
+   */
+  fun arrayTransformWithIndex(elementAlias: String, indexAlias: String, transform: Expression) =
+    Companion.arrayTransformWithIndex(this, elementAlias, indexAlias, transform)
+
+  /**
+   * Creates an expression that returns a slice of this array expression to its end.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array starting from index 2
+   * field("items").arraySliceToEnd(2)
+   * ```
+   *
+   * @param offset The starting index.
+   * @return A new [Expression] representing the arraySliceToEnd operation.
+   */
+  fun arraySliceToEnd(offset: Int) = Companion.arraySliceToEnd(this, offset)
+
+  /**
+   * Creates an expression that returns a slice of this array expression to its end.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array starting from the value of the 'offset' field
+   * field("items").arraySliceToEnd(field("offset"))
+   * ```
+   *
+   * @param offset The starting index.
+   * @return A new [Expression] representing the arraySliceToEnd operation.
+   */
+  fun arraySliceToEnd(offset: Expression) = Companion.arraySliceToEnd(this, offset)
+
+  /**
+   * Creates an expression that returns a slice of this array expression.
+   *
+   * ```kotlin
+   * // Get 5 elements from the 'items' array starting from index 2
+   * field("items").arraySlice(2, 5)
+   * ```
+   *
+   * @param offset The starting index.
+   * @param length The number of elements to return.
+   * @return A new [Expression] representing the arraySlice operation.
+   */
+  fun arraySlice(offset: Int, length: Int) = Companion.arraySlice(this, offset, length)
+
+  /**
+   * Creates an expression that returns a slice of this array expression.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array using expressions for offset and length
+   * field("items").arraySlice(field("offset"), field("length"))
+   * ```
+   *
+   * @param offset The starting index.
+   * @param length The number of elements to return.
+   * @return A new [Expression] representing the arraySlice operation.
+   */
+  fun arraySlice(offset: Expression, length: Expression) =
+    Companion.arraySlice(this, offset, length)
 
   /**
    * Creates an expression that returns the sum of the elements in this array expression.
@@ -6884,6 +10387,212 @@ abstract class Expression internal constructor() {
   fun arrayLength() = Companion.arrayLength(this)
 
   /**
+   * Creates an expression that returns the first element of an array expression.
+   *
+   * ```kotlin
+   * // Get the first element of the 'myArray' field.
+   * field("myArray").arrayFirst()
+   * ```
+   *
+   * @return A new [Expression] representing the first element.
+   */
+  fun arrayFirst() = Companion.arrayFirst(this)
+
+  /**
+   * Creates an expression that returns the first N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the first 2 elements of the 'myArray' field.
+   * field("myArray").arrayFirstN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first N elements.
+   */
+  fun arrayFirstN(n: Int) = Companion.arrayFirstN(this, n)
+
+  /**
+   * Creates an expression that returns the first N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the first 2 elements of the 'myArray' field.
+   * field("myArray").arrayFirstN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first N elements.
+   */
+  fun arrayFirstN(n: Expression) = Companion.arrayFirstN(this, n)
+
+  /**
+   * Creates an expression that returns the last element of an array expression.
+   *
+   * ```kotlin
+   * // Get the last element of the 'myArray' field.
+   * field("myArray").arrayLast()
+   * ```
+   *
+   * @return A new [Expression] representing the last element.
+   */
+  fun arrayLast() = Companion.arrayLast(this)
+
+  /**
+   * Creates an expression that returns the last N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the last 2 elements of the 'myArray' field.
+   * field("myArray").arrayLastN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the last N elements.
+   */
+  fun arrayLastN(n: Int) = Companion.arrayLastN(this, n)
+
+  /**
+   * Creates an expression that returns the last N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the last 2 elements of the 'myArray' field.
+   * field("myArray").arrayLastN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the last N elements.
+   */
+  fun arrayLastN(n: Expression) = Companion.arrayLastN(this, n)
+
+  /**
+   * Creates an expression that returns the minimum value of an array expression.
+   *
+   * ```kotlin
+   * // Get the minimum value of the 'myArray' field.
+   * field("myArray").arrayMinimum()
+   * ```
+   *
+   * @return A new [Expression] representing the minimum value.
+   */
+  fun arrayMinimum() = Companion.arrayMinimum(this)
+
+  /**
+   * Creates an expression that returns the maximum value of an array expression.
+   *
+   * ```kotlin
+   * // Get the maximum value of the 'myArray' field.
+   * field("myArray").arrayMaximum()
+   * ```
+   *
+   * @return A new [Expression] representing the maximum value.
+   */
+  fun arrayMaximum() = Companion.arrayMaximum(this)
+
+  /**
+   * Creates an expression that returns the first `n` smallest elements of the [array].
+   *
+   * Note: Returns the n smallest non-null elements in the array, in ascending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the 3 smallest elements of the 'myArray' field.
+   * field("myArray").arrayMinimumN(3)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first `n` smallest elements.
+   */
+  fun arrayMinimumN(n: Int) = Companion.arrayMinimumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` smallest elements of the [array].
+   *
+   * Note: Returns the n smallest non-null elements in the array, in ascending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the n smallest elements of the 'myArray' field.
+   * field("myArray").arrayMinimumN(field("count"))
+   * ```
+   *
+   * @param n An expression evaluating to the number of elements to return.
+   * @return A new [Expression] representing the first `n` smallest elements.
+   */
+  fun arrayMinimumN(n: Expression) = Companion.arrayMinimumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` largest elements of the [array].
+   *
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the 3 largest elements of the 'myArray' field.
+   * field("myArray").arrayMaximumN(3)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first `n` largest elements.
+   */
+  fun arrayMaximumN(n: Int) = Companion.arrayMaximumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` largest elements of the [array].
+   *
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the n largest elements of the 'myArray' field.
+   * field("myArray").arrayMaximumN(field("count"))
+   * ```
+   *
+   * @param n An expression evaluating to the number of elements to return.
+   * @return A new [Expression] representing the first `n` largest elements.
+   */
+  fun arrayMaximumN(n: Expression) = Companion.arrayMaximumN(this, n)
+
+  /**
+   * Creates an expression that returns the first index where the specified [value] occurs in the
+   * [array].
+   *
+   * ```kotlin
+   * // Get the first index of 'foo' in the 'tags' array field.
+   * field("tags").arrayIndexOf("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the index of the value.
+   */
+  fun arrayIndexOf(value: Any?): Expression = Companion.arrayIndexOf(this, value)
+
+  /**
+   * Creates an expression that returns the last index where the specified [value] occurs in the
+   * [array].
+   *
+   * ```kotlin
+   * // Get the last index of 'foo' in the 'tags' array field.
+   * field("tags").arrayLastIndexOf("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the index of the value.
+   */
+  fun arrayLastIndexOf(value: Any?): Expression = Companion.arrayLastIndexOf(this, value)
+
+  /**
+   * Creates an expression that returns a list of all indices where the specified [value] occurs in
+   * the [array].
+   *
+   * ```kotlin
+   * // Get all indices of 'foo' in the 'tags' array field.
+   * field("tags").arrayIndexOfAll("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the list of indices.
+   */
+  fun arrayIndexOfAll(value: Any?): Expression = Companion.arrayIndexOfAll(this, value)
+
+  /**
    * Creates an expression that indexes into an array from the beginning or end and return the
    * element. If the offset exceeds the array length, an error is returned. A negative offset,
    * starts from the end.
@@ -6960,6 +10669,44 @@ abstract class Expression internal constructor() {
    * @return A new [AggregateFunction] representing the maximum aggregation.
    */
   fun maximum(): AggregateFunction = AggregateFunction.maximum(this)
+
+  /**
+   * Creates an aggregation that finds the first value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the first aggregation.
+   */
+  fun first(): AggregateFunction = AggregateFunction.first(this)
+
+  /**
+   * Creates an aggregation that finds the last value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the last aggregation.
+   */
+  fun last(): AggregateFunction = AggregateFunction.last(this)
+
+  /**
+   * Creates an aggregation that collects all values of this expression across multiple stage inputs
+   * into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg aggregation.
+   */
+  fun arrayAgg(): AggregateFunction = AggregateFunction.arrayAgg(this)
+
+  /**
+   * Creates an aggregation that collects all distinct values of this expression across multiple
+   * stage inputs into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
+   */
+  fun arrayAggDistinct(): AggregateFunction = AggregateFunction.arrayAggDistinct(this)
 
   /**
    * Create an [Ordering] that sorts documents in ascending order based on value of this expression
@@ -7204,6 +10951,58 @@ abstract class Expression internal constructor() {
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
 
   /**
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
+   * ```
+   *
+   * @param elseExpression The expression that will be evaluated and returned if this expression is
+   * null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
+
+  /**
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
+   * ```
+   *
+   * @param elseValue The value that will be returned if this expression evaluates to null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
+
+  /**
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
+   * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+   *
+   * ```kotlin
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
+   * ```
+   *
+   * @param replacement The fallback expression or value if the first one is null.
+   * @param others Optional additional expressions to check if previous ones are null.
+   * @return A new [Expression] representing the coalesce operation.
+   */
+  fun coalesce(replacement: Any, vararg others: Any): Expression =
+    Companion.coalesce(this, replacement, *others)
+
+  /**
    * Creates an expression that checks if this expression produces an error.
    *
    * ```kotlin
@@ -7229,13 +11028,92 @@ abstract class Expression internal constructor() {
     }
   }
 
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the search DTS.
+  //   */
+  //  @Beta
+  //  fun snippet(rquery: String): Expression =
+  //    FunctionExpression(
+  //      "snippet",
+  //      notImplemented,
+  //      arrayOf(this, constant(rquery)),
+  //      SnippetOptions(rquery).options
+  //    )
+  //
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param options Define how the snippet is generated.
+  //   *
+  //   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
+  //   */
+  //  @Beta
+  //  internal fun snippet(options: SnippetOptions): Expression {
+  //    throw NotImplementedError()
+  //  }
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(constant(2.2), constant(2.4))
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
+  //   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(2.2, 2.4)
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(2.2),
+  //   *   field('tireWidth').lessThanOrEqual(2.4))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
 }
 
 /** Expressions that have an alias are [Selectable] */
-@Beta
 abstract class Selectable : Expression() {
   internal abstract val alias: String
   internal abstract val expr: Expression
@@ -7253,7 +11131,6 @@ abstract class Selectable : Expression() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-@Beta
 class AliasedExpression
 internal constructor(override val alias: String, override val expr: Expression) : Selectable() {
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
@@ -7283,7 +11160,6 @@ internal constructor(override val alias: String, override val expr: Expression) 
  *
  * You can create a [Field] instance using the static [Expression.field] method:
  */
-@Beta
 class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
 
@@ -7328,6 +11204,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
           ?: EvaluateResultUnset // This value is used if getField() returns null.
     }
   }
+
   private fun getServerTimestamp(fieldValue: Value, context: EvaluationContext): EvaluateResult {
     val behavior =
       context.pipeline.internalOptions?.serverTimestampBehavior
@@ -7338,7 +11215,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
         EvaluateResult.timestamp(getLocalWriteTime(fieldValue))
       DocumentSnapshot.ServerTimestampBehavior.PREVIOUS -> {
         val previousValue = getPreviousValue(fieldValue)
-        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue!!)
+        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue)
       }
     }
   }
@@ -7354,6 +11231,25 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   override fun hashCode(): Int {
     return fieldPath.hashCode()
   }
+
+  /**
+   * Evaluates to the distance in meters between the location specified by this field and the query
+   * location.
+   *
+   * Note: This Expression can only be used within a `Search` stage.
+   *
+   * @param location Compute distance to this GeoPoint.
+   */
+  @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
+
+  //  /**
+  //   * Perform a full-text search on this field.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the rquery DTS.
+  //   */
+  //  @Beta internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
 }
 
 /**
@@ -7364,7 +11260,6 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
  * [and], [equal], or the methods on [Expression] ([Expression.equal]), [Expression.lessThan], etc)
  * to construct new [FunctionExpression] instances.
  */
-@Beta
 open class FunctionExpression
 internal constructor(
   internal val name: String,
@@ -7377,27 +11272,32 @@ internal constructor(
     params: List<Expression>,
     options: InternalOptions = InternalOptions.EMPTY
   ) : this(name, FunctionRegistry.functions[name] ?: notImplemented, params.toTypedArray(), options)
+
   internal constructor(
     name: String,
     function: EvaluateFunction
   ) : this(name, function, emptyArray())
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression
   ) : this(name, function, arrayOf(param))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Expression
   ) : this(name, function, arrayOf(param1, param2))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -7405,11 +11305,13 @@ internal constructor(
     param2: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
   ) : this(name, function, arrayOf(field(fieldName)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -7453,7 +11355,6 @@ internal constructor(
 }
 
 /** A class that represents a filter condition. */
-@Beta
 abstract class BooleanExpression : Expression() {
 
   /**
@@ -7534,34 +11435,40 @@ internal class BooleanFunctionExpression internal constructor(val expr: Expressi
     function: EvaluateFunction,
     params: Array<out Expression>
   ) : this(FunctionExpression(name, function, params))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression
   ) : this(name, function, arrayOf(param))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Any
   ) : this(name, function, arrayOf(param1, Expression.toExprOrConstant(param2)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param, *Expression.toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Expression
   ) : this(name, function, arrayOf(param1, param2))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
   ) : this(name, function, arrayOf(field(fieldName)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -7639,7 +11546,6 @@ internal class BooleanField(val field: Field) : BooleanExpression() {
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-@Beta
 class Ordering internal constructor(val expr: Expression, val dir: Direction) {
   internal fun canonicalId(): String {
     val direction = if (dir == Direction.ASCENDING) "asc" else "desc"
@@ -7710,4 +11616,31 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
           .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
+}
+
+private class Variable(val name: String) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setVariableReferenceValue(name).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Variable evaluation not implemented")
+    }
+  override fun canonicalId() = "var($name)"
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Variable) return false
+    return name == other.name
+  }
+  override fun hashCode(): Int = name.hashCode()
+}
+
+private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setPipelineValue(pipeline.toPipelineProto(userDataReader)).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Pipeline evaluation not implemented")
+    }
+  override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
+  override fun toString() = "Pipeline(...)"
 }

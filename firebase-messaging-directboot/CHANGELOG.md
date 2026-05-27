@@ -1,5 +1,9 @@
 # Unreleased
 
+# 25.0.2
+
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
 # 25.0.1
 
 - [unchanged] Updated to keep messaging SDK versions aligned.

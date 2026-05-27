@@ -1,0 +1,102 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.firebase.ai
+
+import androidx.test.platform.app.InstrumentationRegistry
+import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.PublicPreviewAPI
+
+@OptIn(PublicPreviewAPI::class)
+class AIModels {
+
+  companion object {
+    // General purpose models
+    var app: FirebaseApp? = null
+    lateinit var vertexAIFlashModel: GenerativeModel
+    lateinit var vertexAIFlashLiteModel: GenerativeModel
+    lateinit var vertexAI3_5FlashModel: GenerativeModel
+    lateinit var googleAIFlashModel: GenerativeModel
+    lateinit var googleAIFlashLiteModel: GenerativeModel
+    lateinit var googleAI3_5FlashModel: GenerativeModel
+    lateinit var vertexAITemplateModel: TemplateGenerativeModel
+    lateinit var googleAITemplateModel: TemplateGenerativeModel
+
+    /** Returns a list of general purpose models to test */
+    fun getModels(): List<GenerativeModel> {
+      if (app == null) {
+        setup()
+      }
+      return listOf(
+        vertexAIFlashModel,
+        vertexAIFlashLiteModel,
+        vertexAI3_5FlashModel,
+        googleAIFlashModel,
+        googleAIFlashLiteModel,
+        googleAI3_5FlashModel,
+      )
+    }
+
+    fun app(): FirebaseApp {
+      if (app == null) {
+        setup()
+      }
+      return app!!
+    }
+
+    fun setup() {
+      val context = InstrumentationRegistry.getInstrumentation().context
+      app = FirebaseApp.initializeApp(context)
+      vertexAIFlashModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
+          .generativeModel(
+            modelName = "gemini-2.5-flash",
+          )
+      vertexAIFlashLiteModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
+          .generativeModel(
+            modelName = "gemini-2.5-flash-lite",
+          )
+      vertexAI3_5FlashModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI("global"))
+          .generativeModel(
+            modelName = "gemini-3.5-flash",
+          )
+      googleAIFlashModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
+          .generativeModel(
+            modelName = "gemini-3.1-flash-lite",
+          )
+      googleAIFlashLiteModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
+          .generativeModel(
+            modelName = "gemini-2.5-flash-lite",
+          )
+      googleAI3_5FlashModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
+          .generativeModel(
+            modelName = "gemini-3.5-flash",
+          )
+      vertexAITemplateModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
+      googleAITemplateModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
+    }
+  }
+}
+
+@OptIn(PublicPreviewAPI::class)
+data class TemplateModel(val backend: String, val model: TemplateGenerativeModel)

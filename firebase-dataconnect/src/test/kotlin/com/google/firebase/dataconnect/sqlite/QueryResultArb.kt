@@ -19,8 +19,11 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPathComparator
+import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy
 import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
@@ -28,14 +31,13 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
-import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
-import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.testutil.withAddedField
 import com.google.firebase.dataconnect.toEntityPathProto
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -44,7 +46,6 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import com.google.protobuf.field
 import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
@@ -306,8 +307,8 @@ internal class QueryResultArb(
 
       return if (entityId in entityStructById) {
         val entityStruct = entityStructById[entityId]!!
-        val pruneEntityStruct = entityStruct.withPrunedFields()
-        EntityIdStructPair(entityId, pruneEntityStruct)
+        val prunedEntityStruct = entityStruct.withPrunedFields()
+        EntityIdStructPair(entityId, prunedEntityStruct)
       } else if (memoizedEntityStructById === null || entityId !in memoizedEntityStructById) {
         val entityStruct = entityArb.next(rs, entityStructEdgeCaseProbability).struct
         entityStructById[entityId] = entityStruct
@@ -363,11 +364,47 @@ internal class QueryResultArb(
     entityListSizeEdgeCaseProbability: Float,
   ): GenerateHydratedStructResult {
     val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
-    val hydratedStructBuilder = dehydratedStruct.toBuilder()
+    var hydratedStruct = dehydratedStruct
     val entityByPath = mutableMapOf<DataConnectPath, EntityIdStructPair>()
     val entityListPaths = mutableSetOf<DataConnectPath>()
     val queryResultProtoBuilder = QueryResultProto.newBuilder()
     queryResultProtoBuilder.setStruct(dehydratedStruct)
+
+    fun Struct.Builder.generateUnsetFieldName(): String {
+      while (true) {
+        val key = structKeyArb.sample(rs).value
+        if (!containsFields(key)) {
+          return key
+        }
+      }
+    }
+
+    fun Struct.withInsertedValue(value: Value): Pair<Struct, DataConnectPath> {
+      val candidateInsertionPaths = buildList {
+        add(emptyDataConnectPath())
+        addAll(entityByPath.keys)
+        sortWith(DataConnectPathComparator) // Sort so that the Arb is deterministic
+      }
+      val insertionPath = candidateInsertionPaths.random(rs.random)
+
+      var entityPath: DataConnectPath? = null
+      val newStruct = map { path, valueAtPath ->
+        if (path != insertionPath) {
+          valueAtPath
+        } else {
+          check(valueAtPath.isStructValue)
+          valueAtPath.structValue.toBuilder().run {
+            check(entityPath === null)
+            val insertField = generateUnsetFieldName()
+            entityPath = insertionPath.withAddedField(insertField)
+            putFields(insertField, value).build().toValueProto()
+          }
+        }
+      }
+
+      checkNotNull(entityPath)
+      return Pair(newStruct, entityPath)
+    }
 
     var entityIndex = 0
     while (entityIndex < entities.size) {
@@ -375,13 +412,9 @@ internal class QueryResultArb(
       val entityOrEntityListProto: EntityOrEntityListProto =
         if (!isEntityList) {
           val entity = entities[entityIndex++]
-          val entityPath =
-            hydratedStructBuilder.randomlyInsertStruct(
-              entity.struct,
-              rs.random,
-              generateKey = { structKeyArb.sample(rs).value }
-            )
-
+          val (newHydratedStruct, entityPath) =
+            hydratedStruct.withInsertedValue(entity.struct.toValueProto())
+          hydratedStruct = newHydratedStruct
           entityByPath[entityPath] = entity
 
           val entityProto =
@@ -405,12 +438,10 @@ internal class QueryResultArb(
             ListValue.newBuilder()
               .addAllValues(entitiesInEntityList.map { it.struct.toValueProto() })
               .build()
-          val entityListPath =
-            hydratedStructBuilder.randomlyInsertValue(
-              listValue.toValueProto(),
-              rs.random,
-              generateKey = { structKeyArb.sample(rs).value }
-            )
+          val (newHydratedStruct, entityListPath) =
+            hydratedStruct.withInsertedValue(listValue.toValueProto())
+          hydratedStruct = newHydratedStruct
+
           entityListPaths.add(entityListPath)
           entitiesInEntityList.mapIndexed { index, entity ->
             entityByPath[entityListPath.withAddedListIndex(index)] = entity
@@ -438,7 +469,7 @@ internal class QueryResultArb(
     }
 
     return GenerateHydratedStructResult(
-      hydratedStruct = hydratedStructBuilder.build(),
+      hydratedStruct = hydratedStruct,
       entityByPath = entityByPath.toMap(),
       entityListPaths = entityListPaths.toSet(),
       queryResultProto = queryResultProtoBuilder.build(),

@@ -89,9 +89,23 @@ sourceSets {
   }
 
   // Source set for integration tests
-  integrationTest
+  integrationTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
-  prodTest
+  prodTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
   // Source set for Gradle Runner test build. Gradle Runner test builds are run in separate
   // processes i.e. test build does not share same class paths as test process. So we need
@@ -136,49 +150,66 @@ tasks {
   }
 }
 
-task integrationTest(type: Test) {
-  description = 'Runs integration tests.'
-  group = 'verification'
-
-  testClassesDirs = sourceSets.integrationTest.output.classesDirs
-  classpath = sourceSets.integrationTest.runtimeClasspath
-
-  shouldRunAfter(test)
-}
-
-check.dependsOn(integrationTest)
-
-task prodTest(type: Test) {
-  description = 'Runs prod tests.'
-  group = 'verification'
-
-  testClassesDirs = sourceSets.prodTest.output.classesDirs
-  classpath = sourceSets.prodTest.runtimeClasspath
-
-  shouldRunAfter(test)
-
-  doFirst {
+ext.configureTestSystemProperties = { Task task, List<String> propertyNames ->
+  task.doFirst {
     def localProperties = new Properties()
     def localPropertiesFile = rootProject.file('local.properties')
     if (localPropertiesFile.exists()) {
       localProperties.load(localPropertiesFile.newDataInputStream())
     }
 
-    [
-      'firebase.appId',
-      'firebase.projectNumber'
-    ].each { propName ->
+    propertyNames.each { propName ->
       def propValue = localProperties.getProperty(propName)
       if (propValue) {
-        systemProperty propName, propValue
+        task.systemProperty propName, propValue
       }
     }
+  }
+}
 
+task integrationTest(type: Test) {
+  description = 'Runs integration tests.'
+  group = 'verification'
+
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
+
+  testClassesDirs = sourceSets.integrationTest.output.classesDirs
+  classpath = sourceSets.integrationTest.runtimeClasspath
+
+  shouldRunAfter(test)
+
+  testLogging {
+    showStandardStreams = true
+  }
+}
+
+task prodTest(type: Test) {
+  description = 'Runs prod tests.'
+  group = 'verification'
+
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
+
+  testClassesDirs = sourceSets.prodTest.output.classesDirs
+  classpath = sourceSets.prodTest.runtimeClasspath
+
+  shouldRunAfter(test)
+
+  configureTestSystemProperties(it, ['firebase.appId', 'firebase.projectNumber'])
+
+  doFirst {
     // Pass the FIREBASE_TOKEN environment variable to the test process
     def token = System.getenv('FIREBASE_TOKEN')
     if (token) {
       environment 'FIREBASE_TOKEN', token
     }
+  }
+
+  testLogging {
+    showStandardStreams = true
   }
 }
 

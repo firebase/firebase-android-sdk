@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+@file:SharedWithAndroidTest
+
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectSerialization.Companion.toErrorInfoImpl
 import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -25,6 +29,11 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
+import google.firebase.dataconnect.proto.GraphqlErrorExtensions as GraphqlErrorExtensionsProto
+import google.firebase.dataconnect.proto.SourceLocation as SourceLocationProto
+import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
+import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
@@ -40,6 +49,7 @@ import java.util.Objects
 
 @Suppress("SpellCheckingInspection")
 fun registerDataConnectKotestPrinters() {
+  registerDataConnectKotestTestutilPrinters()
   Printers.add(Struct::class, StructCompactPrint)
   Printers.add(ListValue::class, ListValueCompactPrint)
   Printers.add(Value::class, ValueCompactPrint)
@@ -49,6 +59,11 @@ fun registerDataConnectKotestPrinters() {
   Printers.add(EntityListProto::class, EntityListProtoPrint)
   Printers.add(EntityPathProto::class, EntityPathProtoPrint)
   Printers.add(DehydratedQueryResult::class, DehydratedQueryResultPrint)
+  Printers.add(SourceLocationProto::class, SourceLocationProtoPrint)
+  Printers.add(GraphqlErrorProto::class, GraphqlErrorProtoPrint)
+  Printers.add(GraphqlErrorExtensionsProto::class, GraphqlErrorExtensionsProtoPrint)
+  Printers.add(StreamRequestProto::class, StreamRequestProtoPrint)
+  Printers.add(StreamResponseProto::class, StreamResponseProtoPrint)
 }
 
 private object StructCompactPrint : Print<Struct> {
@@ -194,3 +209,46 @@ class PrintFriendlyDataConnectPath(val path: DataConnectPath) :
 }
 
 fun DataConnectPath.toPrintable(): PrintFriendlyDataConnectPath = PrintFriendlyDataConnectPath(this)
+
+private object GraphqlErrorProtoPrint : Print<GraphqlErrorProto> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: GraphqlErrorProto): Printed = a.toErrorInfoImpl().toString().printed()
+}
+
+private object GraphqlErrorExtensionsProtoPrint : Print<GraphqlErrorExtensionsProto> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: GraphqlErrorExtensionsProto): Printed =
+    toStruct(a).toCompactString().printed()
+
+  fun toStruct(proto: GraphqlErrorExtensionsProto): Struct {
+    val builder = Struct.newBuilder()
+
+    val file = proto.file
+    if (file.isNotBlank()) {
+      builder.putFields("file", file.toValueProto())
+    }
+
+    return builder.build()
+  }
+}
+
+private object StreamRequestProtoPrint : Print<StreamRequestProto> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: StreamRequestProto): Printed =
+    a.toCompactString(authUid = DataConnectAuth.AuthUid("<unknown>")).printed()
+}
+
+private object StreamResponseProtoPrint : Print<StreamResponseProto> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: StreamResponseProto): Printed = a.toCompactString().printed()
+}
+
+private object SourceLocationProtoPrint : Print<SourceLocationProto> {
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: SourceLocationProto): Printed =
+    "{line=${a.line}, col=${a.column}}".printed()
+}

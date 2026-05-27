@@ -12,13 +12,16 @@ on:
   pull_request:
     paths:
       - firebase-dataconnect/demo/**
+      - 'firebase-dataconnect/ci/**'
+      - '!firebase-dataconnect/ci/README.md'
+      - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect_demo_app.yml
   schedule:
     - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
 
 env:
-  FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.6.0' }}
+  FDC_NODE_VERSION: ${{ inputs.nodeVersion || '24' }}
+  FDC_INPUT_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
@@ -33,9 +36,21 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          sparse-checkout: firebase-dataconnect/demo
+          sparse-checkout: |
+            firebase-dataconnect/demo
+            firebase-dataconnect/ci/
+
+      - name: Initialize FDC_FIREBASE_TOOLS_VERSION environment variable
+        run: |
+          set -euo pipefail
+          if [[ -n "$FDC_INPUT_FIREBASE_TOOLS_VERSION" ]]; then
+            version="$FDC_INPUT_FIREBASE_TOOLS_VERSION"
+          else
+            version="$(cat firebase-dataconnect/ci/firebase-tools-version.txt)"
+          fi
+          echo "FDC_FIREBASE_TOOLS_VERSION=${version}" >> "$GITHUB_ENV"
 
       - name: Create Cache Key Files
         run: |
@@ -72,7 +87,7 @@ jobs:
           cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           npm ci --fund=false --audit=false
 
-      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
@@ -82,6 +97,10 @@ jobs:
             firebase-dataconnect/demo/gradle.properties
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
             github_actions_demo_test_cache_key.txt
+
+      # Do not update to version 6, context: https://blog.gradle.org/github-actions-for-gradle-v6
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: tool versions
         continue-on-error: true
@@ -121,21 +140,21 @@ jobs:
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           dokkaGeneratePublicationHtml
 
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: apks
           path: firebase-dataconnect/demo/build/**/*.apk
           if-no-files-found: warn
           compression-level: 0
 
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: gradle_build_reports
           path: firebase-dataconnect/demo/build/reports/
           if-no-files-found: warn
           compression-level: 9
 
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ktdoc
           path: firebase-dataconnect/demo/build/dokka/html
@@ -146,14 +165,14 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: firebase-dataconnect/demo
 
       - name: Create Cache Key Files
         run: echo "h99ee4egfd" >github_actions_demo_spotless_cache_key.txt
 
-      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
@@ -163,6 +182,10 @@ jobs:
             firebase-dataconnect/demo/gradle.properties
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
             github_actions_demo_spotless_cache_key.txt
+
+     # Do not update to version 6, context: https://blog.gradle.org/github-actions-for-gradle-v6
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: tool versions
         continue-on-error: true
@@ -202,7 +225,7 @@ jobs:
       issues: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           show-progress: false
           sparse-checkout: |

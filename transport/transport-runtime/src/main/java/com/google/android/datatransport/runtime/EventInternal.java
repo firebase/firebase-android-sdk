@@ -58,6 +58,9 @@ public abstract class EventInternal {
   @Nullable
   public abstract List<byte[]> getExperimentIdsEncryptedList();
 
+  @Nullable
+  public abstract String getPseudonymousIdUpdateReceiverClassName();
+
   public final Map<String, String> getMetadata() {
     return Collections.unmodifiableMap(getAutoMetadata());
   }
@@ -91,6 +94,7 @@ public abstract class EventInternal {
         .setExperimentIdsClear(getExperimentIdsClear())
         .setExperimentIdsEncrypted(getExperimentIdsEncrypted())
         .setExperimentIdsEncryptedList(getExperimentIdsEncryptedList())
+        .setPseudonymousIdUpdateReceiverClassName(getPseudonymousIdUpdateReceiverClassName())
         .setEncodedPayload(getEncodedPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
@@ -124,6 +128,8 @@ public abstract class EventInternal {
     public abstract Builder setExperimentIdsEncrypted(byte[] value);
 
     public abstract Builder setExperimentIdsEncryptedList(List<byte[]> value);
+
+    public abstract Builder setPseudonymousIdUpdateReceiverClassName(String value);
 
     protected abstract Map<String, String> getAutoMetadata();
 

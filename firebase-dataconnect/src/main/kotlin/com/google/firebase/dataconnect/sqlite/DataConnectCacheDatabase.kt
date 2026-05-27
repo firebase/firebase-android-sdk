@@ -18,24 +18,34 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.QueryId
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.util.BigIntegerUtil.LONG_MAX_VALUE_BIG_INTEGER
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.Executors
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
+import kotlin.reflect.KClass
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -44,6 +54,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Provides and manages access to the sqlite database used to stored cached query results for
@@ -54,7 +65,11 @@ import kotlinx.coroutines.sync.withLock
  * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  */
-internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
+internal class DataConnectCacheDatabase(
+  private val dbFile: File?,
+  private val cpuDispatcher: CoroutineDispatcher,
+  private val logger: Logger,
+) {
 
   private val stateMutex = Mutex()
   private var state: State = State.New
@@ -85,19 +100,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
           .asCoroutineDispatcher()
 
-      val coroutineJob = SupervisorJob()
-
-      val coroutineScope =
-        CoroutineScope(
-          coroutineJob +
-            CoroutineName(logger.nameWithId) +
-            coroutineDispatcher +
-            CoroutineExceptionHandler { context, throwable ->
-              logger.warn(throwable) {
-                "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
-              }
-            }
-        )
+      val coroutineScope = createSupervisorCoroutineScope(coroutineDispatcher, logger)
 
       val initializeJob =
         coroutineScope.async {
@@ -200,17 +203,17 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
-    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.string))
     return rawQuery(
       logger,
       "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
-      if (authUid === null) emptyArray() else arrayOf(authUid),
+      if (authUid === null) emptyArray() else arrayOf(authUid.string),
     ) { cursor ->
       if (cursor.moveToNext()) {
         SqliteUserId(cursor.getLong(0))
       } else {
-        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
+        throw AuthUidNotFoundException("authUid=${authUid?.string} (internal error m5m52ahrxz)")
       }
     }
   }
@@ -220,23 +223,22 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private data class GetQueryResult(
     val id: SqliteQueryId,
     val proto: QueryResultProto,
+    val expiryProto: QueryResultExpiry,
   )
 
-  private fun SQLiteDatabase.getQuery(
-    user: SqliteUserId,
-    queryId: ImmutableByteArray
-  ): GetQueryResult? =
+  private fun SQLiteDatabase.getQuery(user: SqliteUserId, queryId: QueryId): GetQueryResult? =
     rawQuery(
       logger,
-      "SELECT id, data, flags FROM queries WHERE user_id=? AND query_id=?",
-      bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
+      "SELECT id, data, expiry, flags FROM queries WHERE user_id=? AND query_id=?",
+      bindArgs = arrayOf(user.sqliteRowId, queryId.bytes.peek()),
     ) { cursor ->
       if (!cursor.moveToNext()) {
         null
       } else {
         val id = SqliteQueryId(cursor.getLong(0))
         val protoBytes = cursor.getBlob(1)
-        val flags = cursor.getLong(2).toULong()
+        val expiryBytes = cursor.getBlob(2)
+        val flags = cursor.getLong(3).toULong()
 
         val parseResult = runCatching {
           // The lower 32 bits of the "flags" are "required". So if there are any flags set there
@@ -254,27 +256,42 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         parseResult.onFailure {
           logger.warn(it) {
             "Parsing QueryResultProto failed for id=$id, user=$user, " +
-              "queryId=${queryId.to0xHexString()}, flags=$flags [ykb2vwrcge]"
+              "queryId=$queryId, flags=$flags [ykb2vwrcge]"
           }
         }
 
-        GetQueryResult(id, parseResult.getOrThrow())
+        val expiryParseResult = runCatching { QueryResultExpiry.parseFrom(expiryBytes) }
+
+        expiryParseResult.onFailure {
+          logger.warn(it) {
+            "Parsing QueryResultExpiry failed for id=$id, user=$user, " +
+              "queryId=$queryId, flags=$flags [x9k2c3b8y1]"
+          }
+        }
+
+        GetQueryResult(id, parseResult.getOrThrow(), expiryParseResult.getOrThrow())
       }
     }
 
   private fun SQLiteDatabase.insertQuery(
     user: SqliteUserId,
-    queryId: ImmutableByteArray,
+    queryId: QueryId,
     queryResultProtoBytes: ImmutableByteArray,
+    expiryProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
     execSQL(
       logger,
       """
         INSERT OR REPLACE INTO queries
-        (user_id, query_id, data, flags)
-        VALUES (?, ?, ?, 0)
+        (user_id, query_id, data, expiry, flags)
+        VALUES (?, ?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, queryId.peek(), queryResultProtoBytes.peek())
+      arrayOf(
+        user.sqliteRowId,
+        queryId.bytes.peek(),
+        queryResultProtoBytes.peek(),
+        expiryProtoBytes.peek()
+      )
     )
     val rowId = getLastInsertRowId(logger)
     return SqliteQueryId(rowId)
@@ -424,47 +441,118 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     execSQL(logger, "DELETE FROM entity_query_map WHERE query_id=?", arrayOf(query.sqliteRowId))
   }
 
-  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): Struct? =
-  // TODO: convert to read-only transaction so it can be run concurrently
-  runReadWriteTransaction { sqliteDatabase ->
-    val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
-    val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
-    if (getQueryResult === null) {
-      null
-    } else {
-      val (sqliteQueryId, queryResultProto) = getQueryResult
-      val entityIds: Set<String> = queryResultProto.referencedEntityIds()
-      val entityStructByEntityId =
-        sqliteDatabase.getEntities(
-          sqliteUserId,
-          entityIds,
-          EntityParseFailureAction.Error,
-        )
+  sealed interface GetQueryResultResult {
+    data object NotFound : GetQueryResultResult
 
-      val rehydrateResult = runCatching {
-        rehydrateQueryResult(queryResultProto, entityStructByEntityId)
-      }
-      rehydrateResult.onFailure {
-        logger.warn {
-          "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
-            "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+    data class Stale(val staleness: Duration) : GetQueryResultResult
+
+    data class Found(
+      val struct: Struct,
+      val freshnessRemaining: Duration,
+    ) : GetQueryResultResult
+  }
+
+  suspend fun getQueryResult(
+    authUid: AuthUid?,
+    queryId: QueryId,
+    currentTimeMillis: Long,
+    staleResult: KClass<out GetQueryResultResult>,
+  ): GetQueryResultResult {
+    require(staleResult in supportedStaleResults) {
+      val supportedStaleResultsString =
+        supportedStaleResults.map { it.simpleName ?: "" }.sorted().joinToString()
+      "unsupported staleResult: $staleResult " +
+        "(supported values $supportedStaleResultsString) [a7zkmf2rq8]"
+    }
+
+    // TODO: convert to read-only transaction so it can be run concurrently
+    return runReadWriteTransaction { sqliteDatabase ->
+      val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
+      val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
+      if (getQueryResult === null) {
+        GetQueryResultResult.NotFound
+      } else {
+        val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+
+        val staleness = expiryProto.calculateStaleness(currentTimeMillis)
+        val staleDuration =
+          when (staleness) {
+            is Staleness.Stale -> staleness.staleness
+            Staleness.Invalid -> Duration.ZERO
+            Staleness.Unspecified -> Duration.ZERO
+            is Staleness.Fresh -> staleness.freshnessRemaining
+          }
+
+        if (staleness !is Staleness.Fresh && staleResult != GetQueryResultResult.Found::class) {
+          when (staleResult) {
+            GetQueryResultResult.NotFound::class ->
+              return@runReadWriteTransaction GetQueryResultResult.NotFound
+            GetQueryResultResult.Stale::class ->
+              return@runReadWriteTransaction GetQueryResultResult.Stale(staleDuration)
+            else ->
+              throw IllegalArgumentException(
+                "internal error eheprtkz29: should not get here: staleResult=$staleResult"
+              )
+          }
         }
+
+        val entityIds: Set<String> = queryResultProto.referencedEntityIds()
+        val entityStructByEntityId =
+          sqliteDatabase.getEntities(
+            sqliteUserId,
+            entityIds,
+            EntityParseFailureAction.Error,
+          )
+
+        val rehydrateResult = runCatching {
+          rehydrateQueryResult(queryResultProto, entityStructByEntityId)
+        }
+        rehydrateResult.onFailure {
+          logger.warn {
+            "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
+              "queryId=$queryId [knpe3t4f5b]"
+          }
+        }
+
+        val staleDurationMultiplier =
+          when (staleness) {
+            is Staleness.Stale -> -1
+            else -> 1
+          }
+        val freshnessRemaining = staleDuration * staleDurationMultiplier
+        GetQueryResultResult.Found(rehydrateResult.getOrThrow(), freshnessRemaining)
       }
-      rehydrateResult.getOrThrow()
     }
   }
 
   suspend fun insertQueryResult(
-    authUid: String?,
-    queryId: ImmutableByteArray,
+    authUid: AuthUid?,
+    queryId: QueryId,
     queryData: Struct,
+    maxAge: DurationProto,
+    currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
-    require(queryId.size > 0) {
-      "queryId.size=${queryId.size}, but must be greater than zero [ab4em538tb]"
+    require(queryId.bytes.size > 0) {
+      "queryId.bytes.size=${queryId.bytes.size}, but must be greater than zero [ab4em538tb]"
     }
-    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
-    val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
+
+    val queryResultProtoBytes: ImmutableByteArray
+    val expiryProtoBytes: ImmutableByteArray
+    val entityStructById: Map<String, Struct>
+    withContext(cpuDispatcher) {
+      val dehydratedQueryResult = dehydrateQueryResult(queryData, getEntityIdForPath)
+      entityStructById = dehydratedQueryResult.entityStructById
+      queryResultProtoBytes = ImmutableByteArray.adopt(dehydratedQueryResult.proto.toByteArray())
+
+      expiryProtoBytes =
+        QueryResultExpiry.newBuilder().let {
+          val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
+          it.setMaxAge(maxAge)
+          it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
+          ImmutableByteArray.adopt(it.build().toByteArray())
+        }
+    }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -474,6 +562,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           user = user,
           queryId = queryId,
           queryResultProtoBytes = queryResultProtoBytes,
+          expiryProtoBytes = expiryProtoBytes,
         )
 
       val sqliteEntityIds =
@@ -563,3 +652,122 @@ private fun QueryResultProto.referencedEntityIds(): Set<String> = buildSet {
     }
   }
 }
+
+private val NANOS_FROM_SECONDS_MULTIPLIER = 1_000_000_000.toBigInteger()
+
+private val NANOS_FROM_MILLISECONDS_MULTIPLIER = 1_000_000.toBigInteger()
+
+private fun DurationProto.toBigIntegerNanos(): BigInteger {
+  val seconds = seconds.toBigInteger()
+  val nanos = nanos.toBigInteger()
+  return nanos + (seconds * NANOS_FROM_SECONDS_MULTIPLIER)
+}
+
+private fun nanosFromMillis(millis: Long): BigInteger =
+  millis.toBigInteger() * NANOS_FROM_MILLISECONDS_MULTIPLIER
+
+private sealed interface Staleness {
+  data object Unspecified : Staleness
+  data object Invalid : Staleness
+  data class Fresh(val freshnessRemaining: Duration) : Staleness
+  data class Stale(val staleness: Duration) : Staleness
+}
+
+private fun QueryResultExpiry.calculateStaleness(currentTimeMillis: Long): Staleness {
+  val expiryTimeNanosString = this.expiryTimeNanos ?: return Staleness.Unspecified
+
+  val expiryTimeNanos: BigInteger =
+    try {
+      expiryTimeNanosString.toBigInteger(36)
+    } catch (_: NumberFormatException) {
+      return Staleness.Invalid
+    }
+
+  val nanosExpired = nanosFromMillis(currentTimeMillis) - expiryTimeNanos
+  val staleness = nanosExpired.signedDurationFromNanoseconds()
+
+  maxAge.run {
+    if (seconds == 0L && nanos == 0) {
+      return Staleness.Stale(staleness = staleness.duration)
+    }
+  }
+
+  return when (staleness) {
+    SignedDuration.Zero -> Staleness.Fresh(freshnessRemaining = Duration.ZERO)
+    is SignedDuration.NonZero ->
+      if (staleness.sign.isPositive) {
+        Staleness.Stale(staleness = staleness.duration)
+      } else {
+        Staleness.Fresh(freshnessRemaining = staleness.duration)
+      }
+  }
+}
+
+private sealed interface SignedDuration {
+  val duration: Duration
+
+  data object Zero : SignedDuration {
+    override val duration = Duration.ZERO
+  }
+
+  data class NonZero(override val duration: Duration, val sign: Sign) : SignedDuration {
+    enum class Sign(val isPositive: Boolean) {
+      Positive(true),
+      Negative(false);
+
+      val isNegative: Boolean
+        get() = !isPositive
+    }
+  }
+}
+
+private fun BigInteger.signedDurationFromNanoseconds(): SignedDuration {
+  when {
+    this < BigInteger.ZERO -> {
+      val positiveSignedDuration = abs().signedDurationFromNanoseconds()
+      check(positiveSignedDuration is SignedDuration.NonZero)
+      check(positiveSignedDuration.sign == SignedDuration.NonZero.Sign.Positive)
+      return positiveSignedDuration.copy(sign = SignedDuration.NonZero.Sign.Negative)
+    }
+    this > BigInteger.ZERO -> {
+      if (this <= LONG_MAX_VALUE_BIG_INTEGER) {
+        val duration = toLong().nanoseconds
+        if (!duration.isInfinite()) {
+          check(duration.isPositive()) {
+            "internal error cktj247ham: duration.isPositive() returned false (duration=$duration)"
+          }
+          return SignedDuration.NonZero(duration, SignedDuration.NonZero.Sign.Positive)
+        }
+      }
+
+      val milliseconds = this / NANOS_FROM_MILLISECONDS_MULTIPLIER
+      val duration =
+        if (milliseconds > LONG_MAX_VALUE_BIG_INTEGER) {
+          Duration.INFINITE
+        } else {
+          milliseconds.toLong().milliseconds
+        }
+
+      check(duration.isPositive()) {
+        "internal error t89g2eccdq: duration.isPositive() returned false (duration=$duration)"
+      }
+
+      val normalizedDuration = if (duration.isInfinite()) Duration.INFINITE else duration
+
+      return SignedDuration.NonZero(normalizedDuration, SignedDuration.NonZero.Sign.Positive)
+    }
+    else -> {
+      check(this == BigInteger.ZERO) {
+        "internal error c9mv7fgcdm: this==$this, but expected BigInteger.ZERO"
+      }
+      return SignedDuration.Zero
+    }
+  }
+}
+
+private val supportedStaleResults =
+  listOf(
+    GetQueryResultResult.NotFound::class,
+    GetQueryResultResult.Found::class,
+    GetQueryResultResult.Stale::class,
+  )

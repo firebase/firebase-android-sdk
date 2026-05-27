@@ -154,11 +154,13 @@ class DataConnectCacheDatabaseMigratorUnitTest {
   @Test
   fun `migrate() should throw if user_version has a different major version`() = runTest {
     val semanticVersionArb =
-      Arb.dataConnect.semanticVersion(
-        major = Arb.int(0..999).filterNot { it == 1 },
-        minor = Arb.int(0..999),
-        patch = Arb.int(0..999),
-      )
+      Arb.dataConnect
+        .semanticVersion(
+          major = Arb.int(0..999).filterNot { it == 1 },
+          minor = Arb.int(0..999),
+          patch = Arb.int(0..999),
+        )
+        .filterNot { it.major == 0 && it.minor == 0 && it.patch == 0 }
     checkAll(propTestConfig, semanticVersionArb) { userVersion ->
       val mockLogger: Logger = mockk(relaxed = true)
       val exception =

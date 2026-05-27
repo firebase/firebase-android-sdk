@@ -43,6 +43,8 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:Input abstract val connectors: Property<Collection<String>>
 
+  @get:Optional @get:Input abstract val previewFlags: Property<Collection<String>>
+
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
@@ -69,6 +71,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val dataConnectExecutableCallingConvention = dataConnectExecutableCallingConvention.get()
     val configDirectory: File? = configDirectory.orNull?.asFile
     val connectors: Collection<String> = connectors.get().distinct().sorted()
+    val previewFlags: List<String> = previewFlags.orNull?.toList() ?: emptyList()
     val buildDirectory: File = buildDirectory.get().asFile
     val outputDirectory: File = outputDirectory.get().asFile
     val ktfmtJarFile: File? = ktfmtJarFile.orNull?.asFile
@@ -77,6 +80,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     logger.info("dataConnectExecutableCallingConvention={}", dataConnectExecutableCallingConvention)
     logger.info("configDirectory={}", configDirectory?.absolutePath)
     logger.info("connectors={}", connectors.joinToString(", "))
+    logger.info("previewFlags={}", previewFlags.joinToString())
     logger.info("buildDirectory={}", buildDirectory.absolutePath)
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
     logger.info("ktfmtJarFile={}", ktfmtJarFile?.absolutePath)
@@ -97,6 +101,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       subCommand = subCommand,
       configDirectory = configDirectory,
       execOperations = execOperations,
+      previewFlags = previewFlags,
     ) {
       when (dataConnectExecutableCallingConvention) {
         CallingConvention.GRADLE -> this.connectors = connectors

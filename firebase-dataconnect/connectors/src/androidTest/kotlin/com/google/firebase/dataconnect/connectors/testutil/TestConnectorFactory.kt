@@ -31,14 +31,15 @@ import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 abstract class TestConnectorFactory<T : GeneratedConnector<T>>(
   private val firebaseAppFactory: TestFirebaseAppFactory,
   private val dataConnectFactory: TestDataConnectFactory
-) : FactoryTestRule<T, Nothing>() {
+) : FactoryTestRule<T, CacheSettings>() {
 
   abstract fun createConnector(firebaseApp: FirebaseApp, settings: DataConnectSettings): T
 
-  override fun createInstance(params: Nothing?): T {
+  override fun createInstance(params: CacheSettings?): T {
     val firebaseApp = firebaseAppFactory.newInstance()
 
-    val dataConnectSettings = DataConnectBackend.fromInstrumentationArguments().dataConnectSettings
+    val dataConnectSettings =
+      DataConnectBackend.fromInstrumentationArguments().getDataConnectSettings(params)
     val connector = createConnector(firebaseApp, dataConnectSettings)
 
     // Get the instance of `FirebaseDataConnect` from the `TestDataConnectFactory` so that it will

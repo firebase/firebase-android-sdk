@@ -36,10 +36,13 @@ import com.google.firebase.appcheck.internal.RetryManager;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -70,6 +73,7 @@ public class DebugAppCheckProviderTest {
   @Mock NetworkClient mockNetworkClient;
   @Mock RetryManager mockRetryManager;
   @Mock AppCheckTokenResponse mockAppCheckTokenResponse;
+  @Captor ArgumentCaptor<byte[]> requestBytesCaptor;
 
   private StorageHelper storageHelper;
   private SharedPreferences sharedPreferences;
@@ -172,5 +176,32 @@ public class DebugAppCheckProviderTest {
     assertThat(task.isSuccessful()).isFalse();
     Exception exception = task.getException();
     assertThat(exception).isInstanceOf(IOException.class);
+  }
+
+  @Test
+  public void getLimitedUseToken_onSuccess_setsTaskResult() throws Exception {
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenReturn(mockAppCheckTokenResponse);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
+    when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+    Task<AppCheckToken> task = provider.getLimitedUseToken();
+
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(
+            requestBytesCaptor.capture(), eq(NetworkClient.DEBUG), eq(mockRetryManager));
+
+    byte[] capturedBytes = requestBytesCaptor.getValue();
+    JSONObject jsonObject = new JSONObject(new String(capturedBytes, "UTF-8"));
+    assertThat(jsonObject.opt(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY)).isEqualTo(DEBUG_SECRET);
+    assertThat(jsonObject.opt(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY)).isEqualTo(true);
+
+    AppCheckToken token = task.getResult();
+    assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
   }
 }

@@ -80,6 +80,8 @@ public class TransportRuntimeTest {
   private byte[] EXPERIMENT_IDS_CLEAR = "experiment ids clear".getBytes(Charset.defaultCharset());
   private byte[] EXPERIMENT_IDS_ENCRYPTED =
       "experiment ids encrypted".getBytes(Charset.defaultCharset());
+  private static final String PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME =
+      "com.google.android.datatransport.runtime.TestPseudonymousIdUpdateReceiver";
 
   private static class StatefulTransportScheduleCallback implements TransportScheduleCallback {
     public boolean called = false;
@@ -113,6 +115,8 @@ public class TransportRuntimeTest {
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .setPseudonymousIdUpdateReceiverClassName(
+                    PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
                 .build());
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
@@ -164,6 +168,8 @@ public class TransportRuntimeTest {
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .setPseudonymousIdUpdateReceiverClassName(
+                    PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
                 .build());
     EventInternal expectedEvent =
         EventInternal.builder()
@@ -179,6 +185,7 @@ public class TransportRuntimeTest {
             .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
             .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
             .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+            .setPseudonymousIdUpdateReceiverClassName(PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
@@ -225,6 +232,8 @@ public class TransportRuntimeTest {
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .setPseudonymousIdUpdateReceiverClassName(
+                    PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
                 .build());
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
@@ -270,6 +279,8 @@ public class TransportRuntimeTest {
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .setPseudonymousIdUpdateReceiverClassName(
+                    PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
                 .build());
     EventInternal expectedEvent =
         EventInternal.builder()
@@ -285,6 +296,7 @@ public class TransportRuntimeTest {
             .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
             .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
             .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+            .setPseudonymousIdUpdateReceiverClassName(PSEUDONYMOUS_ID_UPDATE_RECEIVER_CLASS_NAME)
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();

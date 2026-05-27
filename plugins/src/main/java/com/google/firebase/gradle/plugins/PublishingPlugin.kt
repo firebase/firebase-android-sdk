@@ -404,8 +404,9 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-messaging-ktx",
           "com.google.firebase:firebase-ml-modeldownloader-ktx",
           "com.google.firebase:firebase-perf-ktx",
-          "com.google.firebase:firebase-pnv",
           "com.google.firebase:firebase-storage-ktx",
+          "com.google.firebase:firebase-ai-ondevice",
+          "com.google.firebase:firebase-ai-ondevice-interop",
         )
       )
 
@@ -443,6 +444,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-config",
           "com.google.android.gms:play-services-ads",
           "com.google.firebase:firebase-firestore",
+          "com.google.firebase:firebase-pnv",
           "com.google.firebase:firebase-functions",
           "com.google.firebase:firebase-inappmessaging-display",
           "com.google.firebase:firebase-ml-vision",
@@ -786,6 +788,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-dataconnect",
         "com.google.firebase:firebase-encoders",
         "com.google.firebase:firebase-firestore",
+        "com.google.firebase:firebase-pnv",
         "com.google.firebase:firebase-functions",
         "com.google.firebase:firebase-inappmessaging",
         "com.google.firebase:firebase-inappmessaging-display",

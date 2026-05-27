@@ -1,5 +1,9 @@
 # Unreleased
 
+# 25.0.2
+
+- [changed] Fix ANR in SharedPreferencesQueue by reducing lock contention
+
 # 25.0.1
 
 - [changed] Bumped internal dependencies.
@@ -90,9 +94,10 @@ The Kotlin extensions library transitively includes the updated `firebase-messag
 Kotlin extensions library has no additional updates.
 
 # 23.4.0
-* [changed] Called messageHandled() after a message has been handled to indicate
+
+- [changed] Called messageHandled() after a message has been handled to indicate
   that the message has been handled successfully.
-* [changed] Added an internal identifier to Firelog logging for compliance.
+- [changed] Added an internal identifier to Firelog logging for compliance.
 
 # 23.3.1
 

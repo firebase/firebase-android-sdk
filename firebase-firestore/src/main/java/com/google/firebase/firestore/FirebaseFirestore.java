@@ -27,7 +27,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.annotations.Beta;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PreviewApi;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
@@ -914,7 +913,6 @@ public class FirebaseFirestore {
    *
    * @return A {@code PipelineSource} to begin defining the pipeline's stages.
    */
-  @Beta
   @NonNull
   public PipelineSource pipeline() {
     clientProvider.ensureConfigured();

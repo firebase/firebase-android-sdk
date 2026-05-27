@@ -8,16 +8,16 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Clone mock responses
-        run: firebase-ai/update_responses.sh
+        run: ai-logic/firebase-ai/update_responses.sh
       - name: Find cloned and latest versions
         run: |
           CLONED=$(git describe --tags)
           LATEST=$(git tag --sort=v:refname | tail -n1)
           echo "cloned_tag=$CLONED" >> $GITHUB_ENV
           echo "latest_tag=$LATEST" >> $GITHUB_ENV
-        working-directory: firebase-ai/src/test/resources/vertexai-sdk-test-data
+        working-directory: ai-logic/firebase-ai/src/test/resources/vertexai-sdk-test-data
       - name: Find comment from previous run if exists
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e # v3.1.0
         id: fc

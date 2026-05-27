@@ -1,23 +1,67 @@
 # Unreleased
 
-- [changed] Added public APIs for offline caching.
-  [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716))
-- [changed] Added hydration and dehydration logic for use in offline caching.
-  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
-- [changed] Added sqlite database logic for use in offline caching.
-  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720))
-- [changed] Wired up implementation for serving query responses from cache.
-  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759))
+- [feature] `QuerySubscription.flow` gains
+  [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
+  ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))
+- [changed] Internal fix of wasteful computation only meant for debug logging.
+  ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
+- [changed] Internal change to replace `SecureRandom` with just `Random`
+  as the random numbers were not used in a security-sensitive context,
+  thus the performance costs of secure random number generation were unnecessary.
+  ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
+  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
+
+# 17.2.2
+
+- [changed] Internal refactor for calculating debug logging strings.
+  ([#8024](https://github.com/firebase/firebase-android-sdk/pull/8024))
+- [changed] Internal refactor to use more descriptive variable names.
+  ([#8025](https://github.com/firebase/firebase-android-sdk/pull/8025))
+- [changed] Internal refactor to use token objects instead of strings.
+  ([#8027](https://github.com/firebase/firebase-android-sdk/pull/8027))
+
+# 17.2.1
+
+- [changed] Ensure exceptions are not silently ignored when closing
+  `FirebaseDataConnect` instances.
+  ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
+- [changed] Internal change to use `SecureRandom` when generating operation IDs.
+  ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
+- [changed] Internal refactor to use immutable byte arrays.
+  ([#7957](https://github.com/firebase/firebase-android-sdk/pull/7957))
+
+# 17.2.0
+
+- [changed] Added offline caching APIs
+  ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
+  [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),
+  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848),
+  [#7875](https://github.com/firebase/firebase-android-sdk/pull/7875),
+  [#7885](https://github.com/firebase/firebase-android-sdk/pull/7885),
+  [#7887](https://github.com/firebase/firebase-android-sdk/pull/7887))
+- [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
+  ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
+
+# 17.1.4
+
+- [changed] Internal changes to support future offline caching functionality.
+  ([#7716](https://github.com/firebase/firebase-android-sdk/pull/7716),
+  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714),
+  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720),
+  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759),
+  [#7821](https://github.com/firebase/firebase-android-sdk/pull/7821))
 
 # 17.1.3
 
 - [changed] Internal refactor for reporting "paths" in response data.
-  [#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
+  ([#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
 
 # 17.1.2
 
 - [changed] Internal refactor for managing Auth and App Check tokens
-  [#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
+  ([#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
 
 # 17.1.1
 

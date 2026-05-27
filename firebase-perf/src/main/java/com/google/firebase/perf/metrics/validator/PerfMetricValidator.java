@@ -33,6 +33,8 @@ public abstract class PerfMetricValidator {
   private static final Pattern ATTRIBUTE_KEY_PATTERN =
       Pattern.compile("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*");
 
+  private static final Constants.CounterNames[] validCounterNames = Constants.CounterNames.values();
+
   /**
    * Creates a list of PerfMetricValidator classes based on the contents of PerfMetric
    *
@@ -126,7 +128,6 @@ public abstract class PerfMetricValidator {
       return String.format(
           Locale.US, "Metric name must not exceed %d characters", Constants.MAX_COUNTER_ID_LENGTH);
     } else if (str.startsWith("_")) {
-      Constants.CounterNames[] validCounterNames = Constants.CounterNames.values();
       for (Constants.CounterNames counterName : validCounterNames) {
         if (counterName.toString().equals(str)) {
           return null;

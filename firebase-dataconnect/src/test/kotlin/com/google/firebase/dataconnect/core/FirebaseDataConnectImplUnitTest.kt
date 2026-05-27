@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
@@ -27,16 +28,23 @@ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
+import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
+import io.kotest.property.checkAll
 import io.mockk.mockk
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -238,24 +246,52 @@ class FirebaseDataConnectImplUnitTest {
       job.join()
     }
 
+  @Test
+  fun `connectorResourceName should be the correct value`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.projectId(), Arb.dataConnect.connectorConfig()) {
+      projectId,
+      config ->
+      val dataConnect = newDataConnect(projectId = projectId, config = config)
+      dataConnect.connectorResourceName shouldBe
+        "projects/$projectId/" +
+          "locations/${config.location}" +
+          "/services/${config.serviceId}" +
+          "/connectors/${config.connector}"
+    }
+  }
+
+  @Test
+  fun `connectorResourceName should be correctly passed along to the DataConnectGrpcClient`() =
+    runTest {
+      checkAll(propTestConfig, Arb.dataConnect.projectId(), Arb.dataConnect.connectorConfig()) {
+        projectId,
+        config ->
+        val dataConnect = newDataConnect(projectId = projectId, config = config)
+        dataConnect.grpcRPCs.connectorResourceName shouldBe dataConnect.connectorResourceName
+      }
+    }
+
   private fun newDataConnect(
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
       mockk(relaxed = true),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       mockk(relaxed = true),
+    projectId: String? = null,
+    config: ConnectorConfig? = null,
   ): FirebaseDataConnectImpl {
     val app = firebaseAppFactory.newInstance()
     return FirebaseDataConnectImpl(
         context = app.applicationContext,
         app = app,
-        projectId = app.options.projectId!!,
-        config = Arb.dataConnect.connectorConfig().next(rs),
+        projectId = projectId ?: app.options.projectId!!,
+        config = config ?: Arb.dataConnect.connectorConfig().next(rs),
         blockingExecutor = Dispatchers.IO.asExecutor(),
         nonBlockingExecutor = Dispatchers.Default.asExecutor(),
         deferredAuthProvider = deferredAuthProvider,
         deferredAppCheckProvider = deferredAppCheckProvider,
         creator = mockk(relaxed = true),
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
+        idStringGenerator = IdStringGenerator(Random.Default),
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }
@@ -263,3 +299,11 @@ class FirebaseDataConnectImplUnitTest {
   private interface TestVariables
   private interface TestData
 }
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 200,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+    shrinkingMode = ShrinkingMode.Off,
+  )

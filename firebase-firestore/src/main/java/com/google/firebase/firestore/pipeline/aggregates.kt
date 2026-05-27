@@ -168,6 +168,91 @@ private constructor(
      */
     @JvmStatic
     fun countDistinct(expression: Expression) = AggregateFunction("count_distinct", expression)
+
+    /**
+     * Creates an aggregation that finds the first value of a field across multiple stage inputs.
+     *
+     * @param fieldName The name of the field to find the first value of.
+     * @return A new [AggregateFunction] representing the first aggregation.
+     */
+    @JvmStatic fun first(fieldName: String) = AggregateFunction("first", fieldName)
+
+    /**
+     * Creates an aggregation that finds the first value of an expression across multiple stage
+     * inputs.
+     *
+     * @param expression The expression to find the first value of.
+     * @return A new [AggregateFunction] representing the first aggregation.
+     */
+    @JvmStatic fun first(expression: Expression) = AggregateFunction("first", expression)
+
+    /**
+     * Creates an aggregation that finds the last value of a field across multiple stage inputs.
+     *
+     * @param fieldName The name of the field to find the last value of.
+     * @return A new [AggregateFunction] representing the last aggregation.
+     */
+    @JvmStatic fun last(fieldName: String) = AggregateFunction("last", fieldName)
+
+    /**
+     * Creates an aggregation that finds the last value of an expression across multiple stage
+     * inputs.
+     *
+     * @param expression The expression to find the last value of.
+     * @return A new [AggregateFunction] representing the last aggregation.
+     */
+    @JvmStatic fun last(expression: Expression) = AggregateFunction("last", expression)
+
+    /**
+     * Creates an aggregation that collects all values of a field across multiple stage inputs into
+     * an array.
+     *
+     * If the expression resolves to an absent value, it is converted to `null`. The order of
+     * elements in the output array is not stable and shouldn't be relied upon.
+     *
+     * @param fieldName The name of the field to collect values from.
+     * @return A new [AggregateFunction] representing the array_agg aggregation.
+     */
+    @JvmStatic fun arrayAgg(fieldName: String) = AggregateFunction("array_agg", fieldName)
+
+    /**
+     * Creates an aggregation that collects all values of an expression across multiple stage inputs
+     * into an array.
+     *
+     * If the expression resolves to an absent value, it is converted to `null`. The order of
+     * elements in the output array is not stable and shouldn't be relied upon.
+     *
+     * @param expression The expression to collect values from.
+     * @return A new [AggregateFunction] representing the array_agg aggregation.
+     */
+    @JvmStatic fun arrayAgg(expression: Expression) = AggregateFunction("array_agg", expression)
+
+    /**
+     * Creates an aggregation that collects all distinct values of a field across multiple stage
+     * inputs into an array.
+     *
+     * If the expression resolves to an absent value, it is converted to `null`. The order of
+     * elements in the output array is not stable and shouldn't be relied upon.
+     *
+     * @param fieldName The name of the field to collect values from.
+     * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
+     */
+    @JvmStatic
+    fun arrayAggDistinct(fieldName: String) = AggregateFunction("array_agg_distinct", fieldName)
+
+    /**
+     * Creates an aggregation that collects all distinct values of an expression across multiple
+     * stage inputs into an array.
+     *
+     * If the expression resolves to an absent value, it is converted to `null`. The order of
+     * elements in the output array is not stable and shouldn't be relied upon.
+     *
+     * @param expression The expression to collect values from.
+     * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
+     */
+    @JvmStatic
+    fun arrayAggDistinct(expression: Expression) =
+      AggregateFunction("array_agg_distinct", expression)
   }
 
   /**

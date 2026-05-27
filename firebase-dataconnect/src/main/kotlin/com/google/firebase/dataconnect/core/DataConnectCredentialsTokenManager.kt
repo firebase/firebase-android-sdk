@@ -24,24 +24,21 @@ import com.google.firebase.dataconnect.core.DataConnectCredentialsTokenManager.G
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
-import com.google.firebase.util.nextAlphanumericString
 import java.lang.ref.WeakReference
 import kotlin.coroutines.coroutineContext
-import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
@@ -55,6 +52,7 @@ import kotlinx.coroutines.launch
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
 internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenResult>(
   private val deferredProvider: com.google.firebase.inject.Deferred<T>,
+  private val idStringGenerator: IdStringGenerator,
   parentCoroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
   protected val logger: Logger,
@@ -64,17 +62,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
 
   @Suppress("LeakingThis") private val weakThis = WeakReference(this)
 
-  private val coroutineScope =
-    CoroutineScope(
-      parentCoroutineScope.coroutineContext +
-        SupervisorJob(parentCoroutineScope.coroutineContext[Job]) +
-        CoroutineName(instanceId) +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
-          }
-        }
-    )
+  private val coroutineScope = parentCoroutineScope.createChildSupervisorScope(logger)
 
   private sealed interface State<out T, out R : GetTokenResult> {
 
@@ -298,7 +286,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    * progress.
    */
   suspend fun getToken(requestId: String): R? {
-    val invocationId = "gat" + Random.nextAlphanumericString(length = 8)
+    val invocationId = idStringGenerator.next("gat")
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
       val attemptSequenceNumber = nextSequenceNumber()

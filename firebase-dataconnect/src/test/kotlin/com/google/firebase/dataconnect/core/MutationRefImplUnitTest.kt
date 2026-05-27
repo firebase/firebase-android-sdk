@@ -21,19 +21,22 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.core.DataConnectSerialization.Companion.toErrorInfoImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.graphqlErrorProto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
@@ -56,6 +59,7 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
@@ -66,6 +70,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -109,7 +114,8 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() returns the result on success`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
+    val operationResult =
+      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
@@ -125,7 +131,8 @@ class MutationRefImplUnitTest {
   fun `execute() calls executeMutation with the correct arguments`() = runTest {
     @Serializable data class TestSerializableVariables(val foo: String)
     val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
+    val operationResult =
+      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
     val requestIdSlot: CapturingSlot<String> = slot()
     val operationNameSlot: CapturingSlot<String> = slot()
     val variablesSlot: CapturingSlot<Struct> = slot()
@@ -180,10 +187,11 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
     val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = Arb.dataConnect.operationErrors().next()
-    val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
+    val errors = Arb.list(Arb.dataConnect.graphqlErrorProto()).next()
+    val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors.map { it.toErrorInfoImpl() })
     val variablesSlot: CapturingSlot<Struct> = slot()
-    val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)
+    val operationResult =
+      OperationResult(buildStructProto { put("bar", 24.0) }, errors, DataSource.SERVER)
     val dataConnect =
       dataConnectWithMutationResult(Result.success(operationResult), variablesSlot = variablesSlot)
     val mutationRefImpl =
@@ -204,7 +212,7 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `execute() throws when the data is null`() = runTest {
-    val operationResult = OperationResult(data = null, errors = emptyList())
+    val operationResult = OperationResult(data = null, errors = emptyList(), DataSource.SERVER)
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
@@ -669,9 +677,12 @@ class MutationRefImplUnitTest {
       operationNameSlot: CapturingSlot<String> = slot(),
       variablesSlot: CapturingSlot<Struct> = slot(),
       callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
-    ): FirebaseDataConnectInternal =
-      mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
+    ): FirebaseDataConnectInternal {
+      val dispatcher = UnconfinedTestDispatcher(testScheduler)
+      return mockk {
+        every { idStringGenerator } returns IdStringGenerator(Random.Default)
+        every { blockingDispatcher } returns dispatcher
+        every { serialization } returns DataConnectSerialization(dispatcher)
         every { grpcClient } returns
           mockk<DataConnectGrpcClient> {
             coEvery {
@@ -684,5 +695,6 @@ class MutationRefImplUnitTest {
             } returns result.getOrThrow()
           }
       }
+    }
   }
 }

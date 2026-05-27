@@ -24,8 +24,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.PseudonymousIdUpdateReceiver;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
@@ -102,6 +104,9 @@ public class UploaderTest {
   private Runnable mockRunnable = mock(Runnable.class);
   private ClientHealthMetricsStore mockClientHealthMetricsStore =
       mock(ClientHealthMetricsStore.class);
+  // Needs to be static to be accessed by the static TestPseudonymousIdUpdateReceiver.
+  static String updatedPseudonymousId;
+
   private Uploader uploader =
       spy(
           new Uploader(
@@ -128,6 +133,15 @@ public class UploaderTest {
         .build();
   }
 
+  private static class TestPseudonymousIdUpdateReceiver implements PseudonymousIdUpdateReceiver {
+    public TestPseudonymousIdUpdateReceiver(Context context) {}
+
+    @Override
+    public void setUpdatedPseudonymousId(String updatedPseudonymousId) {
+      UploaderTest.updatedPseudonymousId = updatedPseudonymousId;
+    }
+  }
+
   @Before
   public void setUp() {
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
@@ -136,6 +150,7 @@ public class UploaderTest {
   @After
   public void cleanUp() {
     store.reset();
+    updatedPseudonymousId = null;
   }
 
   @Test
@@ -149,7 +164,7 @@ public class UploaderTest {
 
   @Test
   public void upload_yesNetwork() {
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
     when(uploader.isNetworkAvailable()).thenReturn(Boolean.TRUE);
     uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     verify(uploader, times(1)).logAndUpdateState(TRANSPORT_CONTEXT, 1);
@@ -159,10 +174,25 @@ public class UploaderTest {
   @Test
   public void logAndUpdateStatus_okResponse() {
     store.persist(TRANSPORT_CONTEXT, EVENT);
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordSuccess(any());
     verify(store, times(1)).recordNextCallTime(TRANSPORT_CONTEXT, 1002);
+  }
+
+  @Test
+  public void logAndUpdateStatus_okResponse_withPseudonymousIdUpdate() {
+    store.persist(
+        TRANSPORT_CONTEXT,
+        EVENT.toBuilder()
+            .setPseudonymousIdUpdateReceiverClassName(
+                TestPseudonymousIdUpdateReceiver.class.getName())
+            .build());
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, "updatedId"));
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    verify(store, times(1)).recordSuccess(any());
+    verify(store, times(1)).recordNextCallTime(TRANSPORT_CONTEXT, 1002);
+    assertThat(updatedPseudonymousId).isEqualTo("updatedId");
   }
 
   @Test
@@ -209,7 +239,7 @@ public class UploaderTest {
 
   @Test
   public void logAndUpdateStatus_manyEvents_shouldUploadAll() {
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
     for (int i = 0; i < MANY_EVENT_COUNT; i++) {
       store.persist(TRANSPORT_CONTEXT, EVENT);
     }
@@ -223,7 +253,7 @@ public class UploaderTest {
   public void upload_toFlgServer_shouldIncludeClientHealthMetrics() {
     final ClientMetrics expectedClientMetrics = ClientMetrics.getDefaultInstance();
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
     when(mockBackend.decorate(any())).then(AdditionalAnswers.returnsFirstArg());
     when(mockClientHealthMetricsStore.loadClientMetrics()).thenReturn(expectedClientMetrics);
 
@@ -256,7 +286,7 @@ public class UploaderTest {
     EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
     EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
 
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
 
     store.persist(TRANSPORT_CONTEXT, oldestEvent);
     store.persist(TRANSPORT_CONTEXT, EVENT);
@@ -286,7 +316,7 @@ public class UploaderTest {
     EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
     EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
 
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
 
     store.persist(TRANSPORT_CONTEXT, oldestEvent);
     store.persist(TRANSPORT_CONTEXT, EVENT);
@@ -303,7 +333,7 @@ public class UploaderTest {
     EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
     EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
 
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
 
     store.persist(TRANSPORT_CONTEXT, EVENT);
     store.persist(TRANSPORT_CONTEXT, oldestEvent);
@@ -333,7 +363,7 @@ public class UploaderTest {
     EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
     EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
 
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
 
     store.persist(TRANSPORT_CONTEXT, oldestEvent);
     store.persist(TRANSPORT_CONTEXT, EVENT);

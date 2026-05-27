@@ -36,6 +36,7 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
+import kotlin.time.Duration
 import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -53,32 +54,40 @@ class InProcessDataConnectGrpcServer :
   fun newInstance(
     errors: List<Status>? = null,
     executeQueryResponse: ExecuteQueryResponse? = null,
-    executeMutationResponse: ExecuteMutationResponse? = null
+    executeMutationResponse: ExecuteMutationResponse? = null,
+    responseDelay: Duration? = null,
   ): ServerInfo =
     createInstance(
       errors = errors,
       executeQueryResponse = executeQueryResponse,
-      executeMutationResponse = executeMutationResponse
+      executeMutationResponse = executeMutationResponse,
+      responseDelay = responseDelay,
     )
 
   override fun createInstance(params: Params?): ServerInfo {
     return createInstance(
       params?.errors,
       params?.executeQueryResponse,
-      params?.executeMutationResponse
+      params?.executeMutationResponse,
+      params?.responseDelay,
     )
   }
 
   private fun createInstance(
-    errors: List<Status>? = null,
-    executeQueryResponse: ExecuteQueryResponse? = null,
-    executeMutationResponse: ExecuteMutationResponse? = null
+    errors: List<Status>?,
+    executeQueryResponse: ExecuteQueryResponse?,
+    executeMutationResponse: ExecuteMutationResponse?,
+    responseDelay: Duration?,
   ): ServerInfo {
-    val serverInterceptor = ServerInterceptorImpl(errors ?: Params.defaults.errors)
+    val serverInterceptor =
+      ServerInterceptorImpl(
+        errors ?: Params.defaults.errors,
+        responseDelay ?: Params.defaults.responseDelay,
+      )
     val connectorService =
       ConnectorServiceImpl(
         executeQueryResponse ?: Params.defaults.executeQueryResponse,
-        executeMutationResponse ?: Params.defaults.executeMutationResponse
+        executeMutationResponse ?: Params.defaults.executeMutationResponse,
       )
     val grpcServer =
       OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
@@ -92,7 +101,8 @@ class InProcessDataConnectGrpcServer :
   data class Params(
     val errors: List<Status> = emptyList(),
     val executeQueryResponse: ExecuteQueryResponse? = null,
-    val executeMutationResponse: ExecuteMutationResponse? = null
+    val executeMutationResponse: ExecuteMutationResponse? = null,
+    val responseDelay: Duration? = null,
   ) {
     companion object {
       val defaults = Params()
@@ -105,7 +115,8 @@ class InProcessDataConnectGrpcServer :
 
   data class ServerInfo(val server: Server, val metadatas: Flow<Metadata>)
 
-  private class ServerInterceptorImpl(errors: List<Status> = emptyList()) : ServerInterceptor {
+  private class ServerInterceptorImpl(errors: List<Status>, private val responseDelay: Duration?) :
+    ServerInterceptor {
 
     private val errors = errors.toList().iterator()
 
@@ -121,6 +132,8 @@ class InProcessDataConnectGrpcServer :
     ): ServerCall.Listener<ReqT> {
       check(_metadatas.tryEmit(headers)) { "_metadatas.tryEmit(headers) failed" }
 
+      responseDelay?.let { Thread.sleep(it.inWholeMilliseconds) }
+
       synchronized(errors) {
         if (errors.hasNext()) {
           throw StatusException(errors.next())
@@ -132,8 +145,8 @@ class InProcessDataConnectGrpcServer :
   }
 
   private class ConnectorServiceImpl(
-    val executeQueryResponse: ExecuteQueryResponse? = null,
-    val executeMutationResponse: ExecuteMutationResponse? = null
+    val executeQueryResponse: ExecuteQueryResponse?,
+    val executeMutationResponse: ExecuteMutationResponse?,
   ) : ConnectorServiceGrpc.ConnectorServiceImplBase() {
     override fun executeQuery(
       request: ExecuteQueryRequest,

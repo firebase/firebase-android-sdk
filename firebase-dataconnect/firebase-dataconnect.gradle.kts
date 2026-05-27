@@ -25,6 +25,7 @@ plugins {
   id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin") apply false
+  id("com.google.firebase.dataconnect.sharedtest")
 }
 
 firebaseLibrary {
@@ -133,6 +134,7 @@ dependencies {
   testImplementation(libs.mockk)
   testImplementation(libs.testonly.three.ten.abp)
   testImplementation(libs.robolectric)
+  testImplementation(libs.turbine)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
