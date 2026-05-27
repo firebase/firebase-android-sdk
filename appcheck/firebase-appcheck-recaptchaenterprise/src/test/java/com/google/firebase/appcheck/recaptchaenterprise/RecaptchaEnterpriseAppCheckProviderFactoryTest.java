@@ -82,7 +82,7 @@ public class RecaptchaEnterpriseAppCheckProviderFactoryTest {
   }
 
   @Test
-  public void create_callMultipleTimes_providerIsInitializedOnlyOnce() {
+  public void create_callMultipleTimes_initializesProviderEveryTime() {
     when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(SITE_KEY_1);
     RecaptchaEnterpriseAppCheckProviderFactory factory =
         RecaptchaEnterpriseAppCheckProviderFactory.getInstance();
@@ -90,6 +90,8 @@ public class RecaptchaEnterpriseAppCheckProviderFactoryTest {
     factory.create(mockFirebaseApp);
     factory.create(mockFirebaseApp);
     factory.create(mockFirebaseApp);
-    verify(mockProvider, times(1)).initializeRecaptchaClient();
+
+    verify(mockComponent, times(3)).get(SITE_KEY_1);
+    verify(mockProvider, times(3)).initializeRecaptchaClient();
   }
 }

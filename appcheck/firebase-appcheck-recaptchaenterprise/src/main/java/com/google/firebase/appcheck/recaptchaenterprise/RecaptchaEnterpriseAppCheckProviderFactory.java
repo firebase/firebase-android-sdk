@@ -29,8 +29,6 @@ import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterp
  */
 public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProviderFactory {
 
-  private volatile RecaptchaEnterpriseAppCheckProvider provider;
-
   private RecaptchaEnterpriseAppCheckProviderFactory() {}
 
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
@@ -43,20 +41,14 @@ public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProvi
   @Override
   @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    if (provider == null) {
-      synchronized (this) {
-        if (provider == null) {
-          String siteKey = firebaseApp.getOptions().getRecaptchaSiteKey();
-          Preconditions.checkNotEmpty(
-              siteKey,
-              "Missing site key from configuration. Verify your google-services.json file is updated.");
-          ProviderMultiResourceComponent component =
-              firebaseApp.get(ProviderMultiResourceComponent.class);
-          provider = component.get(siteKey);
-          provider.initializeRecaptchaClient();
-        }
-      }
-    }
+    String siteKey = firebaseApp.getOptions().getRecaptchaSiteKey();
+    Preconditions.checkNotEmpty(
+        siteKey,
+        "Missing site key from configuration. Verify your google-services.json file is updated.");
+    ProviderMultiResourceComponent component =
+        firebaseApp.get(ProviderMultiResourceComponent.class);
+    RecaptchaEnterpriseAppCheckProvider provider = component.get(siteKey);
+    provider.initializeRecaptchaClient();
     return provider;
   }
 }
