@@ -2,7 +2,8 @@
   "A limbo resolution for a document should be removed from the queue when the last query listen stops": {
     "describeName": "Limbo Documents:",
     "itName": "A limbo resolution for a document should be removed from the queue when the last query listen stops",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 1,
       "numClients": 1,
@@ -12,8 +13,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection1"
           },
           "targetId": 2
@@ -23,8 +26,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -69,7 +74,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -92,8 +98,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection1"
             }
           }
@@ -103,13 +111,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection1"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
@@ -122,7 +133,8 @@
                 1
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection1"
           },
           "targetId": 4
@@ -154,7 +166,8 @@
                   1
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection1"
             }
           }
@@ -171,7 +184,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -187,7 +201,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             4
           ]
@@ -203,7 +218,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedState": {
@@ -214,8 +230,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -232,7 +250,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -244,8 +263,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 6
@@ -255,8 +276,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -273,7 +296,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -282,8 +306,10 @@
             "6": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -328,7 +354,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -351,8 +378,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -362,8 +391,10 @@
         "userUnlisten": [
           6,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection2"
           }
         ],
@@ -372,8 +403,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -390,7 +423,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -409,7 +443,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 8
@@ -441,7 +476,8 @@
                   2
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -451,8 +487,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -469,7 +507,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -485,7 +524,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -501,7 +541,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             8
           ]
@@ -517,7 +558,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         },
         "expectedState": {
@@ -528,8 +570,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -546,7 +590,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -562,7 +607,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -584,7 +630,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 10
@@ -616,7 +663,8 @@
                   2
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -626,8 +674,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -644,7 +694,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -660,7 +711,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -676,7 +728,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -692,7 +745,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             10
           ]
@@ -708,7 +762,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1004
         },
         "expectedState": {
@@ -719,8 +774,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -737,7 +794,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -753,7 +811,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -769,7 +828,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -792,7 +852,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           }
         ],
@@ -804,8 +865,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -822,7 +885,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -838,7 +902,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -861,7 +926,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           }
         ],
@@ -873,8 +939,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc"
                 }
               ],
@@ -891,14 +959,16 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -906,7 +976,8 @@
   "A limbo resolution for a document should not be enqueued if one is already enqueued": {
     "describeName": "Limbo Documents:",
     "itName": "A limbo resolution for a document should not be enqueued if one is already enqueued",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 1,
       "numClients": 1,
@@ -916,8 +987,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection1"
           },
           "targetId": 2
@@ -927,8 +1000,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -973,7 +1048,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -996,8 +1072,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection1"
             }
           }
@@ -1007,13 +1085,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection1"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
@@ -1026,7 +1107,8 @@
                 1
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection1"
           },
           "targetId": 4
@@ -1058,7 +1140,8 @@
                   1
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection1"
             }
           }
@@ -1075,7 +1158,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1091,7 +1175,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             4
           ]
@@ -1107,7 +1192,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedState": {
@@ -1118,8 +1204,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1136,7 +1224,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1148,8 +1237,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 6
@@ -1159,8 +1250,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1177,7 +1270,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1186,8 +1280,10 @@
             "6": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1232,7 +1328,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -1255,8 +1352,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -1266,8 +1365,10 @@
         "userUnlisten": [
           6,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection2"
           }
         ],
@@ -1276,8 +1377,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1294,7 +1397,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1313,7 +1417,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 8
@@ -1345,7 +1450,8 @@
                   2
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -1355,8 +1461,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1373,7 +1481,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1389,7 +1498,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1405,7 +1515,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             8
           ]
@@ -1421,7 +1532,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         },
         "expectedState": {
@@ -1432,8 +1544,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1450,7 +1564,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1466,7 +1581,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1488,7 +1604,8 @@
                 2
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection2"
           },
           "targetId": 10
@@ -1520,7 +1637,8 @@
                   2
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection2"
             }
           }
@@ -1530,8 +1648,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1548,7 +1668,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1564,7 +1685,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1580,7 +1702,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1596,7 +1719,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             10
           ]
@@ -1612,7 +1736,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1004
         },
         "expectedState": {
@@ -1623,8 +1748,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection1/doc1"
                 }
               ],
@@ -1641,7 +1768,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1657,7 +1785,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection1"
                 }
               ],
@@ -1673,7 +1802,8 @@
                       2
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection2"
                 }
               ],
@@ -1690,7 +1820,8 @@
   "A limbo resolution for a document should not be started if one is already active": {
     "describeName": "Limbo Documents:",
     "itName": "A limbo resolution for a document should not be started if one is already active",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": false
@@ -1699,8 +1830,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -1710,8 +1843,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -1756,7 +1891,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -1779,8 +1915,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -1790,13 +1928,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
@@ -1809,7 +1950,8 @@
                 1
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -1841,7 +1983,8 @@
                   1
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -1858,7 +2001,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -1874,7 +2018,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             4
           ]
@@ -1890,7 +2035,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedState": {
@@ -1901,8 +2047,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/doc"
                 }
               ],
@@ -1919,14 +2067,16 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -1939,7 +2089,8 @@
                 1
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 6
@@ -1971,7 +2122,8 @@
                   1
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -1981,8 +2133,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/doc"
                 }
               ],
@@ -1999,7 +2153,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2015,7 +2170,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2031,7 +2187,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             6
           ]
@@ -2047,7 +2204,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedState": {
@@ -2058,8 +2216,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/doc"
                 }
               ],
@@ -2076,7 +2236,8 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2092,14 +2253,16 @@
                       1
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -2107,7 +2270,8 @@
   "Document remove message will cause docs to go in limbo": {
     "describeName": "Limbo Documents:",
     "itName": "Document remove message will cause docs to go in limbo",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -2116,8 +2280,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -2127,8 +2293,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2185,7 +2353,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -2220,8 +2389,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2237,7 +2408,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         },
         "expectedSnapshotEvents": [
@@ -2246,8 +2418,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2260,8 +2434,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -2271,8 +2447,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2296,7 +2474,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1004
         },
         "expectedSnapshotEvents": [
@@ -2305,8 +2484,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -2326,13 +2507,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2346,7 +2530,8 @@
   "Failed limbo resolution removes document from view": {
     "describeName": "Limbo Documents:",
     "itName": "Failed limbo resolution removes document from view",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -2362,7 +2547,8 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -2379,7 +2565,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2424,7 +2611,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -2454,7 +2642,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2495,7 +2684,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2512,19 +2702,23 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -2550,8 +2744,10 @@
             "fromCache": true,
             "hasPendingWrites": true,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2561,8 +2757,10 @@
             "4": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2578,7 +2776,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             4
           ]
@@ -2594,7 +2793,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -2603,8 +2803,10 @@
             "fromCache": false,
             "hasPendingWrites": true,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2636,8 +2838,10 @@
               }
             ],
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2650,8 +2854,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -2661,8 +2867,10 @@
             "4": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2670,7 +2878,8 @@
             }
           },
           "userCallbacks": {
-            "acknowledgedDocs": [],
+            "acknowledgedDocs": [
+            ],
             "rejectedDocs": [
               "collection/a"
             ]
@@ -2692,8 +2901,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -2713,13 +2924,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "4": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2745,8 +2959,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -2756,8 +2972,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2816,7 +3034,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -2853,8 +3072,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2878,7 +3099,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -2887,8 +3109,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2901,8 +3125,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -2912,8 +3138,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -2936,7 +3164,8 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -2969,7 +3198,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -2979,8 +3209,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -2990,8 +3222,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3007,7 +3241,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3028,8 +3263,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -3039,8 +3276,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3056,7 +3295,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3160,7 +3400,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1010
         },
         "expectedSnapshotEvents": [
@@ -3184,8 +3425,10 @@
               }
             ],
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           },
@@ -3216,7 +3459,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -3258,7 +3502,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1101
         },
         "expectedSnapshotEvents": [
@@ -3267,8 +3512,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -3299,7 +3546,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -3320,13 +3568,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3342,7 +3593,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3368,8 +3620,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -3379,8 +3633,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3439,7 +3695,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -3476,8 +3733,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -3501,7 +3760,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -3510,8 +3770,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -3524,8 +3786,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -3535,8 +3799,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3559,7 +3825,8 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -3592,7 +3859,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -3602,8 +3870,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -3613,8 +3883,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3630,7 +3902,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3686,8 +3959,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -3697,8 +3972,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3714,7 +3991,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3818,7 +4096,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1010
         },
         "expectedSnapshotEvents": [
@@ -3842,8 +4121,10 @@
               }
             ],
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -3889,7 +4170,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -3910,13 +4192,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3932,7 +4217,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -3943,7 +4229,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1100
         }
       }
@@ -3964,8 +4251,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -3975,8 +4264,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4035,7 +4326,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -4072,8 +4364,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4097,7 +4391,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -4106,8 +4401,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4120,8 +4417,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -4131,8 +4430,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4155,7 +4456,8 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -4188,7 +4490,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4198,8 +4501,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -4209,8 +4514,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4226,7 +4533,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4269,8 +4577,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -4280,8 +4590,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4297,7 +4609,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4401,7 +4714,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1010
         },
         "expectedSnapshotEvents": [
@@ -4425,8 +4739,10 @@
               }
             ],
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -4472,7 +4788,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -4493,13 +4810,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4515,7 +4835,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4526,7 +4847,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1100
         }
       }
@@ -4558,8 +4880,10 @@
         "clientIndex": 1,
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -4569,8 +4893,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4587,8 +4913,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4649,7 +4977,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         }
       },
@@ -4688,8 +5017,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4711,7 +5042,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         },
         "expectedState": {
@@ -4722,8 +5054,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -4733,8 +5067,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4752,8 +5088,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4781,17 +5119,21 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1004
         },
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4809,8 +5151,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -4835,7 +5179,8 @@
   "Limbo documents are deleted with an existence filter": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo documents are deleted with an existence filter",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -4844,8 +5189,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -4855,8 +5202,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4901,7 +5250,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -4924,8 +5274,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4946,7 +5298,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -4955,8 +5308,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -4969,8 +5324,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -4980,8 +5337,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -4997,7 +5356,8 @@
       },
       {
         "watchFilter": {
-          "keys": [],
+          "keys": [
+          ],
           "targetIds": [
             1
           ]
@@ -5013,7 +5373,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -5022,8 +5383,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -5043,13 +5406,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5063,7 +5429,8 @@
   "Limbo documents are deleted without an existence filter": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo documents are deleted without an existence filter",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -5072,8 +5439,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -5083,8 +5452,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5129,7 +5500,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -5152,8 +5524,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5174,7 +5548,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -5183,8 +5558,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5197,8 +5574,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -5208,8 +5587,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5233,7 +5614,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -5242,8 +5624,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -5263,13 +5647,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5306,8 +5693,10 @@
         "clientIndex": 1,
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -5317,8 +5706,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5335,8 +5726,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5397,7 +5790,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000000
         }
       },
@@ -5436,8 +5830,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5459,7 +5855,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000000
         },
         "expectedState": {
@@ -5470,8 +5867,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -5481,8 +5880,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5495,9 +5896,12 @@
         "clientIndex": 0,
         "shutdown": true,
         "expectedState": {
-          "activeLimboDocs": [],
-          "activeTargets": {},
-          "enqueuedLimboDocs": []
+          "activeLimboDocs": [
+          ],
+          "activeTargets": {
+          },
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -5509,8 +5913,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5524,8 +5930,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5544,7 +5952,8 @@
       {
         "clientIndex": 1,
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -5562,7 +5971,8 @@
       {
         "clientIndex": 1,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000000
         },
         "expectedState": {
@@ -5573,8 +5983,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -5584,8 +5996,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5612,7 +6026,8 @@
       {
         "clientIndex": 1,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 4000000
         },
         "expectedSnapshotEvents": [
@@ -5621,8 +6036,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -5642,13 +6059,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5662,7 +6082,8 @@
   "Limbo documents are resolved with updates": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo documents are resolved with updates",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -5678,7 +6099,8 @@
                 "a"
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -5695,7 +6117,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5740,7 +6163,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -5770,7 +6194,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5791,7 +6216,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -5807,7 +6233,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -5820,8 +6247,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -5838,7 +6267,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5883,7 +6313,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -5899,7 +6330,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -5919,7 +6351,8 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
@@ -5931,7 +6364,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -5945,7 +6379,8 @@
   "Limbo documents are resolved with updates in different snapshot than \"current\"": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo documents are resolved with updates in different snapshot than \"current\"",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -5961,7 +6396,8 @@
                 "a"
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -5978,7 +6414,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6023,7 +6460,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -6053,7 +6491,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6069,7 +6508,8 @@
                 "b"
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -6086,7 +6526,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6102,7 +6543,8 @@
                       "b"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6126,7 +6568,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -6142,7 +6585,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6155,8 +6599,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -6173,7 +6619,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6189,7 +6636,8 @@
                       "b"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6240,7 +6688,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedSnapshotEvents": [
@@ -6256,7 +6705,8 @@
                   "a"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -6300,13 +6750,15 @@
                   "b"
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
@@ -6318,7 +6770,8 @@
                       "a"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6334,7 +6787,8 @@
                       "b"
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6353,7 +6807,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         }
       }
@@ -6362,7 +6817,8 @@
   "Limbo documents stay consistent between views": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo documents stay consistent between views",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": false
@@ -6393,7 +6849,8 @@
             "acknowledgedDocs": [
               "collection/a"
             ],
-            "rejectedDocs": []
+            "rejectedDocs": [
+            ]
           }
         }
       },
@@ -6406,15 +6863,18 @@
             "acknowledgedDocs": [
               "collection/b"
             ],
-            "rejectedDocs": []
+            "rejectedDocs": [
+            ]
           }
         }
       },
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -6451,8 +6911,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6462,8 +6924,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6508,7 +6972,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedState": {
@@ -6519,8 +6984,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -6530,8 +6997,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6550,7 +7019,8 @@
                 true
               ]
             ],
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -6594,7 +7064,8 @@
                   true
                 ]
               ],
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6604,8 +7075,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -6615,8 +7088,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6632,7 +7107,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6645,13 +7121,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "4": {
               "queries": [
@@ -6663,7 +7142,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6675,8 +7155,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -6713,8 +7195,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6724,8 +7208,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6741,7 +7227,8 @@
                       true
                     ]
                   ],
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6774,8 +7261,10 @@
         "clientIndex": 0,
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -6785,8 +7274,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6859,7 +7350,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000000
         },
         "expectedSnapshotEvents": [
@@ -6906,8 +7398,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6934,7 +7428,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000000
         },
         "expectedSnapshotEvents": [
@@ -6943,8 +7438,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -6958,8 +7455,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -6969,8 +7468,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -6979,8 +7480,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -7004,8 +7507,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7023,13 +7528,16 @@
         "clientIndex": 0,
         "runTimer": "client_metadata_refresh",
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7052,7 +7560,8 @@
       {
         "clientIndex": 1,
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -7070,7 +7579,8 @@
       {
         "clientIndex": 1,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000000
         },
         "expectedState": {
@@ -7082,8 +7592,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -7093,8 +7605,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7103,8 +7617,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -7132,7 +7648,8 @@
       {
         "clientIndex": 1,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000000
         },
         "expectedState": {
@@ -7143,8 +7660,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7153,8 +7672,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -7173,8 +7694,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -7204,8 +7727,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7224,7 +7749,8 @@
       {
         "clientIndex": 0,
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -7242,7 +7768,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 5000000
         },
         "expectedState": {
@@ -7253,8 +7780,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7263,8 +7792,10 @@
             "5": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -7292,7 +7823,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 6000000
         },
         "expectedSnapshotEvents": [
@@ -7301,8 +7833,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -7322,13 +7856,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7342,7 +7879,8 @@
   "Limbo resolution handles snapshot before CURRENT": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution handles snapshot before CURRENT",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": false
@@ -7351,8 +7889,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -7362,8 +7902,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7422,7 +7964,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -7459,8 +8002,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -7470,13 +8015,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
@@ -7491,7 +8039,8 @@
             ],
             "limit": 1,
             "limitType": "LimitToFirst",
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -7526,7 +8075,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -7545,7 +8095,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7591,7 +8142,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedSnapshotEvents": [
@@ -7609,7 +8161,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -7652,7 +8205,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -7680,8 +8234,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -7700,7 +8256,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7738,7 +8295,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         }
       },
@@ -7752,7 +8310,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000
         }
       },
@@ -7802,7 +8361,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 4000
         },
         "expectedSnapshotEvents": [
@@ -7820,13 +8380,15 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "4": {
               "queries": [
@@ -7840,7 +8402,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7854,7 +8417,8 @@
   "Limbo resolution handles snapshot before CURRENT [no document update]": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution handles snapshot before CURRENT [no document update]",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": false
@@ -7863,8 +8427,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -7874,8 +8440,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -7934,7 +8502,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -7971,8 +8540,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -7982,13 +8553,16 @@
         "userUnlisten": [
           2,
           {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           }
         ],
         "expectedState": {
-          "activeTargets": {}
+          "activeTargets": {
+          }
         }
       },
       {
@@ -8003,7 +8577,8 @@
             ],
             "limit": 1,
             "limitType": "LimitToFirst",
-            "orderBys": [],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 4
@@ -8038,7 +8613,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -8057,7 +8633,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8103,7 +8680,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedSnapshotEvents": [
@@ -8121,7 +8699,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -8164,7 +8743,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -8192,8 +8772,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -8212,7 +8794,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8228,7 +8811,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         }
       },
@@ -8242,7 +8826,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000
         },
         "expectedSnapshotEvents": [
@@ -8260,7 +8845,8 @@
               ],
               "limit": 1,
               "limitType": "LimitToFirst",
-              "orderBys": [],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -8281,7 +8867,8 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "4": {
               "queries": [
@@ -8295,7 +8882,8 @@
                   ],
                   "limit": 1,
                   "limitType": "LimitToFirst",
-                  "orderBys": [],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8328,7 +8916,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 4000
         }
       }
@@ -8337,7 +8926,8 @@
   "Limbo resolution should wait for full re-query result if there is an existence filter mismatch ": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution should wait for full re-query result if there is an existence filter mismatch ",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -8346,8 +8936,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -8357,8 +8949,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8415,7 +9009,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -8450,8 +9045,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -8465,16 +9062,21 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
-          "activeTargets": {},
-          "enqueuedLimboDocs": []
+          "activeLimboDocs": [
+          ],
+          "activeTargets": {
+          },
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -8484,8 +9086,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8519,7 +9123,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedState": {
@@ -8527,8 +9132,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8581,7 +9188,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000
         },
         "expectedState": {
@@ -8592,8 +9200,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -8603,8 +9213,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8629,7 +9241,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 3000
         },
         "expectedSnapshotEvents": [
@@ -8638,8 +9251,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -8659,13 +9274,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8680,7 +9298,8 @@
   "Limbo resolution throttling when a limbo listen is rejected.": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution throttling when a limbo listen is rejected.",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 1,
       "numClients": 1,
@@ -8690,8 +9309,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -8701,8 +9322,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8759,7 +9382,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -8794,8 +9418,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -8808,7 +9434,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -8824,7 +9451,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedSnapshotEvents": [
@@ -8833,8 +9461,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -8847,8 +9477,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -8858,8 +9490,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8886,8 +9520,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -8914,8 +9550,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -8924,8 +9562,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -8933,7 +9573,8 @@
               "targetPurpose": "TargetPurposeLimboResolution"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -8951,8 +9592,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -8972,20 +9615,24 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -8993,7 +9640,8 @@
   "Limbo resolution throttling with all results at once from watch": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution throttling with all results at once from watch",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 2,
       "numClients": 1,
@@ -9003,8 +9651,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -9014,8 +9664,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9108,7 +9760,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -9179,8 +9832,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -9193,7 +9848,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -9209,7 +9865,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedSnapshotEvents": [
@@ -9218,8 +9875,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -9233,8 +9892,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -9244,8 +9905,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9254,8 +9917,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -9298,7 +9963,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2001
         },
         "expectedSnapshotEvents": [
@@ -9307,8 +9973,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -9348,8 +10016,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9358,8 +10028,10 @@
             "5": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -9369,8 +10041,10 @@
             "7": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/d"
                 }
               ],
@@ -9411,7 +10085,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2002
         },
         "expectedSnapshotEvents": [
@@ -9420,8 +10095,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -9460,8 +10137,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9470,8 +10149,10 @@
             "9": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/e"
                 }
               ],
@@ -9479,7 +10160,8 @@
               "targetPurpose": "TargetPurposeLimboResolution"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -9497,7 +10179,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2003
         },
         "expectedSnapshotEvents": [
@@ -9506,8 +10189,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -9527,20 +10212,24 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -9548,7 +10237,8 @@
   "Limbo resolution throttling with bloom filter application": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution throttling with bloom filter application",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 2,
       "numClients": 1,
@@ -9558,8 +10248,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -9569,8 +10261,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9639,7 +10333,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -9686,8 +10381,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -9701,16 +10398,21 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
-          "activeTargets": {},
-          "enqueuedLimboDocs": []
+          "activeLimboDocs": [
+          ],
+          "activeTargets": {
+          },
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -9720,8 +10422,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9809,7 +10513,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -9856,8 +10561,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -9871,8 +10578,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a1"
                 }
               ],
@@ -9882,8 +10591,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -9892,8 +10603,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a2"
                 }
               ],
@@ -9911,7 +10624,8 @@
   "Limbo resolution throttling with existence filter mismatch": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution throttling with existence filter mismatch",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 2,
       "numClients": 1,
@@ -9921,8 +10635,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -9932,8 +10648,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10002,7 +10720,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -10049,8 +10768,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -10064,16 +10785,21 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
-          "activeTargets": {},
-          "enqueuedLimboDocs": []
+          "activeLimboDocs": [
+          ],
+          "activeTargets": {
+          },
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -10083,8 +10809,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10165,7 +10893,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1001
         },
         "expectedSnapshotEvents": [
@@ -10212,8 +10941,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -10223,8 +10954,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10301,7 +11034,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1002
         },
         "expectedState": {
@@ -10313,8 +11047,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a1"
                 }
               ],
@@ -10324,8 +11060,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10335,8 +11073,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a2"
                 }
               ],
@@ -10377,7 +11117,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1003
         },
         "expectedSnapshotEvents": [
@@ -10386,8 +11127,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -10426,8 +11169,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10437,8 +11182,10 @@
             "5": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a3"
                 }
               ],
@@ -10446,7 +11193,8 @@
               "targetPurpose": "TargetPurposeLimboResolution"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -10464,7 +11212,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1004
         },
         "expectedSnapshotEvents": [
@@ -10473,8 +11222,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -10494,13 +11245,16 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10508,7 +11262,8 @@
               "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -10516,7 +11271,8 @@
   "Limbo resolution throttling with results one at a time from watch": {
     "describeName": "Limbo Documents:",
     "itName": "Limbo resolution throttling with results one at a time from watch",
-    "tags": [],
+    "tags": [
+    ],
     "config": {
       "maxConcurrentLimboResolutions": 2,
       "numClients": 1,
@@ -10526,8 +11282,10 @@
       {
         "userListen": {
           "query": {
-            "filters": [],
-            "orderBys": [],
+            "filters": [
+            ],
+            "orderBys": [
+            ],
             "path": "collection"
           },
           "targetId": 2
@@ -10537,8 +11295,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10631,7 +11391,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         },
         "expectedSnapshotEvents": [
@@ -10702,8 +11463,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -10716,7 +11479,8 @@
       },
       {
         "watchEntity": {
-          "docs": [],
+          "docs": [
+          ],
           "targets": [
             2
           ]
@@ -10732,7 +11496,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedSnapshotEvents": [
@@ -10741,8 +11506,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             }
           }
@@ -10756,8 +11523,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/a"
                 }
               ],
@@ -10767,8 +11536,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10777,8 +11548,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -10813,7 +11586,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2001
         },
         "expectedSnapshotEvents": [
@@ -10822,8 +11596,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -10851,8 +11627,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10861,8 +11639,10 @@
             "3": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/b"
                 }
               ],
@@ -10872,8 +11652,10 @@
             "5": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -10902,7 +11684,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2002
         },
         "expectedSnapshotEvents": [
@@ -10911,8 +11694,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -10940,8 +11725,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -10950,8 +11737,10 @@
             "5": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -10961,8 +11750,10 @@
             "7": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/d"
                 }
               ],
@@ -10990,7 +11781,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2003
         },
         "expectedSnapshotEvents": [
@@ -10999,8 +11791,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -11028,8 +11822,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -11038,8 +11834,10 @@
             "7": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/d"
                 }
               ],
@@ -11049,8 +11847,10 @@
             "9": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/e"
                 }
               ],
@@ -11058,7 +11858,8 @@
               "targetPurpose": "TargetPurposeLimboResolution"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -11076,7 +11877,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2004
         },
         "expectedSnapshotEvents": [
@@ -11085,8 +11887,10 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -11113,8 +11917,10 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
@@ -11123,8 +11929,10 @@
             "9": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/e"
                 }
               ],
@@ -11132,7 +11940,8 @@
               "targetPurpose": "TargetPurposeLimboResolution"
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       },
       {
@@ -11145,7 +11954,8 @@
       },
       {
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2005
         },
         "expectedSnapshotEvents": [
@@ -11154,8 +11964,10 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
-              "orderBys": [],
+              "filters": [
+              ],
+              "orderBys": [
+              ],
               "path": "collection"
             },
             "removed": [
@@ -11175,20 +11987,24 @@
           }
         ],
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection"
                 }
               ],
               "resumeToken": ""
             }
           },
-          "enqueuedLimboDocs": []
+          "enqueuedLimboDocs": [
+          ]
         }
       }
     ]
@@ -11223,7 +12039,8 @@
         "clientIndex": 1,
         "userListen": {
           "query": {
-            "filters": [],
+            "filters": [
+            ],
             "limit": 3,
             "limitType": "LimitToLast",
             "orderBys": [
@@ -11241,7 +12058,8 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [
@@ -11266,7 +12084,8 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [
@@ -11347,7 +12166,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         }
       },
@@ -11398,7 +12218,8 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
+              "filters": [
+              ],
               "limit": 3,
               "limitType": "LimitToLast",
               "orderBys": [
@@ -11418,7 +12239,8 @@
       },
       {
         "clientIndex": 0,
-        "watchReset": []
+        "watchReset": [
+        ]
       },
       {
         "clientIndex": 0,
@@ -11478,7 +12300,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         },
         "expectedState": {
@@ -11489,8 +12312,10 @@
             "1": {
               "queries": [
                 {
-                  "filters": [],
-                  "orderBys": [],
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
                   "path": "collection/c"
                 }
               ],
@@ -11500,7 +12325,8 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [
@@ -11526,7 +12352,8 @@
             "fromCache": true,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
+              "filters": [
+              ],
               "limit": 3,
               "limitType": "LimitToLast",
               "orderBys": [
@@ -11572,7 +12399,8 @@
         "clientIndex": 1,
         "userListen": {
           "query": {
-            "filters": [],
+            "filters": [
+            ],
             "limit": 3,
             "limitType": "LimitToLast",
             "orderBys": [
@@ -11590,7 +12418,8 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [
@@ -11615,7 +12444,8 @@
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [
@@ -11696,7 +12526,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 1000
         }
       },
@@ -11747,7 +12578,8 @@
             "fromCache": false,
             "hasPendingWrites": false,
             "query": {
-              "filters": [],
+              "filters": [
+              ],
               "limit": 3,
               "limitType": "LimitToLast",
               "orderBys": [
@@ -11767,7 +12599,8 @@
       },
       {
         "clientIndex": 0,
-        "watchReset": []
+        "watchReset": [
+        ]
       },
       {
         "clientIndex": 0,
@@ -11827,7 +12660,8 @@
       {
         "clientIndex": 0,
         "watchSnapshot": {
-          "targetIds": [],
+          "targetIds": [
+          ],
           "version": 2000
         }
       },
@@ -11880,7 +12714,8 @@
               }
             ],
             "query": {
-              "filters": [],
+              "filters": [
+              ],
               "limit": 3,
               "limitType": "LimitToLast",
               "orderBys": [
@@ -11912,12 +12747,14 @@
         "clientIndex": 0,
         "drainQueue": true,
         "expectedState": {
-          "activeLimboDocs": [],
+          "activeLimboDocs": [
+          ],
           "activeTargets": {
             "2": {
               "queries": [
                 {
-                  "filters": [],
+                  "filters": [
+                  ],
                   "limit": 3,
                   "limitType": "LimitToLast",
                   "orderBys": [

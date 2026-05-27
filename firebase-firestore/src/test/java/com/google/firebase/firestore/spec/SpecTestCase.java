@@ -675,7 +675,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           syncEngine.loadBundle(bundleReader, bundleTask);
           bundleTask.addOnFailureListener(e -> log("Loading bundle failed with " + e));
         });
-      assertTrue(bundleTask.isSuccessful());
+    assertTrue(bundleTask.isSuccessful());
   }
 
   private void doMutation(Mutation mutation) throws Exception {
@@ -1433,7 +1433,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       } else {
         assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
       }
-      assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId().value());
+      assertEquals(remoteTargetId.value(), actualTarget.getTargetId().value());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
       assertEquals(
           expectedTarget.getResumeToken().toStringUtf8(),

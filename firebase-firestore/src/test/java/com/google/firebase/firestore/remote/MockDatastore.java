@@ -99,7 +99,7 @@ public class MockDatastore extends Datastore {
     @Override
     public void unwatchTarget(RemoteTargetId targetId) {
       SpecTestCase.log("      unwatchTarget(" + targetId.value() + ")");
-      this.activeTargets.remove(targetId.value());
+      this.activeTargets.remove(targetId);
     }
 
     /** Injects a stream failure as though it had come from the backend. */
