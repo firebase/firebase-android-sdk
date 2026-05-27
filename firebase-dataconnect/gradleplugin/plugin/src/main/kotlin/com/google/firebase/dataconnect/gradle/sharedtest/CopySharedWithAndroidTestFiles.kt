@@ -15,15 +15,17 @@
  */
 package com.google.firebase.dataconnect.gradle.sharedtest
 
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 /**
  * A Gradle task that copies Kotlin source files annotated with `@file:SharedWithAndroidTest` from
@@ -41,6 +43,8 @@ abstract class CopySharedWithAndroidTestFiles : DefaultTask() {
 
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
   @TaskAction
   fun run() {
     val inputBaseDirectory: File = inputBaseDirectory.get().asFile
@@ -51,6 +55,16 @@ abstract class CopySharedWithAndroidTestFiles : DefaultTask() {
     logger.info("inputDirectory={}", inputDirectory.absolutePath)
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
 
+    if (outputDirectory.exists()) {
+      logger.info("Deleting output directory: {}", outputDirectory.absolutePath)
+      fileSystemOperations.delete { it.delete(outputDirectory) }
+      if (outputDirectory.exists()) {
+        throw OutputDirectoryDeleteFailedException(
+          "Deleting output directory failed: ${outputDirectory.absolutePath}"
+        )
+      }
+    }
+
     copyAnnotatedFiles(
       srcBaseDir = inputBaseDirectory,
       srcDir = inputDirectory,
@@ -59,6 +73,8 @@ abstract class CopySharedWithAndroidTestFiles : DefaultTask() {
       logger = logger,
     )
   }
+
+  class OutputDirectoryDeleteFailedException(message: String) : GradleException(message)
 }
 
 /**

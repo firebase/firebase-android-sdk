@@ -22,6 +22,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.internal.InternalTokenResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -29,12 +30,14 @@ import kotlinx.coroutines.tasks.await
 
 internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+  idStringGenerator: IdStringGenerator,
   parentCoroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
   DataConnectCredentialsTokenManager<InternalAuthProvider, GetAuthTokenResult>(
     deferredProvider = deferredAuthProvider,
+    idStringGenerator = idStringGenerator,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,
