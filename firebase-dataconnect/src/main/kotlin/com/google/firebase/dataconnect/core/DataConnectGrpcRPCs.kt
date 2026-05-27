@@ -739,7 +739,7 @@ private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPat
   }
 
 @JvmName("getEntityIdForPathFunction_List_DataConnectProperties")
-private fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
+internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
   val entityIdByPath: Map<DataConnectPath, String>
   val entityIdsByPath: Map<DataConnectPath, List<String>>
 

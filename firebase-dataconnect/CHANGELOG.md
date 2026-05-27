@@ -12,6 +12,9 @@
 - [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
   if local caching is not enabled, instead of behaving like SERVER_ONLY.
   ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
+- [changed] Realtime query results now update the local cache as query
+  results are received.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.2.2
 
