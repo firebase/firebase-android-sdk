@@ -17,9 +17,9 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -86,12 +86,7 @@ class CrashlyticsExtensionTests {
       """
     )
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments("-d", ":tasks", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, "-d", ":tasks", "--configuration-cache")
 
     assertThat(result.output).contains("/some/absolute/string/path")
   }
@@ -130,12 +125,7 @@ class CrashlyticsExtensionTests {
       """
     )
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments("-d", ":tasks", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, "-d", ":tasks", "--configuration-cache")
 
     assertThat(result.output).contains("/some/absolute/string/path")
     assertThat(result.output).contains("/another/absolute/string/path")
@@ -176,15 +166,11 @@ class CrashlyticsExtensionTests {
 
     val thrown =
       Assertions.assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":tasks", "--configuration-cache")
-          .build()
+        buildGradleRunner(projectDir, "-d", ":tasks", "--configuration-cache")
       }
 
     assertThat(thrown)
       .hasMessageThat()
-      .contains("Cannot convert the provided notation to a File or URI: 42")
+      .contains("Cannot convert the provided notation to a File: 42")
   }
 }

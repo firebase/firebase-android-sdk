@@ -23,6 +23,7 @@ import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DelayedDeferred
@@ -37,6 +38,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import io.kotest.assertions.asClue
@@ -66,6 +68,7 @@ import io.mockk.slot
 import io.mockk.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineStart
@@ -88,7 +91,7 @@ class DataConnectAuthUnitTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   private val rs = RandomSource.default()
-  private val accessTokenGenerator = Arb.dataConnect.accessToken()
+  private val accessTokenGenerator = Arb.dataConnect.authToken()
   private val accessToken: String = accessTokenGenerator.next(rs)
   private val requestId = Arb.dataConnect.requestId().next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =
@@ -324,7 +327,7 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    result.shouldNotBeNull().authUid shouldBe uid
+    result.shouldNotBeNull().authUid shouldBe AuthUid(uid)
   }
 
   @Test
@@ -579,8 +582,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.close()
 
     withClue("result=$result") { result.shouldBeNull() }
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("$testException")
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh", testException)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "${dataConnectAuth.instanceId} whenAvailable"
     )
@@ -643,6 +645,7 @@ class DataConnectAuthUnitTest {
   ) =
     DataConnectAuth(
       deferredAuthProvider = deferredInternalAuthProvider,
+      idStringGenerator = IdStringGenerator(Random.Default),
       parentCoroutineScope = newBackgroundScopeThatAdvancesLikeForeground(),
       blockingDispatcher =
         StandardTestDispatcher(testScheduler, name = "4jg7adscn6_DataConnectAuth_TestDispatcher"),

@@ -16,16 +16,24 @@
 
 package com.google.firebase.ai.ondevice
 
-import android.graphics.Bitmap
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
+import com.google.firebase.ai.ondevice.interop.DownloadStatusInterop
 import com.google.firebase.ai.ondevice.interop.FinishReason
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+import com.google.firebase.ai.ondevice.interop.GenerationConfig
+import com.google.firebase.ai.ondevice.interop.ModelConfig
+import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
+import com.google.mlkit.genai.prompt.ModelPreference
+import com.google.mlkit.genai.prompt.ModelReleaseStage
 import com.google.mlkit.genai.prompt.TextPart
-import kotlin.math.min
+import com.google.mlkit.genai.prompt.generationConfig
+import com.google.mlkit.genai.prompt.modelConfig
 
 // ====================================
 // `Part` converter extension functions
@@ -33,7 +41,7 @@ import kotlin.math.min
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKit(): TextPart = TextPart(text)
 
 internal fun com.google.firebase.ai.ondevice.interop.ImagePart.toMlKit(): ImagePart =
-  ImagePart(downsizeBitmapIfNeeded(bitmap))
+  ImagePart(bitmap)
 
 // ============================================
 // `CountTokens*` converter extension functions
@@ -75,6 +83,34 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
 internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop():
   GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() })
 
+// ================================================
+// `GenerationConfig` converter extension functions
+// ================================================
+internal fun GenerationConfig.toMlKit(): com.google.mlkit.genai.prompt.GenerationConfig =
+  generationConfig {
+    this@toMlKit.modelConfig?.let { modelConfig = it.toMlKit() }
+  }
+
+// ===========================================
+// `ModelConfig` converter extension functions
+// ===========================================
+internal fun ModelConfig.toMlKit(): com.google.mlkit.genai.prompt.ModelConfig = modelConfig {
+  releaseStage = this@toMlKit.releaseStage.toMlKit()
+  preference = this@toMlKit.preference.toMlKit()
+}
+
+private fun com.google.firebase.ai.ondevice.interop.ModelReleaseStage.toMlKit(): Int =
+  when (this) {
+    com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW -> ModelReleaseStage.PREVIEW
+    com.google.firebase.ai.ondevice.interop.ModelReleaseStage.STABLE -> ModelReleaseStage.STABLE
+  }
+
+private fun com.google.firebase.ai.ondevice.interop.ModelPreference.toMlKit(): Int =
+  when (this) {
+    com.google.firebase.ai.ondevice.interop.ModelPreference.FULL -> ModelPreference.FULL
+    com.google.firebase.ai.ondevice.interop.ModelPreference.FAST -> ModelPreference.FAST
+  }
+
 private fun generateContentRequest(
   text: com.google.firebase.ai.ondevice.interop.TextPart,
   image: com.google.firebase.ai.ondevice.interop.ImagePart? = null,
@@ -90,23 +126,33 @@ private fun generateContentRequest(
   return builder.build()
 }
 
-private fun downsizeBitmapIfNeeded(bitmap: Bitmap): Bitmap {
-  val IMAGE_SHORTER_DIMENSION_MAX_VALUE: Int = 768
-  val width = bitmap.width
-  val height = bitmap.height
-  val shorterDimension: Int = min(width, height)
-  if (shorterDimension <= IMAGE_SHORTER_DIMENSION_MAX_VALUE) {
-    return bitmap
+// ========================================================================
+// `DownloadStatus` and `OnDeviceModelStatus` converter extension functions
+// ========================================================================
+internal fun com.google.mlkit.genai.common.DownloadStatus.toInterop(): DownloadStatusInterop =
+  when (this) {
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadStarted ->
+      DownloadStatusInterop.DownloadStarted(bytesToDownload)
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadProgress ->
+      DownloadStatusInterop.DownloadInProgress(totalBytesDownloaded)
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadCompleted ->
+      DownloadStatusInterop.DownloadCompleted()
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadFailed ->
+      DownloadStatusInterop.DownloadFailed(FirebaseAIOnDeviceException.from(e))
+    else ->
+      DownloadStatusInterop.DownloadFailed(
+        FirebaseAIOnDeviceUnknownException("Unknown download status")
+      )
   }
 
-  val scaleFactor = (IMAGE_SHORTER_DIMENSION_MAX_VALUE.toDouble()) / shorterDimension
-
-  val newWidth = (width * scaleFactor).toInt()
-  val newHeight = (height * scaleFactor).toInt()
-
-  val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, /* filter= */ false)
-  if (resizedBitmap != bitmap) {
-    bitmap.recycle()
+internal fun Int.toInteropStatus(): OnDeviceModelStatusInterop =
+  when (this) {
+    com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE ->
+      OnDeviceModelStatusInterop.UNAVAILABLE
+    com.google.mlkit.genai.common.FeatureStatus.DOWNLOADABLE ->
+      OnDeviceModelStatusInterop.DOWNLOADABLE
+    com.google.mlkit.genai.common.FeatureStatus.DOWNLOADING ->
+      OnDeviceModelStatusInterop.DOWNLOADING
+    com.google.mlkit.genai.common.FeatureStatus.AVAILABLE -> OnDeviceModelStatusInterop.AVAILABLE
+    else -> OnDeviceModelStatusInterop.UNAVAILABLE
   }
-  return resizedBitmap
-}
