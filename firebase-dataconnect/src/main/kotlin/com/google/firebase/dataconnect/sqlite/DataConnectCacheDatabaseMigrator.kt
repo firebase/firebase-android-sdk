@@ -57,7 +57,6 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     if (stopAtVersionForTesting != null) {
       logger.warn {
         "WARNING q9dfsdxdmp: migrate() called with " +
-          "" +
           "stopAtVersionForTesting=$stopAtVersionForTesting, " +
           "which should ONLY be done by tests for the SDK itself"
       }
@@ -72,7 +71,6 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     if (stopAtVersionForTesting != null) {
       logger.warn {
         "WARNING n7d2qazseq: migrateDatabase() called with " +
-          "" +
           "stopAtVersionForTesting=$stopAtVersionForTesting, " +
           "which should ONLY be done by tests for the SDK itself"
       }
