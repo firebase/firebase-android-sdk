@@ -2,6 +2,7 @@
 
 - [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
 
 # 17.12.0
 
