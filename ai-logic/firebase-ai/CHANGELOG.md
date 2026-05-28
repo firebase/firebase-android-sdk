@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
 - [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
 
