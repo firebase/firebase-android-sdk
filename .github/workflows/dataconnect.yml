@@ -34,8 +34,8 @@ on:
 env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
-  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.11.0' }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '24' }}
+  FDC_INPUT_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
@@ -53,6 +53,16 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           show-progress: false
+
+      - name: Initialize FDC_FIREBASE_TOOLS_VERSION environment variable
+        run: |
+          set -euo pipefail
+          if [[ -n "$FDC_INPUT_FIREBASE_TOOLS_VERSION" ]]; then
+            version="$FDC_INPUT_FIREBASE_TOOLS_VERSION"
+          else
+            version="$(cat firebase-dataconnect/ci/firebase-tools-version.txt)"
+          fi
+          echo "FDC_FIREBASE_TOOLS_VERSION=${version}" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
@@ -259,7 +269,7 @@ jobs:
             set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload Log Files
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integration_test_logs
           path: "**/*.log"
@@ -267,7 +277,7 @@ jobs:
           compression-level: 9
 
       - name: Upload Gradle Build Reports
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integration_test_gradle_build_reports
           path: firebase-dataconnect/**/build/reports/
@@ -305,7 +315,7 @@ jobs:
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
-  shellcheck:
+  zshellcheck:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -313,8 +323,18 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/'
-      - name: shellcheck
-        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
+      - name: zshellcheck setup
+        run: |
+          set -xveuo pipefail
+          cd '${{ runner.temp }}'
+          mkdir zshellcheck
+          cd zshellcheck
+          curl -fsSL -o zshellcheck.tar.gz https://github.com/afadesigns/zshellcheck/releases/download/v1.0.17/zshellcheck_Linux_x86_64.tar.gz
+          tar xvf zshellcheck.tar.gz
+      - name: zshellcheck
+        run: |
+          set -xveuo pipefail
+          find . -name '*.zsh' -exec '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff '{}' +
 
   python-ci-unit-tests:
     continue-on-error: false
@@ -393,6 +413,7 @@ jobs:
     needs:
       - 'integration-test'
       - 'actionlint-dataconnect-yml'
+      - 'zshellcheck'
       - 'python-ci-unit-tests'
       - 'python-ci-lint'
       - 'python-ci-format'
@@ -418,6 +439,7 @@ jobs:
           cat >'${{ runner.temp }}/job_results.txt' <<EOF
           integration-test:${{ needs.integration-test.result }}
           actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
+          zshellcheck:${{ needs.zshellcheck.result }}
           python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
           python-ci-lint:${{ needs.python-ci-lint.result }}
           python-ci-format:${{ needs.python-ci-format.result }}

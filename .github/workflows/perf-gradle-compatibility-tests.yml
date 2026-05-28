@@ -30,3 +30,30 @@ jobs:
           ./gradlew \
           :firebase-perf-gradle:functionalTest --tests \
           "com.google.firebase.perf.plugin.transform.InstrumentationApiCompatTest.gradleBuildRunsInstrumentationForAllVariants_latestGradleAndAgp"
+  create-issue-on-failure:
+    needs: performance-plugin
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create issue
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+              const issueTitle = 'Perf Gradle Compatibility test failed';
+
+              const { data: searchResults } = await github.rest.search.issuesAndPullRequests({
+                q: `is:issue is:open repo:${context.repo.owner}/${context.repo.repo} in:title "${issueTitle}"`,
+              });
+
+              if (searchResults.total_count === 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: issueTitle,
+                  body: `https://github.com/firebase/firebase-android-sdk/actions/workflows/perf-gradle-compatibility-tests.yml`
+                  assignees: ['tejasd'],
+                  labels: ['bug', 'automated']
+                })
+              }

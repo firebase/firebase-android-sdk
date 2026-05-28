@@ -25,18 +25,23 @@ import org.json.JSONObject;
  */
 public class ExchangeDebugTokenRequest {
   @VisibleForTesting static final String DEBUG_TOKEN_KEY = "debugToken";
+  @VisibleForTesting static final String LIMITED_USE_TOKEN_KEY = "limited_use";
 
   private final String debugToken;
+  private final boolean isLimitedUseToken;
 
-  public ExchangeDebugTokenRequest(@NonNull String debugToken) {
+  public ExchangeDebugTokenRequest(@NonNull String debugToken, boolean isLimitedUseToken) {
     this.debugToken = debugToken;
+    this.isLimitedUseToken = isLimitedUseToken;
   }
 
   @NonNull
   public String toJsonString() throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(DEBUG_TOKEN_KEY, debugToken);
-
+    if (isLimitedUseToken) {
+      jsonObject.put(LIMITED_USE_TOKEN_KEY, true);
+    }
     return jsonObject.toString();
   }
 }
