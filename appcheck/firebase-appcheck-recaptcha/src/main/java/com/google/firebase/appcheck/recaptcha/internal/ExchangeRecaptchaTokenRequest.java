@@ -25,7 +25,7 @@ import org.json.JSONObject;
  */
 public class ExchangeRecaptchaTokenRequest {
 
-  @VisibleForTesting static final String RECAPTCHA_TOKEN_KEY = "recaptchaToken";
+  @VisibleForTesting static final String RECAPTCHA_TOKEN_KEY = "recaptchaEnterpriseToken";
 
   @VisibleForTesting static final String LIMITED_USE_TOKEN_KEY = "limited_use";
 
