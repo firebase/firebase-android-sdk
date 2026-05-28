@@ -71,41 +71,34 @@ import kotlinx.coroutines.withContext
  */
 internal object GrpcBidiFlow {
 
-  /**
-   * Represents events emitted by the [Flow] created by [GrpcBidiFlow.create].
-   *
-   * @property connectionId The "connectionId" to uniquely identify a connection to the remote
-   * server, especially for correlation with invocations of [Listener.collectStarted].
-   */
-  sealed class Event<in RequestT, out ResponseT, out ConnectionCookie>(val connectionId: String) {
+  /** Represents events emitted by the [Flow] created by [GrpcBidiFlow.create]. */
+  sealed class Event<in RequestT, out ResponseT, out ConnectionCookie>(
+    val connectionId: String,
+    val connectionCookie: ConnectionCookie,
+  ) {
     /**
      * Emitted once when the gRPC flow collection starts.
      *
      * It provides a [SendChannel] that the caller can use to send requests to the server. Closing
      * this channel will half-close the gRPC stream from the client side.
-     *
-     * @param connectionId The unique identifier associated with this particular flow collection.
-     * @property outgoingRequests The channel to send requests to the server.
      */
     class ConnectionInfo<in RequestT, out ConnectionCookie>(
       connectionId: String,
-      val connectionCookie: ConnectionCookie,
+      connectionCookie: ConnectionCookie,
       val outgoingRequests: SendChannel<RequestT>,
-    ) : Event<RequestT, Nothing, ConnectionCookie>(connectionId) {
+    ) : Event<RequestT, Nothing, ConnectionCookie>(connectionId, connectionCookie) {
       override fun toString() =
         "ConnectionInfo(connectionId=$connectionId, connectionCookie=$connectionCookie)"
     }
 
-    /**
-     * Emitted when a response message is received from the server.
-     *
-     * @property message The response message received from the server.
-     */
-    class Message<out ResponseT>(
+    /** Emitted when a response message is received from the server. */
+    class Message<out ResponseT, out ConnectionCookie>(
       connectionId: String,
+      connectionCookie: ConnectionCookie,
       val message: ResponseT,
-    ) : Event<Any?, ResponseT, Nothing>(connectionId) {
-      override fun toString() = "Message(message=$message)"
+    ) : Event<Any?, ResponseT, ConnectionCookie>(connectionId, connectionCookie) {
+      override fun toString() =
+        "Message(connectionId=$connectionId, connectionCookie=$connectionCookie, message=$message)"
     }
   }
 
@@ -311,7 +304,7 @@ internal object GrpcBidiFlow {
           clientCall.request(1)
           for (response in responses) {
             collectionListener?.receivedMessage(response)
-            emit(Event.Message(connectionId, response))
+            emit(Event.Message(connectionId, connectionCookie, response))
             clientCall.request(1)
           }
           collectionListener?.receivingMessagesComplete()
