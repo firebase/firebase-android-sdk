@@ -16,12 +16,10 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.ExternalAccountCredentials
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.auth.oauth2.ServiceAccountCredentials as GoogleServiceAccountCredentials
 import com.google.auth.oauth2.UserCredentials
-import java.io.IOException
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNull
 import org.junit.Before
@@ -55,8 +53,7 @@ class CredentialsRetrieverTest {
   fun testGetAuthCredential_usesServiceCredentialsJsonPassedIn() {
     val credentialsRetriever = CredentialsRetriever()
 
-    val credential =
-      credentialsRetriever.getAuthCredential(TEST_SERVICE_CREDENTIALS_PATH)!!
+    val credential = credentialsRetriever.getAuthCredential(TEST_SERVICE_CREDENTIALS_PATH)!!
     val googleCreds = credential.credentials as GoogleServiceAccountCredentials
 
     assertEquals("firebase-adminsdk@my-project.iam.gserviceaccount.com", googleCreds.clientEmail)
@@ -67,8 +64,7 @@ class CredentialsRetrieverTest {
   fun testGetAuthCredential_usesWifCredentialsJsonPassedIn() {
     val credentialsRetriever = CredentialsRetriever()
 
-    val credential =
-      credentialsRetriever.getAuthCredential(TEST_WIF_CREDENTIALS_PATH)!!
+    val credential = credentialsRetriever.getAuthCredential(TEST_WIF_CREDENTIALS_PATH)!!
     val googleCreds = credential.credentials
 
     assert(googleCreds is ExternalAccountCredentials)
@@ -135,8 +131,7 @@ class CredentialsRetrieverTest {
     val credentialsRetriever = CredentialsRetriever()
 
     // Also pass in service credentials json directly
-    val credential =
-      credentialsRetriever.getAuthCredential(TEST_SERVICE_CREDENTIALS_PATH)!!
+    val credential = credentialsRetriever.getAuthCredential(TEST_SERVICE_CREDENTIALS_PATH)!!
     val googleCreds = credential.credentials as GoogleServiceAccountCredentials
 
     // Verify service credentials auth is configured
@@ -183,10 +178,11 @@ class CredentialsRetrieverTest {
     val mockAdcCredentials: GoogleCredentials = mock()
     whenever(mockAdcCredentials.createScoped(ApiEndpoints.SCOPES)).thenReturn(mockAdcCredentials)
 
-    val credentialsRetriever = CredentialsRetriever(
-      appDistributionEnvironment = testEnvironment,
-      adcCredentialsProvider = { mockAdcCredentials }
-    )
+    val credentialsRetriever =
+      CredentialsRetriever(
+        appDistributionEnvironment = testEnvironment,
+        adcCredentialsProvider = { mockAdcCredentials }
+      )
 
     val credential = credentialsRetriever.getAuthCredential()!!
     assertEquals(mockAdcCredentials, credential.credentials)

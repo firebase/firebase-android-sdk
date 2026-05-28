@@ -16,8 +16,8 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.auth.http.HttpCredentialsAdapter
 import com.google.api.client.http.HttpResponseException
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_CREDENTIALS
 import java.io.IOException
 import java.security.GeneralSecurityException

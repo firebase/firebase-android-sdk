@@ -16,14 +16,14 @@
 
 package com.google.firebase.appdistribution.gradle
 
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.appdistribution.gradle.AppDistributionEnvironment.Companion.ENV_FIREBASE_TOKEN
 import com.google.firebase.appdistribution.gradle.AppDistributionEnvironment.Companion.ENV_GOOGLE_APPLICATION_CREDENTIALS
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.REFRESH_TOKEN_ERROR
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.SERVICE_CREDENTIALS_NOT_FOUND
 import com.google.firebase.appdistribution.gradle.OptionsUtils.ensureFileExists
 import com.google.firebase.appdistribution.gradle.models.ServiceAccountCredentials
-import com.google.auth.http.HttpCredentialsAdapter
-import com.google.auth.oauth2.GoogleCredentials
 import java.io.IOException
 import org.gradle.api.logging.Logging
 
@@ -31,7 +31,9 @@ import org.gradle.api.logging.Logging
 class CredentialsRetriever(
   private val appDistributionEnvironment: AppDistributionEnvironment =
     AppDistributionEnvironmentImpl(),
-  private val adcCredentialsProvider: () -> GoogleCredentials = { GoogleCredentials.getApplicationDefault() }
+  private val adcCredentialsProvider: () -> GoogleCredentials = {
+    GoogleCredentials.getApplicationDefault()
+  }
 ) {
 
   /** Returns the auth credential, if found. Otherwise returns null. */

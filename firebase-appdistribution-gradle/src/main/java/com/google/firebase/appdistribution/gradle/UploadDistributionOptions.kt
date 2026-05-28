@@ -69,8 +69,7 @@ internal constructor(
   val groups = extractValues(groupsValue, groupsPath)
   val testDevices = extractTestDevices(testDevicesValue, testDevicesPath)
   val credential: HttpCredentialsAdapter? =
-    CredentialsRetriever(appDistributionEnvironment)
-      .getAuthCredential(serviceCredentialsFile)
+    CredentialsRetriever(appDistributionEnvironment).getAuthCredential(serviceCredentialsFile)
   val testCases = extractValues(testCasesValue, testCasesPath)
 
   val testLoginCredential =
