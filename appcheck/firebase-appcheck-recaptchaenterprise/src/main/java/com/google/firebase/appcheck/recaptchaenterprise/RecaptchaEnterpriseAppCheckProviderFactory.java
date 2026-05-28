@@ -15,13 +15,13 @@
 package com.google.firebase.appcheck.recaptchaenterprise;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
-import java.util.Objects;
 
 /**
  * Implementation of an {@link AppCheckProviderFactory} that builds <br>
@@ -29,34 +29,26 @@ import java.util.Objects;
  */
 public class RecaptchaEnterpriseAppCheckProviderFactory implements AppCheckProviderFactory {
 
-  private final String siteKey;
-  private volatile RecaptchaEnterpriseAppCheckProvider provider;
-
-  private RecaptchaEnterpriseAppCheckProviderFactory(@NonNull String siteKey) {
-    this.siteKey = siteKey;
-  }
+  private RecaptchaEnterpriseAppCheckProviderFactory() {}
 
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
   @NonNull
-  public static RecaptchaEnterpriseAppCheckProviderFactory getInstance(@NonNull String siteKey) {
-    Objects.requireNonNull(siteKey, "siteKey cannot be null");
-    return new RecaptchaEnterpriseAppCheckProviderFactory(siteKey);
+  public static RecaptchaEnterpriseAppCheckProviderFactory getInstance() {
+    return new RecaptchaEnterpriseAppCheckProviderFactory();
   }
 
   @NonNull
   @Override
   @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    if (provider == null) {
-      synchronized (this) {
-        if (provider == null) {
-          ProviderMultiResourceComponent component =
-              firebaseApp.get(ProviderMultiResourceComponent.class);
-          provider = component.get(siteKey);
-          provider.initializeRecaptchaClient();
-        }
-      }
-    }
+    String siteKey = firebaseApp.getOptions().getRecaptchaSiteKey();
+    Preconditions.checkNotEmpty(
+        siteKey,
+        "Missing site key from configuration. Verify your google-services.json file is updated.");
+    ProviderMultiResourceComponent component =
+        firebaseApp.get(ProviderMultiResourceComponent.class);
+    RecaptchaEnterpriseAppCheckProvider provider = component.get(siteKey);
+    provider.initializeRecaptchaClient();
     return provider;
   }
 }

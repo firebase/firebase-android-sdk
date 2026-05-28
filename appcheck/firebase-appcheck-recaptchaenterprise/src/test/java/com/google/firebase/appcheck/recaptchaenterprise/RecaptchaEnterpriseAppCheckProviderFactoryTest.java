@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.ProviderMultiResourceComponent;
 import com.google.firebase.appcheck.recaptchaenterprise.internal.RecaptchaEnterpriseAppCheckProvider;
@@ -31,54 +32,66 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 /** Tests for {@link RecaptchaEnterpriseAppCheckProviderFactory}. */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
 public class RecaptchaEnterpriseAppCheckProviderFactoryTest {
   static final String SITE_KEY_1 = "siteKey1";
 
   @Mock private FirebaseApp mockFirebaseApp;
+  @Mock private FirebaseOptions mockFirebaseOptions;
   @Mock private ProviderMultiResourceComponent mockComponent;
   @Mock private RecaptchaEnterpriseAppCheckProvider mockProvider;
 
   @Before
   public void setUp() {
+    MockitoAnnotations.openMocks(this);
     when(mockFirebaseApp.get(eq(ProviderMultiResourceComponent.class))).thenReturn(mockComponent);
     when(mockComponent.get(anyString())).thenReturn(mockProvider);
+    when(mockFirebaseApp.getOptions()).thenReturn(mockFirebaseOptions);
   }
 
   @Test
-  public void getInstance_nonNullSiteKey_returnsNonNullInstance() {
+  public void getInstance_returnsNonNullInstance() {
     RecaptchaEnterpriseAppCheckProviderFactory factory =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance();
     assertNotNull(factory);
   }
 
   @Test
-  public void getInstance_nullSiteKey_expectThrows() {
-    assertThrows(
-        NullPointerException.class,
-        () -> RecaptchaEnterpriseAppCheckProviderFactory.getInstance(null));
-  }
-
-  @Test
-  public void create_nonNullFirebaseApp_returnsRecaptchaEnterpriseAppCheckProvider() {
+  public void create_siteKeyInOptions_returnsRecaptchaEnterpriseAppCheckProvider() {
+    when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(SITE_KEY_1);
     RecaptchaEnterpriseAppCheckProviderFactory factory =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance();
     AppCheckProvider provider = factory.create(mockFirebaseApp);
     assertNotNull(provider);
     assertEquals(RecaptchaEnterpriseAppCheckProvider.class, provider.getClass());
+    verify(mockComponent).get(SITE_KEY_1);
   }
 
   @Test
-  public void create_callMultipleTimes_providerIsInitializedOnlyOnce() {
+  public void create_noSiteKeyInOptionsOrFactory_expectThrows() {
+    when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(null);
     RecaptchaEnterpriseAppCheckProviderFactory factory =
-        RecaptchaEnterpriseAppCheckProviderFactory.getInstance(SITE_KEY_1);
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance();
+    assertThrows(IllegalArgumentException.class, () -> factory.create(mockFirebaseApp));
+  }
+
+  @Test
+  public void create_callMultipleTimes_initializesProviderEveryTime() {
+    when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(SITE_KEY_1);
+    RecaptchaEnterpriseAppCheckProviderFactory factory =
+        RecaptchaEnterpriseAppCheckProviderFactory.getInstance();
 
     factory.create(mockFirebaseApp);
     factory.create(mockFirebaseApp);
     factory.create(mockFirebaseApp);
-    verify(mockProvider, times(1)).initializeRecaptchaClient();
+
+    verify(mockComponent, times(3)).get(SITE_KEY_1);
+    verify(mockProvider, times(3)).initializeRecaptchaClient();
   }
 }
