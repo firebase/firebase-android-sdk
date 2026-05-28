@@ -18,14 +18,15 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getApplicationId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
-import com.google.firebase.dataconnect.util.decodeSemanticVersion
 
 internal class DataConnectCacheDatabaseMigrator
 private constructor(private val sqliteDatabase: SQLiteDatabase, private val logger: Logger) {
@@ -34,16 +35,100 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
 
     private const val APPLICATION_ID: Int = 0x7f1bc816
 
+    private val version_1_0_0 = SemanticVersion(1, 0, 0)
+    private val version_1_1_0 = SemanticVersion(1, 1, 0)
+
     fun migrate(sqliteDatabase: SQLiteDatabase, logger: Logger) {
       DataConnectCacheDatabaseMigrator(sqliteDatabase, logger).migrate()
     }
+
+    @VisibleForTesting
+    fun migrateToVersionForTesting(
+      sqliteDatabase: SQLiteDatabase,
+      stopAtVersion: SemanticVersion,
+      logger: Logger,
+    ) {
+      DataConnectCacheDatabaseMigrator(sqliteDatabase, logger)
+        .migrate(stopAtVersionForTesting = stopAtVersion)
+    }
   }
 
-  private fun migrate() {
+  private fun migrate(stopAtVersionForTesting: SemanticVersion? = null) {
+    if (stopAtVersionForTesting != null) {
+      logger.warn {
+        "WARNING q9dfsdxdmp: migrate() called with " +
+          "" +
+          "stopAtVersionForTesting=$stopAtVersionForTesting, " +
+          "which should ONLY be done by tests for the SDK itself"
+      }
+    }
     logger.debug { "migrate() started" }
     migrateApplicationId()
-    migrateSchema()
+    migrateDatabase(stopAtVersionForTesting)
     logger.debug { "migrate() completed" }
+  }
+
+  private fun migrateDatabase(stopAtVersionForTesting: SemanticVersion?) {
+    if (stopAtVersionForTesting != null) {
+      logger.warn {
+        "WARNING n7d2qazseq: migrateDatabase() called with " +
+          "" +
+          "stopAtVersionForTesting=$stopAtVersionForTesting, " +
+          "which should ONLY be done by tests for the SDK itself"
+      }
+    }
+    val stopAtVersionForTestingInt = stopAtVersionForTesting?.encodeToInt()
+
+    val visitedUserVersions: MutableSet<Int> = mutableSetOf()
+
+    while (true) {
+      val migrateOneStepResult: MigrateOneStepResult
+      val userVersionAfter: Int
+
+      try {
+        sqliteDatabase.beginTransaction()
+
+        val userVersionBefore = sqliteDatabase.version
+        migrateOneStepResult = migrateOneStep()
+        userVersionAfter = sqliteDatabase.version
+
+        if (migrateOneStepResult == MigrateOneStepResult.MigrationStepSuccessful) {
+          check(userVersionBefore != userVersionAfter) {
+            "internal error bpabj7creb: migrateOneStepResult==MigrationStepSuccessful but " +
+              "userVersionBefore==userVersionAfter, contrarily indicating that " +
+              "no migration occurred (userVersionBefore=$userVersionBefore, " +
+              "userVersionAfter=$userVersionAfter)"
+          }
+          check(userVersionAfter !in visitedUserVersions) {
+            "internal error vxznqxhsjf: userVersionAfter=$userVersionAfter, " +
+              "but that value is contained in visitedUserVersions; " +
+              "aborting to avoid an infinite loop " +
+              "(visitedUserVersions.size=${visitedUserVersions.size}, " +
+              "visitedUserVersions=${visitedUserVersions.sorted().joinToString()})"
+          }
+          visitedUserVersions.add(userVersionBefore)
+          visitedUserVersions.add(userVersionAfter)
+        }
+
+        sqliteDatabase.setTransactionSuccessful()
+      } finally {
+        sqliteDatabase.endTransaction()
+      }
+
+      if (stopAtVersionForTestingInt != null && userVersionAfter == stopAtVersionForTestingInt) {
+        logger.warn {
+          "WARNING zqpjcejdcq: stopping database migrations at user_version " +
+            "$stopAtVersionForTestingInt, because a non-null value of $stopAtVersionForTesting " +
+            "was specified, which should ONLY be done by tests for the SDK itself"
+        }
+        break
+      }
+
+      when (migrateOneStepResult) {
+        MigrateOneStepResult.MigrationStepSuccessful -> continue
+        MigrateOneStepResult.NoMoreMigrationsToPerform -> break
+      }
+    }
   }
 
   private fun migrateApplicationId() {
@@ -79,33 +164,49 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     }
   }
 
-  private fun migrateSchema() {
-    try {
-      sqliteDatabase.beginTransaction()
+  private enum class MigrateOneStepResult {
+    MigrationStepSuccessful,
+    NoMoreMigrationsToPerform,
+  }
 
-      val userVersion = sqliteDatabase.version
-      if (userVersion == 0) {
-        logger.debug { "user_version is 0; initializing database" }
-        initializeDatabase()
-        val newUserVersion = SemanticVersion(1, 0, 0)
-        val newUserVersionInt = newUserVersion.encodeToInt()
-        logger.debug { "setting user_version to $newUserVersionInt ($newUserVersion)" }
-        sqliteDatabase.version = newUserVersionInt
-      } else {
-        val decodedUserVersion: SemanticVersion = userVersion.decodeSemanticVersion()
-        logger.debug { "user_version is $userVersion, decoded as $decodedUserVersion" }
-        if (decodedUserVersion.major != 1) {
-          throw UnsupportedUserVersionException(
-            "user_version $userVersion has a 'major' version number of " +
-              "${decodedUserVersion.major}, but only major version 1 is supported " +
-              "(decodedUserVersion=$decodedUserVersion) [szetvza49k]"
-          )
-        }
-      }
+  private fun migrateOneStep(): MigrateOneStepResult {
+    val newUserVersion: SemanticVersion? = migrateToNextVersionFrom(sqliteDatabase.version)
 
-      sqliteDatabase.setTransactionSuccessful()
-    } finally {
-      sqliteDatabase.endTransaction()
+    return if (newUserVersion == null) {
+      MigrateOneStepResult.NoMoreMigrationsToPerform
+    } else {
+      val newUserVersionInt = newUserVersion.encodeToInt()
+      logger.debug { "setting user_version to $newUserVersionInt ($newUserVersion)" }
+      sqliteDatabase.version = newUserVersionInt
+      MigrateOneStepResult.MigrationStepSuccessful
+    }
+  }
+
+  private fun migrateToNextVersionFrom(userVersionInt: Int): SemanticVersion? {
+    if (userVersionInt == 0) {
+      logger.debug { "user_version is 0; initializing database" }
+      initializeDatabase()
+      return version_1_0_0
+    }
+
+    val userVersion = SemanticVersion.decodeFromInt(userVersionInt)
+
+    return if (userVersion.major != 1) {
+      throw UnsupportedUserVersionException(
+        "user_version $userVersionInt ($userVersion) has 'major' version number " +
+          "${userVersion.major}, but only major version 1 is supported [szetvza49k]"
+      )
+    } else if (userVersion == version_1_0_0) {
+      migrateFrom100To110(userVersion)
+    } else if (userVersion.minor >= 1) {
+      logger.debug { "user_version is $userVersionInt ($userVersion); all migrations complete" }
+      null
+    } else {
+      throw UnsupportedUserVersionException(
+        "unsupported user_version: $userVersion ($userVersionInt); " +
+          "it is between 1.0.0 and 1.1.0, for which there are no known migrations; " +
+          "aborting to avoid corrupting the database [vdzgyhdche]"
+      )
     }
   }
 
@@ -162,6 +263,28 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       logger,
       "CREATE INDEX entity_query_map_entity_index ON entity_query_map(entity_id)"
     )
+  }
+
+  private fun migrateFrom100To110(userVersion: SemanticVersion): SemanticVersion {
+    check(userVersion == version_1_0_0) {
+      "internal error tka7dm6nch: userVersion=$userVersion but expected $version_1_0_0"
+    }
+    val newVersion = version_1_1_0
+    logger.debug {
+      "user_version is $userVersion (${userVersion.encodeToInt()}); " +
+        "migrating to $newVersion (${newVersion.encodeToInt()})"
+    }
+
+    sqliteDatabase.execSQL(
+      logger,
+      "ALTER TABLE queries ADD COLUMN last_update_sequence_number INTEGER"
+    )
+    sqliteDatabase.execSQL(
+      logger,
+      "ALTER TABLE entities ADD COLUMN last_update_sequence_number INTEGER"
+    )
+
+    return newVersion
   }
 
   class InvalidApplicationIdException(message: String) : Exception(message)
