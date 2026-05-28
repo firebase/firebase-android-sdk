@@ -17,6 +17,7 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.InferenceSource
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -35,6 +36,7 @@ internal constructor(
   public val inferenceSource: InferenceSource,
   public val promptFeedback: PromptFeedback?,
   public val usageMetadata: UsageMetadata?,
+  public val modelVersion: String? = null,
 ) {
 
   // To maintain backwards compatibility with possible outside usage, we maintain a public
@@ -47,7 +49,7 @@ internal constructor(
     candidates: List<Candidate>,
     promptFeedback: PromptFeedback?,
     usageMetadata: UsageMetadata?,
-  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata)
+  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, null)
 
   /**
    * Convenience field representing all the text parts in the response as a single string.
@@ -118,13 +120,15 @@ internal constructor(
     val candidates: List<Candidate.Internal>? = null,
     val promptFeedback: PromptFeedback.Internal? = null,
     val usageMetadata: UsageMetadata.Internal? = null,
+    @SerialName("model_version") val modelVersion: String? = null,
   ) : Response {
     internal fun toPublic(): GenerateContentResponse {
       return GenerateContentResponse(
         candidates?.map { it.toPublic() }.orEmpty(),
         InferenceSource.IN_CLOUD,
         promptFeedback?.toPublic(),
-        usageMetadata?.toPublic()
+        usageMetadata?.toPublic(),
+        modelVersion
       )
     }
   }
