@@ -122,7 +122,17 @@ public class WatchChangeAggregator {
   /** Processes and adds the WatchTargetChange to the current set of changes. */
   public void handleTargetChange(WatchTargetChange targetChange) {
     for (RemoteTargetId targetId : getTargetIds(targetChange)) {
-      TargetState targetState = ensureTargetState(targetId);
+      TargetState targetState = targetStates.get(targetId);
+      if (targetState == null) {
+        if (Logger.isDebugEnabled()) {
+          Logger.debug(
+              LOG_TAG,
+              "handleTargetChange received targetChange for untracked target ID (%s) with state (%s)",
+              targetId,
+              targetChange.getChangeType());
+        }
+        continue;
+      }
 
       switch (targetChange.getChangeType()) {
         case NoChange:
@@ -406,7 +416,14 @@ public class WatchChangeAggregator {
    * given target's mapping.
    */
   private void addDocumentToTarget(RemoteTargetId targetId, MutableDocument document) {
-    if (!isActiveTarget(targetId)) {
+    TargetState targetState = targetStates.get(targetId);
+    if (targetState == null || !isActiveTarget(targetId)) {
+      if (Logger.isDebugEnabled()) {
+        Logger.debug(
+            LOG_TAG,
+            "addDocumentToTarget received document for unknown inactive target (%s)",
+            targetId);
+      }
       return;
     }
 
@@ -415,7 +432,6 @@ public class WatchChangeAggregator {
             ? DocumentViewChange.Type.MODIFIED
             : DocumentViewChange.Type.ADDED;
 
-    TargetState targetState = ensureTargetState(targetId);
     targetState.addDocumentChange(document.getKey(), changeType);
 
     pendingDocumentUpdates.put(document.getKey(), document);
@@ -431,11 +447,17 @@ public class WatchChangeAggregator {
    */
   private void removeDocumentFromTarget(
       RemoteTargetId targetId, DocumentKey key, @Nullable MutableDocument updatedDocument) {
-    if (!isActiveTarget(targetId)) {
+    TargetState targetState = targetStates.get(targetId);
+    if (targetState == null || !isActiveTarget(targetId)) {
+      if (Logger.isDebugEnabled()) {
+        Logger.debug(
+            LOG_TAG,
+            "removeDocumentFromTarget received document for unknown or inactive target (%s)",
+            targetId);
+      }
       return;
     }
 
-    TargetState targetState = ensureTargetState(targetId);
     if (targetContainsDocument(targetId, key)) {
       targetState.addDocumentChange(key, DocumentViewChange.Type.REMOVED);
     } else {
@@ -461,7 +483,10 @@ public class WatchChangeAggregator {
    * changes.
    */
   private int getCurrentDocumentCountForTarget(RemoteTargetId targetId) {
-    TargetState targetState = ensureTargetState(targetId);
+    TargetState targetState = targetStates.get(targetId);
+    if (targetState == null) {
+      return 0;
+    }
     TargetChange targetChange = targetState.toTargetChange();
     return (targetMetadataProvider.getRemoteKeysForTarget(targetId).size()
         + targetChange.getAddedDocuments().size()
@@ -472,20 +497,18 @@ public class WatchChangeAggregator {
    * Increment the number of acks needed from watch before we can consider the server to be
    * 'in-sync' with the client's active targets.
    */
-  void recordPendingTargetRequest(RemoteTargetId targetId) {
+  public void recordPendingTargetRequest(RemoteTargetId targetId) {
     // For each request we get we need to record we need a response for it.
-    TargetState targetState = ensureTargetState(targetId);
-    targetState.recordPendingTargetRequest();
-  }
-
-  private TargetState ensureTargetState(RemoteTargetId targetId) {
     TargetState targetState = targetStates.get(targetId);
     if (targetState == null) {
-      targetState = new TargetState();
+      if (Logger.isDebugEnabled()) {
+        Logger.debug(
+            LOG_TAG, "recordPendingTargetRequest set up tracking for target ID %s", targetId);
+      }
+      targetState = new TargetState(targetId);
       targetStates.put(targetId, targetState);
     }
-
-    return targetState;
+    targetState.recordPendingTargetRequest();
   }
 
   private Set<RemoteTargetId> ensureDocumentTargetMapping(DocumentKey key) {
@@ -514,7 +537,7 @@ public class WatchChangeAggregator {
   @Nullable
   private RemoteTargetData queryDataForActiveTarget(RemoteTargetId targetId) {
     TargetState targetState = targetStates.get(targetId);
-    return targetState != null && targetState.isPending()
+    return targetState == null || targetState.isPending()
         ? null
         : targetMetadataProvider.getTargetDataForTarget(targetId);
   }
@@ -527,7 +550,7 @@ public class WatchChangeAggregator {
     hardAssert(
         targetStates.get(targetId) != null && !targetStates.get(targetId).isPending(),
         "Should only reset active targets");
-    targetStates.put(targetId, new TargetState());
+    targetStates.put(targetId, new TargetState(targetId));
 
     // Trigger removal for any documents currently mapped to this target. These removals will be
     // part of the initial snapshot if Watch does not resend these documents.

@@ -104,6 +104,14 @@ public class RemoteEventTest {
       targetMetadataProvider.setSyncedKeys(entry.getValue(), existingKeys);
     }
 
+    // Put all targets into the 'added' state
+    for (RemoteTargetId targetId : targetIds) {
+      aggregator.recordPendingTargetRequest(targetId);
+      aggregator.handleTargetChange(
+          new WatchTargetChange(
+              WatchTargetChangeType.Added, asRemoteTargetIdList(targetId.value())));
+    }
+
     for (Map.Entry<Integer, Integer> entry : outstandingResponses.entrySet()) {
       for (int i = 0; i < entry.getValue(); ++i) {
         aggregator.recordPendingTargetRequest(RemoteTargetId.from(entry.getKey()));
@@ -677,7 +685,8 @@ public class RemoteEventTest {
     assertEquals(doc1, event.getDocumentUpdates().get(doc1.getKey()));
     assertEquals(doc2, event.getDocumentUpdates().get(doc2.getKey()));
 
-    targetMetadataProvider.setSyncedKeys(targetMap.get(1), keySet(doc1.getKey(), doc2.getKey()));
+    targetMetadataProvider.setSyncedKeys(
+        targetMap.get(RemoteTargetId.from(1)), keySet(doc1.getKey(), doc2.getKey()));
 
     MutableDocument deletedDoc1 = deletedDoc("docs/1", 3);
     DocumentChange change3 =

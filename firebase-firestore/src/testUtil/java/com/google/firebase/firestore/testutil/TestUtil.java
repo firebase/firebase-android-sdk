@@ -81,6 +81,7 @@ import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
+import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
@@ -465,6 +466,16 @@ public class TestUtil {
         remoteEvent.getResolvedLimboDocuments());
   }
 
+  public static void addWatchTargets(
+      WatchChangeAggregator aggregator, List<RemoteTargetId> targetIds) {
+    for (RemoteTargetId targetId : targetIds) {
+      aggregator.recordPendingTargetRequest(targetId);
+      aggregator.handleTargetChange(
+          new WatchTargetChange(
+              WatchChange.WatchTargetChangeType.Added, Collections.singletonList(targetId)));
+    }
+  }
+
   public static RemoteEvent noChangeEvent(int targetId, int version) {
     return noChangeEvent(targetId, version, resumeToken(version));
   }
@@ -481,6 +492,8 @@ public class TestUtil {
 
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
+
+    addWatchTargets(aggregator, RemoteTargetId.from(asList(targetId)));
 
     WatchChange.WatchTargetChange watchChange =
         new WatchChange.WatchTargetChange(
@@ -515,6 +528,8 @@ public class TestUtil {
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
+
+    addWatchTargets(aggregator, Collections.singletonList(targetId));
 
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
         new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
@@ -553,6 +568,11 @@ public class TestUtil {
                 return remoteTargetId.value();
               }
             });
+
+    List<RemoteTargetId> allTargets = new ArrayList<>();
+    allTargets.addAll(updatedInTargets);
+    allTargets.addAll(removedFromTargets);
+    addWatchTargets(aggregator, allTargets);
 
     SnapshotVersion version = SnapshotVersion.NONE;
 
@@ -622,6 +642,7 @@ public class TestUtil {
                 return remoteTargetId.value();
               }
             });
+    addWatchTargets(aggregator, activeTargets);
     aggregator.handleDocumentChange(change);
     return toSdkRemoteEvent(aggregator.createRemoteEvent(doc.getVersion()));
   }
