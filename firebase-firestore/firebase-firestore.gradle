@@ -73,6 +73,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
 
+        // By default, exclude large tests because they are slow.
+        // Run with `./gradlew :firebase-firestore:connectedCheck -PrunLargeTests` to run ONLY large tests.
+        if (project.hasProperty('runLargeTests')) {
+            testInstrumentationRunnerArguments annotation: 'androidx.test.filters.LargeTest'
+        } else {
+            testInstrumentationRunnerArguments notAnnotation: 'androidx.test.filters.LargeTest'
+        }
+
         // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")

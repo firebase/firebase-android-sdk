@@ -20,12 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
 import com.google.android.gms.tasks.Task;
 import java.util.Arrays;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+@LargeTest
 @RunWith(AndroidJUnit4.class)
 public class LargeDocumentTest {
 
