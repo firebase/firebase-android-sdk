@@ -49,9 +49,6 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
   @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
   abstract val obfuscatableSources: ConfigurableFileCollection
 
-  @get:[InputFiles PathSensitive(PathSensitivity.NONE)]
-  abstract val obfuscatableClasspath: ConfigurableFileCollection
-
   @get:OutputFile abstract val mappingFileIdFile: RegularFileProperty
   @get:OutputDirectory abstract val resourceDir: DirectoryProperty
 
@@ -78,7 +75,7 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
   }
 
   internal companion object {
-    @Suppress("UnstableApiUsage") // isMinifyEnabled, compileClasspath
+    @Suppress("UnstableApiUsage") // isMinifyEnabled
     fun register(
       project: Project,
       variant: ApplicationVariant,
