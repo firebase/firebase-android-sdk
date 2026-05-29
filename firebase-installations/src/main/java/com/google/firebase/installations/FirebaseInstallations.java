@@ -409,10 +409,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Store the prefs to persist the result of the previous step.
     insertOrUpdatePrefs(updatedPrefs);
 
-    // Update FidListener if a fid is new or has changed.
-    if (shouldNotifyFidListener(prefs, updatedPrefs)) {
-      updateFidListener(updatedPrefs);
-    }
+    // Update FidListener if a fid is new or changed its registration to registered.
+    checkAndUpdateFidListeners(prefs, updatedPrefs);
 
     prefs = updatedPrefs;
 
@@ -448,10 +446,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return false;
   }
 
-  private synchronized void updateFidListener(@NonNull PersistedInstallationEntry updatedPrefs) {
-    if (!fidListeners.isEmpty()
-        && !TextUtils.isEmpty(updatedPrefs.getFirebaseInstallationId())
-        && updatedPrefs.isRegistered()) {
+  private synchronized void checkAndUpdateFidListeners(
+      PersistedInstallationEntry prefs, PersistedInstallationEntry updatedPrefs) {
+    if (!fidListeners.isEmpty() && shouldNotifyFidListener(prefs, updatedPrefs)) {
       // Update all the registered FidListener about fid changes.
       for (FidListener listener : fidListeners) {
         listener.onFidChanged(updatedPrefs.getFirebaseInstallationId());
