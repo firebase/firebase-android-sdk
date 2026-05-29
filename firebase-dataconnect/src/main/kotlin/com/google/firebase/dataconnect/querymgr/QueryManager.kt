@@ -17,32 +17,29 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.QueryRefImpl
-import com.google.firebase.dataconnect.core.toDataSourceEnum
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import com.google.firebase.dataconnect.util.TaggedReference
 
 internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
     query: QueryRefImpl<Data, Variables>,
     fetchPolicy: FetchPolicy,
-  ): SequencedReference<Result<DataSourcePair<Data>>> =
+  ): SequencedReference<Result<TaggedReference<DataSource, Data>>> =
     liveQueries.withLiveQuery(query) {
-      it
-        .execute(
-          dataDeserializer = query.dataDeserializer,
-          dataSerializersModule = query.dataSerializersModule,
-          callerSdkType = query.callerSdkType,
-          fetchPolicy = fetchPolicy,
-        )
-        .toDataSourcePair()
+      it.execute(
+        dataDeserializer = query.dataDeserializer,
+        dataSerializersModule = query.dataSerializersModule,
+        callerSdkType = query.callerSdkType,
+        fetchPolicy = fetchPolicy,
+      )
     }
 
   suspend fun <Data, Variables> subscribe(
     query: QueryRefImpl<Data, Variables>,
     executeQuery: Boolean,
-    callback: suspend (SequencedReference<Result<DataSourcePair<Data>>>) -> Unit,
+    callback: suspend (SequencedReference<Result<TaggedReference<DataSource, Data>>>) -> Unit,
   ): Nothing =
     liveQueries.withLiveQuery(query) { liveQuery ->
       liveQuery.subscribe(
@@ -50,17 +47,7 @@ internal class QueryManager(private val liveQueries: LiveQueries) {
         dataSerializersModule = query.dataSerializersModule,
         executeQuery = executeQuery,
         callerSdkType = query.callerSdkType,
-        callback = { callback(it.toDataSourcePair()) },
+        callback = callback,
       )
     }
 }
-
-private fun <T> SequencedReference<
-  Result<TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>>
->
-  .toDataSourcePair(): SequencedReference<Result<DataSourcePair<T>>> = map { result ->
-  result.map { it.toDataSourcePair() }
-}
-
-private fun <T> TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>
-  .toDataSourcePair(): DataSourcePair<T> = DataSourcePair(ref, tag.toDataSourceEnum())
