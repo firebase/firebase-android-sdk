@@ -34,6 +34,7 @@ import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
@@ -146,6 +147,10 @@ internal fun DataConnectArb.operationFailureResponseImpl(
   Arb.bind(rawData, data, errors) { rawData0, data0, errors0 ->
     DataConnectOperationFailureResponseImpl(rawData0, data0, errors0)
   }
+
+internal fun DataConnectArb.sqliteSequenceNumber(
+  long: Arb<Long> = Arb.longWithEvenNumDigitsDistribution(),
+): Arb<SqliteSequenceNumber> = long.map(::SqliteSequenceNumber)
 
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
