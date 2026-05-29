@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
+import com.google.firebase.dataconnect.core.DataConnectSerialization
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -26,20 +26,18 @@ import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.mapSuspending
 import com.google.firebase.dataconnect.util.SuspendingLazy
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class RegisteredDataDeserializer<T>(
   val dataDeserializer: DeserializationStrategy<T>,
   val dataSerializersModule: SerializersModule?,
-  private val blockingCoroutineDispatcher: CoroutineDispatcher,
+  private val serialization: DataConnectSerialization,
   parentLogger: Logger,
 ) {
   private val logger =
@@ -137,9 +135,12 @@ internal class RegisteredDataDeserializer<T>(
     sequencedResult.ref
       .mapCatching {
         val deserializedData =
-          withContext(blockingCoroutineDispatcher) {
-            it.deserialize(dataDeserializer, dataSerializersModule)
-          }
+          serialization.decodeData(
+            it.data,
+            it.errors,
+            dataDeserializer,
+            dataSerializersModule,
+          )
         DataSourcePair(deserializedData, it.source)
       }
       .onFailure {

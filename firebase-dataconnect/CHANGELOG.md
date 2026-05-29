@@ -1,13 +1,29 @@
 # Unreleased
 
+- [feature] `QuerySubscription.flow` gains
+  [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
+  ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))
+- [changed] Internal fix of wasteful computation only meant for debug logging.
+  ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
+- [changed] Internal change to replace `SecureRandom` with just `Random`
+  as the random numbers were not used in a security-sensitive context,
+  thus the performance costs of secure random number generation were unnecessary.
+  ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
+  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
+- [changed] Realtime query results now update the local cache as query
+  results are received.
+  ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
+
+# 17.2.2
+
 - [changed] Internal refactor for calculating debug logging strings.
   ([#8024](https://github.com/firebase/firebase-android-sdk/pull/8024))
 - [changed] Internal refactor to use more descriptive variable names.
   ([#8025](https://github.com/firebase/firebase-android-sdk/pull/8025))
 - [changed] Internal refactor to use token objects instead of strings.
   ([#8027](https://github.com/firebase/firebase-android-sdk/pull/8027))
-- [changed] Internal change to add protos for realtime query updates.
-  ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
 
 # 17.2.1
 

@@ -21,13 +21,12 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred
-import java.security.SecureRandom
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.random.Random
-import kotlin.random.asKotlinRandom
 
 internal class FirebaseDataConnectFactory(
   private val context: Context,
@@ -38,6 +37,10 @@ internal class FirebaseDataConnectFactory(
   private val deferredAppCheckProvider: Deferred<InteropAppCheckTokenProvider>,
 ) {
 
+  // Use the same instance of IdStringGenerator for every FirebaseDataConnect instance so that
+  // all instances generate unique IDs.
+  private val idStringGenerator = IdStringGenerator(Random.Default)
+
   init {
     firebaseApp.addLifecycleEventListener { _, _ -> close() }
   }
@@ -45,7 +48,6 @@ internal class FirebaseDataConnectFactory(
   private val lock = ReentrantLock()
   private val instances = mutableMapOf<FirebaseDataConnectInstanceKey, FirebaseDataConnect>()
   private var closed = false
-  private val secureRandom by lazy(LazyThreadSafetyMode.NONE) { SecureRandom() }
 
   fun get(config: ConnectorConfig, settings: DataConnectSettings?): FirebaseDataConnect {
     val key =
@@ -68,12 +70,7 @@ internal class FirebaseDataConnectFactory(
         return cachedInstance
       }
 
-      val newInstance =
-        FirebaseDataConnect.newInstance(
-          config,
-          settings,
-          secureRandom.asKotlinRandom(),
-        )
+      val newInstance = FirebaseDataConnect.newInstance(config, settings)
       instances[key] = newInstance
       return newInstance
     }
@@ -82,7 +79,6 @@ internal class FirebaseDataConnectFactory(
   private fun FirebaseDataConnect.Companion.newInstance(
     config: ConnectorConfig,
     settings: DataConnectSettings?,
-    secureRandom: Random,
   ) =
     FirebaseDataConnectImpl(
       context = context,
@@ -95,7 +91,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
-      secureRandom = secureRandom,
+      idStringGenerator = idStringGenerator,
     )
 
   fun remove(instance: FirebaseDataConnect) {

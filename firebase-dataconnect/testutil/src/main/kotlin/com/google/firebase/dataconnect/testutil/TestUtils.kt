@@ -177,6 +177,10 @@ class DelayUntilTimeoutException(message: String) : Exception(message)
  * Calls `Assert.fail()`, but also returns `Nothing` so that the Kotlin compiler can do better type
  * deduction for code that follows this `fail()` call.
  */
+@Deprecated(
+  "Use io.kotest.assertions.fail instead",
+  replaceWith = ReplaceWith("fail(message)", "io.kotest.assertions.fail")
+)
 fun fail(message: String): Nothing {
   Assert.fail(message)
   throw IllegalStateException("Should never get here")

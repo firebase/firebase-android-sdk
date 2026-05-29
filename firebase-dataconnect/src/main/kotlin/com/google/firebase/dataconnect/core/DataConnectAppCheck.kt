@@ -23,18 +23,21 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await
 
 internal class DataConnectAppCheck(
   deferredAppCheckTokenProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
+  idStringGenerator: IdStringGenerator,
   parentCoroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
   DataConnectCredentialsTokenManager<InteropAppCheckTokenProvider, GetAppCheckTokenResult>(
     deferredProvider = deferredAppCheckTokenProvider,
+    idStringGenerator = idStringGenerator,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,

@@ -68,6 +68,10 @@ object DataConnectArb {
       // https://www.postgresql.org/docs/current/datatype-character.html
       .filterNot { it.value == 0 }
 
+  fun alphabeticString(length: IntRange = 0..10): Arb<String> = Arb.string(length, Codepoint.az())
+
+  fun alphabeticString(length: Int): Arb<String> = alphabeticString(length..length)
+
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
 
@@ -146,9 +150,6 @@ object DataConnectArb {
     }
   }
 
-  fun authUid(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
-    string.map { "authUid_${it.lowercase()}" }
-
   fun authToken(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     string.map { "authToken_${it.lowercase()}" }
 
@@ -159,6 +160,11 @@ object DataConnectArb {
   fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {
       "requestId_${string.bind()}"
+    }
+
+  fun streamId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "streamId_${string.bind()}"
     }
 
   fun connectorResourceName(

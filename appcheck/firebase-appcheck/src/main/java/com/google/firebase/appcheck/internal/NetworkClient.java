@@ -58,7 +58,7 @@ public class NetworkClient {
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangePlayIntegrityToken?key=%s";
   private static final String PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:generatePlayIntegrityChallenge?key=%s";
-  private static final String RECAPTCHA_ENTERPRISE_URL_TEMPLATE =
+  private static final String RECAPTCHA_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeRecaptchaEnterpriseToken?key=%s";
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
@@ -73,13 +73,13 @@ public class NetworkClient {
   private final Provider<HeartBeatController> heartBeatControllerProvider;
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY, RECAPTCHA_ENTERPRISE})
+  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY, RECAPTCHA})
   public @interface AttestationTokenType {}
 
   public static final int UNKNOWN = 0;
   public static final int DEBUG = 2;
   public static final int PLAY_INTEGRITY = 3;
-  public static final int RECAPTCHA_ENTERPRISE = 4;
+  public static final int RECAPTCHA = 4;
 
   public NetworkClient(@NonNull FirebaseApp firebaseApp) {
     this(
@@ -240,8 +240,8 @@ public class NetworkClient {
         return DEBUG_EXCHANGE_URL_TEMPLATE;
       case PLAY_INTEGRITY:
         return PLAY_INTEGRITY_EXCHANGE_URL_TEMPLATE;
-      case RECAPTCHA_ENTERPRISE:
-        return RECAPTCHA_ENTERPRISE_URL_TEMPLATE;
+      case RECAPTCHA:
+        return RECAPTCHA_URL_TEMPLATE;
       default:
         throw new IllegalArgumentException("Unknown token type.");
     }
