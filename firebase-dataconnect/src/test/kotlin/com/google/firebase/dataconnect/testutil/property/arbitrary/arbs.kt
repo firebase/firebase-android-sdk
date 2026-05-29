@@ -162,7 +162,8 @@ internal class DataSourceSample(
 internal fun DataConnectArb.dataSource(
   publicDataSourceArb: Arb<com.google.firebase.dataconnect.DataSource> =
     Arb.enum<com.google.firebase.dataconnect.DataSource>(),
-  sqliteSequenceNumberArb: Arb<SqliteSequenceNumber> = sqliteSequenceNumber(),
+  sqliteSequenceNumberArb: Arb<SqliteSequenceNumber?> =
+    sqliteSequenceNumber().orNull(nullProbability = 0.2),
 ): Arb<DataSourceSample> = arbitrary {
   val publicDataSource = publicDataSourceArb.bind()
   val coreDataSource =
