@@ -20,10 +20,10 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.core.toDataSourceEnum
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -94,7 +94,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-  ): SequencedReference<Result<DataSourcePair<T>>> {
+  ): SequencedReference<Result<TaggedReference<DataSource, T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
@@ -126,7 +126,7 @@ internal class LiveQuery(
 
     newJob.join()
 
-    return registeredDataDeserializer.getLatestUpdate()!!.toDataSourcePair()
+    return registeredDataDeserializer.getLatestUpdate()!!
   }
 
   suspend fun <T> subscribe(
@@ -134,7 +134,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    callback: suspend (SequencedReference<Result<DataSourcePair<T>>>) -> Unit,
+    callback: suspend (SequencedReference<Result<TaggedReference<DataSource, T>>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer =
       registerDataDeserializer(dataDeserializer, dataSerializersModule)
@@ -146,7 +146,7 @@ internal class LiveQuery(
       if (cachedUpdate === null) {
         0
       } else {
-        callback(cachedUpdate.map { Result.success(it.toDataSourcePair()) })
+        callback(cachedUpdate.map { Result.success(it) })
         cachedUpdate.sequenceNumber
       }
 
@@ -164,7 +164,7 @@ internal class LiveQuery(
     registeredDataDeserializer.onSuccessfulUpdate(
       sinceSequenceNumber = effectiveSinceSequenceNumber
     ) {
-      callback(it.toDataSourcePair())
+      callback(it)
     }
   }
 
@@ -270,13 +270,3 @@ internal class LiveQuery(
     ): RegisteredDataDeserializer<T>
   }
 }
-
-private fun <T> SequencedReference<
-  Result<TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>>
->
-  .toDataSourcePair(): SequencedReference<Result<DataSourcePair<T>>> = map { result ->
-  result.map { it.toDataSourcePair() }
-}
-
-private fun <T> TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>
-  .toDataSourcePair(): DataSourcePair<T> = DataSourcePair(ref, tag.toDataSourceEnum())
