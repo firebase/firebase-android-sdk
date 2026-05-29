@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalRealtimeQueries::class)
-
 package com.google.firebase.dataconnect
 
 import app.cash.turbine.test
@@ -29,6 +26,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStringByKeyQuery
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.protobuf.Struct
@@ -46,6 +44,7 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.uuid
+import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
@@ -115,6 +114,7 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
       callerSdkType = callerSdkTypeArb.sample(),
       authToken = null,
       appCheckToken = null,
+      idStringGenerator = IdStringGenerator(Random.Default),
     )
 }
 
