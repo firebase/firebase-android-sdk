@@ -29,12 +29,26 @@ public class ExchangeDebugTokenRequestTest {
   @Test
   public void toJsonString_expectSerialized() throws Exception {
     ExchangeDebugTokenRequest exchangeDebugTokenRequest =
-        new ExchangeDebugTokenRequest(DEBUG_TOKEN);
+        new ExchangeDebugTokenRequest(DEBUG_TOKEN, false);
 
     String jsonString = exchangeDebugTokenRequest.toJsonString();
     JSONObject jsonObject = new JSONObject(jsonString);
 
     assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
         .isEqualTo(DEBUG_TOKEN);
+    assertThat(jsonObject.opt(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
+  }
+
+  @Test
+  public void toJsonString_limitedUse_expectSerialized() throws Exception {
+    ExchangeDebugTokenRequest exchangeDebugTokenRequest =
+        new ExchangeDebugTokenRequest(DEBUG_TOKEN, true);
+
+    String jsonString = exchangeDebugTokenRequest.toJsonString();
+    JSONObject jsonObject = new JSONObject(jsonString);
+
+    assertThat(jsonObject.getString(ExchangeDebugTokenRequest.DEBUG_TOKEN_KEY))
+        .isEqualTo(DEBUG_TOKEN);
+    assertThat(jsonObject.getBoolean(ExchangeDebugTokenRequest.LIMITED_USE_TOKEN_KEY)).isTrue();
   }
 }

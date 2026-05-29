@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalRealtimeQueries::class)
-
 package com.google.firebase.dataconnect
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
-import com.google.firebase.dataconnect.testutil.realtimeQuery
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStringByKeyQuery
@@ -37,11 +34,6 @@ import kotlinx.serialization.serializer
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Integration tests for the
- * [com.google.firebase.dataconnect.core.FirebaseDataConnectInternal.realtimeQuery] method and its
- * return value.
- */
 class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val nameArb = Arb.string(size = 4, Codepoint.az()).map { "name_$it" }
@@ -59,7 +51,7 @@ class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
     val key = connector.insertString(name1)
 
     val ref =
-      dataConnect.realtimeQuery(
+      dataConnect.query(
         GetStringByKeyQuery.OPERATION_NAME,
         GetStringByKeyQuery.Variables(key),
         serializer<GetStringByKeyQuery.Data>(),
@@ -83,7 +75,7 @@ class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
     val key = connector.insertString(name1)
 
     val ref =
-      dataConnect.realtimeQuery(
+      dataConnect.query(
         GetStringByKeyQuery.OPERATION_NAME,
         GetStringByKeyQuery.Variables(key),
         serializer<GetStringByKeyQuery.Data>(),
@@ -107,7 +99,7 @@ class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
     val key = connector.insertString(name1)
 
     val ref =
-      dataConnect.realtimeQuery(
+      dataConnect.query(
         GetStringByKeyQuery.OPERATION_NAME,
         GetStringByKeyQuery.Variables(key),
         serializer<GetStringByKeyQuery.Data>(),
@@ -131,7 +123,7 @@ class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
     val key = connector.insertString(name1)
 
     val ref =
-      dataConnect.realtimeQuery(
+      dataConnect.query(
         GetStringByKeyQuery.OPERATION_NAME,
         GetStringByKeyQuery.Variables(key),
         serializer<GetStringByKeyQuery.Data>(),

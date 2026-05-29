@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
@@ -48,6 +49,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
@@ -366,9 +368,13 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
   )
 }
 
+internal fun DataConnectArb.authUid(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.az())
+): Arb<AuthUid> = string.map { AuthUid("authUid_${it.lowercase()}") }
+
 internal fun DataConnectArb.authTokenResult(
   accessToken: Arb<String?> = authToken().orNull(nullProbability = 0.33),
-  authUid: Arb<String?> = authUid().orNull(nullProbability = 0.33),
+  authUid: Arb<AuthUid?> = authUid().orNull(nullProbability = 0.33),
 ): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
