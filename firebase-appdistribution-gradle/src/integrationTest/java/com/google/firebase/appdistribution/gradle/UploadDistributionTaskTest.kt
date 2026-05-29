@@ -719,10 +719,6 @@ class UploadDistributionTaskTest {
   }
 
   companion object {
-    // Latest gradle, AGP and google-services plugin versions. Update this when new releases come
-    // out.
-    // Also remember to update the latest AGP/gradle versions in BeePlusGradleProject.java.
-    // firebase-appdistribution-gradle/src/prodTest/java/com/google/firebase/appdistribution/gradle/BeePlusGradleProject.java#L59-L60
     private val LATEST_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion()
     private val LATEST_AGP_VERSION = VersionUtils.fetchLatestAgpVersion()
     private val LATEST_GOOGLE_SERVICES_VERSION = VersionUtils.fetchLatestGoogleServicesVersion()
@@ -746,6 +742,7 @@ class UploadDistributionTaskTest {
     @org.junit.BeforeClass
     @JvmStatic
     fun logVersions() {
+      LOGGER.info("Integration tests using versions:")
       LOGGER.info("Latest Gradle Version: $LATEST_GRADLE_VERSION")
       LOGGER.info("Latest AGP Version: $LATEST_AGP_VERSION")
       LOGGER.info("Latest Google Services Version: $LATEST_GOOGLE_SERVICES_VERSION")

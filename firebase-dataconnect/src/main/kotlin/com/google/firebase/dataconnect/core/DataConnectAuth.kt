@@ -56,7 +56,13 @@ internal class DataConnectAuth(
       GetAuthTokenResult(it.token, it.getAuthUid())
     }
 
-  data class GetAuthTokenResult(override val token: String?, val authUid: String?) : GetTokenResult
+  @JvmInline
+  value class AuthUid(val string: String) {
+    override fun toString() = "AuthUid($string)"
+  }
+
+  data class GetAuthTokenResult(override val token: String?, val authUid: AuthUid?) :
+    GetTokenResult
 
   private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
@@ -68,6 +74,9 @@ internal class DataConnectAuth(
 
     // The "sub" claim is documented to be "a non-empty string and must be the uid of the user or
     // device". See http://goo.gle/4oGjEQt for the relevant Firebase documentation.
-    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): String? = claims["sub"] as? String
+    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): AuthUid? {
+      val sub = claims["sub"] as? String
+      return if (sub === null) null else AuthUid(sub)
+    }
   }
 }
