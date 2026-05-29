@@ -18,7 +18,6 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
@@ -231,7 +230,7 @@ class DataConnectGrpcClientUnitTest {
         OperationResult(
           data = responseData,
           errors = emptyList(),
-          DataSource.CACHE,
+          DataSource.Cache(sqliteSequenceNumber),
         )
     }
   }
@@ -252,7 +251,7 @@ class DataConnectGrpcClientUnitTest {
         fetchPolicy
       )
 
-    operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.SERVER)
+    operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.Server)
   }
 
   @Test
@@ -265,7 +264,7 @@ class DataConnectGrpcClientUnitTest {
       val operationResult =
         dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-      operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.SERVER)
+      operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.Server)
     }
 
   @Test
@@ -295,7 +294,7 @@ class DataConnectGrpcClientUnitTest {
       OperationResult(
         data = responseData,
         errors = responseErrors.map { it.graphqlError },
-        DataSource.SERVER
+        DataSource.Server
       )
   }
 
@@ -318,7 +317,7 @@ class DataConnectGrpcClientUnitTest {
       OperationResult(
         data = responseData,
         errors = responseErrors.map { it.graphqlError },
-        DataSource.SERVER
+        DataSource.Server
       )
   }
 
@@ -399,7 +398,7 @@ class DataConnectGrpcClientUnitTest {
           fetchPolicy,
         )
 
-      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.SERVER)
+      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.Server)
       coVerifyOrder {
         mockDataConnectGrpcRPCs.executeQuery(
           any(),
@@ -447,7 +446,7 @@ class DataConnectGrpcClientUnitTest {
       val result =
         dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.SERVER)
+      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.Server)
       coVerifyOrder {
         mockDataConnectGrpcRPCs.executeMutation(
           any(),

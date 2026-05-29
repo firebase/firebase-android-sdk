@@ -16,13 +16,13 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
 import com.google.firebase.dataconnect.core.DataConnectCache
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectSerialization
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.QueryId
@@ -261,7 +261,7 @@ private fun Flow<
       DataConnectGrpcClient.OperationResult(
         data = executeResponse.data,
         errors = executeResponse.errors,
-        source = DataSource.SERVER,
+        source = DataSource.Server,
       )
     }
   }

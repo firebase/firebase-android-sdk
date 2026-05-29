@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.toDataSourceEnum
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.mapSuspending
@@ -141,7 +142,7 @@ internal class RegisteredDataDeserializer<T>(
             dataDeserializer,
             dataSerializersModule,
           )
-        DataSourcePair(deserializedData, it.source)
+        DataSourcePair(deserializedData, it.source.toDataSourceEnum())
       }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
