@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.toDataSourceEnum
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -30,6 +31,7 @@ import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
+import com.google.firebase.dataconnect.util.TaggedReference
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
@@ -124,7 +126,7 @@ internal class LiveQuery(
 
     newJob.join()
 
-    return registeredDataDeserializer.getLatestUpdate()!!
+    return registeredDataDeserializer.getLatestUpdate()!!.toDataSourcePair()
   }
 
   suspend fun <T> subscribe(
@@ -144,7 +146,7 @@ internal class LiveQuery(
       if (cachedUpdate === null) {
         0
       } else {
-        callback(cachedUpdate.map { Result.success(it) })
+        callback(cachedUpdate.map { Result.success(it.toDataSourcePair()) })
         cachedUpdate.sequenceNumber
       }
 
@@ -162,7 +164,7 @@ internal class LiveQuery(
     registeredDataDeserializer.onSuccessfulUpdate(
       sinceSequenceNumber = effectiveSinceSequenceNumber
     ) {
-      callback(it)
+      callback(it.toDataSourcePair())
     }
   }
 
@@ -268,3 +270,13 @@ internal class LiveQuery(
     ): RegisteredDataDeserializer<T>
   }
 }
+
+private fun <T> SequencedReference<
+  Result<TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>>
+>
+  .toDataSourcePair(): SequencedReference<Result<DataSourcePair<T>>> = map { result ->
+  result.map { it.toDataSourcePair() }
+}
+
+private fun <T> TaggedReference<com.google.firebase.dataconnect.core.DataSource, T>
+  .toDataSourcePair(): DataSourcePair<T> = DataSourcePair(ref, tag.toDataSourceEnum())

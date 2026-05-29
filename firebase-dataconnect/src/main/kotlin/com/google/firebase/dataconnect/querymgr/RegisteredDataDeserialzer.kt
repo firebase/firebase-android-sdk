@@ -18,15 +18,16 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.DataConnectSerialization
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.core.toDataSourceEnum
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.mapSuspending
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.dataconnect.util.TaggedReference
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +55,7 @@ internal class RegisteredDataDeserializer<T>(
   // atomically emit a new event and ensure that it has a larger sequence number, and we don't want
   // to "replay" an older result. Use `latestUpdate` instead of relying on the replay cache.
   private val updates =
-    MutableSharedFlow<SequencedReference<SuspendingLazy<Result<DataSourcePair<T>>>>>(
+    MutableSharedFlow<SequencedReference<SuspendingLazy<Result<TaggedReference<DataSource, T>>>>>(
       replay = 0,
       extraBufferCapacity = Int.MAX_VALUE,
       onBufferOverflow = BufferOverflow.SUSPEND,
@@ -65,7 +66,7 @@ internal class RegisteredDataDeserializer<T>(
   // occurred.
   private val latestUpdate =
     MutableStateFlow<
-      NullableReference<SequencedReference<SuspendingLazy<Result<DataSourcePair<T>>>>>
+      NullableReference<SequencedReference<SuspendingLazy<Result<TaggedReference<DataSource, T>>>>>
     >(
       NullableReference(null)
     )
@@ -77,7 +78,7 @@ internal class RegisteredDataDeserializer<T>(
   // This flow is updated by initializing the lazy value from `latestUpdate`; therefore, make sure
   // to initialize the lazy value from `latestUpdate` before getting this flow's value.
   private val latestSuccessfulUpdate =
-    MutableStateFlow<NullableReference<SequencedReference<DataSourcePair<T>>>>(
+    MutableStateFlow<NullableReference<SequencedReference<TaggedReference<DataSource, T>>>>(
       NullableReference(null)
     )
 
@@ -105,10 +106,10 @@ internal class RegisteredDataDeserializer<T>(
     check(emitSucceeded) { "updates.tryEmit(newUpdate) should have returned true" }
   }
 
-  suspend fun getLatestUpdate(): SequencedReference<Result<DataSourcePair<T>>>? =
+  suspend fun getLatestUpdate(): SequencedReference<Result<TaggedReference<DataSource, T>>>? =
     latestUpdate.value.ref?.mapSuspending { it.get() }
 
-  suspend fun getLatestSuccessfulUpdate(): SequencedReference<DataSourcePair<T>>? {
+  suspend fun getLatestSuccessfulUpdate(): SequencedReference<TaggedReference<DataSource, T>>? {
     // Call getLatestUpdate() to populate `latestSuccessfulUpdate` with the most recent update.
     getLatestUpdate()
     return latestSuccessfulUpdate.value.ref
@@ -116,7 +117,7 @@ internal class RegisteredDataDeserializer<T>(
 
   suspend fun onSuccessfulUpdate(
     sinceSequenceNumber: Long?,
-    callback: suspend (SequencedReference<Result<DataSourcePair<T>>>) -> Unit
+    callback: suspend (SequencedReference<Result<TaggedReference<DataSource, T>>>) -> Unit
   ): Nothing {
     var lastSequenceNumber = sinceSequenceNumber ?: Long.MIN_VALUE
     updates
@@ -132,7 +133,7 @@ internal class RegisteredDataDeserializer<T>(
   private fun lazyDeserialize(
     requestId: String,
     sequencedResult: SequencedReference<Result<OperationResult>>
-  ): SuspendingLazy<Result<DataSourcePair<T>>> = SuspendingLazy {
+  ): SuspendingLazy<Result<TaggedReference<DataSource, T>>> = SuspendingLazy {
     sequencedResult.ref
       .mapCatching {
         val deserializedData =
@@ -142,7 +143,7 @@ internal class RegisteredDataDeserializer<T>(
             dataDeserializer,
             dataSerializersModule,
           )
-        DataSourcePair(deserializedData, it.source.toDataSourceEnum())
+        TaggedReference(it.source, deserializedData)
       }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
