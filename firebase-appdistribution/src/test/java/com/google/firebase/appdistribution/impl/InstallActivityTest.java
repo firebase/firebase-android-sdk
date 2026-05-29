@@ -23,9 +23,11 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Intent;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +35,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
@@ -47,6 +50,7 @@ public class InstallActivityTest {
 
   @Before
   public void setUp() {
+    ShadowLog.clear();
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
     // Enable unknown sources by default for tests to reach startAndroidPackageInstallerIntent
@@ -61,7 +65,20 @@ public class InstallActivityTest {
   }
 
   @Test
-  public void onCreate_withoutInstallPath_finishesActivity() {
+  public void onCreate_withNullIntent_finishesActivityAndLogsError() {
+    ActivityController<InstallActivity> controller =
+        Robolectric.buildActivity(InstallActivity.class, null);
+    controller.get().setIntent(null);
+    controller.get().setTheme(androidx.appcompat.R.style.Theme_AppCompat);
+    controller.create().resume();
+
+    InstallActivity activity = controller.get();
+    assertTrue(activity.isFinishing());
+    assertErrorLogged("InstallActivity: No intent provided");
+  }
+
+  @Test
+  public void onCreate_withoutInstallPath_finishesActivityAndLogsError() {
     Intent intent = new Intent();
     // No INSTALL_PATH extra
 
@@ -72,10 +89,11 @@ public class InstallActivityTest {
 
     InstallActivity activity = controller.get();
     assertTrue(activity.isFinishing());
+    assertErrorLogged("InstallActivity: No INSTALL_PATH extra provided");
   }
 
   @Test
-  public void onCreate_withNullInstallPath_finishesActivity() {
+  public void onCreate_withNullInstallPath_finishesActivityAndLogsError() {
     Intent intent = new Intent();
     intent.putExtra("INSTALL_PATH", (String) null);
 
@@ -86,10 +104,11 @@ public class InstallActivityTest {
 
     InstallActivity activity = controller.get();
     assertTrue(activity.isFinishing());
+    assertErrorLogged("InstallActivity: No INSTALL_PATH extra provided");
   }
 
   @Test
-  public void onCreate_withEmptyInstallPath_finishesActivity() {
+  public void onCreate_withEmptyInstallPath_finishesActivityAndLogsError() {
     Intent intent = new Intent();
     intent.putExtra("INSTALL_PATH", "");
 
@@ -100,10 +119,11 @@ public class InstallActivityTest {
 
     InstallActivity activity = controller.get();
     assertTrue(activity.isFinishing());
+    assertErrorLogged("InstallActivity: No INSTALL_PATH extra provided");
   }
 
   @Test
-  public void onCreate_withValidInstallPath_doesNotFinishAndStartsInstaller() throws IOException {
+  public void onCreate_withValidInstallPath_startsInstallIntent() throws IOException {
     File tempFile = new File(ApplicationProvider.getApplicationContext().getCacheDir(), "temp.apk");
     tempFile.createNewFile();
     tempFile.deleteOnExit();
@@ -124,5 +144,25 @@ public class InstallActivityTest {
     assertEquals(Intent.ACTION_VIEW, startedIntent.getAction());
     assertEquals("application/vnd.android.package-archive", startedIntent.getType());
     assertTrue((startedIntent.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != 0);
+    assertNoErrorLogged();
+  }
+
+  private void assertErrorLogged(String expectedMessage) {
+    List<ShadowLog.LogItem> logs = ShadowLog.getLogsForTag("FirebaseAppDistribution");
+    boolean found = false;
+    for (ShadowLog.LogItem log : logs) {
+      if (log.type == Log.ERROR && log.msg != null && log.msg.contains(expectedMessage)) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue("Expected error log not found: " + expectedMessage, found);
+  }
+
+  private void assertNoErrorLogged() {
+    List<ShadowLog.LogItem> logs = ShadowLog.getLogsForTag("FirebaseAppDistribution");
+    for (ShadowLog.LogItem log : logs) {
+      assertFalse("Expected no error logs, but found: " + log.msg, log.type == Log.ERROR);
+    }
   }
 }
