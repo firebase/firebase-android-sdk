@@ -872,7 +872,7 @@ public class FirebaseMessaging {
 
   private void invokeOnRegistrationChanged(String token, boolean isUnregistered) {
     // onNewToken() is only invoked for the default app as there is no parameter to identify which
-// app the token is for. 
+    // app the token is for.
     if (!FirebaseApp.DEFAULT_APP_NAME.equals(firebaseApp.getName())) {
       return;
     }

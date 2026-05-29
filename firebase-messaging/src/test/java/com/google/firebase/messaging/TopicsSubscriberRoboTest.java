@@ -66,9 +66,7 @@ public class TopicsSubscriberRoboTest {
   private TopicsSubscriber topicsSubscriber;
   private FakeScheduledExecutorService fakeExecutor;
 
-  @Mock private GmsRpc mockRpc;
   @Mock private Metadata mockMetadata;
-  @Mock private FirebaseMessaging mockFcm;
   @Mock private FirebaseInstallationsApi mockInstallationsApi;
   @Mock private HttpURLConnection mockConnection;
   @Mock private TopicSubscriptionClient mockTopicSubscriptionClient;
@@ -148,9 +146,6 @@ public class TopicsSubscriberRoboTest {
 
   @Test
   public void testSingleSubscribe() {
-    // Mock client behavior for verify
-    // doNothing().when(mockTopicSubscriptionClient).subscribe(TEST_TOPIC);
-
     Task<Void> task = topicsSubscriber.subscribeToTopic(TEST_TOPIC);
     // fakeExecutor hasn't executed thus the queue is non-empty
     assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe(TEST_TOPIC));
@@ -179,8 +174,6 @@ public class TopicsSubscriberRoboTest {
 
   @Test
   public void testSingleSubscribe_failure() throws Exception {
-    // doReturn(500).when(mockConnection).getResponseCode();
-    // FakeHttp.addPendingHttpResponse(500, "{}");
     doThrow(new IOException(GmsRpc.ERROR_INTERNAL_SERVER_ERROR))
         .when(mockTopicSubscriptionClient)
         .subscribe(anyString());
@@ -218,9 +211,6 @@ public class TopicsSubscriberRoboTest {
 
   @Test
   public void testMultipleOperations() {
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-
     Task<Void> task1 = topicsSubscriber.subscribeToTopic("topic1");
     Task<Void> task2 = topicsSubscriber.subscribeToTopic("topic2");
     Task<Void> task3 = topicsSubscriber.unsubscribeFromTopic("topic1");
@@ -235,9 +225,6 @@ public class TopicsSubscriberRoboTest {
     // execute immediately
     fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
 
-    InOrder inOrder = inOrder(mockRpc);
-    // inOrder.verify(mockRpc).unsubscribeFromTopic(TEST_TOKEN, "topic1");
-
     for (Task<Void> task : Arrays.asList(task1, task2, task3, task4)) {
       assertThat(task.isSuccessful()).isTrue();
     }
@@ -247,21 +234,11 @@ public class TopicsSubscriberRoboTest {
 
   @Test
   public void testMultipleOperations_withFailure() throws Exception {
-    // First success, second fail.
-    // Since we mock the same connection object, we need to handle sequential calls?
-    // Or just make it fail if it's the second call?
-    // Hard to verify sequential calls on same mock object unless we use
-    // thenReturn(200).thenReturn(500).
-    // doReturn(200).doReturn(500).when(mockConnection).getResponseCode();
-
     // Mock client behavior
     doNothing()
         .doThrow(new IOException(GmsRpc.ERROR_INTERNAL_SERVER_ERROR))
         .when(mockTopicSubscriptionClient)
         .subscribe(anyString());
-
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-    // FakeHttp.addPendingHttpResponse(500, "{}");
 
     Task<Void> task1 = topicsSubscriber.subscribeToTopic("topic1");
     Task<Void> task2 = topicsSubscriber.subscribeToTopic("topic2");
@@ -272,13 +249,8 @@ public class TopicsSubscriberRoboTest {
     // execute immediately
     fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
 
-    InOrder inOrder = inOrder(mockRpc, mockTopicSubscriptionClient);
-    // Subscribe is not on RPC anymore
-    // inOrder.verify(mockRpc).subscribeToTopic(TEST_TOKEN, "topic1");
-    // inOrder.verify(mockRpc).subscribeToTopic(TEST_TOKEN, "topic2");
+    InOrder inOrder = inOrder(mockTopicSubscriptionClient);
     inOrder.verify(mockTopicSubscriptionClient).subscribe("topic1");
-    // Mock client behavior
-    // Mock client behavior
     doNothing()
         .doThrow(new IOException(GmsRpc.ERROR_INTERNAL_SERVER_ERROR)) // Fail first attempt (task2)
         .doNothing() // Succeed second attempt (retry of task2)
@@ -291,11 +263,7 @@ public class TopicsSubscriberRoboTest {
     assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe("topic2"));
 
     // Now make it succeed and run it again
-    // Reset mock to return 200
-    // doReturn(200).when(mockConnection).getResponseCode();
-    // FakeHttp.addPendingHttpResponse(200, "{}");
     topicsSubscriber.syncTopics();
-    // execute immediately
     // execute immediately
     fakeExecutor.simulateNormalOperationFor(30, SECONDS);
 
@@ -307,12 +275,6 @@ public class TopicsSubscriberRoboTest {
   @Test
   public void testMultipleOperationsOnSameTopic_withFailure() throws Exception {
     // Pass the first subscription but fail the second subscription operation
-    // doReturn(200).doReturn(200).doReturn(500).when(mockConnection).getResponseCode();
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-    // FakeHttp.addPendingHttpResponse(500, "{}");
-
-    // Mock client behavior
-    // Mock client behavior
     doNothing() // task1 (subscribe) - success
         .doThrow(new IOException(GmsRpc.ERROR_INTERNAL_SERVER_ERROR)) // task3 (subscribe) - fail
         .doNothing() // task3 retry - success
@@ -345,13 +307,8 @@ public class TopicsSubscriberRoboTest {
     // Remaining queue should be the single subscribe operation
     assertThat(topicsSubscriber.hasPendingOperation()).isTrue();
     assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe(TEST_TOPIC));
-    // Now make it succeed and run it again
-    // doReturn(200).when(mockConnection).getResponseCode();
-    // FakeHttp.addPendingHttpResponse(200, "{}");
 
     topicsSubscriber.syncTopics();
-    // execute immediately
-    // execute immediately
     // execute immediately
     fakeExecutor.simulateNormalOperationFor(300, SECONDS);
     assertThat(task3.isSuccessful()).isTrue();
@@ -362,10 +319,6 @@ public class TopicsSubscriberRoboTest {
   /** Test existing operations in the queue at startup */
   @Test
   public void testOperationsAlreadyInQueue() {
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-    // FakeHttp.addPendingHttpResponse(200, "{}");
-
     // Add a couple of operations, then create the TopicsSubscriber again
     topicsSubscriber.scheduleTopicOperation(TopicOperation.subscribe("topic1"));
     topicsSubscriber.scheduleTopicOperation(TopicOperation.subscribe("topic2"));
@@ -381,11 +334,6 @@ public class TopicsSubscriberRoboTest {
 
     // Initial sync
     fakeExecutor.simulateNormalOperationFor(0, SECONDS);
-    // store = topicsSubscriber.getStore(); // Not needed if store is same instance?
-    // Wait, createInstance uses TopicsStore.getInstance which returns singleton?
-    // In setUp, we call TopicsStore.getInstance(..., fakeExecutor).
-    // Here we pass 'store' to constructor.
-    // The original test called createInstance which calls TopicsStore.getInstance.
 
     Task<Void> task = topicsSubscriber.subscribeToTopic("topic3");
 
