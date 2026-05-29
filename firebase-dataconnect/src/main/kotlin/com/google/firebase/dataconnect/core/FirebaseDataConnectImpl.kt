@@ -40,6 +40,7 @@ import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCorou
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.throwCombinedException
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CancellationException
@@ -154,13 +155,19 @@ internal class FirebaseDataConnectImpl(
     }
 
     data class Initialized(
+      val cache: DataConnectCache?,
       val grpcRPCs: DataConnectGrpcRPCs,
       val grpcClient: DataConnectGrpcClient,
       val queryManager: QueryManager,
       val realtimeQueryManager: RealtimeQueryManager,
     ) : State
 
-    data class Closing(val grpcRPCs: DataConnectGrpcRPCs, val closeJob: Deferred<Unit>) : State
+    data class Closing(
+      val grpcRPCs: DataConnectGrpcRPCs,
+      val cache: DataConnectCache?,
+      val closeJob: Deferred<Unit>
+    ) : State
+
     object Closed : State
   }
 
@@ -182,11 +189,13 @@ internal class FirebaseDataConnectImpl(
       state.updateAndGet { currentState ->
         when (currentState) {
           is State.New -> {
-            val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
+            val backendInfo = createDataConnectBackendInfo(currentState.emulatorSettings)
+            val cache = createDataConnectCache(backendInfo)
+            val grpcRPCs = createDataConnectGrpcRPCs(backendInfo, cache)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcClient)
-            val realtimeQueryManager = createRealtimeQueryManager(grpcClient)
-            State.Initialized(grpcRPCs, grpcClient, queryManager, realtimeQueryManager)
+            val realtimeQueryManager = createRealtimeQueryManager(grpcClient, cache)
+            State.Initialized(cache, grpcRPCs, grpcClient, queryManager, realtimeQueryManager)
           }
           is State.Initialized -> currentState
           is State.Closing -> currentState
@@ -230,45 +239,58 @@ internal class FirebaseDataConnectImpl(
     return sha512Bytes.toAlphaNumericString()
   }
 
-  private fun createDataConnectGrpcRPCs(
+  private fun createDataConnectBackendInfo(
     emulatorSettings: EmulatedServiceSettings?
-  ): DataConnectGrpcRPCs {
+  ): DataConnectBackendInfo {
     val backendInfoFromSettings =
       DataConnectBackendInfo(
         host = settings.host,
         sslEnabled = settings.sslEnabled,
         isEmulator = false
       )
+
     val backendInfoFromEmulatorSettings =
       emulatorSettings?.run {
         DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
       }
-    val backendInfo =
-      if (backendInfoFromEmulatorSettings == null) {
-        backendInfoFromSettings
-      } else {
-        if (!settings.isDefaultHost()) {
-          logger.warn(
-            "Host has been set in DataConnectSettings and useEmulator, " +
-              "emulator host will be used."
-          )
+
+    return if (backendInfoFromEmulatorSettings == null) {
+      backendInfoFromSettings
+    } else {
+      if (!settings.isDefaultHost()) {
+        logger.warn(
+          "Host has been set in DataConnectSettings and useEmulator, " +
+            "emulator host will be used."
+        )
+      }
+      backendInfoFromEmulatorSettings
+    }
+  }
+
+  private fun createDataConnectCache(backendInfo: DataConnectBackendInfo): DataConnectCache? {
+    val cacheSettings = settings.cacheSettings ?: return null
+
+    val dbFile =
+      when (cacheSettings.storage) {
+        CacheSettings.Storage.MEMORY -> null
+        CacheSettings.Storage.PERSISTENT -> {
+          val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+          context.getDatabasePath(dbName)
         }
-        backendInfoFromEmulatorSettings
       }
 
-    val cacheSettings =
-      settings.cacheSettings?.run {
-        val dbFile =
-          when (storage) {
-            CacheSettings.Storage.MEMORY -> null
-            CacheSettings.Storage.PERSISTENT -> {
-              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
-              context.getDatabasePath(dbName)
-            }
-          }
-        DataConnectGrpcRPCs.CacheSettings(dbFile, maxAge)
-      }
+    return DataConnectCache(
+      dbFile,
+      cacheSettings.maxAge,
+      nonBlockingDispatcher,
+      Logger("DataConnectCache").also { it.debug { "created by ${logger.nameWithId}" } },
+    )
+  }
 
+  private fun createDataConnectGrpcRPCs(
+    backendInfo: DataConnectBackendInfo,
+    cache: DataConnectCache?
+  ): DataConnectGrpcRPCs {
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
@@ -285,7 +307,7 @@ internal class FirebaseDataConnectImpl(
         nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
-        cacheSettings = cacheSettings,
+        cache = cache,
         parentLogger = logger,
       )
 
@@ -349,12 +371,16 @@ internal class FirebaseDataConnectImpl(
     return QueryManager(liveQueries)
   }
 
-  private fun createRealtimeQueryManager(grpcClient: DataConnectGrpcClient): RealtimeQueryManager =
+  private fun createRealtimeQueryManager(
+    grpcClient: DataConnectGrpcClient,
+    cache: DataConnectCache?,
+  ): RealtimeQueryManager =
     RealtimeQueryManager(
       grpcClient = grpcClient,
       coroutineScope = coroutineScope,
       idStringGenerator = idStringGenerator,
       serialization = serialization,
+      cache = cache,
       logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
     )
 
@@ -500,9 +526,15 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs): Deferred<Unit> {
+    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs, cache: DataConnectCache?): Deferred<Unit> {
       @OptIn(DelicateCoroutinesApi::class)
-      val closeJob = GlobalScope.async(start = CoroutineStart.LAZY) { grpcRPCs.close() }
+      val closeJob: Deferred<Unit> =
+        GlobalScope.async(start = CoroutineStart.LAZY) {
+          throwCombinedException {
+            grpcRPCs.runCatching { close() }
+            cache?.runCatching { close() }
+          }
+        }
       closeJob.invokeOnCompletion { exception ->
         if (exception !== null) {
           logger.warn(exception) { "close() failed" }
@@ -528,10 +560,16 @@ internal class FirebaseDataConnectImpl(
         when (currentState) {
           is State.New -> State.Closed
           is State.Initialized ->
-            State.Closing(currentState.grpcRPCs, createCloseJob(currentState.grpcRPCs))
+            State.Closing(
+              currentState.grpcRPCs,
+              currentState.cache,
+              createCloseJob(currentState.grpcRPCs, currentState.cache)
+            )
           is State.Closing ->
             if (currentState.closeJob.isCancelled) {
-              currentState.copy(closeJob = createCloseJob(currentState.grpcRPCs))
+              currentState.copy(
+                closeJob = createCloseJob(currentState.grpcRPCs, currentState.cache)
+              )
             } else {
               currentState
             }
