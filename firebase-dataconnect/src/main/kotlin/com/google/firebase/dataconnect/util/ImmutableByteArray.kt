@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.util.ImmutableByteArray.Companion.adopt
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 
 /**
@@ -24,7 +25,8 @@ import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
  * This class provides a way to pass around a [ByteArray] while ensuring that it won't be modified.
  * It does not copy the array when created via [adopt], but rather takes ownership of it.
  */
-internal class ImmutableByteArray private constructor(private val array: ByteArray) {
+internal class ImmutableByteArray private constructor(private val array: ByteArray) :
+  Comparable<ImmutableByteArray> {
 
   /** The size of the underlying byte array. */
   val size: Int
@@ -61,6 +63,18 @@ internal class ImmutableByteArray private constructor(private val array: ByteArr
    */
   fun to0xHexString(include0xPrefix: Boolean = true): String =
     array.to0xHexString(include0xPrefix = include0xPrefix)
+
+  /**
+   * Compares this object's underlying byte array with that of the given [ImmutableByteArray] for
+   * relative ordering based on the contents and the size of the arrays.
+   *
+   * Although the exact algorithm is not specified, it is guaranteed to produce a stable ordering
+   * for every call with the same arrays with the same contents, across process and device restarts.
+   * That is, if you call `a.compareTo(b)` today, then save `a` and `b` to files, then in 10 years,
+   * after many process restarts, load `a` and `b` from those files and call `a.compareTo(b)` again,
+   * it will return the same sign, or zero, as it did before.
+   */
+  override fun compareTo(other: ImmutableByteArray): Int = array.contentCompareTo(other.array)
 
   /**
    * Creates a deep copy of this [ImmutableByteArray].

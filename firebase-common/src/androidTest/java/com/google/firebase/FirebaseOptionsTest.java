@@ -30,6 +30,7 @@ public class FirebaseOptionsTest {
   private static final String GA_TRACKING_ID = "UA-123456-2";
   private static final String GCM_SENDER_ID = "309678045053";
   private static final String STORAGE_BUCKET = "ghconfigtest-644f2";
+  private static final String RECAPTCHA_SITE_KEY = "6L00000sAAAAAAaaaaaAAaa00000_AAAaAaaAa00";
   private static final String GCP_PROJECT_ID = "test-product-id";
 
   private static final FirebaseOptions ALL_VALUES_OPTIONS =
@@ -40,6 +41,7 @@ public class FirebaseOptionsTest {
           .setGaTrackingId(GA_TRACKING_ID)
           .setGcmSenderId(GCM_SENDER_ID)
           .setStorageBucket(STORAGE_BUCKET)
+          .setRecaptchaSiteKey(RECAPTCHA_SITE_KEY)
           .setProjectId(GCP_PROJECT_ID)
           .build();
 
@@ -53,6 +55,7 @@ public class FirebaseOptionsTest {
             .setGaTrackingId(GA_TRACKING_ID)
             .setGcmSenderId(GCM_SENDER_ID)
             .setStorageBucket(STORAGE_BUCKET)
+            .setRecaptchaSiteKey(RECAPTCHA_SITE_KEY)
             .setProjectId(GCP_PROJECT_ID)
             .build();
     assertThat(firebaseOptions.getApplicationId()).isEqualTo(GOOGLE_APP_ID);
@@ -61,6 +64,7 @@ public class FirebaseOptionsTest {
     assertThat(firebaseOptions.getGaTrackingId()).isEqualTo(GA_TRACKING_ID);
     assertThat(firebaseOptions.getGcmSenderId()).isEqualTo(GCM_SENDER_ID);
     assertThat(firebaseOptions.getStorageBucket()).isEqualTo(STORAGE_BUCKET);
+    assertThat(firebaseOptions.getRecaptchaSiteKey()).isEqualTo(RECAPTCHA_SITE_KEY);
     assertThat(firebaseOptions.getProjectId()).isEqualTo(GCP_PROJECT_ID);
   }
 

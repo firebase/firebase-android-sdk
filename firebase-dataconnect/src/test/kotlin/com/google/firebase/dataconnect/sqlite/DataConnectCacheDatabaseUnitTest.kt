@@ -24,8 +24,11 @@ import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryR
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Found
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.NotFound
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Stale
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.Quadruple
@@ -53,23 +56,27 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
+import io.kotest.property.assume
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.every
@@ -638,18 +645,144 @@ class DataConnectCacheDatabaseUnitTest {
   }
 
   @Test
+  fun `insertQueryResult() should set last_update_sequence_number only for itself`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
+      queryIdArb().distinctPair(),
+    ) { authUid, maxAge, (queryId1, queryId2) ->
+      val queryResultArb =
+        QueryResultArb(
+          entityIdArb = @OptIn(DelicateKotest::class) Arb.proto.structKey(length = 4).distinct(),
+          entityCountRange = 0..5,
+        )
+      val queryResult1 = queryResultArb.bind()
+      val queryResult2 = queryResultArb.bind()
+
+      val sequenceNumber1 =
+        dataConnectCacheDatabase.insertQueryResult(
+          authUid.authUid,
+          queryId1.queryId,
+          queryResult1.hydratedStruct,
+          maxAge = maxAge,
+          currentTimeMillis = 0L,
+          getEntityIdForPath = queryResult1::getEntityIdForPath,
+        )
+      val sequenceNumber2 =
+        dataConnectCacheDatabase.insertQueryResult(
+          authUid.authUid,
+          queryId2.queryId,
+          queryResult2.hydratedStruct,
+          maxAge = maxAge,
+          currentTimeMillis = 0L,
+          getEntityIdForPath = queryResult2::getEntityIdForPath,
+        )
+
+      withClue("query1") {
+        val result =
+          dataConnectCacheDatabase.getQueryResult(
+            authUid.authUid,
+            queryId1.queryId,
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
+          )
+        check(result is Found)
+        result.maxLastUpdateSequenceNumber shouldBe sequenceNumber1
+      }
+      withClue("query2") {
+        val result =
+          dataConnectCacheDatabase.getQueryResult(
+            authUid.authUid,
+            queryId2.queryId,
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
+          )
+        check(result is Found)
+        result.maxLastUpdateSequenceNumber shouldBe sequenceNumber2
+      }
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should update last_update_sequence_number for its entities`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
+      queryIdArb().distinctPair(),
+    ) { authUid, maxAge, (queryId1, queryId2) ->
+      val queryResultArb =
+        QueryResultArb(
+            entityCountRange = 0..5,
+            entityRepeatPolicy = INTER_SAMPLE,
+          )
+          .filter { it.entityByPath.isNotEmpty() }
+      val queryResult1 = queryResultArb.bind()
+      val queryResult2 = queryResultArb.bind()
+
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId1.queryId,
+        queryResult1.hydratedStruct,
+        maxAge = maxAge,
+        currentTimeMillis = 0L,
+        getEntityIdForPath = queryResult1::getEntityIdForPath,
+      )
+      val sequenceNumber2 =
+        dataConnectCacheDatabase.insertQueryResult(
+          authUid.authUid,
+          queryId2.queryId,
+          queryResult2.hydratedStruct,
+          maxAge = maxAge,
+          currentTimeMillis = 0L,
+          getEntityIdForPath = queryResult2::getEntityIdForPath,
+        )
+
+      withClue("query1") {
+        val result =
+          dataConnectCacheDatabase.getQueryResult(
+            authUid.authUid,
+            queryId1.queryId,
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
+          )
+        check(result is Found)
+        // Even query1 should report query2's sequence number since its insert modified the
+        // last_update_sequence_number of at least one of query1's entities.
+        result.maxLastUpdateSequenceNumber shouldBe sequenceNumber2
+      }
+      withClue("query2") {
+        val result =
+          dataConnectCacheDatabase.getQueryResult(
+            authUid.authUid,
+            queryId2.queryId,
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
+          )
+        check(result is Found)
+        result.maxLastUpdateSequenceNumber shouldBe sequenceNumber2
+      }
+    }
+  }
+
+  @Test
   fun `getQueryResult() when maxAge is zero and staleResult=Stale should return Stale`() =
     testQueryResultInsertedWithMaxAgeZero(
       staleResult = Stale::class,
-      verifyResult = { result, _, expectedStaleness -> result shouldBe Stale(expectedStaleness) }
+      verifyResult = { result, _, expectedStaleness, _ -> result shouldBe Stale(expectedStaleness) }
     )
 
   @Test
   fun `getQueryResult() when maxAge is zero and staleResult=Found should return Found`() =
     testQueryResultInsertedWithMaxAgeZero(
       staleResult = Found::class,
-      verifyResult = { result, insertedData, expectedStaleness ->
-        result shouldBe Found(insertedData, -expectedStaleness)
+      verifyResult = { result, insertedData, expectedStaleness, insertSequenceNumber ->
+        result shouldBe Found(insertedData, -expectedStaleness, insertSequenceNumber)
       }
     )
 
@@ -657,12 +790,18 @@ class DataConnectCacheDatabaseUnitTest {
   fun `getQueryResult() when maxAge is zero and staleResult=NotFound should return NotFound`() =
     testQueryResultInsertedWithMaxAgeZero(
       staleResult = NotFound::class,
-      verifyResult = { result, _, _ -> result shouldBe NotFound }
+      verifyResult = { result, _, _, _ -> result shouldBe NotFound }
     )
 
   private fun testQueryResultInsertedWithMaxAgeZero(
     staleResult: KClass<out GetQueryResultResult>,
-    verifyResult: (GetQueryResultResult, insertedData: Struct, expectedStaleness: Duration) -> Unit,
+    verifyResult:
+      (
+        GetQueryResultResult,
+        insertedData: Struct,
+        expectedStaleness: Duration,
+        sequenceNumber: SqliteSequenceNumber,
+      ) -> Unit,
   ) = runTest {
     dataConnectCacheDatabase.initialize()
 
@@ -682,9 +821,9 @@ class DataConnectCacheDatabaseUnitTest {
         time1 = time1,
         time2 = time2,
         staleResult = staleResult,
-        verifyResult = {
+        verifyResult = { result, insertSequenceNumber ->
           val expectedStaleness = durationFromMillis(time2.toBigInteger() - time1.toBigInteger())
-          verifyResult(it, queryResult.hydratedStruct, expectedStaleness)
+          verifyResult(result, queryResult.hydratedStruct, expectedStaleness, insertSequenceNumber)
         },
       )
     }
@@ -694,15 +833,15 @@ class DataConnectCacheDatabaseUnitTest {
   fun `getQueryResult() after maxAge time has passed and staleResult=Stale should return Stale`() =
     testGetQueryResultAfterMaxAgeTimeHasPassed(
       staleResult = Stale::class,
-      verifyResult = { result, _, expectedStaleness -> result shouldBe Stale(expectedStaleness) }
+      verifyResult = { result, _, expectedStaleness, _ -> result shouldBe Stale(expectedStaleness) }
     )
 
   @Test
   fun `getQueryResult() after maxAge time has passed and staleResult=Found should return Found`() =
     testGetQueryResultAfterMaxAgeTimeHasPassed(
       staleResult = Found::class,
-      verifyResult = { result, insertedData, expectedStaleness ->
-        result shouldBe Found(insertedData, -expectedStaleness)
+      verifyResult = { result, insertedData, expectedStaleness, insertSequenceNumber ->
+        result shouldBe Found(insertedData, -expectedStaleness, insertSequenceNumber)
       }
     )
 
@@ -710,12 +849,18 @@ class DataConnectCacheDatabaseUnitTest {
   fun `getQueryResult() after maxAge time has passed and staleResult=NotFound should return NotFound`() =
     testGetQueryResultAfterMaxAgeTimeHasPassed(
       staleResult = NotFound::class,
-      verifyResult = { result, _, _ -> result shouldBe NotFound }
+      verifyResult = { result, _, _, _ -> result shouldBe NotFound }
     )
 
   private fun testGetQueryResultAfterMaxAgeTimeHasPassed(
     staleResult: KClass<out GetQueryResultResult>,
-    verifyResult: (GetQueryResultResult, insertedData: Struct, expectedStaleness: Duration) -> Unit,
+    verifyResult:
+      (
+        GetQueryResultResult,
+        insertedData: Struct,
+        expectedStaleness: Duration,
+        insertSequenceNumber: SqliteSequenceNumber,
+      ) -> Unit,
   ) = runTest {
     dataConnectCacheDatabase.initialize()
 
@@ -758,7 +903,14 @@ class DataConnectCacheDatabaseUnitTest {
         time1 = time1,
         time2 = time2,
         staleResult = staleResult,
-        verifyResult = { verifyResult(it, queryResult.hydratedStruct, expectedStaleness) },
+        verifyResult = { result, insertSequenceNumber ->
+          verifyResult(
+            result,
+            queryResult.hydratedStruct,
+            expectedStaleness,
+            insertSequenceNumber,
+          )
+        },
       )
     }
   }
@@ -793,7 +945,14 @@ class DataConnectCacheDatabaseUnitTest {
         time1 = time1,
         time2 = time2,
         staleResult = staleResult,
-        verifyResult = { it shouldBe Found(queryResult.hydratedStruct, Duration.ZERO) },
+        verifyResult = { result, insertSequenceNumber ->
+          result shouldBe
+            Found(
+              queryResult.hydratedStruct,
+              Duration.ZERO,
+              insertSequenceNumber,
+            )
+        },
       )
     }
   }
@@ -844,7 +1003,14 @@ class DataConnectCacheDatabaseUnitTest {
           time1 = time1,
           time2 = time2,
           staleResult = staleResult,
-          verifyResult = { it shouldBe Found(queryResult.hydratedStruct, freshnessRemaining) },
+          verifyResult = { result, insertSequenceNumber ->
+            result shouldBe
+              Found(
+                queryResult.hydratedStruct,
+                freshnessRemaining,
+                insertSequenceNumber,
+              )
+          },
         )
       }
     }
@@ -857,16 +1023,17 @@ class DataConnectCacheDatabaseUnitTest {
     time1: Long,
     time2: Long,
     staleResult: KClass<out GetQueryResultResult>,
-    verifyResult: (GetQueryResultResult) -> Unit,
+    verifyResult: (GetQueryResultResult, insertSequenceNumber: SqliteSequenceNumber) -> Unit,
   ) {
-    dataConnectCacheDatabase.insertQueryResult(
-      authUid.authUid,
-      queryId.queryId,
-      queryResultData,
-      maxAge = maxAge,
-      currentTimeMillis = time1,
-      getEntityIdForPath = null,
-    )
+    val sequenceNumber =
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId.queryId,
+        queryResultData,
+        maxAge = maxAge,
+        currentTimeMillis = time1,
+        getEntityIdForPath = null,
+      )
 
     val result =
       dataConnectCacheDatabase.getQueryResult(
@@ -876,7 +1043,174 @@ class DataConnectCacheDatabaseUnitTest {
         staleResult,
       )
 
-    verifyResult(result)
+    verifyResult(result, sequenceNumber)
+  }
+
+  @Test
+  fun `getQueryResult() last_update_sequence_number all null`() =
+    testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+      editDbAfterInsert = { db, _, logger ->
+        db.execSQL(logger, "UPDATE queries SET last_update_sequence_number = NULL")
+        db.execSQL(logger, "UPDATE entities SET last_update_sequence_number = NULL")
+      },
+      verifyResult = { result, _, _ -> result.maxLastUpdateSequenceNumber.shouldBeNull() },
+    )
+
+  @Test
+  fun `getQueryResult() query last_update_sequence_number is null`() =
+    testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+      editDbAfterInsert = { db, _, logger ->
+        db.execSQL(logger, "UPDATE queries SET last_update_sequence_number = NULL")
+      },
+      verifyResult = { result, insertSequenceNumber, _ ->
+        result.maxLastUpdateSequenceNumber shouldBe insertSequenceNumber
+      },
+    )
+
+  @Test
+  fun `getQueryResult() entities last_update_sequence_number are null`() =
+    testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+      editDbAfterInsert = { db, _, logger ->
+        db.execSQL(logger, "UPDATE entities SET last_update_sequence_number = NULL")
+      },
+      verifyResult = { result, insertSequenceNumber, _ ->
+        result.maxLastUpdateSequenceNumber shouldBe insertSequenceNumber
+      },
+    )
+
+  @Test
+  fun `getQueryResult() query last_update_sequence_number is largest`() =
+    testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+      editDbAfterInsert = { db, insertSequenceNumber, logger ->
+        val newSequenceNumber = insertSequenceNumber.sequenceNumber + 1
+        db.execSQL(logger, "UPDATE queries SET last_update_sequence_number = $newSequenceNumber")
+        SqliteSequenceNumber(newSequenceNumber)
+      },
+      verifyResult = { result, _, querySequenceNumber ->
+        result.maxLastUpdateSequenceNumber shouldBe querySequenceNumber
+      },
+    )
+
+  @Test
+  fun `getQueryResult() entity last_update_sequence_number is largest`() =
+    testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+      editDbAfterInsert = { db, _, logger ->
+        val entityRowIds =
+          db.rawQuery(logger, "SELECT id FROM entities") { cursor ->
+            buildList {
+              while (cursor.moveToNext()) {
+                add(cursor.getLong(0))
+              }
+            }
+          }
+
+        val sequenceNumberArb = Arb.longWithEvenNumDigitsDistribution()
+        val sequenceNumbers = List(entityRowIds.size + 1) { sequenceNumberArb.bind() }
+        val distinctSortedSequenceNumbers = sequenceNumbers.distinct().sorted()
+        assume(distinctSortedSequenceNumbers.size >= 2)
+
+        val querySequenceNumber =
+          distinctSortedSequenceNumbers.dropLast(1).random(randomSource().random)
+        db.execSQL(logger, "UPDATE queries SET last_update_sequence_number = $querySequenceNumber")
+
+        val entitySequenceNumbers = sequenceNumbers.minus(querySequenceNumber).iterator()
+        entityRowIds.forEach { entityRowId ->
+          val entitySequenceNumber = entitySequenceNumbers.next()
+          db.execSQL(
+            logger,
+            """
+          UPDATE entities
+          SET last_update_sequence_number = $entitySequenceNumber
+          WHERE id=$entityRowId
+        """
+          )
+        }
+
+        SqliteSequenceNumber(distinctSortedSequenceNumbers.last())
+      },
+      verifyResult = { result, _, maxEntitySequenceNumber ->
+        result.maxLastUpdateSequenceNumber shouldBe maxEntitySequenceNumber
+      },
+    )
+
+  private fun <T> testGetQueryResultReturnsCorrectMaxLastUpdateSequenceNumber(
+    editDbAfterInsert: PropertyContext.(SQLiteDatabase, SqliteSequenceNumber, Logger) -> T,
+    verifyResult: (Found, SqliteSequenceNumber, T) -> Unit,
+  ) = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      queryIdArb(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
+      QueryResultArb(entityCountRange = 1..5),
+    ) { authUid, queryId, maxAge, queryResult ->
+      val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
+      val mockLogger: Logger = mockk(relaxed = true)
+
+      // Insert a query and entities into the database
+      val insertSequenceNumber = run {
+        val dataConnectCacheDatabase =
+          DataConnectCacheDatabase(
+            dbFile,
+            Dispatchers.Default,
+            mockLogger,
+          )
+        try {
+          dataConnectCacheDatabase.initialize()
+          dataConnectCacheDatabase.insertQueryResult(
+            authUid.authUid,
+            queryId.queryId,
+            queryResult.hydratedStruct,
+            maxAge = maxAge,
+            currentTimeMillis = 0L,
+            getEntityIdForPath = queryResult::getEntityIdForPath,
+          )
+        } finally {
+          dataConnectCacheDatabase.close()
+        }
+      }
+
+      // Manually edit the "last_update_sequence_number" column in the database
+      val editDbAfterInsertResult = run {
+        DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+          db.beginTransaction()
+          try {
+            val result = editDbAfterInsert(db, insertSequenceNumber, mockLogger)
+            db.setTransactionSuccessful()
+            result
+          } finally {
+            db.endTransaction()
+          }
+        }
+      }
+
+      // Load the query from the database
+      val result = run {
+        val dataConnectCacheDatabase =
+          DataConnectCacheDatabase(
+            dbFile,
+            Dispatchers.Default,
+            mockLogger,
+          )
+        try {
+          dataConnectCacheDatabase.initialize()
+          dataConnectCacheDatabase.getQueryResult(
+            authUid.authUid,
+            queryId.queryId,
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
+          )
+        } finally {
+          dataConnectCacheDatabase.close()
+        }
+      }
+
+      // Verify that the maxLastUpdateSequenceNumber was the expected value
+      check(result is Found)
+      verifyResult(result, insertSequenceNumber, editDbAfterInsertResult)
+    }
   }
 }
 
