@@ -354,10 +354,9 @@ internal class DataConnectGrpcRPCs(
         is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
       }
 
-    return if (found == null) {
-      null
-    } else {
-      ExecuteQueryResult.FromCache(found.struct, found.maxLastUpdateSequenceNumber)
+    return when (found) {
+      null -> null
+      else -> ExecuteQueryResult.FromCache(found.struct, found.maxLastUpdateSequenceNumber)
     }
   }
 
