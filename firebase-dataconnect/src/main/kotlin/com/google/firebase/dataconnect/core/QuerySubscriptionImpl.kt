@@ -20,11 +20,12 @@ import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.querymgr.subscribe
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 internal class QuerySubscriptionImpl<Data, Variables>(
@@ -40,25 +41,13 @@ internal class QuerySubscriptionImpl<Data, Variables>(
     //  This "hack" essentially "injects" the executeQuery responses in to the subscription to
     //  mimic the pre-existing behavior.
     val nonRealtimeJob = launch {
-      nonRealtimeQueryManager.subscribe(query, executeQuery = false) { sequencedResult ->
-        val dataResult: Result<DataSourcePair<Data>> = sequencedResult.ref
-        dataResult.throwIfCancellationException()
-        val queryResult = dataResult.map { query.QueryResultImpl(it.data, it.source) }
-        send(QuerySubscriptionResultImpl(query, queryResult))
+      nonRealtimeQueryManager.subscribe(query, executeQuery = false) {
+        onNonRealtimeUpdate(it, this@channelFlow)
       }
     }
 
-    val dataResultFlow: Flow<Result<Data>> = realtimeQueryManager.subscribe(query)
-
-    val queryResultFlow =
-      dataResultFlow.map { dataResult ->
-        dataResult.throwIfCancellationException()
-        val queryResult = dataResult.map { query.QueryResultImpl(it, DataSource.SERVER) }
-        QuerySubscriptionResultImpl(query, queryResult)
-      }
-
     try {
-      queryResultFlow.collect { send(it) }
+      realtimeQueryManager.subscribe(query).collect { onRealtimeUpdate(it, this@channelFlow) }
     } finally {
       nonRealtimeJob.cancel()
     }
@@ -83,5 +72,25 @@ internal class QuerySubscriptionImpl<Data, Variables>(
     override fun hashCode() = Objects.hash(QuerySubscriptionResultImpl::class, query, result)
 
     override fun toString() = "QuerySubscriptionResultImpl(query=$query, result=$result)"
+  }
+
+  private suspend fun onNonRealtimeUpdate(
+    event: SequencedReference<Result<DataSourcePair<Data>>>,
+    channel: SendChannel<QuerySubscriptionResultImpl>,
+  ) {
+    val (data, source) = event.ref.getOrNull() ?: return
+    val queryResult = query.QueryResultImpl(data, source)
+    val subscriptionResult = QuerySubscriptionResultImpl(query, Result.success(queryResult))
+    channel.send(subscriptionResult)
+  }
+
+  private suspend fun onRealtimeUpdate(
+    event: Result<Data>,
+    channel: SendChannel<QuerySubscriptionResultImpl>,
+  ) {
+    event.throwIfCancellationException()
+    val queryResult = event.map { query.QueryResultImpl(it, DataSource.SERVER) }
+    val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
+    channel.send(subscriptionResult)
   }
 }
