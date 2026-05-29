@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
@@ -196,7 +197,10 @@ internal class DataConnectGrpcRPCs(
   }
 
   sealed interface ExecuteQueryResult {
-    @JvmInline value class FromCache(val data: Struct) : ExecuteQueryResult
+    data class FromCache(
+      val data: Struct,
+      val sqliteSequenceNumber: SqliteSequenceNumber?,
+    ) : ExecuteQueryResult
 
     @JvmInline value class FromServer(val response: ExecuteQueryResponse) : ExecuteQueryResult
   }
@@ -329,7 +333,7 @@ internal class DataConnectGrpcRPCs(
     val cachedResult =
       cache.open().getQueryResult(authUid, queryId, currentTimeMillis(), staleResult)
 
-    val cachedData: Struct? =
+    val found: DataConnectCacheDatabase.GetQueryResultResult.Found? =
       when (cachedResult) {
         is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
           logger.logGrpcReturningFromCache(
@@ -337,7 +341,7 @@ internal class DataConnectGrpcRPCs(
             kotlinMethodName = kotlinMethodName,
             cachedResult = cachedResult,
           )
-          cachedResult.struct
+          cachedResult
         }
         is DataConnectCacheDatabase.GetQueryResultResult.Stale -> {
           logger.logGrpcIgnoringStaleCache(
@@ -350,7 +354,11 @@ internal class DataConnectGrpcRPCs(
         is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
       }
 
-    return cachedData?.let(ExecuteQueryResult::FromCache)
+    return if (found == null) {
+      null
+    } else {
+      ExecuteQueryResult.FromCache(found.struct, found.maxLastUpdateSequenceNumber)
+    }
   }
 
   suspend fun connect(

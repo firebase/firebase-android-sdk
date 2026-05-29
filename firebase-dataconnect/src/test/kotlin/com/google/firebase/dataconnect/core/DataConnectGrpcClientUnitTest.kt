@@ -34,6 +34,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.sqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
@@ -208,22 +209,31 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeQuery() should return data and empty errors if response is from cache`() = runTest {
-    val responseData = Arb.proto.struct().next(rs).struct
-    coEvery {
-      mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
-    } returns DataConnectGrpcRPCs.ExecuteQueryResult.FromCache(responseData)
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2)
+    ) { sqliteSequenceNumber ->
+      val responseData = Arb.proto.struct().next(rs).struct
+      coEvery {
+        mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
+      } returns DataConnectGrpcRPCs.ExecuteQueryResult.FromCache(responseData, sqliteSequenceNumber)
 
-    val operationResult =
-      dataConnectGrpcClient.executeQuery(
-        requestId,
-        operationName,
-        variables,
-        callerSdkType,
-        fetchPolicy
-      )
+      val operationResult =
+        dataConnectGrpcClient.executeQuery(
+          requestId,
+          operationName,
+          variables,
+          callerSdkType,
+          fetchPolicy
+        )
 
-    operationResult shouldBe
-      OperationResult(data = responseData, errors = emptyList(), DataSource.CACHE)
+      operationResult shouldBe
+        OperationResult(
+          data = responseData,
+          errors = emptyList(),
+          DataSource.CACHE,
+        )
+    }
   }
 
   @Test
