@@ -20,7 +20,9 @@ import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.querymgr.subscribe
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.TaggedReference
 import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
 import kotlinx.coroutines.channels.SendChannel
@@ -85,11 +87,11 @@ internal class QuerySubscriptionImpl<Data, Variables>(
   }
 
   private suspend fun onRealtimeUpdate(
-    event: Result<Data>,
+    event: Result<TaggedReference<SqliteSequenceNumber?, Data>>,
     channel: SendChannel<QuerySubscriptionResultImpl>,
   ) {
     event.throwIfCancellationException()
-    val queryResult = event.map { query.QueryResultImpl(it, DataSource.SERVER) }
+    val queryResult = event.map { query.QueryResultImpl(it.ref, DataSource.SERVER) }
     val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
     channel.send(subscriptionResult)
   }
