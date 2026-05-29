@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
@@ -71,29 +72,29 @@ public class NumericTransformsTest {
 
   private void expectLocalAndRemoteValue(double expectedSum) {
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(snap.get("sum") instanceof Double);
     assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
     snap = accumulator.awaitRemoteEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(snap.get("sum") instanceof Double);
     assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
   }
 
   private void expectLocalAndRemoteValue(long expectedSum) {
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Long);
+    assertTrue(snap.get("sum") instanceof Long);
     assertEquals(expectedSum, (long) snap.getLong("sum"));
     snap = accumulator.awaitRemoteEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Long);
+    assertTrue(snap.get("sum") instanceof Long);
     assertEquals(expectedSum, (long) snap.getLong("sum"));
   }
 
   private void expectLocalAndRemoteNaN() {
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Double);
-    org.junit.Assert.assertTrue(Double.isNaN(snap.getDouble("sum")));
+    assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(Double.isNaN(snap.getDouble("sum")));
     snap = accumulator.awaitRemoteEvent();
-    org.junit.Assert.assertTrue(snap.get("sum") instanceof Double);
-    org.junit.Assert.assertTrue(Double.isNaN(snap.getDouble("sum")));
+    assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(Double.isNaN(snap.getDouble("sum")));
   }
 
   @Test
