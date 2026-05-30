@@ -76,7 +76,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
    *
    * ### Realtime updates (May 2026)
    *
-   * Starting with SDK version 17.3.0 (Firebase BoM 34.13.0, May 2026) query subscriptions gained
+   * Starting with SDK version 17.3.0 (Firebase BoM 34.14.0, May 2026) query subscriptions gained
    * support for realtime updates. See
    * [Get real-time updates from SQL Connect](https://firebase.google.com/docs/sql-connect/realtime)
    * for details about this feature in the entire product, and [QuerySubscription] for details
