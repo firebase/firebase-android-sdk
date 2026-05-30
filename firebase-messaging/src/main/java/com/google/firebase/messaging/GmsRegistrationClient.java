@@ -19,13 +19,11 @@ import android.content.pm.PackageManager;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import androidx.annotation.WorkerThread;
 import com.google.android.gms.cloudmessaging.CloudMessaging;
 import com.google.android.gms.cloudmessaging.CloudMessagingClient;
 import com.google.android.gms.cloudmessaging.RegisterRequest;
 import com.google.android.gms.cloudmessaging.UnregisterRequest;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.BuildConfig;
 import com.google.firebase.FirebaseApp;
@@ -50,12 +48,11 @@ class GmsRegistrationClient {
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull GmsRpc gmsRpc,
       @NonNull Metadata metadata) {
-    this(context, app, firebaseInstallations, gmsRpc, CloudMessaging.getClient(context), metadata);
+    this(app, firebaseInstallations, gmsRpc, CloudMessaging.getClient(context), metadata);
   }
 
   @VisibleForTesting
   GmsRegistrationClient(
-      @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull GmsRpc gmsRpc,
@@ -110,47 +107,71 @@ class GmsRegistrationClient {
     }
 
     // Proceeding with V1 registration.
-    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
-    executorService.execute(
-        () -> {
-          try {
-            String installationId = Tasks.await(firebaseInstallations.getId());
-            String registrationToken = registerOverV1(installationId);
+    return firebaseInstallations
+        .getId()
+        .continueWithTask(
+            executorService,
+            idTask -> {
+              if (!idTask.isSuccessful()) {
+                return Tasks.forException(getException(idTask));
+              }
+              String installationId = idTask.getResult();
+              return registerOverV1Async(installationId)
+                  .continueWith(
+                      executorService,
+                      registerTask -> {
+                        if (!registerTask.isSuccessful()) {
+                          throw new ExecutionException(registerTask.getException());
+                        }
+                        String registrationToken = registerTask.getResult();
+                        // For V1 registration, the token received should be the same as the FID.
+                        if (!TextUtils.isEmpty(registrationToken)
+                            && registrationToken.endsWith(installationId)) {
+                          // The registration token will be in format projects/**/$fid. But the
+                          // actual token
+                          // for sending messages to will be the FID. So returning the FID.
+                          return installationId;
+                        } else {
+                          throw new ExecutionException(
+                              new IllegalArgumentException("Unexpected Error: FID NOT matching!"));
+                        }
+                      });
+            });
+  }
 
-            // For V1 registration, the token received should be the same as the FID.
-            if (!TextUtils.isEmpty(registrationToken)
-                && registrationToken.endsWith(installationId)) {
-              // The registration token will be in format projects/**/$fid. But the actual token
-              // for sending messages to will be the FID. So returning the FID.
-              taskCompletionSource.setResult(installationId);
-            } else {
-              taskCompletionSource.setException(
-                  new ExecutionException(
-                      new IllegalArgumentException("Unexpected Error: FID NOT matching!")));
-            }
-          } catch (ExecutionException | InterruptedException e) {
-            taskCompletionSource.setException(e);
-          }
-        });
-
-    return taskCompletionSource.getTask();
+  private Exception getException(Task<?> task) {
+    return task.getException() != null
+        ? task.getException()
+        : new ExecutionException(new RuntimeException("Unexpected Error"));
   }
 
   @NonNull
-  @WorkerThread
-  private String registerOverV1(String installationId)
-      throws ExecutionException, InterruptedException {
-    String installationAuthToken = Tasks.await(firebaseInstallations.getToken(false)).getToken();
-    String apiKey = app.getOptions().getApiKey();
-    String gmpAppId = app.getOptions().getApplicationId();
-    String senderId = Metadata.getDefaultSenderId(app);
-    String sdkVersion = BuildConfig.VERSION_NAME;
+  private Task<String> registerOverV1Async(String installationId) {
+    return firebaseInstallations
+        .getToken(false)
+        .continueWithTask(
+            FcmExecutors.newNetworkIOExecutor(),
+            tokenTask -> {
+              if (!tokenTask.isSuccessful()) {
+                return Tasks.forException(getException(tokenTask));
+              }
+              String installationAuthToken = tokenTask.getResult().getToken();
+              String apiKey = app.getOptions().getApiKey();
+              String gmpAppId = app.getOptions().getApplicationId();
+              String senderId = Metadata.getDefaultSenderId(app);
+              String sdkVersion = BuildConfig.VERSION_NAME;
 
-    RegisterRequest request =
-        new RegisterRequest(
-            senderId, gmpAppId, apiKey, installationId, installationAuthToken, sdkVersion);
-    return Tasks.await(client.register(request));
+              RegisterRequest request =
+                  new RegisterRequest(
+                      senderId,
+                      gmpAppId,
+                      apiKey,
+                      installationId,
+                      installationAuthToken,
+                      sdkVersion);
+              return client.register(request);
+            });
   }
 
   /** Unregisters this app from receiving push messages. */
@@ -164,30 +185,46 @@ class GmsRegistrationClient {
     }
 
     // Proceeding with V1 un-registration.
-    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
-    executorService.execute(
-        () -> {
-          try {
-            unregisterOverV1();
-            taskCompletionSource.setResult(null);
-          } catch (ExecutionException | InterruptedException e) {
-            taskCompletionSource.setException(e);
-          }
-        });
-
-    return taskCompletionSource.getTask();
+    return unregisterOverV1Async()
+        .continueWithTask(
+            executorService,
+            task -> {
+              if (!task.isSuccessful()) {
+                return Tasks.forException(getException(task));
+              }
+              return Tasks.forResult(null);
+            });
   }
 
-  @WorkerThread
-  private void unregisterOverV1() throws ExecutionException, InterruptedException {
-    String installationId = Tasks.await(firebaseInstallations.getId());
-    String installationAuthToken = Tasks.await(firebaseInstallations.getToken(false)).getToken();
-    String apiKey = app.getOptions().getApiKey();
-    String projectId = Metadata.getDefaultSenderId(app);
+  private Task<Void> unregisterOverV1Async() {
+    ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
+    return firebaseInstallations
+        .getId()
+        .continueWithTask(
+            executorService,
+            idTask -> {
+              if (!idTask.isSuccessful()) {
+                return Tasks.forException(getException(idTask));
+              }
+              String installationId = idTask.getResult();
+              return firebaseInstallations
+                  .getToken(false)
+                  .continueWithTask(
+                      executorService,
+                      tokenTask -> {
+                        if (!tokenTask.isSuccessful()) {
+                          return Tasks.forException(getException(tokenTask));
+                        }
+                        String installationAuthToken = tokenTask.getResult().getToken();
+                        String apiKey = app.getOptions().getApiKey();
+                        String projectId = Metadata.getDefaultSenderId(app);
 
-    UnregisterRequest request =
-        new UnregisterRequest(projectId, apiKey, installationId, installationAuthToken);
-    Tasks.await(client.unregister(request));
+                        UnregisterRequest request =
+                            new UnregisterRequest(
+                                projectId, apiKey, installationId, installationAuthToken);
+                        return client.unregister(request);
+                      });
+            });
   }
 }

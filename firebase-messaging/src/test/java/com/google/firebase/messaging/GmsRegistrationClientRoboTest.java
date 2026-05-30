@@ -107,7 +107,6 @@ public class GmsRegistrationClientRoboTest {
 
     client =
         new GmsRegistrationClient(
-            context,
             firebaseApp,
             mockFirebaseInstallationsApi,
             mockGmsRpc,
