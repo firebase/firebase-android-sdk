@@ -20,16 +20,20 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
+import com.google.firebase.dataconnect.core.DataConnectCache
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectSerialization
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.QueryId
+import com.google.firebase.dataconnect.core.calculateQueryId
+import com.google.firebase.dataconnect.core.getEntityIdForPathFunction
+import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
-import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Struct
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +44,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -53,6 +58,7 @@ internal class RealtimeQueryManager(
   coroutineScope: CoroutineScope,
   private val idStringGenerator: IdStringGenerator,
   private val serialization: DataConnectSerialization,
+  private val cache: DataConnectCache?,
   private val logger: Logger,
 ) {
 
@@ -135,24 +141,19 @@ internal class RealtimeQueryManager(
     operationName: String,
     variables: Struct,
   ): Flow<DataConnectGrpcClient.OperationResult> {
-    // calculateSha512() is a CPU intensive operation that should NOT be performed on the main
+    // calculateQueryId() is a CPU intensive operation that should NOT be performed on the main
     // thread. This is the first reason why this method assumes it's running in this.coroutineScope.
-    val queryId = variables.calculateSha512(preamble = operationName)
+    val queryId = calculateQueryId(operationName, variables)
 
     // Acquiring the lock by an arbitrary thread could result in priority inversion. This is the
     // second reason why this method assumes it's running in this.coroutineScope: control over the
     // thread that acquires the lock.
     mutex.withLock {
       return flowByQueryId.getOrPut(queryId) {
-        val executeResponseFlow = stream.subscribe(requestId, operationName, variables)
-
-        executeResponseFlow.map { executeResponse ->
-          DataConnectGrpcClient.OperationResult(
-            data = executeResponse.data,
-            errors = executeResponse.errors,
-            source = DataSource.SERVER,
-          )
-        }
+        stream
+          .subscribe(requestId, operationName, variables)
+          .updateCache(cache, queryId)
+          .mapToOperationResponse()
       }
     }
   }
@@ -212,8 +213,7 @@ internal class RealtimeQueryManager(
 
     class Connected(val stream: DataConnectBidiConnectStream) : State {
       val mutex = Mutex()
-      val flowByQueryId:
-        MutableMap<ImmutableByteArray, Flow<DataConnectGrpcClient.OperationResult>> =
+      val flowByQueryId: MutableMap<QueryId, Flow<DataConnectGrpcClient.OperationResult>> =
         mutableMapOf()
       override fun toString() = "Connected"
     }
@@ -242,3 +242,37 @@ internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
     queryRef.dataSerializersModule,
     queryRef.variablesSerializersModule,
   )
+
+private fun Flow<DataConnectBidiConnectStream.ExecuteResponse>.mapToOperationResponse():
+  Flow<DataConnectGrpcClient.OperationResult> = map { executeResponse ->
+  DataConnectGrpcClient.OperationResult(
+    data = executeResponse.data,
+    errors = executeResponse.errors,
+    source = DataSource.SERVER,
+  )
+}
+
+private fun Flow<DataConnectBidiConnectStream.ExecuteResponse>.updateCache(
+  cache: DataConnectCache?,
+  queryId: QueryId
+): Flow<DataConnectBidiConnectStream.ExecuteResponse> = onEach { response ->
+  val cacheDb = cache?.open() ?: return@onEach
+  val data = response.data ?: return@onEach // null indicates error
+  cacheDb.insertQueryResult(
+    response.authUid,
+    queryId,
+    data,
+    cache.maxAgeProto,
+    currentTimeMillis(),
+    response.getEntityIdForPathFunction(),
+  )
+}
+
+@JvmName("getEntityIdForPathFunction_DataConnectBidiConnectStream_ExecuteResponse")
+private fun DataConnectBidiConnectStream.ExecuteResponse.getEntityIdForPathFunction():
+  GetEntityIdForPathFunction? =
+  if (extensions.isEmpty()) {
+    null
+  } else {
+    extensions.getEntityIdForPathFunction()
+  }
