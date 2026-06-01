@@ -47,6 +47,7 @@ data class TestReport(
   enum class Status {
     SUCCESS,
     FAILURE,
+    CANCELLED,
     OTHER;
 
     companion object {
@@ -54,6 +55,8 @@ data class TestReport(
         if (json["status"]?.jsonPrimitive?.content == "completed") {
           if (json["conclusion"]?.jsonPrimitive?.content == "success") {
             return SUCCESS
+          } else if (json["conclusion"]?.jsonPrimitive?.content == "cancelled") {
+            return CANCELLED
           } else {
             return FAILURE
           }

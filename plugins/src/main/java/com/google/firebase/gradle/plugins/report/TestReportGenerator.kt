@@ -149,7 +149,9 @@ class TestReportGenerator(private val apiToken: String) {
       for (commit in commits) {
         if (testLookup.containsKey(Pair.of(sdk, commit))) {
           val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
-          if (report.status != TestReport.Status.OTHER) {
+          if (
+            report.status != TestReport.Status.CANCELLED && report.status != TestReport.Status.OTHER
+          ) {
             sdkTestCount++
             if (report.status == TestReport.Status.SUCCESS) {
               sdkTestSuccess++
@@ -199,6 +201,7 @@ class TestReportGenerator(private val apiToken: String) {
             when (report.status) {
               TestReport.Status.SUCCESS -> "✅"
               TestReport.Status.FAILURE -> "⛔"
+              TestReport.Status.CANCELLED -> "➖"
               TestReport.Status.OTHER -> "➖"
             }
           val link: String = " [$icon](${report.url})"
@@ -240,6 +243,7 @@ class TestReportGenerator(private val apiToken: String) {
         when (report.status) {
           TestReport.Status.SUCCESS -> "✅"
           TestReport.Status.FAILURE -> "⛔"
+          TestReport.Status.CANCELLED -> "➖"
           TestReport.Status.OTHER -> "➖"
         }
       val link: String = " [$icon](${report.url})"
