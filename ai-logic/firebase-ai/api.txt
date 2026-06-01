@@ -674,25 +674,28 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerateContentResponse {
-    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata);
+    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata, String? modelVersion);
     method public java.util.List<com.google.firebase.ai.type.Candidate> getCandidates();
-    method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     method public com.google.firebase.ai.InferenceSource getInferenceSource();
-    method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public String? getModelVersion();
+    method public java.util.List<com.google.firebase.ai.type.TextPart>? getParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
-    method public String? getText();
-    method public String? getThoughtSummary();
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
-    property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
     property public final com.google.firebase.ai.InferenceSource inferenceSource;
-    property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final String? modelVersion;
+    property public final java.util.List<com.google.firebase.ai.type.TextPart>? parts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
-    property public final String? text;
-    property public final String? thoughtSummary;
     property public final com.google.firebase.ai.type.UsageMetadata? usageMetadata;
+  }
+
+  public final class GenerateContentResponseKt {
+    method public static java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
+    method public static java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
+    method public static String? getThoughtSummary();
+    property public static final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
+    property public static final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
+    property public static final String? thoughtSummary;
   }
 
   public final class GenerateObjectResponse<T> {

@@ -36,7 +36,7 @@ internal constructor(
   public val inferenceSource: InferenceSource,
   public val promptFeedback: PromptFeedback?,
   public val usageMetadata: UsageMetadata?,
-  public val modelVersion: String? = null,
+  public val modelVersion: String?
 ) {
 
   // To maintain backwards compatibility with possible outside usage, we maintain a public
@@ -49,7 +49,8 @@ internal constructor(
     candidates: List<Candidate>,
     promptFeedback: PromptFeedback?,
     usageMetadata: UsageMetadata?,
-  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, null)
+    modelVersion: String?,
+  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, modelVersion)
 
   /**
    * Convenience field representing all the text parts in the response as a single string.
@@ -119,7 +120,7 @@ internal constructor(
     val candidates: List<Candidate.Internal>? = null,
     val promptFeedback: PromptFeedback.Internal? = null,
     val usageMetadata: UsageMetadata.Internal? = null,
-    @SerialName("model_version") val modelVersion: String? = null,
+    val modelVersion: String? = null,
   ) : Response {
     internal fun toPublic(): GenerateContentResponse {
       return GenerateContentResponse(
