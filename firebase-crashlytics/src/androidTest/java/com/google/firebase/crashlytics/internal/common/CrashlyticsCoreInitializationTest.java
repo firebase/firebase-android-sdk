@@ -59,7 +59,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
   private static final String PACKAGE_NAME = "testPackageName";
   private static final String BUILD_ID = "testBuildId";
-  private static final int RES_ID_REQUIRE_BUILD_ID = 1;
+  private static final int RES_ID_LEGACY_REQUIRE_BUILD_ID = 1;
+  private static final int RES_ID_REQUIRE_BUILD_ID = 2;
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private Context mockAppContext;
@@ -205,15 +206,49 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Test
   public void testOnPreExecute_buildIdRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired("true");
+    setupLegacyBuildIdRequired("true");
+    setupBuildIdRequired("false");
     setupAppData(BUILD_ID);
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
+
+    setupLegacyBuildIdRequired("false");
+    setupBuildIdRequired("true");
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
+  }
+
+  @Test
+  public void testOnPreExecute_buildIdRequiredAndDoesNotExist_LegacyFlag() {
+    final CrashlyticsCore crashlyticsCore = builder().build();
+    setupLegacyBuildIdRequired("true");
+    setupBuildIdRequired("false");
+    setupAppData(null);
+    try {
+      crashlyticsCore.onPreExecute(appData, mockSettingsController);
+      fail();
+    } catch (Exception e) {
+      assertTrue(e instanceof IllegalStateException);
+    }
   }
 
   @Test
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
+    setupLegacyBuildIdRequired("false");
     setupBuildIdRequired("true");
+    setupAppData(null);
+    try {
+      crashlyticsCore.onPreExecute(appData, mockSettingsController);
+      fail();
+    } catch (Exception e) {
+      assertTrue(e instanceof IllegalStateException);
+    }
+  }
+
+  @Test
+  public void testOnPreExecute_buildIdDoesNotExist_NoFlagsSetup() {
+    final CrashlyticsCore crashlyticsCore = builder().build();
+    // When no BuildIdRequired is set up (either via legacy flag or latest) a default
+    // true flag is passed down to onPreExecute process.
     setupAppData(null);
     try {
       crashlyticsCore.onPreExecute(appData, mockSettingsController);
@@ -226,6 +261,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Test
   public void testOnPreExecute_buildIdNotRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
+    setupLegacyBuildIdRequired("false");
     setupBuildIdRequired("false");
     setupAppData(BUILD_ID);
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
@@ -233,6 +269,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
   @Test
   public void testOnPreExecute_buildIdNotRequiredAndDoesNotExist() {
+    setupLegacyBuildIdRequired("false");
     setupBuildIdRequired("false");
     setupAppData(null);
     final CrashlyticsCore crashlyticsCore = builder().build();
@@ -243,6 +280,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
     // Use the same file store for core as the crash marker.
     CrashlyticsCore crashlyticsCore = builder().setFileStore(fileStore).build();
+    setupLegacyBuildIdRequired(String.valueOf(false));
     setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
     setupCrashMarker();
@@ -256,6 +294,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Test
   public void testOnPreExecute_didNotCrashOnPreviousExecution() {
     final CrashlyticsCore crashlyticsCore = builder().build();
+    setupLegacyBuildIdRequired(String.valueOf(false));
     setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
 
@@ -263,6 +302,14 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
     assertFalse(crashlyticsCore.didCrashOnPreviousExecution());
     assertFalse(getCrashMarkerFile().exists());
+  }
+
+  private void setupLegacyBuildIdRequired(String booleanValue) {
+    setupResource(
+        RES_ID_LEGACY_REQUIRE_BUILD_ID,
+        "string",
+        CrashlyticsCore.LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID,
+        booleanValue);
   }
 
   private void setupBuildIdRequired(String booleanValue) {
