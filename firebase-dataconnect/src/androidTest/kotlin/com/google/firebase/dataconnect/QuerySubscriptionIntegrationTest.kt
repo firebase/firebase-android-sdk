@@ -300,18 +300,19 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_an_update_on_error() = runTest {
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    schema.createPerson(id = personId, name = "Name1").execute()
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
 
-    val noName2Query =
-      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
+    val key = connector.insertString(name = "Name1")
+    val baseQuery = connector.getStringByKey.queryRef(key)
+    val noName2Query = baseQuery.withDataDeserializer(serializer<GetItemDataNoName2>())
     val querySubscription = noName2Query.subscribe()
 
     turbineScope {
       val flow = querySubscription.flow.distinctUntilChanged().testIn(backgroundScope)
-      withClue("result1") { flow.awaitPersonWithName("Name1") }
+      withClue("result1") { flow.awaitItemWithName("Name1") }
 
-      schema.updatePerson(id = personId, name = "Name2").execute()
+      connector.updateString(key, name = "Name2")
       val execute2Result = runCatching { noName2Query.execute() }
       withClue("execute2Result") {
         withClue("execute2Result.getOrNull()") { execute2Result.getOrNull().shouldBeNull() }
@@ -323,9 +324,9 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
         withClue("result2.isFailure") { result2.isFailure shouldBe true }
       }
 
-      schema.updatePerson(id = personId, name = "Name3").execute()
+      connector.updateString(key, name = "Name3")
       noName2Query.execute()
-      withClue("result3") { flow.awaitPersonWithName("Name3") }
+      withClue("result3") { flow.awaitItemWithName("Name3") }
     }
   }
 
