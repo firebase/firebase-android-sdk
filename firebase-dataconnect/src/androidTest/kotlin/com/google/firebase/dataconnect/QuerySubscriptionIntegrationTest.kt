@@ -21,10 +21,13 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
+import com.google.firebase.dataconnect.QuerySubscriptionIntegrationTest.Companion.awaitItemWithName
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.SuspendingFlag
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.ints.shouldBeInRange
@@ -57,11 +60,17 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 import org.junit.AssumptionViolatedException
+import org.junit.Before
 import org.junit.Test
 
 class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val schema by lazy { PersonSchema(dataConnectFactory) }
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun reload_should_notify_collecting_flows() = runTest {
@@ -322,13 +331,14 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_notified_of_per_data_deserializer_successes() = runTest {
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    schema.createPerson(id = personId, name = "Name0").execute()
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
 
-    val noName1Query =
-      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName1>())
-    val noName2Query =
-      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
+    val key = connector.insertString(name = "Name0")
+
+    val baseQuery = connector.getStringByKey.queryRef(key)
+    val noName1Query = baseQuery.withDataDeserializer(serializer<GetItemDataNoName1>())
+    val noName2Query = baseQuery.withDataDeserializer(serializer<GetItemDataNoName2>())
 
     turbineScope {
       val noName1Flow =
@@ -343,30 +353,27 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
           .flow
           .distinctUntilChanged(::areEquivalentQuerySubscriptionResults)
           .testIn(backgroundScope)
-      withClue("noName1Flow-0") { noName1Flow.awaitPersonWithName("Name0") }
-      withClue("noName2Flow-0") { noName2Flow.awaitPersonWithName("Name0") }
+      withClue("noName1Flow-0") { noName1Flow.awaitItemWithName("Name0") }
+      withClue("noName2Flow-0") { noName2Flow.awaitItemWithName("Name0") }
 
-      schema.updatePerson(id = personId, name = "Name1").execute()
-      schema.getPerson(personId).execute()
+      connector.updateString(key, name = "Name1")
 
       withClue("noName1Flow-1") {
         noName1Flow.awaitItem().result.exceptionOrNull().shouldNotBeNull()
       }
-      withClue("noName2Flow-1") { noName2Flow.awaitPersonWithName("Name1") }
+      withClue("noName2Flow-1") { noName2Flow.awaitItemWithName("Name1") }
 
-      schema.updatePerson(id = personId, name = "Name2").execute()
-      schema.getPerson(personId).execute()
+      connector.updateString(key, name = "Name2")
 
-      withClue("noName1Flow-2") { noName1Flow.awaitPersonWithName("Name2") }
+      withClue("noName1Flow-2") { noName1Flow.awaitItemWithName("Name2") }
       withClue("noName2Flow-2") {
         noName2Flow.awaitItem().result.exceptionOrNull().shouldNotBeNull()
       }
 
-      schema.updatePerson(id = personId, name = "Name3").execute()
-      schema.getPerson(personId).execute()
+      connector.updateString(key, name = "Name3")
 
-      withClue("noName1Flow-3") { noName1Flow.awaitPersonWithName("Name3") }
-      withClue("noName2Flow-3") { noName2Flow.awaitPersonWithName("Name3") }
+      withClue("noName1Flow-3") { noName1Flow.awaitItemWithName("Name3") }
+      withClue("noName2Flow-3") { noName2Flow.awaitItemWithName("Name3") }
     }
   }
 
@@ -464,6 +471,32 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   /**
+   * A "data" type suitable for [RealtimeConnector.GetStringByKeyQuery] whose deserialization fails
+   * if the name happens to be "Name1". This behavior is useful when testing the behavior when one
+   * deserializer successfully decodes the data but another one does not. See [GetItemDataNoName2].
+   */
+  @Serializable
+  private data class GetItemDataNoName1(val item: Item?) {
+    @Serializable
+    data class Item(@Serializable(with = NameKSerializer::class) val name: String) {
+      private object NameKSerializer : RejectSpecificNameKSerializer("Name1")
+    }
+  }
+
+  /**
+   * A "data" type suitable for [RealtimeConnector.GetStringByKeyQuery] whose deserialization fails
+   * if the name happens to be "Name1". This behavior is useful when testing the behavior when one
+   * deserializer successfully decodes the data but another one does not. See [GetItemDataNoName1].
+   */
+  @Serializable
+  private data class GetItemDataNoName2(val item: Item?) {
+    @Serializable
+    data class Item(@Serializable(with = NameKSerializer::class) val name: String) {
+      private object NameKSerializer : RejectSpecificNameKSerializer("Name2")
+    }
+  }
+
+  /**
    * Starts a background coroutine that subscribes to and collects the given query with the given
    * variables. Suspends until the first result has been collected. This effectively ensures that
    * the cache for the query with the given variables never gets garbage collected.
@@ -476,19 +509,15 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private companion object {
     @JvmName("awaitPersonWithNameGetPersonQueryData")
-    suspend fun ReceiveTurbine<
-      QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables>
-    >
-      .awaitPersonWithName(
-      name: String
-    ): QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables> {
+    suspend fun <Variables> ReceiveTurbine<QuerySubscriptionResult<GetPersonQuery.Data, Variables>>
+      .awaitPersonWithName(name: String): QuerySubscriptionResult<GetPersonQuery.Data, Variables> {
       val item = awaitItem()
       item.shouldHavePersonWithName(name)
       return item
     }
 
     @JvmName("shouldHavePersonWithNameGetPersonQueryData")
-    fun QuerySubscriptionResult<GetPersonQuery.Data, GetPersonQuery.Variables>
+    fun <Variables> QuerySubscriptionResult<GetPersonQuery.Data, Variables>
       .shouldHavePersonWithName(name: String) {
       withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
       val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
@@ -497,19 +526,23 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     }
 
     @JvmName("awaitPersonWithNameGetPersonDataNoName1")
-    suspend fun ReceiveTurbine<
-      QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables>
-    >
-      .awaitPersonWithName(
-      name: String
-    ): QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables> {
+    suspend fun <Variables> ReceiveTurbine<QuerySubscriptionResult<GetPersonDataNoName1, Variables>>
+      .awaitPersonWithName(name: String): QuerySubscriptionResult<GetPersonDataNoName1, Variables> {
       val item = awaitItem()
       item.shouldHavePersonWithName(name)
+      return item
+    }
+
+    @JvmName("awaitItemWithNameGetItemDataNoName1")
+    suspend fun <Variables> ReceiveTurbine<QuerySubscriptionResult<GetItemDataNoName1, Variables>>
+      .awaitItemWithName(name: String): QuerySubscriptionResult<GetItemDataNoName1, Variables> {
+      val item = awaitItem()
+      item.shouldHaveItemWithName(name)
       return item
     }
 
     @JvmName("shouldHavePersonWithNameGetPersonDataNoName1")
-    fun QuerySubscriptionResult<GetPersonDataNoName1, GetPersonQuery.Variables>
+    fun <Variables> QuerySubscriptionResult<GetPersonDataNoName1, Variables>
       .shouldHavePersonWithName(name: String) {
       withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
       val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
@@ -517,25 +550,49 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       withClue("person.name") { person.name shouldBe name }
     }
 
-    @JvmName("awaitPersonWithNameGetPersonDataNoName2")
-    suspend fun ReceiveTurbine<
-      QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables>
-    >
-      .awaitPersonWithName(
+    @JvmName("shouldHaveItemWithNameGetItemDataNoName1")
+    fun <Variables> QuerySubscriptionResult<GetItemDataNoName1, Variables>.shouldHaveItemWithName(
       name: String
-    ): QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables> {
+    ) {
+      withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
+      val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
+      val item = withClue("data.item") { data.item.shouldNotBeNull() }
+      withClue("item.name") { item.name shouldBe name }
+    }
+
+    @JvmName("awaitPersonWithNameGetPersonDataNoName2")
+    suspend fun <Variables> ReceiveTurbine<QuerySubscriptionResult<GetPersonDataNoName2, Variables>>
+      .awaitPersonWithName(name: String): QuerySubscriptionResult<GetPersonDataNoName2, Variables> {
       val item = awaitItem()
       item.shouldHavePersonWithName(name)
       return item
     }
 
+    @JvmName("awaitItemWithNameGetItemDataNoName2")
+    suspend fun <Variables> ReceiveTurbine<QuerySubscriptionResult<GetItemDataNoName2, Variables>>
+      .awaitItemWithName(name: String): QuerySubscriptionResult<GetItemDataNoName2, Variables> {
+      val item = awaitItem()
+      item.shouldHaveItemWithName(name)
+      return item
+    }
+
     @JvmName("shouldHavePersonWithNameGetPersonDataNoName2")
-    fun QuerySubscriptionResult<GetPersonDataNoName2, GetPersonQuery.Variables>
+    fun <Variables> QuerySubscriptionResult<GetPersonDataNoName2, Variables>
       .shouldHavePersonWithName(name: String) {
       withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
       val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
       val person = withClue("data.person") { data.person.shouldNotBeNull() }
       withClue("person.name") { person.name shouldBe name }
+    }
+
+    @JvmName("shouldHaveItemWithNameGetItemDataNoName2")
+    fun <Variables> QuerySubscriptionResult<GetItemDataNoName2, Variables>.shouldHaveItemWithName(
+      name: String
+    ) {
+      withClue("result.exceptionOrNull()") { result.exceptionOrNull().shouldBeNull() }
+      val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
+      val item = withClue("data.item") { data.item.shouldNotBeNull() }
+      withClue("item.name") { item.name shouldBe name }
     }
 
     /**
