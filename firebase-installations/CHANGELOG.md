@@ -1,6 +1,6 @@
 # Unreleased
 
-- [fixed] FIDchangelistener not getting invoked when a FID is created.
+- [fixed] Addressed FidListener not getting invoked when a FID is created.
 
 # 19.1.0
 
