@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.InferenceSource
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -60,6 +59,7 @@ internal constructor(
    * Any part that's marked as a thought will be ignored. Learn more about
    * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
    */
+  public val text: String? by lazy {
     val parts = candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<TextPart>()
     if (parts.isNullOrEmpty()) return@lazy null
     parts.joinToString(" ") { it.text }

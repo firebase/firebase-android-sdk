@@ -53,8 +53,8 @@ internal class QueryRefImpl<Data, Variables>(
 
   override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
     dataConnect.queryManager.execute(this, fetchPolicy).let {
-      val (data, source) = it.ref.getOrThrow()
-      QueryResultImpl(data, source)
+      val (source, data) = it.ref.getOrThrow()
+      QueryResultImpl(data, source.toDataSourceEnum())
     }
 
   override fun subscribe(): QuerySubscriptionImpl<Data, Variables> = QuerySubscriptionImpl(this)

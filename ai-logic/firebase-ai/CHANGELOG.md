@@ -2,7 +2,13 @@
 
 - [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
 - [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
-- [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
+
+# 17.12.1
+
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig`. (#8107)
+
+>>>>>>> main
+>>>>>>> - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
 
 # 17.12.0
 

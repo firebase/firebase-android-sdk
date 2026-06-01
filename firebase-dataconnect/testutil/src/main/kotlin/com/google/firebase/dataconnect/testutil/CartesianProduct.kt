@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.google.firebase.dataconnect.testutil
 
-package com.google.firebase.dataconnect.querymgr
-
-import com.google.firebase.dataconnect.DataSource
-
-internal data class DataSourcePair<T>(val data: T, val source: DataSource)
+fun <T1, T2> cartesianProduct(
+  iterable1: Iterable<T1>,
+  iterable2: Iterable<T2>
+): List<Pair<T1, T2>> = iterable1.flatMap { o1 -> iterable2.map { o2 -> o1 to o2 } }
