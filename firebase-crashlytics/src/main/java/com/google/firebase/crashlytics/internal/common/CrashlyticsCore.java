@@ -140,13 +140,16 @@ public class CrashlyticsCore {
     // Throw an exception and halt the app if the build ID is required and not present.
     // TODO: This flag is no longer supported and should be removed, as part of a larger refactor
     //  now that the buildId is now only used for mapping file association.
-    final boolean legacyRequiresBuildId =
-        CommonUtils.getBooleanResourceValue(
-            context, LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
     final boolean requiresBuildId =
         CommonUtils.getBooleanResourceValue(
-            context, CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
-    if (!isBuildIdValid(appData.buildId, legacyRequiresBuildId || requiresBuildId)) {
+            context,
+            CRASHLYTICS_REQUIRE_BUILD_ID,
+            CommonUtils.getBooleanResourceValue(
+                context,
+                LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID,
+                CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT));
+
+    if (!isBuildIdValid(appData.buildId, requiresBuildId)) {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 

@@ -220,7 +220,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist_LegacyFlag() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupLegacyBuildIdRequired("true");
-    setupBuildIdRequired("false");
     setupAppData(null);
     try {
       crashlyticsCore.onPreExecute(appData, mockSettingsController);
@@ -233,7 +232,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Test
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupLegacyBuildIdRequired("false");
     setupBuildIdRequired("true");
     setupAppData(null);
     try {
