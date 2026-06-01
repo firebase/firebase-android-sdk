@@ -262,11 +262,7 @@ internal class DataConnectBidiConnectStream(
     val data: Struct?,
     val errors: List<GraphqlErrorProto>,
     val extensions: List<DataConnectPropertiesProto>,
-  ) {
-    operator fun component1() = data
-    operator fun component2() = errors
-    operator fun component3() = extensions
-  }
+  )
 
   private sealed interface SubscriptionEvent {
 

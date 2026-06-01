@@ -16,21 +16,24 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
 import com.google.firebase.dataconnect.core.DataConnectCache
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectSerialization
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.QueryId
 import com.google.firebase.dataconnect.core.calculateQueryId
 import com.google.firebase.dataconnect.core.getEntityIdForPathFunction
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
+import com.google.firebase.dataconnect.util.TaggedReference
+import com.google.firebase.dataconnect.util.map
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Struct
 import java.lang.System.currentTimeMillis
@@ -44,7 +47,6 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -91,7 +93,7 @@ internal class RealtimeQueryManager(
     callerSdkType: CallerSdkType,
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
-  ): Flow<Result<Data>> {
+  ): Flow<Result<TaggedReference<SqliteSequenceNumber?, Data>>> {
     val variablesStruct: Struct =
       serialization.encodeVariables(
         variables,
@@ -106,14 +108,16 @@ internal class RealtimeQueryManager(
         callerSdkType,
       )
 
-    return operationResultFlow.map {
+    return operationResultFlow.map { taggedOperationResult ->
       runCatching {
-        serialization.decodeData(
-          it.data,
-          it.errors,
-          dataDeserializer,
-          dataSerializersModule,
-        )
+        taggedOperationResult.map {
+          serialization.decodeData(
+            it.data,
+            it.errors,
+            dataDeserializer,
+            dataSerializersModule,
+          )
+        }
       }
     }
   }
@@ -122,7 +126,7 @@ internal class RealtimeQueryManager(
     operationName: String,
     variables: Struct,
     callerSdkType: CallerSdkType,
-  ): Flow<DataConnectGrpcClient.OperationResult> {
+  ): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> {
     val requestId = idStringGenerator.next("sub")
     val connection = ensureConnected(requestId, callerSdkType) ?: return emptyFlow()
 
@@ -140,7 +144,7 @@ internal class RealtimeQueryManager(
     requestId: String,
     operationName: String,
     variables: Struct,
-  ): Flow<DataConnectGrpcClient.OperationResult> {
+  ): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> {
     // calculateQueryId() is a CPU intensive operation that should NOT be performed on the main
     // thread. This is the first reason why this method assumes it's running in this.coroutineScope.
     val queryId = calculateQueryId(operationName, variables)
@@ -213,7 +217,11 @@ internal class RealtimeQueryManager(
 
     class Connected(val stream: DataConnectBidiConnectStream) : State {
       val mutex = Mutex()
-      val flowByQueryId: MutableMap<QueryId, Flow<DataConnectGrpcClient.OperationResult>> =
+      val flowByQueryId:
+        MutableMap<
+          QueryId,
+          Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>>
+        > =
         mutableMapOf()
       override fun toString() = "Connected"
     }
@@ -232,7 +240,7 @@ internal class RealtimeQueryManager(
 
 internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
   queryRef: QueryRef<Data, Variables>
-): Flow<Result<Data>> =
+): Flow<Result<TaggedReference<SqliteSequenceNumber?, Data>>> =
   subscribe(
     queryRef.operationName,
     queryRef.variables,
@@ -243,30 +251,44 @@ internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
     queryRef.variablesSerializersModule,
   )
 
-private fun Flow<DataConnectBidiConnectStream.ExecuteResponse>.mapToOperationResponse():
-  Flow<DataConnectGrpcClient.OperationResult> = map { executeResponse ->
-  DataConnectGrpcClient.OperationResult(
-    data = executeResponse.data,
-    errors = executeResponse.errors,
-    source = DataSource.SERVER,
-  )
-}
+private fun Flow<
+  TaggedReference<SqliteSequenceNumber?, DataConnectBidiConnectStream.ExecuteResponse>
+>
+  .mapToOperationResponse():
+  Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> =
+  map { taggedExecuteResponse ->
+    taggedExecuteResponse.map { executeResponse ->
+      DataConnectGrpcClient.OperationResult(
+        data = executeResponse.data,
+        errors = executeResponse.errors,
+        source = DataSource.Server,
+      )
+    }
+  }
 
 private fun Flow<DataConnectBidiConnectStream.ExecuteResponse>.updateCache(
   cache: DataConnectCache?,
-  queryId: QueryId
-): Flow<DataConnectBidiConnectStream.ExecuteResponse> = onEach { response ->
-  val cacheDb = cache?.open() ?: return@onEach
-  val data = response.data ?: return@onEach // null indicates error
-  cacheDb.insertQueryResult(
-    response.authUid,
-    queryId,
-    data,
-    cache.maxAgeProto,
-    currentTimeMillis(),
-    response.getEntityIdForPathFunction(),
-  )
-}
+  queryId: QueryId,
+): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectBidiConnectStream.ExecuteResponse>> =
+  map { response ->
+    val data = response.data
+    val sqliteSequenceNumber =
+      if (cache == null || data == null) {
+        null
+      } else {
+        cache
+          .open()
+          .insertQueryResult(
+            response.authUid,
+            queryId,
+            data,
+            cache.maxAgeProto,
+            currentTimeMillis(),
+            response.getEntityIdForPathFunction(),
+          )
+      }
+    TaggedReference(sqliteSequenceNumber, response)
+  }
 
 @JvmName("getEntityIdForPathFunction_DataConnectBidiConnectStream_ExecuteResponse")
 private fun DataConnectBidiConnectStream.ExecuteResponse.getEntityIdForPathFunction():
