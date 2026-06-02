@@ -74,7 +74,7 @@ internal class OnDeviceGenerativeModelProvider(
         InferenceSource.ON_DEVICE,
         null,
         null,
-        null
+        response.modelVersion
       )
     }
 
@@ -124,7 +124,7 @@ internal class OnDeviceGenerativeModelProvider(
             InferenceSource.ON_DEVICE,
             null,
             null,
-            null
+            it.modelVersion
           )
         }
     )

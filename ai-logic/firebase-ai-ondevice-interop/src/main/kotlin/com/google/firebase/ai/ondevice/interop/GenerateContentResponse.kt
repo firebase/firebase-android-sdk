@@ -21,4 +21,4 @@ package com.google.firebase.ai.ondevice.interop
  *
  * @property candidates The individual responses from the model.
  */
-public class GenerateContentResponse(public val candidates: List<Candidate>) {}
+public class GenerateContentResponse(public val candidates: List<Candidate>, public val modelVersion: String? = null) {}

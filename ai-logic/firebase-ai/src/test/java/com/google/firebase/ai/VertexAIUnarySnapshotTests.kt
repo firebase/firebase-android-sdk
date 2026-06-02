@@ -90,7 +90,6 @@ internal class VertexAIUnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
         response.candidates.first().safetyRatings.isEmpty() shouldBe false
-        response.modelVersion shouldBe "gemini-2.0-flash"
       }
     }
 

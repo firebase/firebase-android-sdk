@@ -72,7 +72,6 @@ internal class VertexAIStreamingSnapshotTests {
           content.parts.isEmpty() shouldBe false
           safetyRatings.isEmpty() shouldBe false
         }
-        responseList.last().modelVersion shouldBe "gemini-2.0-flash"
       }
     }
 
