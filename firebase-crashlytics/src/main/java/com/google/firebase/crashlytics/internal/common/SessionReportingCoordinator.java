@@ -439,6 +439,13 @@ public class SessionReportingCoordinator {
     }
   }
 
+  /** Returns true if an ANR ApplicationExitInfo occurred during the given session. */
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  public boolean didRelevantAnrOccur(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    return findRelevantApplicationExitInfo(sessionId, applicationExitInfoList) != null;
+  }
+
   /** Finds the first ANR ApplicationExitInfo within the session. */
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
