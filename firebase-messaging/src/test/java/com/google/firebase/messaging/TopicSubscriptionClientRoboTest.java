@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -31,7 +30,9 @@ import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,14 +56,12 @@ public class TopicSubscriptionClientRoboTest {
 
   private Context context;
   private FirebaseApp firebaseApp;
-  private Executor executor;
   private TopicSubscriptionClient client;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     context = ApplicationProvider.getApplicationContext();
-    executor = MoreExecutors.directExecutor();
 
     FirebaseOptions options =
         new FirebaseOptions.Builder()
@@ -149,8 +148,8 @@ public class TopicSubscriptionClientRoboTest {
   }
 
   private void runOnBackground(ThrowingRunnable runnable) throws Exception {
-    java.util.concurrent.Future<?> future =
-        java.util.concurrent.Executors.newSingleThreadExecutor()
+    Future<?> future =
+        Executors.newSingleThreadExecutor()
             .submit(
                 () -> {
                   try {
@@ -166,7 +165,7 @@ public class TopicSubscriptionClientRoboTest {
                 });
     try {
       future.get();
-    } catch (java.util.concurrent.ExecutionException e) {
+    } catch (ExecutionException e) {
       if (e.getCause() instanceof Exception) {
         throw (Exception) e.getCause();
       } else {

@@ -124,10 +124,10 @@ class GmsRegistrationClient {
                         if (!registerTask.isSuccessful()) {
                           throw new ExecutionException(registerTask.getException());
                         }
-                        String registrationToken = registerTask.getResult();
+                        String registrationName = registerTask.getResult();
                         // For V1 registration, the token received should be the same as the FID.
-                        if (!TextUtils.isEmpty(registrationToken)
-                            && registrationToken.endsWith(installationId)) {
+                        if (!TextUtils.isEmpty(registrationName)
+                            && registrationName.endsWith(installationId)) {
                           // The registration token will be in format projects/**/$fid. But the
                           // actual token
                           // for sending messages to will be the FID. So returning the FID.
