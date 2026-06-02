@@ -97,7 +97,7 @@ package com.google.firebase.ai.ondevice.interop {
   }
 
   public final class GenerateContentResponse {
-    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates, String? modelVersion = null);
+    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates, String? modelVersion);
     method public java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> getCandidates();
     method public String? getModelVersion();
     property public final java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates;
