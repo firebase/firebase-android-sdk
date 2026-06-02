@@ -48,8 +48,7 @@ internal constructor(
     candidates: List<Candidate>,
     promptFeedback: PromptFeedback?,
     usageMetadata: UsageMetadata?,
-    modelVersion: String?,
-  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, modelVersion)
+  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, null)
 
   /**
    * Convenience field representing all the text parts in the response as a single string.
