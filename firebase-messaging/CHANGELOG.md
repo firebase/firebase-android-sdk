@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Added support for FCM registration using Firebase Installation ID as token
+- [feature] Added support for FCM registration using Firebase Installation ID
 
 # 25.0.2
 
