@@ -273,6 +273,7 @@ public class FirebaseMessaging {
     topicsSubscriberTask =
         TopicsSubscriber.createInstance(
             firebaseApp,
+            this,
             firebaseInstallationsApi,
             metadata,
             context,
@@ -856,18 +857,23 @@ public class FirebaseMessaging {
 
   @VisibleForTesting
   boolean tokenNeedsRefresh(@Nullable Store.Token token) {
-    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
-      String fid = fetchFid();
-      if (fid != null) {
-        // In V1 registration, if the current FID is not equal to the existing token, then the FCM
-        // registration needs refresh.
-        return token == null
-            || !fid.equalsIgnoreCase(token.token)
-            || token.needsRefresh(metadata.getAppVersionCode());
-      }
+    if (token == null || token.needsRefresh(metadata.getAppVersionCode())) {
+      // If not token present or if the app version changed, then we need to refresh token.
+      return true;
     }
 
-    return token == null || token.needsRefresh(metadata.getAppVersionCode()) || token.isFid();
+    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
+      String fid = fetchFid();
+      // If V1 registration, the token has to be the current FID; else needs registration refresh.
+      // This could be different in cases where :
+      // 1. App instance migrated from legacy registration to V1.
+      // 2. The latest FID has changed which is not yet registered with FCM.
+      return !token.token.equalsIgnoreCase(fid);
+    } else {
+      // If legacy registration and if the token is a FID, then it means the app has downgraded back
+      // to token and hence needs registration refresh.
+      return token.isFid();
+    }
   }
 
   private void invokeOnRegistrationChanged(String token, boolean isUnregistered) {

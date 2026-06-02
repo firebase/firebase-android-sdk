@@ -83,7 +83,10 @@ public class TopicSubscriptionClientRoboTest {
     when(mockFirebaseInstallationsApi.getId()).thenReturn(Tasks.forResult(TEST_FID));
 
     // Spy on the client to mock createConnection
-    client = spy(new TopicSubscriptionClient(firebaseApp, mockFirebaseInstallationsApi));
+    client =
+        spy(
+            new TopicSubscriptionClient(
+                firebaseApp, mockFirebaseMessaging, mockFirebaseInstallationsApi));
     doReturn(mockConnection).when(client).createConnection(any(URL.class));
   }
 

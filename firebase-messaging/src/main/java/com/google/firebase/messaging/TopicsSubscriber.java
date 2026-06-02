@@ -65,6 +65,7 @@ class TopicsSubscriber {
   @VisibleForTesting
   static Task<TopicsSubscriber> createInstance(
       FirebaseApp firebaseApp,
+      FirebaseMessaging firebaseMessaging,
       FirebaseInstallationsApi firebaseInstallationsApi,
       Metadata metadata,
       Context context,
@@ -77,7 +78,8 @@ class TopicsSubscriber {
               new TopicsSubscriber(
                   metadata,
                   topicsStore,
-                  new TopicSubscriptionClient(firebaseApp, firebaseInstallationsApi),
+                  new TopicSubscriptionClient(
+                      firebaseApp, firebaseMessaging, firebaseInstallationsApi),
                   context,
                   syncExecutor);
           return topicsSubscriber;

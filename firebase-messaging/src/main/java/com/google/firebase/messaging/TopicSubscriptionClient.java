@@ -40,25 +40,33 @@ class TopicSubscriptionClient {
 
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final FirebaseApp firebaseApp;
+  private final FirebaseMessaging firebaseMessaging;
 
   TopicSubscriptionClient(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseMessaging firebaseMessaging,
+      FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.firebaseApp = firebaseApp;
+    this.firebaseMessaging = firebaseMessaging;
   }
 
   @WorkerThread
   void subscribe(String topic) throws IOException {
-    String token = awaitTask(firebaseInstallationsApi.getToken(false)).getToken();
+    String fisToken = awaitTask(firebaseInstallationsApi.getToken(false)).getToken();
+    // During subscribe operation, we are making sure the app instance is registered.
+    firebaseMessaging.blockingRegister(false);
     String fid = awaitTask(firebaseInstallationsApi.getId());
-    performTopicOperation(topic, token, fid, "subscribe");
+    performTopicOperation(topic, fisToken, fid, "subscribe");
   }
 
   @WorkerThread
   void unsubscribe(String topic) throws IOException {
-    String token = awaitTask(firebaseInstallationsApi.getToken(false)).getToken();
+    String fisToken = awaitTask(firebaseInstallationsApi.getToken(false)).getToken();
+    // During subscribe operation, we are making sure the app instance is registered.
+    firebaseMessaging.blockingRegister(false);
     String fid = awaitTask(firebaseInstallationsApi.getId());
-    performTopicOperation(topic, token, fid, "unsubscribe");
+    performTopicOperation(topic, fisToken, fid, "unsubscribe");
   }
 
   @WorkerThread
