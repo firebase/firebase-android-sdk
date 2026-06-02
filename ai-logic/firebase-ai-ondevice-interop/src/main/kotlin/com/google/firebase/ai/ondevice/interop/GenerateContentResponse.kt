@@ -22,7 +22,6 @@ package com.google.firebase.ai.ondevice.interop
  * @property candidates The individual responses from the model.
  * @property modelVersion The version of the model that generated the response.
  */
-public class GenerateContentResponse(
-  public val candidates: List<Candidate>,
-  public val modelVersion: String? = null
-) {}
+public class GenerateContentResponse
+@JvmOverloads
+constructor(public val candidates: List<Candidate>, public val modelVersion: String? = null) {}
