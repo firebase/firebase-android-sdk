@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.messaging.FirebaseMessaging.GMS_PACKAGE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.clearInvocations;
@@ -34,6 +35,7 @@ import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build.VERSION_CODES;
@@ -109,11 +111,10 @@ public final class FirebaseMessagingRoboTest {
   @Before
   public void setUp() throws InterruptedException, ExecutionException, TimeoutException {
     FirebaseIidRoboTestHelper.addGmsCorePackageInfo();
-    android.content.pm.PackageInfo gmsPackageInfo =
+    PackageInfo gmsPackageInfo =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager())
             .getInternalMutablePackageInfo("com.google.android.gms");
-    gmsPackageInfo.requestedPermissionsFlags =
-        new int[] {android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED};
+    gmsPackageInfo.requestedPermissionsFlags = new int[] {PackageInfo.REQUESTED_PERMISSION_GRANTED};
     FirebaseApp.clearInstancesForTest();
     context = ApplicationProvider.getApplicationContext();
     // Set the app's uid so that ProxyNotificationInitializer.allowedToUse() returns true.
@@ -1152,7 +1153,7 @@ public final class FirebaseMessagingRoboTest {
 
     try {
       Tasks.await(task, 5, SECONDS);
-      org.junit.Assert.fail("Expected ExecutionException");
+      fail("Expected ExecutionException");
     } catch (Exception e) {
       Throwable rootCause = e;
       while (rootCause.getCause() != null) {

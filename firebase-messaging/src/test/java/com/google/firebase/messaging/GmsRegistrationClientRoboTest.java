@@ -14,8 +14,10 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -40,6 +42,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.LooperMode.Mode;
+import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(shadows = ShadowPreconditions.class)
@@ -116,7 +119,7 @@ public class GmsRegistrationClientRoboTest {
 
   private void setV1RegistrationEnabled(boolean enabled) throws Exception {
     ApplicationInfo applicationInfo =
-        org.robolectric.Shadows.shadowOf(context.getPackageManager())
+        shadowOf(context.getPackageManager())
             .getInternalMutablePackageInfo(context.getPackageName())
             .applicationInfo;
     if (applicationInfo.metaData == null) {
@@ -135,7 +138,7 @@ public class GmsRegistrationClientRoboTest {
   }
 
   private <T> T awaitTaskOnBackground(Task<T> task) throws Exception {
-    org.robolectric.shadows.ShadowLooper.idleMainLooper();
+    ShadowLooper.idleMainLooper();
     return Tasks.await(task, 5, java.util.concurrent.TimeUnit.SECONDS);
   }
 
@@ -219,7 +222,7 @@ public class GmsRegistrationClientRoboTest {
 
     try {
       awaitTaskOnBackground(task);
-      org.junit.Assert.fail("Expected ExecutionException");
+      fail("Expected ExecutionException");
     } catch (ExecutionException e) {
       assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
     }
@@ -248,7 +251,7 @@ public class GmsRegistrationClientRoboTest {
 
     try {
       awaitTaskOnBackground(task);
-      org.junit.Assert.fail("Expected ExecutionException");
+      fail("Expected ExecutionException");
     } catch (ExecutionException e) {
       assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
     }
