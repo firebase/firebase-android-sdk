@@ -32,12 +32,6 @@ package com.google.firebase.messaging {
     method @WorkerThread public void onUnregistered(String);
   }
 
-  public class GmsRegistrationClient {
-    method public boolean isV1RegistrationEnabled();
-    method public com.google.android.gms.tasks.Task<java.lang.String!> register();
-    method public com.google.android.gms.tasks.Task<? extends java.lang.Object!> unregister();
-  }
-
   public final class MessagingKt {
     method public static com.google.firebase.messaging.FirebaseMessaging getMessaging(com.google.firebase.Firebase);
     method public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(String to, kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
