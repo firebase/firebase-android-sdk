@@ -84,9 +84,10 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
+  api(project(":appcheck:firebase-appcheck"))
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)

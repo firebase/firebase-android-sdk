@@ -1,10 +1,11 @@
 # Unreleased
 
 - [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
+- [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
 
 # 17.12.1
 
-- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig`. (#8107)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
 
 # 17.12.0
@@ -180,4 +181,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

@@ -16,17 +16,21 @@
 
 package com.google.firebase.appdistribution.gradle.models
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import com.google.auth.http.HttpCredentialsAdapter
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.appdistribution.gradle.ApiEndpoints
 import java.io.File
 import java.nio.file.Files
 
-class ServiceAccountCredentials private constructor(val googleCredential: GoogleCredential) {
+class ServiceAccountCredentials
+private constructor(val credentialsAdapter: HttpCredentialsAdapter) {
   companion object {
     fun fromFile(credentials: File): ServiceAccountCredentials =
       ServiceAccountCredentials(
-        GoogleCredential.fromStream(Files.newInputStream(credentials.toPath()))
-          .createScoped(ApiEndpoints.SCOPES)
+        HttpCredentialsAdapter(
+          GoogleCredentials.fromStream(Files.newInputStream(credentials.toPath()))
+            .createScoped(ApiEndpoints.SCOPES)
+        )
       )
   }
 }
