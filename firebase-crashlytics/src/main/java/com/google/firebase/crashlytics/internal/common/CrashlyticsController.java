@@ -119,6 +119,10 @@ class CrashlyticsController {
   // A token to make sure that checkForUnsentReports only gets called once.
   final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
+  // Set during initialization's session finalization when the previous session ended with an ANR,
+  // so didCrashOnPreviousExecution() reports ANRs alongside JVM and native crashes.
+  private volatile boolean didPreviousExecutionEndWithAnr = false;
+
   CrashlyticsController(
       Context context,
       IdManager idManager,
@@ -930,6 +934,11 @@ class CrashlyticsController {
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
       if (applicationExitInfoList.size() != 0) {
+        // Record whether the previous session ended with an ANR so didCrashOnPreviousExecution()
+        // can report it, without re-querying the system or blocking the main thread.
+        if (reportingCoordinator.didRelevantAnrOccur(sessionId, applicationExitInfoList)) {
+          didPreviousExecutionEndWithAnr = true;
+        }
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
             UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
@@ -943,5 +952,11 @@ class CrashlyticsController {
           .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
     }
   }
+
+  /** Whether the previous execution ended with an ANR, detected during session finalization. */
+  boolean didPreviousExecutionEndWithAnr() {
+    return didPreviousExecutionEndWithAnr;
+  }
+
   // endregion
 }

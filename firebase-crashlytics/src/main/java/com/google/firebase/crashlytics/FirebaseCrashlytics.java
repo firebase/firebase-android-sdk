@@ -454,9 +454,11 @@ public class FirebaseCrashlytics {
   // endregion
 
   /**
-   * Checks whether the app crashed on its previous run.
+   * Checks whether the app crashed on its previous run. Returns {@code true} for JVM crashes,
+   * native crashes, and ANRs (Application Not Responding). ANR detection requires Android API 30
+   * (R) or above.
    *
-   * @return true if a crash was recorded during the previous run of the app.
+   * @return true if a crash or ANR was recorded during the previous run of the app.
    */
   public boolean didCrashOnPreviousExecution() {
     return core.didCrashOnPreviousExecution();

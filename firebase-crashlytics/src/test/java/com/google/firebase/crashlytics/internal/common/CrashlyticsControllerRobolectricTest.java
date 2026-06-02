@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -131,6 +133,47 @@ public class CrashlyticsControllerRobolectricTest {
             eq(testApplicationExitInfo),
             any(LogFileManager.class),
             any(UserMetadata.class));
+  }
+
+  @Test
+  public void testFinalizeSessions_relevantAnr_setsDidPreviousExecutionEndWithAnr()
+      throws Exception {
+    final String sessionIdPrevious = "sessionIdPrevious";
+    final String sessionId = "sessionId";
+    final CrashlyticsController controller = createController();
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
+
+    when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
+        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
+    when(mockSessionReportingCoordinator.didRelevantAnrOccur(
+            eq(sessionIdPrevious), eq(testApplicationExitInfo)))
+        .thenReturn(true);
+    mockSettingsProvider(true, false);
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
+
+    assertTrue(controller.didPreviousExecutionEndWithAnr());
+  }
+
+  @Test
+  public void testFinalizeSessions_noRelevantAnr_leavesDidPreviousExecutionEndWithAnrFalse()
+      throws Exception {
+    final String sessionIdPrevious = "sessionIdPrevious";
+    final String sessionId = "sessionId";
+    final CrashlyticsController controller = createController();
+    addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
+
+    when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
+        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
+    // didRelevantAnrOccur returns false by default for the mock.
+    mockSettingsProvider(true, false);
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
+
+    assertFalse(controller.didPreviousExecutionEndWithAnr());
   }
 
   @Test

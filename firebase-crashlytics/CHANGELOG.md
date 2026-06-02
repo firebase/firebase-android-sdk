@@ -5,6 +5,9 @@
 - [fixed] Fixed race condition that caused logs from background threads to not be attached to
   reports in some cases [#8034]
 - [changed] Updated `firebase-sessions` dependency to v3.0.6
+- [changed] `didCrashOnPreviousExecution()` now also returns `true` when the previous run ended
+  with an ANR (Application Not Responding), in addition to JVM and native crashes. ANR detection
+  requires API level 30 (Android R) or above. [#4201]
 
 # 20.0.5
 

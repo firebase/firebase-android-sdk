@@ -499,7 +499,8 @@ public class CrashlyticsCore {
   }
 
   public boolean didCrashOnPreviousExecution() {
-    return didCrashOnPreviousExecution;
+    return didCrashOnPreviousExecution
+        || (controller != null && controller.didPreviousExecutionEndWithAnr());
   }
 
   // endregion
