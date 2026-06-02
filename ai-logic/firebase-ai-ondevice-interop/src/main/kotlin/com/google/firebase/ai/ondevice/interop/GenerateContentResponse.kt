@@ -24,5 +24,5 @@ package com.google.firebase.ai.ondevice.interop
  */
 public class GenerateContentResponse(
   public val candidates: List<Candidate>,
-  public val modelVersion: String?
+  public val modelVersion: String? = null
 ) {}
