@@ -149,7 +149,7 @@ class TestReportGenerator(private val apiToken: String) {
       for (commit in commits) {
         if (testLookup.containsKey(Pair.of(sdk, commit))) {
           val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
-          if (report.status.finished) {
+          if (report.status.completed) {
             sdkTestCount++
             if (report.status == TestReport.Status.SUCCESS) {
               sdkTestSuccess++

@@ -44,7 +44,7 @@ data class TestReport(
     DAILY_TEST,
   }
 
-  enum class Status(public val icon: String, public val finished: Boolean) {
+  enum class Status(public val icon: String, public val completed: Boolean) {
     SUCCESS("✅", true),
     FAILURE("⛔", true),
     CANCELLED("✖️", false),
