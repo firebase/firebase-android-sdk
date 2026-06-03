@@ -16,6 +16,7 @@
 
 package com.google.firebase.appdistribution.gradle
 
+import com.google.firebase.appdistribution.gradle.VersionUtils.Stability.STABLE
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
@@ -27,15 +28,27 @@ object VersionUtils {
   private const val GOOGLE_SERVICES_METADATA_URL =
     "https://dl.google.com/dl/android/maven2/com/google/gms/google-services/maven-metadata.xml"
 
-  fun fetchLatestAgpVersion(): String {
-    return fetchLatestDependencyVersion(AGP_METADATA_URL, "AGP")
+  enum class Stability(val filteredKeywords: Set<String>) {
+    STABLE(setOf("alpha", "beta", "milestone", "canary", "m", "rc")),
+    RC(setOf("alpha", "milestone", "m")),
+    BLEEDING_EDGE(setOf());
+
+    fun applies(version: String) = !filteredKeywords.any { version.contains(it, ignoreCase = true) }
   }
 
-  fun fetchLatestGoogleServicesVersion(): String {
-    return fetchLatestDependencyVersion(GOOGLE_SERVICES_METADATA_URL, "Google Services")
+  fun fetchLatestAgpVersion(stability: Stability = STABLE): String {
+    return fetchLatestDependencyVersion(AGP_METADATA_URL, "AGP", stability)
   }
 
-  private fun fetchLatestDependencyVersion(url: String, name: String): String {
+  fun fetchLatestGoogleServicesVersion(stability: Stability = STABLE): String {
+    return fetchLatestDependencyVersion(GOOGLE_SERVICES_METADATA_URL, "Google Services", stability)
+  }
+
+  private fun fetchLatestDependencyVersion(
+    url: String,
+    name: String,
+    stability: Stability,
+  ): String {
     val doc =
       try {
         fetchUrl(url) { connection ->
@@ -52,14 +65,14 @@ object VersionUtils {
     // Iterate backwards through all versions to find the first stable one
     for (i in versionsNodeList.length - 1 downTo 0) {
       val version = versionsNodeList.item(i).textContent
-      if (!isUnstable(version)) {
+      if (stability.applies(version)) {
         return version
       }
     }
-    throw RuntimeException("Failed to find any stable version in $name metadata")
+    throw RuntimeException("Failed to find any $stability version in $name metadata")
   }
 
-  fun fetchLatestGradleVersion(): String {
+  fun fetchLatestGradleVersion(stability: Stability = STABLE): String {
     val content =
       try {
         fetchUrl(GRADLE_RELEASES_URL) { connection ->
@@ -71,7 +84,7 @@ object VersionUtils {
 
     val matchResults = Regex("/gradle/gradle/releases/tag/v?([^\"/\\s>]+)").findAll(content)
 
-    val stableVersions =
+    val applicableVersions =
       matchResults
         .map { it.groupValues[1] }
         .map { version ->
@@ -80,14 +93,14 @@ object VersionUtils {
             "-rc-${it.groupValues[1]}"
           }
         }
-        .filter { !isUnstable(it) }
+        .filter { stability.applies(it) }
         .toList()
 
-    if (stableVersions.isEmpty()) {
-      throw RuntimeException("Failed to find any stable Gradle version in HTML")
+    if (applicableVersions.isEmpty()) {
+      throw RuntimeException("Failed to find any $stability Gradle version in HTML")
     }
 
-    return stableVersions.maxWithOrNull(VersionComparator) ?: stableVersions[0]
+    return applicableVersions.maxWithOrNull(VersionComparator) ?: applicableVersions[0]
   }
 
   private object VersionComparator : Comparator<String> {
@@ -118,10 +131,5 @@ object VersionUtils {
     } finally {
       connection.disconnect()
     }
-  }
-
-  private fun isUnstable(version: String): Boolean {
-    val unstableKeywords = listOf("alpha", "beta", "milestone", "canary", "m", "rc")
-    return unstableKeywords.any { version.contains(it, ignoreCase = true) }
   }
 }
