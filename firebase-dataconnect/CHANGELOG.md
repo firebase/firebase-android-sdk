@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.3.0
+
 - [feature] `QuerySubscription.flow` gains
   [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
   ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))

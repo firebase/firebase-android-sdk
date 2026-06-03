@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
@@ -90,7 +89,7 @@ internal class DataConnectGrpcClient(
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList,
-      source = DataSource.SERVER,
+      source = DataSource.Server,
     )
   }
 
@@ -148,12 +147,12 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
       DataConnectGrpcClient.OperationResult(
         data = data,
         errors = emptyList(),
-        source = DataSource.CACHE,
+        source = DataSource.Cache(sqliteSequenceNumber),
       )
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
         errors = response.errorsList,
-        source = DataSource.SERVER,
+        source = DataSource.Server,
       )
   }

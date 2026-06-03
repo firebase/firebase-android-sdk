@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.querymgr
+package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.DataSource
+/** A class that wraps a reference and associates a tag with it. */
+internal data class TaggedReference<out Tag, out T>(val tag: Tag, val ref: T)
 
-internal data class DataSourcePair<T>(val data: T, val source: DataSource)
+/**
+ * Returns a new [TaggedReference] with the same [tag], but with its [ref] transformed by applying
+ * the given [block] function to the current [ref].
+ */
+internal inline fun <Tag, T, U> TaggedReference<Tag, T>.map(
+  block: (T) -> U
+): TaggedReference<Tag, U> = TaggedReference(tag, block(ref))

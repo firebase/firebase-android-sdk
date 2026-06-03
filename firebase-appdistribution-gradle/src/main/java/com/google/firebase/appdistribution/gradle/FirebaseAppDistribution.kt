@@ -16,8 +16,8 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.http.HttpResponseException
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_CREDENTIALS
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -76,9 +76,11 @@ object FirebaseAppDistribution {
   private fun getCredential(options: TesterManagementOptions) =
     options.credential ?: throw AppDistributionException(MISSING_CREDENTIALS)
 
-  private fun getAuthenticatedHttpClient(credential: Credential): AuthenticatedHttpClient {
+  private fun getAuthenticatedHttpClient(
+    credentialsAdapter: HttpCredentialsAdapter
+  ): AuthenticatedHttpClient {
     return try {
-      AuthenticatedHttpClient(credential)
+      AuthenticatedHttpClient(credentialsAdapter)
     } catch (e: Exception) {
       when (e) {
         is GeneralSecurityException,
