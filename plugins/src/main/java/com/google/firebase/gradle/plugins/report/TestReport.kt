@@ -44,21 +44,19 @@ data class TestReport(
     DAILY_TEST,
   }
 
-  enum class Status {
-    SUCCESS,
-    FAILURE,
-    CANCELLED,
-    OTHER;
+  enum class Status(public val icon: String, public val finished: Boolean) {
+    SUCCESS("✅", true),
+    FAILURE("⛔", true),
+    CANCELLED("✖️", false),
+    OTHER("▶️", false);
 
     companion object {
       fun of(json: JsonObject): Status {
         if (json["status"]?.jsonPrimitive?.content == "completed") {
-          if (json["conclusion"]?.jsonPrimitive?.content == "success") {
-            return SUCCESS
-          } else if (json["conclusion"]?.jsonPrimitive?.content == "cancelled") {
-            return CANCELLED
-          } else {
-            return FAILURE
+          return when (json["conclusion"]?.jsonPrimitive?.content) {
+            "success" -> SUCCESS
+            "cancelled" -> CANCELLED
+            else -> FAILURE
           }
         } else {
           return OTHER
