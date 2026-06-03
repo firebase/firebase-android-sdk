@@ -18,8 +18,8 @@ package com.google.firebase.appdistribution.gradle
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.google.firebase.appdistribution.gradle.ApiStubs.Companion.WIRE_MOCK_PORT
-import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_COMPILE_SDK_VERSION
 import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_AGP_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_COMPILE_SDK_VERSION
 import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_GOOGLE_SERVICES_VERSION
 import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_GRADLE_VERSION
 import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_AGP_VERSION
