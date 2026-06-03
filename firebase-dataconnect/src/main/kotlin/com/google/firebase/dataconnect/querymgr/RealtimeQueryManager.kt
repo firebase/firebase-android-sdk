@@ -16,34 +16,51 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.DataSource
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
+import com.google.firebase.dataconnect.core.DataConnectCache
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
+import com.google.firebase.dataconnect.core.DataConnectSerialization
+import com.google.firebase.dataconnect.core.DataSource
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.QueryId
+import com.google.firebase.dataconnect.core.calculateQueryId
+import com.google.firebase.dataconnect.core.getEntityIdForPathFunction
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
+import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
-import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.TaggedReference
+import com.google.firebase.dataconnect.util.map
+import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Struct
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
-@ExperimentalRealtimeQueries
 internal class RealtimeQueryManager(
   private val grpcClient: DataConnectGrpcClient,
   coroutineScope: CoroutineScope,
   private val idStringGenerator: IdStringGenerator,
+  private val serialization: DataConnectSerialization,
+  private val cache: DataConnectCache?,
   private val logger: Logger,
 ) {
 
@@ -51,16 +68,67 @@ internal class RealtimeQueryManager(
 
   private val coroutineScope =
     coroutineScope.createChildSupervisorScope(logger).also {
-      it.coroutineContext.job.invokeOnCompletion { state.set(State.Closed) }
+      it.launch(start = CoroutineStart.UNDISPATCHED) {
+        try {
+          awaitCancellation()
+        } finally {
+          logger.debug { "cancellation signal received; setting state to Closing" }
+          state.update { currentState ->
+            if (currentState == State.Closed) currentState else State.Closing
+          }
+        }
+      }
+
+      it.coroutineContext.job.invokeOnCompletion {
+        logger.debug { "scope Job is completed; setting state to Closed" }
+        state.set(State.Closed)
+      }
     }
 
-  suspend fun subscribe(
-    requestId: String,
+  suspend fun <Data, Variables> subscribe(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+  ): Flow<Result<TaggedReference<SqliteSequenceNumber?, Data>>> {
+    val variablesStruct: Struct =
+      serialization.encodeVariables(
+        variables,
+        variablesSerializer,
+        variablesSerializersModule,
+      )
+
+    val operationResultFlow =
+      subscribe(
+        operationName = operationName,
+        variablesStruct,
+        callerSdkType,
+      )
+
+    return operationResultFlow.map { taggedOperationResult ->
+      runCatching {
+        taggedOperationResult.map {
+          serialization.decodeData(
+            it.data,
+            it.errors,
+            dataDeserializer,
+            dataSerializersModule,
+          )
+        }
+      }
+    }
+  }
+
+  private suspend fun subscribe(
     operationName: String,
     variables: Struct,
     callerSdkType: CallerSdkType,
-  ): Flow<DataConnectGrpcClient.OperationResult> {
-    val connection = ensureConnected(requestId, callerSdkType)
+  ): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> {
+    val requestId = idStringGenerator.next("sub")
+    val connection = ensureConnected(requestId, callerSdkType) ?: return emptyFlow()
 
     val coroutineName = "${logger.nameWithId}-subscribe(rid=$requestId)[ecpvdvmzvj]"
     val job =
@@ -76,25 +144,20 @@ internal class RealtimeQueryManager(
     requestId: String,
     operationName: String,
     variables: Struct,
-  ): Flow<DataConnectGrpcClient.OperationResult> {
-    // calculateSha512() is a CPU intensive operation that should NOT be performed on the main
+  ): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> {
+    // calculateQueryId() is a CPU intensive operation that should NOT be performed on the main
     // thread. This is the first reason why this method assumes it's running in this.coroutineScope.
-    val queryId = variables.calculateSha512(preamble = operationName)
+    val queryId = calculateQueryId(operationName, variables)
 
     // Acquiring the lock by an arbitrary thread could result in priority inversion. This is the
     // second reason why this method assumes it's running in this.coroutineScope: control over the
     // thread that acquires the lock.
     mutex.withLock {
       return flowByQueryId.getOrPut(queryId) {
-        val executeResponseFlow = stream.subscribe(requestId, operationName, variables)
-
-        executeResponseFlow.map { executeResponse ->
-          DataConnectGrpcClient.OperationResult(
-            data = executeResponse.data,
-            errors = executeResponse.errors,
-            source = DataSource.SERVER,
-          )
-        }
+        stream
+          .subscribe(requestId, operationName, variables)
+          .updateCache(cache, queryId)
+          .mapToOperationResponse()
       }
     }
   }
@@ -102,33 +165,46 @@ internal class RealtimeQueryManager(
   private suspend fun ensureConnected(
     requestId: String,
     callerSdkType: CallerSdkType
-  ): State.Connected {
+  ): State.Connected? {
+    var connectionAttempted = false
+
     while (true) {
-      val currentState = state.get()
-
-      val newState =
-        when (currentState) {
-          State.Disconnected ->
-            State.Connecting(
-              coroutineScope.async(start = CoroutineStart.LAZY) {
-                grpcClient.connect(
-                  streamId = idStringGenerator.next("con"),
-                  requestId = requestId,
-                  callerSdkType = callerSdkType,
-                )
-              }
-            )
-          is State.Connecting -> {
-            val stream = currentState.job.await()
-            State.Connected(stream)
-          }
-          is State.Connected -> return currentState
-          State.Closed -> error("${logger.nameWithId} has been closed")
+      when (val currentState = state.get()) {
+        State.Disconnected -> {
+          val newState: State.Connecting = createConnectingState(requestId, callerSdkType)
+          state.compareAndSet(currentState, newState)
         }
-
-      state.compareAndSet(currentState, newState)
+        is State.Connecting -> {
+          val connectResult = currentState.job.runCatching { await() }
+          val newState = connectResult.map(State::Connected).getOrElse { State.Disconnected }
+          state.compareAndSet(currentState, newState)
+          connectResult.onFailure { exception ->
+            if (connectionAttempted) {
+              throw exception
+            }
+            connectionAttempted = true
+          }
+        }
+        is State.Connected -> return currentState
+        State.Closing,
+        State.Closed -> return null
+      }
     }
   }
+
+  private fun createConnectingState(
+    requestId: String,
+    callerSdkType: CallerSdkType,
+  ) =
+    State.Connecting(
+      coroutineScope.async(start = CoroutineStart.LAZY) {
+        grpcClient.connect(
+          requestId = requestId,
+          callerSdkType = callerSdkType,
+          idStringGenerator = idStringGenerator,
+        )
+      }
+    )
 
   private sealed interface State {
     object Disconnected : State {
@@ -142,13 +218,83 @@ internal class RealtimeQueryManager(
     class Connected(val stream: DataConnectBidiConnectStream) : State {
       val mutex = Mutex()
       val flowByQueryId:
-        MutableMap<ImmutableByteArray, Flow<DataConnectGrpcClient.OperationResult>> =
+        MutableMap<
+          QueryId,
+          Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>>
+        > =
         mutableMapOf()
       override fun toString() = "Connected"
     }
 
-    object Closed : State {
+    sealed interface TerminatingState : State
+
+    object Closing : TerminatingState {
+      override fun toString() = "Closing"
+    }
+
+    object Closed : TerminatingState {
       override fun toString() = "Closed"
     }
   }
 }
+
+internal suspend fun <Data, Variables> RealtimeQueryManager.subscribe(
+  queryRef: QueryRef<Data, Variables>
+): Flow<Result<TaggedReference<SqliteSequenceNumber?, Data>>> =
+  subscribe(
+    queryRef.operationName,
+    queryRef.variables,
+    queryRef.dataDeserializer,
+    queryRef.variablesSerializer,
+    queryRef.callerSdkType,
+    queryRef.dataSerializersModule,
+    queryRef.variablesSerializersModule,
+  )
+
+private fun Flow<
+  TaggedReference<SqliteSequenceNumber?, DataConnectBidiConnectStream.ExecuteResponse>
+>
+  .mapToOperationResponse():
+  Flow<TaggedReference<SqliteSequenceNumber?, DataConnectGrpcClient.OperationResult>> =
+  map { taggedExecuteResponse ->
+    taggedExecuteResponse.map { executeResponse ->
+      DataConnectGrpcClient.OperationResult(
+        data = executeResponse.data,
+        errors = executeResponse.errors,
+        source = DataSource.Server,
+      )
+    }
+  }
+
+private fun Flow<DataConnectBidiConnectStream.ExecuteResponse>.updateCache(
+  cache: DataConnectCache?,
+  queryId: QueryId,
+): Flow<TaggedReference<SqliteSequenceNumber?, DataConnectBidiConnectStream.ExecuteResponse>> =
+  map { response ->
+    val data = response.data
+    val sqliteSequenceNumber =
+      if (cache == null || data == null) {
+        null
+      } else {
+        cache
+          .open()
+          .insertQueryResult(
+            response.authUid,
+            queryId,
+            data,
+            cache.maxAgeProto,
+            currentTimeMillis(),
+            response.getEntityIdForPathFunction(),
+          )
+      }
+    TaggedReference(sqliteSequenceNumber, response)
+  }
+
+@JvmName("getEntityIdForPathFunction_DataConnectBidiConnectStream_ExecuteResponse")
+private fun DataConnectBidiConnectStream.ExecuteResponse.getEntityIdForPathFunction():
+  GetEntityIdForPathFunction? =
+  if (extensions.isEmpty()) {
+    null
+  } else {
+    extensions.getEntityIdForPathFunction()
+  }

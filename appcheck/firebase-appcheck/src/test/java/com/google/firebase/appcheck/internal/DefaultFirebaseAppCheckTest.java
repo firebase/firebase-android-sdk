@@ -76,6 +76,8 @@ public class DefaultFirebaseAppCheckTest {
     when(mockFirebaseApp.getPersistenceKey()).thenReturn(PERSISTENCE_KEY);
     when(mockAppCheckProviderFactory.create(any())).thenReturn(mockAppCheckProvider);
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
+    when(mockAppCheckProvider.getLimitedUseToken())
+        .thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     defaultFirebaseAppCheck =
@@ -419,7 +421,7 @@ public class DefaultFirebaseAppCheckTest {
 
     defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
 
-    verify(mockAppCheckProvider).getToken();
+    verify(mockAppCheckProvider).getLimitedUseToken();
   }
 
   @Test
@@ -429,7 +431,7 @@ public class DefaultFirebaseAppCheckTest {
 
     defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
 
-    verify(mockAppCheckProvider).getToken();
+    verify(mockAppCheckProvider).getLimitedUseToken();
   }
 
   @Test
@@ -438,7 +440,7 @@ public class DefaultFirebaseAppCheckTest {
 
     defaultFirebaseAppCheck.getLimitedUseToken();
 
-    verify(mockAppCheckProvider).getToken();
+    verify(mockAppCheckProvider).getLimitedUseToken();
   }
 
   @Test
@@ -448,7 +450,7 @@ public class DefaultFirebaseAppCheckTest {
 
     defaultFirebaseAppCheck.getLimitedUseToken();
 
-    verify(mockAppCheckProvider).getToken();
+    verify(mockAppCheckProvider).getLimitedUseToken();
   }
 
   @Test
@@ -472,9 +474,7 @@ public class DefaultFirebaseAppCheckTest {
   public void getLimitedUseToken_providerThrowsExceptionWithNullMessage_returnsResultWithError()
       throws Exception {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
-    when(mockAppCheckProvider.getToken())
-        .thenReturn(Tasks.forException(new Exception((String) null)));
-    when(mockAppCheckProvider.getToken())
+    when(mockAppCheckProvider.getLimitedUseToken())
         .thenReturn(Tasks.forException(new Exception((String) null)));
 
     Task<AppCheckTokenResult> tokenTask = defaultFirebaseAppCheck.getLimitedUseToken();
