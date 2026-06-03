@@ -37,6 +37,8 @@ import kotlinx.serialization.json.JsonNames
  * @property safetyRatings A list of [SafetyRating]s describing the generated content.
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exists.
+ * @property finishMessage The optional message associated with the finish reason, providing more
+ * details.
  * @property groundingMetadata Metadata returned to the client when the model grounds its response.
  * @property urlContextMetadata Metadata returned to the client when the [UrlContext] tool is
  * enabled.
@@ -48,6 +50,7 @@ internal constructor(
   public val safetyRatings: List<SafetyRating>,
   public val citationMetadata: CitationMetadata?,
   public val finishReason: FinishReason?,
+  public val finishMessage: String?,
   public val groundingMetadata: GroundingMetadata?,
   public val urlContextMetadata: UrlContextMetadata?
 ) {
@@ -57,6 +60,7 @@ internal constructor(
   internal data class Internal(
     val content: Content.Internal? = null,
     val finishReason: FinishReason.Internal? = null,
+    val finishMessage: String? = null,
     val safetyRatings: List<SafetyRating.Internal>? = null,
     val citationMetadata: CitationMetadata.Internal? = null,
     val groundingMetadata: GroundingMetadata.Internal? = null,
@@ -65,17 +69,19 @@ internal constructor(
 
     @OptIn(PublicPreviewAPI::class)
     internal fun toPublic(): Candidate {
+      val content = this.content?.toPublic() ?: content("model") {}
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
-      val citations = citationMetadata?.toPublic()
+      val citations = citationMetadata?.toPublic(content)
       val finishReason = finishReason?.toPublic()
-      val groundingMetadata = groundingMetadata?.toPublic()
+      val groundingMetadata = groundingMetadata?.toPublic(content)
       val urlContextMetadata = urlContextMetadata?.toPublic()
 
       return Candidate(
-        this.content?.toPublic() ?: content("model") {},
+        content,
         safetyRatings,
         citations,
         finishReason,
+        finishMessage,
         groundingMetadata,
         urlContextMetadata
       )
@@ -89,6 +95,7 @@ internal constructor(
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
       )
@@ -163,7 +170,8 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
   @OptIn(ExperimentalSerializationApi::class)
   internal constructor(@JsonNames("citations") val citationSources: List<Citation.Internal>) {
 
-    internal fun toPublic() = CitationMetadata(citationSources.map { it.toPublic() })
+    internal fun toPublic(content: Content) =
+      CitationMetadata(citationSources.map { it.toPublic(content) })
   }
 }
 
@@ -203,7 +211,7 @@ internal constructor(
     val publicationDate: Date? = null,
   ) {
 
-    internal fun toPublic(): Citation {
+    internal fun toPublic(content: Content): Citation {
       val publicationDateAsCalendar =
         publicationDate?.let {
           val calendar = Calendar.getInstance()
@@ -220,8 +228,8 @@ internal constructor(
         }
       return Citation(
         title = title,
-        startIndex = startIndex,
-        endIndex = endIndex,
+        startIndex = convertUtf8IndexToUtf16(content, startIndex),
+        endIndex = convertUtf8IndexToUtf16(content, endIndex),
         uri = uri,
         license = license,
         publicationDate = publicationDateAsCalendar
@@ -263,7 +271,17 @@ public class FinishReason private constructor(public val name: String, public va
     BLOCKLIST,
     PROHIBITED_CONTENT,
     SPII,
-    MALFORMED_FUNCTION_CALL;
+    MALFORMED_FUNCTION_CALL,
+    IMAGE_SAFETY,
+    IMAGE_PROHIBITED_CONTENT,
+    IMAGE_OTHER,
+    NO_IMAGE,
+    IMAGE_RECITATION,
+    LANGUAGE,
+    UNEXPECTED_TOOL_CALL,
+    TOO_MANY_TOOL_CALLS,
+    MISSING_THOUGHT_SIGNATURE,
+    MALFORMED_RESPONSE;
 
     internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
 
@@ -278,6 +296,16 @@ public class FinishReason private constructor(public val name: String, public va
         PROHIBITED_CONTENT -> FinishReason.PROHIBITED_CONTENT
         SPII -> FinishReason.SPII
         MALFORMED_FUNCTION_CALL -> FinishReason.MALFORMED_FUNCTION_CALL
+        IMAGE_SAFETY -> FinishReason.IMAGE_SAFETY
+        IMAGE_PROHIBITED_CONTENT -> FinishReason.IMAGE_PROHIBITED_CONTENT
+        IMAGE_OTHER -> FinishReason.IMAGE_OTHER
+        NO_IMAGE -> FinishReason.NO_IMAGE
+        IMAGE_RECITATION -> FinishReason.IMAGE_RECITATION
+        LANGUAGE -> FinishReason.LANGUAGE
+        UNEXPECTED_TOOL_CALL -> FinishReason.UNEXPECTED_TOOL_CALL
+        TOO_MANY_TOOL_CALLS -> FinishReason.TOO_MANY_TOOL_CALLS
+        MISSING_THOUGHT_SIGNATURE -> FinishReason.MISSING_THOUGHT_SIGNATURE
+        MALFORMED_RESPONSE -> FinishReason.MALFORMED_RESPONSE
         else -> FinishReason.UNKNOWN
       }
   }
@@ -318,6 +346,40 @@ public class FinishReason private constructor(public val name: String, public va
     @JvmField
     public val MALFORMED_FUNCTION_CALL: FinishReason = FinishReason("MALFORMED_FUNCTION_CALL", 9)
 
+    /** Token generation stopped because generated images contain safety violations. */
+    @JvmField public val IMAGE_SAFETY: FinishReason = FinishReason("IMAGE_SAFETY", 10)
+
+    /** Image generation stopped because generated images have other prohibited content. */
+    @JvmField
+    public val IMAGE_PROHIBITED_CONTENT: FinishReason = FinishReason("IMAGE_PROHIBITED_CONTENT", 11)
+
+    /** Image generation stopped because of other miscellaneous issue. */
+    @JvmField public val IMAGE_OTHER: FinishReason = FinishReason("IMAGE_OTHER", 12)
+
+    /** The model was expected to generate an image, but none was generated. */
+    @JvmField public val NO_IMAGE: FinishReason = FinishReason("NO_IMAGE", 13)
+
+    /** Image generation stopped due to recitation. */
+    @JvmField public val IMAGE_RECITATION: FinishReason = FinishReason("IMAGE_RECITATION", 14)
+
+    /** The response candidate content was flagged for using an unsupported language. */
+    @JvmField public val LANGUAGE: FinishReason = FinishReason("LANGUAGE", 15)
+
+    /** Model generated a tool call but no tools were enabled in the request. */
+    @JvmField
+    public val UNEXPECTED_TOOL_CALL: FinishReason = FinishReason("UNEXPECTED_TOOL_CALL", 16)
+
+    /** Model called too many tools consecutively, thus the system exited execution. */
+    @JvmField public val TOO_MANY_TOOL_CALLS: FinishReason = FinishReason("TOO_MANY_TOOL_CALLS", 17)
+
+    /** Request has at least one thought signature missing. */
+    @JvmField
+    public val MISSING_THOUGHT_SIGNATURE: FinishReason =
+      FinishReason("MISSING_THOUGHT_SIGNATURE", 18)
+
+    /** Finished due to malformed response. */
+    @JvmField public val MALFORMED_RESPONSE: FinishReason = FinishReason("MALFORMED_RESPONSE", 19)
+
     internal fun fromInterop(reason: OnDeviceFinishReason) =
       when (reason) {
         OnDeviceFinishReason.STOP -> STOP
@@ -333,6 +395,12 @@ public class FinishReason private constructor(public val name: String, public va
  * If using grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
+ * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
+ * within the Service Specific Terms).
+ *
+ * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
+ * Maps" usage requirements for your chosen API provider:
+ * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
  * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
  * within the Service Specific Terms).
  *
@@ -365,14 +433,15 @@ public class GroundingMetadata(
     val groundingChunks: List<GroundingChunk.Internal>?,
     val groundingSupports: List<GroundingSupport.Internal>?,
   ) {
-    internal fun toPublic() =
+    internal fun toPublic(content: Content) =
       GroundingMetadata(
         webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
         retrievalQueries = retrievalQueries.orEmpty(),
-        groundingAttribution = groundingAttribution?.map { it.toPublic() }.orEmpty(),
+        groundingAttribution = groundingAttribution?.map { it.toPublic(content) }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
-        groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty().filterNotNull()
+        groundingSupports =
+          groundingSupports?.map { it.toPublic(content) }.orEmpty().filterNotNull()
       )
   }
 }
@@ -408,15 +477,40 @@ public class SearchEntryPoint(
  * Represents a chunk of retrieved data that supports a claim in the model's response.
  *
  * @property web Contains details if the grounding chunk is from a web source.
+ * @property maps Contains details if the grounding chunk is from a Google Maps source.
  */
-public class GroundingChunk(
-  public val web: WebGroundingChunk?,
+public class GroundingChunk
+@JvmOverloads
+constructor(
+  public val web: WebGroundingChunk? = null,
+  public val maps: GoogleMapsGroundingChunk? = null,
 ) {
+
   @Serializable
   internal data class Internal(
     val web: WebGroundingChunk.Internal?,
+    val maps: GoogleMapsGroundingChunk.Internal?,
   ) {
-    internal fun toPublic() = GroundingChunk(web = web?.toPublic())
+    internal fun toPublic() = GroundingChunk(web = web?.toPublic(), maps?.toPublic())
+  }
+}
+
+/**
+ * A grounding chunk from Google Maps.
+ *
+ * @property uri The URI of the place.
+ * @property title The title of the place.
+ * @property placeId This Place's resource name, in `places/{place_id}` format. This can be used to
+ * look up the place using the Google Maps API.
+ */
+public class GoogleMapsGroundingChunk(
+  public val uri: String?,
+  public val title: String?,
+  public val placeId: String?,
+) {
+  @Serializable
+  internal data class Internal(val uri: String?, val title: String?, val placeId: String?) {
+    fun toPublic() = GoogleMapsGroundingChunk(uri, title, placeId)
   }
 }
 
@@ -460,12 +554,12 @@ public class GroundingSupport(
     val segment: Segment.Internal?,
     val groundingChunkIndices: List<Int>?,
   ) {
-    internal fun toPublic(): GroundingSupport? {
+    internal fun toPublic(content: Content): GroundingSupport? {
       if (segment == null) {
         return null
       }
       return GroundingSupport(
-        segment = segment.toPublic(),
+        segment = segment.toPublic(content),
         groundingChunkIndices = groundingChunkIndices.orEmpty(),
       )
     }
@@ -483,8 +577,8 @@ public class GroundingAttribution(
     val segment: Segment.Internal,
     val confidenceScore: Float?,
   ) {
-    internal fun toPublic() =
-      GroundingAttribution(segment = segment.toPublic(), confidenceScore = confidenceScore)
+    internal fun toPublic(content: Content) =
+      GroundingAttribution(segment = segment.toPublic(content), confidenceScore = confidenceScore)
   }
 }
 
@@ -495,11 +589,11 @@ public class GroundingAttribution(
  * @property partIndex The zero-based index of the [Part] object within the `parts` array of its
  * parent [Content] object. This identifies which part of the content the segment belongs to.
  * @property startIndex The zero-based start index of the segment within the specified [Part],
- * measured in UTF-8 bytes. This offset is inclusive, starting from 0 at the beginning of the part's
- * content.
+ * measured in UTF-16 characters. This offset is inclusive, starting from 0 at the beginning of the
+ * part's content.
  * @property endIndex The zero-based end index of the segment within the specified [Part], measured
- * in UTF-8 bytes. This offset is exclusive, meaning the character at this index is not included in
- * the segment.
+ * in UTF-16 characters. This offset is exclusive, meaning the character at this index is not
+ * included in the segment.
  * @property text The text corresponding to the segment from the response.
  */
 public class Segment(
@@ -515,13 +609,17 @@ public class Segment(
     val partIndex: Int?,
     val text: String?,
   ) {
-    internal fun toPublic() =
-      Segment(
-        startIndex = startIndex ?: 0,
-        endIndex = endIndex ?: 0,
-        partIndex = partIndex ?: 0,
+    internal fun toPublic(content: Content): Segment {
+      val partIndex = this.partIndex ?: 0
+      val part = content.parts.getOrNull(partIndex)
+      val fakeContent = Content(content.role, if (part == null) emptyList() else listOf(part))
+      return Segment(
+        startIndex = convertUtf8IndexToUtf16(fakeContent, startIndex ?: 0),
+        endIndex = convertUtf8IndexToUtf16(fakeContent, endIndex ?: 0),
+        partIndex = partIndex,
         text = text ?: ""
       )
+    }
   }
 }
 
@@ -604,3 +702,45 @@ private constructor(public val name: String, public val ordinal: Int) {
     @JvmField public val UNSAFE: UrlRetrievalStatus = UrlRetrievalStatus("UNSAFE", 4)
   }
 }
+
+/**
+ * The APIs for citation provide indices in UTF-8 bytes. Java and Kotlin internally represent a
+ * character as UTF-16, meaning that UTF-8 indices do not map cleanly and need to be manually
+ * converted. While native solutions exist for encoding strings, the cost of searching for an index
+ * is larger than necessary, so this linear approach seeks an index instead of encoding repeatedly.
+ */
+internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int {
+  if (originalIndex == 0) {
+    return 0
+  }
+  var sumIndex = 0
+  var progress = 0
+  for (part in content.parts) {
+    val text = part.asTextOrNull() ?: ""
+    var i = 0
+    while (i < text.length) {
+      text[i].isHighSurrogate()
+      val ch = text[i]
+      progress +=
+        when {
+          ch.isAscii() -> 1
+          ch.isTwoByte() -> 2
+          ch.isHighSurrogate() -> 4
+          else -> 3
+        }
+      if (ch.isHighSurrogate() && i + 1 < text.length) {
+        i++ // Skip the low surrogate
+      }
+      i++
+      if (progress >= originalIndex) {
+        return sumIndex + i
+      }
+    }
+    sumIndex += text.length
+  }
+  return originalIndex
+}
+
+private fun Char.isAscii() = this.code < 0x80
+
+private fun Char.isTwoByte() = this.code in 0x80..0x7FF

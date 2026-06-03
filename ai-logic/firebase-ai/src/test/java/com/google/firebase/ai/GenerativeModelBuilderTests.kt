@@ -49,7 +49,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider uses hybrid suffix in PREFER_ON_DEVICE mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-1.5-flash",
+          modelName = "gemini-2.5-flash",
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,
@@ -73,7 +73,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider uses hybrid suffix in PREFER_IN_CLOUD mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-1.5-flash",
+          modelName = "gemini-2.5-flash",
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,
@@ -97,7 +97,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider does NOT use hybrid suffix in ONLY_IN_CLOUD mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-1.5-flash",
+          modelName = "gemini-2.5-flash",
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,

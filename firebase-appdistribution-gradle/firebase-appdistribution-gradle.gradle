@@ -89,9 +89,23 @@ sourceSets {
   }
 
   // Source set for integration tests
-  integrationTest
+  integrationTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
-  prodTest
+  prodTest {
+    java {
+      srcDirs += ['src/testUtil/java']
+    }
+    kotlin {
+      srcDirs += ['src/testUtil/java']
+    }
+  }
 
   // Source set for Gradle Runner test build. Gradle Runner test builds are run in separate
   // processes i.e. test build does not share same class paths as test process. So we need
@@ -157,17 +171,27 @@ task integrationTest(type: Test) {
   description = 'Runs integration tests.'
   group = 'verification'
 
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
+
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
 
   shouldRunAfter(test)
-}
 
-check.dependsOn(integrationTest)
+  testLogging {
+    showStandardStreams = true
+  }
+}
 
 task prodTest(type: Test) {
   description = 'Runs prod tests.'
   group = 'verification'
+
+  // Disable caching because the tests use com.google.firebase.appdistribution.gradle.VersionUtils,
+  // which fetches the latest version from the internet.
+  outputs.upToDateWhen { false }
 
   testClassesDirs = sourceSets.prodTest.output.classesDirs
   classpath = sourceSets.prodTest.runtimeClasspath
@@ -182,6 +206,10 @@ task prodTest(type: Test) {
     if (token) {
       environment 'FIREBASE_TOKEN', token
     }
+  }
+
+  testLogging {
+    showStandardStreams = true
   }
 }
 

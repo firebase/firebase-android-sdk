@@ -227,4 +227,20 @@ internal class DevAPIUnarySnapshotTests {
         response.text.shouldBeNull()
       }
     }
+
+  @Test
+  fun `failure with finish message and no content returns correctly`() =
+    goldenDevAPIUnaryFile("unary-failure-with-message-no-content.json") {
+      withTimeout(testTimeout) {
+        shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
+          {
+            val response = it.response
+            response.candidates.shouldNotBeEmpty()
+            val candidate = response.candidates.first()
+            candidate.finishReason shouldBe FinishReason.OTHER
+            candidate.finishMessage shouldBe
+              "Model failed to generate content due to internal error."
+          }
+      }
+    }
 }

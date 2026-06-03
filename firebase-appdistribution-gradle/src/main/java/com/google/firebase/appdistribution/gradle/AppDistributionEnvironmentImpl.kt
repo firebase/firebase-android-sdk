@@ -16,8 +16,7 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.http.HttpTransport
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.firebase.appdistribution.gradle.models.FirebaseCliConfig
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.GsonBuilder
@@ -28,7 +27,7 @@ import java.nio.file.Paths
 import org.gradle.api.logging.Logging
 
 class AppDistributionEnvironmentImpl : AppDistributionEnvironment {
-  override fun getFirebaseCliLoginCredentials(transport: HttpTransport): GoogleCredential? {
+  override fun getFirebaseCliLoginCredentials(): HttpCredentialsAdapter? {
     val gson =
       GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
 
@@ -46,7 +45,7 @@ class AppDistributionEnvironmentImpl : AppDistributionEnvironment {
 
       // Step 3: Generate new credential using refresh token
       if (config?.tokens?.refreshToken != null) {
-        val refreshToken = RefreshToken(config.tokens.refreshToken, transport)
+        val refreshToken = RefreshToken(config.tokens.refreshToken)
         return refreshToken.generateNewCredentials()
       }
     } catch (e: IOException) {

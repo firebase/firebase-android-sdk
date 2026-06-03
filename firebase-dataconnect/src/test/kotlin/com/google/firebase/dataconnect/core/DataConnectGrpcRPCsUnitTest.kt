@@ -17,19 +17,26 @@
 
 package com.google.firebase.dataconnect.core
 
+import app.cash.turbine.test
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.CacheSettings
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResult
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.sqlite.hydratedStructWithMutatedEntityValuesFrom
+import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
@@ -41,6 +48,7 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue as ListValueProto
@@ -50,11 +58,13 @@ import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
+import google.firebase.dataconnect.proto.StreamRequest
 import io.grpc.InsecureServerCredentials
 import io.grpc.Server
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -64,18 +74,24 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -91,10 +107,16 @@ class DataConnectGrpcRPCsUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
+  @get:Rule val cleanups = CleanupsRule()
+
+  private val rs: RandomSource by randomSeedTestRule.rs
 
   private val mockLogger = newMockLogger("s3nx74epqj")
   private val requestIdArb = Arb.dataConnect.requestId()
-  private val executeQueryRequestArb = executeQueryRequestArb()
+  private val streamIdArb = Arb.dataConnect.streamId()
+  private val connectorResourceNameArb = Arb.dataConnect.connectorResourceName()
+  private val operationNameVariablesPairArb = operationNameVariablesPairArb()
   private val callerSdkTypeArb = Arb.enum<CallerSdkType>()
   private val grpcMetadataArb = Arb.dataConnect.dataConnectGrpcMetadata()
 
@@ -112,30 +134,40 @@ class DataConnectGrpcRPCsUnitTest {
   fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() =
     runTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
-      checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5).pair(), fetchPolicy1Arb) {
-        (sample1, sample2),
-        fetchPolicy1 ->
+      checkAll(
+        propTestConfig,
+        QueryResultArb(entityCountRange = 0..5).pair(),
+        fetchPolicy1Arb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { (sample1, sample2), fetchPolicy1, authToken, appCheckToken ->
         val response1 = sample1.hydratedStruct.toExecuteQueryResponse()
         val response2 = sample2.hydratedStruct.toExecuteQueryResponse()
 
         startServer().use { server ->
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val request = executeQueryRequestArb.bind()
+          val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response1
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request,
+            request.operationName,
+            request.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
+            authToken,
+            appCheckToken,
           )
           server.nextResponse = response2
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               FetchPolicy.SERVER_ONLY,
+              authToken,
+              appCheckToken,
             )
 
           result2.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response shouldBe response2
@@ -149,12 +181,17 @@ class DataConnectGrpcRPCsUnitTest {
     val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
     val fetchPolicy2Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
     val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
-    checkAll(propTestConfig, fetchPoliciesArb) { (fetchPolicy1, fetchPolicy2) ->
+    checkAll(
+      propTestConfig,
+      fetchPoliciesArb,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+    ) { (fetchPolicy1, fetchPolicy2), authToken, appCheckToken ->
       val (sample1, sample2) =
         QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
           .pair()
           .bind()
-      val (request1, request2) = executeQueryRequestArb.distinctPair().bind()
+      val (request1, request2) = operationNameVariablesPairArb.distinctPair().bind()
 
       startServer().use { server ->
         val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
@@ -162,23 +199,32 @@ class DataConnectGrpcRPCsUnitTest {
         server.nextResponse = sample1.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
-          request1,
+          request1.operationName,
+          request1.variables,
           callerSdkTypeArb.bind(),
           fetchPolicy1,
+          authToken,
+          appCheckToken,
         )
         server.nextResponse = sample2.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
-          request2,
+          request2.operationName,
+          request2.variables,
           callerSdkTypeArb.bind(),
           FetchPolicy.SERVER_ONLY,
+          authToken,
+          appCheckToken,
         )
         val result =
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request1,
+            request1.operationName,
+            request1.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
+            authToken,
+            appCheckToken,
           )
 
         val expectedData = sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
@@ -191,15 +237,18 @@ class DataConnectGrpcRPCsUnitTest {
   fun `executeQuery(fetchPolicy=CACHE_ONLY) throws if no cached data`() = runTest {
     startServer().use { server ->
       val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-      val request = executeQueryRequestArb.next()
+      val request = operationNameVariablesPairArb.next(rs)
 
       val exception =
         shouldThrow<CachedDataNotFoundException> {
           dataConnectGrpcRPCs.executeQuery(
-            requestIdArb.next(),
-            request,
-            callerSdkTypeArb.next(),
+            requestIdArb.next(rs),
+            request.operationName,
+            request.variables,
+            callerSdkTypeArb.next(rs),
             FetchPolicy.CACHE_ONLY,
+            Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(rs),
+            Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(rs),
           )
         }
 
@@ -213,33 +262,85 @@ class DataConnectGrpcRPCsUnitTest {
   }
 
   @Test
+  fun `executeQuery(fetchPolicy=CACHE_ONLY) with null cacheSettings throws CachedDataNotFoundException`() =
+    runTest {
+      startServer().use { server ->
+        val dataConnectGrpcRPCs =
+          DataConnectGrpcRPCs(
+            context = RuntimeEnvironment.getApplication(),
+            host = "localhost:${server.port}",
+            sslEnabled = false,
+            connectorResourceName = connectorResourceNameArb.next(rs),
+            nonBlockingCoroutineDispatcher = Dispatchers.Default,
+            blockingCoroutineDispatcher = Dispatchers.IO,
+            grpcMetadata = grpcMetadataArb.next(rs),
+            cache = null,
+            parentLogger = mockLogger,
+          )
+        val request = operationNameVariablesPairArb.next(rs)
+
+        val exception =
+          shouldThrow<CachedDataNotFoundException> {
+            dataConnectGrpcRPCs.executeQuery(
+              requestIdArb.next(rs),
+              request.operationName,
+              request.variables,
+              callerSdkTypeArb.next(rs),
+              FetchPolicy.CACHE_ONLY,
+              Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(rs),
+              Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(rs),
+            )
+          }
+
+        assertSoftly {
+          withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 0 }
+          exception.message shouldContainWithNonAbuttingText "sz664hyg7t"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "FetchPolicy.CACHE_ONLY cannot be used"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "DataConnectSettings object with a non-null `cacheSettings`"
+        }
+      }
+    }
+
+  @Test
   fun `executeQuery(fetchPolicy!=SERVER_ONLY) returns non-normalized query results from cache`() =
     runTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
-      checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5), fetchPoliciesArb) {
-        sample,
-        (fetchPolicy1, fetchPolicy2) ->
+      checkAll(
+        propTestConfig,
+        QueryResultArb(entityCountRange = 0..5),
+        fetchPoliciesArb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { sample, (fetchPolicy1, fetchPolicy2), authToken, appCheckToken ->
         startServer().use { server ->
           val response = sample.hydratedStruct.toExecuteQueryResponse()
           server.nextResponse = response
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val request = executeQueryRequestArb.bind()
+          val request = operationNameVariablesPairArb.bind()
 
           val result1 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy1,
+              authToken,
+              appCheckToken,
             )
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request,
+              request.operationName,
+              request.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy2,
+              authToken,
+              appCheckToken,
             )
 
           withClue("result1") {
@@ -262,45 +363,61 @@ class DataConnectGrpcRPCsUnitTest {
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb =
         Arb.quadruple(fetchPolicy1Arb, fetchPolicy1Arb, fetchPolicy2Arb, fetchPolicy2Arb)
-      checkAll(propTestConfig, fetchPoliciesArb) {
-        (fetchPolicy1, fetchPolicy2, fetchPolicy3, fetchPolicy4) ->
+      checkAll(
+        propTestConfig,
+        fetchPoliciesArb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { (fetchPolicy1, fetchPolicy2, fetchPolicy3, fetchPolicy4), authToken, appCheckToken ->
         startServer().use { server ->
           val queryResultArb =
             QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
           val sample1 = queryResultArb.bind()
           val sample2 = queryResultArb.bind()
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
-          val distinctExecuteQueryRequestArb = executeQueryRequestArb.distinct()
+          val distinctExecuteQueryRequestArb = operationNameVariablesPairArb.distinct()
           val request1 = distinctExecuteQueryRequestArb.bind()
           val request2 = distinctExecuteQueryRequestArb.bind()
 
           server.nextResponse = sample1.toExecuteQueryResponse()
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request1,
+            request1.operationName,
+            request1.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
+            authToken,
+            appCheckToken,
           )
           server.nextResponse = sample2.toExecuteQueryResponse()
           dataConnectGrpcRPCs.executeQuery(
             requestIdArb.bind(),
-            request2,
+            request2.operationName,
+            request2.variables,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
+            authToken,
+            appCheckToken,
           )
           val result1 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request1,
+              request1.operationName,
+              request1.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy3,
+              authToken,
+              appCheckToken,
             )
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
               requestIdArb.bind(),
-              request2,
+              request2.operationName,
+              request2.variables,
               callerSdkTypeArb.bind(),
               fetchPolicy4,
+              authToken,
+              appCheckToken,
             )
 
           withClue("result1") {
@@ -314,6 +431,43 @@ class DataConnectGrpcRPCsUnitTest {
         }
       }
     }
+
+  @Test
+  fun `connect() lazily sends init request on subscribe`() = runTest {
+    val server = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server)
+    server.open()
+    val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
+
+    server.events.test {
+      val stream = dataConnectGrpcRPCs.connect()
+      expectNoEvents()
+
+      val subscriptionFlow = stream.subscribe("req1", "opName", StructProto.getDefaultInstance())
+      expectNoEvents()
+
+      backgroundScope.launch { subscriptionFlow.collect() }
+      val streamRequest: StreamRequest = awaitUntilInitStreamRequest().streamRequest
+
+      withClue("streamRequest=${streamRequest.print().value}") {
+        withClue("requestId") { streamRequest.requestId shouldBe "init" }
+        withClue("name") { streamRequest.name shouldBe dataConnectGrpcRPCs.connectorResourceName }
+        withClue("requestKindCase") {
+          streamRequest.requestKindCase shouldBe StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET
+        }
+      }
+      cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  private suspend fun DataConnectGrpcRPCs.connect() =
+    connect(
+      streamId = streamIdArb.next(rs),
+      callerSdkType = Arb.enum<CallerSdkType>().next(rs),
+      authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
+      appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
+      idStringGenerator = IdStringGenerator(Random.Default),
+    )
 
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")
 
@@ -365,14 +519,23 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
-  private fun newDataConnectGrpcRPCs(server: StartServerResult) =
+  private fun newDataConnectGrpcRPCs(server: StartServerResult): DataConnectGrpcRPCs =
+    newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port)
+
+  private fun newDataConnectGrpcRPCs(
+    server: InProcessDataConnectGrpcStreamingServer
+  ): DataConnectGrpcRPCs = newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port)
+
+  private fun newDataConnectGrpcRPCsForLocalhostServerOnPort(port: Int) =
     DataConnectGrpcRPCs(
       context = RuntimeEnvironment.getApplication(),
-      host = "localhost:${server.port}",
+      host = "localhost:$port",
       sslEnabled = false,
+      connectorResourceName = connectorResourceNameArb.next(rs),
+      nonBlockingCoroutineDispatcher = Dispatchers.Default,
       blockingCoroutineDispatcher = Dispatchers.IO,
-      grpcMetadata = grpcMetadataArb.next(),
-      cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
+      grpcMetadata = grpcMetadataArb.next(rs),
+      cache = DataConnectCache(newDbFile(), maxAge = 1.hours, Dispatchers.Default, mockLogger),
       parentLogger = mockLogger,
     )
 }
@@ -380,16 +543,11 @@ class DataConnectGrpcRPCsUnitTest {
 private val propTestConfig =
   PropTestConfig(iterations = 50, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
-private fun executeQueryRequestArb(
+private fun operationNameVariablesPairArb(
   operationName: Arb<String> = Arb.dataConnect.operationName(),
   variables: Arb<ProtoArb.StructInfo> = Arb.proto.struct(),
-): Arb<ExecuteQueryRequest> =
-  Arb.bind(operationName, variables) { operationName, variables ->
-    ExecuteQueryRequest.newBuilder()
-      .setOperationName(operationName)
-      .setVariables(variables.struct)
-      .build()
-  }
+): Arb<OperationNameVariablesPair<StructProto>> =
+  Arb.bind(operationName, variables.map { it.struct }, ::OperationNameVariablesPair)
 
 private fun StructProto.toExecuteQueryResponse(): ExecuteQueryResponse =
   ExecuteQueryResponse.newBuilder().setData(this@toExecuteQueryResponse).build()

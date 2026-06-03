@@ -74,9 +74,17 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
   /**
    * Subscribes to a query to be notified of updates to the query's data when the query is executed.
    *
-   * At this time the notifications are _not_ realtime, and are _not_ pushed from the server.
-   * Instead, the notifications are sent whenever the query is explicitly executed by calling
-   * [QueryRef.execute].
+   * ### Realtime updates (May 2026)
+   *
+   * Starting with SDK version 17.3.0 (Firebase BoM 34.14.0, May 2026) query subscriptions gained
+   * support for realtime updates. See
+   * [Get real-time updates from SQL Connect](https://firebase.google.com/docs/sql-connect/realtime)
+   * for details about this feature in the entire product, and [QuerySubscription] for details
+   * specific to Android.
+   *
+   * Prior to SDK version 17.3.0, updates were _not_ realtime, and were _not_ pushed from the
+   * server. Instead, the notifications were sent whenever the query was explicitly executed by
+   * calling [QueryRef.execute].
    *
    * @return an object that can be used to subscribe to query results.
    */

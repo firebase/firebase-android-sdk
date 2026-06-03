@@ -18,7 +18,9 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.putHeaders
+import com.google.firebase.dataconnect.core.DataConnectSerialization.Companion.toErrorInfoImpl
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
@@ -37,7 +39,12 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.ExecuteRequest
+import google.firebase.dataconnect.proto.GraphqlError
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.ServiceInfo
+import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.StreamResponse
 import java.io.BufferedWriter
 import java.io.CharArrayWriter
 import java.io.DataOutputStream
@@ -223,27 +230,102 @@ internal object ProtoUtil {
 
   fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
     if (hasData()) put("data", data)
-    putList("errors") { errorsList.forEach { add(it.toErrorInfoImpl().toString()) } }
-
+    if (errorsCount > 0) {
+      put("errors", errorsList)
+    }
     if (hasExtensions()) {
-      putStruct("extensions") {
-        putList("data_connect") {
-          extensions.dataConnectList.forEach { dataConnectProperties ->
-            addStruct {
-              if (dataConnectProperties.hasPath()) {
-                put("path", dataConnectProperties.path.toDataConnectPath().toPathString())
-              }
-              dataConnectProperties.entityId
-                .takeIf { it.isNotEmpty() }
-                ?.let { put("entity_id", it) }
-              dataConnectProperties.entityIdsList
-                .takeIf { it.isNotEmpty() }
-                ?.let { putList("entity_ids") { it.forEach(::add) } }
-              if (dataConnectProperties.hasMaxAge()) {
-                put("max_age", dataConnectProperties.maxAge.toHumanFriendlyString())
-              }
+      put("extensions", extensions)
+    }
+  }
+
+  fun StructProtoBuilder.put(key: String, extensions: GraphqlResponseExtensions) {
+    putStruct(key) {
+      putList("data_connect") {
+        extensions.dataConnectList.forEach { dataConnectProperties ->
+          addStruct {
+            if (dataConnectProperties.hasPath()) {
+              put("path", dataConnectProperties.path.toDataConnectPath().toPathString())
+            }
+            dataConnectProperties.entityId.takeIf { it.isNotEmpty() }?.let { put("entity_id", it) }
+            dataConnectProperties.entityIdsList
+              .takeIf { it.isNotEmpty() }
+              ?.let { putList("entity_ids") { it.forEach(::add) } }
+            if (dataConnectProperties.hasMaxAge()) {
+              put("max_age", dataConnectProperties.maxAge.toHumanFriendlyString())
             }
           }
+        }
+      }
+    }
+  }
+
+  fun StructProtoBuilder.put(key: String, errors: Collection<GraphqlError>) {
+    putList(key) { errors.forEach { add(it.toErrorInfoImpl().toString()) } }
+  }
+
+  fun streamResponseDefaultKeySortSelector(key: String): String =
+    when (key) {
+      "requestId" -> "\u0000A"
+      "data" -> "\u0000B"
+      "errors" -> "\u0000C"
+      "cancelled" -> "\u0000D"
+      "extensions" -> "\u0000E"
+      else -> key
+    }
+
+  fun StreamResponse.toCompactString(
+    keySortSelector: ((String) -> String)? = ::streamResponseDefaultKeySortSelector
+  ): String = toStructProto().toCompactString(keySortSelector)
+
+  fun StreamResponse.toStructProto(): Struct = buildStructProto {
+    put("requestId", requestId)
+    if (hasData()) put("data", data)
+    if (errorsCount > 0) {
+      put("errors", errorsList)
+    }
+    if (cancelled) put("cancelled", cancelled)
+    if (hasExtensions()) {
+      put("extensions", extensions)
+    }
+  }
+
+  private fun streamRequestKeySortSelector(key: String): String =
+    when (key) {
+      "requestId" -> "\u0000A"
+      "name" -> "\u0000B"
+      "headers" -> "\u0000C"
+      else -> key
+    }
+
+  fun StreamRequest.toCompactString(
+    authUid: AuthUid?,
+    keySortSelector: ((String) -> String)? = ::streamRequestKeySortSelector,
+  ): String = toStructProto(authUid).toCompactString(keySortSelector)
+
+  fun StreamRequest.toStructProto(authUid: AuthUid?): Struct = buildStructProto {
+    name.takeIf { it.isNotEmpty() }?.let { put("name", it) }
+    requestId.takeIf { it.isNotEmpty() }?.let { put("requestId", it) }
+    dataEtag.takeIf { it.isNotEmpty() }?.let { put("data_etag", it) }
+
+    when (requestKindCase) {
+      StreamRequest.RequestKindCase.SUBSCRIBE -> put("subscribe", subscribe)
+      StreamRequest.RequestKindCase.EXECUTE -> put("execute", execute)
+      StreamRequest.RequestKindCase.RESUME -> put("resume", true)
+      StreamRequest.RequestKindCase.CANCEL -> put("cancel", true)
+      StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET -> {}
+    }
+
+    if (headersCount > 0) {
+      putHeaders(authUid, "headers", headersMap)
+    }
+  }
+
+  fun StructProtoBuilder.put(key: String, executeRequest: ExecuteRequest) {
+    putStruct(key) {
+      executeRequest.run {
+        put("operationName", operationName)
+        if (hasVariables()) {
+          put("variables", variables)
         }
       }
     }

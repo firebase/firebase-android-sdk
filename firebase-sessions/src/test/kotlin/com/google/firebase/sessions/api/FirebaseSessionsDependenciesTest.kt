@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -115,10 +116,11 @@ class FirebaseSessionsDependenciesTest {
   }
 
   @Test(expected = TimeoutCancellationException::class)
-  fun getSubscribers_neverRegister_waitsForever() = runTest {
+  fun getSubscribers_neverRegister_waitsForever(): Unit = runBlocking {
     FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
 
     // The register never happens, wait until the timeout.
     withTimeout(2.seconds) { FirebaseSessionsDependencies.getRegisteredSubscribers() }
+    Unit
   }
 }
