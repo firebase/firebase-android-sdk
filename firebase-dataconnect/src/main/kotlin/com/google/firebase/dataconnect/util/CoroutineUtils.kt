@@ -25,6 +25,12 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 internal object CoroutineUtils {
 
@@ -123,4 +129,61 @@ internal object CoroutineUtils {
     context: CoroutineContext = EmptyCoroutineContext,
     coroutineName: String? = null
   ): CoroutineScope = createChildSupervisorCoroutineScope(this, logger, context, coroutineName)
+
+  /** Returns a "send-only" wrapper around the receiver [SendChannel]. */
+  fun <T> SendChannel<T>.asSendChannel(): SendOnlySendChannel<T> =
+    when (this) {
+      is SendOnlySendChannel -> this
+      else -> SendOnlySendChannel(this)
+    }
+
+  /**
+   * A "send-only" wrapper around a [SendChannel], preventing it from being cast to another type,
+   * specifically [Channel], and, thus, allowing non-send methods to be called on it.
+   *
+   * The purpose of this wrapper is to prevent a [Channel] instance from being passed to a method
+   * that takes [SendChannel] and that [SendChannel] being cast back to [Channel] and having methods
+   * not defined in [SendChannel] called on it.
+   *
+   * This is similar in spirit to the [kotlinx.coroutines.flow.asSharedFlow] and
+   * [kotlinx.coroutines.flow.asStateFlow] extension functions that are defined in the official
+   * Kotlin coroutines library.
+   */
+  class SendOnlySendChannel<in T>(delegate: SendChannel<T>) : SendChannel<T> by delegate
+
+  /**
+   * Returns a [Flow] that emits when the [Job] associated with the receiver [CoroutineScope]
+   * completes.
+   *
+   * This is a convenience extension function that delegates to [CoroutineContext.completedFlow]
+   * using this scope's [CoroutineScope.coroutineContext].
+   */
+  fun CoroutineScope.completedFlow(): Flow<Throwable?> = this.coroutineContext.completedFlow()
+
+  /**
+   * Returns a [Flow] that emits when the [Job] associated with the receiver [CoroutineContext]
+   * completes.
+   *
+   * If this context does not contain a [Job], the returned flow completes immediately without
+   * emitting any values.
+   *
+   * If this context contains a [Job], it delegates to [Job.completedFlow].
+   */
+  fun CoroutineContext.completedFlow(): Flow<Throwable?> = this[Job]?.completedFlow() ?: emptyFlow()
+
+  /**
+   * Returns a [Flow] that emits when the receiver [Job] completes.
+   *
+   * The returned flow will emit exactly one value when the job completes, and then close. The
+   * emitted value is the [Throwable] that caused the job to complete, or `null` if the job
+   * completed normally. Specifically, the emitted value is the argument passed to the
+   * [Job.invokeOnCompletion].
+   */
+  fun Job.completedFlow(): Flow<Throwable?> = callbackFlow {
+    val disposableHandle = invokeOnCompletion { throwable ->
+      trySend(throwable)
+      close()
+    }
+    awaitClose { disposableHandle.dispose() }
+  }
 }

@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a potential crash in `InstallActivity`.
+
+# 16.0.0-beta19
+
 - [fixed] Fixed failing APK downloads due to an invalid file provider authority [#8136]
 
 # 16.0.0-beta18

@@ -23,11 +23,9 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder
 import com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder
-import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -35,12 +33,14 @@ import com.google.firebase.dataconnect.isDefaultHost
 import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.querymgr.RealtimeQueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.throwCombinedException
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CancellationException
@@ -77,26 +77,11 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val grpcClient: DataConnectGrpcClient
   val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
+  val queryManagerUnlessClosed: QueryManager?
+  val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
-
-  /**
-   * A temporary method that is similar to the public [query] method but the [QueryRef] that it
-   * returns supports "realtime subscription updates".
-   *
-   * "Realtime subscription updates" is currently a work-in-progress; however, when it is completed,
-   * this method will be deleted and the public [query] method will be modified to return [QueryRef]
-   * objects that support realtime subscription updates.
-   */
-  @ExperimentalRealtimeQueries
-  fun <Data, Variables> realtimeQuery(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)? = null,
-  ): QueryRef<Data, Variables>
 }
 
 internal class FirebaseDataConnectImpl(
@@ -168,12 +153,21 @@ internal class FirebaseDataConnectImpl(
     data class New(val emulatorSettings: EmulatedServiceSettings?) : State {
       constructor() : this(null)
     }
+
     data class Initialized(
+      val cache: DataConnectCache?,
       val grpcRPCs: DataConnectGrpcRPCs,
       val grpcClient: DataConnectGrpcClient,
-      val queryManager: QueryManager
+      val queryManager: QueryManager,
+      val realtimeQueryManager: RealtimeQueryManager,
     ) : State
-    data class Closing(val grpcRPCs: DataConnectGrpcRPCs, val closeJob: Deferred<Unit>) : State
+
+    data class Closing(
+      val grpcRPCs: DataConnectGrpcRPCs,
+      val cache: DataConnectCache?,
+      val closeJob: Deferred<Unit>
+    ) : State
+
     object Closed : State
   }
 
@@ -185,16 +179,23 @@ internal class FirebaseDataConnectImpl(
     get() = initialize().grpcRPCs
   override val queryManager: QueryManager
     get() = initialize().queryManager
+  override val queryManagerUnlessClosed: QueryManager?
+    get() = initializeUnlessClosed()?.queryManager
+  override val realtimeQueryManagerUnlessClosed: RealtimeQueryManager?
+    get() = initializeUnlessClosed()?.realtimeQueryManager
 
-  private fun initialize(): State.Initialized {
+  private fun initializeUnlessClosed(): State.Initialized? {
     val newState =
       state.updateAndGet { currentState ->
         when (currentState) {
           is State.New -> {
-            val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
+            val backendInfo = createDataConnectBackendInfo(currentState.emulatorSettings)
+            val cache = createDataConnectCache(backendInfo)
+            val grpcRPCs = createDataConnectGrpcRPCs(backendInfo, cache)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcClient)
-            State.Initialized(grpcRPCs, grpcClient, queryManager)
+            val realtimeQueryManager = createRealtimeQueryManager(grpcClient, cache)
+            State.Initialized(cache, grpcRPCs, grpcClient, queryManager, realtimeQueryManager)
           }
           is State.Initialized -> currentState
           is State.Closing -> currentState
@@ -209,9 +210,13 @@ internal class FirebaseDataConnectImpl(
         )
       is State.Initialized -> newState
       is State.Closing,
-      State.Closed -> throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      State.Closed -> null
     }
   }
+
+  private fun initialize(): State.Initialized =
+    initializeUnlessClosed()
+      ?: throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
   private data class DataConnectBackendInfo(
     val host: String,
@@ -234,45 +239,58 @@ internal class FirebaseDataConnectImpl(
     return sha512Bytes.toAlphaNumericString()
   }
 
-  private fun createDataConnectGrpcRPCs(
+  private fun createDataConnectBackendInfo(
     emulatorSettings: EmulatedServiceSettings?
-  ): DataConnectGrpcRPCs {
+  ): DataConnectBackendInfo {
     val backendInfoFromSettings =
       DataConnectBackendInfo(
         host = settings.host,
         sslEnabled = settings.sslEnabled,
         isEmulator = false
       )
+
     val backendInfoFromEmulatorSettings =
       emulatorSettings?.run {
         DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
       }
-    val backendInfo =
-      if (backendInfoFromEmulatorSettings == null) {
-        backendInfoFromSettings
-      } else {
-        if (!settings.isDefaultHost()) {
-          logger.warn(
-            "Host has been set in DataConnectSettings and useEmulator, " +
-              "emulator host will be used."
-          )
+
+    return if (backendInfoFromEmulatorSettings == null) {
+      backendInfoFromSettings
+    } else {
+      if (!settings.isDefaultHost()) {
+        logger.warn(
+          "Host has been set in DataConnectSettings and useEmulator, " +
+            "emulator host will be used."
+        )
+      }
+      backendInfoFromEmulatorSettings
+    }
+  }
+
+  private fun createDataConnectCache(backendInfo: DataConnectBackendInfo): DataConnectCache? {
+    val cacheSettings = settings.cacheSettings ?: return null
+
+    val dbFile =
+      when (cacheSettings.storage) {
+        CacheSettings.Storage.MEMORY -> null
+        CacheSettings.Storage.PERSISTENT -> {
+          val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+          context.getDatabasePath(dbName)
         }
-        backendInfoFromEmulatorSettings
       }
 
-    val cacheSettings =
-      settings.cacheSettings?.run {
-        val dbFile =
-          when (storage) {
-            CacheSettings.Storage.MEMORY -> null
-            CacheSettings.Storage.PERSISTENT -> {
-              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
-              context.getDatabasePath(dbName)
-            }
-          }
-        DataConnectGrpcRPCs.CacheSettings(dbFile, maxAge)
-      }
+    return DataConnectCache(
+      dbFile,
+      cacheSettings.maxAge,
+      nonBlockingDispatcher,
+      Logger("DataConnectCache").also { it.debug { "created by ${logger.nameWithId}" } },
+    )
+  }
 
+  private fun createDataConnectGrpcRPCs(
+    backendInfo: DataConnectBackendInfo,
+    cache: DataConnectCache?
+  ): DataConnectGrpcRPCs {
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
@@ -289,7 +307,7 @@ internal class FirebaseDataConnectImpl(
         nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
-        cacheSettings = cacheSettings,
+        cache = cache,
         parentLogger = logger,
       )
 
@@ -353,6 +371,19 @@ internal class FirebaseDataConnectImpl(
     return QueryManager(liveQueries)
   }
 
+  private fun createRealtimeQueryManager(
+    grpcClient: DataConnectGrpcClient,
+    cache: DataConnectCache?,
+  ): RealtimeQueryManager =
+    RealtimeQueryManager(
+      grpcClient = grpcClient,
+      coroutineScope = coroutineScope,
+      idStringGenerator = idStringGenerator,
+      serialization = serialization,
+      cache = cache,
+      logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
+    )
+
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
     state.update { currentState ->
       when (currentState) {
@@ -383,7 +414,7 @@ internal class FirebaseDataConnectImpl(
         }
         emulatorInfo.servicesList.forEachIndexed { index, serviceInfo ->
           logger.debug {
-            "[rid=$requestId]  service #${index+1}:" +
+            "[rid=$requestId]  service #${index + 1}:" +
               " serviceId=${serviceInfo.serviceId}" +
               " connectionString=${serviceInfo.connectionString}"
           }
@@ -445,34 +476,6 @@ internal class FirebaseDataConnectImpl(
     )
   }
 
-  @ExperimentalRealtimeQueries
-  override fun <Data, Variables> realtimeQuery(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)?,
-  ): RealtimeQueryRefImpl<Data, Variables> {
-    val options =
-      object : QueryRefOptionsBuilder<Data, Variables> {
-        override var callerSdkType: FirebaseDataConnect.CallerSdkType? = null
-        override var variablesSerializersModule: SerializersModule? = null
-        override var dataSerializersModule: SerializersModule? = null
-      }
-    optionsBuilder?.let { it(options) }
-
-    return RealtimeQueryRefImpl(
-      dataConnect = this,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
-      variablesSerializersModule = options.variablesSerializersModule,
-      dataSerializersModule = options.dataSerializersModule,
-    )
-  }
-
   override fun <Data, Variables> mutation(
     operationName: String,
     variables: Variables,
@@ -523,9 +526,15 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs): Deferred<Unit> {
+    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs, cache: DataConnectCache?): Deferred<Unit> {
       @OptIn(DelicateCoroutinesApi::class)
-      val closeJob = GlobalScope.async(start = CoroutineStart.LAZY) { grpcRPCs.close() }
+      val closeJob: Deferred<Unit> =
+        GlobalScope.async(start = CoroutineStart.LAZY) {
+          throwCombinedException {
+            grpcRPCs.runCatching { close() }
+            cache?.runCatching { close() }
+          }
+        }
       closeJob.invokeOnCompletion { exception ->
         if (exception !== null) {
           logger.warn(exception) { "close() failed" }
@@ -551,10 +560,16 @@ internal class FirebaseDataConnectImpl(
         when (currentState) {
           is State.New -> State.Closed
           is State.Initialized ->
-            State.Closing(currentState.grpcRPCs, createCloseJob(currentState.grpcRPCs))
+            State.Closing(
+              currentState.grpcRPCs,
+              currentState.cache,
+              createCloseJob(currentState.grpcRPCs, currentState.cache)
+            )
           is State.Closing ->
             if (currentState.closeJob.isCancelled) {
-              currentState.copy(closeJob = createCloseJob(currentState.grpcRPCs))
+              currentState.copy(
+                closeJob = createCloseJob(currentState.grpcRPCs, currentState.cache)
+              )
             } else {
               currentState
             }

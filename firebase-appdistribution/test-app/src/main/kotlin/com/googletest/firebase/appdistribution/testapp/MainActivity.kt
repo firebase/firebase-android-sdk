@@ -39,15 +39,15 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
+import com.google.firebase.Firebase
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.appdistribution.appDistribution
 import com.google.firebase.appdistribution.testapp.BuildConfig
-import com.google.firebase.Firebase
+import com.google.firebase.appdistribution.testapp.R
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.google.firebase.appdistribution.testapp.R
 
 class MainActivity : AppCompatActivity() {
 

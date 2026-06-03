@@ -19,10 +19,10 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
@@ -48,6 +49,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
@@ -145,10 +147,40 @@ internal fun DataConnectArb.operationFailureResponseImpl(
     DataConnectOperationFailureResponseImpl(rawData0, data0, errors0)
   }
 
+internal fun DataConnectArb.sqliteSequenceNumber(
+  long: Arb<Long> = Arb.longWithEvenNumDigitsDistribution(),
+): Arb<SqliteSequenceNumber> = long.map(::SqliteSequenceNumber)
+
+internal class DataSourceSample(
+  val publicDataSource: com.google.firebase.dataconnect.DataSource,
+  val coreDataSource: com.google.firebase.dataconnect.core.DataSource,
+) {
+  override fun toString() =
+    "DataSourceSample(publicDataSource=$publicDataSource, coreDataSource=$coreDataSource)"
+}
+
+internal fun DataConnectArb.dataSource(
+  publicDataSourceArb: Arb<com.google.firebase.dataconnect.DataSource> =
+    Arb.enum<com.google.firebase.dataconnect.DataSource>(),
+  sqliteSequenceNumberArb: Arb<SqliteSequenceNumber?> =
+    sqliteSequenceNumber().orNull(nullProbability = 0.2),
+): Arb<DataSourceSample> = arbitrary {
+  val publicDataSource = publicDataSourceArb.bind()
+  val coreDataSource =
+    when (publicDataSource) {
+      com.google.firebase.dataconnect.DataSource.CACHE ->
+        com.google.firebase.dataconnect.core.DataSource.Cache(sqliteSequenceNumberArb.bind())
+      com.google.firebase.dataconnect.DataSource.SERVER ->
+        com.google.firebase.dataconnect.core.DataSource.Server
+    }
+  DataSourceSample(publicDataSource, coreDataSource)
+}
+
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..5),
-  source: Arb<DataSource> = Arb.enum(),
+  source: Arb<com.google.firebase.dataconnect.core.DataSource> =
+    dataSource().map { it.coreDataSource },
 ) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
@@ -366,9 +398,13 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
   )
 }
 
+internal fun DataConnectArb.authUid(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.az())
+): Arb<AuthUid> = string.map { AuthUid("authUid_${it.lowercase()}") }
+
 internal fun DataConnectArb.authTokenResult(
   accessToken: Arb<String?> = authToken().orNull(nullProbability = 0.33),
-  authUid: Arb<String?> = authUid().orNull(nullProbability = 0.33),
+  authUid: Arb<AuthUid?> = authUid().orNull(nullProbability = 0.33),
 ): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(

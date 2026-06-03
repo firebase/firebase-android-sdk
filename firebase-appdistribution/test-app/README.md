@@ -67,8 +67,8 @@ To build the debug APK, upload it to App Distribution, and install it on the run
 1. In firebase-appdistribution/test-app/test-app.gradle, uncomment the line
    `// testers "your email here"` and replace "your email here" with the email you intend to use for
    testing.
-1. Start an emulator
-1. Run the following command from the repo's root directory:
+2. Start an emulator
+3. Run the following command from the repo's root directory:
 
    ```
    ./gradlew clean :firebase-appdistribution:test-app:build :firebase-appdistribution:test-app:appDistributionUploadBetaDebug && adb install firebase-appdistribution/test-app/build/outputs/apk/beta/debug/test-app-beta-debug.apk
@@ -81,10 +81,11 @@ alternative you can always download it using App Distribution, but using `adb` i
 After that, if you want to avoid having to do this every time you want to test locally:
 
 1. Submit feedback in the locally running app, to generate some logs
-1. In the Logcat output, find the release name (i.e.
+2. In the Logcat output, find the release name (i.e.
    `"projects/1095562444941/installations/fCmpB677QTybkwfKbViGI-/releases/3prs96fui9kb0"`)
-1. Modify the body of `ReleaseIdentifier.identifyRelease()` to be:
+3. Modify the body of `ReleaseIdentifier.identifyRelease()` to be:
 
    ```
    return Tasks.forResult("<your release name>");
    ```
+
