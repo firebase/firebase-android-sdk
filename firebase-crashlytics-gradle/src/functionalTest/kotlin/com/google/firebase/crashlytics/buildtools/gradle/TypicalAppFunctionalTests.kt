@@ -355,6 +355,72 @@ class TypicalAppFunctionalTests {
     assertThat(afterEdit.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
   }
 
+  @Test
+  fun `release mapping file id task is invalidated when the runtime classpath changes`() {
+    val first = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val noChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(noChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(UP_TO_DATE)
+
+    // Adding a dependency changes the obfuscated output (new code is bundled and renamed) with no
+    // source edit, so R8 produces a different mapping.txt. fileTree("src") would miss this; the
+    // @Classpath input must catch it.
+    buildFile.appendText(
+      """
+        dependencies {
+          implementation("org.jetbrains:annotations:23.0.0")
+        }
+      """
+    )
+    val afterDependency = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(afterDependency.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(SUCCESS)
+  }
+
+  @Test
+  fun `release mapping file id task is invalidated when proguard rules change`() {
+    val rulesFile = File(projectDir, "proguard-rules.pro")
+    rulesFile.writeText("-dontwarn com.google.firebase.testing.**")
+
+    buildFile.writeText(
+      """
+        plugins {
+          id("com.android.application") version "8.1.4"
+          id("com.google.gms.google-services") version "4.4.1"
+          id("com.google.firebase.crashlytics") version "$pluginVersion"
+        }
+
+        android {
+          compileSdk = 33
+          namespace = "com.google.firebase.testing.crashlytics"
+
+          buildTypes {
+            release {
+              isMinifyEnabled = true
+              proguardFiles("proguard-rules.pro")
+            }
+          }
+        }
+      """
+    )
+
+    val first = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val noChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(noChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(UP_TO_DATE)
+
+    // Changing keep rules changes what R8 obfuscates, so the mapping.txt changes with no source
+    // edit. The proguard config files are an input so the id must regenerate.
+    rulesFile.appendText("\n-keep class com.google.firebase.testing.crashlytics.** { *; }\n")
+    val afterRuleChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(afterRuleChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(SUCCESS)
+  }
+
   @BeforeEach
   fun setup() {
     settingsFile = File(projectDir, "settings.gradle.kts")

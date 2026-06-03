@@ -16,6 +16,7 @@
 
 package com.google.firebase.crashlytics.buildtools.gradle.tasks
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.ApplicationVariant
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsBuildtools
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPlugin
@@ -31,14 +32,17 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
 /** Inject mapping file id task. */
@@ -46,8 +50,29 @@ import org.gradle.kotlin.dsl.register
 abstract class InjectMappingFileIdTask : DefaultTask() {
   @get:Input abstract val useBlankMappingFileId: Property<Boolean>
 
+  // When obfuscation is on, the mapping id must change whenever the obfuscated output could change,
+  // and stay stable otherwise (so it doesn't invalidate the cached release pipeline on every
+  // build).
+  //
+  // We deliberately do NOT fingerprint the obfuscated classes directly (ScopedArtifact.CLASSES):
+  // this task contributes the id as a generated `res` dir, which feeds mergeResources, and the
+  // compiled classes are produced downstream of that (res -> mergeResources -> R.jar -> compile).
+  // Wiring CLASSES as an input therefore closes a task-dependency cycle on every app. Instead we
+  // fingerprint the cycle-free, upstream inputs that determine the mapping.
   @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
   abstract val obfuscatableSources: ConfigurableFileCollection
+
+  // External runtime classpath: changes here (dependency or toolchain version bumps) change the
+  // obfuscated output even when no source file changes.
+  @get:Classpath abstract val obfuscatableClasspath: ConfigurableFileCollection
+
+  // ProGuard/R8 configuration: rule changes change the mapping.
+  @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
+  abstract val proguardConfigFiles: ConfigurableFileCollection
+
+  // AGP version ships R8; a toolchain bump can change the mapping with no other input change.
+  @get:[Input Optional]
+  abstract val androidGradlePluginVersion: Property<String>
 
   @get:OutputFile abstract val mappingFileIdFile: RegularFileProperty
   @get:OutputDirectory abstract val resourceDir: DirectoryProperty
@@ -75,7 +100,9 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
   }
 
   internal companion object {
-    @Suppress("UnstableApiUsage") // isMinifyEnabled
+    @Suppress(
+      "UnstableApiUsage"
+    ) // isMinifyEnabled, runtimeConfiguration, proguardFiles, pluginVersion
     fun register(
       project: Project,
       variant: ApplicationVariant,
@@ -84,6 +111,11 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
       val useBlank =
         !crashlyticsExtension.mappingFileUploadEnabled.getOrElse(variant.isMinifyEnabled)
 
+      val agpVersion =
+        project.extensions.getByType<ApplicationAndroidComponentsExtension>().pluginVersion.let {
+          "${it.major}.${it.minor}.${it.micro}"
+        }
+
       val injectMappingFileIdTaskProvider =
         project.tasks.register<InjectMappingFileIdTask>(
           "injectCrashlyticsMappingFileId${variant.name.capitalized()}"
@@ -91,15 +123,16 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
           this.useBlankMappingFileId.set(useBlank)
           this.mappingFileIdFile.set(buildFile(project, variant, "mappingFileId.txt"))
 
-          // Only fingerprint inputs when obfuscation is on. In blank-id mode the id is constant
-          // and source/classpath changes are irrelevant to the mapping handle.
+          // Only fingerprint inputs when obfuscation is on. In blank-id mode the id is constant, so
+          // source/classpath/rule changes are irrelevant to the mapping handle.
           //
-          // Discover user source files via project.fileTree("src") rather than
-          // variant.sources.java/kotlin.all. AGP's accessor includes generated source dirs
-          // (R.java, deeplinks, view-binding, etc.) whose producer tasks depend on the same
-          // mergeResources pipeline that consumes THIS task's output, which would close a cycle.
-          // AGP 8.1.4 has no `static` getter (added in 8.6) that would expose the non-generated
-          // subset, so we hand-roll the discovery from on-disk source-set conventions.
+          // User sources are discovered via project.fileTree("src") rather than
+          // variant.sources.java/kotlin.all: AGP's `all` accessor includes generated source dirs
+          // (view-binding, etc.) whose producer tasks depend on the same mergeResources pipeline
+          // that consumes THIS task's output, which would close a cycle. The `static` accessor that
+          // would expose only the non-generated subset was added in AGP 8.6, but this plugin
+          // compiles against the 8.1 API, so we hand-roll the discovery from source-set
+          // conventions.
           if (!useBlank) {
             this.obfuscatableSources.from(
               project.fileTree("src").matching { patterns ->
@@ -112,6 +145,9 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
                 patterns.exclude("test/**", "androidTest/**", "test*/**", "androidTest*/**")
               }
             )
+            this.obfuscatableClasspath.from(variant.runtimeConfiguration)
+            this.proguardConfigFiles.from(variant.proguardFiles)
+            this.androidGradlePluginVersion.set(agpVersion)
           }
         }
 

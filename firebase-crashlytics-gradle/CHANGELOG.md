@@ -1,7 +1,7 @@
 ### Unreleased
 
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects when enabling nativeSymbolUploadEnabled. [#8037]
-- [fixed] Stopped regenerating the mapping file id on every minified release build. `injectCrashlyticsMappingFileId<Variant>` is now content-driven: the task stays `UP-TO-DATE` (and downstream `mergeResources`, `processResources`, R8, packaging tasks stay cached) while the variant's source files (`src/**/java`, `src/**/kotlin`, excluding tests) are unchanged. A new id is minted when those sources change — which is when R8 would produce a different `mapping.txt` — and on first build, after `clean`, or when `mappingFileUploadEnabled` is toggled. [#6770]
+- [fixed] Stopped regenerating the mapping file id on every minified release build. `injectCrashlyticsMappingFileId<Variant>` is now content-driven: the task stays `UP-TO-DATE` (and downstream `mergeResources`, `processResources`, R8, packaging tasks stay cached) while the inputs that determine the obfuscation mapping are unchanged — the variant's source files (`src/**/java`, `src/**/kotlin`, excluding tests), the runtime dependency classpath, the ProGuard/R8 configuration, and the AGP version. A new id is minted when any of those change — which is when R8 would produce a different `mapping.txt` — and on first build, after `clean`, or when `mappingFileUploadEnabled` is toggled. [#6770]
 
 ### Crashlytics Gradle plugin version 3.0.7
 
