@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class, DelicateKotest::class, ExperimentalRealtimeQueries::class)
+@file:OptIn(ExperimentalKotest::class, DelicateKotest::class)
 
 package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.ExperimentalRealtimeQueries
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.CacheSettings
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResult
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
@@ -32,8 +30,9 @@ import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
+import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.awaitUntilItemIsInstance
+import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -49,6 +48,7 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue as ListValueProto
@@ -87,8 +87,11 @@ import io.kotest.property.checkAll
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -259,6 +262,48 @@ class DataConnectGrpcRPCsUnitTest {
   }
 
   @Test
+  fun `executeQuery(fetchPolicy=CACHE_ONLY) with null cacheSettings throws CachedDataNotFoundException`() =
+    runTest {
+      startServer().use { server ->
+        val dataConnectGrpcRPCs =
+          DataConnectGrpcRPCs(
+            context = RuntimeEnvironment.getApplication(),
+            host = "localhost:${server.port}",
+            sslEnabled = false,
+            connectorResourceName = connectorResourceNameArb.next(rs),
+            nonBlockingCoroutineDispatcher = Dispatchers.Default,
+            blockingCoroutineDispatcher = Dispatchers.IO,
+            grpcMetadata = grpcMetadataArb.next(rs),
+            cache = null,
+            parentLogger = mockLogger,
+          )
+        val request = operationNameVariablesPairArb.next(rs)
+
+        val exception =
+          shouldThrow<CachedDataNotFoundException> {
+            dataConnectGrpcRPCs.executeQuery(
+              requestIdArb.next(rs),
+              request.operationName,
+              request.variables,
+              callerSdkTypeArb.next(rs),
+              FetchPolicy.CACHE_ONLY,
+              Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(rs),
+              Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(rs),
+            )
+          }
+
+        assertSoftly {
+          withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 0 }
+          exception.message shouldContainWithNonAbuttingText "sz664hyg7t"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "FetchPolicy.CACHE_ONLY cannot be used"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "DataConnectSettings object with a non-null `cacheSettings`"
+        }
+      }
+    }
+
+  @Test
   fun `executeQuery(fetchPolicy!=SERVER_ONLY) returns non-normalized query results from cache`() =
     runTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
@@ -388,20 +433,21 @@ class DataConnectGrpcRPCsUnitTest {
     }
 
   @Test
-  fun `connect() eagerly sends init request`() = runTest {
+  fun `connect() lazily sends init request on subscribe`() = runTest {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
     server.open()
     val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
 
     server.events.test {
-      dataConnectGrpcRPCs.connect()
+      val stream = dataConnectGrpcRPCs.connect()
+      expectNoEvents()
 
-      val streamRequest =
-        awaitUntilItemIsInstance<
-            _, InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
-          >()
-          .streamRequest
+      val subscriptionFlow = stream.subscribe("req1", "opName", StructProto.getDefaultInstance())
+      expectNoEvents()
+
+      backgroundScope.launch { subscriptionFlow.collect() }
+      val streamRequest: StreamRequest = awaitUntilInitStreamRequest().streamRequest
 
       withClue("streamRequest=${streamRequest.print().value}") {
         withClue("requestId") { streamRequest.requestId shouldBe "init" }
@@ -410,6 +456,7 @@ class DataConnectGrpcRPCsUnitTest {
           streamRequest.requestKindCase shouldBe StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET
         }
       }
+      cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -419,6 +466,7 @@ class DataConnectGrpcRPCsUnitTest {
       callerSdkType = Arb.enum<CallerSdkType>().next(rs),
       authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
       appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
+      idStringGenerator = IdStringGenerator(Random.Default),
     )
 
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")
@@ -487,7 +535,7 @@ class DataConnectGrpcRPCsUnitTest {
       nonBlockingCoroutineDispatcher = Dispatchers.Default,
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.next(rs),
-      cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
+      cache = DataConnectCache(newDbFile(), maxAge = 1.hours, Dispatchers.Default, mockLogger),
       parentLogger = mockLogger,
     )
 }
@@ -495,15 +543,10 @@ class DataConnectGrpcRPCsUnitTest {
 private val propTestConfig =
   PropTestConfig(iterations = 50, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
-data class OperationNameVariablesPair(
-  val operationName: String,
-  val variables: StructProto,
-)
-
 private fun operationNameVariablesPairArb(
   operationName: Arb<String> = Arb.dataConnect.operationName(),
   variables: Arb<ProtoArb.StructInfo> = Arb.proto.struct(),
-): Arb<OperationNameVariablesPair> =
+): Arb<OperationNameVariablesPair<StructProto>> =
   Arb.bind(operationName, variables.map { it.struct }, ::OperationNameVariablesPair)
 
 private fun StructProto.toExecuteQueryResponse(): ExecuteQueryResponse =

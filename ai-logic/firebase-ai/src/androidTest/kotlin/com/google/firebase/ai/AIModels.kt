@@ -25,44 +25,50 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Tool
 
 @OptIn(PublicPreviewAPI::class)
-class AIModels {
+public class AIModels {
 
-  companion object {
-    private val API_KEY: String = ""
-    private val APP_ID: String = ""
-    private val PROJECT_ID: String = "fireescape-integ-tests"
+  public companion object {
     // General purpose models
-    var app: FirebaseApp? = null
-    val vertexAIFlashModel: GenerativeModel by lazy {
+    public var app: FirebaseApp? = null
+
+    public val vertexAIFlashModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash")
     }
-    val vertexAIFlashLiteModel: GenerativeModel by lazy {
+    public val vertexAIFlashLiteModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash-lite")
     }
-    val googleAIFlashModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-2.5-flash")
+    public val vertexAI3_5FlashModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.5-flash")
     }
-    val googleAIFlashLiteModel: GenerativeModel by lazy {
+    public val googleAIFlashModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.1-flash-lite")
+    }
+    public val googleAIFlashLiteModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-2.5-flash-lite")
     }
-    val vertexAITemplateModel: TemplateGenerativeModel by lazy {
+    public val googleAI3_5FlashModel: GenerativeModel by lazy {
+      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.5-flash")
+    }
+    public val vertexAITemplateModel: TemplateGenerativeModel by lazy {
       FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI()).templateGenerativeModel()
     }
-    val googleAITemplateModel: TemplateGenerativeModel by lazy {
+    public val googleAITemplateModel: TemplateGenerativeModel by lazy {
       FirebaseAI.getInstance(app(), GenerativeBackend.googleAI()).templateGenerativeModel()
     }
 
     /** Returns a list of general purpose models to test */
-    fun getModels(): List<GenerativeModel> {
+    public fun getModels(): List<GenerativeModel> {
       return listOf(
         vertexAIFlashModel,
         vertexAIFlashLiteModel,
+        vertexAI3_5FlashModel,
         googleAIFlashModel,
-        googleAIFlashLiteModel
+        googleAIFlashLiteModel,
+        googleAI3_5FlashModel,
       )
     }
 
-    fun getGenerativeModel(
+    public fun getGenerativeModel(
       backend: GenerativeBackend,
       modelName: String = "gemini-2.5-flash",
       config: GenerationConfig? = null
@@ -71,7 +77,7 @@ class AIModels {
         .generativeModel(modelName = modelName, generationConfig = config)
     }
 
-    fun getGenerativeModels(
+    public fun getGenerativeModels(
       modelName: String = "gemini-2.5-flash",
       config: GenerationConfig? = null
     ): List<GenerativeModel> {
@@ -81,23 +87,23 @@ class AIModels {
       )
     }
 
-    fun getTemplateModels(): List<TemplateGenerativeModel> {
+    public fun getTemplateModels(): List<TemplateGenerativeModel> {
       return listOf(vertexAITemplateModel, googleAITemplateModel)
     }
 
-    fun app(): FirebaseApp {
+    public fun app(): FirebaseApp {
       if (app == null) {
         setup()
       }
       return app!!
     }
 
-    fun setup() {
+    public fun setup() {
       val context = InstrumentationRegistry.getInstrumentation().context
       app = FirebaseApp.initializeApp(context)
     }
 
-    fun getGoogleLiveModel(
+    public fun getGoogleLiveModel(
       modelName: String? = null,
       config: LiveGenerationConfig? = null,
       systemInstruction: Content? = null,
@@ -112,7 +118,7 @@ class AIModels {
         )
     }
 
-    fun getVertexLiveModel(
+    public fun getVertexLiveModel(
       modelName: String? = null,
       config: LiveGenerationConfig? = null
     ): LiveGenerativeModel {
@@ -123,7 +129,7 @@ class AIModels {
         )
     }
 
-    fun getAllLiveModels(
+    public fun getAllLiveModels(
       modelName: String? = null,
       config: LiveGenerationConfig? = null
     ): List<LiveGenerativeModel> {
@@ -131,3 +137,9 @@ class AIModels {
     }
   }
 }
+
+@OptIn(PublicPreviewAPI::class)
+public data class TemplateModel(
+  public val backend: String,
+  public val model: TemplateGenerativeModel
+)

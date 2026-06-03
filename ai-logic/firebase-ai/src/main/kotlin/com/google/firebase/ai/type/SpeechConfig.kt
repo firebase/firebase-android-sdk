@@ -42,7 +42,7 @@ public data class SpeakerVoiceConfig(
   )
 }
 
-/** The configuration for the multi-speaker setup. */
+/** The configuration for the multi-speaker setup in Text-to-Speech. */
 @PublicPreviewAPI
 @Serializable
 public data class MultiSpeakerVoiceConfig(

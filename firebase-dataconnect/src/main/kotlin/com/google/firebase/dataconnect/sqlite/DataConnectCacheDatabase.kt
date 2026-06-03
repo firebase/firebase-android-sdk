@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.QueryId
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
@@ -39,6 +41,7 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -51,6 +54,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Provides and manages access to the sqlite database used to stored cached query results for
@@ -63,6 +67,7 @@ import kotlinx.coroutines.sync.withLock
  */
 internal class DataConnectCacheDatabase(
   private val dbFile: File?,
+  private val cpuDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
 
@@ -192,23 +197,36 @@ internal class DataConnectCacheDatabase(
     }
   }
 
+  @JvmInline
+  value class SqliteSequenceNumber(val sequenceNumber: Long) : Comparable<SqliteSequenceNumber> {
+    override fun compareTo(other: SqliteSequenceNumber) =
+      sequenceNumber.compareTo(other.sequenceNumber)
+  }
+
+  private fun SQLiteDatabase.nextSequenceNumber(): SqliteSequenceNumber {
+    execSQL(logger, "INSERT INTO sequence_number DEFAULT VALUES")
+    val sequenceNumber = getLastInsertRowId(logger)
+    execSQL(logger, "DELETE FROM sequence_number")
+    return SqliteSequenceNumber(sequenceNumber)
+  }
+
   @JvmInline private value class SqliteUserId(val sqliteRowId: Long)
 
   @JvmInline private value class SqliteQueryId(val sqliteRowId: Long)
 
   @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
-    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: AuthUid?): SqliteUserId {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid?.string))
     return rawQuery(
       logger,
       "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
-      if (authUid === null) emptyArray() else arrayOf(authUid),
+      if (authUid === null) emptyArray() else arrayOf(authUid.string),
     ) { cursor ->
       if (cursor.moveToNext()) {
         SqliteUserId(cursor.getLong(0))
       } else {
-        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
+        throw AuthUidNotFoundException("authUid=${authUid?.string} (internal error m5m52ahrxz)")
       }
     }
   }
@@ -219,16 +237,20 @@ internal class DataConnectCacheDatabase(
     val id: SqliteQueryId,
     val proto: QueryResultProto,
     val expiryProto: QueryResultExpiry,
+    // lastUpdateSequenceNumber==null comes from migrating from an older schema that lacked the
+    // "last_update_sequence_number" column in the "queries" table.
+    val lastUpdateSequenceNumber: SqliteSequenceNumber?,
   )
 
-  private fun SQLiteDatabase.getQuery(
-    user: SqliteUserId,
-    queryId: ImmutableByteArray
-  ): GetQueryResult? =
+  private fun SQLiteDatabase.getQuery(user: SqliteUserId, queryId: QueryId): GetQueryResult? =
     rawQuery(
       logger,
-      "SELECT id, data, expiry, flags FROM queries WHERE user_id=? AND query_id=?",
-      bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
+      """
+        SELECT id, data, expiry, flags, last_update_sequence_number
+        FROM queries
+        WHERE user_id=? AND query_id=?
+      """,
+      bindArgs = arrayOf(user.sqliteRowId, queryId.bytes.peek()),
     ) { cursor ->
       if (!cursor.moveToNext()) {
         null
@@ -237,6 +259,7 @@ internal class DataConnectCacheDatabase(
         val protoBytes = cursor.getBlob(1)
         val expiryBytes = cursor.getBlob(2)
         val flags = cursor.getLong(3).toULong()
+        val lastUpdateSequenceNumber = if (cursor.isNull(4)) null else cursor.getLong(4)
 
         val parseResult = runCatching {
           // The lower 32 bits of the "flags" are "required". So if there are any flags set there
@@ -254,7 +277,7 @@ internal class DataConnectCacheDatabase(
         parseResult.onFailure {
           logger.warn(it) {
             "Parsing QueryResultProto failed for id=$id, user=$user, " +
-              "queryId=${queryId.to0xHexString()}, flags=$flags [ykb2vwrcge]"
+              "queryId=$queryId, flags=$flags [ykb2vwrcge]"
           }
         }
 
@@ -263,32 +286,39 @@ internal class DataConnectCacheDatabase(
         expiryParseResult.onFailure {
           logger.warn(it) {
             "Parsing QueryResultExpiry failed for id=$id, user=$user, " +
-              "queryId=${queryId.to0xHexString()}, flags=$flags [x9k2c3b8y1]"
+              "queryId=$queryId, flags=$flags [x9k2c3b8y1]"
           }
         }
 
-        GetQueryResult(id, parseResult.getOrThrow(), expiryParseResult.getOrThrow())
+        GetQueryResult(
+          id,
+          parseResult.getOrThrow(),
+          expiryParseResult.getOrThrow(),
+          lastUpdateSequenceNumber?.toSqliteSequenceNumber(),
+        )
       }
     }
 
   private fun SQLiteDatabase.insertQuery(
     user: SqliteUserId,
-    queryId: ImmutableByteArray,
+    queryId: QueryId,
     queryResultProtoBytes: ImmutableByteArray,
     expiryProtoBytes: ImmutableByteArray,
+    lastUpdateSequenceNumber: SqliteSequenceNumber,
   ): SqliteQueryId {
     execSQL(
       logger,
       """
         INSERT OR REPLACE INTO queries
-        (user_id, query_id, data, expiry, flags)
-        VALUES (?, ?, ?, ?, 0)
+        (user_id, query_id, data, expiry, flags, last_update_sequence_number)
+        VALUES (?, ?, ?, ?, 0, ?)
       """,
       arrayOf(
         user.sqliteRowId,
-        queryId.peek(),
+        queryId.bytes.peek(),
         queryResultProtoBytes.peek(),
-        expiryProtoBytes.peek()
+        expiryProtoBytes.peek(),
+        lastUpdateSequenceNumber.sequenceNumber,
       )
     )
     val rowId = getLastInsertRowId(logger)
@@ -298,6 +328,7 @@ internal class DataConnectCacheDatabase(
   private fun SQLiteDatabase.updateEntities(
     user: SqliteUserId,
     entityStructById: Map<String, Struct>,
+    lastUpdateSequenceNumber: SqliteSequenceNumber,
   ): List<SqliteEntityId> {
     val baseEntityStructById =
       getEntities(
@@ -313,7 +344,7 @@ internal class DataConnectCacheDatabase(
     //  baseEntityStruct.toBuilder() call if the fields of entityStruct are a superset of those of
     //  baseEntityStruct.
     entityStructById.entries.forEach { (entityId, entityStruct) ->
-      val baseEntityStruct = baseEntityStructById[entityId]
+      val baseEntityStruct = baseEntityStructById[entityId]?.struct
       val overlaidEntityStruct =
         if (baseEntityStruct === null) {
           entityStruct
@@ -321,7 +352,13 @@ internal class DataConnectCacheDatabase(
           baseEntityStruct.toBuilder().putAllFields(entityStruct.fieldsMap).build()
         }
 
-      val sqliteEntityId = insertEntity(user, entityId, overlaidEntityStruct)
+      val sqliteEntityId =
+        insertEntity(
+          user,
+          entityId,
+          overlaidEntityStruct,
+          lastUpdateSequenceNumber,
+        )
       sqliteEntityIds.add(sqliteEntityId)
     }
 
@@ -332,6 +369,7 @@ internal class DataConnectCacheDatabase(
     user: SqliteUserId,
     entityId: String,
     entityStruct: Struct,
+    lastUpdateSequenceNumber: SqliteSequenceNumber,
   ): SqliteEntityId {
     val entityStructBytes = entityStruct.toByteArray()
 
@@ -339,10 +377,15 @@ internal class DataConnectCacheDatabase(
       logger,
       """
         INSERT OR REPLACE INTO entities
-        (user_id, entity_id, data, flags)
-        VALUES (?, ?, ?, 0)
+        (user_id, entity_id, data, flags, last_update_sequence_number)
+        VALUES (?, ?, ?, 0, ?)
       """,
-      arrayOf(user.sqliteRowId, entityId, entityStructBytes)
+      arrayOf(
+        user.sqliteRowId,
+        entityId,
+        entityStructBytes,
+        lastUpdateSequenceNumber.sequenceNumber,
+      )
     )
 
     val rowId = getLastInsertRowId(logger)
@@ -369,18 +412,25 @@ internal class DataConnectCacheDatabase(
     Error,
   }
 
+  private class EntityStructLastUpdateSequenceNumberPair(
+    val struct: Struct,
+    // lastUpdateSequenceNumber==null comes from migrating from an older schema that lacked the
+    // "last_update_sequence_number" column in the "entities" table.
+    val lastUpdateSequenceNumber: SqliteSequenceNumber?,
+  )
+
   private fun SQLiteDatabase.getEntities(
     user: SqliteUserId,
     entityIds: Collection<String>,
     entityParseFailureAction: EntityParseFailureAction,
-  ): Map<String, Struct> {
+  ): Map<String, EntityStructLastUpdateSequenceNumberPair> {
     if (entityIds.isEmpty()) {
       return emptyMap()
     }
 
     val (sql, bindArgs) =
       SQLiteStatementBuilder().run {
-        append("SELECT entity_id, data, flags FROM entities")
+        append("SELECT entity_id, data, flags, last_update_sequence_number FROM entities")
         append(" WHERE user_id=").appendBinding(user.sqliteRowId)
         append(" AND entity_id IN (")
         entityIds.forEachIndexed { index, entityId ->
@@ -397,6 +447,7 @@ internal class DataConnectCacheDatabase(
           val entityId = cursor.getString(0)
           val data = cursor.getBlob(1)
           val flags = cursor.getLong(2).toULong()
+          val lastUpdateSequenceNumber = if (cursor.isNull(3)) null else cursor.getLong(3)
 
           val parseResult = runCatching {
             // The lower 32 bits of the "flags" are "required". So if there are any flags set there
@@ -424,7 +475,12 @@ internal class DataConnectCacheDatabase(
             }
 
           if (entityStruct !== null) {
-            put(entityId, entityStruct)
+            val entityInfo =
+              EntityStructLastUpdateSequenceNumberPair(
+                entityStruct,
+                lastUpdateSequenceNumber?.toSqliteSequenceNumber(),
+              )
+            put(entityId, entityInfo)
           }
         }
       }
@@ -444,15 +500,21 @@ internal class DataConnectCacheDatabase(
 
     data class Stale(val staleness: Duration) : GetQueryResultResult
 
+    /**
+     * @property maxLastUpdateSequenceNumber The largest sequence number of the query or any of its
+     * constituent entities; null indicates that the sequence number is not known because the
+     * database was populated by an older version that was not sequence number aware.
+     */
     data class Found(
       val struct: Struct,
       val freshnessRemaining: Duration,
+      val maxLastUpdateSequenceNumber: SqliteSequenceNumber?,
     ) : GetQueryResultResult
   }
 
   suspend fun getQueryResult(
-    authUid: String?,
-    queryId: ImmutableByteArray,
+    authUid: AuthUid?,
+    queryId: QueryId,
     currentTimeMillis: Long,
     staleResult: KClass<out GetQueryResultResult>,
   ): GetQueryResultResult {
@@ -470,7 +532,9 @@ internal class DataConnectCacheDatabase(
       if (getQueryResult === null) {
         GetQueryResultResult.NotFound
       } else {
-        val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+        val sqliteQueryId: SqliteQueryId = getQueryResult.id
+        val queryResultProto: QueryResultProto = getQueryResult.proto
+        val expiryProto: QueryResultExpiry = getQueryResult.expiryProto
 
         val staleness = expiryProto.calculateStaleness(currentTimeMillis)
         val staleDuration =
@@ -495,7 +559,7 @@ internal class DataConnectCacheDatabase(
         }
 
         val entityIds: Set<String> = queryResultProto.referencedEntityIds()
-        val entityStructByEntityId =
+        val entityInfoByEntityId =
           sqliteDatabase.getEntities(
             sqliteUserId,
             entityIds,
@@ -503,12 +567,12 @@ internal class DataConnectCacheDatabase(
           )
 
         val rehydrateResult = runCatching {
-          rehydrateQueryResult(queryResultProto, entityStructByEntityId)
+          rehydrateQueryResult(queryResultProto, entityInfoByEntityId.mapValues { it.value.struct })
         }
         rehydrateResult.onFailure {
           logger.warn {
             "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
-              "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+              "queryId=$queryId [knpe3t4f5b]"
           }
         }
 
@@ -518,34 +582,60 @@ internal class DataConnectCacheDatabase(
             else -> 1
           }
         val freshnessRemaining = staleDuration * staleDurationMultiplier
-        GetQueryResultResult.Found(rehydrateResult.getOrThrow(), freshnessRemaining)
+
+        val maxLastUpdateSequenceNumber =
+          entityInfoByEntityId.values.fold(getQueryResult.lastUpdateSequenceNumber) {
+            currentMax,
+            entityInfo ->
+            val candidateMax = entityInfo.lastUpdateSequenceNumber
+            when {
+              currentMax == null -> candidateMax
+              candidateMax == null -> currentMax
+              candidateMax.sequenceNumber > currentMax.sequenceNumber -> candidateMax
+              else -> currentMax
+            }
+          }
+
+        GetQueryResultResult.Found(
+          struct = rehydrateResult.getOrThrow(),
+          freshnessRemaining = freshnessRemaining,
+          maxLastUpdateSequenceNumber = maxLastUpdateSequenceNumber,
+        )
       }
     }
   }
 
   suspend fun insertQueryResult(
-    authUid: String?,
-    queryId: ImmutableByteArray,
+    authUid: AuthUid?,
+    queryId: QueryId,
     queryData: Struct,
     maxAge: DurationProto,
     currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
-  ) {
-    require(queryId.size > 0) {
-      "queryId.size=${queryId.size}, but must be greater than zero [ab4em538tb]"
+  ): SqliteSequenceNumber {
+    require(queryId.bytes.size > 0) {
+      "queryId.bytes.size=${queryId.bytes.size}, but must be greater than zero [ab4em538tb]"
     }
-    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
-    val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
 
-    val expiryProtoBytes =
-      QueryResultExpiry.newBuilder().let {
-        val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
-        it.setMaxAge(maxAge)
-        it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
-        ImmutableByteArray.adopt(it.build().toByteArray())
-      }
+    val queryResultProtoBytes: ImmutableByteArray
+    val expiryProtoBytes: ImmutableByteArray
+    val entityStructById: Map<String, Struct>
+    withContext(cpuDispatcher) {
+      val dehydratedQueryResult = dehydrateQueryResult(queryData, getEntityIdForPath)
+      entityStructById = dehydratedQueryResult.entityStructById
+      queryResultProtoBytes = ImmutableByteArray.adopt(dehydratedQueryResult.proto.toByteArray())
 
-    runReadWriteTransaction { sqliteDatabase ->
+      expiryProtoBytes =
+        QueryResultExpiry.newBuilder().let {
+          val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
+          it.setMaxAge(maxAge)
+          it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
+          ImmutableByteArray.adopt(it.build().toByteArray())
+        }
+    }
+
+    return runReadWriteTransaction { sqliteDatabase ->
+      val sequenceNumber = sqliteDatabase.nextSequenceNumber()
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
 
       val query =
@@ -554,18 +644,22 @@ internal class DataConnectCacheDatabase(
           queryId = queryId,
           queryResultProtoBytes = queryResultProtoBytes,
           expiryProtoBytes = expiryProtoBytes,
+          lastUpdateSequenceNumber = sequenceNumber,
         )
 
       val sqliteEntityIds =
         sqliteDatabase.updateEntities(
           user = user,
           entityStructById = entityStructById,
+          lastUpdateSequenceNumber = sequenceNumber
         )
 
       sqliteDatabase.deleteEntityIdMappingsForQuery(query)
       sqliteEntityIds.forEach { sqliteEntityId ->
         sqliteDatabase.insertQueryIdEntityIdMapping(query, sqliteEntityId)
       }
+
+      sequenceNumber
     }
   }
 
@@ -762,3 +856,6 @@ private val supportedStaleResults =
     GetQueryResultResult.Found::class,
     GetQueryResultResult.Stale::class,
   )
+
+private fun Long.toSqliteSequenceNumber(): DataConnectCacheDatabase.SqliteSequenceNumber =
+  DataConnectCacheDatabase.SqliteSequenceNumber(this)

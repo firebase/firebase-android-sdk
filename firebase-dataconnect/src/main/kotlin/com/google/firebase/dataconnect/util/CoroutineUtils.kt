@@ -25,15 +25,21 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 internal object CoroutineUtils {
 
   /**
-   * Creates and returns a new [CoroutineScope] with a [SupervisorJob], [CoroutineName], and
-   * [CoroutineExceptionHandler].
+   * Creates and returns a new [CoroutineScope] with newly-created [SupervisorJob], [CoroutineName],
+   * and [CoroutineExceptionHandler] elements.
    *
-   * The [CoroutineContext] of the returned [CoroutineScope] will be the given [context], with some
-   * elements unconditionally replaced:
+   * The [CoroutineContext] of the returned [CoroutineScope] will be the given [context], with the
+   * following elements unconditionally replaced:
    *
    * * The [Job] element will be a newly-created [SupervisorJob] with the given [parent]; notably,
    * if the given [parent] is null then the parent of the [SupervisorJob] will _also_ be null.
@@ -43,6 +49,18 @@ internal object CoroutineUtils {
    * * The [CoroutineExceptionHandler] will be a newly-created instance that simply logs a warning
    * message to the given [Logger] and then drops the exception. This prevents any crashing
    * coroutines in the returned scope from propagating outside the scope.
+   *
+   * @param context The context elements for the returned [CoroutineScope]; note that the [Job],
+   * [CoroutineName], and [CoroutineExceptionHandler] will be discarded and replaced, as documented
+   * above.
+   * @param logger The logger to use to log uncaught exceptions in the [CoroutineExceptionHandler]
+   * element of the [CoroutineContext] of the returned [CoroutineScope]; also used to calculate the
+   * [coroutineName] if the given value is null.
+   * @param parent The parent for the [SupervisorJob] of the [CoroutineContext] of the returned
+   * [CoroutineScope].
+   * @param coroutineName The name to specify in the [CoroutineName] element of the
+   * [CoroutineContext] of the returned [CoroutineScope]; if null, use the [Logger.nameWithId] value
+   * of the given [logger].
    */
   fun createSupervisorCoroutineScope(
     context: CoroutineContext = EmptyCoroutineContext,
@@ -60,4 +78,112 @@ internal object CoroutineUtils {
           }
         }
     )
+
+  /**
+   * Creates and returns a new [CoroutineScope] with newly-created [SupervisorJob], [CoroutineName],
+   * and [CoroutineExceptionHandler] elements, that is a "child" of the given [parentScope], and
+   * uses the [CoroutineContext] of the given [parentScope] as its base context.
+   *
+   * The [SupervisorJob] of the returned [CoroutineScope] will have its parent set to the [Job] of
+   * the [CoroutineContext] of the given [parentScope]. If the parent's [Job] is found to be null
+   * then the parent of the [SupervisorJob] of the returned [CoroutineScope] will also be null.
+   *
+   * The [CoroutineContext] of the returned [CoroutineScope] will be that of the [parentScope] plus
+   * the given [childContextOverrides], plus some elements unconditionally replaced as described in
+   * [createSupervisorCoroutineScope].
+   *
+   * This is a convenience wrapper around [createSupervisorCoroutineScope] that automatically
+   * extracts the job from the [parentScope] to establish structured concurrency.
+   *
+   * @param parentScope The parent scope from which to inherit the context and job.
+   * @param logger Passed verbatim to [createSupervisorCoroutineScope].
+   * @param childContextOverrides Additional context elements to add or override from the parent.
+   * @param coroutineName Passed verbatim to [createSupervisorCoroutineScope].
+   */
+  fun createChildSupervisorCoroutineScope(
+    parentScope: CoroutineScope,
+    logger: Logger,
+    childContextOverrides: CoroutineContext = EmptyCoroutineContext,
+    coroutineName: String? = null
+  ): CoroutineScope =
+    createSupervisorCoroutineScope(
+      context = parentScope.coroutineContext + childContextOverrides,
+      logger = logger,
+      parent = parentScope.coroutineContext[Job],
+      coroutineName = coroutineName,
+    )
+
+  /**
+   * Convenience extension function that simply calls [createChildSupervisorCoroutineScope] with the
+   * receiver [CoroutineScope] as the first argument.
+   *
+   * @receiver Passed to [createChildSupervisorCoroutineScope] as the `parentScope` parameter.
+   * @param logger Passed to [createChildSupervisorCoroutineScope] as the `logger` parameter.
+   * @param context Passed to [createChildSupervisorCoroutineScope] as the `childContextOverrides`
+   * parameter.
+   * @param coroutineName Passed to [createChildSupervisorCoroutineScope] as the `coroutineName`
+   * parameter.
+   */
+  fun CoroutineScope.createChildSupervisorScope(
+    logger: Logger,
+    context: CoroutineContext = EmptyCoroutineContext,
+    coroutineName: String? = null
+  ): CoroutineScope = createChildSupervisorCoroutineScope(this, logger, context, coroutineName)
+
+  /** Returns a "send-only" wrapper around the receiver [SendChannel]. */
+  fun <T> SendChannel<T>.asSendChannel(): SendOnlySendChannel<T> =
+    when (this) {
+      is SendOnlySendChannel -> this
+      else -> SendOnlySendChannel(this)
+    }
+
+  /**
+   * A "send-only" wrapper around a [SendChannel], preventing it from being cast to another type,
+   * specifically [Channel], and, thus, allowing non-send methods to be called on it.
+   *
+   * The purpose of this wrapper is to prevent a [Channel] instance from being passed to a method
+   * that takes [SendChannel] and that [SendChannel] being cast back to [Channel] and having methods
+   * not defined in [SendChannel] called on it.
+   *
+   * This is similar in spirit to the [kotlinx.coroutines.flow.asSharedFlow] and
+   * [kotlinx.coroutines.flow.asStateFlow] extension functions that are defined in the official
+   * Kotlin coroutines library.
+   */
+  class SendOnlySendChannel<in T>(delegate: SendChannel<T>) : SendChannel<T> by delegate
+
+  /**
+   * Returns a [Flow] that emits when the [Job] associated with the receiver [CoroutineScope]
+   * completes.
+   *
+   * This is a convenience extension function that delegates to [CoroutineContext.completedFlow]
+   * using this scope's [CoroutineScope.coroutineContext].
+   */
+  fun CoroutineScope.completedFlow(): Flow<Throwable?> = this.coroutineContext.completedFlow()
+
+  /**
+   * Returns a [Flow] that emits when the [Job] associated with the receiver [CoroutineContext]
+   * completes.
+   *
+   * If this context does not contain a [Job], the returned flow completes immediately without
+   * emitting any values.
+   *
+   * If this context contains a [Job], it delegates to [Job.completedFlow].
+   */
+  fun CoroutineContext.completedFlow(): Flow<Throwable?> = this[Job]?.completedFlow() ?: emptyFlow()
+
+  /**
+   * Returns a [Flow] that emits when the receiver [Job] completes.
+   *
+   * The returned flow will emit exactly one value when the job completes, and then close. The
+   * emitted value is the [Throwable] that caused the job to complete, or `null` if the job
+   * completed normally. Specifically, the emitted value is the argument passed to the
+   * [Job.invokeOnCompletion].
+   */
+  fun Job.completedFlow(): Flow<Throwable?> = callbackFlow {
+    val disposableHandle = invokeOnCompletion { throwable ->
+      trySend(throwable)
+      close()
+    }
+    awaitClose { disposableHandle.dispose() }
+  }
 }

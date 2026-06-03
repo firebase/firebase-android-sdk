@@ -25,10 +25,9 @@ import kotlinx.serialization.Serializable
  */
 @PublicPreviewAPI
 @Serializable
-public class Voice public constructor(public val voiceName: String) {
-
+public data class Voice(public val voiceName: String) {
   internal fun toInternal(): PrebuiltVoiceInternal {
-    return PrebuiltVoiceInternal(this.voiceName)
+    return PrebuiltVoiceInternal(voiceName)
   }
 }
 

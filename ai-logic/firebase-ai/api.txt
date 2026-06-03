@@ -1867,15 +1867,20 @@ package com.google.firebase.ai.type {
 
   public final class TemplateTool {
     method public static com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+    method public static com.google.firebase.ai.type.TemplateTool googleMaps();
+    method public static com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     field public static final com.google.firebase.ai.type.TemplateTool.Companion Companion;
   }
 
   public static final class TemplateTool.Companion {
     method public com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+    method public com.google.firebase.ai.type.TemplateTool googleMaps();
+    method public com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
   }
 
   public final class TemplateToolConfig {
     ctor public TemplateToolConfig();
+    ctor public TemplateToolConfig(com.google.firebase.ai.type.RetrievalConfig? retrievalConfig);
   }
 
   public final class TextPart implements com.google.firebase.ai.type.Part {
@@ -2014,6 +2019,8 @@ package com.google.firebase.ai.type {
 
   @com.google.firebase.ai.type.PublicPreviewAPI @kotlinx.serialization.Serializable public final class Voice {
     ctor public Voice(String voiceName);
+    method public String component1();
+    method public com.google.firebase.ai.type.Voice copy(String voiceName);
     method public String getVoiceName();
     property public final String voiceName;
   }
