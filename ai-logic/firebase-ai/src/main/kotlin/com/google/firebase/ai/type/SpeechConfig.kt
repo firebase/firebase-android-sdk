@@ -20,8 +20,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. In the documentation, find the list of
- * [all supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ * Configures a participating speaker within a multi-speaker setup.
+ *
+ * When generating multi-speaker conversational audio, each speaker must be configured with a unique
+ * name and a specific voice. Find the list of
+ * [supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ *
+ * @property speaker The unique name/identifier of the speaker (e.g., `"Alice"`).
+ * @property voice The specific [Voice] assigned to this speaker.
  */
 @PublicPreviewAPI
 @Serializable
@@ -42,7 +48,19 @@ public data class SpeakerVoiceConfig(
   )
 }
 
-/** The configuration for the multi-speaker setup in Text-to-Speech. */
+/**
+ * Configuration for a multi-speaker audio generation setup.
+ *
+ * Enables the model to generate audio containing multiple distinct speakers, alternating voices
+ * dynamically based on speaker labels in the prompt.
+ *
+ * Note: Multi-speaker configurations are not supported by the Live API (e.g.,
+ * [LiveGenerationConfig]), and will be silently ignored by the backend.
+ *
+ * @property speakerVoiceConfigs A list of voice configurations for the participating speakers.
+ *
+ * Currently, the backend requires exactly **two** speaker voice configurations.
+ */
 @PublicPreviewAPI
 @Serializable
 public data class MultiSpeakerVoiceConfig(
@@ -57,7 +75,18 @@ public data class MultiSpeakerVoiceConfig(
   )
 }
 
-/** Speech configuration class for setting up the voice of the server's response. */
+/**
+ * Speech configuration class for controlling the model's speech and audio generation behaviors.
+ *
+ * This allows you to configure the voice properties (single-speaker OR multi-speaker setup) and
+ * language preferences when requesting the model to generate spoken responses.
+ *
+ * @property voice The single-speaker [Voice] configuration.
+ * @property multiSpeakerVoiceConfig The multi-speaker configuration. Note that this configuration
+ * is not supported by the Live API (e.g., [LiveGenerationConfig]) and will be silently ignored.
+ * @property languageCode The optional IETF BCP-47 language code (e.g., `"en-US"`, `"es-ES"`) used
+ * to guide the model's speech synthesis and recognition.
+ */
 @PublicPreviewAPI
 public class SpeechConfig
 private constructor(
@@ -66,12 +95,28 @@ private constructor(
   public val languageCode: String? = null,
 ) {
 
+  /**
+   * Constructs a [SpeechConfig] for a single-speaker setup.
+   *
+   * @param voice The specific [Voice] to use for speech generation.
+   * @param languageCode An optional IETF BCP-47 language code to guide speech generation.
+   */
   @JvmOverloads
   public constructor(
     voice: Voice,
     languageCode: String? = null,
   ) : this(voice = voice, multiSpeakerVoiceConfig = null, languageCode = languageCode)
 
+  /**
+   * Constructs a [SpeechConfig] for a multi-speaker setup.
+   *
+   * Note: Multi-speaker configurations are not supported by the Live API (e.g.,
+   * [LiveGenerationConfig]), and will be silently ignored by the backend.
+   *
+   * @param multiSpeakerVoiceConfig The configuration detailing multiple speakers and their
+   * corresponding voices.
+   * @param languageCode An optional IETF BCP-47 language code to guide speech generation.
+   */
   @JvmOverloads
   public constructor(
     multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig,

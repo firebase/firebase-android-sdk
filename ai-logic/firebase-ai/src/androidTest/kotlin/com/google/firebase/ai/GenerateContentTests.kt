@@ -142,7 +142,7 @@ class GenerateContentTests {
   fun testGenerateContent_speechConfig() {
     val config = generationConfig {
       responseModalities = listOf(ResponseModality.AUDIO)
-      speechConfig = SpeechConfig(voice = Voice("Aoede"), languageCode = "en-US")
+      speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
     }
     val models = AIModels.getGenerativeModels(modelName = ttsModelName, config = config)
     runBlocking {

@@ -20,8 +20,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. In the documentation, find the list of
- * [all supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ * Various voices supported by the server. Find the list of
+ * [supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ *
+ * @property voiceName The name of the voice to use (e.g., `"Kore"`).
  */
 @PublicPreviewAPI
 @Serializable

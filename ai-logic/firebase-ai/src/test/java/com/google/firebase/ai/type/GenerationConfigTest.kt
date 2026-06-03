@@ -26,7 +26,7 @@ internal class GenerationConfigTest {
 
   @Test
   fun `GenerationConfig with SpeechConfig voice only`() {
-    val config = generationConfig { speechConfig = SpeechConfig(voice = Voice("Aoede")) }
+    val config = generationConfig { speechConfig = SpeechConfig(voice = Voice("Charon")) }
 
     val expectedJson =
       """
@@ -34,7 +34,7 @@ internal class GenerationConfigTest {
         "speech_config": {
           "voice_config": {
             "prebuilt_voice_config": {
-              "voice_name": "Aoede"
+              "voice_name": "Charon"
             }
           }
         }
@@ -48,7 +48,7 @@ internal class GenerationConfigTest {
   @Test
   fun `GenerationConfig with SpeechConfig voice and languageCode`() {
     val config = generationConfig {
-      speechConfig = SpeechConfig(voice = Voice("Aoede"), languageCode = "en-US")
+      speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
     }
 
     val expectedJson =
@@ -58,7 +58,7 @@ internal class GenerationConfigTest {
           "language_code": "en-US",
           "voice_config": {
             "prebuilt_voice_config": {
-              "voice_name": "Aoede"
+              "voice_name": "Charon"
             }
           }
         }

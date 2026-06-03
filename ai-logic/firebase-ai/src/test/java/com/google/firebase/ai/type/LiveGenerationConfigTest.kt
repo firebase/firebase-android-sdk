@@ -26,7 +26,7 @@ internal class LiveGenerationConfigTest {
 
   @Test
   fun `LiveGenerationConfig with SpeechConfig voice only`() {
-    val config = liveGenerationConfig { speechConfig = SpeechConfig(voice = Voice("Aoede")) }
+    val config = liveGenerationConfig { speechConfig = SpeechConfig(voice = Voice("Charon")) }
 
     val expectedJson =
       """
@@ -34,7 +34,7 @@ internal class LiveGenerationConfigTest {
         "speech_config": {
           "voice_config": {
             "prebuilt_voice_config": {
-              "voice_name": "Aoede"
+              "voice_name": "Charon"
             }
           }
         }
@@ -48,7 +48,7 @@ internal class LiveGenerationConfigTest {
   @Test
   fun `LiveGenerationConfig with SpeechConfig voice and languageCode`() {
     val config = liveGenerationConfig {
-      speechConfig = SpeechConfig(voice = Voice("Aoede"), languageCode = "en-US")
+      speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
     }
 
     val expectedJson =
@@ -58,7 +58,7 @@ internal class LiveGenerationConfigTest {
           "language_code": "en-US",
           "voice_config": {
             "prebuilt_voice_config": {
-              "voice_name": "Aoede"
+              "voice_name": "Charon"
             }
           }
         }
@@ -71,6 +71,9 @@ internal class LiveGenerationConfigTest {
 
   @Test
   fun `LiveGenerationConfig with SpeechConfig multiSpeaker and languageCode`() {
+    // Note: Multi-speaker configurations are not supported by the Live API, and will
+    // be silently ignored by the backend. However, we still support serialization
+    // consistency across both standard and live generation configurations.
     val config = liveGenerationConfig {
       speechConfig =
         SpeechConfig(

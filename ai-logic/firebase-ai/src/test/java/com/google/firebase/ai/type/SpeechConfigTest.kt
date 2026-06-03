@@ -26,7 +26,7 @@ class SpeechConfigTest {
 
   @Test
   fun singleSpeakerConstructor_setsVoiceAndLanguageCode() {
-    val voice = Voice("Kora")
+    val voice = Voice("Charon")
     val config = SpeechConfig(voice, "en-US")
     assertEquals(voice, config.voice)
     assertEquals("en-US", config.languageCode)
@@ -35,7 +35,7 @@ class SpeechConfigTest {
 
   @Test
   fun singleSpeakerConstructor_defaultLanguageCode() {
-    val voice = Voice("Kora")
+    val voice = Voice("Charon")
     val config = SpeechConfig(voice)
     assertEquals(voice, config.voice)
     assertNull(config.languageCode)
@@ -45,7 +45,10 @@ class SpeechConfigTest {
   @Test
   fun multiSpeakerConstructor_setsConfigAndLanguageCode() {
     val speakerConfigs =
-      listOf(SpeakerVoiceConfig("Joe", Voice("Kora")), SpeakerVoiceConfig("Jane", Voice("Kora")))
+      listOf(
+        SpeakerVoiceConfig("Joe", Voice("Charon")),
+        SpeakerVoiceConfig("Jane", Voice("Charon"))
+      )
     val multiConfig = MultiSpeakerVoiceConfig(speakerConfigs)
     val config = SpeechConfig(multiConfig, "en-US")
     assertEquals(multiConfig, config.multiSpeakerVoiceConfig)
@@ -56,7 +59,10 @@ class SpeechConfigTest {
   @Test
   fun multiSpeakerConstructor_defaultLanguageCode() {
     val speakerConfigs =
-      listOf(SpeakerVoiceConfig("Joe", Voice("Kora")), SpeakerVoiceConfig("Jane", Voice("Kora")))
+      listOf(
+        SpeakerVoiceConfig("Joe", Voice("Charon")),
+        SpeakerVoiceConfig("Jane", Voice("Charon"))
+      )
     val multiConfig = MultiSpeakerVoiceConfig(speakerConfigs)
     val config = SpeechConfig(multiConfig)
     assertEquals(multiConfig, config.multiSpeakerVoiceConfig)
@@ -66,10 +72,10 @@ class SpeechConfigTest {
 
   @Test
   fun serialization_singleSpeaker() {
-    val voice = Voice("Kora")
+    val voice = Voice("Charon")
     val config = SpeechConfig(voice, "en-US")
     val internal = config.toInternal()
-    assertEquals("Kora", internal.voiceConfig?.prebuiltVoiceConfig?.voiceName)
+    assertEquals("Charon", internal.voiceConfig?.prebuiltVoiceConfig?.voiceName)
     assertEquals("en-US", internal.languageCode)
     assertNull(internal.multiSpeakerVoiceConfig)
   }
@@ -77,7 +83,10 @@ class SpeechConfigTest {
   @Test
   fun serialization_multiSpeaker() {
     val speakerConfigs =
-      listOf(SpeakerVoiceConfig("Joe", Voice("Kora")), SpeakerVoiceConfig("Jane", Voice("Kora")))
+      listOf(
+        SpeakerVoiceConfig("Joe", Voice("Charon")),
+        SpeakerVoiceConfig("Jane", Voice("Charon"))
+      )
     val multiConfig = MultiSpeakerVoiceConfig(speakerConfigs)
     val config = SpeechConfig(multiConfig, "en-US")
     val internal = config.toInternal()
@@ -86,7 +95,7 @@ class SpeechConfigTest {
     assertEquals(2, internal.multiSpeakerVoiceConfig?.speakerVoiceConfigs?.size)
     assertEquals("Joe", internal.multiSpeakerVoiceConfig?.speakerVoiceConfigs?.get(0)?.speaker)
     assertEquals(
-      "Kora",
+      "Charon",
       internal.multiSpeakerVoiceConfig
         ?.speakerVoiceConfigs
         ?.get(0)
@@ -100,9 +109,9 @@ class SpeechConfigTest {
   fun serialization_multiSpeaker_moreThanTwoSpeakers() {
     val speakerConfigs =
       listOf(
-        SpeakerVoiceConfig("Joe", Voice("Kora")),
-        SpeakerVoiceConfig("Jane", Voice("Kora")),
-        SpeakerVoiceConfig("Jack", Voice("Kora"))
+        SpeakerVoiceConfig("Joe", Voice("Charon")),
+        SpeakerVoiceConfig("Jane", Voice("Charon")),
+        SpeakerVoiceConfig("Jack", Voice("Charon"))
       )
     val multiConfig = MultiSpeakerVoiceConfig(speakerConfigs)
     val config = SpeechConfig(multiConfig)

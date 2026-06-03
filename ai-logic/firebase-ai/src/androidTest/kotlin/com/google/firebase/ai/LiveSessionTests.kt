@@ -296,7 +296,7 @@ class LiveSessionTests {
     val config = liveGenerationConfig {
       responseModality = ResponseModality.AUDIO
       outputAudioTranscription = AudioTranscriptionConfig()
-      speechConfig = SpeechConfig(voice = Voice("Aoede"), languageCode = "en-US")
+      speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
     }
     for (liveModel in AIModels.getAllLiveModels(config = config)) {
       val session = liveModel.connect()
@@ -313,6 +313,8 @@ class LiveSessionTests {
 
   @Test
   fun testRealtime_speechConfig_multiSpeaker(): Unit = runBlocking {
+    // Note: Multi-speaker configurations are not supported by the Live API, and will
+    // be silently ignored by the backend.
     val config = liveGenerationConfig {
       responseModality = ResponseModality.AUDIO
       outputAudioTranscription = AudioTranscriptionConfig()

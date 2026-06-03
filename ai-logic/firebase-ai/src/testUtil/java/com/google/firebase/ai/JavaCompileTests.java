@@ -154,7 +154,7 @@ public class JavaCompileTests {
                 .setAspectRatio(AspectRatio.LANDSCAPE_21x9)
                 .setImageSize(ImageSize.SIZE_512)
                 .build())
-        .setSpeechConfig(new SpeechConfig(new Voice("Kora"), "en-US"))
+        .setSpeechConfig(new SpeechConfig(new Voice("Charon"), "en-US"))
         .build();
   }
 
@@ -201,13 +201,13 @@ public class JavaCompileTests {
   }
 
   private void testSpeechConfig() {
-    SpeechConfig singleSpeechConfig = new SpeechConfig(new Voice("Kora"), "en-US");
+    SpeechConfig singleSpeechConfig = new SpeechConfig(new Voice("Charon"), "en-US");
 
     MultiSpeakerVoiceConfig multiSpeakerConfig =
         new MultiSpeakerVoiceConfig(
             List.of(
-                new SpeakerVoiceConfig("Joe", new Voice("Kora")),
-                new SpeakerVoiceConfig("Jane", new Voice("Kora"))));
+                new SpeakerVoiceConfig("Joe", new Voice("Charon")),
+                new SpeakerVoiceConfig("Jane", new Voice("Charon"))));
     SpeechConfig multiSpeechConfig = new SpeechConfig(multiSpeakerConfig);
     SpeechConfig multiSpeechConfigWithLang = new SpeechConfig(multiSpeakerConfig, "en-US");
   }
