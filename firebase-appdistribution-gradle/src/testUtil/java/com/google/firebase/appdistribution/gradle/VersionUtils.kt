@@ -30,7 +30,7 @@ object VersionUtils {
 
   enum class Stability(val filteredKeywords: Set<String>) {
     STABLE(setOf("alpha", "beta", "milestone", "canary", "m", "rc")),
-    RC(setOf("alpha", "milestone", "m")),
+    RC(setOf("alpha", "milestone", "canary", "m")),
     BLEEDING_EDGE(setOf());
 
     fun applies(version: String) = !filteredKeywords.any { version.contains(it, ignoreCase = true) }

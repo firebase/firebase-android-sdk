@@ -28,7 +28,6 @@ import com.google.firebase.appdistribution.gradle.VersionUtils.Stability.STABLE
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
-import kotlin.jvm.java
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome.FAILED
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -432,7 +431,7 @@ class UploadDistributionTaskTest {
 
   @Test
   fun testGoogleServices440AppIdParsing_forAgp730() {
-    testAabPathParsing_withAab(
+    testGoogleServicesAppIdParsing(
       Versions(
         gradle = "7.4",
         agp = "7.3.0", // Note: this fails with AGP 7.4.0
