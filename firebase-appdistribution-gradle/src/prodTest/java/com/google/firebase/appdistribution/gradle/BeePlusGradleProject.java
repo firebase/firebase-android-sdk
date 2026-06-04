@@ -66,9 +66,13 @@ class BeePlusGradleProject extends ExternalResource {
   private static final Logger LOGGER = Logger.getLogger(BeePlusGradleProject.class.getName());
 
   static {
-    LOGGER.info("Production compat tests using versions:\n"
-        + "Latest stable Gradle Version: " + LATEST_STABLE_GRADLE_VERSION + "\n"
-        + "Latest stable AGP Version: " + LATEST_STABLE_AGP_VERSION);
+    LOGGER.info(
+        "Production compat tests using versions:\n"
+            + "Latest stable Gradle Version: "
+            + LATEST_STABLE_GRADLE_VERSION
+            + "\n"
+            + "Latest stable AGP Version: "
+            + LATEST_STABLE_AGP_VERSION);
   }
 
   // The project number for App Distro Probes. We need to use this project
