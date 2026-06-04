@@ -151,37 +151,10 @@ internal fun DataConnectArb.sqliteSequenceNumber(
   long: Arb<Long> = Arb.longWithEvenNumDigitsDistribution(),
 ): Arb<SqliteSequenceNumber> = long.map(::SqliteSequenceNumber)
 
-internal class DataSourceSample(
-  val publicDataSource: com.google.firebase.dataconnect.DataSource,
-  val coreDataSource: com.google.firebase.dataconnect.core.DataSource,
-) {
-  override fun toString() =
-    "DataSourceSample(publicDataSource=$publicDataSource, coreDataSource=$coreDataSource)"
-}
-
-internal fun DataConnectArb.dataSource(
-  publicDataSourceArb: Arb<com.google.firebase.dataconnect.DataSource> =
-    Arb.enum<com.google.firebase.dataconnect.DataSource>(),
-  sqliteSequenceNumberArb: Arb<SqliteSequenceNumber?> =
-    sqliteSequenceNumber().orNull(nullProbability = 0.2),
-): Arb<DataSourceSample> = arbitrary {
-  val publicDataSource = publicDataSourceArb.bind()
-  val coreDataSource =
-    when (publicDataSource) {
-      com.google.firebase.dataconnect.DataSource.CACHE ->
-        com.google.firebase.dataconnect.core.DataSource.Cache(sqliteSequenceNumberArb.bind())
-      com.google.firebase.dataconnect.DataSource.SERVER ->
-        com.google.firebase.dataconnect.core.DataSource.Server
-    }
-  DataSourceSample(publicDataSource, coreDataSource)
-}
-
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..5),
-  source: Arb<com.google.firebase.dataconnect.core.DataSource> =
-    dataSource().map { it.coreDataSource },
-) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
+) = Arb.bind(data, errors, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
