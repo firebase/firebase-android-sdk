@@ -187,6 +187,26 @@ public class GmsRpcRoboTest {
   }
 
   @Test
+  public void testGetToken_withV1Registration() throws Throwable {
+    doReturn(createRegistrationResponse("a_token")).when(internalRpc).send(any(Bundle.class));
+    Task<String> tokenTask = gmsRpc.getToken(true);
+
+    // verify the task
+    String token = Tasks.await(tokenTask, TIMEOUT_S, TimeUnit.SECONDS);
+    assertEquals("a_token", token);
+
+    // verify the request bundle
+    Bundle expectedParameters = getDefaultParameters(SENDER_ID, SCOPE_ALL);
+    expectedParameters.putString(PARAM_API_KEY, "test_api_key");
+    verifyRpcCallArgument(expectedParameters);
+  }
+
+  @Test
+  public void testGetToken_withV1Registration_propagatesIoException() {
+    testPropagatesIoException(() -> gmsRpc.getToken(true));
+  }
+
+  @Test
   public void testDeleteToken() throws Throwable {
     doReturn(createUnregistrationResponse()).when(internalRpc).send(any(Bundle.class));
 
@@ -203,6 +223,26 @@ public class GmsRpcRoboTest {
   @Test
   public void testDeleteToken_propagatesIoException() {
     testPropagatesIoException(() -> gmsRpc.deleteToken(false));
+  }
+
+  @Test
+  public void testDeleteToken_withV1Registration() throws Throwable {
+    doReturn(createUnregistrationResponse()).when(internalRpc).send(any(Bundle.class));
+
+    Task<?> rpcTask = gmsRpc.deleteToken(true);
+    rpcTask.getResult(IOException.class);
+    assertThat(rpcTask.isSuccessful()).isTrue();
+
+    // verify the request bundle
+    Bundle expectedParameters = getDefaultParameters(SENDER_ID, SCOPE_ALL);
+    expectedParameters.putString(EXTRA_DELETE, "1");
+    expectedParameters.putString(PARAM_API_KEY, "test_api_key");
+    verifyRpcCallArgument(expectedParameters);
+  }
+
+  @Test
+  public void testDeleteToken_withV1Registration_propagatesIoException() {
+    testPropagatesIoException(() -> gmsRpc.deleteToken(true));
   }
 
   @Test
