@@ -19,6 +19,7 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.querymgr.subscribe
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.throwIfCancellationException
@@ -27,6 +28,8 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal class QuerySubscriptionImpl<Data, Variables>(
   override val query: QueryRefImpl<Data, Variables>,
@@ -78,34 +81,113 @@ internal class QuerySubscriptionImpl<Data, Variables>(
   private inner class ResultSender(
     val channel: SendChannel<QuerySubscriptionResultImpl>,
   ) {
+    private val mutex = Mutex()
+    private var lastEmittedSqliteSequenceNumber: SqliteSequenceNumber? = null
+
     suspend fun onNonRealtimeUpdate(
       event: SequencedReference<Result<SourcedData<Data>>>,
     ) {
-      val (source, _, data) = event.ref.getOrNull() ?: return
-      emit(data, source)
+      val (source, sqliteSequenceNumber, data) = event.ref.getOrNull() ?: return
+      mutex.withLock {
+        if (shouldEmitNonRealtime(source, sqliteSequenceNumber, lastEmittedSqliteSequenceNumber)) {
+          emit(data, source, sqliteSequenceNumber)
+        }
+      }
     }
 
     suspend fun onRealtimeUpdate(
       event: Result<SqliteSequencedReference<Data>>,
     ) {
       event.throwIfCancellationException()
-      val queryResult = event.map { query.QueryResultImpl(it.ref, DataSource.SERVER) }
-      emit(queryResult)
+
+      mutex.withLock {
+        if (shouldEmitRealtime(event, lastEmittedSqliteSequenceNumber)) {
+          val queryResult = event.map { query.QueryResultImpl(it.ref, DataSource.SERVER) }
+          emit(queryResult, event.getOrNull()?.sqliteSequenceNumber)
+        }
+      }
     }
 
     private suspend fun emit(
       queryResult: Result<QueryRefImpl<Data, Variables>.QueryResultImpl>,
+      dataSqliteSequenceNumber: SqliteSequenceNumber?,
     ) {
       val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
       channel.send(subscriptionResult)
+      if (dataSqliteSequenceNumber != null) {
+        lastEmittedSqliteSequenceNumber = dataSqliteSequenceNumber
+      }
     }
 
-    private suspend fun emit(data: Data, source: DataSource) {
-      emit(query.QueryResultImpl(data, source))
+    private suspend fun emit(
+      data: Data,
+      source: DataSource,
+      dataSqliteSequenceNumber: SqliteSequenceNumber?,
+    ) {
+      emit(query.QueryResultImpl(data, source), dataSqliteSequenceNumber)
     }
 
-    private suspend fun emit(queryResult: QueryRefImpl<Data, Variables>.QueryResultImpl) {
-      emit(Result.success(queryResult))
+    private suspend fun emit(
+      queryResult: QueryRefImpl<Data, Variables>.QueryResultImpl,
+      dataSqliteSequenceNumber: SqliteSequenceNumber?,
+    ) {
+      emit(Result.success(queryResult), dataSqliteSequenceNumber)
     }
   }
+}
+
+private fun shouldEmitNonRealtime(
+  dataSource: DataSource,
+  dataSqliteSequenceNumber: SqliteSequenceNumber?,
+  lastEmittedSqliteSequenceNumber: SqliteSequenceNumber?,
+): Boolean {
+  // Emit the data if `lastEmittedSqliteSequenceNumber` is null, as that indicates that there have
+  // been no results emitted yet. Regardless of the age of the data, we may as well emit something.
+  if (lastEmittedSqliteSequenceNumber == null) {
+    return true
+  }
+
+  // Return an appropriate value when `dataSqliteSequenceNumber` is null. The meaning of a null
+  // value depends on the source of the data.
+  if (dataSqliteSequenceNumber == null) {
+    return when (dataSource) {
+      // Do not emit the data because it's so old that it was saved to cache by an older version of
+      // the SDK that lacked SqliteSequenceNumber support; therefore, the data cannot possibly be
+      // newer than the data previously emitted with `lastEmittedSqliteSequenceNumber`.
+      DataSource.CACHE -> false
+      // Emit the data because either saving the data to the cache failed, or caching is not enabled
+      // at all. Either way, there is no way to tell if this data is older than the data previously
+      // emitted with `lastEmittedSqliteSequenceNumber`, so assume that it is newer.
+      DataSource.SERVER -> true
+    }
+  }
+
+  // Emit the data if, and only if, it is newer than the data previously emitted with
+  // `lastEmittedSqliteSequenceNumber`.
+  return dataSqliteSequenceNumber > lastEmittedSqliteSequenceNumber
+}
+
+private fun shouldEmitRealtime(
+  event: Result<SqliteSequencedReference<*>>,
+  lastEmittedSqliteSequenceNumber: SqliteSequenceNumber?,
+): Boolean {
+  // Emit failures unconditionally, since they do not have an associated SqliteSequenceNumbers.
+  if (event.isFailure) {
+    return true
+  }
+
+  // Emit the data if `lastEmittedSqliteSequenceNumber` is null, as that indicates that there have
+  // been no results emitted yet. Regardless of the age of the data, we may as well emit something.
+  if (lastEmittedSqliteSequenceNumber == null) {
+    return true
+  }
+
+  // Emit the data if its SqliteSequenceNumber is null because that means saving the data to the
+  // cache failed. In this case there is no way to tell if this data is older than the data
+  // previously emitted with `lastEmittedSqliteSequenceNumber`, so assume that it is newer.
+  val dataSqliteSequenceNumber = event.getOrThrow().sqliteSequenceNumber ?: return true
+
+  // Emit the data if, and only if, it is newer than the data previously emitted with
+  // `lastEmittedSqliteSequenceNumber`.
+  return dataSqliteSequenceNumber > lastEmittedSqliteSequenceNumber
 }
