@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.util
+package com.google.firebase.dataconnect.testutil
 
-/** A class that wraps a reference and associates a tag with it. */
-internal data class TaggedReference<out Tag, out T>(val tag: Tag, val ref: T)
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 
-/**
- * Returns a new [TaggedReference] with the same [tag], but with its [ref] transformed by applying
- * the given [block] function to the current [ref].
- */
-internal inline fun <Tag, T, U> TaggedReference<Tag, T>.map(
-  block: (T) -> U
-): TaggedReference<Tag, U> = TaggedReference(tag, block(ref))
+fun com.google.protobuf.Duration.toKotlinDuration(): kotlin.time.Duration =
+  seconds.seconds + nanos.nanoseconds
