@@ -465,7 +465,8 @@ class FirebaseAppDistributionUploadTest {
     assertTrue(uploadedSuccessfully)
     verify(mockUploadService).uploadDistribution(eq(APP_NAME), any())
     verify(mockApiService).getUploadStatus(eq(OPERATION_NAME), eq(BinaryType.APK))
-    verify(mockApiService).testRelease(eq(RELEASE_NAME), eq(TEST_DEVICES), eq(null), eq(null), eq(null))
+    verify(mockApiService)
+      .testRelease(eq(RELEASE_NAME), eq(TEST_DEVICES), eq(null), eq(null), eq(null))
     verify(testLookup).pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME)))
   }
 
@@ -480,9 +481,8 @@ class FirebaseAppDistributionUploadTest {
     whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
     whenever(mockApiService.getUploadStatus(any(), any()))
       .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
-    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull())).doAnswer {
-      throw IOException()
-    }
+    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+      .doAnswer { throw IOException() }
     val upload =
       FirebaseAppDistributionUpload(
         options,

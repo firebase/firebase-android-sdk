@@ -124,7 +124,8 @@ internal constructor(
               try {
                 val testCase = testCaseId?.let { "${appName}/testCases/$it" }
                 val projectNumber = getProjectNumber(options.appId)
-                val resultsBucket = options.resultsBucket?.let { formatResultsBucket(projectNumber, it) }
+                val resultsBucket =
+                  options.resultsBucket?.let { formatResultsBucket(projectNumber, it) }
                 apiService
                   .testRelease(
                     release.name,

@@ -16,6 +16,11 @@
 
 package com.google.firebase.appdistribution.gradle
 
+import com.google.api.client.http.LowLevelHttpRequest
+import com.google.api.client.http.LowLevelHttpResponse
+import com.google.api.client.testing.http.MockHttpTransport
+import com.google.api.client.testing.http.MockLowLevelHttpRequest
+import com.google.api.client.testing.http.MockLowLevelHttpResponse
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TEST_CASE_NOT_FOUND
@@ -26,11 +31,6 @@ import com.google.firebase.appdistribution.gradle.models.LoginCredential
 import com.google.firebase.appdistribution.gradle.models.ReleaseTest
 import com.google.firebase.appdistribution.gradle.models.RoboStats
 import com.google.firebase.appdistribution.gradle.models.TestDevice
-import com.google.api.client.http.LowLevelHttpRequest
-import com.google.api.client.http.LowLevelHttpResponse
-import com.google.api.client.testing.http.MockHttpTransport
-import com.google.api.client.testing.http.MockLowLevelHttpRequest
-import com.google.api.client.testing.http.MockLowLevelHttpResponse
 import java.io.IOException
 import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
