@@ -39,7 +39,6 @@ internal class DataConnectGrpcClient(
   data class OperationResult(
     val data: Struct?,
     val errors: List<GraphqlError>,
-    val source: DataSource,
   )
 
   suspend fun executeQuery(
@@ -48,7 +47,7 @@ internal class DataConnectGrpcClient(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-  ): OperationResult {
+  ): SourcedData<OperationResult> {
     val executeQueryResult =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") { authToken, appCheckToken
         ->
@@ -63,7 +62,7 @@ internal class DataConnectGrpcClient(
         )
       }
 
-    return executeQueryResult.toOperationResult()
+    return executeQueryResult.map { it.toOperationResult() }
   }
 
   suspend fun executeMutation(
@@ -89,7 +88,6 @@ internal class DataConnectGrpcClient(
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList,
-      source = DataSource.Server,
     )
   }
 
@@ -147,12 +145,10 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
       DataConnectGrpcClient.OperationResult(
         data = data,
         errors = emptyList(),
-        source = DataSource.Cache(sqliteSequenceNumber),
       )
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
         errors = response.errorsList,
-        source = DataSource.Server,
       )
   }
