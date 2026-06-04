@@ -14,7 +14,7 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -34,10 +34,12 @@ import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutionException;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
@@ -63,9 +65,10 @@ public class GmsRegistrationClientRoboTest {
   private Context context;
   private FirebaseApp firebaseApp;
 
+  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
     context = ApplicationProvider.getApplicationContext();
 
     FirebaseOptions options =
@@ -220,12 +223,9 @@ public class GmsRegistrationClientRoboTest {
 
     Task<String> task = client.register();
 
-    try {
-      awaitTaskOnBackground(task);
-      fail("Expected ExecutionException");
-    } catch (ExecutionException e) {
-      assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
-    }
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
   }
 
   @Test
@@ -249,11 +249,8 @@ public class GmsRegistrationClientRoboTest {
 
     Task<?> task = client.unregister();
 
-    try {
-      awaitTaskOnBackground(task);
-      fail("Expected ExecutionException");
-    } catch (ExecutionException e) {
-      assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
-    }
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
   }
 }
