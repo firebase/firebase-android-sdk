@@ -83,7 +83,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(
     val channel: SendChannel<QuerySubscriptionResultImpl>,
   ) {
     private val mutex = Mutex()
-    private var lastEmittedSqliteSequenceNumber: Long? = null
+    private var lastEmittedSqliteSequenceNumber: SqliteSequenceNumber? = null
 
     suspend fun onNonRealtimeUpdate(
       event: SequencedReference<Result<SourcedData<Data>>>,
@@ -116,7 +116,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(
       val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
       channel.send(subscriptionResult)
       if (dataSqliteSequenceNumber != null) {
-        lastEmittedSqliteSequenceNumber = dataSqliteSequenceNumber.sequenceNumber
+        lastEmittedSqliteSequenceNumber = dataSqliteSequenceNumber
       }
     }
 
@@ -140,7 +140,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(
 private fun shouldEmitNonRealtime(
   dataSource: DataSource,
   dataSqliteSequenceNumber: SqliteSequenceNumber?,
-  lastEmittedSqliteSequenceNumber: Long?,
+  lastEmittedSqliteSequenceNumber: SqliteSequenceNumber?,
 ): Boolean {
   // Emit the data if `lastEmittedSqliteSequenceNumber` is null, as that indicates that there have
   // been no results emitted yet. Regardless of the age of the data, we may as well emit something.
@@ -165,12 +165,12 @@ private fun shouldEmitNonRealtime(
 
   // Emit the data if, and only if, it is newer than the data previously emitted with
   // `lastEmittedSqliteSequenceNumber`.
-  return dataSqliteSequenceNumber.sequenceNumber > lastEmittedSqliteSequenceNumber
+  return dataSqliteSequenceNumber > lastEmittedSqliteSequenceNumber
 }
 
 private fun shouldEmitRealtime(
   event: Result<SqliteSequencedReference<*>>,
-  lastEmittedSqliteSequenceNumber: Long?,
+  lastEmittedSqliteSequenceNumber: SqliteSequenceNumber?,
 ): Boolean {
   // Emit failures unconditionally, since they do not have an associated SqliteSequenceNumbers.
   if (event.isFailure) {
@@ -190,5 +190,5 @@ private fun shouldEmitRealtime(
 
   // Emit the data if, and only if, it is newer than the data previously emitted with
   // `lastEmittedSqliteSequenceNumber`.
-  return dataSqliteSequenceNumber.sequenceNumber > lastEmittedSqliteSequenceNumber
+  return dataSqliteSequenceNumber > lastEmittedSqliteSequenceNumber
 }
