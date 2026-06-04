@@ -17,12 +17,13 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.newMockLogger
@@ -30,19 +31,15 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.TwoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
+import com.google.firebase.dataconnect.testutil.property.arbitrary.graphqlErrorProto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.sqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
-import com.google.protobuf.ListValue
-import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
-import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.SourceLocation
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.throwables.shouldThrow
@@ -54,27 +51,23 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.merge
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 
 private val propTestConfig =
   PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.25))
@@ -103,7 +96,12 @@ class DataConnectGrpcClientUnitTest {
   private val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
     mockk(relaxed = true, name = "mockDataConnectGrpcRPCs-zfbhma6tyh") {
       coEvery { executeQuery(any(), any(), any(), any(), any(), any(), any()) } returns
-        DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(ExecuteQueryResponse.getDefaultInstance())
+        SqliteSequencedReference(
+          null,
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.getDefaultInstance()
+          )
+        )
       coEvery { executeMutation(any(), any(), any(), any(), any(), any()) } returns
         ExecuteMutationResponse.getDefaultInstance()
     }
@@ -210,14 +208,18 @@ class DataConnectGrpcClientUnitTest {
   fun `executeQuery() should return data and empty errors if response is from cache`() = runTest {
     checkAll(
       propTestConfig,
+      Arb.proto.struct().map { it.struct},
       Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2)
-    ) { sqliteSequenceNumber ->
-      val responseData = Arb.proto.struct().next(rs).struct
+    ) { responseData, sqliteSequenceNumber ->
       coEvery {
         mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
-      } returns DataConnectGrpcRPCs.ExecuteQueryResult.FromCache(responseData, sqliteSequenceNumber)
+      } returns
+        SqliteSequencedReference(
+          sqliteSequenceNumber,
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromCache(responseData)
+        )
 
-      val operationResult =
+      val sourcedOperationResult =
         dataConnectGrpcClient.executeQuery(
           requestId,
           operationName,
@@ -226,32 +228,50 @@ class DataConnectGrpcClientUnitTest {
           fetchPolicy
         )
 
-      operationResult shouldBe
-        OperationResult(
-          data = responseData,
-          errors = emptyList(),
-          DataSource.Cache(sqliteSequenceNumber),
+      sourcedOperationResult shouldBe
+        SourcedData(
+          DataSource.CACHE,
+          sqliteSequenceNumber,
+          OperationResult(
+            data = responseData,
+            errors = emptyList(),
+          ),
         )
     }
   }
 
   @Test
   fun `executeQuery() should return null data and empty errors if response is empty`() = runTest {
-    coEvery {
-      mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
-    } returns
-      DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(ExecuteQueryResponse.getDefaultInstance())
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2)
+    ) { sqliteSequenceNumber ->
+      coEvery {
+        mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
+      } returns
+        SqliteSequencedReference(
+          sqliteSequenceNumber,
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.getDefaultInstance()
+          )
+        )
 
-    val operationResult =
-      dataConnectGrpcClient.executeQuery(
-        requestId,
-        operationName,
-        variables,
-        callerSdkType,
-        fetchPolicy
-      )
+      val sourcedOperationResult =
+        dataConnectGrpcClient.executeQuery(
+          requestId,
+          operationName,
+          variables,
+          callerSdkType,
+          fetchPolicy
+        )
 
-    operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.Server)
+      sourcedOperationResult shouldBe
+        SourcedData(
+          DataSource.SERVER,
+          sqliteSequenceNumber,
+          OperationResult(data = null, errors = emptyList())
+        )
+    }
   }
 
   @Test
@@ -264,50 +284,64 @@ class DataConnectGrpcClientUnitTest {
       val operationResult =
         dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-      operationResult shouldBe OperationResult(data = null, errors = emptyList(), DataSource.Server)
+      operationResult shouldBe OperationResult(data = null, errors = emptyList())
     }
 
   @Test
   fun `executeQuery() should return data and errors`() = runTest {
-    val responseData = Arb.proto.struct().next(rs).struct
-    val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
-    coEvery {
-      mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
-    } returns
-      DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
-        ExecuteQueryResponse.newBuilder()
-          .setData(responseData)
-          .addAllErrors(responseErrors.map { it.graphqlError })
-          .build()
-      )
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2),
+      Arb.list(Arb.dataConnect.graphqlErrorProto(), 1..3),
+    ) { responseData, sqliteSequenceNumber, responseErrors ->
+      coEvery {
+        mockDataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any(), any())
+      } returns
+        SqliteSequencedReference(
+          sqliteSequenceNumber,
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.newBuilder()
+              .setData(responseData)
+              .addAllErrors(responseErrors)
+              .build()
+          )
+        )
 
-    val operationResult =
-      dataConnectGrpcClient.executeQuery(
-        requestId,
-        operationName,
-        variables,
-        callerSdkType,
-        fetchPolicy
-      )
+      val sourcedOperationResult =
+        dataConnectGrpcClient.executeQuery(
+          requestId,
+          operationName,
+          variables,
+          callerSdkType,
+          fetchPolicy
+        )
 
-    operationResult shouldBe
-      OperationResult(
-        data = responseData,
-        errors = responseErrors.map { it.graphqlError },
-        DataSource.Server
-      )
+      sourcedOperationResult shouldBe
+        SourcedData(
+          DataSource.SERVER,
+          sqliteSequenceNumber,
+          OperationResult(
+            data = responseData,
+            errors = responseErrors,
+          )
+        )
+    }
   }
 
   @Test
   fun `executeMutation() should return data and errors`() = runTest {
-    val responseData = Arb.proto.struct().next(rs).struct
-    val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
+        checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.list(Arb.dataConnect.graphqlErrorProto(), 1..3),
+    ) { responseData, responseErrors ->
     coEvery {
       mockDataConnectGrpcRPCs.executeMutation(any(), any(), any(), any(), any(), any())
     } returns
       ExecuteMutationResponse.newBuilder()
         .setData(responseData)
-        .addAllErrors(responseErrors.map { it.graphqlError })
+        .addAllErrors(responseErrors)
         .build()
 
     val operationResult =
@@ -316,9 +350,9 @@ class DataConnectGrpcClientUnitTest {
     operationResult shouldBe
       OperationResult(
         data = responseData,
-        errors = responseErrors.map { it.graphqlError },
-        DataSource.Server
+        errors = responseErrors,
       )
+        }
   }
 
   @Test
@@ -360,11 +394,15 @@ class DataConnectGrpcClientUnitTest {
   @Test
   fun `executeQuery() should retry with fresh auth and app check tokens on UNAUTHENTICATED`() =
     runTest {
-      val authTokens = authTokenPairArb().next(rs)
+    checkAll(
+      propTestConfig,
+      authTokenPairArb(),
+      appCheckTokenPairArb(),
+      Arb.proto.struct().map { it.struct },
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2),
+    ) { authTokens, appCheckTokens, responseData, sqliteSequenceNumber ->
       mockDataConnectAuth.stubGetTokensSimulatingForceRefresh(authTokens)
-      val appCheckTokens = appCheckTokenPairArb().next(rs)
       mockDataConnectAppCheck.stubGetTokensSimulatingForceRefresh(appCheckTokens)
-      val responseData = Arb.proto.struct().next(rs).struct
       coEvery {
           mockDataConnectGrpcRPCs.executeQuery(
             any(),
@@ -384,12 +422,15 @@ class DataConnectGrpcClientUnitTest {
           )
         )
         .andThen(
+          SqliteSequencedReference(
+            sqliteSequenceNumber,
           DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
             ExecuteQueryResponse.newBuilder().setData(responseData).build()
           )
+          )
         )
 
-      val result =
+      val sourcedOperationResult =
         dataConnectGrpcClient.executeQuery(
           requestId,
           operationName,
@@ -398,7 +439,11 @@ class DataConnectGrpcClientUnitTest {
           fetchPolicy,
         )
 
-      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.Server)
+      sourcedOperationResult shouldBe SourcedData(
+        DataSource.SERVER,
+        sqliteSequenceNumber,
+        OperationResult(data = responseData, errors = emptyList())
+      )
       coVerifyOrder {
         mockDataConnectGrpcRPCs.executeQuery(
           any(),
@@ -424,15 +469,19 @@ class DataConnectGrpcClientUnitTest {
       )
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
     }
+    }
 
   @Test
   fun `executeMutation() should retry with fresh auth and app check tokens on UNAUTHENTICATED`() =
     runTest {
-      val authTokens = authTokenPairArb().next(rs)
+    checkAll(
+      propTestConfig,
+      authTokenPairArb(),
+      appCheckTokenPairArb(),
+      Arb.proto.struct().map { it.struct },
+    ) { authTokens, appCheckTokens, responseData ->
       mockDataConnectAuth.stubGetTokensSimulatingForceRefresh(authTokens)
-      val appCheckTokens = appCheckTokenPairArb().next(rs)
       mockDataConnectAppCheck.stubGetTokensSimulatingForceRefresh(appCheckTokens)
-      val responseData = Arb.proto.struct().next(rs).struct
       coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any(), any(), any(), any()) }
         .throws(
           StatusException(
@@ -443,10 +492,10 @@ class DataConnectGrpcClientUnitTest {
         )
         .andThen(ExecuteMutationResponse.newBuilder().setData(responseData).build())
 
-      val result =
+      val operationResult =
         dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-      result shouldBe OperationResult(data = responseData, errors = emptyList(), DataSource.Server)
+      operationResult shouldBe OperationResult(data = responseData, errors = emptyList())
       coVerifyOrder {
         mockDataConnectGrpcRPCs.executeMutation(
           any(),
@@ -469,6 +518,7 @@ class DataConnectGrpcClientUnitTest {
         "retrying with fresh Auth and/or AppCheck tokens"
       )
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
+    }
     }
 
   @Test
@@ -632,63 +682,6 @@ class DataConnectGrpcClientUnitTest {
     }
 
   private class TestException(message: String) : Exception(message)
-
-  private data class GraphqlErrorInfo(
-    val graphqlError: GraphqlError,
-  ) {
-    companion object {
-      private val randomPathSegments =
-        Arb.string(
-            minSize = 1,
-            maxSize = 8,
-            codepoints = Codepoint.alphanumeric().merge(Codepoint.egyptianHieroglyphs()),
-          )
-          .iterator(edgeCaseProbability = 0.33f)
-
-      private val randomMessages =
-        Arb.string(minSize = 1, maxSize = 100).iterator(edgeCaseProbability = 0.33f)
-
-      private val randomInts = Arb.int().iterator(edgeCaseProbability = 0.2f)
-
-      fun random(rs: RandomSource): GraphqlErrorInfo {
-
-        val dataConnectErrorPath = mutableListOf<DataConnectPathSegment>()
-        val graphqlErrorPath = ListValue.newBuilder()
-        repeat(6) {
-          if (rs.random.nextFloat() < 0.33f) {
-            val pathSegment = randomInts.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathSegment))
-            graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathSegment.toDouble()))
-          } else {
-            val pathSegment = randomPathSegments.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathSegment))
-            graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathSegment))
-          }
-        }
-
-        val graphqlErrorLocations = mutableListOf<SourceLocation>()
-        repeat(3) {
-          val line = randomInts.next(rs)
-          val column = randomInts.next(rs)
-          graphqlErrorLocations.add(
-            SourceLocation.newBuilder().setLine(line).setColumn(column).build()
-          )
-        }
-
-        val message = randomMessages.next(rs)
-        val graphqlError =
-          GraphqlError.newBuilder()
-            .apply {
-              setMessage(message)
-              setPath(graphqlErrorPath)
-              addAllLocations(graphqlErrorLocations)
-            }
-            .build()
-
-        return GraphqlErrorInfo(graphqlError)
-      }
-    }
-  }
 }
 
 private fun DataConnectAuth.stubGetTokensSimulatingForceRefresh(
