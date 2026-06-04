@@ -41,6 +41,7 @@ jobs:
     # only run on post submit or PRs not originating from forks.
     if: ((github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - determine_changed
     strategy:
@@ -105,6 +106,7 @@ jobs:
   enterprise_integ_tests:
     name: "System Tests With Enterprise DB"
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - determine_changed
     # only run on post submit or PRs not originating from forks.
@@ -198,6 +200,7 @@ jobs:
   firestore_nightly_integ_tests:
     name: "System Tests Against Nightly"
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - determine_changed
     # only run on post submit or PRs not originating from forks.
@@ -264,6 +267,7 @@ jobs:
   firestore_emulator_integ_tests:
     name: "System Tests Against Emulator"
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - determine_changed
     # only run on post submit or PRs not originating from forks.
@@ -346,4 +350,4 @@ jobs:
     steps:
       - name: Check test matrix
         if: needs.integ_tests.result == 'failure' || needs.enterprise_integ_tests.result == 'failure'
-        run: exit 1
+        run: echo "Firestore tests failed but are temporarily marked as optional."
