@@ -17,6 +17,7 @@
 package com.google.firebase.appdistribution.gradle;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.firebase.appdistribution.gradle.VersionUtils.Stability.STABLE;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -57,15 +58,17 @@ class BeePlusGradleProject extends ExternalResource {
   }
 
   static final String PACKAGE_NAME = "com.firebase.appdistribution.prober";
-  static final String LATEST_AGP_VERSION = VersionUtils.INSTANCE.fetchLatestAgpVersion();
-  static final String LATEST_GRADLE_VERSION = VersionUtils.INSTANCE.fetchLatestGradleVersion();
+  static final String LATEST_STABLE_AGP_VERSION =
+      VersionUtils.INSTANCE.fetchLatestAgpVersion(STABLE);
+  static final String LATEST_STABLE_GRADLE_VERSION =
+      VersionUtils.INSTANCE.fetchLatestGradleVersion(STABLE);
 
   private static final Logger LOGGER = Logger.getLogger(BeePlusGradleProject.class.getName());
 
   static {
-    LOGGER.info("Production compat tests using versions:");
-    LOGGER.info("Latest Gradle Version: " + LATEST_GRADLE_VERSION);
-    LOGGER.info("Latest AGP Version: " + LATEST_AGP_VERSION);
+    LOGGER.info("Production compat tests using versions:\n"
+        + "Latest stable Gradle Version: " + LATEST_STABLE_GRADLE_VERSION + "\n"
+        + "Latest stable AGP Version: " + LATEST_STABLE_AGP_VERSION);
   }
 
   // The project number for App Distro Probes. We need to use this project
@@ -115,7 +118,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--emails",
             String.join(",", emails))
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -131,7 +134,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--file",
             emailsFile.getAbsolutePath())
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -148,7 +151,7 @@ class BeePlusGradleProject extends ExternalResource {
             String.join(",", emails),
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -165,7 +168,7 @@ class BeePlusGradleProject extends ExternalResource {
             emailsFile.getAbsolutePath(),
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -175,7 +178,7 @@ class BeePlusGradleProject extends ExternalResource {
         .withProjectDir(projectDir.getRoot())
         .withArguments("assembleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -185,7 +188,7 @@ class BeePlusGradleProject extends ExternalResource {
         .withProjectDir(projectDir.getRoot())
         .withArguments("bundleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -266,7 +269,7 @@ class BeePlusGradleProject extends ExternalResource {
                 + "  }\n"
                 + "\n"
                 + "}\n",
-            LATEST_AGP_VERSION,
+            LATEST_STABLE_AGP_VERSION,
             pluginClasspathString,
             PACKAGE_NAME,
             PACKAGE_NAME,
