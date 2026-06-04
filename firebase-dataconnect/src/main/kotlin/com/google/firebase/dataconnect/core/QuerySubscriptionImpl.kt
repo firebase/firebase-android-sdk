@@ -24,7 +24,6 @@ import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
-import kotlin.map
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
