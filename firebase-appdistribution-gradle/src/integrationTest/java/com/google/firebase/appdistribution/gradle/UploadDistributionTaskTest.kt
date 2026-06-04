@@ -18,6 +18,13 @@ package com.google.firebase.appdistribution.gradle
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.google.firebase.appdistribution.gradle.ApiStubs.Companion.WIRE_MOCK_PORT
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_AGP_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_COMPILE_SDK_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_GOOGLE_SERVICES_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.LATEST_GRADLE_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_AGP_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_GOOGLE_SERVICES_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_GRADLE_VERSION
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome.FAILED
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -73,7 +80,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION
     )
 
     val result =
@@ -96,7 +103,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION
     )
 
     val result =
@@ -146,7 +153,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION
     )
 
     val result =
@@ -222,7 +229,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "AAB"
     )
 
@@ -252,7 +259,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "AAB"
     )
 
@@ -312,7 +319,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "AAB"
     )
 
@@ -367,7 +374,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
     )
 
     val result =
@@ -397,7 +404,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "APK",
       artifactPath = "app/build/outputs/apk/debug/app-debug.apk"
     )
@@ -423,7 +430,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "APK",
       artifactPath = "app/build/outputs/apk/debug/app-debug.apk"
     )
@@ -455,7 +462,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "APK",
       artifactPath = "bad/artifact/path"
     )
@@ -480,7 +487,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       artifactType = "APK",
       artifactPath = "\\0"
     )
@@ -600,7 +607,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       useGoogleServicesPlugin = true,
     )
 
@@ -672,7 +679,7 @@ class UploadDistributionTaskTest {
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       testersFile = file.absolutePath
     )
 
@@ -696,7 +703,7 @@ class UploadDistributionTaskTest {
     val file = testGradleProject.createAndWriteFile("app/src/testers.txt", "a@a.com,b@b.com")
     testGroovyBuild.writeBuildFiles(
       agpVersion = LATEST_AGP_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      compileSdkVersion = LATEST_COMPILE_SDK_VERSION,
       googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION
     )
 
@@ -719,23 +726,6 @@ class UploadDistributionTaskTest {
   }
 
   companion object {
-    private val LATEST_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion()
-    private val LATEST_AGP_VERSION = VersionUtils.fetchLatestAgpVersion()
-    private val LATEST_GOOGLE_SERVICES_VERSION = VersionUtils.fetchLatestGoogleServicesVersion()
-    // For tests against Gradle 9, we get the error:
-    // "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"
-    // when we don't set this to at least 30.
-    private const val COMPILE_SDK_VERSION_FOR_LATEST_TEST = "30"
-
-    // Gradle 7.3.3 was released in December 2023.
-    private const val OLDER_GRADLE_VERSION = "7.3.3"
-
-    // AGP 7.0 was released in July 2021.
-    private const val OLDER_AGP_VERSION = "7.0.0"
-
-    // google-services Gradle plugin 4.3.2 was released in September 2019.
-    private const val OLDER_GOOGLE_SERVICES_VERSION = "4.3.2"
-
     private val LOGGER =
       java.util.logging.Logger.getLogger(UploadDistributionTaskTest::class.java.name)
 

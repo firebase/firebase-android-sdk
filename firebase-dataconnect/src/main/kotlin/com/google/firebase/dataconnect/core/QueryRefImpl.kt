@@ -52,10 +52,7 @@ internal class QueryRefImpl<Data, Variables>(
   override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
 
   override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
-    dataConnect.queryManager.execute(this, fetchPolicy).let {
-      val (source, data) = it.ref.getOrThrow()
-      QueryResultImpl(data, source.toDataSourceEnum())
-    }
+    dataConnect.queryManager.execute(this, fetchPolicy).ref.getOrThrow().toQueryResultImpl()
 
   override fun subscribe(): QuerySubscriptionImpl<Data, Variables> = QuerySubscriptionImpl(this)
 
@@ -154,4 +151,6 @@ internal class QueryRefImpl<Data, Variables>(
 
     override fun toString() = "QueryResultImpl(data=$data, ref=$ref, dataSource=$dataSource)"
   }
+
+  private fun SourcedData<Data>.toQueryResultImpl() = QueryResultImpl(data, source)
 }
