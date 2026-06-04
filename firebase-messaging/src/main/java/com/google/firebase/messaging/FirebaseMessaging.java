@@ -700,7 +700,6 @@ public class FirebaseMessaging {
    * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
    * deprecated in June 2023</a>.
    */
-  @SuppressLint("WrongConstant")
   @Deprecated
   public void send(@NonNull RemoteMessage message) {
     if (TextUtils.isEmpty(message.getTo())) {
