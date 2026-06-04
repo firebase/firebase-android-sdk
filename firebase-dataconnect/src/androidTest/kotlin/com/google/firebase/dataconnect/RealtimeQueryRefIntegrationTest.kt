@@ -22,13 +22,24 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStringByKeyQuery
+import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlin.time.Duration
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
 import org.junit.Before
@@ -138,4 +149,82 @@ class RealtimeQueryRefIntegrationTest : DataConnectIntegrationTestBase() {
       awaitItem().result.getOrThrow().dataSource shouldBe DataSource.SERVER
     }
   }
+
+  @Test
+  fun emittedResultsUpdateTheLocalCacheForTheUnderlyingQuery() = runTest {
+    val dataConnect =
+      dataConnectFactory.newInstance(
+        RealtimeConnector.config,
+        CacheSettings(maxAge = Duration.INFINITE)
+      )
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val fetchPolicyArb = Arb.of(QueryRef.FetchPolicy.PREFER_CACHE, QueryRef.FetchPolicy.CACHE_ONLY)
+
+    checkAll(propTestConfig, nameArb.pair(), fetchPolicyArb) { (name1, name2), fetchPolicy ->
+      val key = connector.insertString(name1)
+
+      val ref =
+        dataConnect.query(
+          GetStringByKeyQuery.OPERATION_NAME,
+          GetStringByKeyQuery.Variables(key),
+          serializer<GetStringByKeyQuery.Data>(),
+          serializer(),
+        )
+
+      suspend fun verifyCachedData(
+        clue: String,
+        fetchPolicy: QueryRef.FetchPolicy,
+        expectedNames: List<String>?,
+      ) {
+        withClue(clue) {
+          val result = ref.execute(fetchPolicy)
+          result.dataSource shouldBe DataSource.CACHE
+          if (expectedNames == null) {
+            result.data.item.shouldBeNull()
+          } else {
+            result.data shouldBeIn expectedNames.map(GetStringByKeyQuery::Data)
+          }
+        }
+      }
+
+      suspend fun verifyCachedData(
+        clue: String,
+        fetchPolicy: QueryRef.FetchPolicy,
+        vararg expectedNames: String,
+      ) = verifyCachedData(clue, fetchPolicy, expectedNames.toList())
+
+      ref.subscribe().flow.test {
+        suspend fun awaitItemAndCheckName(clue: String, expectedName: String?) {
+          val queryResult = awaitItem().result.shouldBeSuccess()
+          val expectedData =
+            GetStringByKeyQuery.Data(GetStringByKeyQuery.Data.Item.fromNameOrNull(expectedName))
+          check(queryResult.data == expectedData) {
+            "$clue internal test error cvyx4f32ft: queryResult=$queryResult, " +
+              "but expected its data to be $expectedData"
+          }
+        }
+
+        awaitItemAndCheckName("awaitCheck1", name1)
+        verifyCachedData("cacheCheck1", fetchPolicy, name1)
+
+        connector.updateString(key, name2)
+        verifyCachedData("cacheCheck2", fetchPolicy, name1, name2)
+        awaitItemAndCheckName("awaitCheck2", name2)
+        verifyCachedData("cacheCheck3", fetchPolicy, name2)
+
+        connector.deleteString(key)
+        verifyCachedData("cacheCheck4", fetchPolicy, name2)
+        awaitItemAndCheckName("awaitCheck3", null)
+        verifyCachedData("cacheCheck5", fetchPolicy, null)
+      }
+    }
+  }
 }
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 10,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+    shrinkingMode = ShrinkingMode.Off,
+  )
