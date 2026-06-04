@@ -22,7 +22,6 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
@@ -32,6 +31,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlowListenerMessageFormatter
@@ -197,6 +197,7 @@ internal class DataConnectGrpcRPCs(
   }
 
   sealed interface ExecuteQueryResult {
+
     @JvmInline
     value class FromCache(val data: Struct) : ExecuteQueryResult {
       override fun toString() = "FromCache(data=${data.toCompactString()})"
@@ -233,7 +234,7 @@ internal class DataConnectGrpcRPCs(
     fetchPolicy: FetchPolicy,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
-  ): SourcedData<ExecuteQueryResult> {
+  ): SqliteSequencedReference<ExecuteQueryResult> {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery($operationName)"
 
@@ -320,8 +321,7 @@ internal class DataConnectGrpcRPCs(
       )
     }
 
-    return SourcedData(
-      DataSource.SERVER,
+    return SqliteSequencedReference(
       cachedDataSqliteSequenceNumber,
       ExecuteQueryResult.FromServer(result.getOrThrow()),
     )
@@ -331,7 +331,7 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     kotlinMethodName: String,
     fetchPolicy: FetchPolicy,
-  ): SourcedData<ExecuteQueryResult.FromCache>? {
+  ): SqliteSequencedReference<ExecuteQueryResult.FromCache>? {
     val staleResult =
       when (fetchPolicy) {
         FetchPolicy.CACHE_ONLY -> GetQueryResultResult.Found::class
@@ -349,8 +349,7 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           cachedResult = cachedResult,
         )
-        SourcedData(
-          DataSource.CACHE,
+        SqliteSequencedReference(
           cachedResult.maxLastUpdateSequenceNumber,
           ExecuteQueryResult.FromCache(cachedResult.struct),
         )
