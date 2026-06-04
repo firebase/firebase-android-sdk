@@ -66,6 +66,7 @@ object UploadDistributionTaskConfigurator {
       inferredApkDirectory.value(variant.artifacts.get(APK))
       testCases.value(extension.testCases)
       testCasesFile.value(nullOrAbsolutePath(extension.testCasesFile.getOrNull(), project))
+      resultsBucket.set(extension.resultsBucket)
       configureGoogleServicesPluginPath(this, variant)
     }
   }
@@ -110,6 +111,7 @@ object UploadDistributionTaskConfigurator {
       inferredApkDirectory.value(variant.artifacts.get(APK))
       testCases.value(extension.testCases)
       testCasesFile.value(nullOrAbsolutePath(extension.testCasesFile, project))
+      resultsBucket.set(extension.resultsBucket)
       configureGoogleServicesPluginPath(this, variant)
     }
   }

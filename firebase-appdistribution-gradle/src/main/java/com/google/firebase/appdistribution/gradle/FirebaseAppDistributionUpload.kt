@@ -123,8 +123,16 @@ internal constructor(
             .mapNotNull { testCaseId ->
               try {
                 val testCase = testCaseId?.let { "${appName}/testCases/$it" }
+                val projectNumber = getProjectNumber(options.appId)
+                val resultsBucket = options.resultsBucket?.let { formatResultsBucket(projectNumber, it) }
                 apiService
-                  .testRelease(release.name, testDevices, options.testLoginCredential, testCase)
+                  .testRelease(
+                    release.name,
+                    testDevices,
+                    options.testLoginCredential,
+                    testCase,
+                    resultsBucket
+                  )
                   ?.name
               } catch (e: HttpResponseException) {
                 throw AppDistributionException.fromHttpResponseException(STARTING_TEST_FAILED, e)
@@ -209,13 +217,27 @@ internal constructor(
     }
   }
 
+  private fun getProjectNumber(appId: String): String {
+    return appId.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+  }
+
   private fun getAppNameFromAppId(appId: String): String {
-    // Parse the project number out from the app id
-    val projectNumber = appId.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
-    return "projects/$projectNumber/apps/$appId"
+    return "projects/${getProjectNumber(appId)}/apps/$appId"
+  }
+
+  private fun formatResultsBucket(projectNumber: String, bucketInput: String): String {
+    val cleanBucketName = bucketInput.trim().removePrefix("gs://").trim('/')
+    if (!cleanBucketName.matches(BUCKET_NAME_REGEX)) {
+      throw AppDistributionException(
+        AppDistributionException.Reason.INVALID_RESULTS_BUCKET,
+        extraInformation = bucketInput
+      )
+    }
+    return "projects/$projectNumber/buckets/$cleanBucketName"
   }
 
   companion object {
     private val logger = Logging.getLogger(this::class.java)
+    private val BUCKET_NAME_REGEX = "^[a-z0-9_.-]+$".toRegex()
   }
 }

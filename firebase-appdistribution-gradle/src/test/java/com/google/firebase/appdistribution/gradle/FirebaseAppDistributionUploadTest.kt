@@ -38,6 +38,7 @@ import com.google.firebase.appdistribution.gradle.models.uploadstatus.WrappedRes
 import com.google.gson.Gson
 import java.io.IOException
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import org.junit.Assert.assertTrue
@@ -448,7 +449,7 @@ class FirebaseAppDistributionUploadTest {
     whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
     whenever(mockApiService.getUploadStatus(any(), any()))
       .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
-    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull()))
+    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
       .thenReturn(RELEASE_TEST)
     doNothing().whenever(testLookup).pollForReleaseTests(any(), any())
     val upload =
@@ -464,7 +465,7 @@ class FirebaseAppDistributionUploadTest {
     assertTrue(uploadedSuccessfully)
     verify(mockUploadService).uploadDistribution(eq(APP_NAME), any())
     verify(mockApiService).getUploadStatus(eq(OPERATION_NAME), eq(BinaryType.APK))
-    verify(mockApiService).testRelease(eq(RELEASE_NAME), eq(TEST_DEVICES), eq(null), eq(null))
+    verify(mockApiService).testRelease(eq(RELEASE_NAME), eq(TEST_DEVICES), eq(null), eq(null), eq(null))
     verify(testLookup).pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME)))
   }
 
@@ -479,7 +480,7 @@ class FirebaseAppDistributionUploadTest {
     whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
     whenever(mockApiService.getUploadStatus(any(), any()))
       .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
-    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull())).doAnswer {
+    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull())).doAnswer {
       throw IOException()
     }
     val upload =
@@ -514,7 +515,8 @@ class FirebaseAppDistributionUploadTest {
           any(),
           any(),
           anyOrNull(),
-          eq("${APP_NAME}/testCases/test-case-1")
+          eq("${APP_NAME}/testCases/test-case-1"),
+          anyOrNull()
         )
       )
       .thenReturn(RELEASE_TEST)
@@ -523,7 +525,8 @@ class FirebaseAppDistributionUploadTest {
           any(),
           any(),
           anyOrNull(),
-          eq("${APP_NAME}/testCases/test-case-2")
+          eq("${APP_NAME}/testCases/test-case-2"),
+          anyOrNull()
         )
       )
       .thenReturn(null)
@@ -532,7 +535,8 @@ class FirebaseAppDistributionUploadTest {
           any(),
           any(),
           anyOrNull(),
-          eq("${APP_NAME}/testCases/test-case-3")
+          eq("${APP_NAME}/testCases/test-case-3"),
+          anyOrNull()
         )
       )
       .thenReturn(RELEASE_TEST_2)
@@ -555,21 +559,24 @@ class FirebaseAppDistributionUploadTest {
         eq(RELEASE_NAME),
         eq(TEST_DEVICES),
         eq(null),
-        eq("${APP_NAME}/testCases/test-case-1")
+        eq("${APP_NAME}/testCases/test-case-1"),
+        eq(null)
       )
     verify(mockApiService)
       .testRelease(
         eq(RELEASE_NAME),
         eq(TEST_DEVICES),
         eq(null),
-        eq("${APP_NAME}/testCases/test-case-2")
+        eq("${APP_NAME}/testCases/test-case-2"),
+        eq(null)
       )
     verify(mockApiService)
       .testRelease(
         eq(RELEASE_NAME),
         eq(TEST_DEVICES),
         eq(null),
-        eq("${APP_NAME}/testCases/test-case-3")
+        eq("${APP_NAME}/testCases/test-case-3"),
+        eq(null)
       )
     verify(testLookup)
       .pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME, RELEASE_TEST_2_NAME)))
@@ -592,7 +599,8 @@ class FirebaseAppDistributionUploadTest {
           any(),
           any(),
           anyOrNull(),
-          eq("${APP_NAME}/testCases/test-case-1")
+          eq("${APP_NAME}/testCases/test-case-1"),
+          anyOrNull()
         )
       )
       .thenReturn(RELEASE_TEST)
@@ -601,7 +609,8 @@ class FirebaseAppDistributionUploadTest {
           any(),
           any(),
           anyOrNull(),
-          eq("${APP_NAME}/testCases/test-case-2")
+          eq("${APP_NAME}/testCases/test-case-2"),
+          anyOrNull()
         )
       )
       .doAnswer { throw IOException() }
@@ -618,6 +627,110 @@ class FirebaseAppDistributionUploadTest {
     val message = e.message
     assertNotNull(message)
     assertContains(message, STARTING_TEST_FAILED.message)
+  }
+
+  @Test
+  fun uploadDistribution_withAutomatedTesting_withResultsBucket_succeeds() {
+    val options =
+      UploadDistributionOptions(
+        appId = APP_ID,
+        binaryPath = apkPath,
+        testDevicesValue = TEST_DEVICES_VALUE,
+        resultsBucket = "gs://my-custom-bucket"
+      )
+    whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
+    whenever(mockApiService.getUploadStatus(any(), any()))
+      .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
+    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+      .thenReturn(RELEASE_TEST)
+    doNothing().whenever(testLookup).pollForReleaseTests(any(), any())
+    val upload =
+      FirebaseAppDistributionUpload(
+        options,
+        mockApiService,
+        mockUploadService,
+        testLookup = testLookup
+      )
+
+    val uploadedSuccessfully = upload.uploadDistribution()
+
+    assertTrue(uploadedSuccessfully)
+    verify(mockUploadService).uploadDistribution(eq(APP_NAME), any())
+    verify(mockApiService).getUploadStatus(eq(OPERATION_NAME), eq(BinaryType.APK))
+    verify(mockApiService)
+      .testRelease(
+        eq(RELEASE_NAME),
+        eq(TEST_DEVICES),
+        eq(null),
+        eq(null),
+        eq("projects/123/buckets/my-custom-bucket")
+      )
+    verify(testLookup).pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME)))
+  }
+
+  @Test
+  fun uploadDistribution_withAutomatedTesting_withResultsBucketWithoutPrefix_succeeds() {
+    val options =
+      UploadDistributionOptions(
+        appId = APP_ID,
+        binaryPath = apkPath,
+        testDevicesValue = TEST_DEVICES_VALUE,
+        resultsBucket = "my-custom-bucket"
+      )
+    whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
+    whenever(mockApiService.getUploadStatus(any(), any()))
+      .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
+    whenever(mockApiService.testRelease(any(), any(), anyOrNull(), anyOrNull(), anyOrNull()))
+      .thenReturn(RELEASE_TEST)
+    doNothing().whenever(testLookup).pollForReleaseTests(any(), any())
+    val upload =
+      FirebaseAppDistributionUpload(
+        options,
+        mockApiService,
+        mockUploadService,
+        testLookup = testLookup
+      )
+
+    val uploadedSuccessfully = upload.uploadDistribution()
+
+    assertTrue(uploadedSuccessfully)
+    verify(mockUploadService).uploadDistribution(eq(APP_NAME), any())
+    verify(mockApiService).getUploadStatus(eq(OPERATION_NAME), eq(BinaryType.APK))
+    verify(mockApiService)
+      .testRelease(
+        eq(RELEASE_NAME),
+        eq(TEST_DEVICES),
+        eq(null),
+        eq(null),
+        eq("projects/123/buckets/my-custom-bucket")
+      )
+    verify(testLookup).pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME)))
+  }
+
+  @Test
+  fun uploadDistribution_withAutomatedTesting_withInvalidResultsBucket_fails() {
+    val options =
+      UploadDistributionOptions(
+        appId = APP_ID,
+        binaryPath = apkPath,
+        testDevicesValue = TEST_DEVICES_VALUE,
+        resultsBucket = "gs://INVALID_BUCKET_NAME!"
+      )
+    whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
+    whenever(mockApiService.getUploadStatus(any(), any()))
+      .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
+    val upload =
+      FirebaseAppDistributionUpload(
+        options,
+        mockApiService,
+        mockUploadService,
+        testLookup = testLookup
+      )
+
+    val e = assertFailsWith(AppDistributionException::class) { upload.uploadDistribution() }
+
+    assertEquals(AppDistributionException.Reason.INVALID_RESULTS_BUCKET, e.reason)
+    assertTrue(e.message!!.contains("gs://INVALID_BUCKET_NAME!"))
   }
 
   companion object {

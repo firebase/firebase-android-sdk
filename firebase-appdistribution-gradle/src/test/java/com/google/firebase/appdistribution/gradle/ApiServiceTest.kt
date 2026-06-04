@@ -26,9 +26,15 @@ import com.google.firebase.appdistribution.gradle.models.LoginCredential
 import com.google.firebase.appdistribution.gradle.models.ReleaseTest
 import com.google.firebase.appdistribution.gradle.models.RoboStats
 import com.google.firebase.appdistribution.gradle.models.TestDevice
+import com.google.api.client.http.LowLevelHttpRequest
+import com.google.api.client.http.LowLevelHttpResponse
+import com.google.api.client.testing.http.MockHttpTransport
+import com.google.api.client.testing.http.MockLowLevelHttpRequest
+import com.google.api.client.testing.http.MockLowLevelHttpResponse
 import java.io.IOException
 import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -248,6 +254,45 @@ class ApiServiceTest {
         loginCredential = LoginCredential(google = true),
       ),
       response,
+    )
+  }
+
+  @Test
+  fun testRelease_withResultsBucket_succeeds() {
+    var capturedRequestBody: String? = null
+    val content = FixtureUtils.getFixtureAsString("release_test.json")
+    val customHttpTransport =
+      object : MockHttpTransport() {
+        override fun buildRequest(method: String, url: String): LowLevelHttpRequest {
+          return object : MockLowLevelHttpRequest() {
+            override fun execute(): LowLevelHttpResponse {
+              capturedRequestBody = contentAsString
+              val response = MockLowLevelHttpResponse()
+              response.statusCode = 200
+              response.setContent(content)
+              return response
+            }
+          }
+        }
+      }
+    val httpClient = AuthenticatedHttpClient(customHttpTransport)
+    val apiService = ApiService(httpClient)
+
+    val response =
+      apiService.testRelease(
+        RELEASE_NAME,
+        listOf(TestDevice(model = "pixel")),
+        LoginCredential(google = true),
+        "test-case-id",
+        "projects/123456789123/buckets/my-custom-bucket"
+      )
+
+    assertNotNull(response)
+    assertNotNull(capturedRequestBody)
+    assertTrue(
+      capturedRequestBody!!.contains(
+        "\"resultsBucket\":\"projects/123456789123/buckets/my-custom-bucket\""
+      )
     )
   }
 

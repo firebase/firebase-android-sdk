@@ -126,6 +126,13 @@ interface AppDistributionExtension {
    * e.g., testCasesFile="/path/to/testCases.txt"
    */
   var testCasesFile: String?
+  /**
+   * The name of a Google Cloud Storage bucket where raw results of any automated tests will be
+   * stored. Do not include the gs:// prefix. Note that the bucket must be owned by a
+   * billing-enabled project, and that specifying a bucket with this flag will result in billing
+   * charges for the storage used.
+   */
+  var resultsBucket: String?
 
   companion object {
     fun createDefault(): AppDistributionExtension {
@@ -150,6 +157,7 @@ interface AppDistributionExtension {
         override var testNonBlocking: Boolean? = null
         override var testCases: String? = null
         override var testCasesFile: String? = null
+        override var resultsBucket: String? = null
       }
     }
 
@@ -174,7 +182,8 @@ interface AppDistributionExtension {
           this.testPasswordResource,
           this.testNonBlocking,
           this.testCases,
-          this.testCasesFile
+          this.testCasesFile,
+          this.resultsBucket
         )
         .all { it == null }
     }

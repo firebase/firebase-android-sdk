@@ -47,6 +47,13 @@ constructor(config: VariantExtensionConfig<*>) : VariantExtension, Serializable 
   abstract val testNonBlocking: Property<Boolean?>
   abstract val testCases: Property<String?>
   abstract val testCasesFile: Property<String?>
+  /**
+   * The name of a Google Cloud Storage bucket where raw results of any automated tests will be
+   * stored. Do not include the gs:// prefix. Note that the bucket must be owned by a
+   * billing-enabled project, and that specifying a bucket with this flag will result in billing
+   * charges for the storage used.
+   */
+  abstract val resultsBucket: Property<String?>
 
   init {
     val buildTypeExtension = config.buildTypeExtension(AppDistributionExtension::class.java)

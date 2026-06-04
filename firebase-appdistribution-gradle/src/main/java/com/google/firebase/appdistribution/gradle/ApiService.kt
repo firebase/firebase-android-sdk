@@ -98,12 +98,14 @@ class ApiService(private val httpClient: AuthenticatedHttpClient) {
     testDevices: List<TestDevice>,
     testLoginCredential: LoginCredential?,
     testCaseName: String? = null,
+    resultsBucketName: String? = null,
   ): ReleaseTest? {
     val releaseTest =
       ReleaseTest(
         loginCredential = testLoginCredential,
         deviceExecutions = testDevices.map { DeviceExecution(device = it) },
-        testCase = testCaseName
+        testCase = testCaseName,
+        resultsBucket = resultsBucketName
       )
     try {
       val response =
