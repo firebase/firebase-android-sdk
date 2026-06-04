@@ -15,14 +15,12 @@
  */
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource as PublicDataSource
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.QuerySubscriptionResult
-import com.google.firebase.dataconnect.core.DataSource as CoreDataSource
 import com.google.firebase.dataconnect.querymgr.subscribe
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.TaggedReference
 import com.google.firebase.dataconnect.util.throwIfCancellationException
 import java.util.Objects
 import kotlinx.coroutines.channels.SendChannel
@@ -39,17 +37,18 @@ internal class QuerySubscriptionImpl<Data, Variables>(
       query.dataConnect.realtimeQueryManagerUnlessClosed ?: return@channelFlow
     val nonRealtimeQueryManager = query.dataConnect.queryManagerUnlessClosed ?: return@channelFlow
 
-    // TODO: Modify RealtimeQueryManager to produce updates when queries are executed.
-    //  This "hack" essentially "injects" the executeQuery responses in to the subscription to
-    //  mimic the pre-existing behavior.
+    val resultSender = ResultSender(this@channelFlow)
+
+    // TODO: Remove the event emitting from the non-realtime query manager by improving the realtime
+    //  query manager to emit events from cache and in response to executeQuery() calls.
     val nonRealtimeJob = launch {
       nonRealtimeQueryManager.subscribe(query, executeQuery = false) {
-        onNonRealtimeUpdate(it, this@channelFlow)
+        resultSender.onNonRealtimeUpdate(it)
       }
     }
 
     try {
-      realtimeQueryManager.subscribe(query).collect { onRealtimeUpdate(it, this@channelFlow) }
+      realtimeQueryManager.subscribe(query).collect { resultSender.onRealtimeUpdate(it) }
     } finally {
       nonRealtimeJob.cancel()
     }
@@ -76,23 +75,37 @@ internal class QuerySubscriptionImpl<Data, Variables>(
     override fun toString() = "QuerySubscriptionResultImpl(query=$query, result=$result)"
   }
 
-  private suspend fun onNonRealtimeUpdate(
-    event: SequencedReference<Result<TaggedReference<CoreDataSource, Data>>>,
-    channel: SendChannel<QuerySubscriptionImpl<Data, Variables>.QuerySubscriptionResultImpl>,
+  private inner class ResultSender(
+    val channel: SendChannel<QuerySubscriptionResultImpl>,
   ) {
-    val (source, data) = event.ref.getOrNull() ?: return
-    val queryResult = query.QueryResultImpl(data, source.toDataSourceEnum())
-    val subscriptionResult = QuerySubscriptionResultImpl(query, Result.success(queryResult))
-    channel.send(subscriptionResult)
-  }
+    suspend fun onNonRealtimeUpdate(
+      event: SequencedReference<Result<SourcedData<Data>>>,
+    ) {
+      val (source, _, data) = event.ref.getOrNull() ?: return
+      emit(data, source)
+    }
 
-  private suspend fun onRealtimeUpdate(
-    event: Result<TaggedReference<SqliteSequenceNumber?, Data>>,
-    channel: SendChannel<QuerySubscriptionResultImpl>,
-  ) {
-    event.throwIfCancellationException()
-    val queryResult = event.map { query.QueryResultImpl(it.ref, PublicDataSource.SERVER) }
-    val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
-    channel.send(subscriptionResult)
+    suspend fun onRealtimeUpdate(
+      event: Result<SqliteSequencedReference<Data>>,
+    ) {
+      event.throwIfCancellationException()
+      val queryResult = event.map { query.QueryResultImpl(it.ref, DataSource.SERVER) }
+      emit(queryResult)
+    }
+
+    private suspend fun emit(
+      queryResult: Result<QueryRefImpl<Data, Variables>.QueryResultImpl>,
+    ) {
+      val subscriptionResult = QuerySubscriptionResultImpl(query, queryResult)
+      channel.send(subscriptionResult)
+    }
+
+    private suspend fun emit(data: Data, source: DataSource) {
+      emit(query.QueryResultImpl(data, source))
+    }
+
+    private suspend fun emit(queryResult: QueryRefImpl<Data, Variables>.QueryResultImpl) {
+      emit(Result.success(queryResult))
+    }
   }
 }
