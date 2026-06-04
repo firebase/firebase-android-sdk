@@ -16,23 +16,22 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.DataSource as CoreDataSource
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataSource
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
+import com.google.firebase.dataconnect.testutil.property.arbitrary.sqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.TaggedReference
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -51,6 +50,7 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
@@ -96,13 +96,17 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `execute() should return the result on success`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataSource()) { dataSource ->
+    checkAll(
+      propTestConfig,
+      Arb.enum<DataSource>(),
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2),
+    ) { dataSource, sqliteSequenceNumber ->
       val data: TestData = mockk()
       val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
       val fetchPolicySlot = slot<FetchPolicy>()
       val dataConnect =
         dataConnectWithQueryResult(
-          Result.success(TaggedReference(dataSource.coreDataSource, data)),
+          Result.success(SourcedData(dataSource, sqliteSequenceNumber, data)),
           querySlot,
           fetchPolicySlot
         )
@@ -113,7 +117,7 @@ class QueryRefImplUnitTest {
       assertSoftly {
         queryResult.ref shouldBeSameInstanceAs queryRefImpl
         queryResult.data shouldBe data
-        queryResult.dataSource shouldBe dataSource.publicDataSource
+        queryResult.dataSource shouldBe dataSource
         querySlot.captured shouldBeSameInstanceAs queryRefImpl
         fetchPolicySlot.captured shouldBe FetchPolicy.PREFER_CACHE
       }
@@ -122,15 +126,18 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `execute(FetchPolicy) should return the result on success`() = runTest {
-    checkAll(propTestConfig, Arb.enum<FetchPolicy>(), Arb.dataConnect.dataSource()) {
-      fetchPolicy,
-      dataSource ->
+    checkAll(
+      propTestConfig,
+      Arb.enum<FetchPolicy>(),
+      Arb.enum<DataSource>(),
+      Arb.dataConnect.sqliteSequenceNumber().orNull(nullProbability = 0.2),
+    ) { fetchPolicy, dataSource, sqliteSequenceNumber ->
       val data: TestData = mockk()
       val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
       val fetchPolicySlot = slot<FetchPolicy>()
       val dataConnect =
         dataConnectWithQueryResult(
-          Result.success(TaggedReference(dataSource.coreDataSource, data)),
+          Result.success(SourcedData(dataSource, sqliteSequenceNumber, data)),
           querySlot,
           fetchPolicySlot
         )
@@ -141,7 +148,7 @@ class QueryRefImplUnitTest {
       assertSoftly {
         queryResult.ref shouldBeSameInstanceAs queryRefImpl
         queryResult.data shouldBe data
-        queryResult.dataSource shouldBe dataSource.publicDataSource
+        queryResult.dataSource shouldBe dataSource
         querySlot.captured shouldBeSameInstanceAs queryRefImpl
         fetchPolicySlot.captured shouldBe fetchPolicy
       }
@@ -637,7 +644,7 @@ class QueryRefImplUnitTest {
       queryRefImpl().map { it.withDataConnect(dataConnect) }
 
     fun <Data, Variables> dataConnectWithQueryResult(
-      result: Result<TaggedReference<CoreDataSource, Data>>,
+      result: Result<SourcedData<Data>>,
       querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>,
       fetchPolicySlot: CapturingSlot<FetchPolicy>,
     ): FirebaseDataConnectInternal =
