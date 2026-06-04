@@ -197,7 +197,11 @@ internal class DataConnectCacheDatabase(
     }
   }
 
-  @JvmInline value class SqliteSequenceNumber(val sequenceNumber: Long)
+  @JvmInline
+  value class SqliteSequenceNumber(val sequenceNumber: Long) : Comparable<SqliteSequenceNumber> {
+    override fun compareTo(other: SqliteSequenceNumber) =
+      sequenceNumber.compareTo(other.sequenceNumber)
+  }
 
   private fun SQLiteDatabase.nextSequenceNumber(): SqliteSequenceNumber {
     execSQL(logger, "INSERT INTO sequence_number DEFAULT VALUES")
@@ -658,6 +662,11 @@ internal class DataConnectCacheDatabase(
       sequenceNumber
     }
   }
+
+  suspend fun nextSequenceNumber(): SqliteSequenceNumber =
+    runReadWriteTransaction { sqliteDatabase ->
+      sqliteDatabase.nextSequenceNumber()
+    }
 
   private suspend inline fun <T> runReadWriteTransaction(
     crossinline block: suspend (SQLiteDatabase) -> T
