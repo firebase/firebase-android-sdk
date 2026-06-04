@@ -170,7 +170,8 @@ class DataConnectGrpcRPCsUnitTest {
               appCheckToken,
             )
 
-          result2.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response shouldBe response2
+          result2.ref.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response shouldBe
+            response2
           withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 2 }
         }
       }
@@ -228,7 +229,7 @@ class DataConnectGrpcRPCsUnitTest {
           )
 
         val expectedData = sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
-        result.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data shouldBe expectedData
+        result.ref.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data shouldBe expectedData
       }
     }
   }
@@ -344,11 +345,11 @@ class DataConnectGrpcRPCsUnitTest {
             )
 
           withClue("result1") {
-            val response1 = result1.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response
+            val response1 = result1.ref.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response
             response1 shouldBe response
           }
           withClue("result2") {
-            val response2 = result2.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
+            val response2 = result2.ref.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
             response2 shouldBe sample.hydratedStruct
           }
           withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 1 }
@@ -421,11 +422,11 @@ class DataConnectGrpcRPCsUnitTest {
             )
 
           withClue("result1") {
-            val response1 = result1.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
+            val response1 = result1.ref.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
             response1 shouldBe sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
           }
           withClue("result2") {
-            val response2 = result2.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
+            val response2 = result2.ref.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
             response2 shouldBe sample2.hydratedStruct
           }
         }
