@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.core
+package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.DataSource as DataSourceEnum
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
 
-internal sealed interface DataSource {
-
-  object Server : DataSource {
-    override fun toString() = "Server"
-  }
-
-  data class Cache(val sqliteSequenceNumber: SqliteSequenceNumber?) : DataSource {
-    override fun toString() = "Cache(sqliteSequenceNumber=${sqliteSequenceNumber?.sequenceNumber})"
-  }
+internal data class SqliteSequencedReference<out T>(
+  val sqliteSequenceNumber: SqliteSequenceNumber?,
+  val ref: T,
+) {
+  override fun toString() =
+    "SqliteSequencedReference(sqliteSequenceNumber=${sqliteSequenceNumber?.sequenceNumber}, ref=$ref)"
 }
 
-internal fun DataSource.toDataSourceEnum(): DataSourceEnum =
-  when (this) {
-    DataSource.Server -> DataSourceEnum.SERVER
-    is DataSource.Cache -> DataSourceEnum.CACHE
-  }
+internal fun <T, U> SqliteSequencedReference<T>.copy(
+  sqliteSequenceNumber: SqliteSequenceNumber? = this.sqliteSequenceNumber,
+  ref: U,
+): SqliteSequencedReference<U> = SqliteSequencedReference(sqliteSequenceNumber, ref)
+
+internal inline fun <T, U> SqliteSequencedReference<T>.map(
+  block: (T) -> U,
+): SqliteSequencedReference<U> = copy(ref = block(ref))
