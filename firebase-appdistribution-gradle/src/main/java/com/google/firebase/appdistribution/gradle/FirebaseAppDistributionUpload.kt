@@ -125,7 +125,9 @@ internal constructor(
                 val testCase = testCaseId?.let { "${appName}/testCases/$it" }
                 val projectNumber = getProjectNumber(options.appId)
                 val resultsBucket =
-                  options.resultsBucket?.let { formatResultsBucket(projectNumber, it) }
+                  options.resultsBucket?.let {
+                    ResultsBucketFormatter.formatResultsBucket(projectNumber, it)
+                  }
                 apiService
                   .testRelease(
                     release.name,
@@ -226,19 +228,7 @@ internal constructor(
     return "projects/${getProjectNumber(appId)}/apps/$appId"
   }
 
-  private fun formatResultsBucket(projectNumber: String, bucketInput: String): String {
-    val cleanBucketName = bucketInput.trim().removePrefix("gs://").trim('/')
-    if (!cleanBucketName.matches(BUCKET_NAME_REGEX)) {
-      throw AppDistributionException(
-        AppDistributionException.Reason.INVALID_RESULTS_BUCKET,
-        extraInformation = bucketInput
-      )
-    }
-    return "projects/$projectNumber/buckets/$cleanBucketName"
-  }
-
   companion object {
     private val logger = Logging.getLogger(this::class.java)
-    private val BUCKET_NAME_REGEX = "^[a-z0-9_.-]+$".toRegex()
   }
 }

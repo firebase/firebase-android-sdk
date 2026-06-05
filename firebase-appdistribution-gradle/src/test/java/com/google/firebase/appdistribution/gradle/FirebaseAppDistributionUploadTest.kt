@@ -38,7 +38,6 @@ import com.google.firebase.appdistribution.gradle.models.uploadstatus.WrappedRes
 import com.google.gson.Gson
 import java.io.IOException
 import kotlin.test.assertContains
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import org.junit.Assert.assertTrue
@@ -705,32 +704,6 @@ class FirebaseAppDistributionUploadTest {
         eq("projects/123/buckets/my-custom-bucket")
       )
     verify(testLookup).pollForReleaseTests(eq(mockApiService), eq(setOf(RELEASE_TEST_NAME)))
-  }
-
-  @Test
-  fun uploadDistribution_withAutomatedTesting_withInvalidResultsBucket_fails() {
-    val options =
-      UploadDistributionOptions(
-        appId = APP_ID,
-        binaryPath = apkPath,
-        testDevicesValue = TEST_DEVICES_VALUE,
-        resultsBucket = "gs://INVALID_BUCKET_NAME!"
-      )
-    whenever(mockUploadService.uploadDistribution(any(), any())).thenReturn(OPERATION_NAME)
-    whenever(mockApiService.getUploadStatus(any(), any()))
-      .thenReturn(UploadStatusResponse(true, MOCK_WRAPPED_RESPONSE, null))
-    val upload =
-      FirebaseAppDistributionUpload(
-        options,
-        mockApiService,
-        mockUploadService,
-        testLookup = testLookup
-      )
-
-    val e = assertFailsWith(AppDistributionException::class) { upload.uploadDistribution() }
-
-    assertEquals(AppDistributionException.Reason.INVALID_RESULTS_BUCKET, e.reason)
-    assertTrue(e.message!!.contains("gs://INVALID_BUCKET_NAME!"))
   }
 
   companion object {
