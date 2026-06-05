@@ -36,18 +36,9 @@ class ResultsBucketFormatterTest {
   }
 
   @Test
-  fun formatResultsBucket_withTrailingSlashes_throwsException() {
-    val exception =
-      assertFailsWith(AppDistributionException::class) {
-        ResultsBucketFormatter.formatResultsBucket("123", "gs://my-bucket/")
-      }
-    assertEquals(AppDistributionException.Reason.INVALID_RESULTS_BUCKET, exception.reason)
-    assertContains(exception.message!!, "gs://my-bucket/")
-  }
-
-  @Test
   fun formatResultsBucket_withInvalidCharacters_throwsException() {
-    val invalidNames = listOf("gs://My-Bucket", "my bucket", "gs://my-bucket!", "my_bucket?")
+    val invalidNames =
+      listOf("gs://My-Bucket", "my bucket", "gs://my-bucket!", "my_bucket?", "gs://my-bucket/")
     for (name in invalidNames) {
       val exception =
         assertFailsWith(AppDistributionException::class) {

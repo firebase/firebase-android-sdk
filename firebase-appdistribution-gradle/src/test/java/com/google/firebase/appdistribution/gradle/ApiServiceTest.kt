@@ -26,6 +26,7 @@ import com.google.firebase.appdistribution.gradle.models.LoginCredential
 import com.google.firebase.appdistribution.gradle.models.ReleaseTest
 import com.google.firebase.appdistribution.gradle.models.RoboStats
 import com.google.firebase.appdistribution.gradle.models.TestDevice
+import com.google.gson.Gson
 import java.io.IOException
 import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
@@ -270,15 +271,11 @@ class ApiServiceTest {
       )
 
     assertNotNull(response)
-    val capturedRequest = httpTransport.lastRequest
-    assertNotNull(capturedRequest)
-    val capturedRequestBody = capturedRequest.contentAsString
+    assertNotNull(httpTransport.lastRequest)
+    val capturedRequestBody = httpTransport.lastRequest.contentAsString
     assertNotNull(capturedRequestBody)
-    assertTrue(
-      capturedRequestBody.contains(
-        "\"resultsBucket\":\"projects/123456789123/buckets/my-custom-bucket\""
-      )
-    )
+    val parsedRequest = Gson().fromJson(capturedRequestBody, ReleaseTest::class.java)
+    assertEquals("projects/123456789123/buckets/my-custom-bucket", parsedRequest.resultsBucket)
   }
 
   companion object {
