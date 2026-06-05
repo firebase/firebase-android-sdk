@@ -23,11 +23,13 @@ show_help() {
   say "This can be useful for running instrumentation tests"
   say "without the overhead of rendering the Android UI."
   say
-  say "Syntax: $0 [avd]"
+  say "Syntax: $0 [avd] [-- emulator_flags...]"
   say
   say "The AVD to use may be specified as the first argument,"
   say "and _must_ be specified if there is more than one AVD"
   say "configured in the Android emulator."
+  say
+  say "Any arguments after '--' are passed directly to the emulator command."
   say
   say "The ANDROID_HOME environment variable must be set and is used"
   say "to find the Android emulator binary."
@@ -39,10 +41,22 @@ if (( ${#opt_help} )); then
   show_help
   exit 0
 fi
-if (( # == 1 )); then
-  typeset -r emulator_avd="$1"
-elif (( # > 1 )); then
-  say_error "unexpected command-line argument: $2" >&2
+
+typeset -i double_dash_index=${@[(i)--]}
+typeset -a script_args
+typeset -a emulator_extra_args
+if (( double_dash_index <= $# )); then
+  script_args=( "${@[1,double_dash_index-1]}" )
+  emulator_extra_args=( "${@[double_dash_index+1,$#]}" )
+else
+  script_args=( "$@" )
+  emulator_extra_args=( )
+fi
+
+if (( ${#script_args} == 1 )); then
+  typeset -r emulator_avd="${script_args[1]}"
+elif (( ${#script_args} > 1 )); then
+  say_error "unexpected command-line argument: ${script_args[2]}" >&2
   sayp "Run with %F{cyan}-h%f for help." >&2
   exit 2
 fi
@@ -98,6 +112,7 @@ typeset -r args=(
   -timezone UTC
   -skip-adb-auth
   -no-metrics
+  "${emulator_extra_args[@]}"
 )
 
 say_args "${args[@]}"

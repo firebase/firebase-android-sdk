@@ -27,11 +27,13 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class GroundingTests {
+  private val validator = TypesValidator()
 
   @Test
   fun groundingTests_canRecognizeAreas(): Unit = runBlocking {
     val model = setupModel(config = ToolConfig())
     val response = model.generateContent("Where is a good place to grab a coffee near Alameda, CA?")
+    validator.validateResponse(response)
 
     response.candidates.isEmpty() shouldBe false
     response.candidates[0].groundingMetadata?.groundingChunks?.any { it.maps != null } shouldBe true
@@ -51,9 +53,25 @@ class GroundingTests {
           )
       )
     val response = model.generateContent("Find bookstores in my area.")
+    validator.validateResponse(response)
 
     response.candidates.isEmpty() shouldBe false
     response.candidates[0].groundingMetadata?.groundingChunks?.any { it.maps != null } shouldBe true
+  }
+
+  @Test
+  fun groundingTests_canSearchWeather(): Unit = runBlocking {
+    val model =
+      FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
+        .generativeModel(
+          modelName = "gemini-2.5-flash",
+          tools = listOf(Tool.googleSearch()),
+        )
+    val response = model.generateContent("What temperature is it today in Cancún?")
+    // Grounding indices should be correct
+    validator.validateResponse(response)
+    // Search grounding should be used
+    response.candidates.any { it.groundingMetadata != null } shouldBe true
   }
 
   companion object {

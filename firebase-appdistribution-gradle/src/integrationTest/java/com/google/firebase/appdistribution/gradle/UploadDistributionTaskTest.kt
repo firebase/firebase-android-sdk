@@ -18,6 +18,16 @@ package com.google.firebase.appdistribution.gradle
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import com.google.firebase.appdistribution.gradle.ApiStubs.Companion.WIRE_MOCK_PORT
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_AGP_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_COMPILE_SDK_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_GOOGLE_SERVICES_VERSION
+import com.google.firebase.appdistribution.gradle.TestGroovyBuild.Companion.OLDER_GRADLE_VERSION
+import com.google.firebase.appdistribution.gradle.VersionUtils.Stability.BLEEDING_EDGE
+import com.google.firebase.appdistribution.gradle.VersionUtils.Stability.RC
+import com.google.firebase.appdistribution.gradle.VersionUtils.Stability.STABLE
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome.FAILED
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
@@ -28,7 +38,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(TestParameterInjector::class)
 class UploadDistributionTaskTest {
   @get:Rule val wireMockRule = WireMockRule(WIRE_MOCK_PORT)
 
@@ -36,81 +48,92 @@ class UploadDistributionTaskTest {
   val testGroovyBuild = TestGroovyBuild(testGradleProject)
   private val apiStubs = ApiStubs(testGradleProject)
 
+  data class Versions(
+    val gradle: String,
+    val agp: String,
+    val compileSdk: String,
+    val googleServices: String,
+    val useConfigurationCache: Boolean,
+  ) {
+    fun additionalGradleArguments(): List<String> =
+      if (useConfigurationCache) listOf("--configuration-cache") else listOf()
+  }
+
+  class VersionsProvider : TestParameterValuesProvider() {
+    override fun provideValues(context: Context): List<Versions> {
+      return listOf(
+        Versions( // oldest supported versions (without configuration cache)
+          OLDER_GRADLE_VERSION,
+          OLDER_AGP_VERSION,
+          OLDER_COMPILE_SDK_VERSION,
+          OLDER_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = false
+        ),
+        Versions( // latest stable versions (without configuration cache)
+          LATEST_STABLE_GRADLE_VERSION,
+          LATEST_STABLE_AGP_VERSION,
+          COMPILE_SDK_VERSION_FOR_GRADLE9,
+          LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = false
+        ),
+        Versions( // latest stable versions
+          LATEST_STABLE_GRADLE_VERSION,
+          LATEST_STABLE_AGP_VERSION,
+          COMPILE_SDK_VERSION_FOR_GRADLE9,
+          LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = true
+        ),
+        Versions( // AGP RC with latest stable version of gradle
+          LATEST_STABLE_GRADLE_VERSION,
+          LATEST_AGP_RC_VERSION,
+          COMPILE_SDK_VERSION_FOR_GRADLE9,
+          LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = true
+        ),
+        Versions( // Gradle RC with latest stable version of AGP
+          LATEST_GRADLE_RC_VERSION,
+          LATEST_STABLE_AGP_VERSION,
+          COMPILE_SDK_VERSION_FOR_GRADLE9,
+          LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = true
+        ),
+        Versions( // AGP bleeding-edge with Gradle RC
+          LATEST_GRADLE_RC_VERSION,
+          AGP_BLEEDING_EDGE_VERSION,
+          COMPILE_SDK_VERSION_FOR_GRADLE9,
+          LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+          useConfigurationCache = true
+        ),
+      )
+    }
+  }
+
   @Before
   fun setup() {
     System.setProperty("FIREBASE_APP_DISTRIBUTION_API_URL", "http://localhost:${WIRE_MOCK_PORT}")
   }
 
-  // *************************************************************************
-  // Test matrix cases for testing on the latest and older gradle/AGP versions
-  // *************************************************************************
   @Test
-  fun testApkPathParsing_withApk_onOlderAgpAndGradleVersions() {
+  fun testApkPathParsing_withApk(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using APK"))
-    assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
-  }
-
-  @Test
-  fun testApkPathParsing_withApk_onLatestAgpAndGradleVersions() {
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using APK"))
-    assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
-  }
-
-  @Test
-  fun testApkPathParsing_withApk_withConfigurationCache_onLatestAgpAndGradleVersions() {
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
     )
 
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments(
-          "assembleDebug",
-          "appDistributionUploadDebug",
-          "--configuration-cache",
-          "--info",
-          "--stacktrace"
+          listOf("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -119,42 +142,26 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testApkPathParsing_noApk_onOlderAgpAndGradleVersions() {
+  fun testApkPathParsing_noApk(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
     )
 
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("appDistributionUploadDebug", "--info", "--stacktrace")
+        .withArguments(
+          listOf("appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
+        )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
-        .buildAndFail()
-
-    assertEquals(FAILED, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Could not find an APK"))
-  }
-
-  @Test
-  fun testApkPathParsing_noApk_onLatestAgpAndGradleVersions() {
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .buildAndFail()
 
     assertEquals(FAILED, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -163,6 +170,7 @@ class UploadDistributionTaskTest {
 
   @Test
   fun testApkPathParsing_withCustomOutputName_onOlderAgpAndGradleVersions() {
+    // fails with later versions
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
@@ -191,38 +199,16 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testAabPathParsing_withAab_onOlderAgpAndGradleVersions() {
+  fun testAabPathParsing_withAab(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
-      artifactType = "AAB"
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("bundleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
-  }
-
-  @Test
-  fun testAabPathParsing_withAab_onLatestAgpAndGradleVersions() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
       artifactType = "AAB"
     )
 
@@ -230,13 +216,11 @@ class UploadDistributionTaskTest {
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments(
-          ":app:bundleDebug",
-          ":app:appDistributionUploadDebug",
-          "--info",
-          "--stacktrace"
+          listOf("bundleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -245,14 +229,16 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testAabPathParsing_withAab_withConfigurationCache_onLatestAgpAndGradleVersions() {
+  fun testAabPathParsing_noAab(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
       artifactType = "AAB"
     )
 
@@ -260,38 +246,11 @@ class UploadDistributionTaskTest {
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments(
-          "bundleDebug",
-          "appDistributionUploadDebug",
-          "--configuration-cache",
-          "--info",
-          "--stacktrace"
+          listOf("appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
-  }
-
-  @Test
-  fun testAabPathParsing_noAab_onOlderAgpAndGradleVersions() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
-      artifactType = "AAB"
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .buildAndFail()
 
     assertEquals(FAILED, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -305,53 +264,32 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testAabPathParsing_noAab_onLatestAgpAndGradleVersions() {
+  fun testAabPathParsing_withAabCommandLineOverride(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
-      artifactType = "AAB"
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .buildAndFail()
-
-    assertEquals(FAILED, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
-    assertThat(result.output, containsString("Could not find the AAB"))
-  }
-
-  @Test
-  fun testAabPathParsing_withAabCommandLineOverride_onOlderAgpAndGradleVersions() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
     )
 
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments(
-          "bundleDebug",
-          "appDistributionUploadDebug",
-          "--artifactType=AAB",
-          "--info",
-          "--stacktrace"
+          listOf(
+            "bundleDebug",
+            "appDistributionUploadDebug",
+            "--artifactType=AAB",
+            "--info",
+            "--stacktrace"
+          ) + versions.additionalGradleArguments()
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -360,70 +298,16 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testAabPathParsing_withAabCommandLineOverride_onLatestAgpAndGradleVersions() {
+  fun testArtifactPath_withRelativePath(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments(
-          "bundleDebug",
-          "appDistributionUploadDebug",
-          "--artifactType=AAB",
-          "--info",
-          "--stacktrace"
-        )
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
-  }
-
-  @Test
-  fun testArtifactPath_withRelativePath_onLatestAgpAndGradleVersions() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
-      artifactType = "APK",
-      artifactPath = "app/build/outputs/apk/debug/app-debug.apk"
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using APK"))
-    assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
-  }
-
-  @Test
-  fun testArtifactPath_withRelativePath_withConfigurationCache_onLatestAgpAndGradleVersions() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
       artifactType = "APK",
       artifactPath = "app/build/outputs/apk/debug/app-debug.apk"
     )
@@ -432,14 +316,11 @@ class UploadDistributionTaskTest {
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments(
-          "assembleDebug",
-          "appDistributionUploadDebug",
-          "--configuration-cache",
-          "--info",
-          "--stacktrace"
+          listOf("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -448,14 +329,16 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testArtifactPath_withPathToNonexistentFile_onLatestAgpAndGradleVersions() {
+  fun testArtifactPath_withPathToNonexistentFile(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
       artifactType = "APK",
       artifactPath = "bad/artifact/path"
     )
@@ -463,9 +346,12 @@ class UploadDistributionTaskTest {
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
+        .withArguments(
+          listOf("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
+        )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .buildAndFail()
 
     assertEquals(FAILED, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -473,14 +359,16 @@ class UploadDistributionTaskTest {
   }
 
   @Test
-  fun testArtifactPath_withPathInvalidPath_onLatestAgpAndGradleVersions() {
+  fun testArtifactPath_withPathInvalidPath(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubGetAabInfoSuccess()
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      compileSdkVersion = versions.compileSdk,
+      googleServicesVersion = versions.googleServices,
       artifactType = "APK",
       artifactPath = "\\0"
     )
@@ -488,9 +376,12 @@ class UploadDistributionTaskTest {
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
+        .withArguments(
+          listOf("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
+        )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .buildAndFail()
 
     assertThat(result.output, containsString("is an invalid path"))
@@ -501,136 +392,81 @@ class UploadDistributionTaskTest {
   // *************************************************************************
   @Test
   fun testAabPathParsing_forAgp713andGradle72() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = "7.1.3",
-      artifactType = "AAB",
+    testAabPathParsing_withAab(
+      Versions(
+        gradle = "7.2",
+        agp = "7.1.3",
+        OLDER_COMPILE_SDK_VERSION,
+        OLDER_GOOGLE_SERVICES_VERSION,
+        useConfigurationCache = false
+      )
     )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("bundleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion("7.2")
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
   @Test
   fun testAabPathParsing_forAgp722andGradle733() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = "7.2.2",
-      artifactType = "AAB",
+    testAabPathParsing_withAab(
+      Versions(
+        gradle = "7.3.3",
+        agp = "7.2.2",
+        OLDER_COMPILE_SDK_VERSION,
+        OLDER_GOOGLE_SERVICES_VERSION,
+        useConfigurationCache = false
+      )
     )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("bundleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion("7.3.3")
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
   @Test
   fun testAabPathParsing_forAgp731andGradle74() {
-    apiStubs.stubGetAabInfoSuccess()
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = "7.3.1",
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      artifactType = "AAB",
+    testAabPathParsing_withAab(
+      Versions(
+        gradle = "7.4",
+        agp = "7.3.1",
+        OLDER_COMPILE_SDK_VERSION,
+        LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+        useConfigurationCache = false
+      )
     )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("bundleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion("7.4")
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-    assertThat(result.output, containsString("Using AAB"))
-    assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
   @Test
   fun testGoogleServices440AppIdParsing_forAgp730() {
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = "7.3.0", // Note: this fails with AGP 7.4.0
-      googleServicesVersion = "4.4.0",
-      useGoogleServicesPlugin = true,
+    testGoogleServicesAppIdParsing(
+      Versions(
+        gradle = "7.4",
+        agp = "7.3.0", // Note: this fails with AGP 7.4.0
+        OLDER_COMPILE_SDK_VERSION,
+        "4.4.0",
+        useConfigurationCache = false
+      )
     )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion("7.4")
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
   }
 
   // *************************************************************************
   // Miscellaneous integration tests
   // *************************************************************************
   @Test
-  fun testGoogleServicesAppIdParsing_onLatestAgpAndGradleVersions() {
+  fun testGoogleServicesAppIdParsing(
+    @TestParameter(valuesProvider = VersionsProvider::class) versions: Versions,
+  ) {
     apiStubs.stubUploadDistributionSuccess()
     apiStubs.stubGetUploadStatusSuccess()
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = versions.agp,
+      googleServicesVersion = versions.googleServices,
+      compileSdkVersion = versions.compileSdk,
       useGoogleServicesPlugin = true,
     )
 
     val result =
       GradleRunner.create()
         .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
+        .withArguments(
+          listOf("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace") +
+            versions.additionalGradleArguments()
+        )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
-        .build()
-
-    assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
-  }
-
-  @Test
-  fun testGoogleServicesAppIdParsing_onOlderAgpAndGradleVersions() {
-    apiStubs.stubUploadDistributionSuccess()
-    apiStubs.stubGetUploadStatusSuccess()
-    testGroovyBuild.writeBuildFiles(
-      agpVersion = OLDER_AGP_VERSION,
-      googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION,
-      useGoogleServicesPlugin = true,
-    )
-
-    val result =
-      GradleRunner.create()
-        .withProjectDir(testGradleProject.projectDir.root)
-        .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
-        .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(OLDER_GRADLE_VERSION)
+        .withGradleVersion(versions.gradle)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -670,9 +506,9 @@ class UploadDistributionTaskTest {
     apiStubs.stubDistributeReleaseSuccess()
     val file = testGradleProject.createAndWriteFile("app/src/testers.txt", "a@a.com,b@b.com")
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
+      agpVersion = LATEST_STABLE_AGP_VERSION,
+      googleServicesVersion = LATEST_STABLE_GOOGLE_SERVICES_VERSION,
+      compileSdkVersion = COMPILE_SDK_VERSION_FOR_GRADLE9,
       testersFile = file.absolutePath
     )
 
@@ -681,7 +517,7 @@ class UploadDistributionTaskTest {
         .withProjectDir(testGradleProject.projectDir.root)
         .withArguments("assembleDebug", "appDistributionUploadDebug", "--info", "--stacktrace")
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -695,9 +531,9 @@ class UploadDistributionTaskTest {
     apiStubs.stubDistributeReleaseSuccess()
     val file = testGradleProject.createAndWriteFile("app/src/testers.txt", "a@a.com,b@b.com")
     testGroovyBuild.writeBuildFiles(
-      agpVersion = LATEST_AGP_VERSION,
-      compileSdkVersion = COMPILE_SDK_VERSION_FOR_LATEST_TEST,
-      googleServicesVersion = LATEST_GOOGLE_SERVICES_VERSION
+      agpVersion = LATEST_STABLE_AGP_VERSION,
+      compileSdkVersion = COMPILE_SDK_VERSION_FOR_GRADLE9,
+      googleServicesVersion = LATEST_STABLE_GOOGLE_SERVICES_VERSION
     )
 
     val result =
@@ -711,7 +547,7 @@ class UploadDistributionTaskTest {
           "--stacktrace"
         )
         .withPluginClasspath(testGradleProject.pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .build()
 
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
@@ -719,26 +555,17 @@ class UploadDistributionTaskTest {
   }
 
   companion object {
-    // Latest gradle, AGP and google-services plugin versions. Update this when new releases come
-    // out.
-    // Also remember to update the latest AGP/gradle versions in BeePlusGradleProject.java.
-    // firebase-appdistribution-gradle/src/prodTest/java/com/google/firebase/appdistribution/gradle/BeePlusGradleProject.java#L59-L60
-    private val LATEST_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion()
-    private val LATEST_AGP_VERSION = VersionUtils.fetchLatestAgpVersion()
-    private val LATEST_GOOGLE_SERVICES_VERSION = VersionUtils.fetchLatestGoogleServicesVersion()
-    // For tests against Gradle 9, we get the error:
-    // "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"
-    // when we don't set this to at least 30.
-    private const val COMPILE_SDK_VERSION_FOR_LATEST_TEST = "30"
+    const val COMPILE_SDK_VERSION_FOR_GRADLE9 = "30"
 
-    // Gradle 7.3.3 was released in December 2023.
-    private const val OLDER_GRADLE_VERSION = "7.3.3"
+    val LATEST_STABLE_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion(STABLE)
+    val LATEST_STABLE_AGP_VERSION = VersionUtils.fetchLatestAgpVersion(STABLE)
+    val LATEST_STABLE_GOOGLE_SERVICES_VERSION =
+      VersionUtils.fetchLatestGoogleServicesVersion(STABLE)
 
-    // AGP 7.0 was released in July 2021.
-    private const val OLDER_AGP_VERSION = "7.0.0"
+    val LATEST_GRADLE_RC_VERSION = VersionUtils.fetchLatestGradleVersion(RC)
+    val LATEST_AGP_RC_VERSION = VersionUtils.fetchLatestAgpVersion(RC)
 
-    // google-services Gradle plugin 4.3.2 was released in September 2019.
-    private const val OLDER_GOOGLE_SERVICES_VERSION = "4.3.2"
+    val AGP_BLEEDING_EDGE_VERSION = VersionUtils.fetchLatestAgpVersion(BLEEDING_EDGE)
 
     private val LOGGER =
       java.util.logging.Logger.getLogger(UploadDistributionTaskTest::class.java.name)
@@ -746,9 +573,12 @@ class UploadDistributionTaskTest {
     @org.junit.BeforeClass
     @JvmStatic
     fun logVersions() {
-      LOGGER.info("Latest Gradle Version: $LATEST_GRADLE_VERSION")
-      LOGGER.info("Latest AGP Version: $LATEST_AGP_VERSION")
-      LOGGER.info("Latest Google Services Version: $LATEST_GOOGLE_SERVICES_VERSION")
+      LOGGER.info(
+        "Integration tests using versions:\n" +
+          "Gradle (stable: $LATEST_STABLE_GRADLE_VERSION, rc: $LATEST_GRADLE_RC_VERSION)\n" +
+          "AGP (stable: $LATEST_STABLE_AGP_VERSION, rc: $LATEST_AGP_RC_VERSION, bleeding edge: $AGP_BLEEDING_EDGE_VERSION)\n" +
+          "Google Services (stable: $LATEST_STABLE_GOOGLE_SERVICES_VERSION)"
+      )
     }
   }
 }

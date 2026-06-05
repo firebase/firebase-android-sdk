@@ -19,13 +19,14 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
+import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResult
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
 import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
@@ -33,10 +34,20 @@ import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.SemanticVersion
+import com.google.protobuf.Duration as DurationProto
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.ExecuteMutationResponse as ExecuteMutationResponseProto
+import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
+import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions as GraphqlResponseExtensionsProto
+import google.firebase.dataconnect.proto.SourceLocation as SourceLocationProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -44,7 +55,9 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -52,7 +65,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
-import kotlin.random.Random
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -75,6 +87,43 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
     parentLogger = mockk(relaxed = true),
   )
 }
+
+internal fun DataConnectArb.sourceLocationProto(
+  line: Arb<Int> = Arb.int(),
+  column: Arb<Int> = Arb.int(),
+): Arb<SourceLocationProto> =
+  Arb.bind(line, column) { line, column ->
+    SourceLocationProto.newBuilder().setLine(line).setColumn(column).build()
+  }
+
+internal fun DataConnectArb.graphqlErrorProto(
+  message: Arb<String?> = string().orNull(nullProbability = 0.2),
+  locations: Arb<List<SourceLocationProto>> = Arb.list(sourceLocationProto(), 0..5),
+  path: Arb<ListValue?> =
+    Arb.proto
+      .listValue(
+        depth = 1..1,
+        scalarValue =
+          Arb.choice(
+            Arb.proto.stringValue(),
+            Arb.int().map { it.toValueProto() },
+          )
+      )
+      .map { it.listValue }
+      .orNull(nullProbability = 0.2),
+): Arb<GraphqlErrorProto> =
+  Arb.bind(message, locations, path) { message, locations, path ->
+    GraphqlErrorProto.newBuilder().let {
+      if (message !== null) {
+        it.setMessage(message)
+      }
+      locations.forEach { location -> it.addLocations(location) }
+      if (path !== null) {
+        it.setPath(path)
+      }
+      it.build()
+    }
+  }
 
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
@@ -104,11 +153,14 @@ internal fun DataConnectArb.operationFailureResponseImpl(
     DataConnectOperationFailureResponseImpl(rawData0, data0, errors0)
   }
 
+internal fun DataConnectArb.sqliteSequenceNumber(
+  long: Arb<Long> = Arb.longWithEvenNumDigitsDistribution(),
+): Arb<SqliteSequenceNumber> = long.map(::SqliteSequenceNumber)
+
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
-  errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
-  source: Arb<DataSource> = Arb.enum(),
-) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
+  errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..5),
+) = Arb.bind(data, errors, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
@@ -158,7 +210,6 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
   callerSdkType: Arb<CallerSdkType> = Arb.enum<CallerSdkType>(),
   variablesSerializersModule: Arb<SerializersModule?> = serializersModule(),
   dataSerializersModule: Arb<SerializersModule?> = serializersModule(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   MutationRefImpl(
     dataConnect = dataConnect.bind(),
@@ -169,14 +220,12 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = callerSdkType.bind(),
     variablesSerializersModule = variablesSerializersModule.bind(),
     dataSerializersModule = dataSerializersModule.bind(),
-    secureRandom = secureRandom.bind(),
   )
 }
 
 internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
   constructorArguments: Arb<OperationRefConstructorArguments<Data, Variables>> =
     operationRefConstructorArguments(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   val args = constructorArguments.bind()
   MutationRefImpl(
@@ -188,7 +237,6 @@ internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = args.callerSdkType,
     variablesSerializersModule = args.variablesSerializersModule,
     dataSerializersModule = args.dataSerializersModule,
-    secureRandom = secureRandom.bind(),
   )
 }
 
@@ -329,9 +377,13 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
   )
 }
 
+internal fun DataConnectArb.authUid(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.az())
+): Arb<AuthUid> = string.map { AuthUid("authUid_${it.lowercase()}") }
+
 internal fun DataConnectArb.authTokenResult(
   accessToken: Arb<String?> = authToken().orNull(nullProbability = 0.33),
-  authUid: Arb<String?> = authUid().orNull(nullProbability = 0.33),
+  authUid: Arb<AuthUid?> = authUid().orNull(nullProbability = 0.33),
 ): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
@@ -343,3 +395,98 @@ internal fun DataConnectArb.semanticVersion(
   minor: Arb<Int> = Arb.int(),
   patch: Arb<Int> = Arb.int(),
 ): Arb<SemanticVersion> = Arb.bind(major, minor, patch, ::SemanticVersion)
+
+internal fun DataConnectArb.pathListValue(): Arb<ListValue> =
+  dataConnectPath().map { path ->
+    ListValue.newBuilder().let {
+      path.forEach { pathComponent ->
+        it.addValues(
+          when (pathComponent) {
+            is DataConnectPathSegment.Field -> pathComponent.field.toValueProto()
+            is DataConnectPathSegment.ListIndex -> pathComponent.index.toValueProto()
+          }
+        )
+      }
+      it.build()
+    }
+  }
+
+internal fun DataConnectArb.dataConnectPropertiesProto(
+  path: Arb<ListValue?> = pathListValue().orNull(nullProbability = 0.2),
+  entityId: Arb<String> = string(),
+  entityIds: Arb<List<String>> = Arb.list(string(), 0..3),
+  maxAge: Arb<DurationProto?> = maxAge().orNull(nullProbability = 0.2),
+): Arb<GraphqlResponseExtensionsProto.DataConnectProperties> =
+  Arb.bind(path, entityId, entityIds, maxAge) { path, entityId, entityIds, maxAge ->
+    GraphqlResponseExtensionsProto.DataConnectProperties.newBuilder().let {
+      if (path != null) {
+        it.setPath(path)
+      }
+      it.setEntityId(entityId)
+      it.addAllEntityIds(entityIds)
+      if (maxAge != null) {
+        it.setMaxAge(maxAge)
+      }
+      it.build()
+    }
+  }
+
+internal fun DataConnectArb.graphqlResponseExtensions(
+  dataConnectProperties: Arb<List<GraphqlResponseExtensionsProto.DataConnectProperties>> =
+    Arb.list(dataConnectPropertiesProto(), 0..3),
+): Arb<GraphqlResponseExtensionsProto> =
+  dataConnectProperties.map { dataConnectProperties ->
+    GraphqlResponseExtensionsProto.newBuilder().addAllDataConnect(dataConnectProperties).build()
+  }
+
+internal fun DataConnectArb.executeQueryResponse(
+  data: Arb<Struct> = Arb.proto.struct().map { it.struct },
+  errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..3),
+  extensions: Arb<GraphqlResponseExtensionsProto> = graphqlResponseExtensions()
+): Arb<ExecuteQueryResponseProto> =
+  Arb.bind(data, errors, extensions) { data, errors, extensions ->
+    ExecuteQueryResponseProto.newBuilder()
+      .setData(data)
+      .addAllErrors(errors)
+      .setExtensions(extensions)
+      .build()
+  }
+
+internal fun DataConnectArb.executeMutationResponse(
+  data: Arb<Struct> = Arb.proto.struct().map { it.struct },
+  errors: Arb<List<GraphqlErrorProto>> = Arb.list(graphqlErrorProto(), 0..3),
+): Arb<ExecuteMutationResponseProto> =
+  Arb.bind(data, errors) { data, errors ->
+    ExecuteMutationResponseProto.newBuilder().setData(data).addAllErrors(errors).build()
+  }
+
+internal fun DataConnectArb.executeQueryResultFromCache(
+  struct: Arb<Struct> = Arb.proto.struct().map { it.struct },
+): Arb<ExecuteQueryResult.FromCache> = struct.map(ExecuteQueryResult::FromCache)
+
+internal fun DataConnectArb.executeQueryResultFromServer(
+  executeQueryResponse: Arb<ExecuteQueryResponseProto> = executeQueryResponse(),
+): Arb<ExecuteQueryResult.FromServer> = executeQueryResponse.map(ExecuteQueryResult::FromServer)
+
+internal fun DataConnectArb.executeQueryResult(
+  cacheArb: Arb<ExecuteQueryResult.FromCache> = executeQueryResultFromCache(),
+  serverArb: Arb<ExecuteQueryResult.FromServer> = executeQueryResultFromServer(),
+): Arb<ExecuteQueryResult> = Arb.choice(cacheArb, serverArb)
+
+internal fun DataConnectArb.sqliteSequencedExecuteQueryResult(
+  sqliteSequenceNumber: Arb<SqliteSequenceNumber?> =
+    sqliteSequenceNumber().orNull(nullProbability = 0.2),
+  executeQueryResult: Arb<ExecuteQueryResult> = executeQueryResult(),
+): Arb<SqliteSequencedReference<ExecuteQueryResult>> =
+  sqliteSequencedReference(executeQueryResult, sqliteSequenceNumber)
+
+internal fun <T> DataConnectArb.sqliteSequencedReference(
+  ref: Arb<T>,
+  sqliteSequenceNumber: Arb<SqliteSequenceNumber?> =
+    sqliteSequenceNumber().orNull(nullProbability = 0.2),
+): Arb<SqliteSequencedReference<T>> =
+  Arb.bind(
+    sqliteSequenceNumber,
+    ref,
+    ::SqliteSequencedReference,
+  )

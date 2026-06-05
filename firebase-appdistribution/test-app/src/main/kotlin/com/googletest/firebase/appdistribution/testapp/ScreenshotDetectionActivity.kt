@@ -25,9 +25,9 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.firebase.appdistribution.testapp.R
 import com.googletest.firebase.appdistribution.testapp.ScreenshotDetectionFeedbackTrigger.Companion.screenshotReadPermission
 import java.util.*
-import com.google.firebase.appdistribution.testapp.R
 
 class ScreenshotDetectionActivity : AppCompatActivity() {
   private val handlerThread = HandlerThread("AppDistroFeedbackTrigger").also { it.start() }

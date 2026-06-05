@@ -17,6 +17,7 @@
 package com.google.firebase.appdistribution.gradle;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.firebase.appdistribution.gradle.VersionUtils.Stability.STABLE;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.gradle.testkit.runner.BuildResult;
@@ -56,10 +58,23 @@ class BeePlusGradleProject extends ExternalResource {
   }
 
   static final String PACKAGE_NAME = "com.firebase.appdistribution.prober";
-  // Also remember to update the latest AGP/gradle versions in UploadDistributionTaskTest.kt
-  // firebase-appdistribution-gradle/src/integrationTest/java/com/google/firebase/appdistribution/gradle/UploadDistributionTaskTest.kt#L724-L726
-  static final String LATEST_AGP_VERSION = "9.2.0";
-  static final String LATEST_GRADLE_VERSION = VersionUtils.INSTANCE.fetchLatestGradleVersion();
+  static final String LATEST_STABLE_AGP_VERSION =
+      VersionUtils.INSTANCE.fetchLatestAgpVersion(STABLE);
+  static final String LATEST_STABLE_GRADLE_VERSION =
+      VersionUtils.INSTANCE.fetchLatestGradleVersion(STABLE);
+
+  private static final Logger LOGGER = Logger.getLogger(BeePlusGradleProject.class.getName());
+
+  static {
+    LOGGER.info(
+        "Production compat tests using versions:\n"
+            + "Latest stable Gradle Version: "
+            + LATEST_STABLE_GRADLE_VERSION
+            + "\n"
+            + "Latest stable AGP Version: "
+            + LATEST_STABLE_AGP_VERSION);
+  }
+
   // The project number for App Distro Probes. We need to use this project
   // because this is the one that's actually linked to play for BeePlus,
   // which is required for AAB uploads.
@@ -107,7 +122,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--emails",
             String.join(",", emails))
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -123,7 +138,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--file",
             emailsFile.getAbsolutePath())
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -140,7 +155,7 @@ class BeePlusGradleProject extends ExternalResource {
             String.join(",", emails),
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -157,7 +172,7 @@ class BeePlusGradleProject extends ExternalResource {
             emailsFile.getAbsolutePath(),
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -167,7 +182,7 @@ class BeePlusGradleProject extends ExternalResource {
         .withProjectDir(projectDir.getRoot())
         .withArguments("assembleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
@@ -177,14 +192,14 @@ class BeePlusGradleProject extends ExternalResource {
         .withProjectDir(projectDir.getRoot())
         .withArguments("bundleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
-        .withGradleVersion(LATEST_GRADLE_VERSION)
+        .withGradleVersion(LATEST_STABLE_GRADLE_VERSION)
         .withEnvironment(getEnvironment())
         .build();
   }
 
   private String getToken() {
     String token = System.getenv("FIREBASE_TOKEN");
-    if (token == null || token.isEmpty()) {
+    if (isNullOrEmpty(token)) {
       throw new IllegalStateException(
           "FIREBASE_TOKEN environment variable not set. This is required for production tests.");
     }
@@ -258,7 +273,7 @@ class BeePlusGradleProject extends ExternalResource {
                 + "  }\n"
                 + "\n"
                 + "}\n",
-            LATEST_AGP_VERSION,
+            LATEST_STABLE_AGP_VERSION,
             pluginClasspathString,
             PACKAGE_NAME,
             PACKAGE_NAME,

@@ -84,9 +84,10 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
+  api(project(":appcheck:firebase-appcheck"))
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
@@ -97,7 +98,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures:1.2.0")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
-  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta02")
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)
