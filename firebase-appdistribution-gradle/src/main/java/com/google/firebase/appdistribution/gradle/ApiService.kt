@@ -19,7 +19,6 @@ package com.google.firebase.appdistribution.gradle
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.HttpResponseException
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.Companion.processingBinaryError
-import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TEST_CASE_NOT_FOUND
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TOO_MANY_TESTER_EMAILS
 import com.google.firebase.appdistribution.gradle.NameUtils.extractResourceId
 import com.google.firebase.appdistribution.gradle.models.AabInfo
@@ -107,35 +106,27 @@ class ApiService(private val httpClient: AuthenticatedHttpClient) {
         testCase = testCaseName,
         resultsBucket = resultsBucketName
       )
-    try {
-      val response =
-        httpClient
-          .newPostRequest(
-            ApiEndpoints.getCreateReleaseTestEndpoint(releaseName),
-            buildHttpContent(Gson().toJsonTree(releaseTest))
-          )
-          .execute()
-
-      return if (response.isSuccessStatusCode) {
-        val prefix =
-          if (testCaseName != null) "Started test case ${extractResourceId(testCaseName)}"
-          else "Started test"
-        logger.lifecycle(
-          "{} successfully [{}]. Note: This feature is in beta.",
-          prefix,
-          response.statusCode
+    val response =
+      httpClient
+        .newPostRequest(
+          ApiEndpoints.getCreateReleaseTestEndpoint(releaseName),
+          buildHttpContent(Gson().toJsonTree(releaseTest))
         )
-        Gson().fromJson(response.parseAsString(), ReleaseTest::class.java)
-      } else {
-        logger.warn("Unable to start test. Response code: {}", response.statusCode)
-        null
-      }
-    } catch (e: HttpResponseException) {
-      if (e.statusCode == 404) {
-        throw AppDistributionException(TEST_CASE_NOT_FOUND, extraInformation = testCaseName)
-      }
+        .execute()
 
-      throw e
+    return if (response.isSuccessStatusCode) {
+      val prefix =
+        if (testCaseName != null) "Started test case ${extractResourceId(testCaseName)}"
+        else "Started test"
+      logger.lifecycle(
+        "{} successfully [{}]. Note: This feature is in beta.",
+        prefix,
+        response.statusCode
+      )
+      Gson().fromJson(response.parseAsString(), ReleaseTest::class.java)
+    } else {
+      logger.warn("Unable to start test. Response code: {}", response.statusCode)
+      null
     }
   }
 
