@@ -83,6 +83,10 @@ internal constructor(
   private var emulatorSettings: EmulatedServiceSettings? = null
 
   init {
+    println(
+      "i am a change to verify if " +
+        "https://github.com/firebase/firebase-android-sdk/pull/8248 causes github actions issues"
+    )
     val isRegion: Boolean =
       try {
         URL(regionOrCustomDomain)
