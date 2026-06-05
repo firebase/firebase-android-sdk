@@ -103,7 +103,6 @@ class TopicSubscriptionClient {
     connection.setRequestMethod("POST");
     connection.setRequestProperty("x-goog-api-key", apiKey);
     connection.setRequestProperty("x-goog-firebase-installations-auth", token);
-    connection.setRequestProperty("Content-Type", "application/json");
     connection.setDoOutput(false);
 
     try {

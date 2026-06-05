@@ -18,6 +18,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -99,6 +100,15 @@ public class TopicSubscriptionClientRoboTest {
     runOnBackground(() -> client.subscribe(TEST_TOPIC));
 
     // Verify no exception is thrown
+  }
+
+  @Test
+  public void testSubscribe_triggersFcmRegistration() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+
+    runOnBackground(() -> client.subscribe(TEST_TOPIC));
+
+    verify(mockFirebaseMessaging).blockingRegister(false);
   }
 
   @Test

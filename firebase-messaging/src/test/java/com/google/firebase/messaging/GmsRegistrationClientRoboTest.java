@@ -22,6 +22,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
+import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.cloudmessaging.CloudMessagingClient;
 import com.google.android.gms.tasks.Task;
@@ -50,6 +51,7 @@ import org.robolectric.shadows.ShadowLooper;
 @Config(shadows = ShadowPreconditions.class)
 @LooperMode(Mode.PAUSED)
 public class GmsRegistrationClientRoboTest {
+  private static final String LOG_TAG = "GmsRegistrationClientRoboTest";
   private static final String TEST_TOKEN = "test_token";
   private static final String TEST_FID = "test_fid";
   private static final String SENDER_ID = "1234567890";
@@ -96,7 +98,7 @@ public class GmsRegistrationClientRoboTest {
                 getClass().getClassLoader(),
                 new Class<?>[] {CloudMessagingClient.class},
                 (proxy, method, args) -> {
-                  System.out.println("Proxy called: " + method.getName());
+                  Log.d(LOG_TAG, "Proxy called: " + method.getName());
                   if (method.getName().equals("register")
                       || method.getName().equals("registerApp")) {
                     return Tasks.forResult(TEST_FID);
