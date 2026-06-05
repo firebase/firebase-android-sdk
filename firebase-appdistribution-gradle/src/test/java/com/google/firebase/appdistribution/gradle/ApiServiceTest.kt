@@ -16,11 +16,6 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.http.LowLevelHttpRequest
-import com.google.api.client.http.LowLevelHttpResponse
-import com.google.api.client.testing.http.MockHttpTransport
-import com.google.api.client.testing.http.MockLowLevelHttpRequest
-import com.google.api.client.testing.http.MockLowLevelHttpResponse
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TEST_CASE_NOT_FOUND
@@ -259,23 +254,10 @@ class ApiServiceTest {
 
   @Test
   fun testRelease_withResultsBucket_succeeds() {
-    var capturedRequestBody: String? = null
     val content = FixtureUtils.getFixtureAsString("release_test.json")
-    val customHttpTransport =
-      object : MockHttpTransport() {
-        override fun buildRequest(method: String, url: String): LowLevelHttpRequest {
-          return object : MockLowLevelHttpRequest() {
-            override fun execute(): LowLevelHttpResponse {
-              capturedRequestBody = contentAsString
-              val response = MockLowLevelHttpResponse()
-              response.statusCode = 200
-              response.setContent(content)
-              return response
-            }
-          }
-        }
-      }
-    val httpClient = AuthenticatedHttpClient(customHttpTransport)
+    val httpTransport =
+      AppDistroMockHttpTransport.newBuilder().setCode(200).setContent(content).build()
+    val httpClient = AuthenticatedHttpClient(httpTransport)
     val apiService = ApiService(httpClient)
 
     val response =
@@ -288,9 +270,12 @@ class ApiServiceTest {
       )
 
     assertNotNull(response)
+    val capturedRequest = httpTransport.lastRequest
+    assertNotNull(capturedRequest)
+    val capturedRequestBody = capturedRequest.contentAsString
     assertNotNull(capturedRequestBody)
     assertTrue(
-      capturedRequestBody!!.contains(
+      capturedRequestBody.contains(
         "\"resultsBucket\":\"projects/123456789123/buckets/my-custom-bucket\""
       )
     )

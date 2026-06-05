@@ -32,17 +32,26 @@ public class AppDistroMockHttpTransport extends MockHttpTransport {
     return new Builder();
   }
 
+  private MockLowLevelHttpRequest lastRequest;
+
   @Override
   public LowLevelHttpRequest buildRequest(String method, String url) {
-    return new MockLowLevelHttpRequest() {
-      @Override
-      public LowLevelHttpResponse execute() {
-        MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-        response.setStatusCode(code);
-        response.setContent(content);
-        return response;
-      }
-    };
+    MockLowLevelHttpRequest request =
+        new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() {
+            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+            response.setStatusCode(code);
+            response.setContent(content);
+            return response;
+          }
+        };
+    this.lastRequest = request;
+    return request;
+  }
+
+  public MockLowLevelHttpRequest getLastRequest() {
+    return lastRequest;
   }
 
   public static class Builder {
