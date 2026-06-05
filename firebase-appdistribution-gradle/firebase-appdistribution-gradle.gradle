@@ -251,6 +251,7 @@ dependencies {
   integrationTestImplementation(gradleTestKit())
   integrationTestImplementation("com.android.tools.build:gradle:7.2.0")
   integrationTestImplementation(libs.junit)
+  integrationTestImplementation("com.google.testparameterinjector:test-parameter-injector:1.22")
   integrationTestImplementation("com.github.tomakehurst:wiremock:2.26.3")
   integrationTestImplementation("com.google.code.gson:gson:2.10.1")
   integrationTestImplementation("org.jetbrains.kotlin:kotlin-test")
