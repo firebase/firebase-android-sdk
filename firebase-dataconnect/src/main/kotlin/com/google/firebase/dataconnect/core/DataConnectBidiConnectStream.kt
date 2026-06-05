@@ -95,7 +95,7 @@ internal class DataConnectBidiConnectStream(
             connectionStateFlow.value = SubscriptionEvent.Connected(event)
           }
         }
-        .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto>>()
+        .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>>()
         .map(SubscriptionEvent::Message)
         .onCompletion { throwable ->
           connectionStateFlow.value = SubscriptionEvent.Disconnected
@@ -178,11 +178,11 @@ internal class DataConnectBidiConnectStream(
         .transform { messageOrSubscribe ->
           when (messageOrSubscribe) {
             MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
-            is MessageOrSubscribe.Message -> emit(messageOrSubscribe.message)
+            is MessageOrSubscribe.Message -> emit(messageOrSubscribe)
           }
         }
-        .filter { it.requestId == requestId }
-        .mapNotNull { it.toExecuteResponse() }
+        .filter { it.message.requestId == requestId }
+        .mapNotNull { it.message.toExecuteResponse(it.authUid) }
 
     // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called.
     return merge(subscriptionFlow, scopeCompletedFlow).transformWhile {
@@ -201,9 +201,9 @@ internal class DataConnectBidiConnectStream(
       override fun toString() = "Subscribed"
     }
 
-    class Message(val message: StreamResponseProto) : MessageOrSubscribe {
-      constructor(event: SubscriptionEvent.Message) : this(event.message)
-      override fun toString() = "Message(message=${message.toCompactString()})"
+    class Message(val authUid: AuthUid?, val message: StreamResponseProto) : MessageOrSubscribe {
+      constructor(event: SubscriptionEvent.Message) : this(event.authUid, event.message)
+      override fun toString() = "Message(authUid=$authUid, message=${message.toCompactString()})"
     }
   }
 
@@ -251,28 +251,32 @@ internal class DataConnectBidiConnectStream(
   /**
    * Represents the application-level response to a GraphQL execution request.
    *
+   * @property authUid The Firebase Auth UID of the Firebase user under whose credentials the query
+   * was executed, or `null` if no Firebase user was logged in.
    * @property data The data payload returned by the GraphQL query or mutation.
    * @property errors The errors related to the execution of the operation.
    * @property extensions Additional metadata or properties related to the execution.
    */
   class ExecuteResponse(
+    val authUid: AuthUid?,
     val data: Struct?,
     val errors: List<GraphqlErrorProto>,
     val extensions: List<DataConnectPropertiesProto>,
-  ) {
-    operator fun component1() = data
-    operator fun component2() = errors
-    operator fun component3() = extensions
-  }
+  )
 
   private sealed interface SubscriptionEvent {
 
-    class Message(val connectionId: String, val message: StreamResponseProto) : SubscriptionEvent {
+    class Message(
+      val connectionId: String,
+      val authUid: AuthUid?,
+      val message: StreamResponseProto,
+    ) : SubscriptionEvent {
       constructor(
-        event: GrpcBidiFlow.Event.Message<StreamResponseProto>
-      ) : this(event.connectionId, event.message)
+        event: GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>
+      ) : this(event.connectionId, event.connectionCookie, event.message)
       override fun toString() =
-        "Message(connectionId=$connectionId, message=${message.toCompactString()})"
+        "Message(connectionId=$connectionId, authUid=$authUid, " +
+          "message=${message.toCompactString()})"
     }
 
     sealed interface Connection : SubscriptionEvent
@@ -452,11 +456,12 @@ internal class DataConnectBidiConnectStream(
 
   private companion object {
 
-    fun StreamResponseProto.toExecuteResponse(): ExecuteResponse? =
+    fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
         null
       } else {
         ExecuteResponse(
+          authUid = authUid,
           data = if (hasData()) data else null,
           errors = if (errorsCount > 0) errorsList else emptyList(),
           extensions =
