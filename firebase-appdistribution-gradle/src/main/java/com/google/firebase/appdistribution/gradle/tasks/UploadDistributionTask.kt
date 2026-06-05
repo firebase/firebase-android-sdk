@@ -195,6 +195,14 @@ abstract class UploadDistributionTask : DefaultTask() {
   @get:[Input Optional]
   abstract val testCasesFile: Property<String>
 
+  @get:Option(
+    option = "results-bucket",
+    description =
+      "The name of a Google Cloud Storage bucket where raw results of any automated tests will be stored. Do not include the gs:// prefix. Note that the bucket must be owned by a billing-enabled project, and that specifying a bucket with this flag will result in billing charges for the storage used."
+  )
+  @get:[Input Optional]
+  abstract val resultsBucket: Property<String>
+
   @Internal val inferredAab = fileProperty()
 
   // Multiple APKs can be generated for a single variant, so the provider returns a
@@ -256,6 +264,7 @@ abstract class UploadDistributionTask : DefaultTask() {
         testNonBlocking = testNonBlocking.getOrElse(false),
         testCasesValue = testCases.orNull,
         testCasesPath = testCasesFile.orNull,
+        resultsBucket = resultsBucket.orNull,
         serviceCredentialsFile = serviceCredentialsFile.orNull
       )
 

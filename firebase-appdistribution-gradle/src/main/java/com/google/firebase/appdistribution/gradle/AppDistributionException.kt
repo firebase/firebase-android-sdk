@@ -98,6 +98,9 @@ constructor(
     ),
     APPLICATION_DEFAULT_CREDENTIALS_NOT_FOUND(
       "Unable to create application default credentials in current environment."
+    ),
+    INVALID_RESULTS_BUCKET(
+      "Invalid results bucket. Bucket names can only contain lowercase letters, numeric characters, dashes (-), underscores (_), and dots (.)"
     );
 
     companion object {
