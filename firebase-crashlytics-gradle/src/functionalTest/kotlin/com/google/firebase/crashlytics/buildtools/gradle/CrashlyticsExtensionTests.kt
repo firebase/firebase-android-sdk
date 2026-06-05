@@ -112,9 +112,14 @@ class CrashlyticsExtensionTests {
     assertThat(result.output).contains("/relative/path")
     assertThat(result.output).contains("/relative/project/file/path")
 
-    // Verify warning is only present when manual overrides points to mergeDebugNativeLibs output.
+    // Verify warning is not present when manual overrides points to mergeDebugNativeLibs output but
+    // is set up using an array.
+    // The warning is expected to be shown as a notification for users who in the past make use of a
+    // widely known workaround for flavors and native merged libraries handling.
+    // There is no real use case for passing this path in an array, but just to prove the solution
+    // only aims for single provided overrides this check is added.
     assertThat(result.output)
-      .contains(
+      .doesNotContain(
         """
     The unstrippedNativeLibsDir is manually overridden.
     This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 

@@ -86,15 +86,14 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
   /**
    * Sets and validates the unstripped native libs directories.
    *
-   * Validate the [unstrippedNativeLibsOverride] does not contain a directory manually set to the
-   * output of the [SingleArtifact.MERGED_NATIVE_LIBS] without include the dependency.
+   * Validate the [unstrippedNativeLibsOverride] is not empty at execution phase, with a fallback
+   * natively pointing out to [SingleArtifact.MERGED_NATIVE_LIBS] directory.
    *
    * This happens because for a while the plugin did not properly handle product flavors, so
    * customers would manually configure this to the output of the merged native libs task in a way
    * that didn't include the task dependencies.
    */
-  private fun validateUnstrippedNativeLibsDirs(
-    project: Project,
+  private fun setUnstrippedNativeLibsDirs(
     variant: Variant,
     unstrippedNativeLibsOverride: ConfigurableFileCollection,
   ) {
@@ -112,21 +111,6 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
         }
       }
     )
-
-    // Check if overridden path contains a reference for mergeNativeLibs path.
-    val logOverrideWarn =
-      unstrippedNativeLibsOverride.any { it.path.contains("/intermediates/merged_native_libs/") }
-
-    if (logOverrideWarn) {
-      logger.warn(
-        """
-                  The unstrippedNativeLibsDir is manually overridden.
-                  This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 
-                  override in the CrashlyticsExtension configuration block.
-              """
-          .trimIndent()
-      )
-    }
   }
 
   /** Sets and validates the symbol generator type. */
@@ -181,8 +165,7 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
         this.breakpadExtractionDir.set(buildDir(project, variant, "dump_syms"))
         this.symbolFileOutputDir.set(buildDir(project, variant, "nativeSymbols"))
 
-        validateUnstrippedNativeLibsDirs(
-          project,
+        setUnstrippedNativeLibsDirs(
           variant,
           crashlyticsExtension.unstrippedNativeLibsOverride,
         )

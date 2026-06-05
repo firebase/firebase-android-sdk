@@ -47,7 +47,22 @@ constructor(config: VariantExtensionConfig<*>) : VariantExtension, Serializable 
       // Only set the properties for non-null values.
       crashlyticsExtension.mappingFileUploadEnabled?.let(mappingFileUploadEnabled::set)
       crashlyticsExtension.nativeSymbolUploadEnabled?.let(nativeSymbolUploadEnabled::set)
-      crashlyticsExtension.unstrippedNativeLibsDir?.let { unstrippedNativeLibsOverride.from(it) }
+      crashlyticsExtension.unstrippedNativeLibsDir?.let { nativeLibsOverride ->
+        if (
+          nativeLibsOverride is String &&
+            nativeLibsOverride.contains("/intermediates/merged_native_libs/")
+        ) {
+          logger.warn(
+            """
+                  The unstrippedNativeLibsDir is manually overridden.
+                  This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 
+                  override in the CrashlyticsExtension configuration block.
+              """
+              .trimIndent()
+          )
+        }
+        unstrippedNativeLibsOverride.from(nativeLibsOverride)
+      }
       crashlyticsExtension.symbolGeneratorType?.let(symbolGeneratorType::set)
       crashlyticsExtension.breakpadBinary?.let(breakpadBinary::set)
 
