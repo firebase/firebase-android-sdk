@@ -393,8 +393,6 @@ public final class FirebaseMessagingRoboTest {
 
     ShadowLooper.idleMainLooper();
     Tasks.await(deleteTokenTask, 5, SECONDS);
-    ShadowLooper.idleMainLooper();
-    Tasks.await(deleteTokenTask, 5, SECONDS);
     verify(mockFiid)
         .deleteToken(
             Metadata.getDefaultSenderId(FirebaseApp.getInstance()),
