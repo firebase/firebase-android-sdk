@@ -54,7 +54,7 @@ public class SpeakerVoiceConfig(
  * dynamically based on speaker labels in the prompt.
  *
  * **Note:** Multi-speaker configurations are not supported by the Live API (e.g.,
- * [LiveGenerationConfig]), and will be silently ignored by the backend.
+ * [LiveGenerationConfig]).
  *
  * @property speakerVoiceConfigs A list of voice configurations for the participating speakers.
  *
@@ -109,7 +109,7 @@ private constructor(
    * Constructs a [SpeechConfig] for a multi-speaker setup.
    *
    * **Note:** Multi-speaker configurations are not supported by the Live API (e.g.,
-   * [LiveGenerationConfig]), and will be silently ignored by the backend.
+   * [LiveGenerationConfig]).
    *
    * @param multiSpeakerVoiceConfig The configuration detailing multiple speakers and their
    * corresponding voices.
