@@ -27,8 +27,8 @@ class TestGroovyBuild(private val testGradleProject: TestGradleProject) {
   private lateinit var settingsFile: File
   private lateinit var compileSdkVersion: String
 
-  private var agpVersion = DEFAULT_AGP_VERSION
-  private var googleServicesVersion = DEFAULT_GOOGLE_SERVICES_VERSION
+  private var agpVersion = OLDER_AGP_VERSION
+  private var googleServicesVersion = OLDER_GOOGLE_SERVICES_VERSION
   private var customAndroidBlock = DEFAULT_CUSTOM_ANDROID_BLOCK
   private var customProjectBlock = ""
   private var useGoogleServicesPlugin = false
@@ -42,9 +42,9 @@ class TestGroovyBuild(private val testGradleProject: TestGradleProject) {
   @JvmOverloads
   @Throws(IOException::class)
   fun writeBuildFiles(
-    agpVersion: String = DEFAULT_AGP_VERSION,
-    compileSdkVersion: String = DEFAULT_COMPILE_SDK_VERSION,
-    googleServicesVersion: String = DEFAULT_GOOGLE_SERVICES_VERSION,
+    agpVersion: String = OLDER_AGP_VERSION,
+    compileSdkVersion: String = OLDER_COMPILE_SDK_VERSION,
+    googleServicesVersion: String = OLDER_GOOGLE_SERVICES_VERSION,
     customAndroidBlock: String = DEFAULT_CUSTOM_ANDROID_BLOCK,
     customProjectBlock: String = "",
     artifactType: String? = null,
@@ -152,9 +152,12 @@ class TestGroovyBuild(private val testGradleProject: TestGradleProject) {
     if (value.isNullOrEmpty()) "" else "${key}='${value}'"
 
   companion object {
-    private const val DEFAULT_COMPILE_SDK_VERSION = "27"
-    private const val DEFAULT_AGP_VERSION = "7.0.0"
-    private const val DEFAULT_GOOGLE_SERVICES_VERSION = "4.3.10"
+    // Oldest supported versions
+    const val OLDER_COMPILE_SDK_VERSION = "27" // released in December 2017
+    const val OLDER_GRADLE_VERSION = "7.3.3" // released in December 2023
+    const val OLDER_AGP_VERSION = "7.0.0" // released in July 2021
+    const val OLDER_GOOGLE_SERVICES_VERSION = "4.3.2" // released in September 2019
+
     private const val DEFAULT_CUSTOM_ANDROID_BLOCK = ""
   }
 }
