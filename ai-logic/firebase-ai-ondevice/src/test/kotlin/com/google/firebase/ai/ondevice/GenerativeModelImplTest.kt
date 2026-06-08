@@ -68,7 +68,7 @@ class GenerativeModelImplTest {
   fun `generateContent should return converted response`() = runTest {
     val mlkitModel =
       mockk<MlKitGenerativeModel> {
-        coEvery { getBaseModelName() } returns "gemini-2.0-flash"
+        coEvery { getBaseModelName() } returns "gemini-3.1-flash-lite"
         coEvery { generateContent(any<MlKitGenerateContentRequest>()) } returns
           mockk {
             every { candidates } returns
@@ -112,7 +112,7 @@ class GenerativeModelImplTest {
   fun `generateContentStream should emit converted responses`() = runTest {
     val mlkitModel =
       mockk<MlKitGenerativeModel> {
-        coEvery { getBaseModelName() } returns "gemini-2.0-flash"
+        coEvery { getBaseModelName() } returns "gemini-3.1-flash-lite"
         coEvery { generateContentStream(any<MlKitGenerateContentRequest>()) } returns
           flowOf(
             mockk {

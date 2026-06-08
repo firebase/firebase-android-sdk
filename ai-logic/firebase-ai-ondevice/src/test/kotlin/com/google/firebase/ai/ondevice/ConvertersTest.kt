@@ -115,10 +115,10 @@ internal class ConvertersTest {
       mock(com.google.mlkit.genai.prompt.GenerateContentResponse::class.java).apply {
         `when`(candidates).thenReturn(listOf(mlKitCandidate))
       }
-    val interopResponse = mlKitResponse.toInterop("gemini-2.0-flash")
+    val interopResponse = mlKitResponse.toInterop("gemini-3.1-flash-lite")
 
     assertThat(interopResponse.candidates.size).isEqualTo(1)
     assertThat(interopResponse.candidates[0].text).isEqualTo("hello")
-    assertThat(interopResponse.modelVersion).isEqualTo("gemini-2.0-flash")
+    assertThat(interopResponse.modelVersion).isEqualTo("gemini-3.1-flash-lite")
   }
 }
