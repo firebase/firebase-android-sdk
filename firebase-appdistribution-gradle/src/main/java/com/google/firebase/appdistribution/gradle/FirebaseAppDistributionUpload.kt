@@ -123,8 +123,19 @@ internal constructor(
             .mapNotNull { testCaseId ->
               try {
                 val testCase = testCaseId?.let { "${appName}/testCases/$it" }
+                val projectNumber = getProjectNumber(options.appId)
+                val resultsBucket =
+                  options.resultsBucket?.let {
+                    ResultsBucketFormatter.formatResultsBucket(projectNumber, it)
+                  }
                 apiService
-                  .testRelease(release.name, testDevices, options.testLoginCredential, testCase)
+                  .testRelease(
+                    release.name,
+                    testDevices,
+                    options.testLoginCredential,
+                    testCase,
+                    resultsBucket
+                  )
                   ?.name
               } catch (e: HttpResponseException) {
                 throw AppDistributionException.fromHttpResponseException(STARTING_TEST_FAILED, e)
@@ -209,10 +220,12 @@ internal constructor(
     }
   }
 
+  private fun getProjectNumber(appId: String): String {
+    return appId.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+  }
+
   private fun getAppNameFromAppId(appId: String): String {
-    // Parse the project number out from the app id
-    val projectNumber = appId.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
-    return "projects/$projectNumber/apps/$appId"
+    return "projects/${getProjectNumber(appId)}/apps/$appId"
   }
 
   companion object {

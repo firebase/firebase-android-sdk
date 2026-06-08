@@ -158,12 +158,6 @@ class TestGroovyBuild(private val testGradleProject: TestGradleProject) {
     const val OLDER_AGP_VERSION = "7.0.0" // released in July 2021
     const val OLDER_GOOGLE_SERVICES_VERSION = "4.3.2" // released in September 2019
 
-    // Latest supported versions
-    const val LATEST_COMPILE_SDK_VERSION = "30" // required for Gradle 9
-    val LATEST_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion()
-    val LATEST_AGP_VERSION = VersionUtils.fetchLatestAgpVersion()
-    val LATEST_GOOGLE_SERVICES_VERSION = VersionUtils.fetchLatestGoogleServicesVersion()
-
     private const val DEFAULT_CUSTOM_ANDROID_BLOCK = ""
   }
 }
