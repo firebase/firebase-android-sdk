@@ -105,28 +105,29 @@ class TopicSubscriptionClient {
     connection.setRequestProperty("x-goog-firebase-installations-auth", token);
     connection.setDoOutput(false);
 
+    int responseCode;
     try {
-      int responseCode = connection.getResponseCode();
-      if (responseCode >= 200 && responseCode < 300) {
-        // Success
-        if (isDebugLogEnabled()) {
-          Log.d(TAG, "Topic " + operation + " for: " + topic + " succeeded.");
-        }
-        return;
-      } else if (responseCode == 404 || responseCode == 403) {
-        if (isDebugLogEnabled()) {
-          Log.d(TAG, "Topic " + operation + " failed: " + connection.getResponseMessage());
-        }
-        throw new IOException("Topic " + operation + " failed: " + connection.getResponseMessage());
-      } else if (responseCode >= 500) {
-        throw new IOException(ERROR_INTERNAL_SERVER_ERROR);
-      } else {
-        throw new IOException("Topic " + operation + " failed with status: " + responseCode);
-      }
+      responseCode = connection.getResponseCode();
     } catch (IOException e) {
       throw new IOException(ERROR_SERVICE_NOT_AVAILABLE, e);
     } finally {
       connection.disconnect();
+    }
+
+    if (responseCode >= 200 && responseCode < 300) {
+      // Success
+      if (isDebugLogEnabled()) {
+        Log.d(TAG, "Topic " + operation + " for: " + topic + " succeeded.");
+      }
+    } else if (responseCode == 404 || responseCode == 403) {
+      if (isDebugLogEnabled()) {
+        Log.d(TAG, "Topic " + operation + " failed: " + connection.getResponseMessage());
+      }
+      throw new IOException("Topic " + operation + " failed: " + connection.getResponseMessage());
+    } else if (responseCode >= 500) {
+      throw new IOException(ERROR_INTERNAL_SERVER_ERROR);
+    } else {
+      throw new IOException("Topic " + operation + " failed with status: " + responseCode);
     }
   }
 
