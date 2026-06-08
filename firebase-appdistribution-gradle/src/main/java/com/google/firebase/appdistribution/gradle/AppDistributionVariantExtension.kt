@@ -47,6 +47,7 @@ constructor(config: VariantExtensionConfig<*>) : VariantExtension, Serializable 
   abstract val testNonBlocking: Property<Boolean?>
   abstract val testCases: Property<String?>
   abstract val testCasesFile: Property<String?>
+  abstract val resultsBucket: Property<String?>
 
   init {
     val buildTypeExtension = config.buildTypeExtension(AppDistributionExtension::class.java)
