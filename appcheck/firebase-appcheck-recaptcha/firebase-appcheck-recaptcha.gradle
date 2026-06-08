@@ -17,7 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup = "appcheck-norelease"
+    libraryGroup = "appcheck"
     releaseNotes {
         name.set("{{app_check}} Recaptcha")
         versionName.set("appcheck-recaptcha")
