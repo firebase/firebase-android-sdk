@@ -694,8 +694,7 @@ class DataConnectAuthUnitTest {
   fun `token should update when IdTokenListener fires`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.dataConnect.authTokenResult(), 2..5)) { authTokens ->
       val idTokenListenerSlot = slot<IdTokenListener>()
-      every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } returns
-        Unit
+      every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
       val expectedAuthTokens = mockInternalAuthProvider.setAnswers(authTokens)
 
       val dataConnectAuth = newDataConnectAuth()
