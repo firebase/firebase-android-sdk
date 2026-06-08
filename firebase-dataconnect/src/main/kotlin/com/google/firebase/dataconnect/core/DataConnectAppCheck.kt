@@ -69,7 +69,7 @@ internal class DataConnectAppCheck(
     private val dataConnectAppCheckRef: WeakReference<DataConnectAppCheck>,
   ) : AppCheckTokenListener {
     override fun onAppCheckTokenChanged(tokenResult: AppCheckTokenResult) {
-      dataConnectAppCheckRef.get()?.onTokenChanged()
+      dataConnectAppCheckRef.get()?.onTokenChanged(tokenResult.token)
     }
   }
 }

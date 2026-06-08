@@ -78,7 +78,7 @@ internal class DataConnectAuth(
     private val dataConnectAuthRef: WeakReference<DataConnectAuth>
   ) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
-      dataConnectAuthRef.get()?.onTokenChanged()
+      dataConnectAuthRef.get()?.onTokenChanged(tokenResult.token)
     }
   }
 

@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
 import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.IdTokenListener
@@ -31,11 +32,15 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DelayedDeferred
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
+import com.google.firebase.dataconnect.testutil.SuspendingFlag
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
+import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authUid
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
@@ -43,6 +48,7 @@ import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessag
 import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.inject.Deferred.DeferredHandler
+import com.google.firebase.internal.InternalTokenResult
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
@@ -66,8 +72,10 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbs.products.brand
 import io.kotest.property.checkAll
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -767,6 +775,77 @@ class DataConnectAuthUnitTest {
     }
   }
 
+  @Test
+  fun `onTokenChanged() should cancel in-flight getToken() requests and retry`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    val idTokenListener = dataConnectAuth.initializeAndGetIdTokenListener()
+
+    val taskCompletionSource1 = TaskCompletionSource<GetTokenResult>()
+    val finalToken = GetAuthTokenResult("test-token", AuthUid("test-user"))
+    val getAccessTokenCalled = SuspendingFlag()
+    run {
+      val tokenTask = taskForToken(finalToken.token, finalToken.authUid)
+      coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
+        {
+          val isFirstCall = !getAccessTokenCalled.getAndSet()
+          if (isFirstCall) {
+            taskCompletionSource1.task
+          } else {
+            tokenTask
+          }
+        }
+    }
+
+    val getTokenJob = async { dataConnectAuth.getToken(requestId) }
+    getAccessTokenCalled.await()
+
+    idTokenListener.onIdTokenChanged(mockk(relaxed = true))
+    advanceUntilIdle()
+    taskCompletionSource1.setException(Exception("unhang hung test tv8v7pyf6v"))
+    getTokenJob.await() shouldBe finalToken
+    dataConnectAuth.token.value shouldBe finalToken
+  }
+
+  @Test
+  fun `onTokenChanged() should call getToken() if new token is different`() = runTest {
+    val distinctAuthTokenPairArb =
+      Arb.dataConnect.authToken().orNull(nullProbability = 0.2).distinctPair()
+    checkAll(propTestConfig, distinctAuthTokenPairArb, Arb.dataConnect.authUid()) {
+      (authToken1, authToken2),
+      authUid ->
+      val dataConnectAuth = newDataConnectAuth()
+      val idTokenListener = dataConnectAuth.initializeAndGetIdTokenListener()
+      coEvery { mockInternalAuthProvider.getAccessToken(any()) }
+        .returnsMany(taskForToken(authToken1, authUid), taskForToken(authToken2, authUid))
+      val result1 = dataConnectAuth.getToken(requestId)
+      check(checkNotNull(result1).token == authToken1)
+      idTokenListener.onIdTokenChanged(InternalTokenResult(authToken2))
+
+      dataConnectAuth.token.test { awaitUntilItem { it?.token == authToken2 } }
+      verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(any()) }
+      clearMocks(mockInternalAuthProvider)
+    }
+  }
+
+  @Test
+  fun `onTokenChanged() should NOT call getToken() if new token is the same`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.authTokenResult()) { (authToken, authUid) ->
+      val dataConnectAuth = newDataConnectAuth()
+      val idTokenListener = dataConnectAuth.initializeAndGetIdTokenListener()
+      coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+        taskForToken(authToken, authUid) andThenThrows
+        Exception("should never get here j23s6c4h33")
+      val result1 = dataConnectAuth.getToken(requestId)
+      check(checkNotNull(result1).token == authToken)
+      idTokenListener.onIdTokenChanged(InternalTokenResult(authToken))
+
+      advanceUntilIdle()
+      dataConnectAuth.token.value?.token shouldBe authToken
+      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(any()) }
+      clearMocks(mockInternalAuthProvider)
+    }
+  }
+
   private fun TestScope.newDataConnectAuth(
     deferredInternalAuthProvider: DeferredInternalAuthProvider =
       ImmediateDeferred(mockInternalAuthProvider),
@@ -780,6 +859,14 @@ class DataConnectAuthUnitTest {
         StandardTestDispatcher(testScheduler, name = "4jg7adscn6_DataConnectAuth_TestDispatcher"),
       logger = logger
     )
+
+  private suspend fun DataConnectAuth.initializeAndGetIdTokenListener(): IdTokenListener {
+    val idTokenListenerSlot = slot<IdTokenListener>()
+    every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
+    initialize()
+    awaitTokenProvider()
+    return idTokenListenerSlot.captured
+  }
 
   private companion object {
     val `check every 100 milliseconds for 2 seconds` = eventuallyConfig {

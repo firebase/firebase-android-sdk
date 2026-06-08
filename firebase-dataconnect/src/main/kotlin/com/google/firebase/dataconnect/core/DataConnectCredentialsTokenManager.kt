@@ -21,6 +21,7 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.core.DataConnectCredentialsTokenManager.GetTokenResult
+import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
@@ -397,6 +398,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   private sealed class GetTokenRetry(message: String) : Exception(message)
   private class ForceRefresh(message: String) : GetTokenRetry(message)
   private class NewProvider(message: String) : GetTokenRetry(message)
+  private class NewToken(message: String) : GetTokenRetry(message)
 
   @DeferredApi
   private fun onProviderAvailable(newProvider: T) {
@@ -437,10 +439,34 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
     }
   }
 
-  protected fun onTokenChanged() {
+  protected fun onTokenChanged(newToken: String?) {
+    if (token.value?.token == newToken) {
+      return
+    }
+
     val invocationId = idStringGenerator.next("otc")
-    logger.debug { "$invocationId onTokenChanged()" }
-    forceRefresh() // make sure getToken() gets the *new* token, not an old one
+    logger.debug { "$invocationId onTokenChanged(newToken=${newToken?.toScrubbedAccessToken()})" }
+
+    while (true) {
+      val currentState = state.value
+
+      val activeState =
+        when (currentState) {
+          State.New -> return
+          is State.Initialized -> break
+          is State.Idle -> break
+          is State.Active -> currentState
+          State.Closed -> return
+        }
+
+      val newState = State.Idle(activeState.provider, forceTokenRefresh = false)
+      if (state.compareAndSet(currentState, newState)) {
+        val message = "$invocationId a new token is available (j567n2577q)"
+        activeState.job.cancel(message, NewToken(message))
+        break
+      }
+    }
+
     coroutineScope.launch(CoroutineName(invocationId)) { getToken(invocationId) }
   }
 
