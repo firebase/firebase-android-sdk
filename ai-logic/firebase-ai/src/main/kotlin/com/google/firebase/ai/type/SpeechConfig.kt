@@ -110,7 +110,7 @@ private constructor(
   /**
    * Constructs a [SpeechConfig] for a multi-speaker setup.
    *
-   * Note: Multi-speaker configurations are not supported by the Live API (e.g.,
+   * **Note:** Multi-speaker configurations are not supported by the Live API (e.g.,
    * [LiveGenerationConfig]), and will be silently ignored by the backend.
    *
    * @param multiSpeakerVoiceConfig The configuration detailing multiple speakers and their
