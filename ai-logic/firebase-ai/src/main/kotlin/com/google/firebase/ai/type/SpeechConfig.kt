@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
  * Configures a participating speaker within a multi-speaker setup.
  *
  * When generating multi-speaker conversational audio, each speaker must be configured with a unique
- * name and a specific voice. Find the list of
- * [supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ * name and a specific voice. Find the list of supported voices for
+ * [Gemini Developer API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) and
+ * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
  * @property speaker The unique name/identifier of the speaker (e.g., `"Alice"`).
  * @property voice The specific [Voice] assigned to this speaker.
  */
 @PublicPreviewAPI
-@Serializable
-public data class SpeakerVoiceConfig(
+public class SpeakerVoiceConfig(
   public val speaker: String,
   public val voice: Voice,
 ) {
@@ -44,8 +43,24 @@ public data class SpeakerVoiceConfig(
   @Serializable
   internal data class Internal(
     val speaker: String,
-    @SerialName("voice_config") val voiceConfig: VoiceConfigInternal,
+    val voiceConfig: VoiceConfigInternal,
   )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SpeakerVoiceConfig) return false
+    return speaker == other.speaker && voice == other.voice
+  }
+
+  override fun hashCode(): Int {
+    var result = speaker.hashCode()
+    result = 31 * result + voice.hashCode()
+    return result
+  }
+
+  override fun toString(): String {
+    return "SpeakerVoiceConfig(speaker=$speaker, voice=$voice)"
+  }
 }
 
 /**
@@ -62,8 +77,7 @@ public data class SpeakerVoiceConfig(
  * Currently, the backend requires exactly **two** speaker voice configurations.
  */
 @PublicPreviewAPI
-@Serializable
-public data class MultiSpeakerVoiceConfig(
+public class MultiSpeakerVoiceConfig(
   public val speakerVoiceConfigs: List<SpeakerVoiceConfig>,
 ) {
   internal fun toInternal() =
@@ -71,8 +85,22 @@ public data class MultiSpeakerVoiceConfig(
 
   @Serializable
   internal data class Internal(
-    @SerialName("speaker_voice_configs") val speakerVoiceConfigs: List<SpeakerVoiceConfig.Internal>,
+    val speakerVoiceConfigs: List<SpeakerVoiceConfig.Internal>,
   )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is MultiSpeakerVoiceConfig) return false
+    return speakerVoiceConfigs == other.speakerVoiceConfigs
+  }
+
+  override fun hashCode(): Int {
+    return speakerVoiceConfigs.hashCode()
+  }
+
+  override fun toString(): String {
+    return "MultiSpeakerVoiceConfig(speakerVoiceConfigs=$speakerVoiceConfigs)"
+  }
 }
 
 /**
@@ -129,10 +157,9 @@ private constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("voice_config") val voiceConfig: VoiceConfigInternal? = null,
-    @SerialName("multi_speaker_voice_config")
+    val voiceConfig: VoiceConfigInternal? = null,
     val multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig.Internal? = null,
-    @SerialName("language_code") val languageCode: String? = null,
+    val languageCode: String? = null,
   )
 
   internal fun toInternal(): Internal {

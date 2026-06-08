@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Google LLC
+ * Copyright 2023 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -301,7 +300,6 @@ private constructor(
       speechConfig = speechConfig?.toInternal()
     )
 
-  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     val temperature: Float?,

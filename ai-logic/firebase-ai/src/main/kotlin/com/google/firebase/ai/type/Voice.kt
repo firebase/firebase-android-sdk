@@ -16,27 +16,37 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. Find the list of
- * [supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ * Various voices supported by the server. Find the list of supported voices for
+ * [Gemini Developer API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) and
+ * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
  * @property voiceName The name of the voice to use (e.g., `"Kore"`).
  */
 @PublicPreviewAPI
-@Serializable
-public data class Voice(public val voiceName: String) {
+public class Voice(public val voiceName: String) {
   internal fun toInternal(): PrebuiltVoiceInternal {
     return PrebuiltVoiceInternal(voiceName)
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Voice) return false
+    return voiceName == other.voiceName
+  }
+
+  override fun hashCode(): Int {
+    return voiceName.hashCode()
+  }
+
+  override fun toString(): String {
+    return "Voice(voiceName=$voiceName)"
+  }
 }
 
-@Serializable
-internal data class PrebuiltVoiceInternal(@SerialName("voice_name") val voiceName: String)
+@Serializable internal data class PrebuiltVoiceInternal(val voiceName: String)
 
 @Serializable
-internal data class VoiceConfigInternal(
-  @SerialName("prebuilt_voice_config") val prebuiltVoiceConfig: PrebuiltVoiceInternal
-)
+internal data class VoiceConfigInternal(val prebuiltVoiceConfig: PrebuiltVoiceInternal)

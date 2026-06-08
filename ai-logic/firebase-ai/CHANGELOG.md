@@ -1,6 +1,7 @@
 # Unreleased
 
-- [feature] Added support for `SpeechConfig` in `GenerationConfig`. Added `MultiSpeakerVoiceConfig` and `languageCode` in `SpeechConfig`. (#8100)
+- [feature] Added support for `SpeechConfig` in `GenerationConfig`.
+  Added `MultiSpeakerVoiceConfig` and `languageCode` in `SpeechConfig`. (#8100)
 - [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
 
 # 17.12.1

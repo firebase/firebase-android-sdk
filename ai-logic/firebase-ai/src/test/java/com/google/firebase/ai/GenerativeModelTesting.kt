@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Google LLC
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -501,10 +501,10 @@ internal class GenerativeModelTesting {
     request.text.let {
       it shouldContainJsonKey "generation_config"
       it.shouldContainJsonKeyValue(
-        "$.generation_config.speech_config.voice_config.prebuilt_voice_config.voice_name",
+        "$.generation_config.speech_config.voiceConfig.prebuiltVoiceConfig.voiceName",
         "Puck"
       )
-      it.shouldContainJsonKeyValue("$.generation_config.speech_config.language_code", "en-US")
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
     }
   }
 
@@ -566,22 +566,22 @@ internal class GenerativeModelTesting {
     request.text.let {
       it shouldContainJsonKey "generation_config"
       it.shouldContainJsonKeyValue(
-        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[0].speaker",
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].speaker",
         "Speaker1"
       )
       it.shouldContainJsonKeyValue(
-        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[0].voice_config.prebuilt_voice_config.voice_name",
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].voiceConfig.prebuiltVoiceConfig.voiceName",
         "Puck"
       )
       it.shouldContainJsonKeyValue(
-        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[1].speaker",
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].speaker",
         "Speaker2"
       )
       it.shouldContainJsonKeyValue(
-        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[1].voice_config.prebuilt_voice_config.voice_name",
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].voiceConfig.prebuiltVoiceConfig.voiceName",
         "Charon"
       )
-      it.shouldContainJsonKeyValue("$.generation_config.speech_config.language_code", "en-US")
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
     }
   }
 

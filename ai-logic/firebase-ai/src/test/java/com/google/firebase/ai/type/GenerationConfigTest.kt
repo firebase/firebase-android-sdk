@@ -32,9 +32,9 @@ internal class GenerationConfigTest {
       """
       {
         "speech_config": {
-          "voice_config": {
-            "prebuilt_voice_config": {
-              "voice_name": "Charon"
+          "voiceConfig": {
+            "prebuiltVoiceConfig": {
+              "voiceName": "Charon"
             }
           }
         }
@@ -55,10 +55,10 @@ internal class GenerationConfigTest {
       """
       {
         "speech_config": {
-          "language_code": "en-US",
-          "voice_config": {
-            "prebuilt_voice_config": {
-              "voice_name": "Charon"
+          "languageCode": "en-US",
+          "voiceConfig": {
+            "prebuiltVoiceConfig": {
+              "voiceName": "Charon"
             }
           }
         }
@@ -89,27 +89,27 @@ internal class GenerationConfigTest {
       """
       {
         "speech_config": {
-          "multi_speaker_voice_config": {
-            "speaker_voice_configs": [
+          "multiSpeakerVoiceConfig": {
+            "speakerVoiceConfigs": [
               {
                 "speaker": "Speaker1",
-                "voice_config": {
-                  "prebuilt_voice_config": {
-                    "voice_name": "Puck"
+                "voiceConfig": {
+                  "prebuiltVoiceConfig": {
+                    "voiceName": "Puck"
                   }
                 }
               },
               {
                 "speaker": "Speaker2",
-                "voice_config": {
-                  "prebuilt_voice_config": {
-                    "voice_name": "Charon"
+                "voiceConfig": {
+                  "prebuiltVoiceConfig": {
+                    "voiceName": "Charon"
                   }
                 }
               }
             ]
           },
-          "language_code": "en-US"
+          "languageCode": "en-US"
         }
       }
     """
