@@ -81,7 +81,7 @@ public class MultiSpeakerVoiceConfig(
  *
  * @property voice The single-speaker [Voice] configuration.
  * @property multiSpeakerVoiceConfig The multi-speaker configuration. Note that this configuration
- * is not supported by the Live API (e.g., [LiveGenerationConfig]) and will be silently ignored.
+ * is not supported by the Live API (e.g., [LiveGenerationConfig]).
  * @property languageCode The optional IETF BCP-47 language code (e.g., `"en-US"`, `"es-ES"`) used
  * to guide the model's speech synthesis and recognition.
  */
