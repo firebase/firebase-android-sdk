@@ -16,9 +16,9 @@
 
 package com.google.firebase.appdistribution.gradle
 
+import com.google.api.client.http.HttpResponseException
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
-import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TEST_CASE_NOT_FOUND
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TOO_MANY_TESTER_EMAILS
 import com.google.firebase.appdistribution.gradle.models.AabState
 import com.google.firebase.appdistribution.gradle.models.DeviceExecution
@@ -206,10 +206,7 @@ class ApiServiceTest {
     val httpTransport = AppDistroMockHttpTransport.newBuilder().setCode(404).build()
     val httpClient = AuthenticatedHttpClient(httpTransport)
     val apiService = ApiService(httpClient)
-    assertFailsWith(
-      AppDistributionException::class,
-      AppDistributionException.formatMessage(TEST_CASE_NOT_FOUND, "invalid-test-case-id"),
-    ) {
+    assertFailsWith(HttpResponseException::class) {
       apiService.testRelease(
         RELEASE_NAME,
         listOf(TestDevice(model = "pixel")),

@@ -20,7 +20,6 @@ import com.google.api.client.http.HttpResponseException
 import com.google.firebase.appdistribution.gradle.models.AabState
 import com.google.firebase.appdistribution.gradle.models.WrappedErrorResponse
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
 import java.io.IOException
 import org.gradle.api.logging.Logging
 
@@ -136,10 +135,13 @@ constructor(
       var message = exception.statusMessage
       try {
         val response = Gson().fromJson(exception.content, WrappedErrorResponse::class.java)
-        if (response?.error != null) {
-          message = response.error.message
+        val error = response?.error
+        if (error != null) {
+          val localizedMessageDetail =
+            error.details?.find { it.type == "type.googleapis.com/google.rpc.LocalizedMessage" }
+          message = localizedMessageDetail?.message ?: error.message ?: exception.statusMessage
         }
-      } catch (e: JsonSyntaxException) {
+      } catch (e: Exception) {
         logger.warn("Failed to parse error response: {}", exception.content)
       }
       return message
