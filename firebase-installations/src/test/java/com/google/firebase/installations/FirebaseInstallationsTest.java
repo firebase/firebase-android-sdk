@@ -501,6 +501,65 @@ public class FirebaseInstallationsTest {
   }
 
   @Test
+  public void testFidListener_fidRegistered_sameFid_successful() throws Exception {
+    when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(TEST_INSTALLATION_RESPONSE);
+
+    FakeFidListener fidListener = new FakeFidListener();
+
+    // Register the FidListener
+    firebaseInstallations.registerFidListener(fidListener);
+
+    // Do the actual getId() call under test.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> task = firebaseInstallations.getId();
+
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_FID_1);
+
+    // Verify FidListener receives fid registration notification.
+    assertThat(fidListener.getLatestFid()).isEqualTo(TEST_FID_1);
+  }
+
+  @Test
+  public void testFidListener_alreadyRegistered_noFidChange_notNotified() throws Exception {
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            utils.currentTimeInSecs(),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+
+    FakeFidListener fidListener = new FakeFidListener();
+
+    // Register the FidListener
+    firebaseInstallations.registerFidListener(fidListener);
+
+    // Do the actual getId() call under test.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> task = firebaseInstallations.getId();
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
+
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    // Verify FidListener does not receive any notification since the FID was already registered
+    // and didn't change.
+    assertNull(fidListener.getLatestFid());
+  }
+
+  @Test
   public void testGetId_migrateIid_successful() throws Exception {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
     when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
