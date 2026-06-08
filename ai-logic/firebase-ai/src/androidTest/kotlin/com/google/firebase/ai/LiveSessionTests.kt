@@ -28,12 +28,10 @@ import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.LiveSessionResumptionUpdate
-import com.google.firebase.ai.type.MultiSpeakerVoiceConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SessionResumptionConfig
-import com.google.firebase.ai.type.SpeakerVoiceConfig
 import com.google.firebase.ai.type.SpeechConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.Voice
@@ -297,38 +295,6 @@ class LiveSessionTests {
       responseModality = ResponseModality.AUDIO
       outputAudioTranscription = AudioTranscriptionConfig()
       speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
-    }
-    for (liveModel in AIModels.getAllLiveModels(config = config)) {
-      val session = liveModel.connect()
-      try {
-        session.sendTextRealtime("Hello")
-        val text =
-          withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
-        text.shouldNotBeNull()
-      } finally {
-        session.close()
-      }
-    }
-  }
-
-  @Test
-  fun testRealtime_speechConfig_multiSpeaker(): Unit = runBlocking {
-    // Note: Multi-speaker configurations are not supported by the Live API, and will
-    // be silently ignored by the backend.
-    val config = liveGenerationConfig {
-      responseModality = ResponseModality.AUDIO
-      outputAudioTranscription = AudioTranscriptionConfig()
-      speechConfig =
-        SpeechConfig(
-          multiSpeakerVoiceConfig =
-            MultiSpeakerVoiceConfig(
-              listOf(
-                SpeakerVoiceConfig("Speaker1", Voice("Puck")),
-                SpeakerVoiceConfig("Speaker2", Voice("Charon"))
-              )
-            ),
-          languageCode = "en-US"
-        )
     }
     for (liveModel in AIModels.getAllLiveModels(config = config)) {
       val session = liveModel.connect()
