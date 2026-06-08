@@ -48,13 +48,11 @@ internal class DataConnectAuth(
   private val idTokenListener = IdTokenListenerImpl(weakThis)
 
   @DeferredApi
-  override fun addTokenListener(provider: InternalAuthProvider) {
+  override fun addTokenListener(provider: InternalAuthProvider) =
     provider.addIdTokenListener(idTokenListener)
-  }
 
-  override fun removeTokenListener(provider: InternalAuthProvider) {
+  override fun removeTokenListener(provider: InternalAuthProvider) =
     provider.removeIdTokenListener(idTokenListener)
-  }
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
     provider.getAccessToken(forceRefresh).await().let {
