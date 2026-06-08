@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
  *
  * When generating multi-speaker conversational audio, each speaker must be configured with a unique
  * name and a specific voice. Find the list of supported voices for
- * [Gemini Developer API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) and
+ * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
  * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
  * @property speaker The unique name/identifier of the speaker (e.g., `"Alice"`).
@@ -45,22 +45,6 @@ public class SpeakerVoiceConfig(
     val speaker: String,
     val voiceConfig: VoiceConfigInternal,
   )
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is SpeakerVoiceConfig) return false
-    return speaker == other.speaker && voice == other.voice
-  }
-
-  override fun hashCode(): Int {
-    var result = speaker.hashCode()
-    result = 31 * result + voice.hashCode()
-    return result
-  }
-
-  override fun toString(): String {
-    return "SpeakerVoiceConfig(speaker=$speaker, voice=$voice)"
-  }
 }
 
 /**
@@ -87,20 +71,6 @@ public class MultiSpeakerVoiceConfig(
   internal data class Internal(
     val speakerVoiceConfigs: List<SpeakerVoiceConfig.Internal>,
   )
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is MultiSpeakerVoiceConfig) return false
-    return speakerVoiceConfigs == other.speakerVoiceConfigs
-  }
-
-  override fun hashCode(): Int {
-    return speakerVoiceConfigs.hashCode()
-  }
-
-  override fun toString(): String {
-    return "MultiSpeakerVoiceConfig(speakerVoiceConfigs=$speakerVoiceConfigs)"
-  }
 }
 
 /**

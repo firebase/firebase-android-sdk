@@ -257,7 +257,7 @@ private constructor(
         responseModalities = responseModalities,
         thinkingConfig = thinkingConfig,
         imageConfig = imageConfig,
-        speechConfig = speechConfig
+        speechConfig = speechConfig,
       )
     }
   }
@@ -278,7 +278,7 @@ private constructor(
       responseModalities = responseModalities,
       thinkingConfig = thinkingConfig,
       imageConfig = imageConfig,
-      speechConfig = speechConfig
+      speechConfig = speechConfig,
     )
 
   internal fun toInternal() =
@@ -297,7 +297,7 @@ private constructor(
       responseModalities = responseModalities?.map { it.toInternal() },
       thinkingConfig = thinkingConfig?.toInternal(),
       imageConfig = imageConfig?.toInternal(),
-      speechConfig = speechConfig?.toInternal()
+      speechConfig = speechConfig?.toInternal(),
     )
 
   @Serializable
@@ -316,7 +316,7 @@ private constructor(
     @SerialName("response_modalities") val responseModalities: List<String>? = null,
     @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null,
     @SerialName("image_config") val imageConfig: ImageConfig.Internal? = null,
-    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null
+    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null,
   )
 
   public companion object {

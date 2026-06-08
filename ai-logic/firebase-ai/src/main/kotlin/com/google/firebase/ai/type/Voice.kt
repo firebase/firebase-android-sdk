@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Various voices supported by the server. Find the list of supported voices for
- * [Gemini Developer API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts) and
+ * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
  * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
  * @property voiceName The name of the voice to use (e.g., `"Kore"`).
@@ -29,20 +29,6 @@ import kotlinx.serialization.Serializable
 public class Voice(public val voiceName: String) {
   internal fun toInternal(): PrebuiltVoiceInternal {
     return PrebuiltVoiceInternal(voiceName)
-  }
-
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (other !is Voice) return false
-    return voiceName == other.voiceName
-  }
-
-  override fun hashCode(): Int {
-    return voiceName.hashCode()
-  }
-
-  override fun toString(): String {
-    return "Voice(voiceName=$voiceName)"
   }
 }
 
