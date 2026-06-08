@@ -123,6 +123,8 @@ class TopicSubscriptionClient {
       } else {
         throw new IOException("Topic " + operation + " failed with status: " + responseCode);
       }
+    } catch (IOException e) {
+      throw new IOException(ERROR_SERVICE_NOT_AVAILABLE, e);
     } finally {
       connection.disconnect();
     }
