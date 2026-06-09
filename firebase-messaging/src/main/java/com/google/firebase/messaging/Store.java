@@ -189,5 +189,12 @@ class Store {
       return System.currentTimeMillis() > timestamp + REFRESH_PERIOD_MILLIS
           || !appVersion.equals(this.appVersion);
     }
+
+    /**
+     * Returns whether the existing token is a FID based on its length.
+     */
+    boolean isFid() {
+      return token.length() <= 22;
+    }
   }
 }

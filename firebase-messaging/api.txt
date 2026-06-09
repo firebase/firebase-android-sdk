@@ -2,17 +2,19 @@
 package com.google.firebase.messaging {
 
   public class FirebaseMessaging {
-    method public com.google.android.gms.tasks.Task<java.lang.Void!> deleteToken();
+    method @Deprecated public com.google.android.gms.tasks.Task<java.lang.Void!> deleteToken();
     method public boolean deliveryMetricsExportToBigQueryEnabled();
     method public static com.google.firebase.messaging.FirebaseMessaging getInstance();
-    method public com.google.android.gms.tasks.Task<java.lang.String!> getToken();
+    method @Deprecated public com.google.android.gms.tasks.Task<java.lang.String!> getToken();
     method public boolean isAutoInitEnabled();
     method public boolean isNotificationDelegationEnabled();
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> register();
     method @Deprecated public void send(com.google.firebase.messaging.RemoteMessage);
     method public void setAutoInitEnabled(boolean);
     method public void setDeliveryMetricsExportToBigQuery(boolean);
     method public com.google.android.gms.tasks.Task<java.lang.Void!> setNotificationDelegationEnabled(boolean);
     method public com.google.android.gms.tasks.Task<java.lang.Void!> subscribeToTopic(String);
+    method public com.google.android.gms.tasks.Task<java.lang.Void!> unregister();
     method public com.google.android.gms.tasks.Task<java.lang.Void!> unsubscribeFromTopic(String);
     field @Deprecated public static final String INSTANCE_ID_SCOPE = "FCM";
   }
@@ -23,9 +25,11 @@ package com.google.firebase.messaging {
     method @WorkerThread public void onDeletedMessages();
     method @WorkerThread public void onMessageReceived(com.google.firebase.messaging.RemoteMessage);
     method @Deprecated @WorkerThread public void onMessageSent(String);
-    method @WorkerThread public void onNewToken(String);
+    method @Deprecated @WorkerThread public void onNewToken(String);
+    method @WorkerThread public void onRegistered(String);
     method @Deprecated @WorkerThread public void onSendError(String, Exception);
     method public final int onStartCommand(android.content.Intent!, int, int);
+    method @WorkerThread public void onUnregistered(String);
   }
 
   public final class MessagingKt {
@@ -42,7 +46,7 @@ package com.google.firebase.messaging {
     method public com.google.firebase.messaging.RemoteMessage.Notification? getNotification();
     method @com.google.firebase.messaging.RemoteMessage.MessagePriority public int getOriginalPriority();
     method @com.google.firebase.messaging.RemoteMessage.MessagePriority public int getPriority();
-    method public String? getSenderId();
+    method @Deprecated public String? getSenderId();
     method public long getSentTime();
     method @Deprecated public String? getTo();
     method public int getTtl();
