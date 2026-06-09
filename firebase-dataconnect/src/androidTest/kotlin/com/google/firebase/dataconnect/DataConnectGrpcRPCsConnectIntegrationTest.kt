@@ -44,6 +44,8 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.uuid
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
@@ -112,8 +114,8 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     connect(
       streamId = streamIdArb.sample(),
       callerSdkType = callerSdkTypeArb.sample(),
-      authToken = null,
-      appCheckToken = null,
+      dataConnectAuth = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
+      dataConnectAppCheck = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
       idStringGenerator = IdStringGenerator(Random.Default),
     )
 }
