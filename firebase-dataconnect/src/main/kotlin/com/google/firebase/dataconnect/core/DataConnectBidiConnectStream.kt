@@ -73,7 +73,12 @@ import kotlinx.coroutines.launch
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
  */
 internal class DataConnectBidiConnectStream(
-  flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, AuthUid?>>,
+  flow:
+    Flow<
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, DataConnectAuth.GetAuthTokenResult?
+      >
+    >,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -287,8 +292,9 @@ internal class DataConnectBidiConnectStream(
       val outgoingRequests: SendChannel<StreamRequestProto>,
     ) : Connection {
       constructor(
-        event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, AuthUid?>
-      ) : this(event.connectionId, event.connectionCookie, event.outgoingRequests)
+        event:
+          GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, DataConnectAuth.GetAuthTokenResult?>
+      ) : this(event.connectionId, event.connectionCookie?.authUid, event.outgoingRequests)
 
       override fun toString() = "Connected(connectionId=$connectionId)"
     }

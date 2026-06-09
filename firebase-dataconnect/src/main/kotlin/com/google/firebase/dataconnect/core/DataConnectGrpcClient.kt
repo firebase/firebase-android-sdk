@@ -98,15 +98,13 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream =
-    grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
-      connect(
-        requestId,
-        callerSdkType,
-        authToken,
-        appCheckToken,
-        idStringGenerator,
-      )
-    }
+    grpcRPCs.connect(
+      requestId,
+      callerSdkType,
+      dataConnectAuth,
+      dataConnectAppCheck,
+      idStringGenerator,
+    )
 
   private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,

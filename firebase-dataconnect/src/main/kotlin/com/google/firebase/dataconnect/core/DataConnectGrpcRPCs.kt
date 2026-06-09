@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -368,11 +369,11 @@ internal class DataConnectGrpcRPCs(
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    dataConnectAuth: DataConnectAuth,
+    dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
-    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
+    val authUid = dataConnectAuth.getToken(streamId)?.authUid
 
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
@@ -382,17 +383,31 @@ internal class DataConnectGrpcRPCs(
     val grpcBidiFlowListener =
       ConnectGrpcBidiFlowListener(
         streamId = streamId,
-        authUid = authToken?.authUid,
+        authUid = authUid,
         initRequest = initRequest,
         kotlinMethodName = "connect()",
       )
+
+    val createHeaders:
+      suspend (String) -> GrpcBidiFlow.HeadersResult<DataConnectAuth.GetAuthTokenResult?> =
+      {
+        val authToken = dataConnectAuth.getToken(streamId)
+        if (authToken?.authUid != authUid) {
+          throw AuthUidChangedException(
+            "Firebase Auth UID changed from $authUid to ${authToken?.authUid}"
+          )
+        }
+        val appCheckToken = dataConnectAppCheck.getToken(streamId)
+        val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
+        GrpcBidiFlow.HeadersResult(metadata, authToken)
+      }
 
     val flow =
       GrpcBidiFlow.create(
         grpcChannel = lazyGrpcChannel.get(),
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
-        headers = { GrpcBidiFlow.HeadersResult(metadata, authToken?.authUid) },
+        headers = createHeaders,
         idStringGenerator = idStringGenerator,
         initRequests = listOf(initRequest),
         listener = grpcBidiFlowListener,
@@ -793,3 +808,5 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
 
   return ::getEntityIdForPathFunction
 }
+
+internal class AuthUidChangedException(message: String) : DataConnectException(message)
