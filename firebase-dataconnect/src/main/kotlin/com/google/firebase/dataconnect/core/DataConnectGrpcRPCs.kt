@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -41,6 +42,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.copy
 import com.google.protobuf.Struct
@@ -152,7 +154,7 @@ internal class DataConnectGrpcRPCs(
     operationName: String,
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
@@ -217,7 +219,7 @@ internal class DataConnectGrpcRPCs(
   )
 
   private suspend fun DataConnectCache.queryCacheInfo(
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     request: ExecuteQueryRequest,
   ): QueryCacheInfo {
     val queryId =
@@ -233,7 +235,7 @@ internal class DataConnectGrpcRPCs(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): SqliteSequencedReference<ExecuteQueryResult> {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
@@ -373,7 +375,7 @@ internal class DataConnectGrpcRPCs(
     dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
-    val authUid = dataConnectAuth.getToken(streamId)?.authUid
+    val authUid = dataConnectAuth.getToken(streamId)?.ref?.authUid
 
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
@@ -389,16 +391,17 @@ internal class DataConnectGrpcRPCs(
       )
 
     val createHeaders:
-      suspend (String) -> GrpcBidiFlow.HeadersResult<DataConnectAuth.GetAuthTokenResult?> =
+      suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult>?> =
       {
         val authToken = dataConnectAuth.getToken(streamId)
-        if (authToken?.authUid != authUid) {
+        val authTokenAuthUid = authToken?.ref?.authUid
+        if (authTokenAuthUid != authUid) {
           throw AuthUidChangedException(
-            "Firebase Auth UID changed from $authUid to ${authToken?.authUid}"
+            "Firebase Auth UID changed from $authUid to $authTokenAuthUid"
           )
         }
         val appCheckToken = dataConnectAppCheck.getToken(streamId)
-        val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
+        val metadata = grpcMetadata.get(authToken?.ref, appCheckToken?.ref, callerSdkType)
         GrpcBidiFlow.HeadersResult(metadata, authToken)
       }
 

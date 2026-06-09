@@ -17,10 +17,12 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
@@ -76,7 +78,7 @@ internal class DataConnectBidiConnectStream(
   flow:
     Flow<
       GrpcBidiFlow.Event<
-        StreamRequestProto, StreamResponseProto, DataConnectAuth.GetAuthTokenResult?
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult>?
       >
     >,
   private val coroutineScope: CoroutineScope,
@@ -293,8 +295,10 @@ internal class DataConnectBidiConnectStream(
     ) : Connection {
       constructor(
         event:
-          GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, DataConnectAuth.GetAuthTokenResult?>
-      ) : this(event.connectionId, event.connectionCookie?.authUid, event.outgoingRequests)
+          GrpcBidiFlow.Event.ConnectionInfo<
+            StreamRequestProto, SequencedReference<GetAuthTokenResult>?
+          >
+      ) : this(event.connectionId, event.connectionCookie?.ref?.authUid, event.outgoingRequests)
 
       override fun toString() = "Connected(connectionId=$connectionId)"
     }

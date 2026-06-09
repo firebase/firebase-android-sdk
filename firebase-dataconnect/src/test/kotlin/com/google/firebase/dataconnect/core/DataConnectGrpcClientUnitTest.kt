@@ -41,6 +41,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.sqliteSequenc
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.grpc.Status
@@ -853,7 +855,7 @@ private fun DataConnectAuth.stubGetTokensSimulatingForceRefresh(
 ) {
   val tokenIterator = tokens.iterator()
   val currentToken = AtomicReference(tokenIterator.next())
-  coEvery { getToken(any()) } answers { currentToken.get() }
+  coEvery { getToken(any()) } answers { currentToken.getSequenced() }
   coEvery { forceRefresh() } answers { currentToken.set(tokenIterator.next()) }
 }
 
@@ -862,7 +864,7 @@ private fun DataConnectAppCheck.stubGetTokensSimulatingForceRefresh(
 ) {
   val tokenIterator = tokens.iterator()
   val currentToken = AtomicReference(tokenIterator.next())
-  coEvery { getToken(any()) } answers { currentToken.get() }
+  coEvery { getToken(any()) } answers { currentToken.getSequenced() }
   coEvery { forceRefresh() } answers { currentToken.set(tokenIterator.next()) }
 }
 
@@ -881,12 +883,12 @@ private class TestEnvironment(
 
   val mockDataConnectAuth: DataConnectAuth =
     mockk(relaxed = true, name = "mockDataConnectAuth-cr64w58dm5") {
-      coEvery { getToken(any()) } returns authTokenResult
+      coEvery { getToken(any()) } returns authTokenResult.sequenced()
     }
 
   val mockDataConnectAppCheck: DataConnectAppCheck =
     mockk(relaxed = true, name = "mockDataConnectAppCheck-e2mv4tpqsy") {
-      coEvery { getToken(any()) } returns appCheckTokenResult
+      coEvery { getToken(any()) } returns appCheckTokenResult.sequenced()
     }
 
   val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
@@ -936,3 +938,8 @@ private val defaultExecuteQueryResult =
   )
 
 private val defaultExecuteMutationResult = ExecuteMutationResponse.getDefaultInstance()
+
+private fun <T> AtomicReference<T?>.getSequenced(): SequencedReference<T>? = get()?.sequenced()
+
+private fun <T> T.sequenced(): SequencedReference<T> =
+  SequencedReference(nextSequenceNumber(), this)

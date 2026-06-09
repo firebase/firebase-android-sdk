@@ -51,6 +51,8 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.toKotlinDuration
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.ListValue as ListValueProto
@@ -748,12 +750,12 @@ class DataConnectGrpcRPCsUnitTest {
   private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
     val dataConnectAuth: DataConnectAuth = mockk {
       val token = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } returns token
+      coEvery { getToken(any()) } returns token?.sequenced()
     }
 
     val dataConnectAppCheck: DataConnectAppCheck = mockk {
       val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } returns token
+      coEvery { getToken(any()) } returns token?.sequenced()
     }
 
     return connect(
@@ -918,3 +920,6 @@ private fun listValueFromPath(path: DataConnectPath): ListValueProto {
   }
   return builder.build()
 }
+
+private fun <T> T.sequenced(): SequencedReference<T> =
+  SequencedReference(nextSequenceNumber(), this)

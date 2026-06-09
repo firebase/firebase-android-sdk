@@ -112,7 +112,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   /** The current state of this object. */
   private val state = MutableStateFlow<State<T, R>>(State.New)
 
-  private val _token = MutableStateFlow<R?>(null)
+  private val _token = MutableStateFlow<SequencedReference<R>?>(null)
 
   /**
    * The last token returned from [getToken]
@@ -121,7 +121,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    *
    * After [close] the value of this flow is _not_ cleared, and will remain unchanged indefinitely.
    */
-  val token: StateFlow<R?> = _token.asStateFlow()
+  val token: StateFlow<SequencedReference<R>?> = _token.asStateFlow()
 
   /**
    * Adds the token listener to the given provider.
@@ -302,7 +302,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    * @throws DataConnectException if [close] has been called or is called while the operation is in
    * progress.
    */
-  suspend fun getToken(requestId: String): R? {
+  suspend fun getToken(requestId: String): SequencedReference<R>? {
     val invocationId = idStringGenerator.next("gat")
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
@@ -390,8 +390,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
 
       val tokenResult: R = sequencedResult!!.ref.getOrThrow()
       logger.debug { "$invocationId getToken() returns $tokenResult" }
-      _token.value = tokenResult
-      return tokenResult
+      val sequencedTokenResult = SequencedReference(sequencedResult.sequenceNumber, tokenResult)
+      _token.value = sequencedTokenResult
+      return sequencedTokenResult
     }
   }
 
@@ -440,7 +441,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   }
 
   protected fun onTokenChanged(newToken: String?) {
-    if (token.value?.token == newToken) {
+    if (token.value?.ref?.token == newToken) {
       return
     }
 
