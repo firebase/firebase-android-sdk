@@ -19,14 +19,13 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.Serializable
 
 /**
- * Configures a participating speaker within a multi-speaker setup.
+ * Configures a speaker with a unique name/identifier and a specific voice.
  *
- * When generating multi-speaker conversational audio, each speaker must be configured with a unique
- * name and a specific voice. Find the list of supported voices for
+ * Find the list of supported voices for
  * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
  * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
- * @property speaker The unique name/identifier of the speaker (e.g., `"Alice"`).
+ * @property speaker The unique name/identifier of the speaker.
  * @property voice The specific [Voice] assigned to this speaker.
  */
 @PublicPreviewAPI
