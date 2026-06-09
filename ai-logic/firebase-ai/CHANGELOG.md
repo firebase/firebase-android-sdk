@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
 - [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
 
 # 17.12.1

@@ -98,7 +98,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures:1.2.0")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta02")
+  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)
