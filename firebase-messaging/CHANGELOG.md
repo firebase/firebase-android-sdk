@@ -1,7 +1,7 @@
 # Unreleased
 
-- [feature] Added support for FCM registration using Firebase Installation ID
-- [deprecated] Existing getToken, deleteToken, onNewToken api(s) are deprecated
+- [feature] Added support for FCM registration using Firebase Installation ID (#8087)
+- [deprecated] Existing getToken, deleteToken, onNewToken api(s) are deprecated (#8087)
 
 # 25.0.2
 
