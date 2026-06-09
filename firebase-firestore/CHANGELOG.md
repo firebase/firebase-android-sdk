@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for `minimum` and `maximum` FieldValue operations.
+
 # 26.3.0
 
 - [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.

@@ -778,6 +778,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-appcheck-debug",
         "com.google.firebase:firebase-appcheck-debug-testing",
         "com.google.firebase:firebase-appcheck-playintegrity",
+        "com.google.firebase:firebase-appcheck-recaptcha",
         "com.google.firebase:firebase-appcheck",
         "com.google.firebase:firebase-auth",
         "com.google.firebase:firebase-common",
