@@ -32,7 +32,6 @@ import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import java.lang.ref.WeakReference
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -41,8 +40,11 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.getAndUpdate
@@ -110,6 +112,17 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   /** The current state of this object. */
   private val state = MutableStateFlow<State<T, R>>(State.New)
 
+  private val _token = MutableStateFlow<R?>(null)
+
+  /**
+   * The last token returned from [getToken]
+   *
+   * Returns null if [getToken] has never been called or never completed successfully.
+   *
+   * After [close] the value of this flow is _not_ cleared, and will remain unchanged indefinitely.
+   */
+  val token: StateFlow<R?> = _token.asStateFlow()
+
   /**
    * Adds the token listener to the given provider.
    *
@@ -129,6 +142,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    * refresh if and only if `forceRefresh` is true.
    */
   protected abstract suspend fun getToken(provider: T, forceRefresh: Boolean): R
+
+  /** Invoked synchronously by [close]. */
+  protected abstract fun onClose()
 
   /**
    * Initializes this object.
@@ -173,6 +189,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
 
     weakThis.clear()
     coroutineScope.cancel()
+    onClose()
 
     val oldState = state.getAndUpdate { State.Closed }
     when (oldState) {
@@ -339,7 +356,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
 
       // Ensure that any exception checking below is due to an exception that happened in the
       // coroutine that called getToken(), not from the calling coroutine being cancelled.
-      coroutineContext.ensureActive()
+      currentCoroutineContext().ensureActive()
 
       val sequencedResult = jobResult.getOrNull()
       if (sequencedResult !== null && sequencedResult.sequenceNumber < attemptSequenceNumber) {
@@ -357,6 +374,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
           logger.debug {
             "$invocationId getToken() returns null (FirebaseAuth reports no signed-in user)"
           }
+          _token.value = null
           return null
         } else if (exception is CancellationException) {
           logger.warn(exception) {
@@ -371,10 +389,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
       }
 
       val tokenResult: R = sequencedResult!!.ref.getOrThrow()
-      logger.debug {
-        "$invocationId getToken() returns retrieved token: " +
-          tokenResult.token?.toScrubbedAccessToken()
-      }
+      logger.debug { "$invocationId getToken() returns $tokenResult" }
+      _token.value = tokenResult
       return tokenResult
     }
   }
@@ -382,6 +398,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   private sealed class GetTokenRetry(message: String) : Exception(message)
   private class ForceRefresh(message: String) : GetTokenRetry(message)
   private class NewProvider(message: String) : GetTokenRetry(message)
+  private class NewToken(message: String) : GetTokenRetry(message)
 
   @DeferredApi
   private fun onProviderAvailable(newProvider: T) {
@@ -420,6 +437,37 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
         oldState.job.cancel(message, NewProvider(message))
       }
     }
+  }
+
+  protected fun onTokenChanged(newToken: String?) {
+    if (token.value?.token == newToken) {
+      return
+    }
+
+    val invocationId = idStringGenerator.next("otc")
+    logger.debug { "$invocationId onTokenChanged(newToken=${newToken?.toScrubbedAccessToken()})" }
+
+    while (true) {
+      val currentState = state.value
+
+      val activeState =
+        when (currentState) {
+          State.New -> return
+          is State.Initialized -> break
+          is State.Idle -> break
+          is State.Active -> currentState
+          State.Closed -> return
+        }
+
+      val newState = State.Idle(activeState.provider, forceTokenRefresh = false)
+      if (state.compareAndSet(currentState, newState)) {
+        val message = "$invocationId a new token is available (j567n2577q)"
+        activeState.job.cancel(message, NewToken(message))
+        break
+      }
+    }
+
+    coroutineScope.launch(CoroutineName(invocationId)) { getToken(invocationId) }
   }
 
   /**

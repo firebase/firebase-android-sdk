@@ -1,7 +1,8 @@
 # Unreleased
 
-- [feature] Added support for `SpeechConfig` in `GenerationConfig`.
-  Added `MultiSpeakerVoiceConfig` and `languageCode` in `SpeechConfig`. (#8100)
+- [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`. 
+  Integrated `SpeechConfig` into `GenerationConfig` to support Text-to-speech generation (TTS). (#8100)
+- [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
 - [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
 
 # 17.12.1
