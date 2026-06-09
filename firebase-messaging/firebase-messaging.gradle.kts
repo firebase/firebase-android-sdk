@@ -102,7 +102,7 @@ dependencies {
   api("com.google.firebase:firebase-encoders-json:18.0.0")
   api("com.google.firebase:firebase-encoders-proto:16.0.0")
   api("com.google.firebase:firebase-iid-interop:17.1.0")
-  api("com.google.firebase:firebase-installations:18.0.0") {
+  api("com.google.firebase:firebase-installations:19.1.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
   api("com.google.firebase:firebase-installations-interop:17.1.0")
