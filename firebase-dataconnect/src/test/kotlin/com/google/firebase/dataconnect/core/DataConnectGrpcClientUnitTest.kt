@@ -855,7 +855,7 @@ private fun DataConnectAuth.stubGetTokensSimulatingForceRefresh(
 ) {
   val tokenIterator = tokens.iterator()
   val currentToken = AtomicReference(tokenIterator.next())
-  coEvery { getToken(any()) } answers { currentToken.getSequenced() }
+  coEvery { getToken(any()) } answers { currentToken.get().sequenced() }
   coEvery { forceRefresh() } answers { currentToken.set(tokenIterator.next()) }
 }
 
@@ -864,7 +864,7 @@ private fun DataConnectAppCheck.stubGetTokensSimulatingForceRefresh(
 ) {
   val tokenIterator = tokens.iterator()
   val currentToken = AtomicReference(tokenIterator.next())
-  coEvery { getToken(any()) } answers { currentToken.getSequenced() }
+  coEvery { getToken(any()) } answers { currentToken.get().sequenced() }
   coEvery { forceRefresh() } answers { currentToken.set(tokenIterator.next()) }
 }
 
@@ -883,12 +883,12 @@ private class TestEnvironment(
 
   val mockDataConnectAuth: DataConnectAuth =
     mockk(relaxed = true, name = "mockDataConnectAuth-cr64w58dm5") {
-      coEvery { getToken(any()) } returns authTokenResult.sequenced()
+      coEvery { getToken(any()) } answers { authTokenResult.sequenced() }
     }
 
   val mockDataConnectAppCheck: DataConnectAppCheck =
     mockk(relaxed = true, name = "mockDataConnectAppCheck-e2mv4tpqsy") {
-      coEvery { getToken(any()) } returns appCheckTokenResult.sequenced()
+      coEvery { getToken(any()) } answers { appCheckTokenResult.sequenced() }
     }
 
   val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
@@ -938,8 +938,6 @@ private val defaultExecuteQueryResult =
   )
 
 private val defaultExecuteMutationResult = ExecuteMutationResponse.getDefaultInstance()
-
-private fun <T> AtomicReference<T?>.getSequenced(): SequencedReference<T>? = get()?.sequenced()
 
 private fun <T> T.sequenced(): SequencedReference<T> =
   SequencedReference(nextSequenceNumber(), this)

@@ -21,8 +21,10 @@ import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.asNonNullRefOrNull
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
@@ -48,7 +50,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
@@ -78,9 +79,11 @@ internal class DataConnectBidiConnectStream(
   flow:
     Flow<
       GrpcBidiFlow.Event<
-        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult>?
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
       >
     >,
+  dataConnectAuth: DataConnectAuth,
+  idStringGenerator: IdStringGenerator,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -102,7 +105,12 @@ internal class DataConnectBidiConnectStream(
             connectionStateFlow.value = SubscriptionEvent.Connected(event)
           }
         }
-        .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>>()
+        .mapNotNull {
+          when (it) {
+            is GrpcBidiFlow.Event.ConnectionInfo -> null
+            is GrpcBidiFlow.Event.Message -> it
+          }
+        }
         .map(SubscriptionEvent::Message)
         .onCompletion { throwable ->
           connectionStateFlow.value = SubscriptionEvent.Disconnected
@@ -279,8 +287,9 @@ internal class DataConnectBidiConnectStream(
       val message: StreamResponseProto,
     ) : SubscriptionEvent {
       constructor(
-        event: GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>
-      ) : this(event.connectionId, event.connectionCookie, event.message)
+        event:
+          GrpcBidiFlow.Event.Message<StreamResponseProto, SequencedReference<GetAuthTokenResult?>>
+      ) : this(event.connectionId, event.connectionCookie.ref?.authUid, event.message)
       override fun toString() =
         "Message(connectionId=$connectionId, authUid=$authUid, " +
           "message=${message.toCompactString()})"
@@ -296,9 +305,9 @@ internal class DataConnectBidiConnectStream(
       constructor(
         event:
           GrpcBidiFlow.Event.ConnectionInfo<
-            StreamRequestProto, SequencedReference<GetAuthTokenResult>?
+            StreamRequestProto, SequencedReference<GetAuthTokenResult?>
           >
-      ) : this(event.connectionId, event.connectionCookie?.ref?.authUid, event.outgoingRequests)
+      ) : this(event.connectionId, event.connectionCookie.ref?.authUid, event.outgoingRequests)
 
       override fun toString() = "Connected(connectionId=$connectionId)"
     }
@@ -481,3 +490,42 @@ internal class DataConnectBidiConnectStream(
       }
   }
 }
+
+private fun merge(
+  grpcBidiFlow:
+    Flow<
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >
+    >,
+  dataConnectAuth: DataConnectAuth,
+): Flow<GrpcAuthMergedFlowEvent> =
+  merge(
+    grpcBidiFlow.map(GrpcAuthMergedFlowEvent::Grpc),
+    dataConnectAuth.token.mapNotNull { sequencedReference ->
+      sequencedReference.asNonNullRefOrNull()?.let(GrpcAuthMergedFlowEvent::Auth)
+    }
+  )
+
+private sealed interface GrpcAuthMergedFlowEvent {
+
+  @JvmInline
+  value class Grpc(
+    val event:
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >
+  ) : GrpcAuthMergedFlowEvent
+
+  @JvmInline
+  value class Auth(val event: SequencedReference<GetAuthTokenResult>) : GrpcAuthMergedFlowEvent
+}
+
+private fun authTokenStreamRequest(
+  idStringGenerator: IdStringGenerator,
+  authToken: String
+): StreamRequestProto =
+  StreamRequestProto.newBuilder()
+    .setRequestId(idStringGenerator.next("auth"))
+    .putHeaders("x-firebase-auth-token", authToken)
+    .build()

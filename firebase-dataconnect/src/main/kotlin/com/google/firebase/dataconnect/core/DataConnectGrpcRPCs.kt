@@ -375,33 +375,31 @@ internal class DataConnectGrpcRPCs(
     dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
-    val authUid = dataConnectAuth.getToken(streamId)?.ref?.authUid
+    val connectionAuthUid = dataConnectAuth.getToken(streamId).ref?.authUid
 
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
     // For low-level debugging, swap this `grpcBidiFlowListener` out for
-    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(authToken?.authUid))
+    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
     val grpcBidiFlowListener =
       ConnectGrpcBidiFlowListener(
         streamId = streamId,
-        authUid = authUid,
+        authUid = connectionAuthUid,
         initRequest = initRequest,
         kotlinMethodName = "connect()",
       )
 
     val createHeaders:
-      suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult>?> =
+      suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
       {
         val authToken = dataConnectAuth.getToken(streamId)
-        val authTokenAuthUid = authToken?.ref?.authUid
-        if (authTokenAuthUid != authUid) {
-          throw AuthUidChangedException(
-            "Firebase Auth UID changed from $authUid to $authTokenAuthUid"
-          )
+        val authUid = authToken.ref?.authUid
+        if (authUid != connectionAuthUid) {
+          throw AuthUidChangedException(connectionAuthUid, authUid)
         }
         val appCheckToken = dataConnectAppCheck.getToken(streamId)
-        val metadata = grpcMetadata.get(authToken?.ref, appCheckToken?.ref, callerSdkType)
+        val metadata = grpcMetadata.get(authToken.ref, appCheckToken.ref, callerSdkType)
         GrpcBidiFlow.HeadersResult(metadata, authToken)
       }
 
@@ -418,6 +416,8 @@ internal class DataConnectGrpcRPCs(
 
     return DataConnectBidiConnectStream(
       flow,
+      dataConnectAuth,
+      idStringGenerator,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }
@@ -812,4 +812,5 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
   return ::getEntityIdForPathFunction
 }
 
-internal class AuthUidChangedException(message: String) : DataConnectException(message)
+internal class AuthUidChangedException(oldAuthUid: AuthUid?, newAuthUid: AuthUid?) :
+  DataConnectException("Firebase Auth UID changed from $oldAuthUid to $newAuthUid")

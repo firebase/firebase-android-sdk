@@ -29,6 +29,8 @@ import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStr
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
 import io.kotest.assertions.assertSoftly
@@ -114,8 +116,10 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     connect(
       streamId = streamIdArb.sample(),
       callerSdkType = callerSdkTypeArb.sample(),
-      dataConnectAuth = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
-      dataConnectAppCheck = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
+      dataConnectAuth =
+        mockk(relaxed = true) { coEvery { getToken(any()) } answers { null.sequenced() } },
+      dataConnectAppCheck =
+        mockk(relaxed = true) { coEvery { getToken(any()) } answers { null.sequenced() } },
       idStringGenerator = IdStringGenerator(Random.Default),
     )
 }
@@ -147,3 +151,6 @@ private fun Struct.shouldBeGetStringByKeyQueryData(expectedName: String?) {
     data.item.shouldNotBeNull() shouldBe GetStringByKeyQuery.Data.Item(expectedName)
   }
 }
+
+private fun <T> T.sequenced(): SequencedReference<T> =
+  SequencedReference(nextSequenceNumber(), this)

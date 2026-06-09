@@ -750,12 +750,12 @@ class DataConnectGrpcRPCsUnitTest {
   private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
     val dataConnectAuth: DataConnectAuth = mockk {
       val token = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } returns token?.sequenced()
+      coEvery { getToken(any()) } answers { token.sequenced() }
     }
 
     val dataConnectAppCheck: DataConnectAppCheck = mockk {
       val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } returns token?.sequenced()
+      coEvery { getToken(any()) } answers { token.sequenced() }
     }
 
     return connect(
