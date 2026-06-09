@@ -91,6 +91,8 @@ import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
+import io.mockk.coEvery
+import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -743,14 +745,25 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
-  private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource) =
-    connect(
+  private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
+    val dataConnectAuth: DataConnectAuth = mockk {
+      val token = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
+      coEvery { getToken(any()) } returns token
+    }
+
+    val dataConnectAppCheck: DataConnectAppCheck = mockk {
+      val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
+      coEvery { getToken(any()) } returns token
+    }
+
+    return connect(
       streamId = streamIdArb.next(rs),
-      callerSdkType = Arb.enum<CallerSdkType>().next(rs),
-      authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
-      appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
-      idStringGenerator = IdStringGenerator(Random.Default),
+      Arb.enum<CallerSdkType>().next(rs),
+      dataConnectAuth,
+      dataConnectAppCheck,
+      IdStringGenerator(Random.Default),
     )
+  }
 
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")
 
