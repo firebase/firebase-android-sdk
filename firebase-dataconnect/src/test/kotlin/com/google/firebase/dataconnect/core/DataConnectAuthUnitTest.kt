@@ -58,6 +58,8 @@ import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeSorted
+import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
@@ -69,6 +71,7 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
@@ -578,6 +581,29 @@ class DataConnectAuthUnitTest {
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(false) }
     verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(true) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("got an old result; retrying")
+  }
+
+  @Test
+  fun `getToken() should return increasing sequence numbers`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    dataConnectAuth.awaitTokenProvider()
+    val authTokens = Arb.dataConnect.authTokenResult().let { arb -> List(5) { arb.next(rs) } }
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returnsMany
+      authTokens.map { taskForToken(it.token, it.authUid) }
+    val forceRefreshFlags = Arb.boolean().let { arb -> List(authTokens.size) { arb.next(rs) } }
+
+    val results =
+      forceRefreshFlags.map { forceRefresh ->
+        if (forceRefresh) {
+          dataConnectAuth.forceRefresh()
+        }
+        dataConnectAuth.getToken(requestId)
+      }
+
+    val sequenceNumbers = results.mapNotNull { it?.sequenceNumber }
+    sequenceNumbers.shouldBeUnique()
+    sequenceNumbers.shouldBeSorted()
   }
 
   @Test
