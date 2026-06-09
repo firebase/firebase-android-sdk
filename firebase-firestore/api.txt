@@ -154,6 +154,10 @@ package com.google.firebase.firestore {
     method public static com.google.firebase.firestore.FieldValue delete();
     method public static com.google.firebase.firestore.FieldValue increment(double);
     method public static com.google.firebase.firestore.FieldValue increment(long);
+    method public static com.google.firebase.firestore.FieldValue maximum(double);
+    method public static com.google.firebase.firestore.FieldValue maximum(long);
+    method public static com.google.firebase.firestore.FieldValue minimum(double);
+    method public static com.google.firebase.firestore.FieldValue minimum(long);
     method public static com.google.firebase.firestore.FieldValue serverTimestamp();
     method public static com.google.firebase.firestore.VectorValue vector(double[]);
   }
