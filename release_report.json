@@ -1,0 +1,357 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "82e036a601c8c48d032cc983da0e8136e1f77883",
+                "prId": "8229",
+                "author": "Lee Kellogg",
+                "message": "Make app-distribution InstallActivity exported=false and validate input (#8229)\n\nTested locally.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/82e036a601c8c48d032cc983da0e8136e1f77883",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8229"
+            },
+            {
+                "commitId": "97f53c9c7b585a9fbbe4832d7308c96868b66cf9",
+                "prId": "8234",
+                "author": "Lee Kellogg",
+                "message": "Fix some lint issues in firebase-appdistribution/test-app (#8234)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/97f53c9c7b585a9fbbe4832d7308c96868b66cf9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8234"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "82e036a601c8c48d032cc983da0e8136e1f77883",
+                "prId": "8229",
+                "author": "Lee Kellogg",
+                "message": "Make app-distribution InstallActivity exported=false and validate input (#8229)\n\nTested locally.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/82e036a601c8c48d032cc983da0e8136e1f77883",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8229"
+            }
+        ],
+        "firebase-common": [
+            {
+                "commitId": "87b6032f995ab38b93d0f3298782e094dada385b",
+                "prId": "8216",
+                "author": "Rodrigo Lazo",
+                "message": "Add reCAPTCHA site key support to FirebaseOptions (#8216)\n\nAdded the reCAPTCHA site key field to FirebaseOptions and its builder to\nallow configuration of reCAPTCHA within Firebase projects. Additionally,\nadded a lint baseline file to the firebase-common module to manage\nexisting lint issues.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87b6032f995ab38b93d0f3298782e094dada385b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8216"
+            },
+            {
+                "commitId": "db94adb124062cd3051f665469723aa0b41b364b",
+                "prId": "8182",
+                "author": "Mila",
+                "message": "fix(common): Resolve thread deadlock in HeartBeatInfoStorage (#8182)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/db94adb124062cd3051f665469723aa0b41b364b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8182"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "8e331cb82ed2dbdd14d1c56b1384be9b9e18cc77",
+                "prId": "8273",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): add `token` StateFlow to observe token changes (#8273)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8e331cb82ed2dbdd14d1c56b1384be9b9e18cc77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8273"
+            },
+            {
+                "commitId": "35a4f1bd1f884c8756cd821611a33fef5d917105",
+                "prId": "8263",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.10 (was 3.4.8) and firebase-tools to 15.19.1 (was 15.18.0) (#8263)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/35a4f1bd1f884c8756cd821611a33fef5d917105",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8263"
+            },
+            {
+                "commitId": "1101aa4d90fa4e8a24e50bc694405f445bbc3513",
+                "prId": "8240",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(fix): Fix duplicate cache/server events from QuerySubscription.flow (#8240)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1101aa4d90fa4e8a24e50bc694405f445bbc3513",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8240"
+            },
+            {
+                "commitId": "a1a58a76e02eae389ea6b98f6bc5a178f72eeed8",
+                "prId": "8260",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore) more refactoring in preparating for realtime query result deduplication fix (#8260)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a1a58a76e02eae389ea6b98f6bc5a178f72eeed8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8260"
+            },
+            {
+                "commitId": "3c1273b19c61f9714e05b4c7b80c0490ff0bd2b6",
+                "prId": "8256",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix CHANGELOG entries incorrectly moved to 17.3.0 header by PR #8235 (m181 mergeback) (#8256)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c1273b19c61f9714e05b4c7b80c0490ff0bd2b6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8256"
+            },
+            {
+                "commitId": "1589cf5e537e703238f3a30f94794b608fd20336",
+                "prId": "8236",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): realtime refactor in preparation for deduplicating cached and server results (#8236)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1589cf5e537e703238f3a30f94794b608fd20336",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8236"
+            },
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "c80152fe3ada799c684117837ad86467ede0af73",
+                "prId": "8237",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(docs): Fix BoM version noted in the docs for when realtime support was added to 34.14.0 (was 34.13.0) (#8237)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c80152fe3ada799c684117837ad86467ede0af73",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8237"
+            },
+            {
+                "commitId": "2fd9dc60c8340261a70858d016c452c11733c019",
+                "prId": "8226",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): add `last_update_sequence_number` to cache db (#8226)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2fd9dc60c8340261a70858d016c452c11733c019",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8226"
+            },
+            {
+                "commitId": "dbb523f36be14b404670f4561d10b9c87886d071",
+                "prId": "8220",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(feat): Realtime query results now update the local cache (#8220)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dbb523f36be14b404670f4561d10b9c87886d071",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8220"
+            },
+            {
+                "commitId": "e79be6479de08a1cfb289ebc379552a39f94fc35",
+                "prId": "8215",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): headless_android_emulator_run.zsh: pass args after `--` to the emulator command linea (#8215)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e79be6479de08a1cfb289ebc379552a39f94fc35",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8215"
+            },
+            {
+                "commitId": "83d0dda51d87dbc59bcbce1462520bc5875d29f4",
+                "prId": "8211",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): refactor cache database management logic out of network layer (#8211)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/83d0dda51d87dbc59bcbce1462520bc5875d29f4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8211"
+            },
+            {
+                "commitId": "e313666eb179d257af6414cd84a668da748c39ff",
+                "prId": "8214",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(fix): CACHE_ONLY was incorrectly ignored when cache was not enabled (#8214)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e313666eb179d257af6414cd84a668da748c39ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8214"
+            },
+            {
+                "commitId": "c7094fafdd21b0b1cae5b748e9910a5ea3c9b154",
+                "prId": "8207",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): Add QueryId value type and use it instead of passing around raw byte arrays (#8207)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c7094fafdd21b0b1cae5b748e9910a5ea3c9b154",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8207"
+            },
+            {
+                "commitId": "85ee4b452a4a788c8b100ef0275739613ce2759c",
+                "prId": "8198",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): Create AuthUid value class to add some type safety compared to raw strings (#8198)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/85ee4b452a4a788c8b100ef0275739613ce2759c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8198"
+            },
+            {
+                "commitId": "f343cd9f9c4a3506cb2f6be6f1cebd51f973ff16",
+                "prId": "8197",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(ci): move firebase-tools version out of the yml workflow files (#8197)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f343cd9f9c4a3506cb2f6be6f1cebd51f973ff16",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8197"
+            },
+            {
+                "commitId": "b61c8cfa1c822c722c5f72eb5a09f4645fe6fd0a",
+                "prId": "8196",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(docs): QueryRef/QuerySubscription: kdoc improvements, especially adding BoM version (#8196)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b61c8cfa1c822c722c5f72eb5a09f4645fe6fd0a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8196"
+            },
+            {
+                "commitId": "13eb0f61e731c03a403556798c5bc28797093466",
+                "prId": "8187",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): convert gemini-cli commands to agent \"skills\" (#8187)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/13eb0f61e731c03a403556798c5bc28797093466",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8187"
+            }
+        ],
+        "firebase-installations": [
+            {
+                "commitId": "f23afff04bf02c165486b1fdc3044b5d727be4a9",
+                "prId": "8193",
+                "author": "Eldhose M Babu",
+                "message": "Fix fidchangelistener behavior (#8193)\n\nFixing fidchangelistener behavior to get invoked for new fid creations\nas well",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f23afff04bf02c165486b1fdc3044b5d727be4a9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8193"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "232c864fc9e49f4996dcfa1b4c63983df2315dc2",
+                "prId": "8253",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Return `retrievalConfig` entry to the right changelog section (#8253)\n\nIt was moved to the `Unreleased` section in #8225 due to a\nmisunderstanding.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/232c864fc9e49f4996dcfa1b4c63983df2315dc2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8253"
+            },
+            {
+                "commitId": "31ca8b76376264ce99f8b4fb63fea8249108219c",
+                "prId": "8225",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update App Check dependencies in firebase-ai (#8225)\n\nUpdated the firebase-ai module to start depending on firebase-appcheck.\nAlso, make the dependencies point to the local project for the next\nrelease.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/31ca8b76376264ce99f8b4fb63fea8249108219c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8225"
+            },
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "de675d9d6c676219070b4e62dea55d6da0f02cd3",
+                "prId": "8213",
+                "author": "emilypgoogle",
+                "message": "Add Gemini 3.5 flash models to testing (#8213)\n\nGemini 3.5 was recently released and passes existing testing, should be\ntested for the future.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/de675d9d6c676219070b4e62dea55d6da0f02cd3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8213"
+            },
+            {
+                "commitId": "1ac16c8912af22fcb7f8019096aa780e80a75f4f",
+                "prId": "8188",
+                "author": "emilypgoogle",
+                "message": "Add missing construction to TemplateTool that is present in Tool (#8188)\n\n`TemplateTool` is separate from `Tool` for some reason and was missing\nvarious features that are supported on `Tool` and work correctly with\ntemplates. This adds them to `TemplateTool` and adds testing to validate\nthe maps grounding behavior on Google AI. Vertex does not respond\ncorrectly to our grounding query at the moment so has not been included.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1ac16c8912af22fcb7f8019096aa780e80a75f4f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8188"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "df09c49b3fcf54e427724786cf583da4635dab6d",
+                "prId": "8224",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Rename reCAPTCHA App Check provider (#8224)\n\nRenamed `firebase-appcheck-recaptchaenterprise` to\n`firebase-appcheck-recaptcha` to standardize the naming\nconvention. Updated `NetworkClient` to reflect the new `RECAPTCHA` token\ntype and adjusted internal references accordingly.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/df09c49b3fcf54e427724786cf583da4635dab6d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8224"
+            },
+            {
+                "commitId": "f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prId": "8204",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add getLimitedUseToken support to AppCheckProvider (#8204)\n\nIntroduced the getLimitedUseToken() method to the AppCheckProvider\ninterface and implemented it across the debug, Play Integrity, and\nreCAPTCHA Enterprise providers. The implementation ensures that token\nexchange requests include a \"limited_use\" flag, allowing for the\ngeneration of short-lived, single-use App Check tokens.\n\nVerified manually using debug provider",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8204"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prId": "8204",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add getLimitedUseToken support to AppCheckProvider (#8204)\n\nIntroduced the getLimitedUseToken() method to the AppCheckProvider\ninterface and implemented it across the debug, Play Integrity, and\nreCAPTCHA Enterprise providers. The implementation ensures that token\nexchange requests include a \"limited_use\" flag, allowing for the\ngeneration of short-lived, single-use App Check tokens.\n\nVerified manually using debug provider",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8204"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prId": "8204",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add getLimitedUseToken support to AppCheckProvider (#8204)\n\nIntroduced the getLimitedUseToken() method to the AppCheckProvider\ninterface and implemented it across the debug, Play Integrity, and\nreCAPTCHA Enterprise providers. The implementation ensures that token\nexchange requests include a \"limited_use\" flag, allowing for the\ngeneration of short-lived, single-use App Check tokens.\n\nVerified manually using debug provider",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8204"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prId": "8235",
+                "author": "Google Open Source Bot",
+                "message": "m181 mergeback (#8235)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/daadb6e64157d6c55e7558988ebd27b2dbc6a2a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8235"
+            },
+            {
+                "commitId": "f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prId": "8204",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add getLimitedUseToken support to AppCheckProvider (#8204)\n\nIntroduced the getLimitedUseToken() method to the AppCheckProvider\ninterface and implemented it across the debug, Play Integrity, and\nreCAPTCHA Enterprise providers. The implementation ensures that token\nexchange requests include a \"limited_use\" flag, allowing for the\ngeneration of short-lived, single-use App Check tokens.\n\nVerified manually using debug provider",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2dc87362681e99bda2c0ffcaecbebe4fcdc0508",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8204"
+            }
+        ],
+        "appcheck/firebase-appcheck-recaptcha": [
+            {
+                "commitId": "eb643b8cd36ae311f3da6da1eb3c2797258a3dcb",
+                "prId": "8275",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Promote Firebase App Check Recaptcha to GA (#8275)\n\nChange firebase-appcheck-recaptcha from preview mode `norelease` to GA.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eb643b8cd36ae311f3da6da1eb3c2797258a3dcb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8275"
+            },
+            {
+                "commitId": "4c914b486ed1a1dcbd3310d8e22ea195815b8b1b",
+                "prId": "8230",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Revert changed key in ExchangeRecaptchaTokenRequest (#8230)\n\nRenamed back the RECAPTCHA_TOKEN_KEY constant to\n`recaptchaEnterpriseToken` in the `ExchangeRecaptchaTokenRequest`. The\nbackend expects the value as is.\n\nVerified with manual testing",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c914b486ed1a1dcbd3310d8e22ea195815b8b1b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8230"
+            },
+            {
+                "commitId": "df09c49b3fcf54e427724786cf583da4635dab6d",
+                "prId": "8224",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Rename reCAPTCHA App Check provider (#8224)\n\nRenamed `firebase-appcheck-recaptchaenterprise` to\n`firebase-appcheck-recaptcha` to standardize the naming\nconvention. Updated `NetworkClient` to reflect the new `RECAPTCHA` token\ntype and adjusted internal references accordingly.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/df09c49b3fcf54e427724786cf583da4635dab6d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8224"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-perf"
+    ]
+}
