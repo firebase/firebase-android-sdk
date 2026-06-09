@@ -47,6 +47,8 @@ import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericMaximumTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericMinimumTransformOperation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
@@ -418,6 +420,20 @@ public final class RemoteSerializer {
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
           .setIncrement(incrementOperation.getOperand())
           .build();
+    } else if (transform instanceof NumericMinimumTransformOperation) {
+      NumericMinimumTransformOperation minimumOperation =
+          (NumericMinimumTransformOperation) transform;
+      return DocumentTransform.FieldTransform.newBuilder()
+          .setFieldPath(fieldTransform.getFieldPath().canonicalString())
+          .setMinimum(minimumOperation.getOperand())
+          .build();
+    } else if (transform instanceof NumericMaximumTransformOperation) {
+      NumericMaximumTransformOperation maximumOperation =
+          (NumericMaximumTransformOperation) transform;
+      return DocumentTransform.FieldTransform.newBuilder()
+          .setFieldPath(fieldTransform.getFieldPath().canonicalString())
+          .setMaximum(maximumOperation.getOperand())
+          .build();
     } else {
       throw fail("Unknown transform: %s", transform);
     }
@@ -448,6 +464,14 @@ public final class RemoteSerializer {
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new NumericIncrementTransformOperation(fieldTransform.getIncrement()));
+      case MINIMUM:
+        return new FieldTransform(
+            FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
+            new NumericMinimumTransformOperation(fieldTransform.getMinimum()));
+      case MAXIMUM:
+        return new FieldTransform(
+            FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
+            new NumericMaximumTransformOperation(fieldTransform.getMaximum()));
       default:
         throw fail("Unknown FieldTransform proto: %s", fieldTransform);
     }
