@@ -212,6 +212,10 @@ internal object CoroutineUtils {
       coldFlow.collect { send(it) }
     } finally {
       hotJob.cancel()
+
+      // Delay returning until `hotJob` is completed; otherwise, the Channel will be closed,
+      // potentially causing spurious ClosedSendChannelException if `hotJob` calls send().
+      hotJob.join()
     }
   }
 }

@@ -122,8 +122,8 @@ internal class DataConnectBidiConnectStream(
           }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { _, attempt ->
-          if (attempt > 2) {
+        .retryWhen { cause, attempt ->
+          if (cause is AuthUidChangedException || attempt > 2) {
             false
           } else {
             delay(1.seconds)

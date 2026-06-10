@@ -111,8 +111,8 @@ internal class DataConnectGrpcClient(
     kotlinMethodName: String,
     block: T.(GetAuthTokenResult?, GetAppCheckTokenResult?) -> R,
   ): R {
-    val authToken1 = dataConnectAuth.getToken(requestId)?.ref
-    val appCheckToken1 = dataConnectAppCheck.getToken(requestId)?.ref
+    val authToken1 = dataConnectAuth.getToken(requestId).ref
+    val appCheckToken1 = dataConnectAppCheck.getToken(requestId).ref
 
     return try {
       block(authToken1, appCheckToken1)
@@ -130,8 +130,8 @@ internal class DataConnectGrpcClient(
       dataConnectAuth.forceRefresh()
       dataConnectAppCheck.forceRefresh()
 
-      val authToken2 = dataConnectAuth.getToken(requestId)?.ref
-      val appCheckToken2 = dataConnectAppCheck.getToken(requestId)?.ref
+      val authToken2 = dataConnectAuth.getToken(requestId).ref
+      val appCheckToken2 = dataConnectAppCheck.getToken(requestId).ref
 
       block(authToken2, appCheckToken2)
     }
