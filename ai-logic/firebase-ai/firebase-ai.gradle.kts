@@ -87,7 +87,7 @@ dependencies {
   api(project(":appcheck:firebase-appcheck"))
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
