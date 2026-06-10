@@ -91,6 +91,9 @@ internal class DataConnectBidiConnectStream(
   private val logger: Logger,
 ) {
 
+  val isPermanentlyFailedDueToAuthUidChange: Boolean
+    get() = authUidChangedFlow.replayCache.isNotEmpty()
+
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
    * [com.google.firebase.dataconnect.FirebaseDataConnect.close] is called.
@@ -98,15 +101,15 @@ internal class DataConnectBidiConnectStream(
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
 
   /**
-   * A flow that emits a [TerminalError] when the connection is permanently failed and an exception
-   * should be thrown by the downstream collectors.
+   * A flow that emits a [AuthUidChangedException] when the connection is permanently failed due to
+   * the Firebase Auth user changing.
    */
-  private val _terminalErrorFlow =
-    MutableSharedFlow<TerminalError>(
+  private val _authUidChangedFlow =
+    MutableSharedFlow<AuthUidChangedException>(
       replay = 1,
       onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-  private val terminalErrorFlow = _terminalErrorFlow.asSharedFlow()
+  private val authUidChangedFlow = _authUidChangedFlow.asSharedFlow()
 
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
@@ -132,7 +135,7 @@ internal class DataConnectBidiConnectStream(
         .map(SubscriptionEvent::Message)
         .catch { exception ->
           if (exception is AuthUidChangedException) {
-            _terminalErrorFlow.emit(TerminalError(exception))
+            _authUidChangedFlow.emit(exception)
           }
           throw exception
         }
@@ -226,17 +229,20 @@ internal class DataConnectBidiConnectStream(
         .mapNotNull { it.message.toExecuteResponse(it.authUid) }
 
     // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called, and
-    // fail if a terminal error occurs.
-    val terminalFlow: Flow<Nothing?> =
-      terminalErrorFlow.transform { error -> throw error.exception }
-    return merge(subscriptionFlow, scopeCompletedFlow, terminalFlow).transformWhile {
-      if (it !== null && coroutineScope.isActive) {
-        emit(it)
-        true
-      } else {
-        false
+    // fail if the Firebase Auth user changes.
+    return merge(
+        subscriptionFlow,
+        scopeCompletedFlow,
+        authUidChangedFlow.transform { throw it },
+      )
+      .transformWhile {
+        if (it !== null && coroutineScope.isActive) {
+          emit(it)
+          true
+        } else {
+          false
+        }
       }
-    }
   }
 
   private sealed interface MessageOrSubscribe {
@@ -702,8 +708,4 @@ private fun SendChannel<StreamRequestProto>.trySendOrThrow(
         )
     }
   }
-}
-
-private class TerminalError(val exception: Throwable) {
-  override fun toString() = "TerminalError($exception)"
 }
