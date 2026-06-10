@@ -18,7 +18,6 @@
 package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
-import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.GetTokenResult
@@ -903,14 +902,6 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
-
-private fun taskForToken(
-  token: String?,
-  claims: Map<String, Any> = emptyMap()
-): Task<GetTokenResult> = Tasks.forResult(GetTokenResult(token, claims))
-
-private fun taskForToken(token: String?, authUid: AuthUid?): Task<GetTokenResult> =
-  taskForToken(token, authUid?.let { mapOf("sub" to it.string) } ?: emptyMap())
 
 private fun InternalAuthProvider.setAnswers(
   answers: List<GetAuthTokenResult>
