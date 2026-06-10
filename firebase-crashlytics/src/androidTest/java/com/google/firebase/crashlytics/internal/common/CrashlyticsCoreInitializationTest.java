@@ -265,6 +265,18 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertFalse(getCrashMarkerFile().exists());
   }
 
+  @Test
+  public void testOnPreExecute_didNotANROnPreviousExecution() {
+    // Without any ApplicationExitInfo entries indicating an ANR, didCrashOnPreviousExecution
+    // should return false.
+    final CrashlyticsCore crashlyticsCore = builder().build();
+    setupBuildIdRequired(String.valueOf(false));
+    setupAppData(BUILD_ID);
+
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
+    assertFalse(crashlyticsCore.didCrashOnPreviousExecution());
+  }
+
   private void setupBuildIdRequired(String booleanValue) {
     setupResource(
         RES_ID_REQUIRE_BUILD_ID,
