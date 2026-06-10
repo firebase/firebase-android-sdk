@@ -24,6 +24,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal object CoroutineUtils {
 
@@ -215,7 +217,7 @@ internal object CoroutineUtils {
 
       // Delay returning until `hotJob` is completed; otherwise, the Channel will be closed,
       // potentially causing spurious ClosedSendChannelException if `hotJob` calls send().
-      hotJob.join()
+      withContext(NonCancellable) { hotJob.join() }
     }
   }
 }
