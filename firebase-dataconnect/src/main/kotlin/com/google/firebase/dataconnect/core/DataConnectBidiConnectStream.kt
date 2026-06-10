@@ -393,6 +393,8 @@ internal class DataConnectBidiConnectStream(
             subscribeOrResumeJob.start()
           }
           break
+        } else {
+          subscribeOrResumeJob.cancel("state update failed")
         }
       }
     }
