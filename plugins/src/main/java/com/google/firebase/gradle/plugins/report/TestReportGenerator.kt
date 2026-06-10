@@ -149,7 +149,7 @@ class TestReportGenerator(private val apiToken: String) {
       for (commit in commits) {
         if (testLookup.containsKey(Pair.of(sdk, commit))) {
           val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
-          if (report.status != TestReport.Status.OTHER) {
+          if (report.status.completed) {
             sdkTestCount++
             if (report.status == TestReport.Status.SUCCESS) {
               sdkTestSuccess++
@@ -157,7 +157,8 @@ class TestReportGenerator(private val apiToken: String) {
           }
         }
       }
-      successPercentage.put(sdk, sdkTestSuccess * 100 / sdkTestCount)
+      val percentage = if (sdkTestCount == 0) 100 else sdkTestSuccess * 100 / sdkTestCount
+      successPercentage[sdk] = percentage
     }
     return successPercentage
   }
@@ -195,12 +196,7 @@ class TestReportGenerator(private val apiToken: String) {
       for (commit in commits) {
         if (testLookup.containsKey(Pair.of(sdk, commit))) {
           val report: TestReport = testLookup[Pair.of(sdk, commit)]!!
-          val icon =
-            when (report.status) {
-              TestReport.Status.SUCCESS -> "✅"
-              TestReport.Status.FAILURE -> "⛔"
-              TestReport.Status.OTHER -> "➖"
-            }
+          val icon = report.status.icon
           val link: String = " [$icon](${report.url})"
           output.append(link)
         }
@@ -236,12 +232,7 @@ class TestReportGenerator(private val apiToken: String) {
     output.append(" :--- |")
     output.append("\n| AI Daily Tests |")
     for (report in reports) {
-      val icon =
-        when (report.status) {
-          TestReport.Status.SUCCESS -> "✅"
-          TestReport.Status.FAILURE -> "⛔"
-          TestReport.Status.OTHER -> "➖"
-        }
+      val icon = report.status.icon
       val link: String = " [$icon](${report.url})"
       output.append(link)
       output.append(" |")
