@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.maxOfBySequenceNumber
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
@@ -49,6 +50,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -112,7 +114,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   /** The current state of this object. */
   private val state = MutableStateFlow<State<T, R>>(State.New)
 
-  private val _token = MutableStateFlow<R?>(null)
+  private val _token = MutableStateFlow(SequencedReference<R?>(nextSequenceNumber(), null))
 
   /**
    * The last token returned from [getToken]
@@ -121,7 +123,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    *
    * After [close] the value of this flow is _not_ cleared, and will remain unchanged indefinitely.
    */
-  val token: StateFlow<R?> = _token.asStateFlow()
+  val token: StateFlow<SequencedReference<R?>> = _token.asStateFlow()
 
   /**
    * Adds the token listener to the given provider.
@@ -302,7 +304,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
    * @throws DataConnectException if [close] has been called or is called while the operation is in
    * progress.
    */
-  suspend fun getToken(requestId: String): R? {
+  suspend fun getToken(requestId: String): SequencedReference<R?> {
     val invocationId = idStringGenerator.next("gat")
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
@@ -324,7 +326,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
             logger.debug {
               "$invocationId getToken() returns null (token provider is not (yet?) available)"
             }
-            return null
+            return SequencedReference(attemptSequenceNumber, null)
           }
           is State.Idle -> {
             newActiveState(invocationId, oldState.provider, oldState.forceTokenRefresh)
@@ -358,40 +360,50 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
       // coroutine that called getToken(), not from the calling coroutine being cancelled.
       currentCoroutineContext().ensureActive()
 
-      val sequencedResult = jobResult.getOrNull()
-      if (sequencedResult !== null && sequencedResult.sequenceNumber < attemptSequenceNumber) {
+      val jobSequenceNumber = jobResult.getOrNull()?.sequenceNumber
+      if (jobSequenceNumber != null && jobSequenceNumber < attemptSequenceNumber) {
         logger.debug { "$invocationId getToken() got an old result; retrying" }
         continue
       }
 
-      val exception = jobResult.exceptionOrNull() ?: jobResult.getOrNull()?.ref?.exceptionOrNull()
-      if (exception !== null) {
-        val retryException = exception.getRetryIndicator()
-        if (retryException !== null) {
+      val exception1 = jobResult.exceptionOrNull() ?: jobResult.getOrThrow().ref.exceptionOrNull()
+      if (exception1 != null) {
+        val retryException = exception1.getRetryIndicator()
+        if (retryException != null) {
           logger.debug { "$invocationId getToken() retrying due to ${retryException.message}" }
           continue
-        } else if (exception is FirebaseNoSignedInUserException) {
-          logger.debug {
-            "$invocationId getToken() returns null (FirebaseAuth reports no signed-in user)"
-          }
-          _token.value = null
-          return null
-        } else if (exception is CancellationException) {
-          logger.warn(exception) {
-            "$invocationId getToken() throws GetTokenCancelledException," +
+        } else if (exception1 is CancellationException) {
+          logger.warn(exception1) {
+            "$invocationId getToken() throws CancellationException," +
               " likely due to DataConnectCredentialsTokenManager.close() being called"
           }
-          throw GetTokenCancelledException(exception)
-        } else {
-          logger.warn(exception) { "$invocationId getToken() failed unexpectedly: $exception" }
-          throw exception
+          throw GetTokenCancelledException(exception1)
         }
       }
 
-      val tokenResult: R = sequencedResult!!.ref.getOrThrow()
-      logger.debug { "$invocationId getToken() returns $tokenResult" }
-      _token.value = tokenResult
-      return tokenResult
+      val sequencedResult: SequencedReference<Result<R>> = jobResult.getOrThrow()
+      val tokenResult: R? =
+        sequencedResult.ref.fold(
+          onSuccess = { tokenResult ->
+            logger.debug { "$invocationId getToken() returns $tokenResult" }
+            tokenResult
+          },
+          onFailure = { exception ->
+            if (exception is FirebaseNoSignedInUserException) {
+              logger.debug {
+                "$invocationId getToken() returns null (FirebaseAuth reports no signed-in user)"
+              }
+              null
+            } else {
+              logger.warn(exception) { "$invocationId getToken() failed unexpectedly: $exception" }
+              throw exception
+            }
+          }
+        )
+
+      val sequencedTokenResult = SequencedReference(sequencedResult.sequenceNumber, tokenResult)
+
+      return _token.updateAndGet { current -> maxOfBySequenceNumber(current, sequencedTokenResult) }
     }
   }
 
@@ -440,7 +452,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   }
 
   protected fun onTokenChanged(newToken: String?) {
-    if (token.value?.token == newToken) {
+    if (token.value.ref?.token == newToken) {
       return
     }
 
