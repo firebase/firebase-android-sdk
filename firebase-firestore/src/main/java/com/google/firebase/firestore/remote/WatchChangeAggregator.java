@@ -213,7 +213,7 @@ public class WatchChangeAggregator {
 
     RemoteTargetData targetData = queryDataForActiveTarget(targetId);
     if (targetData != null) {
-      ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
+      ResourcePath singleDocPath = targetData.target.getSingleDocPath();
       if (singleDocPath != null) {
         if (expectedCount == 0) {
           // The existence filter told us the document does not exist. We deduce that this document
@@ -345,7 +345,7 @@ public class WatchChangeAggregator {
 
       RemoteTargetData targetData = queryDataForActiveTarget(targetId);
       if (targetData != null) {
-        ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
+        ResourcePath singleDocPath = targetData.target.getSingleDocPath();
         if (targetState.isCurrent() && singleDocPath != null) {
           // Document queries for document that don't exist can produce an empty result set. To
           // update our local cache, we synthesize a document delete if we have not previously
@@ -380,7 +380,7 @@ public class WatchChangeAggregator {
 
       for (RemoteTargetId targetId : targets) {
         RemoteTargetData targetData = queryDataForActiveTarget(targetId);
-        if (targetData != null && !targetData.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
+        if (targetData != null && !targetData.purpose.equals(QueryPurpose.LIMBO_RESOLUTION)) {
           isOnlyLimboTarget = false;
           break;
         }

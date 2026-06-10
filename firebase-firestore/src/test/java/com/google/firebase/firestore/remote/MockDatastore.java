@@ -75,25 +75,25 @@ public class MockDatastore extends Datastore {
 
     @Override
     public void watchQuery(RemoteTargetData targetData) {
-      String resumeToken = Util.toDebugString(targetData.getResumeToken());
+      String resumeToken = Util.toDebugString(targetData.resumeToken);
       SpecTestCase.log(
           "      watchQuery("
-              + targetData.getTarget()
+              + targetData.target
               + ", "
-              + targetData.getTargetId()
+              + targetData.targetId
               + ", "
               + resumeToken
               + ")");
       // Snapshot version is ignored on the wire
       RemoteTargetData sentTargetData =
-          targetData.withResumeToken(targetData.getResumeToken(), SnapshotVersion.NONE);
+          targetData.withResumeToken(targetData.resumeToken, SnapshotVersion.NONE);
 
-      if (targetData.getExpectedCount() != null) {
-        sentTargetData = sentTargetData.withExpectedCount(targetData.getExpectedCount());
+      if (targetData.expectedCount != null) {
+        sentTargetData = sentTargetData.withExpectedCount(targetData.expectedCount);
       }
 
       watchStreamRequestCount += 1;
-      this.activeTargets.put(targetData.getTargetId(), sentTargetData);
+      this.activeTargets.put(targetData.targetId, sentTargetData);
     }
 
     @Override

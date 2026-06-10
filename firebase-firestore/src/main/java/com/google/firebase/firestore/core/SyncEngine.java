@@ -207,15 +207,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     TargetData targetData = localStore.allocateTarget(query.toTargetOrPipeline());
 
     ViewSnapshot viewSnapshot =
-        initializeViewAndComputeSnapshot(
-            query, targetData.getTargetId(), targetData.getResumeToken());
+        initializeViewAndComputeSnapshot(query, targetData.targetId, targetData.resumeToken);
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
     if (shouldListenToRemote) {
       remoteStore.listen(targetData);
     }
 
-    return targetData.getTargetId();
+    return targetData.targetId;
   }
 
   private ViewSnapshot initializeViewAndComputeSnapshot(

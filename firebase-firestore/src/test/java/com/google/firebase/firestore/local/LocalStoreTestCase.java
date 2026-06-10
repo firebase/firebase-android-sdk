@@ -240,8 +240,8 @@ public abstract class LocalStoreTestCase {
       targetData = localStore.allocateTarget(targetWrapper);
     }
 
-    lastTargetId = targetData.getTargetId();
-    return targetData.getTargetId();
+    lastTargetId = targetData.targetId;
+    return targetData.targetId;
   }
 
   protected void executeQuery(Query query) {
@@ -1111,7 +1111,7 @@ public abstract class LocalStoreTestCase {
 
     // Should come back with the same resume token
     TargetData targetData2 = localStore.allocateTarget(targetOrPipeline);
-    assertEquals(resumeToken(1000), targetData2.getResumeToken());
+    assertEquals(resumeToken(1000), targetData2.resumeToken);
   }
 
   @Test
@@ -1135,7 +1135,7 @@ public abstract class LocalStoreTestCase {
 
     // Should come back with the same resume token
     TargetData targetData2 = localStore.allocateTarget(targetOrPipeline);
-    assertEquals(resumeToken(1000), targetData2.getResumeToken());
+    assertEquals(resumeToken(1000), targetData2.resumeToken);
   }
 
   @Test
@@ -1264,15 +1264,15 @@ public abstract class LocalStoreTestCase {
     updateViews(targetId, /* fromCache= */ false);
 
     TargetData cachedTargetData = localStore.getTargetData(targetOrPipeline);
-    Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
+    Assert.assertEquals(version(10), cachedTargetData.lastLimboFreeSnapshotVersion);
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
     applyRemoteEvent(
         existenceFilterEvent(RemoteTargetId.from(targetId), keySet(key("foo/a")), 2, 20));
     cachedTargetData = localStore.getTargetData(targetOrPipeline);
-    Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
-    Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
+    Assert.assertEquals(version(0), cachedTargetData.lastLimboFreeSnapshotVersion);
+    Assert.assertEquals(ByteString.EMPTY, cachedTargetData.resumeToken);
 
     // Re-run the query as a collection scan
     executeQuery(query);
@@ -1298,19 +1298,19 @@ public abstract class LocalStoreTestCase {
 
     // At this point, we have not yet confirmed that the target is limbo free.
     TargetData cachedTargetData = localStore.getTargetData(targetOrPipeline);
-    Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
+    Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.lastLimboFreeSnapshotVersion);
 
     // Mark the view synced, which updates the last limbo free snapshot version.
     updateViews(targetId, /* fromCache= */ false);
     cachedTargetData = localStore.getTargetData(targetOrPipeline);
-    Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
+    Assert.assertEquals(version(10), cachedTargetData.lastLimboFreeSnapshotVersion);
 
     // The last limbo free snapshot version is persisted even if we release the target.
     releaseTarget(targetId);
 
     if (!garbageCollectorIsEager()) {
       cachedTargetData = localStore.getTargetData(targetOrPipeline);
-      Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
+      Assert.assertEquals(version(10), cachedTargetData.lastLimboFreeSnapshotVersion);
     }
   }
 

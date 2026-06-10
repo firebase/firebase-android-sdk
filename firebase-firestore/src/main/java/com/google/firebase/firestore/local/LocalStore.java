@@ -572,23 +572,23 @@ public final class LocalStore implements BundleCallback {
   private static boolean shouldPersistTargetData(
       TargetData oldTargetData, TargetData newTargetData, @Nullable TargetChange change) {
     // Always persist query data if we don't already have a resume token.
-    if (oldTargetData.getResumeToken().isEmpty()) return true;
+    if (oldTargetData.resumeToken.isEmpty()) return true;
 
     // Don't allow resume token changes to be buffered indefinitely. This allows us to be reasonably
     // up-to-date after a crash and avoids needing to loop over all active queries on shutdown.
     // Especially in the browser we may not get time to do anything interesting while the current
     // tab is closing.
-    long newSeconds = newTargetData.getSnapshotVersion().getTimestamp().getSeconds();
-    long oldSeconds = oldTargetData.getSnapshotVersion().getTimestamp().getSeconds();
+    long newSeconds = newTargetData.snapshotVersion.getTimestamp().getSeconds();
+    long oldSeconds = oldTargetData.snapshotVersion.getTimestamp().getSeconds();
     long timeDelta = newSeconds - oldSeconds;
     if (timeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) return true;
 
     // Update the target cache if sufficient time has passed since the last
     // LastLimboFreeSnapshotVersion
     long newLimboFreeSeconds =
-        newTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+        newTargetData.lastLimboFreeSnapshotVersion.getTimestamp().getSeconds();
     long oldLimboFreeSeconds =
-        oldTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+        oldTargetData.lastLimboFreeSnapshotVersion.getTimestamp().getSeconds();
     long limboFreeTimeDelta = newLimboFreeSeconds - oldLimboFreeSeconds;
     if (limboFreeTimeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) return true;
 
@@ -627,7 +627,7 @@ public final class LocalStore implements BundleCallback {
                   targetId);
 
               // Advance the last limbo free snapshot version
-              SnapshotVersion lastLimboFreeSnapshotVersion = targetData.getSnapshotVersion();
+              SnapshotVersion lastLimboFreeSnapshotVersion = targetData.snapshotVersion;
               TargetData updatedTargetData =
                   targetData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
               queryDataByTarget.put(targetId, updatedTargetData);
@@ -669,7 +669,7 @@ public final class LocalStore implements BundleCallback {
     if (cached != null) {
       // This query has been listened to previously, so reuse the previous targetID.
       // TODO: freshen last accessed date?
-      targetId = cached.getTargetId();
+      targetId = cached.targetId;
       // deserialized target is missing a firestore reference, so we use the one that has it
       // to replace just to be safe.
       cached = cached.withTarget(target);
@@ -760,8 +760,8 @@ public final class LocalStore implements BundleCallback {
             documentMap.put(documentKey, document);
           }
 
-          targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
-          targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
+          targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.targetId);
+          targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.targetId);
 
           DocumentChangeResult result = populateDocumentChanges(documentMap);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
@@ -778,13 +778,13 @@ public final class LocalStore implements BundleCallback {
     TargetData existingTargetData =
         allocateTarget(
             new TargetOrPipeline.TargetWrapper(namedQuery.getBundledQuery().getTarget()));
-    int targetId = existingTargetData.getTargetId();
+    int targetId = existingTargetData.targetId;
 
     persistence.runTransaction(
         "Saved named query",
         () -> {
           // Only update the matching documents if it is newer than what the SDK already has
-          if (namedQuery.getReadTime().compareTo(existingTargetData.getSnapshotVersion()) > 0) {
+          if (namedQuery.getReadTime().compareTo(existingTargetData.snapshotVersion) > 0) {
             // Update existing target data because the query from the bundle is newer.
             TargetData newTargetData =
                 existingTargetData.withResumeToken(ByteString.EMPTY, namedQuery.getReadTime());
@@ -862,7 +862,7 @@ public final class LocalStore implements BundleCallback {
           // Note: This also updates the query cache
           persistence.getReferenceDelegate().removeTarget(targetData);
           queryDataByTarget.remove(targetId);
-          targetIdByTarget.remove(targetData.getTarget());
+          targetIdByTarget.remove(targetData.target);
         });
   }
 
@@ -879,8 +879,8 @@ public final class LocalStore implements BundleCallback {
     ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
 
     if (targetData != null) {
-      lastLimboFreeSnapshotVersion = targetData.getLastLimboFreeSnapshotVersion();
-      remoteKeys = this.targetCache.getMatchingKeysForTargetId(targetData.getTargetId());
+      lastLimboFreeSnapshotVersion = targetData.lastLimboFreeSnapshotVersion;
+      remoteKeys = this.targetCache.getMatchingKeysForTargetId(targetData.targetId);
     }
 
     ImmutableSortedMap<DocumentKey, Document> documents =

@@ -399,7 +399,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void listen(TargetData targetData) {
     // Get any remote target ID currently mapped to the targetData
-    int sdkTargetId = targetData.getTargetId();
+    int sdkTargetId = targetData.targetId;
     RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
 
     // If remote store is still listening for this remote target ID, this is a
@@ -416,14 +416,14 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     RemoteTargetData remoteTargetData =
         new RemoteTargetData(
-            targetData.getTarget(),
+            targetData.target,
             remoteTargetId,
-            targetData.getSequenceNumber(),
-            targetData.getPurpose(),
-            targetData.getSnapshotVersion(),
-            targetData.getLastLimboFreeSnapshotVersion(),
-            targetData.getResumeToken(),
-            targetData.getExpectedCount());
+            targetData.sequenceNumber,
+            targetData.purpose,
+            targetData.snapshotVersion,
+            targetData.lastLimboFreeSnapshotVersion,
+            targetData.resumeToken,
+            targetData.expectedCount);
 
     listenTargets.put(remoteTargetId, remoteTargetData);
 
@@ -435,11 +435,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void sendWatchRequest(RemoteTargetData remoteTargetData) {
-    RemoteTargetId remoteTargetId = remoteTargetData.getTargetId();
+    RemoteTargetId remoteTargetId = remoteTargetData.targetId;
     watchChangeAggregator.recordPendingTargetRequest(remoteTargetId);
 
-    if (!remoteTargetData.getResumeToken().isEmpty()
-        || remoteTargetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+    if (!remoteTargetData.resumeToken.isEmpty()
+        || remoteTargetData.snapshotVersion.compareTo(SnapshotVersion.NONE) > 0) {
 
       Integer sdkTargetId = this.targetIdMapRemoteToSdk.get(remoteTargetId);
 
@@ -652,8 +652,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           // Clear the resume token for the query, since we're in a known mismatch state.
           this.listenTargets.put(
               remoteTargetId,
-              remoteTargetData.withResumeToken(
-                  ByteString.EMPTY, remoteTargetData.getSnapshotVersion()));
+              remoteTargetData.withResumeToken(ByteString.EMPTY, remoteTargetData.snapshotVersion));
 
           // Cause a hard reset by unwatching and rewatching immediately, but deliberately don't
           // send a resume token so that we get a full update.
@@ -666,9 +665,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           // reconnect).
           RemoteTargetData requestTargetData =
               new RemoteTargetData(
-                  remoteTargetData.getTarget(),
+                  remoteTargetData.target,
                   remoteTargetId,
-                  remoteTargetData.getSequenceNumber(),
+                  remoteTargetData.sequenceNumber,
                   /* purpose= */ entry.getValue());
           this.sendWatchRequest(requestTargetData);
         }

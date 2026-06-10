@@ -1414,9 +1414,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       // with the single assertEquals on the TargetData objects themselves if the sequenceNumber is
       // ever made to be consistent.
       // assertEquals(expectedTarget, actualTarget);
-      assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
-      if (usePipelineMode && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
-        Target target = expectedTarget.getTarget().target();
+      assertEquals(expectedTarget.purpose, actualTarget.purpose);
+      if (usePipelineMode && !expectedTarget.purpose.equals(QueryPurpose.LIMBO_RESOLUTION)) {
+        Target target = expectedTarget.target.target();
         assertEquals(
             new TargetOrPipeline.PipelineWrapper(
                 new Query(
@@ -1429,18 +1429,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
                         target.getStartAt(),
                         target.getEndAt())
                     .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))),
-            actualTarget.getTarget());
+            actualTarget.target);
       } else {
-        assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
+        assertEquals(expectedTarget.target, actualTarget.target);
       }
-      assertEquals(remoteTargetId.value(), actualTarget.getTargetId().value());
-      assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
+      assertEquals(remoteTargetId.value(), actualTarget.targetId.value());
+      assertEquals(expectedTarget.snapshotVersion, actualTarget.snapshotVersion);
       assertEquals(
-          expectedTarget.getResumeToken().toStringUtf8(),
-          actualTarget.getResumeToken().toStringUtf8());
+          expectedTarget.resumeToken.toStringUtf8(), actualTarget.resumeToken.toStringUtf8());
 
-      if (expectedTarget.getExpectedCount() != null) {
-        assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+      if (expectedTarget.expectedCount != null) {
+        assertEquals(expectedTarget.expectedCount, actualTarget.expectedCount);
       }
 
       actualTargets.remove(remoteTargetId);

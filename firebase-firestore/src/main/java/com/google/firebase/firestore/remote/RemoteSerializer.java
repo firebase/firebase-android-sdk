@@ -500,7 +500,7 @@ public final class RemoteSerializer {
 
   @Nullable
   public Map<String, String> encodeListenRequestLabels(RemoteTargetData targetData) {
-    @Nullable String value = encodeLabel(targetData.getPurpose());
+    @Nullable String value = encodeLabel(targetData.purpose);
     if (value == null) {
       return null;
     }
@@ -528,7 +528,7 @@ public final class RemoteSerializer {
 
   public com.google.firestore.v1.Target encodeTarget(RemoteTargetData targetData) {
     com.google.firestore.v1.Target.Builder builder = com.google.firestore.v1.Target.newBuilder();
-    TargetOrPipeline target = targetData.getTarget();
+    TargetOrPipeline target = targetData.target;
 
     if (target.isPipeline()) {
       PipelineQueryTarget.Builder pipelineBuilder = PipelineQueryTarget.newBuilder();
@@ -543,21 +543,21 @@ public final class RemoteSerializer {
       builder.setQuery(encodeQueryTarget(target.target()));
     }
 
-    builder.setTargetId(targetData.getTargetId().value());
+    builder.setTargetId(targetData.targetId.value());
 
-    if (targetData.getResumeToken().isEmpty()
-        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+    if (targetData.resumeToken.isEmpty()
+        && targetData.snapshotVersion.compareTo(SnapshotVersion.NONE) > 0) {
       // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
       // tests depend on this behaviour though (leaving min() out of serialization).
-      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+      builder.setReadTime(encodeTimestamp(targetData.snapshotVersion.getTimestamp()));
     } else {
-      builder.setResumeToken(targetData.getResumeToken());
+      builder.setResumeToken(targetData.resumeToken);
     }
 
-    if (targetData.getExpectedCount() != null
-        && (!targetData.getResumeToken().isEmpty()
-            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
-      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
+    if (targetData.expectedCount != null
+        && (!targetData.resumeToken.isEmpty()
+            || targetData.snapshotVersion.compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.expectedCount));
     }
 
     return builder.build();

@@ -51,7 +51,7 @@ public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetM
 
   /** Sets or replaces the local state for the provided query data. */
   public void setSyncedKeys(RemoteTargetData targetData, ImmutableSortedSet<DocumentKey> keys) {
-    this.queryData.put(targetData.getTargetId().value(), targetData);
-    this.syncedKeys.put(targetData.getTargetId().value(), keys);
+    this.queryData.put(targetData.targetId.value(), targetData);
+    this.syncedKeys.put(targetData.targetId.value(), keys);
   }
 }

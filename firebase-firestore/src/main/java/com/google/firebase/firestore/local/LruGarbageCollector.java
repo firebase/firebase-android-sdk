@@ -218,7 +218,7 @@ public class LruGarbageCollector {
       return ListenSequence.INVALID;
     }
     RollingSequenceNumberBuffer buffer = new RollingSequenceNumberBuffer(count);
-    delegate.forEachTarget((targetData) -> buffer.addElement(targetData.getSequenceNumber()));
+    delegate.forEachTarget((targetData) -> buffer.addElement(targetData.sequenceNumber));
     delegate.forEachOrphanedDocumentSequenceNumber(buffer::addElement);
     return buffer.getMaxValue();
   }
