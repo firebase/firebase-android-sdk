@@ -21,6 +21,7 @@ import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.C
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -215,6 +216,209 @@ class TypicalAppFunctionalTests {
       .contains(
         "injectMappingFileIdIntoResource - com_google_firebase_crashlytics_mappingfileid.xml test321"
       )
+  }
+
+  @Test
+  fun `injectCrashlyticsMappingFileIdRelease is UP_TO_DATE on second invocation`() {
+    val first =
+      buildGradleRunner(
+        projectDir,
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache"
+      )
+
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val second =
+      buildGradleRunner(
+        projectDir,
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache"
+      )
+
+    assertThat(second.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(UP_TO_DATE)
+  }
+
+  @Test
+  fun `release mapping file id is preserved across rebuilds`() {
+    buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+    val idBefore = idFile.readText()
+    assertThat(idBefore).isNotEmpty()
+
+    buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+
+    assertThat(idFile.readText()).isEqualTo(idBefore)
+  }
+
+  @Test
+  fun `task re-runs after clean`() {
+    buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
+
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+
+    val rerun =
+      buildGradleRunner(
+        projectDir,
+        ":clean",
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache",
+      )
+
+    assertThat(rerun.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    assertThat(idFile.exists()).isTrue()
+    assertThat(idFile.readText()).isNotEmpty()
+  }
+
+  @Test
+  fun `toggling mappingFileUploadEnabled invalidates the task`() {
+    val first =
+      buildGradleRunner(
+        projectDir,
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache"
+      )
+
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    val idFile = File(projectDir, "build/crashlytics/release/mappingFileId.txt")
+    assertThat(idFile.readText()).isEqualTo("test321")
+
+    buildFile.writeText(
+      """
+        import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+
+        plugins {
+          id("com.android.application") version "8.1.4"
+          id("com.google.gms.google-services") version "4.4.1"
+          id("com.google.firebase.crashlytics") version "$pluginVersion"
+        }
+
+        android {
+          compileSdk = 33
+          namespace = "com.google.firebase.testing.crashlytics"
+
+          buildTypes {
+            release {
+              configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+              }
+              isMinifyEnabled = true
+            }
+          }
+        }
+      """
+    )
+
+    val second =
+      buildGradleRunner(
+        projectDir,
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache"
+      )
+
+    assertThat(second.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+    assertThat(idFile.readText()).isEqualTo("00000000000000000000000000000000")
+  }
+
+  @Test
+  fun `release mapping file id task is invalidated when source code changes`() {
+    val sourceFile =
+      File(projectDir, "src/main/kotlin/com/google/firebase/testing/crashlytics/Greeter.kt")
+    sourceFile.parentFile.mkdirs()
+    sourceFile.writeText(
+      """
+        package com.google.firebase.testing.crashlytics
+        class Greeter { fun hello() = "hello" }
+      """
+    )
+
+    val first = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    // Re-running without changing inputs must NOT regenerate the id (would invalidate downstream
+    // R8, packaging, etc. — the bug PR #8185 originally fixed).
+    val noChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(noChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(UP_TO_DATE)
+
+    // Editing the source MUST invalidate the task so a new id is minted: the on-device id is the
+    // handle Crashlytics uses to match crashes to the right uploaded mapping.txt, and R8 will
+    // produce a different mapping.txt after this edit.
+    sourceFile.writeText(
+      """
+        package com.google.firebase.testing.crashlytics
+        class Greeter { fun hello() = "hello world" }
+      """
+    )
+    val afterEdit = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(afterEdit.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+  }
+
+  @Test
+  fun `release mapping file id task is invalidated when the runtime classpath changes`() {
+    val first = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val noChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(noChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(UP_TO_DATE)
+
+    // Adding a dependency changes the obfuscated output (new code is bundled and renamed) with no
+    // source edit, so R8 produces a different mapping.txt. fileTree("src") would miss this; the
+    // @Classpath input must catch it.
+    buildFile.appendText(
+      """
+        dependencies {
+          implementation("org.jetbrains:annotations:23.0.0")
+        }
+      """
+    )
+    val afterDependency = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(afterDependency.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(SUCCESS)
+  }
+
+  @Test
+  fun `release mapping file id task is invalidated when proguard rules change`() {
+    val rulesFile = File(projectDir, "proguard-rules.pro")
+    rulesFile.writeText("-dontwarn com.google.firebase.testing.**")
+
+    buildFile.writeText(
+      """
+        plugins {
+          id("com.android.application") version "8.1.4"
+          id("com.google.gms.google-services") version "4.4.1"
+          id("com.google.firebase.crashlytics") version "$pluginVersion"
+        }
+
+        android {
+          compileSdk = 33
+          namespace = "com.google.firebase.testing.crashlytics"
+
+          buildTypes {
+            release {
+              isMinifyEnabled = true
+              proguardFiles("proguard-rules.pro")
+            }
+          }
+        }
+      """
+    )
+
+    val first = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(first.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
+
+    val noChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(noChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(UP_TO_DATE)
+
+    // Changing keep rules changes what R8 obfuscates, so the mapping.txt changes with no source
+    // edit. The proguard config files are an input so the id must regenerate.
+    rulesFile.appendText("\n-keep class com.google.firebase.testing.crashlytics.** { *; }\n")
+    val afterRuleChange = buildGradleRunner(projectDir, ":injectCrashlyticsMappingFileIdRelease")
+    assertThat(afterRuleChange.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
+      .isEqualTo(SUCCESS)
   }
 
   @BeforeEach
