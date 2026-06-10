@@ -12,6 +12,7 @@
         ":firebase-messaging-directboot",
         ":ai-logic:firebase-ai",
         ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop",
         ":appcheck:firebase-appcheck",
         ":appcheck:firebase-appcheck-debug",
         ":appcheck:firebase-appcheck-debug-testing",
