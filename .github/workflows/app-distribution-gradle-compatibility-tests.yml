@@ -55,7 +55,7 @@ jobs:
           path: firebase-appdistribution-gradle/build/reports/tests/
       
       - name: Create GitHub Issue on Failure
-        if: failure()
+        if: failure() && github.event_name == 'schedule' && github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

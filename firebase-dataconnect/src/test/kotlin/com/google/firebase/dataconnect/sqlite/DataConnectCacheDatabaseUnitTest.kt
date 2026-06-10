@@ -39,6 +39,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.duration
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.longWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.sqliteSequenceNumber
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -1104,14 +1105,20 @@ class DataConnectCacheDatabaseUnitTest {
             }
           }
 
-        val sequenceNumberArb = Arb.longWithEvenNumDigitsDistribution()
+        val sequenceNumberArb = Arb.dataConnect.sqliteSequenceNumber()
         val sequenceNumbers = List(entityRowIds.size + 1) { sequenceNumberArb.bind() }
         val distinctSortedSequenceNumbers = sequenceNumbers.distinct().sorted()
         assume(distinctSortedSequenceNumbers.size >= 2)
 
         val querySequenceNumber =
           distinctSortedSequenceNumbers.dropLast(1).random(randomSource().random)
-        db.execSQL(logger, "UPDATE queries SET last_update_sequence_number = $querySequenceNumber")
+        db.execSQL(
+          logger,
+          """
+            UPDATE queries
+            SET last_update_sequence_number = ${querySequenceNumber.sequenceNumber}
+          """
+        )
 
         val entitySequenceNumbers = sequenceNumbers.minus(querySequenceNumber).iterator()
         entityRowIds.forEach { entityRowId ->
@@ -1119,14 +1126,14 @@ class DataConnectCacheDatabaseUnitTest {
           db.execSQL(
             logger,
             """
-          UPDATE entities
-          SET last_update_sequence_number = $entitySequenceNumber
-          WHERE id=$entityRowId
-        """
+              UPDATE entities
+              SET last_update_sequence_number = ${entitySequenceNumber.sequenceNumber}
+              WHERE id=$entityRowId
+            """
           )
         }
 
-        SqliteSequenceNumber(distinctSortedSequenceNumbers.last())
+        distinctSortedSequenceNumbers.last()
       },
       verifyResult = { result, _, maxEntitySequenceNumber ->
         result.maxLastUpdateSequenceNumber shouldBe maxEntitySequenceNumber

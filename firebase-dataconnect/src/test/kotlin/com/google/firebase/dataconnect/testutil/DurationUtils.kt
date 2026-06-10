@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.querymgr
+package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.DataSource
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 
-internal data class DataSourcePair<T>(val data: T, val source: DataSource)
+fun com.google.protobuf.Duration.toKotlinDuration(): kotlin.time.Duration =
+  seconds.seconds + nanos.nanoseconds

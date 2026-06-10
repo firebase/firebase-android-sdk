@@ -29,8 +29,9 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.to
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlowListenerMessageFormatter
@@ -196,9 +197,16 @@ internal class DataConnectGrpcRPCs(
   }
 
   sealed interface ExecuteQueryResult {
-    @JvmInline value class FromCache(val data: Struct) : ExecuteQueryResult
 
-    @JvmInline value class FromServer(val response: ExecuteQueryResponse) : ExecuteQueryResult
+    @JvmInline
+    value class FromCache(val data: Struct) : ExecuteQueryResult {
+      override fun toString() = "FromCache(data=${data.toCompactString()})"
+    }
+
+    @JvmInline
+    value class FromServer(val response: ExecuteQueryResponse) : ExecuteQueryResult {
+      override fun toString() = "FromServer(response=${response.toCompactString()})"
+    }
   }
 
   private class QueryCacheInfo(
@@ -226,7 +234,7 @@ internal class DataConnectGrpcRPCs(
     fetchPolicy: FetchPolicy,
     authToken: DataConnectAuth.GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
-  ): ExecuteQueryResult {
+  ): SqliteSequencedReference<ExecuteQueryResult> {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery($operationName)"
 
@@ -258,7 +266,7 @@ internal class DataConnectGrpcRPCs(
     )
 
     if (fetchPolicy != FetchPolicy.SERVER_ONLY) {
-      val cachedResult: ExecuteQueryResult.FromCache? =
+      val cachedResult =
         cacheInfo?.executeQueryAgainstCache(
           requestId = requestId,
           kotlinMethodName = kotlinMethodName,
@@ -282,27 +290,28 @@ internal class DataConnectGrpcRPCs(
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
 
-    result.onSuccess { response ->
-      logger.logGrpcReceived(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        response = { response.toStructProto() },
-        responseTypeName = "ExecuteQueryResponse",
-      )
+    val cachedDataSqliteSequenceNumber =
+      result.getOrNull()?.let { response ->
+        logger.logGrpcReceived(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          response = { response.toStructProto() },
+          responseTypeName = "ExecuteQueryResponse",
+        )
 
-      cacheInfo?.run {
-        cache
-          .open()
-          .insertQueryResult(
-            authUid,
-            queryId,
-            queryData = response.data,
-            maxAge = cache.maxAgeProto,
-            currentTimeMillis = currentTimeMillis(),
-            getEntityIdForPath = response.getEntityIdForPathFunction(),
-          )
+        cacheInfo?.run {
+          cache
+            .open()
+            .insertQueryResult(
+              authUid,
+              queryId,
+              queryData = response.data,
+              maxAge = cache.maxAgeProto,
+              currentTimeMillis = currentTimeMillis(),
+              getEntityIdForPath = response.getEntityIdForPathFunction(),
+            )
+        }
       }
-    }
 
     result.onFailure {
       logger.logGrpcFailed(
@@ -312,45 +321,48 @@ internal class DataConnectGrpcRPCs(
       )
     }
 
-    return ExecuteQueryResult.FromServer(result.getOrThrow())
+    return SqliteSequencedReference(
+      cachedDataSqliteSequenceNumber,
+      ExecuteQueryResult.FromServer(result.getOrThrow()),
+    )
   }
 
   private suspend fun QueryCacheInfo.executeQueryAgainstCache(
     requestId: String,
     kotlinMethodName: String,
     fetchPolicy: FetchPolicy,
-  ): ExecuteQueryResult.FromCache? {
+  ): SqliteSequencedReference<ExecuteQueryResult.FromCache>? {
     val staleResult =
       when (fetchPolicy) {
-        FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
-        else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
+        FetchPolicy.CACHE_ONLY -> GetQueryResultResult.Found::class
+        else -> GetQueryResultResult.Stale::class
       }
 
     val cachedResult =
       cache.open().getQueryResult(authUid, queryId, currentTimeMillis(), staleResult)
 
-    val cachedData: Struct? =
-      when (cachedResult) {
-        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
-          logger.logGrpcReturningFromCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          cachedResult.struct
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.Stale -> {
-          logger.logGrpcIgnoringStaleCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          null
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
+    return when (cachedResult) {
+      is GetQueryResultResult.NotFound -> null
+      is GetQueryResultResult.Found -> {
+        logger.logGrpcReturningFromCache(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          cachedResult = cachedResult,
+        )
+        SqliteSequencedReference(
+          cachedResult.maxLastUpdateSequenceNumber,
+          ExecuteQueryResult.FromCache(cachedResult.struct),
+        )
       }
-
-    return cachedData?.let(ExecuteQueryResult::FromCache)
+      is GetQueryResultResult.Stale -> {
+        logger.logGrpcIgnoringStaleCache(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          cachedResult = cachedResult,
+        )
+        null
+      }
+    }
   }
 
   suspend fun connect(
@@ -674,7 +686,7 @@ internal class DataConnectGrpcRPCs(
     private fun Logger.logGrpcReturningFromCache(
       requestId: String,
       kotlinMethodName: String,
-      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Found,
+      cachedResult: GetQueryResultResult.Found,
     ) = debug {
       "$kotlinMethodName [rid=$requestId] returning result from cache: " +
         "${cachedResult.struct.toCompactString()} " +
@@ -684,7 +696,7 @@ internal class DataConnectGrpcRPCs(
     private fun Logger.logGrpcIgnoringStaleCache(
       requestId: String,
       kotlinMethodName: String,
-      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Stale,
+      cachedResult: GetQueryResultResult.Stale,
     ) = debug {
       "$kotlinMethodName [rid=$requestId] ignoring result from cache " +
         "because it expired ${cachedResult.staleness} ago"
