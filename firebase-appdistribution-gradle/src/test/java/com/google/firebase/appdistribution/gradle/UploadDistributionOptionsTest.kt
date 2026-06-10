@@ -419,6 +419,18 @@ class UploadDistributionOptionsTest {
     assertContains(message, TEST_CASE_WITH_LOGIN_RESOURCES.message)
   }
 
+  @Test
+  fun testSetResultsBucket_Successfully() {
+    val expected = "my-custom-bucket"
+    val options =
+      UploadDistributionOptions(
+        appId = APP_ID,
+        binaryPath = APK_PATH,
+        resultsBucket = expected,
+      )
+    assertEquals(expected, options.resultsBucket)
+  }
+
   companion object {
     const val APP_ID = "1:123456789:android:abc123"
     const val APK_PATH = "src/test/fixtures/test.apk"
