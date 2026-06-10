@@ -13,7 +13,7 @@
   ([#8278](https://github.com/firebase/firebase-android-sdk/pull/8278))
 - [fixed] Realtime query subscriptions now correctly throw an exception when
   the Firebase Auth user changes, instead of silently stopping emitting.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
 
 # 17.3.0
 
