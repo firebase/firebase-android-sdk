@@ -41,14 +41,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -87,11 +91,25 @@ internal class DataConnectBidiConnectStream(
   private val logger: Logger,
 ) {
 
+  val isPermanentlyFailedDueToAuthUidChange: Boolean
+    get() = authUidChangedFlow.replayCache.isNotEmpty()
+
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
    * [com.google.firebase.dataconnect.FirebaseDataConnect.close] is called.
    */
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
+
+  /**
+   * A flow that emits a [AuthUidChangedException] when the connection is permanently failed due to
+   * the Firebase Auth user changing.
+   */
+  private val _authUidChangedFlow =
+    MutableSharedFlow<AuthUidChangedException>(
+      replay = 1,
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+  private val authUidChangedFlow = _authUidChangedFlow.asSharedFlow()
 
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
@@ -115,6 +133,12 @@ internal class DataConnectBidiConnectStream(
           }
         }
         .map(SubscriptionEvent::Message)
+        .catch { exception ->
+          if (exception is AuthUidChangedException) {
+            _authUidChangedFlow.emit(exception)
+          }
+          throw exception
+        }
         .onCompletion { throwable ->
           with(connectionStateUpdater) {
             connectionStateFlow.update(GrpcAuthMergedFlowEvent.Disconnect)
@@ -204,15 +228,21 @@ internal class DataConnectBidiConnectStream(
         .filter { it.message.requestId == requestId }
         .mapNotNull { it.message.toExecuteResponse(it.authUid) }
 
-    // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called.
-    return merge(subscriptionFlow, scopeCompletedFlow).transformWhile {
-      if (it !== null && coroutineScope.isActive) {
-        emit(it)
-        true
-      } else {
-        false
+    // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called, and
+    // fail if the Firebase Auth user changes.
+    return merge(
+        subscriptionFlow,
+        scopeCompletedFlow,
+        authUidChangedFlow.transform { throw it },
+      )
+      .transformWhile {
+        if (it !== null && coroutineScope.isActive) {
+          emit(it)
+          true
+        } else {
+          false
+        }
       }
-    }
   }
 
   private sealed interface MessageOrSubscribe {
