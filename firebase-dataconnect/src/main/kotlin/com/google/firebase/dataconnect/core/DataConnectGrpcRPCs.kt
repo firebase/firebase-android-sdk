@@ -74,6 +74,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -375,7 +376,8 @@ internal class DataConnectGrpcRPCs(
     dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
-    val connectionAuthUid = dataConnectAuth.getToken(streamId).ref?.authUid
+    val initialAuthToken = AtomicReference(dataConnectAuth.getToken(streamId))
+    val connectionAuthUid = initialAuthToken.get().ref?.authUid
 
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
@@ -393,7 +395,7 @@ internal class DataConnectGrpcRPCs(
     val createHeaders:
       suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
       {
-        val authToken = dataConnectAuth.getToken(streamId)
+        val authToken = initialAuthToken.getAndSet(null) ?: dataConnectAuth.getToken(streamId)
         val authUid = authToken.ref?.authUid
         if (authUid != connectionAuthUid) {
           throw AuthUidChangedException(connectionAuthUid, authUid)
@@ -812,5 +814,5 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
   return ::getEntityIdForPathFunction
 }
 
-internal class AuthUidChangedException(oldAuthUid: AuthUid?, newAuthUid: AuthUid?) :
-  DataConnectException("Firebase Auth UID changed from $oldAuthUid to $newAuthUid")
+internal class AuthUidChangedException(currentAuthUid: AuthUid?, newAuthUid: AuthUid?) :
+  DataConnectException("Firebase Auth UID changed from $currentAuthUid to $newAuthUid")

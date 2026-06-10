@@ -94,6 +94,7 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -101,7 +102,9 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
@@ -748,15 +751,22 @@ class DataConnectGrpcRPCsUnitTest {
   }
 
   private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
-    val dataConnectAuth: DataConnectAuth = mockk {
-      val token = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } answers { token.sequenced() }
-    }
+    val dataConnectAuth: DataConnectAuth =
+      mockk(name = "DataConnectAuth@xjk254qsb3") {
+        val authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
+        val authTokenStateFlow = MutableStateFlow(authToken.sequenced())
+        every { token } returns authTokenStateFlow
+        coEvery { getToken(any()) } answers
+          {
+            authTokenStateFlow.updateAndGet { authToken.sequenced() }
+          }
+      }
 
-    val dataConnectAppCheck: DataConnectAppCheck = mockk {
-      val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
-      coEvery { getToken(any()) } answers { token.sequenced() }
-    }
+    val dataConnectAppCheck: DataConnectAppCheck =
+      mockk(name = "DataConnectAppCheck@tye4ewtjzz") {
+        val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
+        coEvery { getToken(any()) } answers { token.sequenced() }
+      }
 
     return connect(
       streamId = streamIdArb.next(rs),
