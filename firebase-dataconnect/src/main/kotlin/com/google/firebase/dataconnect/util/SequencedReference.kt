@@ -78,5 +78,10 @@ internal data class SequencedReference<out T>(val sequenceNumber: Long, val ref:
           "expected ref to have type ${U::class.qualifiedName}, " +
             "but got ${ref::class.qualifiedName} ($ref)"
         )
+
+    fun <T> maxOfBySequenceNumber(
+      ref1: SequencedReference<T>,
+      ref2: SequencedReference<T>,
+    ): SequencedReference<T> = if (ref1.sequenceNumber >= ref2.sequenceNumber) ref1 else ref2
   }
 }

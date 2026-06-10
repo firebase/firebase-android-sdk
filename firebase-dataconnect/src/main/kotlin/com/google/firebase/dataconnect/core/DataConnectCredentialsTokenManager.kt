@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.maxOfBySequenceNumber
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
@@ -49,6 +50,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -400,8 +402,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
         )
 
       val sequencedTokenResult = SequencedReference(sequencedResult.sequenceNumber, tokenResult)
-      _token.value = sequencedTokenResult
-      return sequencedTokenResult
+
+      return _token.updateAndGet { current -> maxOfBySequenceNumber(current, sequencedTokenResult) }
     }
   }
 
