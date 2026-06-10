@@ -25,7 +25,6 @@ import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.SequencedReference.Companion.asNonNullRefOrNull
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
@@ -458,10 +457,7 @@ private fun mergeGrpcAndAuth(
 ): Flow<GrpcAuthMergedFlowEvent> =
   mergeColdAndHotFlow(
     coldFlow = grpcBidiFlow.map(GrpcAuthMergedFlowEvent::Grpc),
-    hotFlow =
-      dataConnectAuth.token.mapNotNull {
-        it.asNonNullRefOrNull()?.let(GrpcAuthMergedFlowEvent::Auth)
-      }
+    hotFlow = dataConnectAuth.token.map(GrpcAuthMergedFlowEvent::Auth)
   )
 
 private sealed interface GrpcAuthMergedFlowEvent {
@@ -477,7 +473,7 @@ private sealed interface GrpcAuthMergedFlowEvent {
   }
 
   @JvmInline
-  value class Auth(val event: SequencedReference<GetAuthTokenResult>) : GrpcAuthMergedFlowEvent {
+  value class Auth(val event: SequencedReference<GetAuthTokenResult?>) : GrpcAuthMergedFlowEvent {
     override fun toString() = "Auth($event)"
   }
 
@@ -571,7 +567,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
   private fun processAuthEvent(
     currentState: SubscriptionEvent.Connection,
-    sequencedAuthToken: SequencedReference<GetAuthTokenResult>,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Connection? =
     when (currentState) {
       is SubscriptionEvent.Connected -> processAuthEvent(currentState, sequencedAuthToken)
@@ -580,14 +576,14 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
   private fun processAuthEvent(
     currentState: SubscriptionEvent.Connected,
-    sequencedAuthToken: SequencedReference<GetAuthTokenResult>,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Connected? {
     if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
       return null // ignore outdated auth token changes
     }
 
     val oldToken = currentState.authToken.ref?.token
-    val newToken = sequencedAuthToken.ref.token
+    val newToken = sequencedAuthToken.ref?.token
     if (oldToken == newToken) {
       return null // Do not re-send the same token, as that is wasteful.
     }
@@ -596,7 +592,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     // The caller will need to re-subscribe with the new authUid as the connection stream does
     // not support changing authUid mid-stream.
     val currentAuthUid = currentState.authToken.ref?.authUid
-    val newAuthUid = sequencedAuthToken.ref.authUid
+    val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
       throw AuthUidChangedException(currentAuthUid, newAuthUid)
     }
@@ -614,7 +610,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
   private fun processAuthEvent(
     currentState: SubscriptionEvent.Disconnected,
-    sequencedAuthToken: SequencedReference<GetAuthTokenResult>,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Disconnected? =
     if (
       currentState.pendingAuthToken != null &&
@@ -649,7 +645,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       is SubscriptionEvent.Connected -> currentState
       is SubscriptionEvent.Disconnected -> {
         val connectedState = SubscriptionEvent.Connected(event)
-        val pendingAuthToken = currentState.pendingAuthToken?.asNonNullRefOrNull()
+        val pendingAuthToken = currentState.pendingAuthToken
         if (pendingAuthToken == null) {
           connectedState
         } else {
