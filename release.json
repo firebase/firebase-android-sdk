@@ -8,6 +8,7 @@
         ":firebase-firestore",
         ":firebase-installations",
         ":firebase-messaging",
+        ":firebase-appdistribution-gradle",
         ":firebase-messaging-directboot",
         ":ai-logic:firebase-ai",
         ":ai-logic:firebase-ai-ondevice",
