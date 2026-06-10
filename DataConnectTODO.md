@@ -39,3 +39,8 @@ Ask gemini to spit out the ssh and adb commands to forward the ports from the re
 
 Add tests to verify that the algorithm used by FirebaseDataConnectImpl.createDataConnectCache()
 to calculate the database path NEVER changes.
+
+## Make AuthUidChangedException public
+
+Making AuthUidChangedException public allows users to catch the exception easily and
+re-subscribe if they want to.
