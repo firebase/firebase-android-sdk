@@ -653,7 +653,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
         } else {
           // Update the auth token on the stream in the rare case that a new auth token was provided
           // between stream connection and receiving the "connected" event.
-          processAuthEvent(connectedState, pendingAuthToken)
+          processAuthEvent(connectedState, pendingAuthToken) ?: connectedState
         }
       }
     }
