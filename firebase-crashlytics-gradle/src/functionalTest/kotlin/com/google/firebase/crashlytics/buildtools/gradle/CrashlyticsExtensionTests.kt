@@ -119,14 +119,7 @@ class CrashlyticsExtensionTests {
     // There is no real use case for passing this path in an array, but just to prove the solution
     // only aims for single provided overrides this check is added.
     assertThat(result.output)
-      .doesNotContain(
-        """
-    The unstrippedNativeLibsDir is manually overridden.
-    This is unnecessary, it is safe to remove from the unstrippedNativeLibsDir 
-    override in the CrashlyticsExtension configuration block.
-        """
-          .trimIndent()
-      )
+      .doesNotContain("it is safe to remove from the unstrippedNativeLibsDir")
   }
 
   @Test
