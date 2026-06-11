@@ -18,12 +18,6 @@ jobs:
         with:
           submodules: true
 
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
@@ -46,20 +40,13 @@ jobs:
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
           FTL_RESULTS_DIR: ${{ format('logs/{0}/{1}_{2}/artifacts/', github.workflow, github.run_id, github.run_attempt) }}
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
-        with:
-          api-level: 34
-          arch: x86_64
-          ram-size: 4096M
-          heap-size: 4096M
-          script: |
-            adb logcat -v time > logcat.txt &
-            ./gradlew ai-logic:firebase-ai:connectedCheck withErrorProne -PtargetBackend="prod"
+        run: |
+          ./gradlew ai-logic:firebase-ai:deviceCheck withErrorProne -PtargetBackend="prod"
 
       - name: Upload logs
         if: failure()
