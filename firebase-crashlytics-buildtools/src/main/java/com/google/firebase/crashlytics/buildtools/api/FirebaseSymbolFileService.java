@@ -48,16 +48,19 @@ public abstract class FirebaseSymbolFileService implements SymbolFileService {
 
     FileUtils.gZipFile(symbolFile, gZippedSymbolFile);
 
-    final URL url =
-        new URL(
-            String.format(
-                uploadRequestFormat,
-                webApi.getCodeMappingApiUrl(),
-                googleAppId,
-                extractUuid(symbolFile)));
+    try {
+      final URL url =
+          new URL(
+              String.format(
+                  uploadRequestFormat,
+                  webApi.getCodeMappingApiUrl(),
+                  googleAppId,
+                  extractUuid(symbolFile)));
 
-    webApi.uploadFile(url, gZippedSymbolFile);
-
-    gZippedSymbolFile.delete();
+      webApi.uploadFile(url, gZippedSymbolFile);
+    } finally {
+      // Ensure no orphaned files are kept after encountering a Network Issue.
+      gZippedSymbolFile.delete();
+    }
   }
 }
