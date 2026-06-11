@@ -158,19 +158,26 @@ public class JavaCompileTests {
   private Schema getSchema() {
     return Schema.obj(
         Map.of(
-            "foo", Schema.numInt(),
-            "bar", Schema.numInt("Some integer"),
-            "baz", Schema.numInt("Some integer", false),
-            "qux", Schema.numDouble(),
-            "quux", Schema.numFloat("Some floating point number"),
-            "xyzzy", Schema.array(Schema.numInt(), "A list of integers"),
-            "fee", Schema.numLong(),
+            "foo",
+            Schema.numInt(),
+            "bar",
+            Schema.numInt("Some integer"),
+            "baz",
+            Schema.numInt("Some integer", false),
+            "qux",
+            Schema.numDouble(),
+            "quux",
+            Schema.numFloat("Some floating point number"),
+            "xyzzy",
+            Schema.array(Schema.numInt(), "A list of integers"),
+            "fee",
+            Schema.numLong(),
             "ber",
-                Schema.obj(
-                    Map.of(
-                        "bez", Schema.array(Schema.numDouble("Nullable double", true)),
-                        "qez", Schema.enumeration(List.of("A", "B", "C"), "One of 3 letters"),
-                        "qeez", Schema.str("A funny string")))));
+            Schema.obj(
+                Map.of(
+                    "bez", Schema.array(Schema.numDouble("Nullable double", true)),
+                    "qez", Schema.enumeration(List.of("A", "B", "C"), "One of 3 letters"),
+                    "qeez", Schema.str("A funny string")))));
   }
 
   private LiveGenerationConfig getLiveConfig() {
