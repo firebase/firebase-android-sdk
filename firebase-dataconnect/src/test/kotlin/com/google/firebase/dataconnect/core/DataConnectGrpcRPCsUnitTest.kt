@@ -51,6 +51,8 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.toKotlinDuration
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.ListValue as ListValueProto
@@ -91,13 +93,18 @@ import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
@@ -743,14 +750,32 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
-  private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource) =
-    connect(
+  private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
+    val dataConnectAuth: DataConnectAuth =
+      mockk(name = "DataConnectAuth@xjk254qsb3") {
+        val authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs)
+        val authTokenStateFlow = MutableStateFlow(authToken.sequenced())
+        every { token } returns authTokenStateFlow
+        coEvery { getToken(any()) } answers
+          {
+            authTokenStateFlow.updateAndGet { authToken.sequenced() }
+          }
+      }
+
+    val dataConnectAppCheck: DataConnectAppCheck =
+      mockk(name = "DataConnectAppCheck@tye4ewtjzz") {
+        val token = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs)
+        coEvery { getToken(any()) } answers { token.sequenced() }
+      }
+
+    return connect(
       streamId = streamIdArb.next(rs),
-      callerSdkType = Arb.enum<CallerSdkType>().next(rs),
-      authToken = Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.2).next(rs),
-      appCheckToken = Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.2).next(rs),
-      idStringGenerator = IdStringGenerator(Random.Default),
+      Arb.enum<CallerSdkType>().next(rs),
+      dataConnectAuth,
+      dataConnectAppCheck,
+      IdStringGenerator(Random.Default),
     )
+  }
 
   private fun newDbFile() = File(temporaryFolder.newFolder(), "db.sqlite")
 
@@ -905,3 +930,6 @@ private fun listValueFromPath(path: DataConnectPath): ListValueProto {
   }
   return builder.build()
 }
+
+private fun <T> T.sequenced(): SequencedReference<T> =
+  SequencedReference(nextSequenceNumber(), this)

@@ -17,10 +17,14 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
+import com.google.firebase.dataconnect.util.CoroutineUtils.mergeColdAndHotFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
@@ -37,21 +41,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
@@ -73,10 +79,20 @@ import kotlinx.coroutines.launch
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
  */
 internal class DataConnectBidiConnectStream(
-  flow: Flow<GrpcBidiFlow.Event<StreamRequestProto, StreamResponseProto, AuthUid?>>,
+  flow:
+    Flow<
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >
+    >,
+  dataConnectAuth: DataConnectAuth,
+  idStringGenerator: IdStringGenerator,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
+
+  val isPermanentlyFailedDueToAuthUidChange: Boolean
+    get() = authUidChangedFlow.replayCache.isNotEmpty()
 
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
@@ -84,25 +100,53 @@ internal class DataConnectBidiConnectStream(
    */
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
 
+  /**
+   * A flow that emits a [AuthUidChangedException] when the connection is permanently failed due to
+   * the Firebase Auth user changing.
+   */
+  private val _authUidChangedFlow =
+    MutableSharedFlow<AuthUidChangedException>(
+      replay = 1,
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+  private val authUidChangedFlow = _authUidChangedFlow.asSharedFlow()
+
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
-      MutableStateFlow<SubscriptionEvent.Connection>(SubscriptionEvent.Disconnected)
+      MutableStateFlow<SubscriptionEvent.Connection>(
+        SubscriptionEvent.Disconnected(pendingAuthToken = null)
+      )
+    val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
 
     val sharedFlow =
-      flow
-        .onEach { event ->
-          if (event is GrpcBidiFlow.Event.ConnectionInfo) {
-            connectionStateFlow.value = SubscriptionEvent.Connected(event)
+      mergeGrpcAndAuth(flow, dataConnectAuth)
+        .mapNotNull { event ->
+          with(connectionStateUpdater) { connectionStateFlow.update(event) }
+          when (event) {
+            is GrpcAuthMergedFlowEvent.Auth,
+            GrpcAuthMergedFlowEvent.Disconnect -> null
+            is GrpcAuthMergedFlowEvent.Grpc ->
+              when (event.event) {
+                is GrpcBidiFlow.Event.ConnectionInfo -> null
+                is GrpcBidiFlow.Event.Message -> event.event
+              }
           }
         }
-        .filterIsInstance<GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>>()
         .map(SubscriptionEvent::Message)
+        .catch { exception ->
+          if (exception is AuthUidChangedException) {
+            _authUidChangedFlow.emit(exception)
+          }
+          throw exception
+        }
         .onCompletion { throwable ->
-          connectionStateFlow.value = SubscriptionEvent.Disconnected
+          with(connectionStateUpdater) {
+            connectionStateFlow.update(GrpcAuthMergedFlowEvent.Disconnect)
+          }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { _, attempt ->
-          if (attempt > 2) {
+        .retryWhen { cause, attempt ->
+          if (cause is AuthUidChangedException || attempt > 2) {
             false
           } else {
             delay(1.seconds)
@@ -184,15 +228,21 @@ internal class DataConnectBidiConnectStream(
         .filter { it.message.requestId == requestId }
         .mapNotNull { it.message.toExecuteResponse(it.authUid) }
 
-    // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called.
-    return merge(subscriptionFlow, scopeCompletedFlow).transformWhile {
-      if (it !== null && coroutineScope.isActive) {
-        emit(it)
-        true
-      } else {
-        false
+    // Configure the returned flow to end gracefully when FirebaseDataConnect.close() is called, and
+    // fail if the Firebase Auth user changes.
+    return merge(
+        subscriptionFlow,
+        scopeCompletedFlow,
+        authUidChangedFlow.transform { throw it },
+      )
+      .transformWhile {
+        if (it !== null && coroutineScope.isActive) {
+          emit(it)
+          true
+        } else {
+          false
+        }
       }
-    }
   }
 
   private sealed interface MessageOrSubscribe {
@@ -264,40 +314,6 @@ internal class DataConnectBidiConnectStream(
     val extensions: List<DataConnectPropertiesProto>,
   )
 
-  private sealed interface SubscriptionEvent {
-
-    class Message(
-      val connectionId: String,
-      val authUid: AuthUid?,
-      val message: StreamResponseProto,
-    ) : SubscriptionEvent {
-      constructor(
-        event: GrpcBidiFlow.Event.Message<StreamResponseProto, AuthUid?>
-      ) : this(event.connectionId, event.connectionCookie, event.message)
-      override fun toString() =
-        "Message(connectionId=$connectionId, authUid=$authUid, " +
-          "message=${message.toCompactString()})"
-    }
-
-    sealed interface Connection : SubscriptionEvent
-
-    class Connected(
-      val connectionId: String,
-      val authUid: AuthUid?,
-      val outgoingRequests: SendChannel<StreamRequestProto>,
-    ) : Connection {
-      constructor(
-        event: GrpcBidiFlow.Event.ConnectionInfo<StreamRequestProto, AuthUid?>
-      ) : this(event.connectionId, event.connectionCookie, event.outgoingRequests)
-
-      override fun toString() = "Connected(connectionId=$connectionId)"
-    }
-
-    object Disconnected : Connection {
-      override fun toString() = "Disconnected"
-    }
-  }
-
   private fun Flow<SubscriptionEvent>.transformToMessage(
     requestId: String,
     operationName: String,
@@ -346,23 +362,6 @@ internal class DataConnectBidiConnectStream(
     cancelRequest: StreamRequestProto,
   ): Flow<SubscriptionEvent.Message> {
 
-    fun SendChannel<StreamRequestProto>.trySendOrThrow(
-      authUid: AuthUid?,
-      request: StreamRequestProto
-    ) {
-      val sendResult = trySend(request)
-      sendResult.onFailure { exception ->
-        if (!sendResult.isClosed) {
-          throw exception
-            ?: error(
-              "internal error gt2ms5wwby: outgoingRequests.trySend() failed, " +
-                "but should have succeeded because outgoingRequests is created " +
-                "with capacity=UNLIMITED (request=${request.toCompactString(authUid)})"
-            )
-        }
-      }
-    }
-
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: AuthUid?,
       subscribeOrResumeSignal: ConflatedSignal,
@@ -405,7 +404,10 @@ internal class DataConnectBidiConnectStream(
         }
         val subscribeOrResumeJob =
           coroutineScope.launch(start = CoroutineStart.LAZY) {
-            event.outgoingRequests.subscribeOrResumeLoop(event.authUid, subscribeOrResumeSignal)
+            event.outgoingRequests.subscribeOrResumeLoop(
+              event.authToken.ref?.authUid,
+              subscribeOrResumeSignal,
+            )
           }
 
         val newState =
@@ -420,6 +422,8 @@ internal class DataConnectBidiConnectStream(
             subscribeOrResumeJob.start()
           }
           break
+        } else {
+          subscribeOrResumeJob.cancel("state update failed")
         }
       }
     }
@@ -469,5 +473,239 @@ internal class DataConnectBidiConnectStream(
             else emptyList(),
         )
       }
+  }
+}
+
+private fun mergeGrpcAndAuth(
+  grpcBidiFlow:
+    Flow<
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >
+    >,
+  dataConnectAuth: DataConnectAuth,
+): Flow<GrpcAuthMergedFlowEvent> =
+  mergeColdAndHotFlow(
+    coldFlow = grpcBidiFlow.map(GrpcAuthMergedFlowEvent::Grpc),
+    hotFlow = dataConnectAuth.token.map(GrpcAuthMergedFlowEvent::Auth)
+  )
+
+private sealed interface GrpcAuthMergedFlowEvent {
+
+  @JvmInline
+  value class Grpc(
+    val event:
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >
+  ) : GrpcAuthMergedFlowEvent {
+    override fun toString() = "Grpc($event)"
+  }
+
+  @JvmInline
+  value class Auth(val event: SequencedReference<GetAuthTokenResult?>) : GrpcAuthMergedFlowEvent {
+    override fun toString() = "Auth($event)"
+  }
+
+  object Disconnect : GrpcAuthMergedFlowEvent {
+    override fun toString() = "Disconnect"
+  }
+}
+
+private sealed interface SubscriptionEvent {
+
+  class Message(
+    val connectionId: String,
+    val authUid: AuthUid?,
+    val message: StreamResponseProto,
+  ) : SubscriptionEvent {
+    constructor(
+      event:
+        GrpcBidiFlow.Event.Message<StreamResponseProto, SequencedReference<GetAuthTokenResult?>>
+    ) : this(event.connectionId, event.connectionCookie.ref?.authUid, event.message)
+    override fun toString() =
+      "Message(connectionId=$connectionId, authUid=$authUid, " +
+        "message=${message.toCompactString()})"
+  }
+
+  sealed interface Connection : SubscriptionEvent
+
+  class Connected(
+    val connectionId: String,
+    val authToken: SequencedReference<GetAuthTokenResult?>,
+    val outgoingRequests: SendChannel<StreamRequestProto>,
+  ) : Connection {
+    constructor(
+      event:
+        GrpcBidiFlow.Event.ConnectionInfo<
+          StreamRequestProto, SequencedReference<GetAuthTokenResult?>
+        >
+    ) : this(event.connectionId, event.connectionCookie, event.outgoingRequests)
+
+    fun withAuthToken(authToken: SequencedReference<GetAuthTokenResult?>) =
+      Connected(
+        connectionId = connectionId,
+        authToken = authToken,
+        outgoingRequests = outgoingRequests,
+      )
+
+    override fun toString() = "Connected(connectionId=$connectionId, authToken=$authToken)"
+  }
+
+  class Disconnected(
+    val pendingAuthToken: SequencedReference<GetAuthTokenResult?>? = null,
+  ) : Connection {
+    override fun toString() = "Disconnected(pendingAuthToken=$pendingAuthToken)"
+  }
+}
+
+private class ConnectionStateUpdater(private val idStringGenerator: IdStringGenerator) {
+
+  fun MutableStateFlow<SubscriptionEvent.Connection>.update(event: GrpcAuthMergedFlowEvent) {
+    update(this, event)
+  }
+
+  @JvmName("updateSubscriptionEventConnectionMutableStateFlow")
+  private fun update(
+    state: MutableStateFlow<SubscriptionEvent.Connection>,
+    event: GrpcAuthMergedFlowEvent,
+  ) {
+    val currentState = state.value
+    val newState = processGrpcAuthMergedFlowEvent(currentState, event) ?: return
+    val updateSuccessful = state.compareAndSet(currentState, newState)
+
+    check(updateSuccessful) {
+      "internal error qen6873hdf: compareAndSet($currentState, $newState) returned false, " +
+        "but expected it to return true because the state should not be updated concurrently"
+    }
+  }
+
+  private fun processGrpcAuthMergedFlowEvent(
+    currentState: SubscriptionEvent.Connection,
+    event: GrpcAuthMergedFlowEvent,
+  ): SubscriptionEvent.Connection? =
+    when (event) {
+      is GrpcAuthMergedFlowEvent.Auth -> processAuthEvent(currentState, event.event)
+      is GrpcAuthMergedFlowEvent.Grpc -> processGrpcEvent(currentState, event.event)
+      is GrpcAuthMergedFlowEvent.Disconnect ->
+        when (currentState) {
+          is SubscriptionEvent.Connected ->
+            SubscriptionEvent.Disconnected(pendingAuthToken = currentState.authToken)
+          is SubscriptionEvent.Disconnected -> currentState
+        }
+    }
+
+  private fun processAuthEvent(
+    currentState: SubscriptionEvent.Connection,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
+  ): SubscriptionEvent.Connection? =
+    when (currentState) {
+      is SubscriptionEvent.Connected -> processAuthEvent(currentState, sequencedAuthToken)
+      is SubscriptionEvent.Disconnected -> processAuthEvent(currentState, sequencedAuthToken)
+    }
+
+  private fun processAuthEvent(
+    currentState: SubscriptionEvent.Connected,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
+  ): SubscriptionEvent.Connected? {
+    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
+      return null // ignore outdated auth token changes
+    }
+
+    val oldToken = currentState.authToken.ref?.token
+    val newToken = sequencedAuthToken.ref?.token
+    if (oldToken == newToken) {
+      return null // Do not re-send the same token, as that is wasteful.
+    }
+
+    // Verify that the authUid has not changed; if so, then throw to abort the connection.
+    // The caller will need to re-subscribe with the new authUid as the connection stream does
+    // not support changing authUid mid-stream.
+    val currentAuthUid = currentState.authToken.ref?.authUid
+    val newAuthUid = sequencedAuthToken.ref?.authUid
+    if (currentAuthUid != newAuthUid) {
+      throw AuthUidChangedException(currentAuthUid, newAuthUid)
+    }
+
+    if (newToken == null) {
+      return null // Do not send an empty token, as that is wasteful too.
+    }
+
+    // Update the authToken on the stream.
+    val streamRequest = authTokenUpdateStreamRequest(newToken)
+    currentState.outgoingRequests.trySendOrThrow(newAuthUid, streamRequest)
+
+    return currentState.withAuthToken(sequencedAuthToken)
+  }
+
+  private fun processAuthEvent(
+    currentState: SubscriptionEvent.Disconnected,
+    sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
+  ): SubscriptionEvent.Disconnected? =
+    if (
+      currentState.pendingAuthToken != null &&
+        sequencedAuthToken.sequenceNumber <= currentState.pendingAuthToken.sequenceNumber
+    ) {
+      null // ignore outdated auth token changes
+    } else {
+      // TODO: consider if we should throw here also if authUid has changed. Probably?
+      SubscriptionEvent.Disconnected(pendingAuthToken = sequencedAuthToken)
+    }
+
+  private fun processGrpcEvent(
+    currentState: SubscriptionEvent.Connection,
+    event:
+      GrpcBidiFlow.Event<
+        StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
+      >,
+  ): SubscriptionEvent.Connected? =
+    when (event) {
+      is GrpcBidiFlow.Event.Message -> null
+      is GrpcBidiFlow.Event.ConnectionInfo -> processGrpcConnectionEvent(currentState, event)
+    }
+
+  private fun processGrpcConnectionEvent(
+    currentState: SubscriptionEvent.Connection,
+    event:
+      GrpcBidiFlow.Event.ConnectionInfo<
+        StreamRequestProto, SequencedReference<GetAuthTokenResult?>
+      >,
+  ): SubscriptionEvent.Connected? =
+    when (currentState) {
+      is SubscriptionEvent.Connected -> currentState
+      is SubscriptionEvent.Disconnected -> {
+        val connectedState = SubscriptionEvent.Connected(event)
+        val pendingAuthToken = currentState.pendingAuthToken
+        if (pendingAuthToken == null) {
+          connectedState
+        } else {
+          // Update the auth token on the stream in the rare case that a new auth token was provided
+          // between stream connection and receiving the "connected" event.
+          processAuthEvent(connectedState, pendingAuthToken) ?: connectedState
+        }
+      }
+    }
+
+  private fun authTokenUpdateStreamRequest(authToken: String): StreamRequestProto =
+    StreamRequestProto.newBuilder()
+      .setRequestId(idStringGenerator.next("auth"))
+      .putHeaders("x-firebase-auth-token", authToken)
+      .build()
+}
+
+private fun SendChannel<StreamRequestProto>.trySendOrThrow(
+  authUid: AuthUid?,
+  request: StreamRequestProto
+) {
+  val sendResult = trySend(request)
+  sendResult.onFailure { exception ->
+    if (!sendResult.isClosed) {
+      throw exception
+        ?: error(
+          "internal error gt2ms5wwby: outgoingRequests.trySend() failed, " +
+            "but should have succeeded because outgoingRequests is created " +
+            "with capacity=UNLIMITED (request=${request.toCompactString(authUid)})"
+        )
+    }
   }
 }

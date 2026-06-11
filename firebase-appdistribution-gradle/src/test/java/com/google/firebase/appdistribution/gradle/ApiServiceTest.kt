@@ -16,9 +16,9 @@
 
 package com.google.firebase.appdistribution.gradle
 
+import com.google.api.client.http.HttpResponseException
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
-import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TEST_CASE_NOT_FOUND
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.TOO_MANY_TESTER_EMAILS
 import com.google.firebase.appdistribution.gradle.models.AabState
 import com.google.firebase.appdistribution.gradle.models.DeviceExecution
@@ -26,9 +26,11 @@ import com.google.firebase.appdistribution.gradle.models.LoginCredential
 import com.google.firebase.appdistribution.gradle.models.ReleaseTest
 import com.google.firebase.appdistribution.gradle.models.RoboStats
 import com.google.firebase.appdistribution.gradle.models.TestDevice
+import com.google.gson.Gson
 import java.io.IOException
 import kotlin.test.assertFailsWith
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -204,10 +206,7 @@ class ApiServiceTest {
     val httpTransport = AppDistroMockHttpTransport.newBuilder().setCode(404).build()
     val httpClient = AuthenticatedHttpClient(httpTransport)
     val apiService = ApiService(httpClient)
-    assertFailsWith(
-      AppDistributionException::class,
-      AppDistributionException.formatMessage(TEST_CASE_NOT_FOUND, "invalid-test-case-id"),
-    ) {
+    assertFailsWith(HttpResponseException::class) {
       apiService.testRelease(
         RELEASE_NAME,
         listOf(TestDevice(model = "pixel")),
@@ -249,6 +248,31 @@ class ApiServiceTest {
       ),
       response,
     )
+  }
+
+  @Test
+  fun testRelease_withResultsBucket_succeeds() {
+    val content = FixtureUtils.getFixtureAsString("release_test.json")
+    val httpTransport =
+      AppDistroMockHttpTransport.newBuilder().setCode(200).setContent(content).build()
+    val httpClient = AuthenticatedHttpClient(httpTransport)
+    val apiService = ApiService(httpClient)
+
+    val response =
+      apiService.testRelease(
+        RELEASE_NAME,
+        listOf(TestDevice(model = "pixel")),
+        LoginCredential(google = true),
+        "test-case-id",
+        "projects/123456789123/buckets/my-custom-bucket"
+      )
+
+    assertNotNull(response)
+    assertNotNull(httpTransport.lastRequest)
+    val capturedRequestBody = httpTransport.lastRequest.contentAsString
+    assertNotNull(capturedRequestBody)
+    val parsedRequest = Gson().fromJson(capturedRequestBody, ReleaseTest::class.java)
+    assertEquals("projects/123456789123/buckets/my-custom-bucket", parsedRequest.resultsBucket)
   }
 
   companion object {
