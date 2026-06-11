@@ -26,6 +26,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
@@ -88,6 +89,7 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -561,18 +563,13 @@ class QuerySubscriptionImplUnitTest {
       check(authUid1 != authUid2)
       check(authToken1 != authToken2)
 
-      val mockInternalAuthProvider = mockk<InternalAuthProvider>(relaxed = true)
-      val idTokenListenerSlot = slot<IdTokenListener>()
-      every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
-      val authUidIterator = listOf(authUid1, authUid2).iterator()
-      val authTokenIterator = listOf(authToken1, authToken2).iterator()
-      coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
-        {
-          val authUid = synchronized(authUidIterator) { authUidIterator.next() }
-          val authToken = synchronized(authTokenIterator) { authTokenIterator.next() }
-          taskForToken(authToken, authUid)
-        }
-
+      val (mockInternalAuthProvider, idTokenListenerSlot) =
+        createMockInternalAuthProviderReturning(
+          authUid1,
+          authUid2,
+          authToken1,
+          authToken2,
+        )
       val dataConnect =
         dataConnect(
           serverLocalBindPort = server.port,
@@ -596,6 +593,7 @@ class QuerySubscriptionImplUnitTest {
           val exception = clientCollector.awaitError()
           exception.shouldBeInstanceOf<AuthUidChangedException>()
           exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase Auth UID changed"
+          exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
           exception.message shouldContainWithNonAbuttingText authUid1.toString()
           exception.message shouldContainWithNonAbuttingText authUid2.toString()
 
@@ -607,6 +605,73 @@ class QuerySubscriptionImplUnitTest {
       }
     }
   }
+
+  @Test
+  fun `flow fails with AuthUidChangedException if auth uid changes during reconnection`() =
+    runTest {
+      val server = runningInProcessDataConnectServer()
+
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.authUid().orNull(nullProbability = 0.3).distinctPair(),
+        Arb.dataConnect.authToken().orNull(nullProbability = 0.3).distinctPair(),
+      ) { (authUid1, authUid2), (authToken1, authToken2) ->
+        check(authUid1 != authUid2)
+        check(authToken1 != authToken2)
+
+        val (mockInternalAuthProvider, idTokenListenerSlot) =
+          createMockInternalAuthProviderReturning(
+            authUid1,
+            authUid2,
+            authToken1,
+            authToken2,
+          )
+        val dataConnect =
+          dataConnect(
+            serverLocalBindPort = server.port,
+            deferredAuthProvider = ImmediateDeferred(mockInternalAuthProvider)
+          )
+        try {
+          dataConnect.awaitAuthReady()
+
+          val subscription = querySubscription(dataConnect)
+          turbineScope {
+            val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+            val clientCollector =
+              subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+            val responseSender = serverCollector.awaitResponseSender()
+            serverCollector.awaitUntilSubscribeStreamRequest()
+
+            val exception =
+              DataConnectBidiConnectStream.withOnRetryForTesting(
+                onRetry = {
+                  idTokenListenerSlot.captured.onIdTokenChanged(InternalTokenResult(authToken2))
+                }
+              ) {
+                // Close the connection from the server to force a reconnection attempt
+                responseSender.onCompleted()
+
+                // The flow should throw AuthUidChangedException and terminate
+                clientCollector.awaitError()
+              }
+
+            // The flow should throw AuthUidChangedException and terminate
+            exception.shouldBeInstanceOf<AuthUidChangedException>()
+            exception.message shouldContainWithNonAbuttingTextIgnoringCase
+              "Firebase Auth UID changed"
+            exception.message shouldContainWithNonAbuttingText "ytd7yf2geh"
+            exception.message shouldContainWithNonAbuttingText authUid1.toString()
+            exception.message shouldContainWithNonAbuttingText authUid2.toString()
+
+            serverCollector.cancelAndIgnoreRemainingEvents()
+            clientCollector.cancelAndIgnoreRemainingEvents()
+          }
+        } finally {
+          dataConnect.suspendingClose()
+        }
+      }
+    }
 
   private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
     createException: (Status.Code) -> Throwable
@@ -856,3 +921,23 @@ private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestD
 
 private val failureGrpcStatusCodes: List<Status.Code> =
   Status.Code.entries.filterNot { it == Status.Code.OK }
+
+private fun createMockInternalAuthProviderReturning(
+  authUid1: AuthUid?,
+  authUid2: AuthUid?,
+  authToken1: String?,
+  authToken2: String?,
+): Pair<InternalAuthProvider, CapturingSlot<IdTokenListener>> {
+  val mockInternalAuthProvider = mockk<InternalAuthProvider>(relaxed = true)
+  val idTokenListenerSlot = slot<IdTokenListener>()
+  every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
+
+  val iterator = listOf(authUid1, authUid2).zip(listOf(authToken1, authToken2)).iterator()
+  coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
+    {
+      val (authUid, authToken) = synchronized(iterator) { iterator.next() }
+      taskForToken(authToken, authUid)
+    }
+
+  return Pair(mockInternalAuthProvider, idTokenListenerSlot)
+}
