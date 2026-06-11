@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added toggle for FirebaseCrashlytics logging [#2973]
+
 # 20.0.6
 
 - [fixed] Fixed race condition that caused logs from background threads to not be attached to
