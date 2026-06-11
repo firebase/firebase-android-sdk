@@ -21,12 +21,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
+import com.google.firebase.auth.internal.IdTokenListener
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
@@ -43,11 +46,16 @@ import com.google.firebase.dataconnect.testutil.awaitUntilStatusExceptionReceive
 import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequest
 import com.google.firebase.dataconnect.testutil.awaitUntilStreamRequestWithRequestId
 import com.google.firebase.dataconnect.testutil.awaitUntilSubscribeStreamRequest
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authUid
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.internal.InternalTokenResult
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
@@ -58,13 +66,17 @@ import io.grpc.stub.StreamObserver
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
+import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.az
@@ -73,9 +85,15 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
 import io.mockk.spyk
 import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
@@ -531,6 +549,65 @@ class QuerySubscriptionImplUnitTest {
     }
   }
 
+  @Test
+  fun `flow fails with AuthUidChangedException if auth uid changes mid-stream`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.authUid().orNull(nullProbability = 0.3).distinctPair(),
+      Arb.dataConnect.authToken().orNull(nullProbability = 0.3).distinctPair(),
+    ) { (authUid1, authUid2), (authToken1, authToken2) ->
+      check(authUid1 != authUid2)
+      check(authToken1 != authToken2)
+
+      val mockInternalAuthProvider = mockk<InternalAuthProvider>(relaxed = true)
+      val idTokenListenerSlot = slot<IdTokenListener>()
+      every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
+      val authUidIterator = listOf(authUid1, authUid2).iterator()
+      val authTokenIterator = listOf(authToken1, authToken2).iterator()
+      coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
+        {
+          val authUid = synchronized(authUidIterator) { authUidIterator.next() }
+          val authToken = synchronized(authTokenIterator) { authTokenIterator.next() }
+          taskForToken(authToken, authUid)
+        }
+
+      val dataConnect =
+        dataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = ImmediateDeferred(mockInternalAuthProvider)
+        )
+      try {
+        dataConnect.awaitAuthReady()
+
+        val subscription = querySubscription(dataConnect)
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+          serverCollector.awaitResponseSender()
+          serverCollector.awaitUntilSubscribeStreamRequest()
+
+          // Trigger the auth token update
+          idTokenListenerSlot.captured.onIdTokenChanged(InternalTokenResult(authToken2))
+
+          // The flow should throw AuthUidChangedException and terminate
+          val exception = clientCollector.awaitError()
+          exception.shouldBeInstanceOf<AuthUidChangedException>()
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase Auth UID changed"
+          exception.message shouldContainWithNonAbuttingText authUid1.toString()
+          exception.message shouldContainWithNonAbuttingText authUid2.toString()
+
+          serverCollector.cancelAndIgnoreRemainingEvents()
+          clientCollector.cancelAndIgnoreRemainingEvents()
+        }
+      } finally {
+        dataConnect.suspendingClose()
+      }
+    }
+  }
+
   private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
     createException: (Status.Code) -> Throwable
   ) {
@@ -609,11 +686,15 @@ class QuerySubscriptionImplUnitTest {
   private fun TestScope.dataConnect(
     server: InProcessDataConnectGrpcStreamingServer,
     idStringGenerator: IdStringGenerator? = null,
-  ): FirebaseDataConnectImpl = dataConnect(server.port, idStringGenerator)
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
+      UnavailableDeferred(),
+  ): FirebaseDataConnectImpl = dataConnect(server.port, idStringGenerator, deferredAuthProvider)
 
   private fun TestScope.dataConnect(
     serverLocalBindPort: Int? = null,
     idStringGenerator: IdStringGenerator? = null,
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
+      UnavailableDeferred(),
   ): FirebaseDataConnectImpl {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
 
@@ -635,7 +716,7 @@ class QuerySubscriptionImplUnitTest {
       config = Arb.dataConnect.connectorConfig().sample(),
       blockingExecutor = executor,
       nonBlockingExecutor = executor,
-      deferredAuthProvider = UnavailableDeferred(),
+      deferredAuthProvider = deferredAuthProvider,
       deferredAppCheckProvider = UnavailableDeferred(),
       creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
       settings = settings,
@@ -691,6 +772,14 @@ class QuerySubscriptionImplUnitTest {
 
   private fun <T> Arb<T>.sampleList(size: Int): List<T> = List(size) { sample() }
 }
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 50,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+    shrinkingMode = ShrinkingMode.Off,
+  )
 
 @Serializable private data class TestVariables(val stringValue: String)
 

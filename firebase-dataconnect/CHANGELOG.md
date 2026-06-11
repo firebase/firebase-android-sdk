@@ -6,6 +6,14 @@
 - [changed] Realtime query results now update the local cache as query
   results are received.
   ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
+- [fixed] Realtime query subscriptions now update the Firebase Auth token if it
+  refreshed during the lifetime of the connection, avoiding an UNAUTHENTICATED
+  error at the expiry of the original Auth token. It also terminates the Flow
+  with an exception if the Firebase Auth user changes.
+  ([#8278](https://github.com/firebase/firebase-android-sdk/pull/8278))
+- [fixed] Realtime query subscriptions now correctly throw an exception when
+  the Firebase Auth user changes, instead of silently stopping emitting.
+  ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
 
 # 17.3.0
 
