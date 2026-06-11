@@ -338,12 +338,14 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # TODO: Re-enable integ_tests and enterprise_integ_tests when backend error is fixed.
   check-required-tests:
     runs-on: ubuntu-latest
     if: always()
     name: Check all required Firestore tests results
-    needs: [integ_tests, enterprise_integ_tests]
+    # needs: [integ_tests, enterprise_integ_tests]
     steps:
       - name: Check test matrix
-        if: needs.integ_tests.result == 'failure' || needs.enterprise_integ_tests.result == 'failure'
-        run: exit 1
+        run: echo "Integration tests are optional"
+        # if: needs.integ_tests.result == 'failure' || needs.enterprise_integ_tests.result == 'failure'
+        # run: exit 1

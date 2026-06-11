@@ -56,7 +56,9 @@ public class CrashlyticsCore {
   static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
 
   // Build ID related constants
-  static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
+  static final String LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
+  static final String CRASHLYTICS_REQUIRE_BUILD_ID =
+      "com.google.firebase.crashlytics.RequireBuildId";
   static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
 
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 3;
@@ -140,7 +142,13 @@ public class CrashlyticsCore {
     //  now that the buildId is now only used for mapping file association.
     final boolean requiresBuildId =
         CommonUtils.getBooleanResourceValue(
-            context, CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
+            context,
+            CRASHLYTICS_REQUIRE_BUILD_ID,
+            CommonUtils.getBooleanResourceValue(
+                context,
+                LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID,
+                CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT));
+
     if (!isBuildIdValid(appData.buildId, requiresBuildId)) {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }

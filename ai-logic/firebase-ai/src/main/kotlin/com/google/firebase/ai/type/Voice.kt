@@ -16,19 +16,23 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. In the documentation, find the list of
- * [all supported voices](https://cloud.google.com/text-to-speech/docs/chirp3-hd).
+ * Various voices supported by the server. Find the list of supported voices for
+ * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
+ * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
+ *
+ * @property voiceName The name of the voice to use (e.g., `"Kore"`).
  */
 @PublicPreviewAPI
-public class Voice public constructor(public val voiceName: String) {
-
-  @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
-
-  internal fun toInternal(): Internal {
-    return Internal(this.voiceName)
+public class Voice(public val voiceName: String) {
+  internal fun toInternal(): PrebuiltVoiceInternal {
+    return PrebuiltVoiceInternal(voiceName)
   }
 }
+
+@Serializable internal data class PrebuiltVoiceInternal(val voiceName: String)
+
+@Serializable
+internal data class VoiceConfigInternal(val prebuiltVoiceConfig: PrebuiltVoiceInternal)

@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
@@ -71,16 +72,29 @@ public class NumericTransformsTest {
 
   private void expectLocalAndRemoteValue(double expectedSum) {
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertTrue(snap.get("sum") instanceof Double);
     assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
     snap = accumulator.awaitRemoteEvent();
+    assertTrue(snap.get("sum") instanceof Double);
     assertEquals(expectedSum, snap.getDouble("sum"), DOUBLE_EPSILON);
   }
 
   private void expectLocalAndRemoteValue(long expectedSum) {
     DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertTrue(snap.get("sum") instanceof Long);
     assertEquals(expectedSum, (long) snap.getLong("sum"));
     snap = accumulator.awaitRemoteEvent();
+    assertTrue(snap.get("sum") instanceof Long);
     assertEquals(expectedSum, (long) snap.getLong("sum"));
+  }
+
+  private void expectLocalAndRemoteNaN() {
+    DocumentSnapshot snap = accumulator.awaitLocalEvent();
+    assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(Double.isNaN(snap.getDouble("sum")));
+    snap = accumulator.awaitRemoteEvent();
+    assertTrue(snap.get("sum") instanceof Double);
+    assertTrue(Double.isNaN(snap.getDouble("sum")));
   }
 
   @Test
@@ -217,5 +231,129 @@ public class NumericTransformsTest {
 
     snap = accumulator.awaitRemoteEvent();
     assertEquals(1, (long) snap.getLong("val"));
+  }
+
+  @Test
+  public void createDocumentWithMinimum() {
+    waitFor(docRef.set(map("sum", FieldValue.minimum(1337))));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void createDocumentWithMaximum() {
+    waitFor(docRef.set(map("sum", FieldValue.maximum(1337))));
+    expectLocalAndRemoteValue(1337L);
+  }
+
+  @Test
+  public void minimumWithExistingInteger() {
+    writeInitialData(map("sum", 10L));
+    waitFor(docRef.update("sum", FieldValue.minimum(5L)));
+    expectLocalAndRemoteValue(5L);
+
+    waitFor(docRef.update("sum", FieldValue.minimum(20L)));
+    expectLocalAndRemoteValue(5L);
+  }
+
+  @Test
+  public void maximumWithExistingInteger() {
+    writeInitialData(map("sum", 10L));
+    waitFor(docRef.update("sum", FieldValue.maximum(5L)));
+    expectLocalAndRemoteValue(10L);
+
+    waitFor(docRef.update("sum", FieldValue.maximum(20L)));
+    expectLocalAndRemoteValue(20L);
+  }
+
+  @Test
+  public void minimumWithExistingDouble() {
+    writeInitialData(map("sum", 10.5D));
+    waitFor(docRef.update("sum", FieldValue.minimum(5.5D)));
+    expectLocalAndRemoteValue(5.5D);
+
+    waitFor(docRef.update("sum", FieldValue.minimum(20.5D)));
+    expectLocalAndRemoteValue(5.5D);
+  }
+
+  @Test
+  public void maximumWithExistingDouble() {
+    writeInitialData(map("sum", 10.5D));
+    waitFor(docRef.update("sum", FieldValue.maximum(5.5D)));
+    expectLocalAndRemoteValue(10.5D);
+
+    waitFor(docRef.update("sum", FieldValue.maximum(20.5D)));
+    expectLocalAndRemoteValue(20.5D);
+  }
+
+  @Test
+  public void mixedTypesPreserveOperandTypeForMinimum() {
+    // field and input value of mixed types: field takes on type of smaller operand
+    writeInitialData(map("sum", 10L));
+    waitFor(docRef.update("sum", FieldValue.minimum(5.5D)));
+    expectLocalAndRemoteValue(5.5D);
+
+    writeInitialData(map("sum", 10.5D));
+    waitFor(docRef.update("sum", FieldValue.minimum(5L)));
+    expectLocalAndRemoteValue(5L);
+  }
+
+  @Test
+  public void mixedTypesPreserveOperandTypeForMaximum() {
+    // field and input value of mixed types: field takes on type of larger operand
+    writeInitialData(map("sum", 10L));
+    waitFor(docRef.update("sum", FieldValue.maximum(20.5D)));
+    expectLocalAndRemoteValue(20.5D);
+
+    writeInitialData(map("sum", 10.5D));
+    waitFor(docRef.update("sum", FieldValue.maximum(20L)));
+    expectLocalAndRemoteValue(20L);
+  }
+
+  @Test
+  public void equivalentValuesDoNotChangeTypeForMinimum() {
+    // equivalent (e.g. 3 and 3.0), field does not change type
+    writeInitialData(map("sum", 3L));
+    waitFor(docRef.update("sum", FieldValue.minimum(3.0D)));
+    expectLocalAndRemoteValue(3L);
+
+    writeInitialData(map("sum", 3.0D));
+    waitFor(docRef.update("sum", FieldValue.minimum(3L)));
+    expectLocalAndRemoteValue(3.0D);
+  }
+
+  @Test
+  public void equivalentValuesDoNotChangeTypeForMaximum() {
+    // equivalent (e.g. 3 and 3.0), field does not change type
+    writeInitialData(map("sum", 3L));
+    waitFor(docRef.update("sum", FieldValue.maximum(3.0D)));
+    expectLocalAndRemoteValue(3L);
+
+    writeInitialData(map("sum", 3.0D));
+    waitFor(docRef.update("sum", FieldValue.maximum(3L)));
+    expectLocalAndRemoteValue(3.0D);
+  }
+
+  @Test
+  public void minimumWithNaN() {
+    // If one of the values is NaN, minimum is NaN
+    writeInitialData(map("sum", Double.NaN));
+    waitFor(docRef.update("sum", FieldValue.minimum(5L)));
+    expectLocalAndRemoteNaN();
+
+    writeInitialData(map("sum", 5L));
+    waitFor(docRef.update("sum", FieldValue.minimum(Double.NaN)));
+    expectLocalAndRemoteNaN();
+  }
+
+  @Test
+  public void maximumWithNaN() {
+    // If one of the values is NaN, maximum is NaN
+    writeInitialData(map("sum", Double.NaN));
+    waitFor(docRef.update("sum", FieldValue.maximum(5L)));
+    expectLocalAndRemoteNaN();
+
+    writeInitialData(map("sum", 5L));
+    waitFor(docRef.update("sum", FieldValue.maximum(Double.NaN)));
+    expectLocalAndRemoteNaN();
   }
 }
