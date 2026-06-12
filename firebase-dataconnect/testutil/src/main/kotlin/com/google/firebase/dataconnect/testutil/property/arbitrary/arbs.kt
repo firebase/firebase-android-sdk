@@ -26,9 +26,11 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.LoggedInInternalAuthProvider
+import com.google.firebase.dataconnect.testutil.LoggedInMultiTokenInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.NotLoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.PLACEHOLDER_APP_CHECK_TOKEN
 import com.google.firebase.dataconnect.testutil.TestInteropAppCheckTokenProvider
+import com.google.firebase.dataconnect.testutil.TestMultiTokenInteropAppCheckTokenProvider
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import io.kotest.assertions.print.print
 import io.kotest.property.Arb
@@ -52,6 +54,7 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
@@ -193,8 +196,17 @@ object DataConnectArb {
   fun loggedInAuthProvider(
     token: Arb<String> = authToken(),
     uid: Arb<String> = authUidString(),
-  ): Arb<LoggedInInternalAuthProvider> =
-    Arb.bind(token, uid) { token, uid -> LoggedInInternalAuthProvider(token = token, uid = uid) }
+  ): Arb<LoggedInInternalAuthProvider> = Arb.bind(token, uid, ::LoggedInInternalAuthProvider)
+
+  fun loggedInMultiTokenAuthProvider(
+    count: Int,
+    token: Arb<String> = authToken(),
+    uid: Arb<String> = authUidString(),
+  ): Arb<LoggedInMultiTokenInternalAuthProvider> {
+    require(count > 1) { "invalid count: $count [rm3jz5xdhb]" }
+    val tokens = Arb.list(token, count..count)
+    return Arb.bind(tokens, uid, ::LoggedInMultiTokenInternalAuthProvider)
+  }
 
   fun deferredAuthProvider(): Arb<com.google.firebase.inject.Deferred<InternalAuthProvider>> =
     Arb.choice(
@@ -215,6 +227,14 @@ object DataConnectArb {
   fun appCheckProvider(
     token: Arb<String> = appCheckToken(),
   ): Arb<TestInteropAppCheckTokenProvider> = token.map(::TestInteropAppCheckTokenProvider)
+
+  fun appCheckMultiTokenProvider(
+    count: Int,
+    token: Arb<String> = appCheckToken(),
+  ): Arb<TestMultiTokenInteropAppCheckTokenProvider> {
+    require(count > 1) { "invalid count: $count [zmr7sjac4e]" }
+    return Arb.list(token, count..count).map(::TestMultiTokenInteropAppCheckTokenProvider)
+  }
 
   fun deferredAppCheckProvider():
     Arb<com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>> =
