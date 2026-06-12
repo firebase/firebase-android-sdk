@@ -696,6 +696,66 @@ class QuerySubscriptionImplUnitTest {
     }
 
   @Test
+  fun `flow fails with AuthUidChangedException if auth uid changes concurrently with reconnection`() =
+    runTest {
+      val server = runningInProcessDataConnectServer()
+
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.authUid().orNull(nullProbability = 0.3).distinctPair(),
+        Arb.dataConnect.authToken().distinctPair(),
+      ) { (authUid1, authUid2), (authToken1, authToken2) ->
+        check(authUid1 != authUid2)
+        check(authToken1 != authToken2)
+
+        val tokenUidPair1 = tokenUidPairOrNullIfUidNull(authToken1, authUid1)
+        val tokenUidPair2 = tokenUidPairOrNullIfUidNull(authToken2, authUid2)
+        val authProvider =
+          LoggedInMultiTokenAndUidAuthProvider(listOf(tokenUidPair1, tokenUidPair2))
+
+        waitFor2ndGetTokenCallThenWaitForDisconnectedThenUpdateTokenThenWaitForDisconnectedAgain()
+
+        val dataConnect =
+          dataConnect(
+            serverLocalBindPort = server.port,
+            deferredAuthProvider = ImmediateDeferred(authProvider)
+          )
+        try {
+          dataConnect.awaitAuthReady()
+
+          val subscription = querySubscription(dataConnect)
+          turbineScope {
+            val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+            val clientCollector =
+              subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+            val responseSender = serverCollector.awaitResponseSender()
+            serverCollector.awaitUntilSubscribeStreamRequest()
+
+            // Close the connection from the server to force a reconnection attempt
+            responseSender.onCompleted()
+
+            // The flow should throw AuthUidChangedException and terminate
+            val exception = clientCollector.awaitError()
+
+            // The flow should throw AuthUidChangedException and terminate
+            exception.shouldBeInstanceOf<AuthUidChangedException>()
+            exception.message shouldContainWithNonAbuttingTextIgnoringCase
+              "Firebase Auth UID changed"
+            exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
+            exception.message shouldContainWithNonAbuttingText authUid1.toString()
+            exception.message shouldContainWithNonAbuttingText authUid2.toString()
+
+            serverCollector.cancelAndIgnoreRemainingEvents()
+            clientCollector.cancelAndIgnoreRemainingEvents()
+          }
+        } finally {
+          dataConnect.suspendingClose()
+        }
+      }
+    }
+
+  @Test
   fun `auth logged in initial connection header`() = runTest {
     val server = runningInProcessDataConnectServer()
 

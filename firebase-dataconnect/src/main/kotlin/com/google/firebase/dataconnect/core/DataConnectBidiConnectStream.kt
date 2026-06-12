@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -54,6 +55,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
@@ -117,6 +119,15 @@ internal class DataConnectBidiConnectStream(
         SubscriptionEvent.Disconnected(pendingAuthToken = null)
       )
     val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
+
+    _disconnectedEventListenerForTesting.get()?.let { listener ->
+      coroutineScope.launch {
+        connectionStateFlow
+          .filterIsInstance<SubscriptionEvent.Disconnected>().collect {
+          listener(it.pendingAuthToken)
+        }
+      }
+    }
 
     val sharedFlow =
       mergeGrpcAndAuth(flow, dataConnectAuth)
@@ -459,6 +470,31 @@ internal class DataConnectBidiConnectStream(
   }
 
   companion object {
+
+    private val _disconnectedEventListenerForTesting =
+      AtomicReference<suspend (SequencedReference<GetAuthTokenResult?>?) -> Unit>(null)
+
+    @VisibleForTesting
+    fun setDisconnectedEventListenerForTesting(
+      listener: suspend (SequencedReference<GetAuthTokenResult?>?) -> Unit
+    ) {
+      val success = _disconnectedEventListenerForTesting.compareAndSet(null, listener)
+      check(success) {
+        "setDisconnectedEventListenerForTesting() failed: " +
+          "a listener is already registered [b887589rta]"
+      }
+    }
+
+    @VisibleForTesting
+    fun unsetDisconnectedEventListenerForTesting(
+      listener: suspend (SequencedReference<GetAuthTokenResult?>?) -> Unit
+    ) {
+      val success = _disconnectedEventListenerForTesting.compareAndSet(listener, null)
+      check(success) {
+        "unsetDisconnectedEventListenerForTesting() failed: " +
+          "the given listener is NOT currently registered [q2c5c5x3xg]"
+      }
+    }
 
     private fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
