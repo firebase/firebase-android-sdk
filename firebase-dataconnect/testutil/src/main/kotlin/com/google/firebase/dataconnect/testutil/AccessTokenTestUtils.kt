@@ -150,14 +150,18 @@ class LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs: List<TokenUidPair?>) :
   }
 
   private fun nextTokenUidPair(): TokenUidPair? {
-    val index = index.getAndIncrement()
-    check(index < tokenUidPairs.size) {
-      "internal error k7j9d4dzbk: no more Auth token/uid pairs to produce"
+    while (true) {
+      val currentIndex = index.get()
+      check(currentIndex + 1 <= tokenUidPairs.size) {
+        "internal error k7j9d4dzbk: no more Auth token/uid pairs to produce"
+      }
+      if (index.compareAndSet(currentIndex, currentIndex + 1)) {
+        return tokenUidPairs[currentIndex]
+      }
     }
-    return tokenUidPairs[index]
   }
 
-  override fun getUid() = tokenUidPairs[index.get()]?.uid
+  override fun getUid() = tokenUidPairs[index.get().coerceAtLeast(1) - 1]?.uid
 
   data class TokenUidPair(val token: String, val uid: String)
 
