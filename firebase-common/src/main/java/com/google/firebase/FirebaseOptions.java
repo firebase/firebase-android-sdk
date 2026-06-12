@@ -236,7 +236,7 @@ public final class FirebaseOptions {
     return storageBucket;
   }
 
-  /** The Google Cloud Storage bucket name, e.g. abc-xyz-123.storage.firebase.com. */
+  /** The reCAPTCHA site key register, e.g. 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
   @Nullable
   public String getRecaptchaSiteKey() {
     return recaptchaSiteKey;
