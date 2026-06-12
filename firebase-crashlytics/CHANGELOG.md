@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Improved rooted device detection to align with OWASP MASTG-KNOW-0027 recommendations [#8099]
+
 # 20.0.6
 
 - [fixed] Fixed race condition that caused logs from background threads to not be attached to
