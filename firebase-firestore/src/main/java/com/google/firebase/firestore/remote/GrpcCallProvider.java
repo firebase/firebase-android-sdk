@@ -36,6 +36,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
+import io.grpc.okhttp.OkHttpChannelBuilder;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +58,21 @@ public class GrpcCallProvider {
   // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
   // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+
+  // This is currently set to the default of 64KB.
+  // Ideally, grpc-java over OkHttp would have automatic flow control to adjust this
+  // value based on network conditions.
+  // We could increase this static window to be between 128kb and 1MB to decrease latency,
+  // after some more investigation to understand the risks.
+  // https://grpc.io/docs/guides/flow-control/
+  // https://grpc.github.io/grpc-java/javadoc/io/grpc/okhttp/OkHttpServerBuilder.html#flowControlWindow(int)
+  private static final int FLOW_CONTROL_WINDOW = 64 * 1024;
+
+  // This is used to increase the max inbound message size from the 4MB default to 17MB,
+  // in order to support 16MB docs + overhead.
+  // https://grpc.github.io/grpc-java/javadoc/io/grpc/okhttp/OkHttpServerBuilder.html#maxInboundMessageSize(int)
+  private static final int MAX_INBOUND_MESSAGE_SIZE = 17 * 1024 * 1024;
+
   private DelayedTask connectivityAttemptTimer;
 
   private final Context context;
@@ -95,18 +111,29 @@ public class GrpcCallProvider {
     ManagedChannelBuilder<?> channelBuilder;
     if (overrideChannelBuilderSupplier != null) {
       channelBuilder = overrideChannelBuilderSupplier.get();
+
+      if (channelBuilder instanceof OkHttpChannelBuilder) {
+        ((OkHttpChannelBuilder) channelBuilder).flowControlWindow(FLOW_CONTROL_WINDOW);
+      }
     } else {
-      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+      OkHttpChannelBuilder okHttpBuilder = OkHttpChannelBuilder.forTarget(databaseInfo.getHost());
+      okHttpBuilder.flowControlWindow(FLOW_CONTROL_WINDOW);
+
       if (!databaseInfo.isSslEnabled()) {
         // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
         // It merely turns off SSL encryption.
-        channelBuilder.usePlaintext();
+        okHttpBuilder.usePlaintext();
       }
+
+      channelBuilder = okHttpBuilder;
     }
 
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
+
+    // Increase the maximum inbound message size from 4MB to 17MB, to support 16MB docs.
+    channelBuilder.maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE);
 
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
     // respond more gracefully to network change events (such as switching from cell to wifi).
