@@ -128,23 +128,23 @@ internal class OnDeviceGenerativeModelProvider(
     )
   }
 
-  /**
-   * Generates a structured object based on the given prompt and schema.
-   *
-   * Note: This is currently not supported for on-device models.
-   *
-   * @param jsonSchema The schema defining the structure of the output.
-   * @param prompt The list of content parts to use as the prompt.
-   * @return The generated object response.
-   * @throws FirebaseAIException Always throws as this feature is not supported.
-   */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
-    )
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+
+    val request = buildOnDeviceGenerateContentRequest(prompt, jsonSchema)
+
+    val response = onDeviceModel.generateContent(request)
+    val generateContentResponse =
+      GenerateContentResponse(
+        response.candidates.map { Candidate.fromInterop(it) },
+        InferenceSource.ON_DEVICE,
+        null,
+        null
+      )
+    GenerateObjectResponse(generateContentResponse, jsonSchema)
   }
 
   /**
@@ -176,7 +176,8 @@ internal class OnDeviceGenerativeModelProvider(
   }
 
   private fun buildOnDeviceGenerateContentRequest(
-    prompt: List<Content>
+    prompt: List<Content>,
+    jsonSchema: JsonSchema<*>? = null
   ): OnDeviceGenerateContentRequest {
     if (prompt.isEmpty()) {
       throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
@@ -201,7 +202,17 @@ internal class OnDeviceGenerativeModelProvider(
         IllegalArgumentException("On-device model requires text as part of the prompt")
       )
     }
-    val text = textParts.joinToString("") { it.text }
+    var text = textParts.joinToString("") { it.text }
+
+    if (jsonSchema != null) {
+      val schemaJson =
+        com.google.firebase.ai.common.JSON.encodeToString(
+          com.google.firebase.ai.type.Schema.InternalJson.serializer(),
+          jsonSchema.toInternalJson()
+        )
+      val schemaPrompt = "Output a JSON object that conforms to the following schema:\n$schemaJson"
+      text = if (text.isEmpty()) schemaPrompt else "$schemaPrompt\n\n$text"
+    }
     val image =
       parts
         .filterIsInstance<ImagePart>()

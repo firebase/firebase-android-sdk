@@ -18,12 +18,14 @@ package com.google.firebase.testing.processor
 
 import com.google.firebase.ai.annotations.Generable
 import com.google.firebase.ai.annotations.Guide
+import kotlinx.serialization.Serializable
 
 /**
  * A test kdoc
  * @property longTest a test long that takes up multiple lines
  */
 @Generable
+@Serializable
 data class RootSchemaTestClass(
   val integerTest: Int?,
   val longTest: Long,
@@ -32,6 +34,8 @@ data class RootSchemaTestClass(
   val listTest: List<Int>,
   @Guide(description = "most likely true, very rarely false") val booleanTest: Boolean,
   val stringTest: String,
+  @Guide(enumValues = ["food", "entertainment", "souvenir", "other"])
+  val guidedEnumStringTest: String?,
   val objTest: SecondarySchemaTestClass,
   val enumTest: EnumTest,
 ) {
