@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.asRemoteTargetIdList;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -177,7 +178,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertQueryReturned("coll/a");
 
     applyRemoteEvent(
-        updateRemoteEvent(deletedDoc("coll/a", 0), singletonList(targetId), emptyList()));
+        updateRemoteEvent(deletedDoc("coll/a", 0), asRemoteTargetIdList(targetId), emptyList()));
 
     // No backfill needed for deleted document.
     executeQuery(query);
@@ -263,7 +264,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                 doc("coll/a", 10, map("count", 1)),
                 doc("coll/b", 10, map("count", 2)),
                 doc("coll/c", 10, map("count", 3))),
-            Collections.singletonList(targetId),
+            asRemoteTargetIdList(targetId),
             Collections.emptyList()));
     backfillIndexes();
 
@@ -293,7 +294,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                 doc("coll/a", 10, map("count", 1)),
                 doc("coll/b", 10, map("count", 2)),
                 doc("coll/c", 10, map("count", 3))),
-            Collections.singletonList(targetId),
+            asRemoteTargetIdList(targetId),
             Collections.emptyList()));
     writeMutation(deleteMutation("coll/b"));
     backfillIndexes();
