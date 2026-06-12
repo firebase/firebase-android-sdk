@@ -22,8 +22,8 @@ import com.google.firebase.appcheck.interop.AppCheckTokenListener
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.IdStringGenerator
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await
@@ -42,7 +42,10 @@ internal class DataConnectAppCheck(
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-  private val appCheckTokenListener = AppCheckTokenListenerImpl(logger)
+
+  @Suppress("LeakingThis") private val weakThis = WeakReference(this)
+
+  private val appCheckTokenListener = AppCheckTokenListenerImpl(weakThis)
 
   @DeferredApi
   override fun addTokenListener(provider: InteropAppCheckTokenProvider) =
@@ -54,11 +57,19 @@ internal class DataConnectAppCheck(
   override suspend fun getToken(provider: InteropAppCheckTokenProvider, forceRefresh: Boolean) =
     provider.getToken(forceRefresh).await().let { GetAppCheckTokenResult(it.token) }
 
-  data class GetAppCheckTokenResult(override val token: String?) : GetTokenResult
+  override fun onClose() {
+    weakThis.clear()
+  }
 
-  private class AppCheckTokenListenerImpl(private val logger: Logger) : AppCheckTokenListener {
+  data class GetAppCheckTokenResult(override val token: String?) : GetTokenResult {
+    override fun toString() = "GetAppCheckTokenResult(token=${token?.toScrubbedAccessToken()})"
+  }
+
+  private class AppCheckTokenListenerImpl(
+    private val dataConnectAppCheckRef: WeakReference<DataConnectAppCheck>,
+  ) : AppCheckTokenListener {
     override fun onAppCheckTokenChanged(tokenResult: AppCheckTokenResult) {
-      logger.debug { "onAppCheckTokenChanged(token=${tokenResult.token.toScrubbedAccessToken()})" }
+      dataConnectAppCheckRef.get()?.onTokenChanged(tokenResult.token)
     }
   }
 }

@@ -1,5 +1,20 @@
 # Unreleased
 
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
+  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
+- [changed] Realtime query results now update the local cache as query
+  results are received.
+  ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
+- [fixed] Realtime query subscriptions now update the Firebase Auth token if it
+  refreshed during the lifetime of the connection, avoiding an UNAUTHENTICATED
+  error at the expiry of the original Auth token. It also terminates the Flow
+  with an exception if the Firebase Auth user changes.
+  ([#8278](https://github.com/firebase/firebase-android-sdk/pull/8278))
+- [fixed] Realtime query subscriptions now correctly throw an exception when
+  the Firebase Auth user changes, instead of silently stopping emitting.
+  ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
+
 # 17.3.0
 
 - [feature] `QuerySubscription.flow` gains
@@ -11,12 +26,6 @@
   as the random numbers were not used in a security-sensitive context,
   thus the performance costs of secure random number generation were unnecessary.
   ([#8154](https://github.com/firebase/firebase-android-sdk/pull/8154))
-- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
-  if local caching is not enabled, instead of behaving like SERVER_ONLY.
-  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
-- [changed] Realtime query results now update the local cache as query
-  results are received.
-  ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
 
 # 17.2.2
 
