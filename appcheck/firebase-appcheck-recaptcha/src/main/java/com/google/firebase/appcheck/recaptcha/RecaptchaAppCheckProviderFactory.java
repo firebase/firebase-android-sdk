@@ -24,7 +24,7 @@ import com.google.firebase.appcheck.recaptcha.internal.ProviderMultiResourceComp
 import com.google.firebase.appcheck.recaptcha.internal.RecaptchaAppCheckProvider;
 
 /**
- * reCAPTCHA default implementation of {@link AppCheckProviderFactory}
+ * Implementation of {@link AppCheckProviderFactory} for the reCAPTCHA attestation provider
  */
 public class RecaptchaAppCheckProviderFactory implements AppCheckProviderFactory {
 
