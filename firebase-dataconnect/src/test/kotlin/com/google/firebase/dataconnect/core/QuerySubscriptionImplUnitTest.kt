@@ -811,7 +811,6 @@ class QuerySubscriptionImplUnitTest {
         deferredAppCheckProvider = deferredAppCheckProvider,
         awaitAuthReady = true,
         awaitAppCheckReady = false,
-        onRetry = {},
         header = authTokenGrpcMetadataKey,
         expectedHeaderValue1 = authProvider.tokens[0],
         expectedHeaderValue2 = authProvider.tokens[1],
@@ -845,7 +844,6 @@ class QuerySubscriptionImplUnitTest {
         deferredAppCheckProvider = deferredAppCheckProvider,
         awaitAuthReady = awaitAuthReady,
         awaitAppCheckReady = false,
-        onRetry = {},
         header = authTokenGrpcMetadataKey,
         expectedHeaderValue1 = null,
         expectedHeaderValue2 = null,
@@ -868,7 +866,6 @@ class QuerySubscriptionImplUnitTest {
         deferredAppCheckProvider = ImmediateDeferred(appCheckProvider),
         awaitAuthReady = false,
         awaitAppCheckReady = true,
-        onRetry = {},
         header = appCheckTokenGrpcMetadataKey,
         expectedHeaderValue1 = appCheckProvider.tokens[0],
         expectedHeaderValue2 = appCheckProvider.tokens[1],
@@ -889,7 +886,6 @@ class QuerySubscriptionImplUnitTest {
         deferredAppCheckProvider = UnavailableDeferred(),
         awaitAuthReady = false,
         awaitAppCheckReady = false,
-        onRetry = {},
         header = appCheckTokenGrpcMetadataKey,
         expectedHeaderValue1 = null,
         expectedHeaderValue2 = null,
@@ -903,7 +899,6 @@ class QuerySubscriptionImplUnitTest {
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
     awaitAuthReady: Boolean,
     awaitAppCheckReady: Boolean,
-    onRetry: () -> Unit,
     header: Metadata.Key<String>,
     expectedHeaderValue1: String?,
     expectedHeaderValue2: String?,
@@ -934,14 +929,12 @@ class QuerySubscriptionImplUnitTest {
         val responseSender = serverCollector.awaitResponseSender()
         serverCollector.awaitUntilSubscribeStreamRequest()
 
-        DataConnectBidiConnectStream.withOnRetryForTesting(onRetry) {
-          // Close the connection from the server to force a reconnection attempt
-          responseSender.onCompleted()
+        // Close the connection from the server to force a reconnection attempt
+        responseSender.onCompleted()
 
-          // Verify that reconnection attempt specifies the correct header value.
-          val reconnectionHeaders = serverCollector.awaitCall().headers
-          reconnectionHeaders.get(header) shouldBe expectedHeaderValue2
-        }
+        // Verify that reconnection attempt specifies the correct header value.
+        val reconnectionHeaders = serverCollector.awaitCall().headers
+        reconnectionHeaders.get(header) shouldBe expectedHeaderValue2
 
         serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
