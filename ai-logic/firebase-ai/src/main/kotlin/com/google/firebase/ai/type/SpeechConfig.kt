@@ -56,8 +56,6 @@ public class SpeakerVoiceConfig(
  * [LiveGenerationConfig]).
  *
  * @property speakerVoiceConfigs A list of voice configurations for the participating speakers.
- *
- * Currently, the backend requires exactly **two** speaker voice configurations.
  */
 @PublicPreviewAPI
 public class MultiSpeakerVoiceConfig(
