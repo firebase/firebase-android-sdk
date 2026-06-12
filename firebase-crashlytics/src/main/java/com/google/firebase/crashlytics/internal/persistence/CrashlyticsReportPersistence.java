@@ -14,13 +14,17 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
@@ -39,6 +43,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +63,8 @@ public class CrashlyticsReportPersistence {
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
+
+  private static final String PROFILING_MANAGER_INFO_FILE_NAME = "profiling-manager-info";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -142,6 +149,21 @@ public class CrashlyticsReportPersistence {
       Logger.getLogger().w("Could not persist event for session " + sessionId, ex);
     }
     trimEvents(sessionId, maxEventsToKeep);
+  }
+
+  /**
+   * Persists Profiling Manager information for a given session.
+   */
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  public void persistProfilingManagerInfo(
+      @NonNull ProfilingManagerInfo profilingManagerInfo,
+      @NonNull String sessionId) {
+    try {
+      String json = TRANSFORM.profilingManagerInfoToJson(profilingManagerInfo);
+      writeTextFile(fileStore.getSessionFile(sessionId, PROFILING_MANAGER_INFO_FILE_NAME), json);
+    } catch (IOException e) {
+      Logger.getLogger().w("Could not persist Profiling Manager info " + sessionId, e);
+    }
   }
 
   /**
@@ -302,7 +324,7 @@ public class CrashlyticsReportPersistence {
     for (File eventFile : eventFiles) {
       try {
         Event event = TRANSFORM.eventFromJson(readTextFile(eventFile));
-        events.add(event);
+        events.add(decorateWithProfilingManagerInfoIfFatal(sessionId, event));
         isHighPriorityReport = isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
       } catch (IOException e) {
         Logger.getLogger().w("Could not add event to report for " + eventFile, e);
@@ -374,6 +396,35 @@ public class CrashlyticsReportPersistence {
     } catch (IOException e) {
       Logger.getLogger().w("Could not synthesize final report file for " + reportFile, e);
     }
+  }
+
+  private Event decorateWithProfilingManagerInfoIfFatal(String sessionId, Event event) {
+    if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN && isFatalEvent(event)) {
+      Optional<ProfilingManagerInfo> profilingManagerInfo =
+          Optional
+              .of(fileStore.getSessionFile(sessionId, PROFILING_MANAGER_INFO_FILE_NAME))
+              .filter(File::exists)
+              .flatMap(f -> {
+                try {
+                  return Optional.of(TRANSFORM.profilingManagerInfoFromJson(readTextFile(f)));
+                } catch (IOException e) {
+                  Logger.getLogger().w("Unable to read the Profiling Manager file ", e);
+                  return Optional.empty();
+                }
+              });
+
+      return profilingManagerInfo.map(info -> event.toBuilder().setApp(
+          event.getApp().toBuilder().setExecution(
+              event.getApp().getExecution().toBuilder().setProfilingManagerInfo(info).build()
+          ).build()
+      ).build()).orElse(event);
+    }
+
+    return event;
+  }
+
+  private static boolean isFatalEvent(Event event) {
+    return event.getType().equals("crash") || event.getType().equals("ndk-crash");
   }
 
   private static boolean isHighPriorityEventFile(@NonNull String fileName) {

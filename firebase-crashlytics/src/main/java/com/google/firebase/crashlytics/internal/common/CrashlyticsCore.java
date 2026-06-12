@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -199,6 +201,10 @@ public class CrashlyticsCore {
 
       controller.enableExceptionHandling(
           sessionIdentifier, Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
+
+      if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
+        controller.enableProfilingManagerListener(sessionIdentifier);
+      }
 
       if (initializeSynchronously && CommonUtils.canTryConnection(context)) {
         Logger.getLogger()

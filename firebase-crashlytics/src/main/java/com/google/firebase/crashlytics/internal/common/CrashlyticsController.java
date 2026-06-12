@@ -19,17 +19,22 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ProfilingManager;
+import android.os.ProfilingTrigger;
 import android.os.StatFs;
 import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
@@ -57,10 +62,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 class CrashlyticsController {
 
@@ -79,6 +86,8 @@ class CrashlyticsController {
   private static final String VERSION_CONTROL_INFO_KEY = "com.crashlytics.version-control-info";
   private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
   private static final String META_INF_FOLDER = "META-INF/";
+  private static final String TRIGGER_TYPE_ANOMALY_FILENAME = "trigger-type-anomaly";
+  private static final String TRIGGER_TYPE_OOM_FILENAME = "trigger-type-oom";
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -173,6 +182,12 @@ class CrashlyticsController {
         new CrashlyticsUncaughtExceptionHandler(
             crashListener, settingsProvider, defaultHandler, nativeComponent);
     Thread.setDefaultUncaughtExceptionHandler(crashHandler);
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  void enableProfilingManagerListener(String sessionId) {
+    // Set up profiling manager here, use background executor because it's just file I/O
+    registerProfilingManagerListener(sessionId, crashlyticsWorkers.diskWrite.getExecutor());
   }
 
   void handleUncaughtException(
@@ -603,6 +618,10 @@ class CrashlyticsController {
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
     }
 
+    if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
+      writeProfilingManagerInfo(mostRecentSessionIdToClose);
+    }
+
     String currentSessionId = null;
     if (skipCurrentSession) {
       currentSessionId = sortedOpenSessions.get(0);
@@ -941,6 +960,68 @@ class CrashlyticsController {
     } else {
       Logger.getLogger()
           .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
+    }
+  }
+  // endregion
+
+  // region ProfilingManager
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  private void writeProfilingManagerInfo(String sessionId) {
+    ActivityManager manager =
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+
+    // For anomaly triggers, there should be a file written to disk by the registered consumer.
+    // However, for OOMs, it is less guaranteed that the process had enough resources to write the
+    // corresponding file. This is ok because we can check ApplicationExitInfo to see if an OOM
+    // occurred.
+    List<Integer> triggers = fileStore.getSessionFiles(sessionId, (dir, name) -> List.of(
+        TRIGGER_TYPE_ANOMALY_FILENAME,
+        TRIGGER_TYPE_OOM_FILENAME
+    ).contains(name)).stream()
+        .map(triggerFile -> {
+          switch (triggerFile.getName()) {
+            case TRIGGER_TYPE_ANOMALY_FILENAME: return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+            case TRIGGER_TYPE_OOM_FILENAME: return ProfilingTrigger.TRIGGER_TYPE_OOM;
+          }
+
+          return ProfilingTrigger.TRIGGER_TYPE_NONE;
+        })
+        .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+        .collect(Collectors.toList());
+
+    List<ApplicationExitInfo> appExits = manager.getHistoricalProcessExitReasons(null, 0, 0);
+
+    reportingCoordinator.persistProfilingManagerInfo(sessionId, triggers, appExits);
+  }
+  
+  @SuppressLint("WrongConstant") // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  private void registerProfilingManagerListener(String sessionId, @Background Executor backgroundExecutor) {
+    ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
+
+    profilingManager.addProfilingTriggers(List.of(
+        new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_OOM).build(),
+        new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_ANOMALY).build()
+    ));
+    profilingManager.registerForAllProfilingResults(backgroundExecutor, (result) -> {
+      writeTriggerTypeFile(sessionId, result.getTriggerType());
+    });
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  private void writeTriggerTypeFile(String sessionId, int triggerType) {
+    String triggerFilename =
+        triggerType == ProfilingTrigger.TRIGGER_TYPE_ANOMALY ? TRIGGER_TYPE_ANOMALY_FILENAME :
+        triggerType == ProfilingTrigger.TRIGGER_TYPE_OOM ? TRIGGER_TYPE_OOM_FILENAME :
+        "trigger-type-unknown";
+
+    try {
+      if (!fileStore.getSessionFile(sessionId, triggerFilename).createNewFile()) {
+        Logger.getLogger()
+            .d("Trigger file " + triggerFilename + " exists for session: " + sessionId);
+      }
+    } catch (IOException e) {
+      Logger.getLogger().e("Unable to touch trigger file " + triggerFilename);
     }
   }
   // endregion

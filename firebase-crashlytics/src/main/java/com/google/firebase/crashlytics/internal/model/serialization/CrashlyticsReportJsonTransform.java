@@ -21,6 +21,7 @@ import com.google.firebase.crashlytics.internal.model.AutoCrashlyticsReportEncod
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
@@ -55,6 +56,12 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
+  public String profilingManagerInfoToJson(
+      @NonNull CrashlyticsReport.ProfilingManagerInfo profilingManagerInfo) {
+    return CRASHLYTICS_REPORT_JSON_ENCODER.encode(profilingManagerInfo);
+  }
+
+  @NonNull
   public CrashlyticsReport reportFromJson(@NonNull String json) throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseReport(jsonReader);
@@ -77,6 +84,16 @@ public class CrashlyticsReportJsonTransform {
       throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseAppExitInfo(jsonReader);
+    } catch (IllegalStateException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @NonNull
+  public CrashlyticsReport.ProfilingManagerInfo profilingManagerInfoFromJson(@NonNull String json)
+    throws IOException {
+    try (JsonReader reader = new JsonReader(new StringReader(json))) {
+      return parseProfilingManagerInfo(reader);
     } catch (IllegalStateException e) {
       throw new IOException(e);
     }
@@ -260,6 +277,28 @@ public class CrashlyticsReportJsonTransform {
       }
     }
     jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static CrashlyticsReport.ProfilingManagerInfo parseProfilingManagerInfo(
+      @NonNull JsonReader jsonReader) throws IOException {
+    CrashlyticsReport.ProfilingManagerInfo.Builder builder =
+        CrashlyticsReport.ProfilingManagerInfo.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "profilingTrigger":
+          builder.setProfilingTrigger(parseProfilingTrigger(jsonReader));
+          break;
+        default:
+          jsonReader.skipValue();
+      }
+    }
+    jsonReader.endObject();
+
     return builder.build();
   }
 
@@ -558,6 +597,9 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "appExitInfo":
           builder.setAppExitInfo(parseAppExitInfo(jsonReader));
+          break;
+        case "profilingManagerInfo":
+          builder.setProfilingManagerInfo(parseProfilingManagerInfo(jsonReader));
           break;
         default:
           jsonReader.skipValue();
@@ -902,6 +944,27 @@ public class CrashlyticsReportJsonTransform {
       }
     }
     jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static ProfilingTrigger parseProfilingTrigger(@NonNull JsonReader jsonReader)
+      throws IOException {
+    ProfilingTrigger.Builder builder = ProfilingTrigger.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "trigger":
+          builder.setTrigger(jsonReader.nextInt());
+          break;
+        default:
+          jsonReader.skipValue();
+      }
+    }
+    jsonReader.endObject();
+
     return builder.build();
   }
 

@@ -17,6 +17,9 @@ package com.google.firebase.crashlytics.internal.common;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
+import android.os.ProfilingTrigger;
+import android.system.OsConstants;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -31,6 +34,7 @@ import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPayload;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
@@ -46,8 +50,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.concurrent.Executor;
+import java.util.function.Predicate;
 
 /**
  * This class coordinates Crashlytics session data capture and persistence, as well as sending of
@@ -144,7 +150,11 @@ public class SessionReportingCoordinator {
       UserMetadata userMetadataForSession) {
 
     ApplicationExitInfo relevantApplicationExitInfo =
-        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList);
+        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList, aei -> {
+          // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
+          // all ApplicationExitInfos that fall within the session.
+          return aei.getReason() != ApplicationExitInfo.REASON_ANR;
+        });
 
     if (relevantApplicationExitInfo == null) {
       Logger.getLogger().v("No relevant ApplicationExitInfo occurred during session: " + sessionId);
@@ -162,6 +172,26 @@ public class SessionReportingCoordinator {
     CrashlyticsReport.Session.Event eventWithRolloutsState =
         addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
     reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  public void persistProfilingManagerInfo(
+      String sessionId,
+      List<Integer> triggers,
+      List<ApplicationExitInfo> applicationExitInfoList
+  ) {
+    Optional<Integer> trigger = triggers.stream()
+        .findFirst()
+        .or(() -> isOom(sessionId, applicationExitInfoList)
+            ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM) : Optional.empty());
+
+    trigger.ifPresent(t -> reportPersistence.persistProfilingManagerInfo(
+        ProfilingManagerInfo.builder()
+            .setProfilingTrigger(ProfilingManagerInfo.ProfilingTrigger.builder()
+                .setTrigger(t)
+                .build())
+            .build(), sessionId
+    ));
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -426,7 +456,6 @@ public class SessionReportingCoordinator {
   }
 
   @VisibleForTesting
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   public static String convertInputStreamToString(InputStream inputStream) throws IOException {
     try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
@@ -442,7 +471,7 @@ public class SessionReportingCoordinator {
   /** Finds the first ANR ApplicationExitInfo within the session. */
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
-      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList, Predicate<ApplicationExitInfo> skip) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
 
     // The order of ApplicationExitInfos is latest first.
@@ -453,9 +482,7 @@ public class SessionReportingCoordinator {
         return null;
       }
 
-      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
-      // all ApplicationExitInfos that fall within the session.
-      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+      if (skip.test(applicationExitInfo)) {
         continue;
       }
 
@@ -463,5 +490,23 @@ public class SessionReportingCoordinator {
     }
 
     return null;
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  private boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    ApplicationExitInfo relevant =
+        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList, aei -> {
+          // Most devices should support REASON_LOW_MEMORY
+          boolean viaLowMemory = aei.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
+              && "OOM".equals(aei.getDescription());
+          // In cases where the above isn't supported, fall back to a more primitive check
+          boolean viaSignaled = aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
+              && aei.getStatus() == OsConstants.SIGKILL;
+
+          // Skip all that aren't related to OOMs
+          return !viaLowMemory && !viaSignaled;
+        });
+
+    return relevant != null;
   }
 }
