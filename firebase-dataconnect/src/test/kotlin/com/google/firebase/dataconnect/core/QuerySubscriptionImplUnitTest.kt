@@ -70,6 +70,7 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
+import io.kotest.assertions.asClue
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -78,6 +79,7 @@ import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -979,6 +981,57 @@ class QuerySubscriptionImplUnitTest {
 
       clientCollector.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `auth token change mid-stream sends update`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.authUid(),
+      Arb.dataConnect.authToken().distinctPair(),
+    ) { authUid, (authToken1, authToken2) ->
+      check(authToken1 != authToken2)
+
+      val authProvider =
+        LoggedInMultiTokenAndUidAuthProvider(
+          listOf(authToken1, authToken2).map { tokenUidPairOrNullIfUidNull(it, authUid) }
+        )
+
+      val dataConnect =
+        dataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = ImmediateDeferred(authProvider)
+        )
+      try {
+        dataConnect.awaitAuthReady()
+
+        val subscription = querySubscription(dataConnect)
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+          serverCollector.awaitResponseSender()
+          serverCollector.awaitUntilSubscribeStreamRequest()
+
+          // Trigger the auth token update
+          checkNotNull(authProvider.idTokenListener)
+            .onIdTokenChanged(InternalTokenResult(authToken2))
+
+          val authUpdateRequest = serverCollector.awaitUntilStreamRequest()
+          authUpdateRequest.streamRequest.asClue {
+            it.requestId shouldStartWith "auth"
+            it.headersMap["x-firebase-auth-token"] shouldBe authToken2
+          }
+
+          serverCollector.cancelAndIgnoreRemainingEvents()
+          clientCollector.cancelAndIgnoreRemainingEvents()
+        }
+      } finally {
+        dataConnect.suspendingClose()
+      }
     }
   }
 
