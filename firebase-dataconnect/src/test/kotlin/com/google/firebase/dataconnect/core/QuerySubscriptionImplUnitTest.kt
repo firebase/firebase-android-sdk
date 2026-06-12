@@ -555,6 +555,36 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
+  fun `flow retries if server connection is lost`() = runTest {
+    val server1 = runningInProcessDataConnectServer()
+    val server2 = InProcessDataConnectGrpcStreamingServer()
+    cleanups.register(server2)
+    val dataConnect = dataConnect(server1)
+    val subscription = querySubscription(dataConnect)
+    val testData = testDataArb().sample()
+
+    turbineScope {
+      val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
+      val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      server1Collector.awaitConnectRpcStarted()
+      server1Collector.awaitUntilSubscribeStreamRequest()
+      server1.close()
+      server2.open(server1.port)
+
+      server2Collector.awaitResponseSender().let { responseSender ->
+        val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        responseSender.onNext(requestId, testData)
+        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      server2Collector.cancelAndIgnoreRemainingEvents()
+      server1Collector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
   fun `flow fails with AuthUidChangedException if auth uid changes mid-stream`() = runTest {
     val server = runningInProcessDataConnectServer()
 
@@ -1032,36 +1062,6 @@ class QuerySubscriptionImplUnitTest {
       } finally {
         dataConnect.suspendingClose()
       }
-    }
-  }
-
-  @Test
-  fun `flow retries if server connection is lost`() = runTest {
-    val server1 = runningInProcessDataConnectServer()
-    val server2 = InProcessDataConnectGrpcStreamingServer()
-    cleanups.register(server2)
-    val dataConnect = dataConnect(server1)
-    val subscription = querySubscription(dataConnect)
-    val testData = testDataArb().sample()
-
-    turbineScope {
-      val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
-      val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      server1Collector.awaitConnectRpcStarted()
-      server1Collector.awaitUntilSubscribeStreamRequest()
-      server1.close()
-      server2.open(server1.port)
-
-      server2Collector.awaitResponseSender().let { responseSender ->
-        val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-        responseSender.onNext(requestId, testData)
-        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
-      }
-
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      server2Collector.cancelAndIgnoreRemainingEvents()
-      server1Collector.cancelAndIgnoreRemainingEvents()
     }
   }
 
