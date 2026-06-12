@@ -236,7 +236,7 @@ public final class FirebaseOptions {
     return storageBucket;
   }
 
-  /** The reCAPTCHA site key register, e.g. 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
+  /** The reCAPTCHA site key for you app, e.g. 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
   @Nullable
   public String getRecaptchaSiteKey() {
     return recaptchaSiteKey;
