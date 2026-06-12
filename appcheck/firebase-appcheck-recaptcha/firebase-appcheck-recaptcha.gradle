@@ -21,6 +21,7 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Recaptcha")
         versionName.set("appcheck-recaptcha")
+        enabled.set(true)
     }
 }
 
