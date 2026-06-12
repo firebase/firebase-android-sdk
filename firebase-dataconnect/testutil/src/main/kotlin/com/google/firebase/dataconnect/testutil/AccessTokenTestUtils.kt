@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import io.grpc.Metadata
+
 // This is a copy of the function of the same name in DataConnectCredentialsTokenManager.kt.
 fun String.toScrubbedAccessToken(): String =
   if (length < 30) {
@@ -31,3 +33,21 @@ fun String.toScrubbedAccessToken(): String =
       )
     }
   }
+
+const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
+
+val authTokenGrpcMetadataKey: Metadata.Key<String> =
+  Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+
+val appCheckTokenGrpcMetadataKey: Metadata.Key<String> =
+  Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
+
+class TestAppCheckTokenResultImpl(
+  private val token: String,
+  private val error: Exception? = null,
+) : com.google.firebase.appcheck.AppCheckTokenResult() {
+  override fun getToken() = token
+  override fun getError() = error
+
+  override fun toString() = "TestAppCheckTokenResultImpl(token=$token, error=$error)"
+}

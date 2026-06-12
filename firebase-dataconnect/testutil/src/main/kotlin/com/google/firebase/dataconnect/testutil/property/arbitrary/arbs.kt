@@ -18,10 +18,17 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.testutil.ImmediateDeferred
+import com.google.firebase.dataconnect.testutil.PLACEHOLDER_APP_CHECK_TOKEN
+import com.google.firebase.dataconnect.testutil.TestAppCheckTokenResultImpl
+import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -46,8 +53,12 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.asSample
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import kotlin.random.nextInt
 import kotlin.time.Duration
 import kotlinx.serialization.modules.SerializersModule
@@ -153,9 +164,64 @@ object DataConnectArb {
   fun authToken(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     string.map { "authToken_${it.lowercase()}" }
 
+  fun authUidString(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = string.map { "authUid_${it.lowercase()}" }
+
   fun appCheckToken(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-  ): Arb<String> = string.map { "appCheckToken_${it.lowercase()}" }
+  ): Arb<String> =
+    string
+      .map { "appCheckToken_${it.lowercase()}" }
+      .withEdgecases(
+        PLACEHOLDER_APP_CHECK_TOKEN,
+      )
+
+  fun deferredAuthProvider(
+    token: Arb<String?> = authToken().orNull(nullProbability = 0.33),
+    uid: Arb<String?> = authUidString().orNull(nullProbability = 0.33),
+  ): Arb<com.google.firebase.inject.Deferred<InternalAuthProvider>> =
+    Arb.bind(token, uid) { token, uid ->
+      if (token == null && uid == null) {
+        UnavailableDeferred()
+      } else {
+        val claims = buildMap {
+          if (uid != null) {
+            put("sub", uid)
+          }
+        }
+        val mockProvider: InternalAuthProvider = mockk {
+          every { getAccessToken(any()) } returns
+            Tasks.forResult(com.google.firebase.auth.GetTokenResult(token, claims))
+          every { getUid() } returns uid
+          every { addIdTokenListener(any()) } just runs
+          every { removeIdTokenListener(any()) } just runs
+        }
+        ImmediateDeferred(
+          mockProvider,
+          name = "InternalAuthProvider(token=$token uid=$uid) [r73tv2gms7]",
+        )
+      }
+    }
+
+  fun deferredAppCheckProvider(
+    token: Arb<String?> = appCheckToken().orNull(nullProbability = 0.33),
+  ): Arb<com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>> =
+    token.map {
+      if (it == null) {
+        UnavailableDeferred()
+      } else {
+        val mockProvider: InteropAppCheckTokenProvider = mockk {
+          every { getToken(any()) } returns Tasks.forResult(TestAppCheckTokenResultImpl(it))
+          every { addAppCheckTokenListener(any()) } just runs
+          every { removeAppCheckTokenListener(any()) } just runs
+        }
+        ImmediateDeferred(
+          mockProvider,
+          name = "InteropAppCheckTokenProvider(token=$it) [ag59cv7a57]",
+        )
+      }
+    }
 
   fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {

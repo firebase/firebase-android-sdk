@@ -20,11 +20,13 @@ import com.google.firebase.inject.Deferred
 import com.google.firebase.inject.Provider
 
 /** An implementation of {@link Deferred} whose provider is always available. */
-class ImmediateDeferred<T>(instance: T) : Deferred<T> {
+class ImmediateDeferred<T>(instance: T, private val name: String? = null) : Deferred<T> {
 
   private val provider = Provider { instance }
 
   override fun whenAvailable(handler: Deferred.DeferredHandler<T>) {
     handler.handle(provider)
   }
+
+  override fun toString() = "ImmediateDeferred(name=$name)"
 }
