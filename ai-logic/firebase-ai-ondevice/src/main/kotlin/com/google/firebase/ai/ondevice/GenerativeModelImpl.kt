@@ -48,7 +48,7 @@ internal class GenerativeModelImpl(
   override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
     try {
       val response = mlkitModel.generateContent(request.toMlKit())
-      response.toInterop()
+      response.toInterop(mlkitModel.getBaseModelName())
     } catch (e: GenAiException) {
       throw getMappingException(e)
     }
@@ -67,7 +67,7 @@ internal class GenerativeModelImpl(
     return mlkitModel
       .generateContentStream(request.toMlKit())
       .catch { throw getMappingException(it) }
-      .map { it.toInterop() }
+      .map { it.toInterop(mlkitModel.getBaseModelName()) }
   }
 
   override suspend fun getBaseModelName(): String = mlkitModel.getBaseModelName()

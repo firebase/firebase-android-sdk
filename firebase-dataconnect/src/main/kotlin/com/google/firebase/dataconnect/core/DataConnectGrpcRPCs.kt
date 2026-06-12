@@ -20,11 +20,13 @@ import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -40,6 +42,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.copy
 import com.google.protobuf.Struct
@@ -71,6 +74,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -151,7 +155,7 @@ internal class DataConnectGrpcRPCs(
     operationName: String,
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
@@ -216,7 +220,7 @@ internal class DataConnectGrpcRPCs(
   )
 
   private suspend fun DataConnectCache.queryCacheInfo(
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     request: ExecuteQueryRequest,
   ): QueryCacheInfo {
     val queryId =
@@ -232,7 +236,7 @@ internal class DataConnectGrpcRPCs(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
+    authToken: GetAuthTokenResult?,
     appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): SqliteSequencedReference<ExecuteQueryResult> {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
@@ -368,31 +372,45 @@ internal class DataConnectGrpcRPCs(
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    dataConnectAuth: DataConnectAuth,
+    dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream {
-    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
+    val initialAuthToken = AtomicReference(dataConnectAuth.getToken(streamId))
+    val connectionAuthUid = initialAuthToken.get().ref?.authUid
 
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
     // For low-level debugging, swap this `grpcBidiFlowListener` out for
-    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(authToken?.authUid))
+    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
     val grpcBidiFlowListener =
       ConnectGrpcBidiFlowListener(
         streamId = streamId,
-        authUid = authToken?.authUid,
+        authUid = connectionAuthUid,
         initRequest = initRequest,
         kotlinMethodName = "connect()",
       )
+
+    val createHeaders:
+      suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
+      {
+        val authToken = initialAuthToken.getAndSet(null) ?: dataConnectAuth.getToken(streamId)
+        val authUid = authToken.ref?.authUid
+        if (authUid != connectionAuthUid) {
+          throw AuthUidChangedException("ytd7yf2geh", connectionAuthUid, authUid)
+        }
+        val appCheckToken = dataConnectAppCheck.getToken(streamId)
+        val metadata = grpcMetadata.get(authToken.ref, appCheckToken.ref, callerSdkType)
+        GrpcBidiFlow.HeadersResult(metadata, authToken)
+      }
 
     val flow =
       GrpcBidiFlow.create(
         grpcChannel = lazyGrpcChannel.get(),
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
-        headers = { GrpcBidiFlow.HeadersResult(metadata, authToken?.authUid) },
+        headers = createHeaders,
         idStringGenerator = idStringGenerator,
         initRequests = listOf(initRequest),
         listener = grpcBidiFlowListener,
@@ -400,6 +418,8 @@ internal class DataConnectGrpcRPCs(
 
     return DataConnectBidiConnectStream(
       flow,
+      dataConnectAuth,
+      idStringGenerator,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }
@@ -793,3 +813,12 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
 
   return ::getEntityIdForPathFunction
 }
+
+internal class AuthUidChangedException(
+  errorCode: String,
+  currentAuthUid: AuthUid?,
+  newAuthUid: AuthUid?,
+) :
+  DataConnectException(
+    "Firebase Auth UID changed from $currentAuthUid to $newAuthUid [$errorCode]"
+  )

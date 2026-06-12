@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
  *
  * The context window will be truncated by keeping only a suffix of it.
  *
- * @property targetTokens The session reduction target, i.e., how many tokens we should keep.
+ * @property targetTokens The session reduction target, specifically, how many tokens to keep.
  */
 @PublicPreviewAPI
 public class SlidingWindow(public val targetTokens: Int? = null) {

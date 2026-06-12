@@ -34,6 +34,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
@@ -49,6 +50,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -97,12 +99,15 @@ public class FirebaseMessaging {
   @Nullable private final FirebaseInstanceIdInternal iid;
   private final Context context;
   private final GmsRpc gmsRpc;
+  private final GmsRegistrationClient gmsRegistrationClient;
   private final RequestDeduplicator requestDeduplicator;
   private final AutoInit autoInit;
   private final Executor initExecutor;
   private final Executor fileExecutor;
   private final Task<TopicsSubscriber> topicsSubscriberTask;
   private final Metadata metadata;
+
+  private final FirebaseInstallationsApi firebaseInstallationsApi;
 
   @GuardedBy("this")
   private boolean syncScheduledOrRunning = false;
@@ -133,9 +138,13 @@ public class FirebaseMessaging {
     store = null;
   }
 
-  /** @hide */
+  /**
+   * @hide
+   * @deprecated Deprecated hidden API. Please do not use.
+   */
   @Keep
   @NonNull
+  @Deprecated
   static synchronized FirebaseMessaging getInstance(@NonNull FirebaseApp firebaseApp) {
     FirebaseMessaging firebaseMessaging = firebaseApp.get(FirebaseMessaging.class);
     Preconditions.checkNotNull(firebaseMessaging, "Firebase Messaging component is not present");
@@ -178,6 +187,7 @@ public class FirebaseMessaging {
         metadata,
         new GmsRpc(
             firebaseApp, metadata, userAgentPublisher, heartBeatInfo, firebaseInstallationsApi),
+        firebaseInstallationsApi,
         /* taskExecutor= */ newTaskExecutor(),
         /* initExecutor= */ newInitExecutor(),
         /* fileExecutor= */ newFileIOExecutor());
@@ -190,6 +200,7 @@ public class FirebaseMessaging {
       Subscriber subscriber,
       Metadata metadata,
       GmsRpc gmsRpc,
+      FirebaseInstallationsApi firebaseInstallationsApi,
       Executor taskExecutor,
       Executor initExecutor,
       Executor fileExecutor) {
@@ -203,6 +214,9 @@ public class FirebaseMessaging {
     this.lifecycleCallbacks = new FcmLifecycleCallbacks();
     this.metadata = metadata;
     this.gmsRpc = gmsRpc;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.gmsRegistrationClient =
+        new GmsRegistrationClient(context, firebaseApp, firebaseInstallationsApi, gmsRpc, metadata);
     this.requestDeduplicator = new RequestDeduplicator(taskExecutor);
     this.initExecutor = initExecutor;
     this.fileExecutor = fileExecutor;
@@ -220,11 +234,33 @@ public class FirebaseMessaging {
               + " notification events may be dropped as a result.");
     }
 
-    if (iid != null) {
+    if (iid != null && !gmsRegistrationClient.isV1RegistrationEnabled()) {
       iid.addNewTokenListener(
           (String token) -> {
-            invokeOnTokenRefresh(token);
+            // We deal with tokens only if V1 registration is not enabled.
+            invokeOnRegistrationChanged(token, false);
           });
+    }
+
+    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
+      @SuppressLint("InvalidDeferredApiUse")
+      FidListenerHandle unused =
+          firebaseInstallationsApi.registerFidListener(
+              fid -> {
+                Store.Token token = getTokenWithoutTriggeringSync();
+                if (token == null) {
+                  // Not registered case. So do nothing
+                  return;
+                }
+
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                  Log.d(TAG, "FID Change detected! Triggering re-sync");
+                }
+
+                // Fid changed means, current FCM registration is invalid. So we call sync, which
+                // will call re-registration.
+                startSync();
+              });
     }
 
     initExecutor.execute(
@@ -236,7 +272,12 @@ public class FirebaseMessaging {
 
     topicsSubscriberTask =
         TopicsSubscriber.createInstance(
-            this, metadata, gmsRpc, context, /* syncExecutor= */ newTopicsSyncExecutor());
+            firebaseApp,
+            this,
+            firebaseInstallationsApi,
+            metadata,
+            context,
+            /* syncExecutor= */ newTopicsSyncExecutor());
 
     // During FCM instantiation, as part of the initial setup, we spin up a couple of background
     // threads to handle topic syncing and proxy notification configuration.
@@ -251,6 +292,16 @@ public class FirebaseMessaging {
         });
 
     initExecutor.execute(() -> initializeProxyNotifications());
+  }
+
+  @WorkerThread
+  @Nullable
+  private String fetchFid() {
+    try {
+      return Tasks.await(firebaseInstallationsApi.getId());
+    } catch (ExecutionException | InterruptedException e) {
+      return null;
+    }
   }
 
   private void initializeProxyNotifications() {
@@ -407,18 +458,79 @@ public class FirebaseMessaging {
    * #deleteToken} for information on deleting the token and the Firebase Installations ID.
    *
    * @return {@link Task} with the token.
+   * @throws IllegalStateException if the {@code firebase_messaging_installation_id_enabled}
+   *     metadata flag set to true in the manifest.
+   * @deprecated Use {@link #register()} instead.
    */
+  @Deprecated
   @NonNull
   public Task<String> getToken() {
+    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
+      return Tasks.forException(
+          new IllegalStateException(
+              "API disabled. Please use {@link #register()} instead or enable this API by removing"
+                  + " {@code <meta-data android:name=\"firebase_messaging_installation_id_enabled\""
+                  + " android:value=\"true\" />} from your app's manifest."));
+    }
+
     if (iid != null) {
       return iid.getTokenTask();
     }
+
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     initExecutor.execute(
         () -> {
           try {
-            taskCompletionSource.setResult(blockingGetToken());
+            taskCompletionSource.setResult(blockingRegister(false));
           } catch (Exception e) {
+            taskCompletionSource.setException(e);
+          }
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  /**
+   * Registers the current Firebase app instance with the Firebase Cloud Messaging (FCM) backend.
+   *
+   * <p>This process ensures the FCM backend is aware of the app instance, linking it to its
+   * Firebase Installation ID (FID). The FID can then be used to target this app instance for
+   * direct-send messaging.
+   *
+   * <p>If a Firebase Installations ID does not exist, this method will create one as part of the
+   * registration process. If an FID already exists, this method uses the existing one.
+   *
+   * <p>Upon completion, the {@link FirebaseMessagingService#onRegistered(String)} callback is
+   * triggered with the current FID. Calling this method when already registered will still invoke
+   * the {@code onRegistered()} callback with the existing FID.
+   *
+   * <p>To unregister, see {@link #unregister()}. To delete the FID, see {@code
+   * FirebaseInstallations.delete()}.
+   *
+   * <p><b>Note:</b> To use this API, you must enable it by adding {@code <meta-data
+   * android:name="firebase_messaging_installation_id_enabled" android:value="true" />} to your
+   * app's manifest.
+   *
+   * @return A {@code Task} that completes when registration is finished.
+   * @throws IllegalStateException if the {@code firebase_messaging_installation_id_enabled}
+   *     metadata flag is not set to true in the manifest.
+   */
+  @NonNull
+  public Task<Void> register() {
+    if (!gmsRegistrationClient.isV1RegistrationEnabled()) {
+      return Tasks.forException(
+          new IllegalStateException(
+              "API disabled. Please enable it by adding {@code <meta-data"
+                  + " android:name=\"firebase_messaging_installation_id_enabled\""
+                  + " android:value=\"true\" />} to your app's manifest."));
+    }
+
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    initExecutor.execute(
+        () -> {
+          try {
+            String unused = blockingRegister(true);
+            taskCompletionSource.setResult(null);
+          } catch (IOException e) {
             taskCompletionSource.setException(e);
           }
         });
@@ -433,9 +545,23 @@ public class FirebaseMessaging {
    *
    * <p>Note that this does not delete the Firebase Installations ID that may have been created when
    * generating the token. See {@code FirebaseInstallations.delete()} for deleting that.
+   *
+   * @throws IllegalStateException if the {@code firebase_messaging_installation_id_enabled}
+   *     metadata flag is set to true in the manifest.
+   * @deprecated Use {@link #unregister()} instead.
    */
+  @Deprecated
   @NonNull
   public Task<Void> deleteToken() {
+    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
+      return Tasks.forException(
+          new IllegalStateException(
+              "API disabled. Please use {@link #unregister()} instead or enable this API by"
+                  + " removing {@code <meta-data"
+                  + " android:name=\"firebase_messaging_installation_id_enabled\""
+                  + " android:value=\"true\" />} from your app's manifest."));
+    }
+
     if (iid != null) {
       TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
       initExecutor.execute(
@@ -449,18 +575,73 @@ public class FirebaseMessaging {
           });
       return taskCompletionSource.getTask();
     }
+
     Store.Token token = getTokenWithoutTriggeringSync();
     if (token == null) {
       return Tasks.forResult(null);
     }
+
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
     executorService.execute(
         () -> {
           try {
-            Tasks.await(gmsRpc.deleteToken());
+            Tasks.await(gmsRpc.deleteToken(false));
             getStore(context).deleteToken(getSubtype(), Metadata.getDefaultSenderId(firebaseApp));
             taskCompletionSource.setResult(null);
+          } catch (Exception e) {
+            taskCompletionSource.setException(e);
+          }
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  /**
+   * Unregisters the current app instance with FCM.
+   *
+   * <p>Upon completion, the {@link FirebaseMessagingService#onUnregistered(String)} callback is
+   * triggered. Afterwards, any attempt to send FCM messages using the current Firebase installation
+   * ID will result in a 404 error.
+   *
+   * <p>Note that if auto-init is enabled, the app instance will be re-registered the next time the
+   * app is started. Disable auto-init ({@link #setAutoInitEnabled}) to avoid this.
+   *
+   * <p>Note that this does not delete the Firebase Installations ID that may have been created
+   * during registration. See {@code FirebaseInstallations.delete()} for deleting that.
+   *
+   * <p><b>Note:</b> To use this API, you must enable it by adding {@code <meta-data
+   * android:name="firebase_messaging_installation_id_enabled" android:value="true" />} to your
+   * app's manifest.
+   *
+   * @return A {@code Task} that completes when unregistration is finished.
+   * @throws IllegalStateException if the {@code firebase_messaging_installation_id_enabled}
+   *     metadata flag is not set to true in the manifest.
+   */
+  @NonNull
+  public Task<Void> unregister() {
+    if (!gmsRegistrationClient.isV1RegistrationEnabled()) {
+      return Tasks.forException(
+          new IllegalStateException(
+              "API disabled. Please enable it by adding {@code <meta-data"
+                  + " android:name=\"firebase_messaging_installation_id_enabled\""
+                  + " android:value=\"true\" />} to your app's manifest."));
+    }
+
+    Store.Token token = getTokenWithoutTriggeringSync();
+    if (token == null) {
+      // Not registered case.
+      return Tasks.forResult(null);
+    }
+
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
+    executorService.execute(
+        () -> {
+          try {
+            Tasks.await(gmsRegistrationClient.unregister());
+            getStore(context).deleteToken(getSubtype(), Metadata.getDefaultSenderId(firebaseApp));
+            taskCompletionSource.setResult(null);
+            invokeOnRegistrationChanged(token.token, true);
           } catch (Exception e) {
             taskCompletionSource.setException(e);
           }
@@ -598,12 +779,6 @@ public class FirebaseMessaging {
   }
 
   private void startSyncIfNecessary() {
-    if (iid != null) {
-      // This calls FirebaseInstanceId.startSync() if necessary, ignore the result since it isn't
-      // needed here.
-      iid.getToken();
-      return;
-    }
     Store.Token token = getTokenWithoutTriggeringSync();
     // Start a sync if we don't have a token, the token needs refresh, or there is a pending topic
     // operation
@@ -628,16 +803,13 @@ public class FirebaseMessaging {
   /**
    * Returns the cached token, if valid. Otherwise makes a request to the server to get a new token.
    */
-  String blockingGetToken() throws IOException {
-    if (iid != null) {
-      try {
-        return Tasks.await(iid.getTokenTask());
-      } catch (ExecutionException | InterruptedException e) {
-        throw new IOException(e);
-      }
-    }
+  String blockingRegister(boolean shouldInvokeCallback) throws IOException {
     Store.Token cachedToken = getTokenWithoutTriggeringSync();
     if (!tokenNeedsRefresh(cachedToken)) {
+      assert cachedToken != null;
+      if (shouldInvokeCallback) {
+        invokeOnRegistrationChanged(cachedToken.token, false);
+      }
       return cachedToken.token;
     }
 
@@ -646,24 +818,32 @@ public class FirebaseMessaging {
         requestDeduplicator.getOrStartGetTokenRequest(
             senderId,
             () ->
-                gmsRpc
-                    .getToken()
+                gmsRegistrationClient
+                    .register()
                     .onSuccessTask(
                         fileExecutor,
                         token -> {
                           getStore(context)
                               .saveToken(
                                   getSubtype(), senderId, token, metadata.getAppVersionCode());
-                          if (cachedToken == null || !token.equals(cachedToken.token)) {
-                            invokeOnTokenRefresh(token);
+                          if (gmsRegistrationClient.isV1RegistrationEnabled()
+                              || shouldInvokeCallback
+                              || cachedToken == null
+                              || !token.equals(cachedToken.token)) {
+                            invokeOnRegistrationChanged(token, false);
                           }
                           return Tasks.forResult(token);
                         }));
     try {
       return Tasks.await(tokenTask);
     } catch (ExecutionException | InterruptedException e) {
-      throw new IOException(e);
+      throw new IOException("FCM Registration failed!", e);
     }
+  }
+
+  @VisibleForTesting
+  String blockingGetToken() throws IOException {
+    return blockingRegister(false);
   }
 
   private String getSubtype() {
@@ -676,23 +856,56 @@ public class FirebaseMessaging {
 
   @VisibleForTesting
   boolean tokenNeedsRefresh(@Nullable Store.Token token) {
-    return token == null || token.needsRefresh(metadata.getAppVersionCode());
+    if (token == null || token.needsRefresh(metadata.getAppVersionCode())) {
+      // If not token present or if the app version changed, then we need to refresh token.
+      return true;
+    }
+
+    if (gmsRegistrationClient.isV1RegistrationEnabled()) {
+      String fid = fetchFid();
+      // If V1 registration, the token has to be the current FID; else needs registration refresh.
+      // This could be different in cases where :
+      // 1. App instance migrated from legacy registration to V1.
+      // 2. The latest FID has changed which is not yet registered with FCM.
+      return !token.token.equalsIgnoreCase(fid);
+    } else {
+      // If legacy registration and if the token is a FID, then it means the app has downgraded back
+      // to token and hence needs registration refresh.
+      return token.isFid();
+    }
   }
 
-  private void invokeOnTokenRefresh(String token) {
+  private void invokeOnRegistrationChanged(String token, boolean isUnregistered) {
     // onNewToken() is only invoked for the default app as there is no parameter to identify which
-    // app the token is for. We could add a new method onNewToken(FirebaseApp app, String token) or
-    // the like to handle multiple apps better.
-    if (FirebaseApp.DEFAULT_APP_NAME.equals(firebaseApp.getName())) {
-      if (Log.isLoggable(TAG, Log.DEBUG)) {
-        Log.d(TAG, "Invoking onNewToken for app: " + firebaseApp.getName());
-      }
-      Intent messagingIntent = new Intent(FirebaseMessagingService.ACTION_NEW_TOKEN);
-      messagingIntent.putExtra(FirebaseMessagingService.EXTRA_TOKEN, token);
-      // Previously this sent to the FIIDReceiver, which forwarded to the service.
-      // Send directly to service using the old FIIDReceiver mechanism to keep the change simple.
-      new FcmBroadcastProcessor(context).process(messagingIntent);
+    // app the token is for.
+    if (!FirebaseApp.DEFAULT_APP_NAME.equals(firebaseApp.getName())) {
+      return;
     }
+
+    if (Log.isLoggable(TAG, Log.DEBUG)) {
+      Log.d(TAG, "Invoking onNewToken for app: " + firebaseApp.getName());
+    }
+
+    boolean isV1Registration = gmsRegistrationClient.isV1RegistrationEnabled();
+    Intent messagingIntent = new Intent();
+    messagingIntent.putExtra(FirebaseMessagingService.EXTRA_TOKEN, token);
+    if (isV1Registration) {
+      messagingIntent.setAction(
+          isUnregistered
+              ? FirebaseMessagingService.ACTION_FCM_UNREGISTERED
+              : FirebaseMessagingService.ACTION_FCM_REGISTERED);
+    } else {
+      if (!isUnregistered) {
+        messagingIntent.setAction(FirebaseMessagingService.ACTION_NEW_TOKEN);
+      } else {
+        // No callback methods to notify deletetoken/unregister for legacy registration.
+        return;
+      }
+    }
+    // Previously this sent to the FIIDReceiver, which forwarded to the service.
+    // Send directly to service using the old FIIDReceiver mechanism to keep the change
+    // simple.
+    new FcmBroadcastProcessor(context).process(messagingIntent);
   }
 
   private class AutoInit {

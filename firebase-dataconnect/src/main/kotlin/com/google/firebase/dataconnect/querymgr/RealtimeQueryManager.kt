@@ -183,7 +183,12 @@ internal class RealtimeQueryManager(
             connectionAttempted = true
           }
         }
-        is State.Connected -> return currentState
+        is State.Connected -> {
+          if (!currentState.stream.isPermanentlyFailedDueToAuthUidChange) {
+            return currentState
+          }
+          state.compareAndSet(currentState, State.Disconnected)
+        }
         State.Closing,
         State.Closed -> return null
       }
