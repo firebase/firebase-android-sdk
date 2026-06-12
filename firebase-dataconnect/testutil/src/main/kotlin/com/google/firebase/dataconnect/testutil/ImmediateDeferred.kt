@@ -28,5 +28,5 @@ class ImmediateDeferred<T>(instance: T, private val name: String? = null) : Defe
     handler.handle(provider)
   }
 
-  override fun toString() = "ImmediateDeferred(name=$name)"
+  override fun toString() = "ImmediateDeferred(name=${name ?: provider})"
 }

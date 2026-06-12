@@ -16,7 +16,13 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.appcheck.interop.AppCheckTokenListener
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.IdTokenListener
+import com.google.firebase.auth.internal.InternalAuthProvider
 import io.grpc.Metadata
+import java.util.concurrent.atomic.AtomicReference
 
 // This is a copy of the function of the same name in DataConnectCredentialsTokenManager.kt.
 fun String.toScrubbedAccessToken(): String =
@@ -50,4 +56,76 @@ class TestAppCheckTokenResultImpl(
   override fun getError() = error
 
   override fun toString() = "TestAppCheckTokenResultImpl(token=$token, error=$error)"
+}
+
+abstract class BaseInternalAuthProvider : InternalAuthProvider {
+
+  private val _idTokenListener = AtomicReference<IdTokenListener>(null)
+  val idTokenListener: IdTokenListener?
+    get() = _idTokenListener.get()
+
+  override fun addIdTokenListener(listener: IdTokenListener) {
+    _idTokenListener.compareAndSet(null, listener).let {
+      check(it) { "addIdTokenListener() has already set a listener [q9zs84tavg]" }
+    }
+  }
+
+  override fun removeIdTokenListener(listener: IdTokenListener) {
+    _idTokenListener.compareAndSet(listener, null).let {
+      check(it) {
+        "removeIdTokenListener() is trying to remove a listener that was not set [z37yytx6ck]"
+      }
+    }
+  }
+}
+
+object NotLoggedInInternalAuthProvider : BaseInternalAuthProvider() {
+  override fun getAccessToken(forceRefresh: Boolean) =
+    Tasks.forResult(com.google.firebase.auth.GetTokenResult(null, emptyMap()))
+
+  override fun getUid() = null
+
+  override fun toString() = "NotLoggedInInternalAuthProvider"
+}
+
+class LoggedInInternalAuthProvider(val token: String, uid: String) : BaseInternalAuthProvider() {
+
+  private val _uid = uid
+
+  override fun getAccessToken(forceRefresh: Boolean) =
+    Tasks.forResult(com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid)))
+
+  override fun getUid() = _uid
+
+  override fun toString() = "LoggedInInternalAuthProvider(token=$token, uid=$_uid)"
+}
+
+class TestInteropAppCheckTokenProvider(val token: String) : InteropAppCheckTokenProvider {
+
+  private val _appCheckTokenListener = AtomicReference<AppCheckTokenListener>(null)
+  val appCheckTokenListener: AppCheckTokenListener?
+    get() = _appCheckTokenListener.get()
+
+  override fun getToken(forceRefresh: Boolean) =
+    Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
+      TestAppCheckTokenResultImpl(token)
+    )
+
+  override fun getLimitedUseToken() = TODO("not implemented")
+
+  override fun addAppCheckTokenListener(listener: AppCheckTokenListener) {
+    _appCheckTokenListener.compareAndSet(null, listener).let {
+      check(it) { "addAppCheckTokenListener() has already set a listener [dg9chc7wbd]" }
+    }
+  }
+
+  override fun removeAppCheckTokenListener(listener: AppCheckTokenListener) {
+    _appCheckTokenListener.compareAndSet(listener, null).let {
+      check(it) {
+        "removeAppCheckTokenListener() is trying to remove a listener that was not set [hydewbz35a]"
+      }
+    }
+  }
+
+  override fun toString() = "TestInteropAppCheckTokenProvider(token=$token)"
 }

@@ -37,6 +37,7 @@ import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
+import com.google.firebase.dataconnect.testutil.NotLoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.TestAppCheckTokenResultImpl
@@ -683,39 +684,31 @@ class QuerySubscriptionImplUnitTest {
     }
 
   @Test
-  fun `auth token non-null initial connection header`() = runTest {
+  fun `auth logged in initial connection header`() = runTest {
     val server = runningInProcessDataConnectServer()
 
     checkAll(
       propTestConfig,
-      Arb.dataConnect.authUid(),
-      Arb.dataConnect.authToken(),
+      Arb.dataConnect.loggedInAuthProvider(),
       Arb.dataConnect.deferredAppCheckProvider(),
-    ) { authUid, authToken, deferredAppCheckProvider ->
-      val mockInternalAuthProvider: InternalAuthProvider =
-        mockk(relaxed = true) {
-          every { getAccessToken(any()) } returns taskForToken(authToken, authUid)
-        }
-
+    ) { loggedInInternalAuthProvider, deferredAppCheckProvider ->
       testDataConnectInitialHeader(
         server,
-        deferredAuthProvider = ImmediateDeferred(mockInternalAuthProvider),
+        deferredAuthProvider = ImmediateDeferred(loggedInInternalAuthProvider),
         deferredAppCheckProvider = deferredAppCheckProvider,
         awaitAuthReady = true,
         awaitAppCheckReady = false,
         header = authTokenGrpcMetadataKey,
-        expectedHeaderValue = authToken,
+        expectedHeaderValue = loggedInInternalAuthProvider.token,
       )
     }
   }
 
   @Test
-  fun `auth token null initial connection header`() =
+  fun `auth not logged in initial connection header`() =
     testAuthHeaderOmittedOnInitialConnection(
       awaitAuthReady = true,
-      ImmediateDeferred(
-        mockk(relaxed = true) { every { getAccessToken(any()) } returns taskForToken(null, null) }
-      )
+      ImmediateDeferred(NotLoggedInInternalAuthProvider),
     )
 
   @Test
@@ -749,23 +742,17 @@ class QuerySubscriptionImplUnitTest {
 
     checkAll(
       propTestConfig,
-      Arb.dataConnect.appCheckToken(),
+      Arb.dataConnect.appCheckProvider(),
       Arb.dataConnect.deferredAuthProvider(),
-    ) { appCheckToken, deferredAuthProvider ->
-      val mockInteropAppCheckTokenProvider: InteropAppCheckTokenProvider =
-        mockk(relaxed = true) {
-          every { getToken(any()) } returns
-            Tasks.forResult(TestAppCheckTokenResultImpl(appCheckToken))
-        }
-
+    ) { appCheckTokenProvider, deferredAuthProvider ->
       testDataConnectInitialHeader(
         server,
         deferredAuthProvider = deferredAuthProvider,
-        deferredAppCheckProvider = ImmediateDeferred(mockInteropAppCheckTokenProvider),
+        deferredAppCheckProvider = ImmediateDeferred(appCheckTokenProvider),
         awaitAuthReady = false,
         awaitAppCheckReady = true,
         header = appCheckTokenGrpcMetadataKey,
-        expectedHeaderValue = appCheckToken,
+        expectedHeaderValue = appCheckTokenProvider.token,
       )
     }
   }
