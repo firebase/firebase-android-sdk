@@ -29,6 +29,7 @@ import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
@@ -111,6 +112,7 @@ class TemplateIntegrationTests {
   }
 
   @Test
+  @Ignore("Model is prone to return specifically London instead of New York")
   fun testTemplateGroundingCity_googleAI(): Unit = runBlocking {
     val model =
       FirebaseAI.getInstance(AIModels.app(), GenerativeBackend.googleAI())
