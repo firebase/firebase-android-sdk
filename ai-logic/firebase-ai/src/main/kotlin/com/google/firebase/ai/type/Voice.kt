@@ -23,7 +23,7 @@ import kotlinx.serialization.Serializable
  * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
  * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
  *
- * @property voiceName The name of the voice to use (e.g., `"Kore"`).
+ * @property voiceName The name of the voice to use (such as `"Kore"`).
  */
 @PublicPreviewAPI
 public class Voice(public val voiceName: String) {

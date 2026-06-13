@@ -16,6 +16,18 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.appcheck.interop.AppCheckTokenListener
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.IdTokenListener
+import com.google.firebase.auth.internal.InternalAuthProvider
+import io.grpc.Metadata
+import io.kotest.assertions.print.print
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+
 // This is a copy of the function of the same name in DataConnectCredentialsTokenManager.kt.
 fun String.toScrubbedAccessToken(): String =
   if (length < 30) {
@@ -31,3 +43,185 @@ fun String.toScrubbedAccessToken(): String =
       )
     }
   }
+
+const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
+
+val authTokenGrpcMetadataKey: Metadata.Key<String> =
+  Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+
+val appCheckTokenGrpcMetadataKey: Metadata.Key<String> =
+  Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
+
+class TestAppCheckTokenResultImpl(
+  private val token: String,
+  private val error: Exception? = null,
+) : com.google.firebase.appcheck.AppCheckTokenResult() {
+  override fun getToken() = token
+  override fun getError() = error
+
+  override fun toString() = "TestAppCheckTokenResultImpl(token=$token, error=$error)"
+}
+
+abstract class BaseInternalAuthProvider : InternalAuthProvider {
+
+  private val _idTokenListener = AtomicReference<IdTokenListener>(null)
+  val idTokenListener: IdTokenListener?
+    get() = _idTokenListener.get()
+
+  override fun addIdTokenListener(listener: IdTokenListener) {
+    _idTokenListener.compareAndSet(null, listener).let {
+      check(it) { "addIdTokenListener() has already set a listener [q9zs84tavg]" }
+    }
+  }
+
+  override fun removeIdTokenListener(listener: IdTokenListener) {
+    _idTokenListener.compareAndSet(listener, null).let {
+      check(it) {
+        "removeIdTokenListener() is trying to remove a listener that was not set [z37yytx6ck]"
+      }
+    }
+  }
+}
+
+object NotLoggedInInternalAuthProvider : BaseInternalAuthProvider() {
+  override fun getAccessToken(forceRefresh: Boolean) =
+    Tasks.forResult(com.google.firebase.auth.GetTokenResult(null, emptyMap()))
+
+  override fun getUid() = null
+
+  override fun toString() = "NotLoggedInInternalAuthProvider"
+}
+
+class LoggedInInternalAuthProvider(val token: String, uid: String) : BaseInternalAuthProvider() {
+
+  private val _uid = uid
+
+  override fun getAccessToken(forceRefresh: Boolean) =
+    Tasks.forResult(com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid)))
+
+  override fun getUid() = _uid
+
+  override fun toString() = "LoggedInInternalAuthProvider(token=$token, uid=$_uid)"
+}
+
+class LoggedInMultiTokenInternalAuthProvider(tokens: List<String>, uid: String) :
+  BaseInternalAuthProvider() {
+
+  val tokens = tokens.toList()
+  private val lock = ReentrantLock()
+  private val iterator = this.tokens.iterator()
+
+  private val _uid = uid
+
+  override fun getAccessToken(forceRefresh: Boolean) =
+    Tasks.forResult(com.google.firebase.auth.GetTokenResult(nextToken(), mapOf("sub" to uid)))
+
+  private fun nextToken(): String =
+    lock.withLock {
+      check(iterator.hasNext()) { "internal error p37nr2p9dk: no more Auth tokens to produce" }
+      iterator.next()
+    }
+
+  override fun getUid() = _uid
+
+  override fun toString() =
+    "LoggedInInternalAuthProvider(tokens=${tokens.print().value}, uid=$_uid)"
+}
+
+class LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs: List<TokenUidPair?>) :
+  BaseInternalAuthProvider() {
+
+  init {
+    require(tokenUidPairs.isNotEmpty()) { "tokenUidPairs must not be empty [jg5879zfs5]" }
+  }
+
+  val tokenUidPairs = tokenUidPairs.toList()
+  private val index = AtomicInteger(0)
+
+  override fun getAccessToken(forceRefresh: Boolean) = Tasks.forResult(nextGetTokenResult())
+
+  private fun nextGetTokenResult(): com.google.firebase.auth.GetTokenResult {
+    val (token, uid) =
+      when (val pair = nextTokenUidPair()) {
+        null -> Pair(null, null)
+        else -> Pair(pair.token, pair.uid)
+      }
+    return com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid))
+  }
+
+  private fun nextTokenUidPair(): TokenUidPair? {
+    while (true) {
+      val currentIndex = index.get()
+      check(currentIndex + 1 <= tokenUidPairs.size) {
+        "internal error k7j9d4dzbk: no more Auth token/uid pairs to produce"
+      }
+      if (index.compareAndSet(currentIndex, currentIndex + 1)) {
+        return tokenUidPairs[currentIndex]
+      }
+    }
+  }
+
+  override fun getUid() = tokenUidPairs[index.get().coerceAtLeast(1) - 1]?.uid
+
+  data class TokenUidPair(val token: String, val uid: String)
+
+  override fun toString() =
+    "LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs=${tokenUidPairs.print().value})"
+}
+
+abstract class BaseInteropAppCheckTokenProvider : InteropAppCheckTokenProvider {
+
+  private val _appCheckTokenListener = AtomicReference<AppCheckTokenListener>(null)
+  val appCheckTokenListener: AppCheckTokenListener?
+    get() = _appCheckTokenListener.get()
+
+  override fun addAppCheckTokenListener(listener: AppCheckTokenListener) {
+    _appCheckTokenListener.compareAndSet(null, listener).let {
+      check(it) { "addAppCheckTokenListener() has already set a listener [dg9chc7wbd]" }
+    }
+  }
+
+  override fun removeAppCheckTokenListener(listener: AppCheckTokenListener) {
+    _appCheckTokenListener.compareAndSet(listener, null).let {
+      check(it) {
+        "removeAppCheckTokenListener() is trying to remove a listener that was not set [hydewbz35a]"
+      }
+    }
+  }
+}
+
+class TestInteropAppCheckTokenProvider(val token: String) : BaseInteropAppCheckTokenProvider() {
+
+  override fun getToken(forceRefresh: Boolean) =
+    Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
+      TestAppCheckTokenResultImpl(token)
+    )
+
+  override fun getLimitedUseToken() = TODO("not implemented")
+
+  override fun toString() = "TestInteropAppCheckTokenProvider(token=$token)"
+}
+
+class TestMultiTokenInteropAppCheckTokenProvider(tokens: List<String>) :
+  BaseInteropAppCheckTokenProvider() {
+
+  val tokens = tokens.toList()
+  private val lock = ReentrantLock()
+  private val iterator = this.tokens.iterator()
+
+  override fun getToken(forceRefresh: Boolean) =
+    Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
+      TestAppCheckTokenResultImpl(nextToken())
+    )
+
+  private fun nextToken(): String =
+    lock.withLock {
+      check(iterator.hasNext()) { "internal error jkgvfsmktg: no more App Check tokens to produce" }
+      iterator.next()
+    }
+
+  override fun getLimitedUseToken() = TODO("not implemented")
+
+  override fun toString() =
+    "TestMultiTokenInteropAppCheckTokenProvider(tokens=${tokens.print().value})"
+}

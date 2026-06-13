@@ -52,12 +52,10 @@ public class SpeakerVoiceConfig(
  * Enables the model to generate audio containing multiple distinct speakers, alternating voices
  * dynamically based on speaker labels in the prompt.
  *
- * **Note:** Multi-speaker configurations are not supported by the Live API (e.g.,
+ * **Note:** Multi-speaker configurations are not supported by the Live API (like
  * [LiveGenerationConfig]).
  *
  * @property speakerVoiceConfigs A list of voice configurations for the participating speakers.
- *
- * Currently, the backend requires exactly **two** speaker voice configurations.
  */
 @PublicPreviewAPI
 public class MultiSpeakerVoiceConfig(
@@ -80,8 +78,8 @@ public class MultiSpeakerVoiceConfig(
  *
  * @property voice The single-speaker [Voice] configuration.
  * @property multiSpeakerVoiceConfig The multi-speaker configuration. Note that this configuration
- * is not supported by the Live API (e.g., [LiveGenerationConfig]).
- * @property languageCode The optional IETF BCP-47 language code (e.g., `"en-US"`, `"es-ES"`) used
+ * is not supported by the Live API (like [LiveGenerationConfig]).
+ * @property languageCode The optional IETF BCP-47 language code (such as `"en-US"`, `"es-ES"`) used
  * to guide the model's speech synthesis and recognition.
  */
 @PublicPreviewAPI
@@ -107,7 +105,7 @@ private constructor(
   /**
    * Constructs a [SpeechConfig] for a multi-speaker setup.
    *
-   * **Note:** Multi-speaker configurations are not supported by the Live API (e.g.,
+   * **Note:** Multi-speaker configurations are not supported by the Live API (like
    * [LiveGenerationConfig]).
    *
    * @param multiSpeakerVoiceConfig The configuration detailing multiple speakers and their
