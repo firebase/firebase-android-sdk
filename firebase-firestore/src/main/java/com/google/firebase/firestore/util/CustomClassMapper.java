@@ -27,12 +27,8 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.IgnoreExtraProperties;
-import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
-import com.google.firebase.firestore.ThrowOnExtraProperties;
 import com.google.firebase.firestore.VectorValue;
-import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -47,13 +43,13 @@ import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -63,6 +59,8 @@ public class CustomClassMapper {
   private static final int MAX_DEPTH = 500;
 
   private static final ConcurrentMap<Class<?>, BeanMapper<?>> mappers = new ConcurrentHashMap<>();
+  private static final Set<String> RECORD_BASE_CLASS_NAMES =
+      Set.of("java.lang.Record", "com.android.tools.r8.RecordTag");
 
   private static void hardAssert(boolean assertion) {
     hardAssert(assertion, "Internal inconsistency");
@@ -104,15 +102,16 @@ public class CustomClassMapper {
    */
   public static <T> T convertToCustomClass(
       Object object, Class<T> clazz, DocumentReference docRef) {
-    return deserializeToClass(object, clazz, new DeserializeContext(ErrorPath.EMPTY, docRef));
+    return deserializeToClass(
+        object, clazz, new DeserializeContext(DeserializeContext.ErrorPath.EMPTY, docRef));
   }
 
   private static <T> Object serialize(T o) {
-    return serialize(o, ErrorPath.EMPTY);
+    return serialize(o, DeserializeContext.ErrorPath.EMPTY);
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> Object serialize(T o, ErrorPath path) {
+  static <T> Object serialize(T o, DeserializeContext.ErrorPath path) {
     if (path.getLength() > MAX_DEPTH) {
       throw serializeError(
           path,
@@ -193,7 +192,7 @@ public class CustomClassMapper {
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  private static <T> T deserializeToType(Object o, Type type, DeserializeContext context) {
+  static <T> T deserializeToType(Object o, Type type, DeserializeContext context) {
     if (o == null) {
       return null;
     } else if (type instanceof ParameterizedType) {
@@ -316,7 +315,7 @@ public class CustomClassMapper {
       Map<String, Object> map = expectMap(o, context);
       BeanMapper<T> mapper = (BeanMapper<T>) loadOrCreateBeanMapperForClass(rawType);
       HashMap<TypeVariable<Class<T>>, Type> typeMapping = new HashMap<>();
-      TypeVariable<Class<T>>[] typeVariables = mapper.clazz.getTypeParameters();
+      TypeVariable<Class<T>>[] typeVariables = mapper.getClazz().getTypeParameters();
       Type[] types = type.getActualTypeArguments();
       if (types.length != typeVariables.length) {
         throw new IllegalStateException("Mismatched lengths for type variables and actual types");
@@ -389,7 +388,11 @@ public class CustomClassMapper {
     @SuppressWarnings("unchecked")
     BeanMapper<T> mapper = (BeanMapper<T>) mappers.get(clazz);
     if (mapper == null) {
-      mapper = new BeanMapper<>(clazz);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isRecordType(clazz)) {
+        mapper = new RecordMapper<>(clazz);
+      } else {
+        mapper = new PojoBeanMapper<>(clazz);
+      }
       // Inserting without checking is fine because mappers are "pure" and it's okay
       // if we create and use multiple by different threads temporarily
       mappers.put(clazz, mapper);
@@ -586,7 +589,8 @@ public class CustomClassMapper {
     }
   }
 
-  private static IllegalArgumentException serializeError(ErrorPath path, String reason) {
+  private static IllegalArgumentException serializeError(
+      DeserializeContext.ErrorPath path, String reason) {
     reason = "Could not serialize object. " + reason;
     if (path.getLength() > 0) {
       reason = reason + " (found in field '" + path.toString() + "')";
@@ -594,7 +598,8 @@ public class CustomClassMapper {
     return new IllegalArgumentException(reason);
   }
 
-  private static RuntimeException deserializeError(ErrorPath path, String reason) {
+  private static RuntimeException deserializeError(
+      DeserializeContext.ErrorPath path, String reason) {
     reason = "Could not deserialize object. " + reason;
     if (path.getLength() > 0) {
       reason = reason + " (found in field '" + path.toString() + "')";
@@ -602,16 +607,14 @@ public class CustomClassMapper {
     return new RuntimeException(reason);
   }
 
+  private static boolean isRecordType(Class<?> cls) {
+    Class<?> parent = cls.getSuperclass();
+    return parent != null && RECORD_BASE_CLASS_NAMES.contains(parent.getName());
+  }
+
   // Helper class to convert from maps to custom objects (Beans), and vice versa.
-  private static class BeanMapper<T> {
-    private final Class<T> clazz;
+  private static class PojoBeanMapper<T> extends BeanMapper<T> {
     private final Constructor<T> constructor;
-    // Whether to throw exception if there are properties we don't know how to set to
-    // custom object fields/setters during deserialization.
-    private final boolean throwOnUnknownProperties;
-    // Whether to log a message if there are properties we don't know how to set to
-    // custom object fields/setters during deserialization.
-    private final boolean warnOnUnknownProperties;
 
     // Case insensitive mapping of properties to their case sensitive versions
     private final Map<String, String> properties;
@@ -624,26 +627,13 @@ public class CustomClassMapper {
     private final Map<String, Method> setters;
     private final Map<String, Field> fields;
 
-    // A set of property names that were annotated with @ServerTimestamp.
-    private final HashSet<String> serverTimestamps;
-
-    // A set of property names that were annotated with @DocumentId. These properties will be
-    // populated with document ID values during deserialization, and be skipped during
-    // serialization.
-    private final HashSet<String> documentIdPropertyNames;
-
-    BeanMapper(Class<T> clazz) {
-      this.clazz = clazz;
-      throwOnUnknownProperties = clazz.isAnnotationPresent(ThrowOnExtraProperties.class);
-      warnOnUnknownProperties = !clazz.isAnnotationPresent(IgnoreExtraProperties.class);
+    PojoBeanMapper(Class<T> clazz) {
+      super(clazz);
       properties = new HashMap<>();
 
       setters = new HashMap<>();
       getters = new HashMap<>();
       fields = new HashMap<>();
-
-      serverTimestamps = new HashSet<>();
-      documentIdPropertyNames = new HashSet<>();
 
       Constructor<T> constructor;
       try {
@@ -784,10 +774,7 @@ public class CustomClassMapper {
       }
     }
 
-    T deserialize(Map<String, Object> values, DeserializeContext context) {
-      return deserialize(values, Collections.emptyMap(), context);
-    }
-
+    @Override
     T deserialize(
         Map<String, Object> values,
         Map<TypeVariable<Class<T>>, Type> types,
@@ -796,7 +783,7 @@ public class CustomClassMapper {
         throw deserializeError(
             context.errorPath,
             "Class "
-                + clazz.getName()
+                + getClazz().getName()
                 + " does not define a no-argument constructor. If you are using ProGuard, make "
                 + "sure these constructors are not stripped");
       }
@@ -805,7 +792,7 @@ public class CustomClassMapper {
       HashSet<String> deserialzedProperties = new HashSet<>();
       for (Map.Entry<String, Object> entry : values.entrySet()) {
         String propertyName = entry.getKey();
-        ErrorPath childPath = context.errorPath.child(propertyName);
+        DeserializeContext.ErrorPath childPath = context.errorPath.child(propertyName);
         if (setters.containsKey(propertyName)) {
           Method setter = setters.get(propertyName);
           Type[] params = setter.getGenericParameterTypes();
@@ -832,13 +819,13 @@ public class CustomClassMapper {
           deserialzedProperties.add(propertyName);
         } else {
           String message =
-              "No setter/field for " + propertyName + " found on class " + clazz.getName();
+              "No setter/field for " + propertyName + " found on class " + getClazz().getName();
           if (properties.containsKey(propertyName.toLowerCase(Locale.US))) {
             message += " (fields/setters are case sensitive!)";
           }
-          if (throwOnUnknownProperties) {
+          if (isThrowOnUnknownProperties()) {
             throw new RuntimeException(message);
-          } else if (warnOnUnknownProperties) {
+          } else if (isWarnOnUnknownProperties()) {
             Logger.warn(CustomClassMapper.class.getSimpleName(), "%s", message);
           }
         }
@@ -857,17 +844,8 @@ public class CustomClassMapper {
         T instance,
         HashSet<String> deserialzedProperties) {
       for (String docIdPropertyName : documentIdPropertyNames) {
-        if (deserialzedProperties.contains(docIdPropertyName)) {
-          String message =
-              "'"
-                  + docIdPropertyName
-                  + "' was found from document "
-                  + context.documentRef.getPath()
-                  + ", cannot apply @DocumentId on this property for class "
-                  + clazz.getName();
-          throw new RuntimeException(message);
-        }
-        ErrorPath childPath = context.errorPath.child(docIdPropertyName);
+        checkForDocIdConflict(docIdPropertyName, deserialzedProperties, context);
+        DeserializeContext.ErrorPath childPath = context.errorPath.child(docIdPropertyName);
         if (setters.containsKey(docIdPropertyName)) {
           Method setter = setters.get(docIdPropertyName);
           Type[] params = setter.getGenericParameterTypes();
@@ -895,28 +873,10 @@ public class CustomClassMapper {
       }
     }
 
-    private Type resolveType(Type type, Map<TypeVariable<Class<T>>, Type> types) {
-      if (type instanceof TypeVariable) {
-        Type resolvedType = types.get(type);
-        if (resolvedType == null) {
-          throw new IllegalStateException("Could not resolve type " + type);
-        } else {
-          return resolvedType;
-        }
-      } else {
-        return type;
-      }
-    }
-
-    Map<String, Object> serialize(T object, ErrorPath path) {
+    @Override
+    Map<String, Object> serialize(T object, DeserializeContext.ErrorPath path) {
+      verifyValidType(object);
       // TODO(wuandy): Add logic to skip @DocumentId annotated fields in serialization.
-      if (!clazz.isAssignableFrom(object.getClass())) {
-        throw new IllegalArgumentException(
-            "Can't serialize object of class "
-                + object.getClass()
-                + " with BeanMapper for class "
-                + clazz);
-      }
       Map<String, Object> result = new HashMap<>();
       for (String property : properties.values()) {
         // Skip @DocumentId annotated properties;
@@ -951,29 +911,6 @@ public class CustomClassMapper {
         result.put(property, serializedValue);
       }
       return result;
-    }
-
-    private void applyFieldAnnotations(Field field) {
-      if (field.isAnnotationPresent(ServerTimestamp.class)) {
-        Class<?> fieldType = field.getType();
-        if (fieldType != Date.class
-            && fieldType != Timestamp.class
-            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && fieldType == Instant.class)) {
-          throw new IllegalArgumentException(
-              "Field "
-                  + field.getName()
-                  + " is annotated with @ServerTimestamp but is "
-                  + fieldType
-                  + " instead of Date, Timestamp, or Instant.");
-        }
-        serverTimestamps.add(propertyName(field));
-      }
-
-      if (field.isAnnotationPresent(DocumentId.class)) {
-        Class<?> fieldType = field.getType();
-        ensureValidDocumentIdType("Field", "is", fieldType);
-        documentIdPropertyNames.add(propertyName(field));
-      }
     }
 
     private void applyGetterAnnotations(Method method) {
@@ -1013,18 +950,6 @@ public class CustomClassMapper {
         Class<?> paramType = method.getParameterTypes()[0];
         ensureValidDocumentIdType("Method", "accepts", paramType);
         documentIdPropertyNames.add(propertyName(method));
-      }
-    }
-
-    private void ensureValidDocumentIdType(String fieldDescription, String operation, Type type) {
-      if (type != String.class && type != DocumentReference.class) {
-        throw new IllegalArgumentException(
-            fieldDescription
-                + " is annotated with @DocumentId but "
-                + operation
-                + " "
-                + type
-                + " instead of String or DocumentReference.");
       }
     }
 
@@ -1131,23 +1056,9 @@ public class CustomClassMapper {
           && baseParameterTypes[0].equals(overrideParameterTypes[0]);
     }
 
-    private static String propertyName(Field field) {
-      String annotatedName = annotatedName(field);
-      return annotatedName != null ? annotatedName : field.getName();
-    }
-
     private static String propertyName(Method method) {
       String annotatedName = annotatedName(method);
       return annotatedName != null ? annotatedName : serializedName(method.getName());
-    }
-
-    private static String annotatedName(AccessibleObject obj) {
-      if (obj.isAnnotationPresent(PropertyName.class)) {
-        PropertyName annotation = obj.getAnnotation(PropertyName.class);
-        return annotation.value();
-      }
-
-      return null;
     }
 
     private static String serializedName(String methodName) {
@@ -1171,63 +1082,6 @@ public class CustomClassMapper {
         pos++;
       }
       return new String(chars);
-    }
-  }
-
-  /**
-   * Immutable class representing the path to a specific field in an object. Used to provide better
-   * error messages.
-   */
-  static class ErrorPath {
-    private final int length;
-    private final ErrorPath parent;
-    private final String name;
-
-    static final ErrorPath EMPTY = new ErrorPath(null, null, 0);
-
-    ErrorPath(ErrorPath parent, String name, int length) {
-      this.parent = parent;
-      this.name = name;
-      this.length = length;
-    }
-
-    int getLength() {
-      return length;
-    }
-
-    ErrorPath child(String name) {
-      return new ErrorPath(this, name, length + 1);
-    }
-
-    @Override
-    public String toString() {
-      if (length == 0) {
-        return "";
-      } else if (length == 1) {
-        return name;
-      } else {
-        // This is not very efficient, but it's only hit if there's an error.
-        return parent.toString() + "." + name;
-      }
-    }
-  }
-
-  /** Holds information a deserialization operation needs to complete the job. */
-  static class DeserializeContext {
-
-    /** Current path to the field being deserialized, used for better error messages. */
-    final ErrorPath errorPath;
-
-    /** Value used to set to {@link DocumentId} annotated fields during deserialization, if any. */
-    final DocumentReference documentRef;
-
-    DeserializeContext(ErrorPath path, DocumentReference docRef) {
-      errorPath = path;
-      documentRef = docRef;
-    }
-
-    DeserializeContext newInstanceWithErrorPath(ErrorPath newPath) {
-      return new DeserializeContext(newPath, documentRef);
     }
   }
 }
