@@ -1,0 +1,36 @@
+name: Monthly Flakiness Report
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"   # At 9am UTC (1am PST / 2am PDT), on the 1st day, every month
+  workflow_dispatch:      # allow triggering the workflow manually
+  pull_request:           # [remove later] allow triggering the workflow with pull_request
+
+
+jobs:
+  monthly_flakiness_report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+
+      - name: Install prerequisites
+        run: pip install requests argparse
+
+      - name: Collect postsubmit Flakiness summary
+        run: python ci/workflow_summary/monthly_summary.py --token ${{github.token}} --run_id ${{github.run_id}} --folder output_logs
+
+      - name: Collect Monthly Test Flakiness logs
+        run: python ci/workflow_summary/collect_ci_test_logs.py --token ${{github.token}} --folder output_logs
+
+      - name: Upload Desktop Cmake
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: output_logs
+          path: output_logs
+          retention-days: 90
