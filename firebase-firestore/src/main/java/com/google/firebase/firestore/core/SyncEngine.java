@@ -19,15 +19,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
-import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleElement;
 import com.google.firebase.firestore.bundle.BundleLoader;
@@ -51,11 +48,8 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
-import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
-import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.IOException;
@@ -335,33 +329,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       mutationUserCallbacks.put(currentUser, userTasks);
     }
     userTasks.put(batchId, userTask);
-  }
-
-  /**
-   * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
-   * updateFunction, the client can read and write values using the supplied transaction object.
-   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
-   * other client has changed any of the data referenced), then the updateFunction will be called
-   * again after a backoff. If the updateFunction still fails after all retries, then the
-   * transaction will be rejected.
-   *
-   * <p>The transaction object passed to the updateFunction contains methods for accessing documents
-   * and collections. Unlike other datastore access, data accessed with the transaction will not
-   * reflect local changes that have not been committed. For this reason, it is required that all
-   * reads are performed before any writes. Transactions must be performed while online.
-   *
-   * <p>The Task returned is resolved when the transaction is fully committed.
-   */
-  public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue,
-      TransactionOptions options,
-      Function<Transaction, Task<TResult>> updateFunction) {
-    return new TransactionRunner<TResult>(asyncQueue, remoteStore, options, updateFunction).run();
-  }
-
-  public Task<Map<String, Value>> runAggregateQuery(
-      Query query, List<AggregateField> aggregateFields) {
-    return remoteStore.runAggregateQuery(query, aggregateFields);
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */
