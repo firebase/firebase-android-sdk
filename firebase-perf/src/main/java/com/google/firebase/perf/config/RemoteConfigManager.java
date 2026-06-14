@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 public class RemoteConfigManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static final RemoteConfigManager instance = new RemoteConfigManager();
   private static final String FIREPERF_FRC_NAMESPACE_NAME = "fireperf";
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
@@ -67,7 +66,7 @@ public class RemoteConfigManager {
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
-  private RemoteConfigManager() {
+  public RemoteConfigManager() {
     this(
         DeviceCacheManager.getInstance(),
         new ThreadPoolExecutor(
@@ -94,11 +93,6 @@ public class RemoteConfigManager {
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
     this.remoteConfigFetchDelayInMs = remoteConfigFetchDelayInMs;
-  }
-
-  /** Gets the singleton instance. */
-  public static RemoteConfigManager getInstance() {
-    return instance;
   }
 
   /**

@@ -30,6 +30,9 @@ import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 import com.google.firebase.perf.metrics.getTraceCounter
 import com.google.firebase.perf.metrics.getTraceCounterCount
+import com.google.firebase.perf.session.PerfSession
+import com.google.firebase.perf.session.SessionManager
+import com.google.firebase.perf.session.gauges.GaugeManager
 import com.google.firebase.perf.transport.TransportManager
 import com.google.firebase.perf.util.Clock
 import com.google.firebase.perf.util.Timer
@@ -104,6 +107,7 @@ class PerformanceTests : BaseTestCase() {
   @Mock lateinit var mockClock: Clock
 
   @Mock lateinit var mockAppStateMonitor: AppStateMonitor
+  @Mock lateinit var mockGaugeManager: GaugeManager
 
   @Captor lateinit var argMetricCaptor: ArgumentCaptor<NetworkRequestMetric>
 
@@ -119,6 +123,8 @@ class PerformanceTests : BaseTestCase() {
     `when`(timerMock.getMicros()).thenReturn(1000L)
     `when`(timerMock.getDurationMicros()).thenReturn(2000L).thenReturn(3000L)
     doAnswer { Timer(currentTime) }.`when`(mockClock).getTime()
+    val sessionManager = SessionManager(mockGaugeManager, PerfSession("sessionId", Clock()))
+    `when`(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager)
   }
 
   @Test

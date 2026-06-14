@@ -17,8 +17,6 @@ package com.google.firebase.perf.session.gauges;
 import static android.system.Os.sysconf;
 
 import android.annotation.SuppressLint;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import android.system.OsConstants;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -78,7 +76,7 @@ public class CpuGaugeCollector {
   private final String procFileName;
   private final long clockTicksPerSecond;
 
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
+  @Nullable private ScheduledFuture<?> cpuMetricCollectorJob = null;
   private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
@@ -163,11 +161,12 @@ public class CpuGaugeCollector {
     this.cpuMetricCollectionRateMs = cpuMetricCollectionRate;
     try {
       cpuMetricCollectorJob =
-          cpuMetricCollectorExecutor.scheduleAtFixedRate(
+          cpuMetricCollectorExecutor.scheduleWithFixedDelay(
               () -> {
                 CpuMetricReading currCpuReading = syncCollectCpuMetric(referenceTime);
                 if (currCpuReading != null) {
                   cpuMetricReadings.add(currCpuReading);
+                  GaugeCounter.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
@@ -181,12 +180,13 @@ public class CpuGaugeCollector {
   private synchronized void scheduleCpuMetricCollectionOnce(Timer referenceTime) {
     try {
       @SuppressWarnings("FutureReturnValueIgnored")
-      ScheduledFuture unusedFuture =
+      ScheduledFuture<?> unusedFuture =
           cpuMetricCollectorExecutor.schedule(
               () -> {
                 CpuMetricReading currCpuReading = syncCollectCpuMetric(referenceTime);
                 if (currCpuReading != null) {
                   cpuMetricReadings.add(currCpuReading);
+                  GaugeCounter.incrementCounter();
                 }
               },
               /* initialDelay */ 0,
@@ -227,12 +227,7 @@ public class CpuGaugeCollector {
   }
 
   private long getClockTicksPerSecond() {
-    if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
-      return sysconf(OsConstants._SC_CLK_TCK);
-    } else {
-      // TODO(b/110779408): Figure out how to collect this info for Android API 20 and below.
-      return INVALID_SC_PER_CPU_CLOCK_TICK;
-    }
+    return sysconf(OsConstants._SC_CLK_TCK);
   }
 
   private long convertClockTicksToMicroseconds(long clockTicks) {

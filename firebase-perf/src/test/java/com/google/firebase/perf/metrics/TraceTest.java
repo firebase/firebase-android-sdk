@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
@@ -76,9 +77,12 @@ public class TraceTest extends FirebasePerformanceTestBase {
     initMocks(this);
     doAnswer((Answer<Timer>) invocationOnMock -> new Timer(currentTime)).when(mockClock).getTime();
     arguments = ArgumentCaptor.forClass(TraceMetric.class);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
+    AppStateMonitor.resetInstance();
+    AppStateMonitor.getInstance(sessionManager);
 
     appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -1017,7 +1021,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     int numberOfSessionIds = trace.getSessions().size();
 
     PerfSession perfSession = PerfSession.createWithId("test_session_id");
-    SessionManager.getInstance().updatePerfSession(perfSession);
+    sessionManager.updatePerfSession(perfSession);
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds + 1);
 
     trace.stop();
@@ -1032,7 +1036,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
+    new SessionManager(mock(GaugeManager.class), null);
 
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds);
 

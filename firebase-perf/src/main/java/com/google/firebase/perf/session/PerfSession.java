@@ -28,21 +28,19 @@ import java.util.concurrent.TimeUnit;
 
 /** Details of a session including a unique Id and related information. */
 public class PerfSession implements Parcelable {
-
-  private final String sessionId;
   private final Timer creationTime;
-
+  private final String sessionId;
   private boolean isGaugeAndEventCollectionEnabled = false;
 
   /*
    * Creates a PerfSession object and decides what metrics to collect.
    */
-  public static PerfSession createWithId(@NonNull String sessionId) {
-    String prunedSessionId = sessionId.replace("-", "");
-    PerfSession session = new PerfSession(prunedSessionId, new Clock());
-    session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
-
-    return session;
+  public static PerfSession createWithId(@Nullable String aqsSessionId) {
+    String sessionId = aqsSessionId;
+    if (sessionId == null) {
+      sessionId = FirebaseSessionsHelperKt.createLegacySessionId();
+    }
+    return new PerfSession(sessionId, new Clock());
   }
 
   /** Creates a PerfSession with the provided {@code sessionId} and {@code clock}. */
@@ -50,6 +48,7 @@ public class PerfSession implements Parcelable {
   public PerfSession(String sessionId, Clock clock) {
     this.sessionId = sessionId;
     creationTime = clock.getTime();
+    isGaugeAndEventCollectionEnabled = shouldCollectGaugesAndEvents();
   }
 
   private PerfSession(@NonNull Parcel in) {
@@ -59,7 +58,8 @@ public class PerfSession implements Parcelable {
     creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
-  /** Returns the sessionId of the object. */
+  /** Returns the sessionId for the given session. */
+  @NonNull
   public String sessionId() {
     return sessionId;
   }
@@ -71,35 +71,9 @@ public class PerfSession implements Parcelable {
     return creationTime;
   }
 
-  /*
-   * Enables/Disables the gauge and event collection for the system.
-   */
-  public void setGaugeAndEventCollectionEnabled(boolean enabled) {
-    isGaugeAndEventCollectionEnabled = enabled;
-  }
-
-  /*
-   * Returns if gauge and event collection is enabled for the system.
-   */
-  public boolean isGaugeAndEventCollectionEnabled() {
-    return isGaugeAndEventCollectionEnabled;
-  }
-
   /** Returns if the current session is verbose or not. */
   public boolean isVerbose() {
     return isGaugeAndEventCollectionEnabled;
-  }
-
-  /** Checks if the current {@link com.google.firebase.perf.v1.PerfSession} is verbose or not. */
-  @VisibleForTesting
-  static boolean isVerbose(@NonNull com.google.firebase.perf.v1.PerfSession perfSession) {
-    for (SessionVerbosity sessionVerbosity : perfSession.getSessionVerbosityList()) {
-      if (sessionVerbosity == SessionVerbosity.GAUGES_AND_SYSTEM_EVENTS) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   /**
@@ -163,11 +137,20 @@ public class PerfSession implements Parcelable {
   }
 
   /** If true, Session Gauge collection is enabled. */
-  public static boolean shouldCollectGaugesAndEvents() {
+  @VisibleForTesting
+  public boolean shouldCollectGaugesAndEvents() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
-
     return configResolver.isPerformanceMonitoringEnabled()
-        && Math.random() < configResolver.getSessionsSamplingRate();
+        && (Math.abs(this.sessionId.hashCode() % 100)
+            < configResolver.getSessionsSamplingRate() * 100);
+  }
+
+  /*
+   * Enables/Disables whether the session is verbose or not.
+   */
+  @VisibleForTesting
+  public void setGaugeAndEventCollectionEnabled(boolean enabled) {
+    isGaugeAndEventCollectionEnabled = enabled;
   }
 
   /**
@@ -208,4 +191,16 @@ public class PerfSession implements Parcelable {
           return new PerfSession[size];
         }
       };
+
+  /** Checks if the current {@link com.google.firebase.perf.v1.PerfSession} is verbose or not. */
+  @VisibleForTesting
+  static boolean isVerbose(@NonNull com.google.firebase.perf.v1.PerfSession perfSession) {
+    for (SessionVerbosity sessionVerbosity : perfSession.getSessionVerbosityList()) {
+      if (sessionVerbosity == SessionVerbosity.GAUGES_AND_SYSTEM_EVENTS) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

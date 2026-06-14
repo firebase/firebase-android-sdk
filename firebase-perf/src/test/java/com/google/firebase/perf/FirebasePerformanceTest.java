@@ -36,7 +36,10 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.config.RemoteConfigManager;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -100,11 +103,14 @@ public class FirebasePerformanceTest {
     sharedPreferences.edit().clear().commit();
     DeviceCacheManager.clearInstance();
 
-    spyRemoteConfigManager = spy(RemoteConfigManager.getInstance());
     ConfigResolver.clearInstance();
     spyConfigResolver = spy(ConfigResolver.getInstance());
+    spyRemoteConfigManager = spy(ConfigResolver.getInstance().getRemoteConfigManager());
 
-    spySessionManager = spy(SessionManager.getInstance());
+    spySessionManager =
+        spy(
+            new SessionManager(
+                mock(GaugeManager.class), new PerfSession("sessionId", new Clock())));
     fakeDirectExecutorService = new FakeDirectExecutorService();
   }
 
