@@ -85,6 +85,19 @@ internal class OnDeviceExtensionTests {
   }
 
   @Test
+  fun `getOnDeviceModelName calls interopModel getBaseModelName`() {
+    runBlocking {
+      coEvery { interopModel.getBaseModelName() } returns "gemini-2.0-flash"
+
+      val extension = OnDeviceExtension(interopModel)
+      val modelName = extension.getOnDeviceModelName()
+
+      modelName shouldBe "gemini-2.0-flash"
+      coVerify(exactly = 1) { interopModel.getBaseModelName() }
+    }
+  }
+
+  @Test
   fun `onDeviceExtension is null when passed null in constructor`() {
     val model =
       GenerativeModel(
