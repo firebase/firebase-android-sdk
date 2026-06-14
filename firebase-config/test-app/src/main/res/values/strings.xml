@@ -17,7 +17,12 @@
 <resources>
   <string name="app_name">Firebase Remote Config Test App</string>
   <string name="firebase_greetings">Greetings from Firebase!</string>
+  <string name="clear">clear</string>
+  <string name="fetch_and_activate_config">Fetch &amp; Activate </string>
   <string name="fetch_config">Fetch Config</string>
+  <string name="activate_config">Activate Config</string>
+  <string name="get_active_config">Get Active Config</string>
+  <string name="crashlytics_label">Crashlytics</string>
   <string name="jvm_crash">JVM Crash</string>
   <string name="anr">ANR</string>
   <string name="on_demand_fatal">On-demand Fatal</string>
