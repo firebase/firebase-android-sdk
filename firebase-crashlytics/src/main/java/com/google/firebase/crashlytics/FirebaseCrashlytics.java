@@ -60,6 +60,8 @@ public class FirebaseCrashlytics {
   static final String FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN = "clx";
   static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
   static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
+  static final String CRASHLYTICS_ENABLE_LOGGER_KEY = "com.crashlytics.EnableLogger";
+  static final boolean CRASHLYTICS_ENABLE_LOGGER_DEFAULT = true;
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
@@ -73,6 +75,12 @@ public class FirebaseCrashlytics {
 
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
+
+    Logger.getLogger()
+        .toggleLogging(
+            CommonUtils.getBooleanResourceValue(
+                context, CRASHLYTICS_ENABLE_LOGGER_KEY, CRASHLYTICS_ENABLE_LOGGER_DEFAULT));
+
     Logger.getLogger()
         .i(
             "Initializing Firebase Crashlytics "
