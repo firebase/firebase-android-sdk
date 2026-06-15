@@ -461,6 +461,23 @@ internal class DataConnectBidiConnectStream(
 
   companion object {
 
+    @VisibleForTesting
+    fun setReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(null, token)
+      check(success) {
+        "setReconnectPendingAuthTokenForTesting() failed: a value is already set [b887589rta]"
+      }
+    }
+
+    @VisibleForTesting
+    fun unsetReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(token, null)
+      check(success) {
+        "unsetReconnectPendingAuthTokenForTesting() failed: " +
+          "the given value is NOT the one currently set [dmjgeq95a2]"
+      }
+    }
+
     private fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
         null
@@ -476,6 +493,9 @@ internal class DataConnectBidiConnectStream(
       }
   }
 }
+
+private val reconnectPendingAuthTokenForTesting =
+  AtomicReference<SequencedReference<GetAuthTokenResult>>(null)
 
 private fun mergeGrpcAndAuth(
   grpcBidiFlow:
@@ -681,7 +701,8 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       is SubscriptionEvent.Connected -> currentState
       is SubscriptionEvent.Disconnected -> {
         val connectedState = SubscriptionEvent.Connected(event)
-        val pendingAuthToken = currentState.pendingAuthToken
+        val pendingAuthToken =
+          reconnectPendingAuthTokenForTesting.get() ?: currentState.pendingAuthToken
         if (pendingAuthToken == null) {
           connectedState
         } else {

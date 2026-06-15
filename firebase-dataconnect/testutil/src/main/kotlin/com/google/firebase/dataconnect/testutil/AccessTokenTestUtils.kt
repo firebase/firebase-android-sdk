@@ -16,11 +16,13 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.interop.AppCheckTokenListener
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.internal.InternalTokenResult
 import io.grpc.Metadata
 import io.kotest.assertions.print.print
 import java.util.concurrent.atomic.AtomicInteger
@@ -62,7 +64,37 @@ class TestAppCheckTokenResultImpl(
   override fun toString() = "TestAppCheckTokenResultImpl(token=$token, error=$error)"
 }
 
+fun authTokenResultFor(token: String, uid: String): com.google.firebase.auth.GetTokenResult =
+  com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid))
+
+fun authTokenResultFor(
+  @Suppress("unused") token: Nothing?,
+  @Suppress("unused") uid: Nothing?,
+): com.google.firebase.auth.GetTokenResult =
+  com.google.firebase.auth.GetTokenResult(null, emptyMap())
+
 abstract class BaseInternalAuthProvider : InternalAuthProvider {
+
+  private val onGetAccessToken =
+    AtomicReference<(com.google.firebase.auth.GetTokenResult) -> Unit>(null)
+
+  fun onGetAccessToken(callback: (com.google.firebase.auth.GetTokenResult) -> Unit) {
+    onGetAccessToken.compareAndSet(null, callback).let {
+      check(it) { "onGetAccessToken() has already been called [akfasws6hk]" }
+    }
+  }
+
+  override fun getAccessToken(
+    forceRefresh: Boolean
+  ): Task<com.google.firebase.auth.GetTokenResult> {
+    val result = getAccessTokenImpl(forceRefresh)
+    onGetAccessToken.get()?.invoke(result)
+    return Tasks.forResult(result)
+  }
+
+  protected abstract fun getAccessTokenImpl(
+    forceRefresh: Boolean
+  ): com.google.firebase.auth.GetTokenResult
 
   private val _idTokenListener = AtomicReference<IdTokenListener>(null)
   val idTokenListener: IdTokenListener?
@@ -84,8 +116,7 @@ abstract class BaseInternalAuthProvider : InternalAuthProvider {
 }
 
 object NotLoggedInInternalAuthProvider : BaseInternalAuthProvider() {
-  override fun getAccessToken(forceRefresh: Boolean) =
-    Tasks.forResult(com.google.firebase.auth.GetTokenResult(null, emptyMap()))
+  override fun getAccessTokenImpl(forceRefresh: Boolean) = authTokenResultFor(null, null)
 
   override fun getUid() = null
 
@@ -96,8 +127,8 @@ class LoggedInInternalAuthProvider(val token: String, uid: String) : BaseInterna
 
   private val _uid = uid
 
-  override fun getAccessToken(forceRefresh: Boolean) =
-    Tasks.forResult(com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid)))
+  override fun getAccessTokenImpl(forceRefresh: Boolean) =
+    authTokenResultFor(token = token, uid = uid)
 
   override fun getUid() = _uid
 
@@ -113,8 +144,8 @@ class LoggedInMultiTokenInternalAuthProvider(tokens: List<String>, uid: String) 
 
   private val _uid = uid
 
-  override fun getAccessToken(forceRefresh: Boolean) =
-    Tasks.forResult(com.google.firebase.auth.GetTokenResult(nextToken(), mapOf("sub" to uid)))
+  override fun getAccessTokenImpl(forceRefresh: Boolean) =
+    authTokenResultFor(token = nextToken(), uid = uid)
 
   private fun nextToken(): String =
     lock.withLock {
@@ -138,16 +169,11 @@ class LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs: List<TokenUidPair?>) :
   val tokenUidPairs = tokenUidPairs.toList()
   private val index = AtomicInteger(0)
 
-  override fun getAccessToken(forceRefresh: Boolean) = Tasks.forResult(nextGetTokenResult())
-
-  private fun nextGetTokenResult(): com.google.firebase.auth.GetTokenResult {
-    val (token, uid) =
-      when (val pair = nextTokenUidPair()) {
-        null -> Pair(null, null)
-        else -> Pair(pair.token, pair.uid)
-      }
-    return com.google.firebase.auth.GetTokenResult(token, mapOf("sub" to uid))
-  }
+  override fun getAccessTokenImpl(forceRefresh: Boolean) =
+    when (val pair = nextTokenUidPair()) {
+      null -> authTokenResultFor(null, null)
+      else -> authTokenResultFor(token = pair.token, uid = pair.uid)
+    }
 
   private fun nextTokenUidPair(): TokenUidPair? {
     while (true) {
@@ -163,10 +189,44 @@ class LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs: List<TokenUidPair?>) :
 
   override fun getUid() = tokenUidPairs[index.get().coerceAtLeast(1) - 1]?.uid
 
-  data class TokenUidPair(val token: String, val uid: String)
-
   override fun toString() =
     "LoggedInMultiTokenAndUidAuthProvider(tokenUidPairs=${tokenUidPairs.print().value})"
+}
+
+data class TokenUidPair(val token: String, val uid: String)
+
+fun TokenUidPair?.toAuthTokenResult(): com.google.firebase.auth.GetTokenResult =
+  when (this) {
+    null -> authTokenResultFor(null, null)
+    else -> authTokenResultFor(token = token, uid = uid)
+  }
+
+fun TokenUidPair?.toInternalTokenResult(): InternalTokenResult = InternalTokenResult(this?.token)
+
+fun tokenUidPairOrNullIfUidNull(token: String, uid: String?): TokenUidPair? =
+  if (uid == null) null else TokenUidPair(token = token, uid = uid)
+
+class MutableAuthProvider(initialToken: TokenUidPair?) : BaseInternalAuthProvider() {
+
+  private val currentToken = AtomicReference(initialToken)
+
+  override fun getAccessTokenImpl(forceRefresh: Boolean) =
+    currentToken.get().let {
+      if (it == null) {
+        authTokenResultFor(null, null)
+      } else {
+        authTokenResultFor(token = it.token, uid = it.uid)
+      }
+    }
+
+  override fun getUid() = currentToken.get()?.uid
+
+  fun setToken(newToken: TokenUidPair?) {
+    currentToken.set(newToken)
+    idTokenListener?.onIdTokenChanged(InternalTokenResult(newToken?.token))
+  }
+
+  override fun toString() = "MutableAuthProvider(currentToken=${currentToken.get()})"
 }
 
 abstract class BaseInteropAppCheckTokenProvider : InteropAppCheckTokenProvider {
