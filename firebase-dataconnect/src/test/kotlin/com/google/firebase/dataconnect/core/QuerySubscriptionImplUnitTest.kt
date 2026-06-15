@@ -17,7 +17,6 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context.CONNECTIVITY_SERVICE
 import android.net.ConnectivityManager
-import android.os.SystemClock.uptimeMillis
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
@@ -1107,7 +1106,7 @@ class QuerySubscriptionImplUnitTest {
   @Test
   fun `auth token change mid-stream sends update`() = runTest {
     val server = runningInProcessDataConnectServer()
-    server.setListener { println("zzyzx ${uptimeMillis()} SERVER $it") }
+    server.setListener { println("zzyzx ${System.nanoTime()} SERVER $it") }
 
     checkAll(
       propTestConfig,
@@ -1116,7 +1115,7 @@ class QuerySubscriptionImplUnitTest {
     ) { authUid, (authToken1, authToken2) ->
       check(authToken1 != authToken2)
       val checkAllIteration = evals()
-      println("zzyzx ${uptimeMillis()} A checkAll() starting iteration=$checkAllIteration")
+      println("zzyzx ${System.nanoTime()} A checkAll() starting iteration=$checkAllIteration")
 
       val authProvider =
         LoggedInMultiTokenAndUidAuthProvider(
@@ -1130,7 +1129,7 @@ class QuerySubscriptionImplUnitTest {
         )
       try {
         println(
-          "zzyzx ${uptimeMillis()} B dataConnect.awaitAuthReady() iteration=$checkAllIteration"
+          "zzyzx ${System.nanoTime()} B dataConnect.awaitAuthReady() iteration=$checkAllIteration"
         )
         dataConnect.awaitAuthReady()
 
@@ -1140,23 +1139,23 @@ class QuerySubscriptionImplUnitTest {
           val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
 
           println(
-            "zzyzx ${uptimeMillis()} C serverCollector.awaitResponseSender() iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} C serverCollector.awaitResponseSender() iteration=$checkAllIteration"
           )
           serverCollector.awaitResponseSender()
           println(
-            "zzyzx ${uptimeMillis()} D serverCollector.awaitUntilSubscribeStreamRequest() iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} D serverCollector.awaitUntilSubscribeStreamRequest() iteration=$checkAllIteration"
           )
           serverCollector.awaitUntilSubscribeStreamRequest()
 
           // Trigger the auth token update
           println(
-            "zzyzx ${uptimeMillis()} E onIdTokenChanged(InternalTokenResult(authToken2)) iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} E onIdTokenChanged(InternalTokenResult(authToken2)) iteration=$checkAllIteration"
           )
           checkNotNull(authProvider.idTokenListener)
             .onIdTokenChanged(InternalTokenResult(authToken2))
 
           println(
-            "zzyzx ${uptimeMillis()} F serverCollector.awaitUntilStreamRequest() iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} F serverCollector.awaitUntilStreamRequest() iteration=$checkAllIteration"
           )
           val authUpdateRequest = serverCollector.awaitUntilStreamRequest()
           authUpdateRequest.streamRequest.asClue {
@@ -1165,23 +1164,23 @@ class QuerySubscriptionImplUnitTest {
           }
 
           println(
-            "zzyzx ${uptimeMillis()} G serverCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} G serverCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
           )
           serverCollector.cancelAndIgnoreRemainingEvents()
           println(
-            "zzyzx ${uptimeMillis()} H clientCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
+            "zzyzx ${System.nanoTime()} H clientCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
           )
           clientCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         println(
-          "zzyzx ${uptimeMillis()} I dataConnect.suspendingClose() iteration=$checkAllIteration"
+          "zzyzx ${System.nanoTime()} I dataConnect.suspendingClose() iteration=$checkAllIteration"
         )
         dataConnect.suspendingClose()
       }
     }
 
-    println("zzyzx ${uptimeMillis()} J checkAll() DONE")
+    println("zzyzx ${System.nanoTime()} J checkAll() DONE")
   }
 
   @Test
