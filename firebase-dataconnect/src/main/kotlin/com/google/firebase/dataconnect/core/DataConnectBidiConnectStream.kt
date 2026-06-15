@@ -609,16 +609,6 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     currentState: SubscriptionEvent.Connected,
     sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Connected? {
-    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
-      return null // ignore outdated auth token changes
-    }
-
-    val oldToken = currentState.authToken.ref?.token
-    val newToken = sequencedAuthToken.ref?.token
-    if (oldToken == newToken) {
-      return null // Do not re-send the same token, as that is wasteful.
-    }
-
     // Verify that the authUid has not changed; if so, then throw to abort the connection.
     // The caller will need to re-subscribe with the new authUid as the connection stream does
     // not support changing authUid mid-stream.
@@ -628,8 +618,23 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       throw AuthUidChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
     }
 
+    // Ignore outdated auth token changes.
+    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
+      return null
+    }
+
+    // Do not re-send the same token, as that is wasteful.
+    val oldToken = currentState.authToken.ref?.token
+    val newToken = sequencedAuthToken.ref?.token
+    if (oldToken == newToken) {
+      return null
+    }
+
+    // Do not send an empty token, as that is wasteful too (and should never happen in practice
+    // because if newToken==null and oldToken!=newToken then it must hold that
+    // currentAuthUid!=newAuthUid, and should have resulted in AuthUidChangedException above).
     if (newToken == null) {
-      return null // Do not send an empty token, as that is wasteful too.
+      return null
     }
 
     // Update the authToken on the stream.
