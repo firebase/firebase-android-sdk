@@ -1,0 +1,22 @@
+{
+    "name": "m182",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-common",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-installations",
+        ":firebase-messaging",
+        ":firebase-appdistribution-gradle",
+        ":firebase-messaging-directboot",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}
