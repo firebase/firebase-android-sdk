@@ -1105,6 +1105,9 @@ class QuerySubscriptionImplUnitTest {
 
   @Test
   fun `auth token change mid-stream sends update`() = runTest {
+    DataConnectGrpcRPCs.debugLogging.set(true)
+    cleanups.register { DataConnectGrpcRPCs.debugLogging.set(false) }
+
     val server = runningInProcessDataConnectServer()
     server.setListener { println("zzyzx ${System.nanoTime()} SERVER $it") }
 
