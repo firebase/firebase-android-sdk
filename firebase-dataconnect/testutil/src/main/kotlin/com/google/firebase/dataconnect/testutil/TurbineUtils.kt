@@ -81,7 +81,7 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
   onIgnoredItem: (T) -> Unit = {},
   predicate: (T) -> TurbinePredicateResult<R>,
 ): R {
-  var skippedItemCount = 0
+  val skippedItems = mutableListOf<T>()
 
   while (true) {
     val awaitResult = runCatching { awaitEvent() }
@@ -94,8 +94,9 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
         onFailure = { exception ->
           throw failure(
             "Turbine awaitEvent() threw exception ${exception::class.qualifiedName} " +
-              "after skipping $skippedItemCount items produced " +
-              "that didn't satisfy the given predicate ($predicateDescription)",
+              "after skipping ${skippedItems.size} items " +
+              "that didn't satisfy the given predicate ($predicateDescription); " +
+              "skippedItems=${skippedItems.print().value}",
             exception
           )
         }
@@ -104,23 +105,26 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
     when (event) {
       Event.Complete ->
         fail(
-          "Flow completed normally after skipping $skippedItemCount items produced " +
+          "Flow completed normally " +
+            "after skipping ${skippedItems.size} items " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
-            "but expected it to produce an item that satisfied the predicate"
+            "but expected it to produce an item that satisfied the predicate; " +
+            "skippedItems=${skippedItems.print().value}",
         )
       is Event.Error ->
         fail(
-          "Flow failed with exception ${event.throwable} after skipping " +
-            "$skippedItemCount items produced " +
+          "Flow failed with exception ${event.throwable} " +
+            "after skipping ${skippedItems.size} items " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
-            "but expected it to produce an item that satisfied the predicate"
+            "but expected it to produce an item that satisfied the predicate; " +
+            "skippedItems=${skippedItems.print().value}",
         )
       is Event.Item ->
         when (val predicateResult = predicate(event.value)) {
           is TurbinePredicateResult.Satisfied -> return predicateResult.mappedValue
           TurbinePredicateResult.Unsatisfied -> {
             onIgnoredItem(event.value)
-            skippedItemCount++
+            skippedItems.add(event.value)
           }
         }
     }
