@@ -152,7 +152,6 @@ internal class DataConnectBidiConnectStream(
           } else {
             delay(1.seconds)
             logger.debug { "retrying connection" }
-            onRetryForTesting.get()?.invoke()
             true
           }
         }
@@ -461,32 +460,6 @@ internal class DataConnectBidiConnectStream(
   }
 
   companion object {
-
-    private val onRetryForTesting = AtomicReference<() -> Unit>(null)
-
-    @VisibleForTesting
-    fun setOnRetryForTesting(callback: () -> Unit) {
-      if (!onRetryForTesting.compareAndSet(null, callback)) {
-        error("an onRetryForTesting callback is already set [zjp8dv9h6j]")
-      }
-    }
-
-    @VisibleForTesting
-    fun clearOnRetryForTesting(callback: () -> Unit) {
-      if (!onRetryForTesting.compareAndSet(callback, null)) {
-        error("the given onRetryForTesting callback is not set [csems6py9x]")
-      }
-    }
-
-    @VisibleForTesting
-    inline fun <T> withOnRetryForTesting(noinline onRetry: () -> Unit, block: () -> T): T {
-      setOnRetryForTesting(onRetry)
-      return try {
-        block()
-      } finally {
-        clearOnRetryForTesting(onRetry)
-      }
-    }
 
     private fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
