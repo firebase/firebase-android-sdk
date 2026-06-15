@@ -1106,6 +1106,7 @@ class QuerySubscriptionImplUnitTest {
   @Test
   fun `auth token change mid-stream sends update`() = runTest {
     val server = runningInProcessDataConnectServer()
+    server.setListener { println("zzyzx SERVER $it") }
 
     checkAll(
       propTestConfig,
@@ -1113,6 +1114,8 @@ class QuerySubscriptionImplUnitTest {
       Arb.dataConnect.authToken().distinctPair(),
     ) { authUid, (authToken1, authToken2) ->
       check(authToken1 != authToken2)
+      val checkAllIteration = evals()
+      println("zzyzx A checkAll() starting iteration=$checkAllIteration")
 
       val authProvider =
         LoggedInMultiTokenAndUidAuthProvider(
@@ -1125,6 +1128,7 @@ class QuerySubscriptionImplUnitTest {
           deferredAuthProvider = ImmediateDeferred(authProvider)
         )
       try {
+        println("zzyzx B dataConnect.awaitAuthReady() iteration=$checkAllIteration")
         dataConnect.awaitAuthReady()
 
         val subscription = querySubscription(dataConnect)
@@ -1132,26 +1136,43 @@ class QuerySubscriptionImplUnitTest {
           val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
           val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
 
+          println("zzyzx C serverCollector.awaitResponseSender() iteration=$checkAllIteration")
           serverCollector.awaitResponseSender()
+          println(
+            "zzyzx D serverCollector.awaitUntilSubscribeStreamRequest() iteration=$checkAllIteration"
+          )
           serverCollector.awaitUntilSubscribeStreamRequest()
 
           // Trigger the auth token update
+          println(
+            "zzyzx E onIdTokenChanged(InternalTokenResult(authToken2)) iteration=$checkAllIteration"
+          )
           checkNotNull(authProvider.idTokenListener)
             .onIdTokenChanged(InternalTokenResult(authToken2))
 
+          println("zzyzx F serverCollector.awaitUntilStreamRequest() iteration=$checkAllIteration")
           val authUpdateRequest = serverCollector.awaitUntilStreamRequest()
           authUpdateRequest.streamRequest.asClue {
             it.requestId shouldStartWith "auth"
             it.headersMap["x-firebase-auth-token"] shouldBe authToken2
           }
 
+          println(
+            "zzyzx G serverCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
+          )
           serverCollector.cancelAndIgnoreRemainingEvents()
+          println(
+            "zzyzx H clientCollector.cancelAndIgnoreRemainingEvents() iteration=$checkAllIteration"
+          )
           clientCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
+        println("zzyzx I dataConnect.suspendingClose() iteration=$checkAllIteration")
         dataConnect.suspendingClose()
       }
     }
+
+    println("zzyzx J checkAll() DONE")
   }
 
   @Test
