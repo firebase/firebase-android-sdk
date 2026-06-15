@@ -296,7 +296,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   // --- API 34+ causal-signal decision tests ---
-  // ProcessStartCause is the only decision input on API 34+; exercise each Cause value.
+  // AppStartCause is the only decision input on API 34+; exercise each Cause value.
 
   /** Builds an {@link AppStartTrace} and registers callbacks. */
   private AppStartTrace newTrace(FakeScheduledExecutorService executor) {
@@ -309,8 +309,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   public void api34Plus_foregroundCause_traceLogs() {
     FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
     AppStartTrace trace = newTrace(executor);
-    trace.setProcessStartCauseForTest(
-        new ProcessStartCause(ProcessStartCause.Cause.FOREGROUND, 100, 35));
+    trace.setAppStartCauseForTest(new AppStartCause(AppStartCause.Cause.FOREGROUND, 100, 35));
 
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -335,8 +334,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     // scenario. Suppress to keep _app_start measuring real cold foreground launches.
     FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
     AppStartTrace trace = newTrace(executor);
-    trace.setProcessStartCauseForTest(
-        new ProcessStartCause(ProcessStartCause.Cause.UNKNOWN, 200, 34));
+    trace.setAppStartCauseForTest(new AppStartCause(AppStartCause.Cause.UNKNOWN, 200, 34));
 
     trace.onActivityCreated(activity1, bundle);
 
@@ -349,13 +347,13 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void api34Plus_nullProcessStartCause_traceSuppressed() {
-    // Defensive: if processStartCause is somehow null at decision time (e.g. the
+  public void api34Plus_nullAppStartCause_traceSuppressed() {
+    // Defensive: if appStartCause is somehow null at decision time (e.g. the
     // capture didn't run), suppress — better to miss a trace than emit one with no
     // provenance.
     FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
     AppStartTrace trace = newTrace(executor);
-    trace.setProcessStartCauseForTest(null);
+    trace.setAppStartCauseForTest(null);
 
     trace.onActivityCreated(activity1, bundle);
 

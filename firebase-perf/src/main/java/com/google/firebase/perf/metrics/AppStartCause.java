@@ -33,7 +33,7 @@ import androidx.annotation.VisibleForTesting;
  *
  * @hide
  */
-final class ProcessStartCause {
+final class AppStartCause {
 
   /** Classification of why the process was forked. */
   enum Cause {
@@ -53,7 +53,7 @@ final class ProcessStartCause {
   final int apiLevel;
 
   @VisibleForTesting
-  ProcessStartCause(@NonNull Cause cause, int importance, int apiLevel) {
+  AppStartCause(@NonNull Cause cause, int importance, int apiLevel) {
     this.cause = cause;
     this.importance = importance;
     this.apiLevel = apiLevel;
@@ -64,16 +64,16 @@ final class ProcessStartCause {
    * {@code AppStartTrace.registerActivityLifecycleCallbacks}) so the OS-set values still
    * reflect the original fork reason rather than transient state mid-init.
    */
-  static @NonNull ProcessStartCause capture(@Nullable Context appContext) {
+  static @NonNull AppStartCause capture(@Nullable Context appContext) {
     final int apiLevel = Build.VERSION.SDK_INT;
     if (appContext == null) {
-      return new ProcessStartCause(Cause.UNKNOWN, -1, apiLevel);
+      return new AppStartCause(Cause.UNKNOWN, -1, apiLevel);
     }
 
     final ActivityManager activityManager =
         (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
     if (activityManager == null) {
-      return new ProcessStartCause(Cause.UNKNOWN, -1, apiLevel);
+      return new AppStartCause(Cause.UNKNOWN, -1, apiLevel);
     }
 
     final int importance = readImportance();
@@ -83,11 +83,11 @@ final class ProcessStartCause {
           importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
               ? Cause.FOREGROUND
               : Cause.UNKNOWN;
-      return new ProcessStartCause(cause, importance, apiLevel);
+      return new AppStartCause(cause, importance, apiLevel);
     }
 
     // API < 34: legacy AppStartTrace logic owns the decision.
-    return new ProcessStartCause(Cause.UNKNOWN, importance, apiLevel);
+    return new AppStartCause(Cause.UNKNOWN, importance, apiLevel);
   }
 
   private static int readImportance() {

@@ -132,7 +132,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   // OS-reported reason this process was forked. Captured once during
   // registerActivityLifecycleCallbacks; consulted by resolveIsStartedFromBackground on
   // API 34+.
-  private @Nullable ProcessStartCause processStartCause = null;
+  private @Nullable AppStartCause appStartCause = null;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -226,7 +226,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       systemForegroundCheck = systemForegroundCheck || isAnyAppProcessInForeground(appContext);
       // Capture the OS-reported start cause as early as possible (this method runs from
       // FirebasePerfEarly during the ContentProvider init chain).
-      processStartCause = ProcessStartCause.capture(appContext);
+      appStartCause = AppStartCause.capture(appContext);
       isRegisteredForLifecycleCallbacks = true;
       this.appContext = appContext;
     }
@@ -337,12 +337,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * API < 34: legacy pre-bug ordering. If {@link StartFromBackgroundRunnable} fired
    *   before the first {@code onActivityCreated}, suppress.
    *
-   * API 34+: {@link ProcessStartCause} owns the decision. {@code FOREGROUND} lets the
+   * API 34+: {@link AppStartCause} owns the decision. {@code FOREGROUND} lets the
    *   trace through; {@code UNKNOWN} or null suppresses.
    *
    * See b/339891952 and https://github.com/firebase/firebase-android-sdk/issues/8103.
    */
   private void resolveIsStartedFromBackground() {
+    // Only on API < 34 do we consult/consume mainThreadRunnableTime: if the
+    // StartFromBackgroundRunnable already fired (time is set), this was a background-only
+    // start, so suppress. Clear it afterwards so the check runs once. On API 34+ this field
+    // is never read or written here — appStartCause owns the decision below.
     if (Build.VERSION.SDK_INT < 34) {
       if (mainThreadRunnableTime != null) {
         isStartedFromBackground = true;
@@ -350,8 +354,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       }
       return;
     }
-    if (processStartCause == null
-        || processStartCause.cause != ProcessStartCause.Cause.FOREGROUND) {
+    // API 34+: the timing-window heuristic is gone. The OS-reported start cause decides:
+    // only a FOREGROUND cause (process forked to launch an activity) lets the trace
+    // through. A null cause (capture failed) or any non-FOREGROUND cause suppresses.
+    if (appStartCause == null || appStartCause.cause != AppStartCause.Cause.FOREGROUND) {
       isStartedFromBackground = true;
     }
   }
@@ -631,13 +637,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   @VisibleForTesting
-  void setProcessStartCauseForTest(@Nullable ProcessStartCause cause) {
-    this.processStartCause = cause;
+  void setAppStartCauseForTest(@Nullable AppStartCause cause) {
+    this.appStartCause = cause;
   }
 
   @VisibleForTesting
   @Nullable
-  ProcessStartCause getProcessStartCauseForTest() {
-    return processStartCause;
+  AppStartCause getAppStartCauseForTest() {
+    return appStartCause;
   }
 }

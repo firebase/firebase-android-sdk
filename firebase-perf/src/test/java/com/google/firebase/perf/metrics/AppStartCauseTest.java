@@ -29,9 +29,9 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowActivityManager;
 
-/** Unit tests for {@link ProcessStartCause}. */
+/** Unit tests for {@link AppStartCause}. */
 @RunWith(RobolectricTestRunner.class)
-public class ProcessStartCauseTest {
+public class AppStartCauseTest {
 
   private final Context appContext = ApplicationProvider.getApplicationContext();
 
@@ -47,9 +47,9 @@ public class ProcessStartCauseTest {
 
   @Test
   public void capture_nullContext_returnsUnknown() {
-    ProcessStartCause cause = ProcessStartCause.capture(null);
+    AppStartCause cause = AppStartCause.capture(null);
 
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.UNKNOWN);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.UNKNOWN);
     assertThat(cause.importance).isEqualTo(-1);
   }
 
@@ -58,10 +58,10 @@ public class ProcessStartCauseTest {
   public void capture_preApi34_returnsUnknownButRecordsImportance() {
     setProcessImportance(RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
 
-    ProcessStartCause cause = ProcessStartCause.capture(appContext);
+    AppStartCause cause = AppStartCause.capture(appContext);
 
     // Pre-API-34: classification is owned by the legacy AppStartTrace path.
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.UNKNOWN);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.UNKNOWN);
     assertThat(cause.apiLevel).isEqualTo(33);
     assertThat(cause.importance).isEqualTo(RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
   }
@@ -71,9 +71,9 @@ public class ProcessStartCauseTest {
   public void capture_api34_foregroundImportance_classifiesForeground() {
     setProcessImportance(RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
 
-    ProcessStartCause cause = ProcessStartCause.capture(appContext);
+    AppStartCause cause = AppStartCause.capture(appContext);
 
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.FOREGROUND);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.FOREGROUND);
     assertThat(cause.importance).isEqualTo(RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
     assertThat(cause.apiLevel).isEqualTo(34);
   }
@@ -83,9 +83,9 @@ public class ProcessStartCauseTest {
   public void capture_api34_serviceImportance_classifiesUnknown() {
     setProcessImportance(RunningAppProcessInfo.IMPORTANCE_SERVICE);
 
-    ProcessStartCause cause = ProcessStartCause.capture(appContext);
+    AppStartCause cause = AppStartCause.capture(appContext);
 
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.UNKNOWN);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.UNKNOWN);
     assertThat(cause.importance).isEqualTo(RunningAppProcessInfo.IMPORTANCE_SERVICE);
   }
 
@@ -94,19 +94,19 @@ public class ProcessStartCauseTest {
   public void capture_api34_cachedImportance_classifiesUnknown() {
     setProcessImportance(RunningAppProcessInfo.IMPORTANCE_CACHED);
 
-    ProcessStartCause cause = ProcessStartCause.capture(appContext);
+    AppStartCause cause = AppStartCause.capture(appContext);
 
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.UNKNOWN);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.UNKNOWN);
     assertThat(cause.importance).isEqualTo(RunningAppProcessInfo.IMPORTANCE_CACHED);
   }
 
   @Test
   public void constructor_visibleForTesting_preservesAllFields() {
-    ProcessStartCause cause =
-        new ProcessStartCause(
-            ProcessStartCause.Cause.FOREGROUND, RunningAppProcessInfo.IMPORTANCE_FOREGROUND, 35);
+    AppStartCause cause =
+        new AppStartCause(
+            AppStartCause.Cause.FOREGROUND, RunningAppProcessInfo.IMPORTANCE_FOREGROUND, 35);
 
-    assertThat(cause.cause).isEqualTo(ProcessStartCause.Cause.FOREGROUND);
+    assertThat(cause.cause).isEqualTo(AppStartCause.Cause.FOREGROUND);
     assertThat(cause.importance).isEqualTo(RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
     assertThat(cause.apiLevel).isEqualTo(35);
   }
