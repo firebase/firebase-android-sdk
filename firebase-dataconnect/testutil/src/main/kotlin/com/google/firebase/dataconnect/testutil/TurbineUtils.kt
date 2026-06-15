@@ -21,8 +21,11 @@ import app.cash.turbine.ReceiveTurbine
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.fail
+import io.kotest.assertions.failure
 import io.kotest.assertions.print.print
 import kotlin.experimental.ExperimentalTypeInference
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * Represents the result of evaluating a predicate on an item emitted from a [ReceiveTurbine].
@@ -81,7 +84,24 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
   var skippedItemCount = 0
 
   while (true) {
-    when (val event = awaitEvent()) {
+    val awaitResult = runCatching { awaitEvent() }
+
+    currentCoroutineContext().ensureActive()
+
+    val event =
+      awaitResult.fold(
+        onSuccess = { it },
+        onFailure = { exception ->
+          throw failure(
+            "Turbine awaitEvent() threw exception ${exception::class.qualifiedName} " +
+              "after skipping $skippedItemCount items produced " +
+              "that didn't satisfy the given predicate ($predicateDescription)",
+            exception
+          )
+        }
+      )
+
+    when (event) {
       Event.Complete ->
         fail(
           "Flow completed normally after skipping $skippedItemCount items produced " +
@@ -177,8 +197,24 @@ suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
     }
   }
 
+  val awaitResult = runCatching { awaitEvent() }
+
+  currentCoroutineContext().ensureActive()
+
+  val event =
+    awaitResult.fold(
+      onSuccess = { it },
+      onFailure = { exception ->
+        throw failure(
+          "Turbine awaitEvent() threw exception ${exception::class.qualifiedName}, " +
+            "but expected it to return Event.Error with a throwable $expectedText",
+          exception
+        )
+      }
+    )
+
   val exception =
-    when (val event = awaitEvent()) {
+    when (event) {
       Event.Complete -> fail("Flow completed normally, but expected it to throw $expectedText")
       is Event.Error -> event.throwable
       is Event.Item ->
