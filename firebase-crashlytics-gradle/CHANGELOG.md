@@ -1,5 +1,6 @@
 ### Unreleased
 
+- [changed] On Android Gradle plugin 8.12 and above, the plugin now uses R8's stable mapping id (`r8_map_id`/`pg_map_id`) for release builds instead of injecting a freshly generated id, so release builds are no longer invalidated on every build. [#6770]
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects when enabling nativeSymbolUploadEnabled. [#8037]
 
 ### Crashlytics Gradle plugin version 3.0.7
