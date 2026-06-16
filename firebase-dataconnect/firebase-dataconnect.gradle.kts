@@ -165,5 +165,3 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 }
-
-tasks.withType<Test> { jvmArgs("-XX:ActiveProcessorCount=2") }
