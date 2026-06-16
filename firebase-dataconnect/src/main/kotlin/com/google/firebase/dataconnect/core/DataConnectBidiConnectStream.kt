@@ -270,6 +270,7 @@ internal class DataConnectBidiConnectStream(
     }
 
     class Connected(
+      val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
       private val subscribeOrResumeSignal: ConflatedSignal,
@@ -292,6 +293,7 @@ internal class DataConnectBidiConnectStream(
 
       override fun toString(): String =
         "Connected(" +
+          "connectionId=$connectionId, " +
           "hadPendingSubscription=$hadPendingSubscription, " +
           "subscribeOrResumeSignal.hasPendingSignal=${subscribeOrResumeSignal.hasPendingSignal}, " +
           "subscribeOrResumeJob={isActive=${subscribeOrResumeJob.isActive}, " +
@@ -392,10 +394,14 @@ internal class DataConnectBidiConnectStream(
         val isPendingSubscription =
           when (currentState) {
             is SubscriptionState.Connected ->
-              error(
-                "internal error nqe9gre3ny: got event $event, " +
-                  "but state=$currentState (expected state=Disconnected)"
-              )
+              if (currentState.connectionId == event.connectionId) {
+                break // already connected; this can occur due to an auth token update
+              } else {
+                error(
+                  "internal error nqe9gre3ny: got event $event, " +
+                    "but state=$currentState (expected state=Disconnected)"
+                )
+              }
             is SubscriptionState.Disconnected -> false
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
@@ -414,6 +420,7 @@ internal class DataConnectBidiConnectStream(
 
         val newState =
           SubscriptionState.Connected(
+            event.connectionId,
             event.outgoingRequests,
             hadPendingSubscription = isPendingSubscription,
             subscribeOrResumeSignal = subscribeOrResumeSignal,
