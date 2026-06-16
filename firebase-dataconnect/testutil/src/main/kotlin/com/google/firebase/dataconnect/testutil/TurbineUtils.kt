@@ -93,7 +93,7 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
         onSuccess = { it },
         onFailure = { exception ->
           throw failure(
-            "Turbine awaitEvent() threw exception ${exception::class.qualifiedName} " +
+            "Turbine awaitEvent() threw exception \"$exception\" " +
               "after skipping ${skippedItems.size} items " +
               "that didn't satisfy the given predicate ($predicateDescription); " +
               "skippedItems=${skippedItems.print().value}",
@@ -167,9 +167,13 @@ suspend inline fun <T> ReceiveTurbine<T>.awaitUntilItem(
  * [U].
  */
 suspend inline fun <T, reified U : T> ReceiveTurbine<T>.awaitUntilItemIsInstance(
+  description: String? = null,
   onIgnoredItem: (T) -> Unit = {},
 ): U =
-  awaitUntilItem("is instance of ${U::class.qualifiedName}", onIgnoredItem) {
+  awaitUntilItem(
+    "is instance of ${U::class.qualifiedName} (description=$description)",
+    onIgnoredItem,
+  ) {
     when (it) {
       is U -> TurbinePredicateResult.Satisfied(it)
       else -> TurbinePredicateResult.Unsatisfied
@@ -210,7 +214,7 @@ suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
       onSuccess = { it },
       onFailure = { exception ->
         throw failure(
-          "Turbine awaitEvent() threw exception ${exception::class.qualifiedName}, " +
+          "Turbine awaitEvent() threw exception \"$exception\", " +
             "but expected it to return Event.Error with a throwable $expectedText",
           exception
         )
