@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.json.Json
 
 /**
  * A [GenerateContentResponse] augmented with class information.
@@ -51,15 +50,17 @@ internal constructor(
     if (text.isEmpty()) {
       return null
     }
-    
+
     // On-device models may sometimes wrap the JSON response in markdown code blocks.
     var cleanText = text.trim()
     if (cleanText.startsWith("```")) {
-      cleanText = cleanText.removePrefix("```json")
-        .removePrefix("```")
-        .trim()
-        .substringBeforeLast("```")
-        .trim()
+      cleanText =
+        cleanText
+          .removePrefix("```json")
+          .removePrefix("```")
+          .trim()
+          .substringBeforeLast("```")
+          .trim()
     }
 
     return com.google.firebase.ai.common.JSON.decodeFromString(deserializer, cleanText) as T?

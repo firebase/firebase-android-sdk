@@ -144,7 +144,8 @@ internal class OnDeviceGenerativeModelProvider(
         response.candidates.map { Candidate.fromInterop(it) },
         InferenceSource.ON_DEVICE,
         null,
-        null
+        null,
+        response.modelVersion
       )
     GenerateObjectResponse(generateContentResponse, jsonSchema)
   }
