@@ -515,11 +515,10 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
     open fun response(message: ResponseT): Any? = message
   }
 
-  fun collectStarted(connectionId: String): String =
-    "GrpcBidiFlow ${System.nanoTime()} collectStarted(cid=$connectionId)"
+  fun collectStarted(connectionId: String): String = "collectStarted(cid=$connectionId)"
 
   fun collectCompleted(connectionId: String, exception: Throwable?): String =
-    "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] collectCompleted(exception=$exception)"
+    "[cid=$connectionId] collectCompleted(exception=$exception)"
 
   fun connectionStarting(
     connectionId: String,
@@ -528,35 +527,35 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
     headers: GrpcMetadata?,
   ): String {
     val formattedHeaders = formatter?.connectionStartingHeaders(headers) ?: headers
-    return "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] connectionStarting(method=${method.fullMethodName}, " +
+    return "[cid=$connectionId] connectionStarting(method=${method.fullMethodName}, " +
       "callOptions=$callOptions, headers=$formattedHeaders)"
   }
 
   fun sendingMessage(connectionId: String, message: RequestT): String {
     val formattedMessage = formatter?.request(message) ?: message
-    return "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] sendingMessage(message=$formattedMessage)"
+    return "[cid=$connectionId] sendingMessage(message=$formattedMessage)"
   }
 
   fun sendingMessagesComplete(connectionId: String): String =
-    "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] sendingMessagesComplete()"
+    "[cid=$connectionId] sendingMessagesComplete()"
 
   fun sendingMessagesFailed(connectionId: String, exception: Throwable): String =
-    "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] sendingMessagesFailed(exception=$exception)"
+    "[cid=$connectionId] sendingMessagesFailed(exception=$exception)"
 
   fun receivedMessage(connectionId: String, message: ResponseT): String {
     val formattedMessage = formatter?.response(message) ?: message
-    return "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] receivedMessage(message=$formattedMessage)"
+    return "[cid=$connectionId] receivedMessage(message=$formattedMessage)"
   }
 
   fun receivingMessagesComplete(connectionId: String): String =
-    "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] receivingMessagesComplete()"
+    "[cid=$connectionId] receivingMessagesComplete()"
 
   fun receivingMessagesFailed(connectionId: String, exception: Throwable): String =
-    "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] receivingMessagesFailed(exception=$exception)"
+    "[cid=$connectionId] receivingMessagesFailed(exception=$exception)"
 
   fun onCallMessage(connectionId: String, message: ResponseT): String {
     val formattedMessage = formatter?.response(message) ?: message
-    return "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] onCallMessage(message=$formattedMessage)"
+    return "[cid=$connectionId] onCallMessage(message=$formattedMessage)"
   }
 
   fun onCallClose(
@@ -566,7 +565,7 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
     calculatedCause: Throwable?,
   ): String {
     val formattedTrailers = formatter?.onCloseTrailers(trailers) ?: trailers
-    return "GrpcBidiFlow ${System.nanoTime()} [cid=$connectionId] onCallClose(status=$status, trailers=$formattedTrailers, " +
+    return "[cid=$connectionId] onCallClose(status=$status, trailers=$formattedTrailers, " +
       "calculatedCause=$calculatedCause)"
   }
 

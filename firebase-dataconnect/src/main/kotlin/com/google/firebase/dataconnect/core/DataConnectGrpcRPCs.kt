@@ -75,7 +75,6 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -384,17 +383,17 @@ internal class DataConnectGrpcRPCs(
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
+    // For low-level debugging, swap this `grpcBidiFlowListener` out for
+    // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
+    //    val grpcBidiFlowListener =
+    //      ConnectGrpcBidiFlowListener(
+    //        streamId = streamId,
+    //        authUid = connectionAuthUid,
+    //        initRequest = initRequest,
+    //        kotlinMethodName = "connect()",
+    //      )
     val grpcBidiFlowListener =
-      if (debugLogging.get()) {
-        PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
-      } else {
-        ConnectGrpcBidiFlowListener(
-          streamId = streamId,
-          authUid = connectionAuthUid,
-          initRequest = initRequest,
-          kotlinMethodName = "connect()",
-        )
-      }
+      PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
 
     val createHeaders:
       suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
@@ -616,8 +615,6 @@ internal class DataConnectGrpcRPCs(
   }
 
   companion object {
-
-    val debugLogging = AtomicBoolean(false)
 
     @VisibleForTesting
     fun createGrpcManagedChannel(
