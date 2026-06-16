@@ -38,7 +38,6 @@ import com.google.firebase.dataconnect.util.CoroutineUtils
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlowListenerMessageFormatter
 import com.google.firebase.dataconnect.util.IdStringGenerator
-import com.google.firebase.dataconnect.util.PrintlnGrpcBidiFlowListener
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
@@ -385,15 +384,13 @@ internal class DataConnectGrpcRPCs(
 
     // For low-level debugging, swap this `grpcBidiFlowListener` out for
     // PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
-    //    val grpcBidiFlowListener =
-    //      ConnectGrpcBidiFlowListener(
-    //        streamId = streamId,
-    //        authUid = connectionAuthUid,
-    //        initRequest = initRequest,
-    //        kotlinMethodName = "connect()",
-    //      )
     val grpcBidiFlowListener =
-      PrintlnGrpcBidiFlowListener(ConnectGrpcBidiFlowListenerFormatter(connectionAuthUid))
+      ConnectGrpcBidiFlowListener(
+        streamId = streamId,
+        authUid = connectionAuthUid,
+        initRequest = initRequest,
+        kotlinMethodName = "connect()",
+      )
 
     val createHeaders:
       suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
