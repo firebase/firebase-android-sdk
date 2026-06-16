@@ -16,7 +16,7 @@
   ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
 - [fixed] Realtime query subscriptions could fail abruptly if the auth
   token changed while connected.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8312](https://github.com/firebase/firebase-android-sdk/pull/8312))
 
 # 17.3.0
 
