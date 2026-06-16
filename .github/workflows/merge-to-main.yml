@@ -44,7 +44,7 @@ jobs:
 
     - name: Add PR comment
       if: steps.filter.outputs.ignore == 'false'
-      uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+      uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # v3.11.0
       with:
         message: >
           ### 📝 PRs merging into main branch

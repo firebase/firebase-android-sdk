@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -151,6 +152,7 @@ internal class DataConnectBidiConnectStream(
           } else {
             delay(1.seconds)
             logger.debug { "retrying connection" }
+            onRetryForTesting.get()?.invoke()
             true
           }
         }
@@ -458,9 +460,35 @@ internal class DataConnectBidiConnectStream(
     }
   }
 
-  private companion object {
+  companion object {
 
-    fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
+    private val onRetryForTesting = AtomicReference<() -> Unit>(null)
+
+    @VisibleForTesting
+    fun setOnRetryForTesting(callback: () -> Unit) {
+      if (!onRetryForTesting.compareAndSet(null, callback)) {
+        error("an onRetryForTesting callback is already set [zjp8dv9h6j]")
+      }
+    }
+
+    @VisibleForTesting
+    fun clearOnRetryForTesting(callback: () -> Unit) {
+      if (!onRetryForTesting.compareAndSet(callback, null)) {
+        error("the given onRetryForTesting callback is not set [csems6py9x]")
+      }
+    }
+
+    @VisibleForTesting
+    inline fun <T> withOnRetryForTesting(noinline onRetry: () -> Unit, block: () -> T): T {
+      setOnRetryForTesting(onRetry)
+      return try {
+        block()
+      } finally {
+        clearOnRetryForTesting(onRetry)
+      }
+    }
+
+    private fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
         null
       } else {
@@ -624,7 +652,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     val currentAuthUid = currentState.authToken.ref?.authUid
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
-      throw AuthUidChangedException(currentAuthUid, newAuthUid)
+      throw AuthUidChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
     }
 
     if (newToken == null) {
