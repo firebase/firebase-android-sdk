@@ -399,7 +399,8 @@ internal class DataConnectBidiConnectStream(
               } else {
                 error(
                   "internal error nqe9gre3ny: got event $event, " +
-                    "but state=$currentState (expected state=Disconnected)"
+                    "but state=$currentState (expected state=Disconnected or " +
+                    "state=Connected(connectionId=${event.connectionId}))"
                 )
               }
             is SubscriptionState.Disconnected -> false
