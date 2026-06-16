@@ -21,7 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
-import com.google.firebase.auth.internal.IdTokenListener
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
@@ -34,9 +34,14 @@ import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
+import com.google.firebase.dataconnect.testutil.LoggedInMultiTokenAndUidAuthProvider
+import com.google.firebase.dataconnect.testutil.NotLoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
+import com.google.firebase.dataconnect.testutil.appCheckTokenGrpcMetadataKey
+import com.google.firebase.dataconnect.testutil.authTokenGrpcMetadataKey
+import com.google.firebase.dataconnect.testutil.awaitCall
 import com.google.firebase.dataconnect.testutil.awaitConnectRpcStarted
 import com.google.firebase.dataconnect.testutil.awaitResponseSender
 import com.google.firebase.dataconnect.testutil.awaitUntilCancelStreamRequest
@@ -60,6 +65,7 @@ import com.google.firebase.internal.InternalTokenResult
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
 import google.firebase.dataconnect.proto.StreamResponse
+import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
@@ -89,13 +95,8 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import io.mockk.CapturingSlot
-import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
-import io.mockk.slot
 import io.mockk.spyk
 import kotlin.random.Random
 import kotlinx.coroutines.asExecutor
@@ -558,22 +559,19 @@ class QuerySubscriptionImplUnitTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.authUid().orNull(nullProbability = 0.3).distinctPair(),
-      Arb.dataConnect.authToken().orNull(nullProbability = 0.3).distinctPair(),
+      Arb.dataConnect.authToken().distinctPair(),
     ) { (authUid1, authUid2), (authToken1, authToken2) ->
       check(authUid1 != authUid2)
       check(authToken1 != authToken2)
 
-      val (mockInternalAuthProvider, idTokenListenerSlot) =
-        createMockInternalAuthProviderReturning(
-          authUid1,
-          authUid2,
-          authToken1,
-          authToken2,
-        )
+      val tokenUidPair1 = tokenUidPairOrNullIfUidNull(authToken1, authUid1)
+      val tokenUidPair2 = tokenUidPairOrNullIfUidNull(authToken2, authUid2)
+      val authProvider = LoggedInMultiTokenAndUidAuthProvider(listOf(tokenUidPair1, tokenUidPair2))
+
       val dataConnect =
         dataConnect(
           serverLocalBindPort = server.port,
-          deferredAuthProvider = ImmediateDeferred(mockInternalAuthProvider)
+          deferredAuthProvider = ImmediateDeferred(authProvider)
         )
       try {
         dataConnect.awaitAuthReady()
@@ -587,7 +585,8 @@ class QuerySubscriptionImplUnitTest {
           serverCollector.awaitUntilSubscribeStreamRequest()
 
           // Trigger the auth token update
-          idTokenListenerSlot.captured.onIdTokenChanged(InternalTokenResult(authToken2))
+          checkNotNull(authProvider.idTokenListener)
+            .onIdTokenChanged(InternalTokenResult(authToken2))
 
           // The flow should throw AuthUidChangedException and terminate
           val exception = clientCollector.awaitError()
@@ -614,22 +613,20 @@ class QuerySubscriptionImplUnitTest {
       checkAll(
         propTestConfig,
         Arb.dataConnect.authUid().orNull(nullProbability = 0.3).distinctPair(),
-        Arb.dataConnect.authToken().orNull(nullProbability = 0.3).distinctPair(),
+        Arb.dataConnect.authToken().distinctPair(),
       ) { (authUid1, authUid2), (authToken1, authToken2) ->
         check(authUid1 != authUid2)
         check(authToken1 != authToken2)
 
-        val (mockInternalAuthProvider, idTokenListenerSlot) =
-          createMockInternalAuthProviderReturning(
-            authUid1,
-            authUid2,
-            authToken1,
-            authToken2,
-          )
+        val tokenUidPair1 = tokenUidPairOrNullIfUidNull(authToken1, authUid1)
+        val tokenUidPair2 = tokenUidPairOrNullIfUidNull(authToken2, authUid2)
+        val authProvider =
+          LoggedInMultiTokenAndUidAuthProvider(listOf(tokenUidPair1, tokenUidPair2))
+
         val dataConnect =
           dataConnect(
             serverLocalBindPort = server.port,
-            deferredAuthProvider = ImmediateDeferred(mockInternalAuthProvider)
+            deferredAuthProvider = ImmediateDeferred(authProvider)
           )
         try {
           dataConnect.awaitAuthReady()
@@ -643,18 +640,11 @@ class QuerySubscriptionImplUnitTest {
             val responseSender = serverCollector.awaitResponseSender()
             serverCollector.awaitUntilSubscribeStreamRequest()
 
-            val exception =
-              DataConnectBidiConnectStream.withOnRetryForTesting(
-                onRetry = {
-                  idTokenListenerSlot.captured.onIdTokenChanged(InternalTokenResult(authToken2))
-                }
-              ) {
-                // Close the connection from the server to force a reconnection attempt
-                responseSender.onCompleted()
+            // Close the connection from the server to force a reconnection attempt
+            responseSender.onCompleted()
 
-                // The flow should throw AuthUidChangedException and terminate
-                clientCollector.awaitError()
-              }
+            // The flow should throw AuthUidChangedException and terminate
+            val exception = clientCollector.awaitError()
 
             // The flow should throw AuthUidChangedException and terminate
             exception.shouldBeInstanceOf<AuthUidChangedException>()
@@ -672,6 +662,287 @@ class QuerySubscriptionImplUnitTest {
         }
       }
     }
+
+  @Test
+  fun `auth logged in initial connection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.loggedInAuthProvider(),
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { loggedInInternalAuthProvider, deferredAppCheckProvider ->
+      testDataConnectInitialHeader(
+        server,
+        deferredAuthProvider = ImmediateDeferred(loggedInInternalAuthProvider),
+        deferredAppCheckProvider = deferredAppCheckProvider,
+        awaitAuthReady = true,
+        awaitAppCheckReady = false,
+        header = authTokenGrpcMetadataKey,
+        expectedHeaderValue = loggedInInternalAuthProvider.token,
+      )
+    }
+  }
+
+  @Test
+  fun `auth not logged in initial connection header`() =
+    testAuthHeaderOmittedOnInitialConnection(
+      awaitAuthReady = true,
+      ImmediateDeferred(NotLoggedInInternalAuthProvider),
+    )
+
+  @Test
+  fun `auth provider not available initial connection header`() =
+    testAuthHeaderOmittedOnInitialConnection(awaitAuthReady = false, UnavailableDeferred())
+
+  private fun testAuthHeaderOmittedOnInitialConnection(
+    awaitAuthReady: Boolean,
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { deferredAppCheckProvider ->
+      testDataConnectInitialHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+        awaitAuthReady = awaitAuthReady,
+        awaitAppCheckReady = false,
+        header = authTokenGrpcMetadataKey,
+        expectedHeaderValue = null,
+      )
+    }
+  }
+
+  @Test
+  fun `appCheck token non-null initial connection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.appCheckProvider(),
+      Arb.dataConnect.deferredAuthProvider(),
+    ) { appCheckTokenProvider, deferredAuthProvider ->
+      testDataConnectInitialHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = ImmediateDeferred(appCheckTokenProvider),
+        awaitAuthReady = false,
+        awaitAppCheckReady = true,
+        header = appCheckTokenGrpcMetadataKey,
+        expectedHeaderValue = appCheckTokenProvider.token,
+      )
+    }
+  }
+
+  @Test
+  fun `appCheck provider not available initial connection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.deferredAuthProvider(),
+    ) { deferredAuthProvider ->
+      testDataConnectInitialHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = UnavailableDeferred(),
+        awaitAuthReady = false,
+        awaitAppCheckReady = false,
+        header = appCheckTokenGrpcMetadataKey,
+        expectedHeaderValue = null,
+      )
+    }
+  }
+
+  private suspend fun TestScope.testDataConnectInitialHeader(
+    server: InProcessDataConnectGrpcStreamingServer,
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+    deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
+    awaitAuthReady: Boolean,
+    awaitAppCheckReady: Boolean,
+    header: Metadata.Key<String>,
+    expectedHeaderValue: String?,
+  ) {
+    val dataConnect =
+      dataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+      )
+
+    try {
+      if (awaitAuthReady) {
+        dataConnect.awaitAuthReady()
+      }
+      if (awaitAppCheckReady) {
+        dataConnect.awaitAppCheckReady()
+      }
+
+      val subscription = querySubscription(dataConnect)
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+        val callEvent = serverCollector.awaitCall()
+        callEvent.headers.get(header) shouldBe expectedHeaderValue
+
+        serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+      }
+    } finally {
+      dataConnect.suspendingClose()
+    }
+  }
+
+  @Test
+  fun `auth token non-null reconnection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.loggedInMultiTokenAuthProvider(count = 2),
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { authProvider, deferredAppCheckProvider ->
+      testDataConnectReconnectHeader(
+        server,
+        deferredAuthProvider = ImmediateDeferred(authProvider),
+        deferredAppCheckProvider = deferredAppCheckProvider,
+        awaitAuthReady = true,
+        awaitAppCheckReady = false,
+        header = authTokenGrpcMetadataKey,
+        expectedHeaderValue1 = authProvider.tokens[0],
+        expectedHeaderValue2 = authProvider.tokens[1],
+      )
+    }
+  }
+
+  @Test
+  fun `auth token null reconnection header`() =
+    testAuthHeaderOmittedOnReconnection(
+      awaitAuthReady = true,
+      ImmediateDeferred(NotLoggedInInternalAuthProvider),
+    )
+
+  @Test
+  fun `auth provider not available reconnection header`() =
+    testAuthHeaderOmittedOnReconnection(awaitAuthReady = false, UnavailableDeferred())
+
+  private fun testAuthHeaderOmittedOnReconnection(
+    awaitAuthReady: Boolean,
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { deferredAppCheckProvider ->
+      testDataConnectReconnectHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+        awaitAuthReady = awaitAuthReady,
+        awaitAppCheckReady = false,
+        header = authTokenGrpcMetadataKey,
+        expectedHeaderValue1 = null,
+        expectedHeaderValue2 = null,
+      )
+    }
+  }
+
+  @Test
+  fun `app check token reconnection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.deferredAuthProvider(),
+      Arb.dataConnect.appCheckMultiTokenProvider(count = 2),
+    ) { deferredAuthProvider, appCheckProvider ->
+      testDataConnectReconnectHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = ImmediateDeferred(appCheckProvider),
+        awaitAuthReady = false,
+        awaitAppCheckReady = true,
+        header = appCheckTokenGrpcMetadataKey,
+        expectedHeaderValue1 = appCheckProvider.tokens[0],
+        expectedHeaderValue2 = appCheckProvider.tokens[1],
+      )
+    }
+  }
+
+  @Test
+  fun `appCheck provider not available reconnection header`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.deferredAuthProvider(),
+    ) { deferredAuthProvider ->
+      testDataConnectReconnectHeader(
+        server,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = UnavailableDeferred(),
+        awaitAuthReady = false,
+        awaitAppCheckReady = false,
+        header = appCheckTokenGrpcMetadataKey,
+        expectedHeaderValue1 = null,
+        expectedHeaderValue2 = null,
+      )
+    }
+  }
+
+  private suspend fun TestScope.testDataConnectReconnectHeader(
+    server: InProcessDataConnectGrpcStreamingServer,
+    deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+    deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
+    awaitAuthReady: Boolean,
+    awaitAppCheckReady: Boolean,
+    header: Metadata.Key<String>,
+    expectedHeaderValue1: String?,
+    expectedHeaderValue2: String?,
+  ) {
+    val dataConnect =
+      dataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+      )
+
+    try {
+      if (awaitAuthReady) {
+        dataConnect.awaitAuthReady()
+      }
+      if (awaitAppCheckReady) {
+        dataConnect.awaitAppCheckReady()
+      }
+
+      val subscription = querySubscription(dataConnect)
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+        val originalHeaders = serverCollector.awaitCall().headers
+        check(originalHeaders.get(header) == expectedHeaderValue1)
+
+        val responseSender = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+
+        // Close the connection from the server to force a reconnection attempt
+        responseSender.onCompleted()
+
+        // Verify that reconnection attempt specifies the correct header value.
+        val reconnectionHeaders = serverCollector.awaitCall().headers
+        reconnectionHeaders.get(header) shouldBe expectedHeaderValue2
+
+        serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+      }
+    } finally {
+      dataConnect.suspendingClose()
+    }
+  }
 
   private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
     createException: (Status.Code) -> Throwable
@@ -753,12 +1024,22 @@ class QuerySubscriptionImplUnitTest {
     idStringGenerator: IdStringGenerator? = null,
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
       UnavailableDeferred(),
-  ): FirebaseDataConnectImpl = dataConnect(server.port, idStringGenerator, deferredAuthProvider)
+    deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
+      UnavailableDeferred(),
+  ): FirebaseDataConnectImpl =
+    dataConnect(
+      server.port,
+      idStringGenerator,
+      deferredAuthProvider,
+      deferredAppCheckProvider,
+    )
 
   private fun TestScope.dataConnect(
     serverLocalBindPort: Int? = null,
     idStringGenerator: IdStringGenerator? = null,
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
+      UnavailableDeferred(),
+    deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
   ): FirebaseDataConnectImpl {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
@@ -782,7 +1063,7 @@ class QuerySubscriptionImplUnitTest {
       blockingExecutor = executor,
       nonBlockingExecutor = executor,
       deferredAuthProvider = deferredAuthProvider,
-      deferredAppCheckProvider = UnavailableDeferred(),
+      deferredAppCheckProvider = deferredAppCheckProvider,
       creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
@@ -922,22 +1203,9 @@ private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestD
 private val failureGrpcStatusCodes: List<Status.Code> =
   Status.Code.entries.filterNot { it == Status.Code.OK }
 
-private fun createMockInternalAuthProviderReturning(
-  authUid1: AuthUid?,
-  authUid2: AuthUid?,
-  authToken1: String?,
-  authToken2: String?,
-): Pair<InternalAuthProvider, CapturingSlot<IdTokenListener>> {
-  val mockInternalAuthProvider = mockk<InternalAuthProvider>(relaxed = true)
-  val idTokenListenerSlot = slot<IdTokenListener>()
-  every { mockInternalAuthProvider.addIdTokenListener(capture(idTokenListenerSlot)) } just runs
-
-  val iterator = listOf(authUid1, authUid2).zip(listOf(authToken1, authToken2)).iterator()
-  coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
-    {
-      val (authUid, authToken) = synchronized(iterator) { iterator.next() }
-      taskForToken(authToken, authUid)
-    }
-
-  return Pair(mockInternalAuthProvider, idTokenListenerSlot)
-}
+private fun tokenUidPairOrNullIfUidNull(
+  token: String,
+  uid: AuthUid?
+): LoggedInMultiTokenAndUidAuthProvider.TokenUidPair? =
+  if (uid == null) null
+  else LoggedInMultiTokenAndUidAuthProvider.TokenUidPair(token = token, uid = uid.string)

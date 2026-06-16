@@ -419,3 +419,6 @@ suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitR
 
 suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitConnectRpcStarted():
   InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted = awaitUntilItemIsInstance()
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitCall():
+  InProcessDataConnectGrpcStreamingServer.Event.Call = awaitUntilItemIsInstance()
