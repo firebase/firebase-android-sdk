@@ -27,7 +27,8 @@ import kotlinx.serialization.json.Json
 public class GenerateObjectResponse<T : Any>
 internal constructor(
   public val response: GenerateContentResponse,
-  internal val schema: JsonSchema<T>
+  internal val schema: JsonSchema<T>,
+  internal val decodedObject: T? = null
 ) {
 
   /**
@@ -40,6 +41,10 @@ internal constructor(
    */
   @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? {
+    if (decodedObject != null && candidateIndex == 0) {
+      return decodedObject
+    }
+
     val candidate = response.candidates[candidateIndex]
 
     val deserializer = schema.getSerializer()
