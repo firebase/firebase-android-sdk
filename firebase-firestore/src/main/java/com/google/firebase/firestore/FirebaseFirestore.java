@@ -294,7 +294,12 @@ public class FirebaseFirestore {
   private FirestoreClient newClient(AsyncQueue asyncQueue) {
     synchronized (clientProvider) {
       DatabaseInfo databaseInfo =
-          new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
+          new DatabaseInfo(
+              databaseId,
+              persistenceKey,
+              settings.getHost(),
+              settings.isSslEnabled(),
+              settings.getGrpcFlowControlWindow());
 
       return new FirestoreClient(
           context,

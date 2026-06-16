@@ -59,15 +59,6 @@ public class GrpcCallProvider {
   // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
 
-  // This is currently set to the default of 64KB.
-  // Ideally, grpc-java over OkHttp would have automatic flow control to adjust this
-  // value based on network conditions.
-  // We could increase this static window to be between 128kb and 1MB to decrease latency,
-  // after some more investigation to understand the risks.
-  // https://grpc.io/docs/guides/flow-control/
-  // https://grpc.github.io/grpc-java/javadoc/io/grpc/okhttp/OkHttpServerBuilder.html#flowControlWindow(int)
-  private static final int FLOW_CONTROL_WINDOW = 64 * 1024;
-
   // This is used to increase the max inbound message size from the 4MB default to 17MB,
   // in order to support 16MB docs + overhead.
   // https://grpc.github.io/grpc-java/javadoc/io/grpc/okhttp/OkHttpServerBuilder.html#maxInboundMessageSize(int)
@@ -113,11 +104,12 @@ public class GrpcCallProvider {
       channelBuilder = overrideChannelBuilderSupplier.get();
 
       if (channelBuilder instanceof OkHttpChannelBuilder) {
-        ((OkHttpChannelBuilder) channelBuilder).flowControlWindow(FLOW_CONTROL_WINDOW);
+        ((OkHttpChannelBuilder) channelBuilder)
+            .flowControlWindow(databaseInfo.getGrpcFlowControlWindow());
       }
     } else {
       OkHttpChannelBuilder okHttpBuilder = OkHttpChannelBuilder.forTarget(databaseInfo.getHost());
-      okHttpBuilder.flowControlWindow(FLOW_CONTROL_WINDOW);
+      okHttpBuilder.flowControlWindow(databaseInfo.getGrpcFlowControlWindow());
 
       if (!databaseInfo.isSslEnabled()) {
         // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
