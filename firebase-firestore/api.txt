@@ -249,9 +249,11 @@ package com.google.firebase.firestore {
   public final class FirebaseFirestoreSettings {
     method public com.google.firebase.firestore.LocalCacheSettings? getCacheSettings();
     method @Deprecated public long getCacheSizeBytes();
+    method public int getGrpcFlowControlWindow();
     method public String getHost();
     method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
+    field public static final int DEFAULT_GRPC_FLOW_CONTROL_WINDOW = 262144; // 0x40000
     field public static final long CACHE_SIZE_UNLIMITED = -1L; // 0xffffffffffffffffL
   }
 
@@ -260,10 +262,12 @@ package com.google.firebase.firestore {
     ctor public FirebaseFirestoreSettings.Builder(com.google.firebase.firestore.FirebaseFirestoreSettings);
     method public com.google.firebase.firestore.FirebaseFirestoreSettings build();
     method @Deprecated public long getCacheSizeBytes();
+    method public int getGrpcFlowControlWindow();
     method public String getHost();
     method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
     method @Deprecated public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
+    method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setGrpcFlowControlWindow(int);
     method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(String);
     method public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings);
     method @Deprecated public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);

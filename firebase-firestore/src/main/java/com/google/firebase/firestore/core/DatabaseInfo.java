@@ -23,6 +23,7 @@ public final class DatabaseInfo {
   private final String persistenceKey;
   private final String host;
   private final boolean sslEnabled;
+  private final int grpcFlowControlWindow;
 
   /**
    * Constructs a new DatabaseInfo.
@@ -35,10 +36,35 @@ public final class DatabaseInfo {
    */
   public DatabaseInfo(
       DatabaseId databaseId, String persistenceKey, String host, boolean sslEnabled) {
+    this(
+        databaseId,
+        persistenceKey,
+        host,
+        sslEnabled,
+        com.google.firebase.firestore.FirebaseFirestoreSettings.DEFAULT_GRPC_FLOW_CONTROL_WINDOW);
+  }
+
+  /**
+   * Constructs a new DatabaseInfo.
+   *
+   * @param databaseId The Google Cloud Project ID and database naming the Firestore instance.
+   * @param persistenceKey A unique identifier for this Firestore's local storage. Usually derived
+   *     from FirebaseApp.name.
+   * @param host The hostname of the backend.
+   * @param sslEnabled Whether to use SSL when connecting.
+   * @param grpcFlowControlWindow gRPC flow control window size.
+   */
+  public DatabaseInfo(
+      DatabaseId databaseId,
+      String persistenceKey,
+      String host,
+      boolean sslEnabled,
+      int grpcFlowControlWindow) {
     this.databaseId = databaseId;
     this.persistenceKey = persistenceKey;
     this.host = host;
     this.sslEnabled = sslEnabled;
+    this.grpcFlowControlWindow = grpcFlowControlWindow;
   }
 
   public DatabaseId getDatabaseId() {
@@ -55,6 +81,10 @@ public final class DatabaseInfo {
 
   public boolean isSslEnabled() {
     return sslEnabled;
+  }
+
+  public int getGrpcFlowControlWindow() {
+    return grpcFlowControlWindow;
   }
 
   @Override
