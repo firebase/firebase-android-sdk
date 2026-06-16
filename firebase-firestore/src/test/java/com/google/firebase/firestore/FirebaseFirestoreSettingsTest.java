@@ -114,5 +114,10 @@ public class FirebaseFirestoreSettingsTest {
         () -> {
           builder.setGrpcFlowControlWindow(-1);
         });
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          builder.setGrpcFlowControlWindow(0);
+        });
   }
 }

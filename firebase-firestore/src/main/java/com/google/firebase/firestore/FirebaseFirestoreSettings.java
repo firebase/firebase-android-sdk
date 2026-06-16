@@ -221,13 +221,13 @@ public final class FirebaseFirestoreSettings {
     /**
      * Sets the gRPC flow control window size.
      *
-     * @param size The flow control window size in bytes. Must be non-negative.
+     * @param size The flow control window size in bytes. Must be positive.
      * @return A settings object with the gRPC flow control window size set.
      */
     @NonNull
     public Builder setGrpcFlowControlWindow(int size) {
-      if (size < 0) {
-        throw new IllegalArgumentException("flow control window size must be non-negative");
+      if (size <= 0) {
+        throw new IllegalArgumentException("flow control window size must be positive");
       }
       this.grpcFlowControlWindow = size;
       return this;
