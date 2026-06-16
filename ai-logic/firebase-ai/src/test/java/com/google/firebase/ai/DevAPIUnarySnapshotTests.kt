@@ -52,7 +52,7 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.shouldNotBeEmpty()
-        response.modelVersion shouldBe "gemini-2.0-flash"
+        response.modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 
@@ -80,7 +80,7 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.shouldNotBeEmpty()
-        response.modelVersion shouldBe "gemini-2.0-flash"
+        response.modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 
@@ -96,7 +96,7 @@ internal class DevAPIUnarySnapshotTests {
           it.startIndex.shouldNotBeNull()
           it.endIndex.shouldNotBeNull()
         }
-        response.modelVersion shouldBe "gemini-2.0-flash"
+        response.modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 
@@ -139,7 +139,7 @@ internal class DevAPIUnarySnapshotTests {
 
         groundingMetadata.groundingChunks.shouldNotBeEmpty()
         groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
-        response.modelVersion shouldBe "gemini-2.0-flash"
+        response.modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 

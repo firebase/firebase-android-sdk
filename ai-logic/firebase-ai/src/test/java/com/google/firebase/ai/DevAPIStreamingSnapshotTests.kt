@@ -78,7 +78,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           finishMessage shouldBe "Finished successfully"
         }
-        responseList.last().modelVersion shouldBe "gemini-2.0-flash"
+        responseList.last().modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 
@@ -94,7 +94,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
         }
-        responseList.last().modelVersion shouldBe "gemini-2.0-flash"
+        responseList.last().modelVersion shouldBe "gemini-3.1-flash-lite"
       }
     }
 
