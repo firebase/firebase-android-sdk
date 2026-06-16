@@ -24,13 +24,17 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal object CoroutineUtils {
 
@@ -185,5 +189,35 @@ internal object CoroutineUtils {
       close()
     }
     awaitClose { disposableHandle.dispose() }
+  }
+
+  /**
+   * Merges two flows into a single flow, where the lifecycle and completion of the returned flow is
+   * strictly determined by the completion of [coldFlow].
+   *
+   * Collection of [hotFlow] is started concurrently when the returned flow is collected. When
+   * [coldFlow] completes (either normally or with an exception), the collection of [hotFlow] is
+   * immediately cancelled, and the merged flow completes.
+   *
+   * This is particularly useful when you want to feed updates from a hot, infinite flow (such as
+   * auth token or configuration changes) into an active session represented by a cold flow, and
+   * ensure that all background collection is cleaned up as soon as the session flow terminates.
+   *
+   * @param T The type of elements emitted by the flows.
+   * @param coldFlow The primary flow whose lifecycle dictates the lifetime of the merged flow.
+   * @param hotFlow The secondary flow whose collection is scoped to the collection of [coldFlow].
+   * @return A merged [Flow] emitting elements from both [coldFlow] and [hotFlow].
+   */
+  fun <T> mergeColdAndHotFlow(coldFlow: Flow<T>, hotFlow: Flow<T>): Flow<T> = channelFlow {
+    val hotJob = launch { hotFlow.collect { send(it) } }
+    try {
+      coldFlow.collect { send(it) }
+    } finally {
+      hotJob.cancel()
+
+      // Delay returning until `hotJob` is completed; otherwise, the Channel will be closed,
+      // potentially causing spurious ClosedSendChannelException if `hotJob` calls send().
+      withContext(NonCancellable) { hotJob.join() }
+    }
   }
 }

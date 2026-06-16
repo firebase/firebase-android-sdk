@@ -90,8 +90,11 @@ public final class RemoteMessage extends AbstractSafeParcelable {
    * Gets the Sender ID for the sender of this message.
    *
    * @return the message Sender ID
+   * @deprecated Please use FirebaseOptions.getGcmSenderId() instead to retrieve the sender ID for
+   *     your app
    */
   @Nullable
+  @Deprecated
   public String getSenderId() {
     return bundle.getString(MessagePayloadKeys.SENDER_ID);
   }

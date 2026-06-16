@@ -122,6 +122,9 @@ internal class SerializationTests {
             },
             "usageMetadata": {
                 "${'$'}ref": "UsageMetadata"
+            },
+            "modelVersion": {
+                "type": "string"
             }
         }
      }

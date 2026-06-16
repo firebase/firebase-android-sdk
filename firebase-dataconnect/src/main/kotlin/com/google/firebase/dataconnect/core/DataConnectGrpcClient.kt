@@ -98,23 +98,21 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream =
-    grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
-      connect(
-        requestId,
-        callerSdkType,
-        authToken,
-        appCheckToken,
-        idStringGenerator,
-      )
-    }
+    grpcRPCs.connect(
+      requestId,
+      callerSdkType,
+      dataConnectAuth,
+      dataConnectAppCheck,
+      idStringGenerator,
+    )
 
   private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,
     kotlinMethodName: String,
     block: T.(GetAuthTokenResult?, GetAppCheckTokenResult?) -> R,
   ): R {
-    val authToken1 = dataConnectAuth.getToken(requestId)
-    val appCheckToken1 = dataConnectAppCheck.getToken(requestId)
+    val authToken1 = dataConnectAuth.getToken(requestId).ref
+    val appCheckToken1 = dataConnectAppCheck.getToken(requestId).ref
 
     return try {
       block(authToken1, appCheckToken1)
@@ -132,8 +130,8 @@ internal class DataConnectGrpcClient(
       dataConnectAuth.forceRefresh()
       dataConnectAppCheck.forceRefresh()
 
-      val authToken2 = dataConnectAuth.getToken(requestId)
-      val appCheckToken2 = dataConnectAppCheck.getToken(requestId)
+      val authToken2 = dataConnectAuth.getToken(requestId).ref
+      val appCheckToken2 = dataConnectAppCheck.getToken(requestId).ref
 
       block(authToken2, appCheckToken2)
     }

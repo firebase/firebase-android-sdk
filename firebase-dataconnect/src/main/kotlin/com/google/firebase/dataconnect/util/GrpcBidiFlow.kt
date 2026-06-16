@@ -178,7 +178,7 @@ internal object GrpcBidiFlow {
     grpcChannel: GrpcChannel,
     method: MethodDescriptor<RequestT, ResponseT>,
     callOptions: CallOptions,
-    headers: (connectionId: String) -> HeadersResult<ConnectionCookie>,
+    headers: suspend (connectionId: String) -> HeadersResult<ConnectionCookie>,
     idStringGenerator: IdStringGenerator,
     initRequests: Iterable<RequestT> = emptyList(),
     listener: Listener<RequestT, ResponseT>? = null,
