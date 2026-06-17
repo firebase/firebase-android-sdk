@@ -103,7 +103,7 @@ typeset -r args=(
   -no-audio
   -no-boot-anim
   -accel on
-  -gpu off
+  -gpu host # use "swiftshader_indirect" for robust software rendering in CI/CD runners
   -no-snapshot-load
   -no-snapshot-save
   -screen touch
