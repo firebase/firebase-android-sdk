@@ -112,6 +112,7 @@ typeset -r args=(
   -timezone "Etc/UTC"
   -skip-adb-auth
   -no-metrics
+  -grpc-use-token
   "${emulator_extra_args[@]}"
 )
 
