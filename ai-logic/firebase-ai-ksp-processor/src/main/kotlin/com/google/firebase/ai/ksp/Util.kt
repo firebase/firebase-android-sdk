@@ -48,7 +48,7 @@ internal fun getGuideValuesFromAnnotation(
     format = getStringFromAnnotation(guideAnnotation, "format"),
     description = description,
     enumValues = getStringListFromAnnotation(guideAnnotation, "enumValues")
-  )
+)
 
 internal fun getDescriptionFromAnnotations(
   guideAnnotation: KSAnnotation?,

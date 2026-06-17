@@ -70,6 +70,13 @@ class FirebaseKspProcessorTest {
     assertThat(stringSchema.title).isEqualTo("stringTest")
     assertThat(stringSchema.nullable).isEqualTo(false)
 
+    assertThat(rootSchema.properties?.get("guidedEnumStringTest")).isNotNull()
+    val guidedEnumStringSchema = rootSchema.properties?.get("guidedEnumStringTest")!!
+    assertThat(guidedEnumStringSchema.title).isEqualTo("guidedEnumStringTest")
+    assertThat(guidedEnumStringSchema.nullable).isEqualTo(true)
+    assertThat(guidedEnumStringSchema.enum)
+      .isEqualTo(listOf("food", "entertainment", "souvenir", "other"))
+
     assertThat(rootSchema.properties?.get("enumTest")).isNotNull()
     val enumSchema = rootSchema.properties?.get("enumTest")!!
     assertThat(enumSchema.clazz).isEqualTo(EnumTest::class)

@@ -24,6 +24,7 @@ plugins {
   id("copy-google-services")
   id("com.google.devtools.ksp") version "2.1.21-2.0.2"
   alias(libs.plugins.kotlinx.serialization)
+  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
 }
 
 firebaseLibrary {

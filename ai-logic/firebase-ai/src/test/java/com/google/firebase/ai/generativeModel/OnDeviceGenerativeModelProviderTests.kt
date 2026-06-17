@@ -108,11 +108,21 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateObject always throws FirebaseAIException`(): Unit = runBlocking {
-    val schema = mockk<JsonSchema<Any>>()
+  fun `generateObject appends schema and returns response when successful`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val onDeviceResponse =
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("{\"test\":\"value\"}", OnDeviceFinishReason.STOP))
+      )
+    coEvery { onDeviceModel.generateContent(any()) } returns onDeviceResponse
 
-    val exception = shouldThrow<FirebaseAIException> { provider.generateObject(schema, prompt) }
-    exception.cause!!::class shouldBe IllegalArgumentException::class
+    val schema = JsonSchema.obj(mapOf("test" to JsonSchema.string()))
+
+    val response = provider.generateObject(schema, prompt)
+
+    response.response.text shouldBe "{\"test\":\"value\"}"
+    response.response.inferenceSource shouldBe InferenceSource.ON_DEVICE
+    response.schema shouldBe schema
   }
 
   @Test

@@ -47,6 +47,16 @@ internal class SchemaSymbolProcessorVisitor(
     if (!isDataClass) {
       logger.error("${classDeclaration.qualifiedName} is not a data class")
     }
+
+    val isSerializable =
+      classDeclaration.annotations.any { it.shortName.asString() == "Serializable" }
+    if (!isSerializable) {
+      logger.error(
+        "Class ${classDeclaration.qualifiedName?.asString()} must be annotated with @kotlinx.serialization.Serializable to be used with GenerateObjectResponse.",
+        classDeclaration
+      )
+    }
+
     val containingFile = classDeclaration.containingFile
     if (containingFile == null) {
       logger.warn("${classDeclaration.qualifiedName} must be in a file in the build, skipping")

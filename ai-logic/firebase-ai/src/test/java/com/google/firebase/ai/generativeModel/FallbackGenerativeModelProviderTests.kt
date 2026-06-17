@@ -100,6 +100,40 @@ internal class FallbackGenerativeModelProviderTests {
     }
   }
 
+  @Test
+  fun `generateObject falls back when precondition fails`() = runBlocking {
+    val schema: JsonSchema<Any> = mockk()
+    val expectedResponse: GenerateObjectResponse<Any> = mockk()
+    coEvery { fallbackModel.generateObject(schema, prompt) } returns expectedResponse
+
+    val provider =
+      FallbackGenerativeModelProvider(defaultModel, fallbackModel, precondition = { false })
+    shouldNotThrowAnyUnit {
+      val response = provider.generateObject(schema, prompt)
+
+      response shouldBe expectedResponse
+      coVerify(exactly = 0) { defaultModel.generateObject(schema, prompt) }
+      coVerify { fallbackModel.generateObject(schema, prompt) }
+    }
+  }
+
+  @Test
+  fun `generateObject falls back when default model throws PromptBlockedException`() = runBlocking {
+    val schema: JsonSchema<Any> = mockk()
+    val expectedResponse: GenerateObjectResponse<Any> = mockk()
+    val exception = mockk<PromptBlockedException>()
+    coEvery { defaultModel.generateObject(schema, prompt) } throws exception
+    coEvery { fallbackModel.generateObject(schema, prompt) } returns expectedResponse
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateObject(schema, prompt)
+
+      response shouldBe expectedResponse
+      coVerify { fallbackModel.generateObject(schema, prompt) }
+    }
+  }
+
   @OptIn(PublicPreviewAPI::class)
   @Test
   fun `generateContent shouldn't falls back when default model throws unrelated exception`(): Unit =
