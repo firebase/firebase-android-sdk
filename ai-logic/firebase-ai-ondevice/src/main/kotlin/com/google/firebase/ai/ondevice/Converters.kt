@@ -24,6 +24,7 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+import com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop
 import com.google.firebase.ai.ondevice.interop.GenerationConfig
 import com.google.firebase.ai.ondevice.interop.ModelConfig
 import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
@@ -83,6 +84,10 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
 internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop(
   modelName: String
 ): GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() }, modelName)
+
+internal fun <T : Any> com.google.mlkit.genai.prompt.GenerateContentResponse.toInteropObject(
+  modelName: String
+): GenerateObjectResponseInterop<T> = GenerateObjectResponseInterop(toInterop(modelName))
 
 // ================================================
 // `GenerationConfig` converter extension functions
