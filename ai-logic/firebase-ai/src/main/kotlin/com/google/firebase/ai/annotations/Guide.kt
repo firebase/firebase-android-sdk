@@ -25,6 +25,7 @@ package com.google.firebase.ai.annotations
  * @property minItems the minimum number of items in a list
  * @property maxItems the maximum number of items in a list
  * @property format the format that a field must conform to
+ * @property enumValues the enum values which the field may contain
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)

@@ -152,7 +152,7 @@ internal class SchemaSymbolProcessorVisitor(
         builder.addStatement("JsonSchema.double(").indent()
       }
       "kotlin.String" -> {
-        if (guideValues.enumValues != null) {
+        if (!guideValues.enumValues.isNullOrEmpty()) {
           builder
             .addStatement("JsonSchema.enumeration(")
             .indent()
@@ -260,7 +260,7 @@ internal class SchemaSymbolProcessorVisitor(
           "format is not a valid parameter to specify in @Guide"
       )
     }
-    if ((guideValues.enumValues != null) && className.canonicalName != "kotlin.String") {
+    if (!guideValues.enumValues.isNullOrEmpty() && className.canonicalName != "kotlin.String") {
       logger.warn(
         "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, " +
           "enumValues is not a valid parameter to specify in @Guide"
@@ -271,7 +271,9 @@ internal class SchemaSymbolProcessorVisitor(
     guideValues.minItems?.let { builder.addStatement("minItems = %L,", it) }
 
     guideValues.maxItems?.let { builder.addStatement("maxItems = %L,", it) }
-    guideValues.format?.let { builder.addStatement("format = %S,", it) }
+    guideValues.format?.let {
+      builder.addStatement("format = com.google.firebase.ai.type.StringFormat.Custom(%S),", it)
+    }
     builder.addStatement("nullable = %L)", className.isNullable).unindent()
     return builder.build()
   }

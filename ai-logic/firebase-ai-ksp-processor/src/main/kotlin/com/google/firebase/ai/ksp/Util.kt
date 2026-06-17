@@ -47,8 +47,8 @@ internal fun getGuideValuesFromAnnotation(
     maxItems = getIntFromAnnotation(guideAnnotation, "maxItems"),
     format = getStringFromAnnotation(guideAnnotation, "format"),
     description = description,
-    enumValues = getStringArrayFromAnnotation(guideAnnotation, "enumValues"),
-  )
+    enumValues = getStringListFromAnnotation(guideAnnotation, "enumValues")
+)
 
 internal fun getDescriptionFromAnnotations(
   guideAnnotation: KSAnnotation?,
@@ -105,22 +105,19 @@ internal fun getStringFromAnnotation(
   return guidePropertyStringValue
 }
 
-internal fun getStringArrayFromAnnotation(
+internal fun getStringListFromAnnotation(
   guideAnnotation: KSAnnotation?,
-  arrayName: String,
+  listName: String,
 ): List<String>? {
-  val value =
+  val guidePropertyStringListValue =
     guideAnnotation
       ?.arguments
-      ?.firstOrNull { it.name?.getShortName()?.equals(arrayName) == true }
-      ?.value
-  return when (value) {
-    is List<*> ->
-      value.mapNotNull { it as? String }.filter { it.isNotEmpty() }.takeIf { it.isNotEmpty() }
-    is Array<*> ->
-      value.mapNotNull { it as? String }.filter { it.isNotEmpty() }.takeIf { it.isNotEmpty() }
-    else -> null
+      ?.firstOrNull { it.name?.getShortName()?.equals(listName) == true }
+      ?.value as? List<*>
+  if (guidePropertyStringListValue.isNullOrEmpty()) {
+    return null
   }
+  return guidePropertyStringListValue?.filterIsInstance<String>()
 }
 
 internal fun extractBaseKdoc(kdoc: String): String? {

@@ -22,6 +22,7 @@ plugins {
   id("firebase-library")
   id("kotlin-android")
   id("copy-google-services")
+  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.devtools.ksp") version "2.1.21-2.0.2"
 }
