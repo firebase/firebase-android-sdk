@@ -109,7 +109,7 @@ typeset -r args=(
   -screen touch
   -netfast
   -no-sim
-  -timezone UTC
+  -timezone "Etc/UTC"
   -skip-adb-auth
   -no-metrics
   "${emulator_extra_args[@]}"
