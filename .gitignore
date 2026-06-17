@@ -29,6 +29,3 @@ gha-creds-*.json
 
 # Jetski CLI artifacts
 .jetskicli/
-/encoders
-*/bin
-/ai-logic/firebase-ai-ksp-processor/bin
