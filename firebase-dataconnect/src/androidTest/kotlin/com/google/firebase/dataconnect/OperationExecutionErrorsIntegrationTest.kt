@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
@@ -157,12 +158,12 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
   @Test
   fun executeMutationFailsWithNonNullDataNonEmptyErrorsDecodingSucceeds() = runTest {
-    val id = Arb.alphanumericString().next()
+    val (id1, id2) = Arb.alphanumericString().distinctPair().next()
     val name = Arb.alphanumericString().next()
     val mutationRef =
       dataConnect.mutation(
         operationName = "createPersonWithPartialFailure",
-        variables = CreatePersonWithPartialFailureVariables(id = id, name = name),
+        variables = CreatePersonWithPartialFailureVariables(id1 = id1, id2 = id2, name = name),
         dataDeserializer = serializer<CreatePersonWithPartialFailureData>(),
         variablesSerializer = serializer(),
         optionsBuilder = {},
@@ -172,10 +173,10 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
     exception.shouldSatisfy(
       expectedMessageSubstringCaseInsensitive = "operation encountered errors",
-      expectedMessageSubstringCaseSensitive = "ecxpjy4qfy",
+      expectedMessageSubstringCaseSensitive = "invalid sql statement",
       expectedCause = null,
-      expectedRawData = mapOf("person1" to mapOf("id" to id), "person2" to null),
-      expectedData = CreatePersonWithPartialFailureData(id),
+      expectedRawData = mapOf("person1" to mapOf("id" to id1), "person2" to mapOf("id" to id2)),
+      expectedData = CreatePersonWithPartialFailureData(id1, id2),
       errorsValidator = { it.shouldHaveAtLeastSize(1) },
     )
   }
@@ -208,12 +209,12 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
   @Test
   fun executeMutationFailsWithNonNullDataNonEmptyErrorsDecodingFails() = runTest {
-    val id = Arb.alphanumericString().next()
+    val (id1, id2) = Arb.alphanumericString().distinctPair().next()
     val name = Arb.alphanumericString().next()
     val mutationRef =
       dataConnect.mutation(
         operationName = "createPersonWithPartialFailure",
-        variables = CreatePersonWithPartialFailureVariables(id = id, name = name),
+        variables = CreatePersonWithPartialFailureVariables(id1 = id1, id2 = id2, name = name),
         dataDeserializer = serializer<IncompatibleData>(),
         variablesSerializer = serializer(),
         optionsBuilder = {},
@@ -223,10 +224,35 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
     exception.shouldSatisfy(
       expectedMessageSubstringCaseInsensitive = "operation encountered errors",
-      expectedMessageSubstringCaseSensitive = "ecxpjy4qfy",
+      expectedMessageSubstringCaseSensitive = "invalid sql statement",
       expectedCause = null,
-      expectedRawData = mapOf("person1" to mapOf("id" to id), "person2" to null),
+      expectedRawData = mapOf("person1" to mapOf("id" to id1), "person2" to mapOf("id" to id2)),
       expectedData = null,
+      errorsValidator = { it.shouldHaveAtLeastSize(1) },
+    )
+  }
+
+  @Test
+  fun executeMutationFailsWithNonNullDataNonEmptyErrorsDecodingSucceedsInTransaction() = runTest {
+    val id = Arb.alphanumericString().next()
+    val name = Arb.alphanumericString().next()
+    val mutationRef =
+      dataConnect.mutation(
+        operationName = "createPersonWithPartialFailureInTransaction",
+        variables = CreatePersonWithPartialFailureVariablesInTransaction(id = id, name = name),
+        dataDeserializer = serializer<CreatePersonWithPartialFailureDataNullable>(),
+        variablesSerializer = serializer(),
+        optionsBuilder = {},
+      )
+
+    val exception = shouldThrow<DataConnectOperationException> { mutationRef.execute() }
+
+    exception.shouldSatisfy(
+      expectedMessageSubstringCaseInsensitive = "operation encountered errors",
+      expectedMessageSubstringCaseSensitive = null,
+      expectedCause = null,
+      expectedRawData = mapOf("person1" to null, "person2" to null),
+      expectedData = CreatePersonWithPartialFailureDataNullable(null, null),
       errorsValidator = { it.shouldHaveAtLeastSize(1) },
     )
   }
@@ -238,7 +264,7 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
     val mutationRef =
       dataConnect.mutation(
         operationName = "createPersonWithPartialFailureInTransaction",
-        variables = CreatePersonWithPartialFailureVariables(id = id, name = name),
+        variables = CreatePersonWithPartialFailureVariablesInTransaction(id = id, name = name),
         dataDeserializer = serializer<IncompatibleData>(),
         variablesSerializer = serializer(),
         optionsBuilder = {},
@@ -273,15 +299,28 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
   }
 
   @Serializable
-  private data class CreatePersonWithPartialFailureVariables(val id: String, val name: String)
+  private data class CreatePersonWithPartialFailureVariables(
+    val id1: String,
+    val id2: String,
+    val name: String,
+  )
 
   @Serializable
-  private data class CreatePersonWithPartialFailureData(
-    val person1: Person,
-    val person2: Nothing?
-  ) {
-    constructor(person1Id: String) : this(Person(person1Id), null)
+  private data class CreatePersonWithPartialFailureVariablesInTransaction(
+    val id: String,
+    val name: String,
+  )
 
-    @Serializable private data class Person(val id: String)
+  @Serializable
+  private data class CreatePersonWithPartialFailureData(val person1: Person, val person2: Person) {
+    constructor(person1Id: String, person2Id: String) : this(Person(person1Id), Person(person2Id))
+
+    @Serializable data class Person(val id: String)
   }
+
+  @Serializable
+  private data class CreatePersonWithPartialFailureDataNullable(
+    val person1: CreatePersonWithPartialFailureData.Person?,
+    val person2: CreatePersonWithPartialFailureData.Person?,
+  )
 }
