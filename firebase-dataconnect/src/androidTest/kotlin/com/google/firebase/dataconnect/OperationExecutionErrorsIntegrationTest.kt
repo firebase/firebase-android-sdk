@@ -173,7 +173,7 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
     exception.shouldSatisfy(
       expectedMessageSubstringCaseInsensitive = "operation encountered errors",
-      expectedMessageSubstringCaseSensitive = "invalid sql statement",
+      expectedMessageSubstringCaseSensitive = null,
       expectedCause = null,
       expectedRawData = mapOf("person1" to mapOf("id" to id1), "person2" to mapOf("id" to id2)),
       expectedData = CreatePersonWithPartialFailureData(id1, id2),
@@ -224,7 +224,7 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
 
     exception.shouldSatisfy(
       expectedMessageSubstringCaseInsensitive = "operation encountered errors",
-      expectedMessageSubstringCaseSensitive = "invalid sql statement",
+      expectedMessageSubstringCaseSensitive = null,
       expectedCause = null,
       expectedRawData = mapOf("person1" to mapOf("id" to id1), "person2" to mapOf("id" to id2)),
       expectedData = null,

@@ -96,7 +96,7 @@ query getPersonWithPartialFailure($id: String!) @auth(level: PUBLIC) {
 
 mutation createPersonWithPartialFailure($id1: String!, $id2: String!, $name: String!) @auth(level: PUBLIC) {
   person1: person_insert(data: { id: $id1, name: $name })
-  query @redact { _select(sql: "SELECT NoSuchColumn FROM ShouldFail") }
+  query @redact { _select(sql: "SELECT 1/0") }
   person2: person_insert(data: { id: $id2, name: $name })
 }
 
