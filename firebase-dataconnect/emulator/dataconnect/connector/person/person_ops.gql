@@ -94,10 +94,10 @@ query getPersonWithPartialFailure($id: String!) @auth(level: PUBLIC) {
   person2: person(id: $id) @check(expr: "false", message: "c8azjdwz2x") { name }
 }
 
-mutation createPersonWithPartialFailure($id: String!, $name: String!) @auth(level: PUBLIC) {
-  person1: person_insert(data: { id: $id, name: $name })
-  query @redact { person(id: $id) { id @check(expr: "false", message: "ecxpjy4qfy") } }
-  person2: person_insert(data: { id_expr: "uuidV4()", name: $name })
+mutation createPersonWithPartialFailure($id1: String!, $id2: String!, $name: String!) @auth(level: PUBLIC) {
+  person1: person_insert(data: { id: $id1, name: $name })
+  query @redact { _select(sql: "SELECT 1/0") }
+  person2: person_insert(data: { id: $id2, name: $name })
 }
 
 mutation createPersonWithPartialFailureInTransaction($id: String!, $name: String!) @auth(level: PUBLIC) @transaction {
