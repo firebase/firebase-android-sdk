@@ -152,7 +152,6 @@ internal class DataConnectBidiConnectStream(
           } else {
             delay(1.seconds)
             logger.debug { "retrying connection" }
-            onRetryForTesting.get()?.invoke()
             true
           }
         }
@@ -470,29 +469,20 @@ internal class DataConnectBidiConnectStream(
 
   companion object {
 
-    private val onRetryForTesting = AtomicReference<() -> Unit>(null)
-
     @VisibleForTesting
-    fun setOnRetryForTesting(callback: () -> Unit) {
-      if (!onRetryForTesting.compareAndSet(null, callback)) {
-        error("an onRetryForTesting callback is already set [zjp8dv9h6j]")
+    fun setReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(null, token)
+      check(success) {
+        "setReconnectPendingAuthTokenForTesting() failed: a value is already set [b887589rta]"
       }
     }
 
     @VisibleForTesting
-    fun clearOnRetryForTesting(callback: () -> Unit) {
-      if (!onRetryForTesting.compareAndSet(callback, null)) {
-        error("the given onRetryForTesting callback is not set [csems6py9x]")
-      }
-    }
-
-    @VisibleForTesting
-    inline fun <T> withOnRetryForTesting(noinline onRetry: () -> Unit, block: () -> T): T {
-      setOnRetryForTesting(onRetry)
-      return try {
-        block()
-      } finally {
-        clearOnRetryForTesting(onRetry)
+    fun unsetReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(token, null)
+      check(success) {
+        "unsetReconnectPendingAuthTokenForTesting() failed: " +
+          "the given value is NOT the one currently set [dmjgeq95a2]"
       }
     }
 
@@ -511,6 +501,9 @@ internal class DataConnectBidiConnectStream(
       }
   }
 }
+
+private val reconnectPendingAuthTokenForTesting =
+  AtomicReference<SequencedReference<GetAuthTokenResult>>(null)
 
 private fun mergeGrpcAndAuth(
   grpcBidiFlow:
@@ -644,16 +637,6 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     currentState: SubscriptionEvent.Connected,
     sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Connected? {
-    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
-      return null // ignore outdated auth token changes
-    }
-
-    val oldToken = currentState.authToken.ref?.token
-    val newToken = sequencedAuthToken.ref?.token
-    if (oldToken == newToken) {
-      return null // Do not re-send the same token, as that is wasteful.
-    }
-
     // Verify that the authUid has not changed; if so, then throw to abort the connection.
     // The caller will need to re-subscribe with the new authUid as the connection stream does
     // not support changing authUid mid-stream.
@@ -663,8 +646,23 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       throw AuthUidChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
     }
 
+    // Ignore outdated auth token changes.
+    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
+      return null
+    }
+
+    // Do not re-send the same token, as that is wasteful.
+    val oldToken = currentState.authToken.ref?.token
+    val newToken = sequencedAuthToken.ref?.token
+    if (oldToken == newToken) {
+      return null
+    }
+
+    // Do not send an empty token, as that is wasteful too (and should never happen in practice
+    // because if newToken==null and oldToken!=newToken then it must hold that
+    // currentAuthUid!=newAuthUid, and should have resulted in AuthUidChangedException above).
     if (newToken == null) {
-      return null // Do not send an empty token, as that is wasteful too.
+      return null
     }
 
     // Update the authToken on the stream.
@@ -711,7 +709,8 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       is SubscriptionEvent.Connected -> currentState
       is SubscriptionEvent.Disconnected -> {
         val connectedState = SubscriptionEvent.Connected(event)
-        val pendingAuthToken = currentState.pendingAuthToken
+        val pendingAuthToken =
+          reconnectPendingAuthTokenForTesting.get() ?: currentState.pendingAuthToken
         if (pendingAuthToken == null) {
           connectedState
         } else {
