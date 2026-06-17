@@ -121,7 +121,7 @@ class TemplateIntegrationTests {
           toolConfig =
             TemplateToolConfig(
               RetrievalConfig(
-                latLng = LatLng(latitude = 30.2672, longitude = -97.7431),
+                latLng = LatLng(latitude = 40.72849, longitude = -74.01054),
                 languageCode = "en_US",
               )
             )
