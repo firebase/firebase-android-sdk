@@ -46,6 +46,20 @@ public interface GenerativeModel {
   public suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse
 
   /**
+   * Generates a structured object from the input [GenerateContentRequest] and target [SchemaObject]
+   * .
+   *
+   * @param request The input given to the model as a prompt.
+   * @param schema The schema defining the structure of the output.
+   * @throws [FirebaseAIOnDeviceNotAvailableException] if model is not available.
+   * @return The [GenerateObjectResponseInterop] containing the generated object response.
+   */
+  public suspend fun <T : Any> generateObject(
+    request: GenerateContentRequest,
+    schema: SchemaObject<T>
+  ): GenerateObjectResponseInterop<T>
+
+  /**
    * Counts the number of tokens in a prompt using the model's tokenizer.
    *
    * @param request The input given to the model as a prompt.

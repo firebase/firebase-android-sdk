@@ -24,8 +24,10 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableExc
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+import com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
 import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
+import com.google.firebase.ai.ondevice.interop.SchemaObject
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.common.GenAiException.ErrorCode
@@ -49,6 +51,23 @@ internal class GenerativeModelImpl(
     try {
       val response = mlkitModel.generateContent(request.toMlKit())
       response.toInterop(mlkitModel.getBaseModelName())
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
+  override suspend fun <T : Any> generateObject(
+    request: GenerateContentRequest,
+    schema: SchemaObject<T>
+  ): GenerateObjectResponseInterop<T> =
+    try {
+      val mlkitRequest =
+        com.google.mlkit.genai.prompt.generateTypedContentRequest(
+          generateContentRequest = request.toMlKit(),
+          outputClass = SchemaTransform.transformSchemaToMlKitTypedClass(schema),
+          includeSchemaInPrompt = true
+        )
+      val response = mlkitModel.generateContent(mlkitRequest)
+      response.toInteropObject(mlkitModel.getBaseModelName())
     } catch (e: GenAiException) {
       throw getMappingException(e)
     }

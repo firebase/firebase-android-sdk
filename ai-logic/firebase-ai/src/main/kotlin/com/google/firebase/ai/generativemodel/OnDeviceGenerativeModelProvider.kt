@@ -23,6 +23,7 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableExc
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
 import com.google.firebase.ai.ondevice.interop.ImagePart as OnDeviceImagePart
+import com.google.firebase.ai.ondevice.interop.SchemaObject as OnDeviceSchemaObject
 import com.google.firebase.ai.ondevice.interop.TextPart as OnDeviceTextPart
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
@@ -143,10 +144,19 @@ internal class OnDeviceGenerativeModelProvider(
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
-    )
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val interopResponse = onDeviceModel.generateObject(request, jsonSchema.toInteropSchema())
+    val typeResponse =
+      GenerateContentResponse(
+        interopResponse.response.candidates.map { Candidate.fromInterop(it) },
+        InferenceSource.ON_DEVICE,
+        null,
+        null,
+        interopResponse.response.modelVersion
+      )
+    GenerateObjectResponse(typeResponse, jsonSchema)
   }
 
   /**
@@ -225,6 +235,25 @@ internal class OnDeviceGenerativeModelProvider(
       maxOutputTokens = onDeviceConfig.maxOutputTokens
     )
   }
+
+  private fun <T : Any> JsonSchema<T>.toInteropSchema(): OnDeviceSchemaObject<T> =
+    OnDeviceSchemaObject(
+      type = this.type,
+      clazz = this.clazz,
+      description = this.description,
+      format = this.format,
+      nullable = this.nullable,
+      enum = this.enum,
+      properties = this.properties?.mapValues { it.value.toInteropSchema() },
+      required = this.required,
+      items = this.items?.toInteropSchema(),
+      title = this.title,
+      minItems = this.minItems,
+      maxItems = this.maxItems,
+      minimum = this.minimum,
+      maximum = this.maximum,
+      anyOf = this.anyOf?.map { it.toInteropSchema() }
+    )
 
   private companion object {
     private val TAG = OnDeviceGenerativeModelProvider::class.java.simpleName
