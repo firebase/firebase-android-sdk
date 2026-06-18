@@ -93,7 +93,7 @@ internal class DataConnectBidiConnectStream(
 ) {
 
   val isPermanentlyFailedDueToAuthUidChange: Boolean
-    get() = authUidChangedFlow.replayCache.isNotEmpty()
+    get() = firebaseUserChangedFlow.replayCache.isNotEmpty()
 
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
@@ -102,15 +102,15 @@ internal class DataConnectBidiConnectStream(
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
 
   /**
-   * A flow that emits a [AuthUidChangedException] when the connection is permanently failed due to
-   * the Firebase Auth user changing.
+   * A flow that emits a [FirebaseUserChangedException] when the connection is permanently failed
+   * due to the Firebase Auth user changing.
    */
-  private val _authUidChangedFlow =
-    MutableSharedFlow<AuthUidChangedException>(
+  private val _firebaseUserChangedFlow =
+    MutableSharedFlow<FirebaseUserChangedException>(
       replay = 1,
       onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-  private val authUidChangedFlow = _authUidChangedFlow.asSharedFlow()
+  private val firebaseUserChangedFlow = _firebaseUserChangedFlow.asSharedFlow()
 
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
@@ -135,8 +135,8 @@ internal class DataConnectBidiConnectStream(
         }
         .map(SubscriptionEvent::Message)
         .catch { exception ->
-          if (exception is AuthUidChangedException) {
-            _authUidChangedFlow.emit(exception)
+          if (exception is FirebaseUserChangedException) {
+            _firebaseUserChangedFlow.emit(exception)
           }
           throw exception
         }
@@ -147,7 +147,7 @@ internal class DataConnectBidiConnectStream(
           throw throwable ?: Exception("to be handled by retryWhen")
         }
         .retryWhen { cause, attempt ->
-          if (cause is AuthUidChangedException || attempt > 2) {
+          if (cause is FirebaseUserChangedException || attempt > 2) {
             false
           } else {
             delay(1.seconds)
@@ -234,7 +234,7 @@ internal class DataConnectBidiConnectStream(
     return merge(
         subscriptionFlow,
         scopeCompletedFlow,
-        authUidChangedFlow.transform { throw it },
+        firebaseUserChangedFlow.transform { throw it },
       )
       .transformWhile {
         if (it !== null && coroutineScope.isActive) {
@@ -643,7 +643,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     val currentAuthUid = currentState.authToken.ref?.authUid
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
-      throw AuthUidChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
+      throw FirebaseUserChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
     }
 
     // Ignore outdated auth token changes.
@@ -660,7 +660,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
     // Do not send an empty token, as that is wasteful too (and should never happen in practice
     // because if newToken==null and oldToken!=newToken then it must hold that
-    // currentAuthUid!=newAuthUid, and should have resulted in AuthUidChangedException above).
+    // currentAuthUid!=newAuthUid, and should have resulted in FirebaseUserChangedException above).
     if (newToken == null) {
       return null
     }
