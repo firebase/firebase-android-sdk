@@ -56,19 +56,13 @@ To test manually, add the plugin to your Android project
 
 Make sure to bump the [version of the plugin](gradle.properties#L3).
 
-Use the
-["Make Releases" GitHub Actions workflow](https://github.com/firebase/firebase-android-buildtools/actions/workflows/make-releases.yml)
-([source](../.github/workflows/make-releases.yml)) to produce maven artifacts. Please refer to the
-[GitHub Actions documentation](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow)
-on how to trigger the workflow manually. The `m2repository.zip` can be downloaded from the
-"Artifacts" section on the workflow execution page.
+Use the ["Create release (build tools)" GitHub Actions workflow](https://github.com/firebase/firebase-android-sdk/actions/workflows/create-releases-buildtools.yml) to produce maven artifacts.
 
 ### Testing the artifact (optional)
 
-Download the `m2repository.zip` artifact from GCS. Extract the contents of the zip file to a local
+Download the `firebase-appdistribution-gradle.zip` artifact from GCS. Extract the contents of the zip file to a local
 directory. In the project-level Gradle file of a test app add the path to the local maven
-repository to the `repositories` block and
-`classpath 'com.google.firebase:firebase-appdistribution-gradle:x.y.z'`
+repository to the `repositories` block and `classpath 'com.google.firebase:firebase-appdistribution-gradle:x.y.z'`
 to the dependencies block.
 
 ```
