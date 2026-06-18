@@ -92,7 +92,7 @@ internal class DataConnectBidiConnectStream(
   private val logger: Logger,
 ) {
 
-  val isPermanentlyFailedDueToAuthUidChange: Boolean
+  val isPermanentlyFailedDueToFirebaseUserChange: Boolean
     get() = firebaseUserChangedFlow.replayCache.isNotEmpty()
 
   /**
