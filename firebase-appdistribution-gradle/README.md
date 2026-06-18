@@ -60,7 +60,7 @@ Use the ["Create release (build tools)" GitHub Actions workflow](https://github.
 
 ### Testing the artifact (optional)
 
-Download the `firebase-appdistribution-gradle.zip` artifact from GCS. Extract the contents of the zip file to a local
+Download the `firebase-appdistribution-gradle.zip` artifact. Extract the contents of the zip file to a local
 directory. In the project-level Gradle file of a test app add the path to the local maven
 repository to the `repositories` block and `classpath 'com.google.firebase:firebase-appdistribution-gradle:x.y.z'`
 to the dependencies block.
