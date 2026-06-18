@@ -410,7 +410,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   private sealed class GetTokenRetry(message: String) : Exception(message)
   private class ForceRefresh(message: String) : GetTokenRetry(message)
   private class NewProvider(message: String) : GetTokenRetry(message)
-  private class NewToken(message: String) : GetTokenRetry(message)
 
   @DeferredApi
   private fun onProviderAvailable(newProvider: T) {
@@ -459,27 +458,35 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
     val invocationId = idStringGenerator.next("otc")
     logger.debug { "$invocationId onTokenChanged(newToken=${newToken?.toScrubbedAccessToken()})" }
 
-    while (true) {
-      val currentState = state.value
-
-      val activeState =
-        when (currentState) {
-          State.New -> return
-          is State.Initialized -> break
-          is State.Idle -> break
-          is State.Active -> currentState
-          State.Closed -> return
-        }
-
-      val newState = State.Idle(activeState.provider, forceTokenRefresh = false)
-      if (state.compareAndSet(currentState, newState)) {
-        val message = "$invocationId a new token is available (j567n2577q)"
-        activeState.job.cancel(message, NewToken(message))
-        break
+    when (val currentState = state.value) {
+      State.New -> return
+      is State.Initialized,
+      is State.Idle -> {
+        coroutineScope.launch(CoroutineName("$invocationId.ds5wtt2m5g")) { getToken(invocationId) }
       }
-    }
+      is State.Active -> {
+        coroutineScope.launch(CoroutineName("$invocationId.p97bsry4p8")) {
+          val result = currentState.job.runCatching { await() }
+          currentCoroutineContext().ensureActive()
 
-    coroutineScope.launch(CoroutineName(invocationId)) { getToken(invocationId) }
+          val callGetToken =
+            result.fold(
+              onFailure = { true },
+              onSuccess = { result2 ->
+                result2.ref.fold(
+                  onFailure = { true },
+                  onSuccess = { it.token != newToken },
+                )
+              },
+            )
+
+          if (callGetToken) {
+            getToken(invocationId)
+          }
+        }
+      }
+      State.Closed -> return
+    }
   }
 
   /**

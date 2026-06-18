@@ -18,9 +18,7 @@
 package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
-import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
@@ -31,7 +29,6 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DelayedDeferred
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
-import com.google.firebase.dataconnect.testutil.SuspendingFlag
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
@@ -61,6 +58,7 @@ import io.kotest.matchers.collections.shouldBeSorted
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -795,37 +793,6 @@ class DataConnectAuthUnitTest {
   }
 
   @Test
-  fun `onTokenChanged() should cancel in-flight getToken() requests and retry`() = runTest {
-    val dataConnectAuth = newDataConnectAuth()
-    val idTokenListener = dataConnectAuth.initializeAndGetIdTokenListener()
-
-    val taskCompletionSource1 = TaskCompletionSource<GetTokenResult>()
-    val finalToken = GetAuthTokenResult("test-token", AuthUid("test-user"))
-    val getAccessTokenCalled = SuspendingFlag()
-    run {
-      val tokenTask = taskForToken(finalToken.token, finalToken.authUid)
-      coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
-        {
-          val isFirstCall = !getAccessTokenCalled.getAndSet()
-          if (isFirstCall) {
-            taskCompletionSource1.task
-          } else {
-            tokenTask
-          }
-        }
-    }
-
-    val getTokenJob = async { dataConnectAuth.getToken(requestId) }
-    getAccessTokenCalled.await()
-
-    idTokenListener.onIdTokenChanged(mockk(relaxed = true))
-    advanceUntilIdle()
-    taskCompletionSource1.setException(Exception("unhang hung test tv8v7pyf6v"))
-    getTokenJob.await().ref shouldBe finalToken
-    dataConnectAuth.token.value.ref shouldBe finalToken
-  }
-
-  @Test
   fun `onTokenChanged() should call getToken() if new token is different`() = runTest {
     val distinctAuthTokenPairArb =
       Arb.dataConnect.authToken().orNull(nullProbability = 0.2).distinctPair()
@@ -861,6 +828,28 @@ class DataConnectAuthUnitTest {
       advanceUntilIdle()
       dataConnectAuth.token.value.ref?.token shouldBe authToken
       verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(any()) }
+      clearMocks(mockInternalAuthProvider)
+    }
+  }
+
+  @Test
+  fun `onTokenChanged() called synchronously from getToken()`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.authTokenResult()) { (authToken, authUid) ->
+      val dataConnectAuth = newDataConnectAuth()
+      val idTokenListener = dataConnectAuth.initializeAndGetIdTokenListener()
+      val getAccessTokenCallCount = AtomicInteger(0)
+      coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
+        {
+          val callCount = getAccessTokenCallCount.incrementAndGet()
+          if (callCount < 5) {
+            idTokenListener.onIdTokenChanged(InternalTokenResult(authToken))
+          }
+          taskForToken(authToken, authUid)
+        }
+
+      dataConnectAuth.getToken(requestId)
+
+      getAccessTokenCallCount.get() shouldBeLessThan 2
       clearMocks(mockInternalAuthProvider)
     }
   }
