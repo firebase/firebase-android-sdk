@@ -19,7 +19,7 @@
   ([#8312](https://github.com/firebase/firebase-android-sdk/pull/8312))
 - [fixed] An infinite loop could occur when Auth and/or App Check tokens were
   refreshed.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8319](https://github.com/firebase/firebase-android-sdk/pull/8319))
 
 # 17.3.0
 
