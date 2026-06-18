@@ -594,7 +594,7 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow fails with AuthUidChangedException if auth uid changes mid-stream`() = runTest {
+  fun `flow fails with FirebaseUserChangedException if auth uid changes mid-stream`() = runTest {
     val server = runningInProcessDataConnectServer()
 
     checkAll(
@@ -629,13 +629,13 @@ class QuerySubscriptionImplUnitTest {
           checkNotNull(authProvider.idTokenListener)
             .onIdTokenChanged(InternalTokenResult(authToken2))
 
-          // The flow should throw AuthUidChangedException and terminate
+          // The flow should throw FirebaseUserChangedException and terminate
           val exception = clientCollector.awaitError()
-          exception.shouldBeInstanceOf<AuthUidChangedException>()
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase Auth UID changed"
+          exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
           exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
-          exception.message shouldContainWithNonAbuttingText authUid1.toString()
-          exception.message shouldContainWithNonAbuttingText authUid2.toString()
+          exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
+          exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
           serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
@@ -647,7 +647,7 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow fails with AuthUidChangedException if auth uid changes during reconnection`() =
+  fun `flow fails with FirebaseUserChangedException if auth uid changes during reconnection`() =
     runTest {
       val server = runningInProcessDataConnectServer()
 
@@ -684,16 +684,15 @@ class QuerySubscriptionImplUnitTest {
             // Close the connection from the server to force a reconnection attempt
             responseSender.onCompleted()
 
-            // The flow should throw AuthUidChangedException and terminate
+            // The flow should throw FirebaseUserChangedException and terminate
             val exception = clientCollector.awaitError()
 
-            // The flow should throw AuthUidChangedException and terminate
-            exception.shouldBeInstanceOf<AuthUidChangedException>()
-            exception.message shouldContainWithNonAbuttingTextIgnoringCase
-              "Firebase Auth UID changed"
+            // The flow should throw FirebaseUserChangedException and terminate
+            exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+            exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
             exception.message shouldContainWithNonAbuttingText "ytd7yf2geh"
-            exception.message shouldContainWithNonAbuttingText authUid1.toString()
-            exception.message shouldContainWithNonAbuttingText authUid2.toString()
+            exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
+            exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
             serverCollector.cancelAndIgnoreRemainingEvents()
             clientCollector.cancelAndIgnoreRemainingEvents()
@@ -705,12 +704,12 @@ class QuerySubscriptionImplUnitTest {
     }
 
   @Test
-  fun `flow fails with AuthUidChangedException if auth uid changes concurrently with reconnection`() =
+  fun `flow fails with FirebaseUserChangedException if auth uid changes concurrently with reconnection`() =
     runTest {
       val server = runningInProcessDataConnectServer()
 
-      // Make sure that AuthUidChangedException is thrown even if the sequence number of the pending
-      // reconnect token is stale; otherwise, auth uid changes could slip through.
+      // Make sure that FirebaseUserChangedException is thrown even if the sequence number of the
+      // pending reconnect token is stale; otherwise, auth uid changes could slip through.
       val postReconnectSequenceNumberArb = Arb.of(nextSequenceNumber(), Long.MAX_VALUE)
 
       checkAll(
@@ -761,19 +760,18 @@ class QuerySubscriptionImplUnitTest {
                 // Close the connection from the server to force a reconnection attempt
                 responseSender.onCompleted()
 
-                // The flow should throw AuthUidChangedException and terminate
+                // The flow should throw FirebaseUserChangedException and terminate
                 clientCollector.awaitError()
               } finally {
                 unsetReconnectPendingAuthTokenForTesting(postReconnectPendingAuthToken)
               }
 
-            // The flow should throw AuthUidChangedException and terminate
-            exception.shouldBeInstanceOf<AuthUidChangedException>()
-            exception.message shouldContainWithNonAbuttingTextIgnoringCase
-              "Firebase Auth UID changed"
+            // The flow should throw FirebaseUserChangedException and terminate
+            exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+            exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
             exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
-            exception.message shouldContainWithNonAbuttingText authUid1.toString()
-            exception.message shouldContainWithNonAbuttingText authUid2.toString()
+            exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
+            exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
             serverCollector.cancelAndIgnoreRemainingEvents()
             clientCollector.cancelAndIgnoreRemainingEvents()

@@ -398,7 +398,7 @@ internal class DataConnectGrpcRPCs(
         val authToken = initialAuthToken.getAndSet(null) ?: dataConnectAuth.getToken(streamId)
         val authUid = authToken.ref?.authUid
         if (authUid != connectionAuthUid) {
-          throw AuthUidChangedException("ytd7yf2geh", connectionAuthUid, authUid)
+          throw FirebaseUserChangedException("ytd7yf2geh", connectionAuthUid, authUid)
         }
         val appCheckToken = dataConnectAppCheck.getToken(streamId)
         val metadata = grpcMetadata.get(authToken.ref, appCheckToken.ref, callerSdkType)
@@ -814,11 +814,12 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
   return ::getEntityIdForPathFunction
 }
 
-internal class AuthUidChangedException(
+internal class FirebaseUserChangedException(
   errorCode: String,
   currentAuthUid: AuthUid?,
   newAuthUid: AuthUid?,
 ) :
   DataConnectException(
-    "Firebase Auth UID changed from $currentAuthUid to $newAuthUid [$errorCode]"
+    "Firebase user changed from uid=${currentAuthUid?.string} " +
+      "to uid=${newAuthUid?.string} [$errorCode]"
   )
