@@ -17,6 +17,9 @@
 - [fixed] Realtime query subscriptions could fail abruptly if the auth
   token changed while connected.
   ([#8312](https://github.com/firebase/firebase-android-sdk/pull/8312))
+- [fixed] An infinite loop could occur when Auth and/or App Check tokens were
+  refreshed.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.3.0
 
