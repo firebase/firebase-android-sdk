@@ -60,9 +60,11 @@ public final class CpuGaugeCollectorTest {
   @Test
   public void testStartCollectingAddsCpuMetricReadingsToTheConcurrentLinkedQueue()
       throws Exception {
+    int priorGaugeCount = GaugeCounter.count();
     testGaugeCollector.startCollecting(100, new Timer());
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
     assertThat(testGaugeCollector.cpuMetricReadings).hasSize(1);
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCount + 1);
   }
 
   @Test
@@ -246,11 +248,17 @@ public final class CpuGaugeCollectorTest {
 
   @Test
   public void testCollectOnce_addOnlyOneCpuMetricReadingToQueue() {
+    int priorGaugeCount = GaugeCounter.count();
     assertThat(testGaugeCollector.cpuMetricReadings).isEmpty();
     testGaugeCollector.collectOnce(new Timer());
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    // Simulate running an additional task.
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
     assertThat(testGaugeCollector.cpuMetricReadings).hasSize(1);
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCount + 1);
   }
 
   @Test

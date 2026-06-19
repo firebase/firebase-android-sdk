@@ -26,7 +26,9 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -70,6 +72,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final TransportManager transportManager;
   private final ConfigResolver configResolver;
   private final Clock clock;
+  private final SessionManager sessionManager;
   private final boolean screenPerformanceRecordingSupported;
 
   private Timer resumeTime; // The time app comes to foreground
@@ -80,22 +83,46 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean isRegisteredForLifecycleCallbacks = false;
   private boolean isColdStart = true;
 
-  public static AppStateMonitor getInstance() {
+  public static AppStateMonitor getInstance(SessionManager sessionManager) {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
-          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
+          instance =
+              new AppStateMonitor(TransportManager.getInstance(), new Clock(), sessionManager);
         }
       }
     }
     return instance;
   }
 
-  AppStateMonitor(TransportManager transportManager, Clock clock) {
+  /**
+   * Returns the singleton instance, creating it with a default {@link SessionManager} if not
+   * already initialized. In production, {@link #getInstance(SessionManager)} is always called
+   * first by {@link com.google.firebase.perf.FirebasePerfEarly}, so the pre-seeded instance is
+   * returned. This overload exists for call sites that run after early initialization (e.g.
+   * {@link com.google.firebase.perf.application.AppStateUpdateHandler}) and for test environments.
+   */
+  public static AppStateMonitor getInstance() {
+    if (instance == null) {
+      synchronized (AppStateMonitor.class) {
+        if (instance == null) {
+          instance =
+              new AppStateMonitor(
+                  TransportManager.getInstance(),
+                  new Clock(),
+                  new SessionManager(GaugeManager.getInstance(), PerfSession.createWithId(null)));
+        }
+      }
+    }
+    return instance;
+  }
+
+  AppStateMonitor(TransportManager transportManager, Clock clock, SessionManager sessionManager) {
     this(
         transportManager,
         clock,
         ConfigResolver.getInstance(),
+        sessionManager,
         isScreenPerformanceRecordingSupported());
   }
 
@@ -104,11 +131,22 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       TransportManager transportManager,
       Clock clock,
       ConfigResolver configResolver,
+      SessionManager sessionManager,
       boolean screenPerformanceRecordingSupported) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.configResolver = configResolver;
+    this.sessionManager = sessionManager;
     this.screenPerformanceRecordingSupported = screenPerformanceRecordingSupported;
+  }
+
+  public SessionManager getSessionManager() {
+    return sessionManager;
+  }
+
+  @VisibleForTesting
+  public static void resetInstance() {
+    instance = null;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
@@ -379,7 +417,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .setName(name)
             .setClientStartTimeUs(startTime.getMicros())
             .setDurationUs(startTime.getDurationMicros(endTime))
-            .addPerfSessions(SessionManager.getInstance().perfSession().build());
+            .addPerfSessions(sessionManager.perfSession().build());
     // Atomically get mTsnsCount and set it to zero.
     int tsnsCount = this.tsnsCount.getAndSet(0);
     synchronized (metricToCountMap) {

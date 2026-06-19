@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -280,6 +281,7 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
 
     TransportManager transportManager = mock(TransportManager.class);
     AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
+    when(appStateMonitor.getSessionManager()).thenReturn(sessionManager);
     ArgumentCaptor<TraceMetric> argMetric = ArgumentCaptor.forClass(TraceMetric.class);
 
     Trace trace = new Trace(traceName, transportManager, clock, appStateMonitor);

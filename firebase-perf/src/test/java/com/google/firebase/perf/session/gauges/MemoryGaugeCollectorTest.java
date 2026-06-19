@@ -59,9 +59,11 @@ public class MemoryGaugeCollectorTest {
 
   @Test
   public void testStartCollecting_addsMemoryMetricReadingsToQueue() {
+    int priorGaugeCount = GaugeCounter.count();
     testGaugeCollector.startCollecting(/* memoryMetricCollectionRateMs= */ 100, new Timer());
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
     assertThat(testGaugeCollector.memoryMetricReadings).hasSize(1);
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCount + 1);
   }
 
   @Test
@@ -148,11 +150,17 @@ public class MemoryGaugeCollectorTest {
 
   @Test
   public void testCollectOnce_addOnlyOneMemoryMetricReadingToQueue() {
+    int priorGaugeCount = GaugeCounter.count();
     assertThat(testGaugeCollector.memoryMetricReadings).isEmpty();
     testGaugeCollector.collectOnce(new Timer());
 
     fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
+    // Simulate running an additional task.
+    fakeScheduledExecutorService.simulateSleepExecutingAtMostOneTask();
+
     assertThat(testGaugeCollector.memoryMetricReadings).hasSize(1);
+    assertThat(GaugeCounter.count()).isEqualTo(priorGaugeCount + 1);
   }
 
   @Test

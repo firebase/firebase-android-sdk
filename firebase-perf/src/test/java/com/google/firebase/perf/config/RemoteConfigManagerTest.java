@@ -76,8 +76,8 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getInstance_verifiesSingleton() {
-    RemoteConfigManager instanceOne = RemoteConfigManager.getInstance();
-    RemoteConfigManager instanceTwo = RemoteConfigManager.getInstance();
+    RemoteConfigManager instanceOne = ConfigResolver.getInstance().getRemoteConfigManager();
+    RemoteConfigManager instanceTwo = ConfigResolver.getInstance().getRemoteConfigManager();
 
     assertThat(instanceOne).isSameInstanceAs(instanceTwo);
   }

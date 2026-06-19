@@ -72,6 +72,7 @@ android {
         buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF\")")
         buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(false)")
         buildConfigField("String", "FIREPERF_VERSION_NAME", "String.valueOf(\"" + property("version") + "\")")
+        buildConfigField("Boolean", "ENFORCE_LEGACY_SESSIONS", "Boolean.valueOf(false)")
 
         if (project.hasProperty("fireperfBuildForAutopush")) {
             // This allows the SDK to be built for "Autopush" env when the mentioned flag
@@ -79,6 +80,7 @@ android {
             // SDK or the Test App).
             buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF_AUTOPUSH\")")
             buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(true)")
+            buildConfigField("Boolean", "ENFORCE_LEGACY_SESSIONS", "Boolean.valueOf(true)")
         }
 
         minSdkVersion project.minSdkVersion
@@ -124,7 +126,7 @@ dependencies {
     api("com.google.firebase:firebase-installations:18.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
-    api("com.google.firebase:firebase-sessions:2.0.7") {
+    api("com.google.firebase:firebase-sessions:3.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'
