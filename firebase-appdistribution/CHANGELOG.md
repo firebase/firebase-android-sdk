@@ -1,5 +1,7 @@
 # Unreleased
 
+# 16.0.0-beta20
+
 - [fixed] Fixed a potential crash in `InstallActivity`.
 
 # 16.0.0-beta19
