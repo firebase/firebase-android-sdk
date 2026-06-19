@@ -1,5 +1,7 @@
 # Unreleased
 
+# 26.4.0
+
 - [feature] Added support for `minimum` and `maximum` FieldValue operations.
 
 # 26.3.0
