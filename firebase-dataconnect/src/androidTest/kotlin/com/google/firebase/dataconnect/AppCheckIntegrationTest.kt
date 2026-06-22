@@ -39,7 +39,6 @@ import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.property.Arb
-import kotlin.time.Duration
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeNotNull
@@ -150,19 +149,16 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun realtimeQuerySubscriptionShouldFailWhenAppCheckTokenIsThePlaceholder() =
-    runTest(timeout = Duration.INFINITE) {
-      // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
-      // appcheck token is sent at all.
-      val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
-      val connector = RealtimeConnector.getInstance(dataConnect)
-      val queryRef = connector.getStringByKey.queryRef("60685DEE-98E9-4E8E-93E4-D756772D21D3")
-      val querySubscription = queryRef.subscribe()
+  fun realtimeQuerySubscriptionShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
+    // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
+    // appcheck token is sent at all.
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("60685DEE-98E9-4E8E-93E4-D756772D21D3")
+    val querySubscription = queryRef.subscribe()
 
-      querySubscription.flow.test(timeout = Duration.INFINITE) {
-        awaitStatusException(Status.Code.UNAUTHENTICATED)
-      }
-    }
+    querySubscription.flow.test { awaitStatusException(Status.Code.UNAUTHENTICATED) }
+  }
 
   @Test
   fun realtimeQuerySubscriptionShouldRetryIfAppCheckTokenIsExpired() =
