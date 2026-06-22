@@ -29,7 +29,7 @@ dependencies {
   implementation(firebaseLibs.kotlinx.serialization.core)
   implementation(firebaseLibs.kotlinx.serialization.json)
   implementation("com.google.cloud:google-cloud-storage:2.69.0")
-  implementation("io.github.z4kn4fein:semver:3.0.0")
+  implementation("io.github.z4kn4fein:semver:3.1.0")
 }
 
 gradlePlugin {
