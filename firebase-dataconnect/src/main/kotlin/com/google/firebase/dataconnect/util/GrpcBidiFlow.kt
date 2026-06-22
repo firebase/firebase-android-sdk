@@ -137,11 +137,11 @@ internal object GrpcBidiFlow {
       fun sendingMessagesComplete()
       fun sendingMessagesFailed(exception: Throwable)
 
-      fun receivedMessage(message: ResponseT)
       fun receivingMessagesComplete()
       fun receivingMessagesFailed(exception: Throwable)
 
       fun onCallReady()
+      fun onCallHeaders(headers: GrpcMetadata)
       fun onCallMessage(message: ResponseT)
       fun onCallClose(status: Status, trailers: GrpcMetadata, calculatedCause: Throwable?)
     }
@@ -236,15 +236,27 @@ internal object GrpcBidiFlow {
       collectionListener?.connectionStarting(method, callOptions, requestHeaders)
       clientCall.start(
         object : ClientCall.Listener<ResponseT>() {
+
+          override fun onHeaders(headers: GrpcMetadata) {
+            collectionListener?.onCallHeaders(headers)
+          }
+
           override fun onMessage(message: ResponseT) {
             collectionListener?.onCallMessage(message)
-            responses.trySend(message).onFailure { exception ->
-              throw exception
-                ?: error(
-                  "internal error wtvhy3j987: responses.trySend(message) should not have failed " +
-                    "because onMessage() should never be called until `responses` is ready; " +
-                    "connectionId=$connectionId, message=$message"
-                )
+
+            val sendResult = responses.trySend(message)
+
+            // Ignore failures from trySend() if `responses` has been closed. Being closed means
+            // onClose() has been called, and the connection is being shut down.
+            if (!sendResult.isClosed) {
+              sendResult.onFailure { exception ->
+                throw exception
+                  ?: error(
+                    "internal error wtvhy3j987: responses.trySend(message) should not have failed " +
+                      "because onMessage() should never be called until `responses` is ready; " +
+                      "connectionId=$connectionId, message=$message"
+                  )
+              }
             }
           }
 
@@ -303,7 +315,6 @@ internal object GrpcBidiFlow {
         val receiveResult = runCatching {
           clientCall.request(1)
           for (response in responses) {
-            collectionListener?.receivedMessage(response)
             emit(Event.Message(connectionId, connectionCookie, response))
             clientCall.request(1)
           }
@@ -391,10 +402,6 @@ internal class LoggingGrpcBidiFlowListener<RequestT, ResponseT>(
       logger.debug(exception) { formatter.sendingMessagesFailed(connectionId, exception) }
     }
 
-    override fun receivedMessage(message: ResponseT) {
-      logger.debug { formatter.receivedMessage(connectionId, message) }
-    }
-
     override fun receivingMessagesComplete() {
       logger.debug { formatter.receivingMessagesComplete(connectionId) }
     }
@@ -403,6 +410,10 @@ internal class LoggingGrpcBidiFlowListener<RequestT, ResponseT>(
       logger.debug(exception) {
         "[cid=$connectionId] receivingMessagesFailed(exception=$exception)"
       }
+    }
+
+    override fun onCallHeaders(headers: GrpcMetadata) {
+      logger.debug { formatter.onCallHeaders(connectionId, headers) }
     }
 
     override fun onCallMessage(message: ResponseT) {
@@ -473,16 +484,16 @@ internal class PrintlnGrpcBidiFlowListener<RequestT, ResponseT>(
       println(formatter.sendingMessagesFailed(connectionId, exception))
     }
 
-    override fun receivedMessage(message: ResponseT) {
-      println(formatter.receivedMessage(connectionId, message))
-    }
-
     override fun receivingMessagesComplete() {
       println(formatter.receivingMessagesComplete(connectionId))
     }
 
     override fun receivingMessagesFailed(exception: Throwable) {
       println("[cid=$connectionId] receivingMessagesFailed(exception=$exception)")
+    }
+
+    override fun onCallHeaders(headers: GrpcMetadata) {
+      println(formatter.onCallHeaders(connectionId, headers))
     }
 
     override fun onCallMessage(message: ResponseT) {
@@ -510,6 +521,7 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
 
   open class Formatter<RequestT, ResponseT> {
     open fun connectionStartingHeaders(headers: GrpcMetadata?): Any? = headers
+    open fun onHeaders(headers: GrpcMetadata): Any? = headers
     open fun onCloseTrailers(trailers: GrpcMetadata): Any? = trailers
     open fun request(message: RequestT): Any? = message
     open fun response(message: ResponseT): Any? = message
@@ -542,16 +554,16 @@ internal class GrpcBidiFlowListenerMessageFormatter<RequestT, ResponseT>(
   fun sendingMessagesFailed(connectionId: String, exception: Throwable): String =
     "[cid=$connectionId] sendingMessagesFailed(exception=$exception)"
 
-  fun receivedMessage(connectionId: String, message: ResponseT): String {
-    val formattedMessage = formatter?.response(message) ?: message
-    return "[cid=$connectionId] receivedMessage(message=$formattedMessage)"
-  }
-
   fun receivingMessagesComplete(connectionId: String): String =
     "[cid=$connectionId] receivingMessagesComplete()"
 
   fun receivingMessagesFailed(connectionId: String, exception: Throwable): String =
     "[cid=$connectionId] receivingMessagesFailed(exception=$exception)"
+
+  fun onCallHeaders(connectionId: String, headers: GrpcMetadata): String {
+    val formattedHeaders = formatter?.onHeaders(headers) ?: headers
+    return "[cid=$connectionId] onCallHeaders(headers=$formattedHeaders)"
+  }
 
   fun onCallMessage(connectionId: String, message: ResponseT): String {
     val formattedMessage = formatter?.response(message) ?: message
