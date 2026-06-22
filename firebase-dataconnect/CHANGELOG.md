@@ -11,7 +11,7 @@
   ([#8319](https://github.com/firebase/firebase-android-sdk/pull/8319))
 - [fixed] Expired Auth and/or App Check tokens were not automatically refreshed
   when rejected by the server upon connection.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8346](https://github.com/firebase/firebase-android-sdk/pull/8346))
 
 # 17.3.1
 
