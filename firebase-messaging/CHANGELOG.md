@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Fixed re-registration invocation with FID change
+- [changed] Fixed re-registration invocation with FID change (#8338)
 
 # 25.1.0
 
