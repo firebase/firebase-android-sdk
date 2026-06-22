@@ -39,7 +39,11 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
   val getStringByKey = GetStringByKeyQuery(this)
 
+  val getStringByKeyAuth = GetStringByKeyQueryAuth(this)
+
   val insertString = InsertStringMutation(this)
+
+  val insertStringAuth = InsertStringMutationAuth(this)
 
   val updateString = UpdateStringMutation(this)
 
@@ -60,6 +64,10 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     suspend fun execute(key: Key): Data.Item? = execute(variables(key))
 
     suspend fun execute(variables: Variables): Data.Item? = queryRef(variables).execute().data.item
+
+    fun queryRef(id: String) = queryRef(UUID.fromString(id))
+
+    fun queryRef(id: UUID) = queryRef(Key(id))
 
     fun queryRef(key: Key) = queryRef(variables(key))
 
@@ -87,6 +95,32 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     }
   }
 
+  class GetStringByKeyQueryAuth(val connector: RealtimeConnector) {
+
+    fun variables(key: Key): GetStringByKeyQuery.Variables = GetStringByKeyQuery.Variables(key)
+
+    suspend fun execute(variables: GetStringByKeyQuery.Variables): GetStringByKeyQuery.Data.Item? =
+      queryRef(variables).execute().data.item
+
+    fun queryRef(id: String) = queryRef(UUID.fromString(id))
+
+    fun queryRef(id: UUID) = queryRef(Key(id))
+
+    fun queryRef(key: Key) = queryRef(variables(key))
+
+    fun queryRef(variables: GetStringByKeyQuery.Variables) =
+      connector.dataConnect.query(
+        OPERATION_NAME,
+        variables,
+        serializer<GetStringByKeyQuery.Data>(),
+        serializer()
+      )
+
+    companion object {
+      const val OPERATION_NAME = "RealtimeString_GetByKey_Auth"
+    }
+  }
+
   class InsertStringMutation(val connector: RealtimeConnector) {
     @Serializable data class Variables(val name: String)
     @Serializable data class Data(val key: Key)
@@ -100,6 +134,24 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
     companion object {
       const val OPERATION_NAME = "RealtimeString_Insert"
+    }
+  }
+
+  class InsertStringMutationAuth(val connector: RealtimeConnector) {
+
+    suspend fun execute(variables: InsertStringMutation.Variables): Key =
+      mutationRef(variables).execute().data.key
+
+    fun mutationRef(variables: InsertStringMutation.Variables) =
+      connector.dataConnect.mutation(
+        OPERATION_NAME,
+        variables,
+        serializer<InsertStringMutation.Data>(),
+        serializer()
+      )
+
+    companion object {
+      const val OPERATION_NAME = "RealtimeString_Insert_Auth"
     }
   }
 
