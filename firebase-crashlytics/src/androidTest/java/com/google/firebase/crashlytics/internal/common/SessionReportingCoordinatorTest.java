@@ -617,54 +617,40 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
   @Test
   public void testIsOom_skipsAllIrrelevantAppExitInfos() {
-    ApplicationExitInfo nonOom1 = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_ANR, 0, 0);
-    ApplicationExitInfo nonOom2 = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_CRASH, 0, 0);
-    ApplicationExitInfo nonOom3 = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_SIGNALED, 0, 0);
+    ApplicationExitInfo nonOom1 = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
+    ApplicationExitInfo nonOom2 = makeApplicationExitInfo(ApplicationExitInfo.REASON_CRASH, 0, 0);
+    ApplicationExitInfo nonOom3 =
+        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, 0);
 
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(
-        nonOom1,
-        nonOom2,
-        nonOom3
-    ));
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3));
 
     assertFalse(isOom);
   }
 
   @Test
   public void testIsOom_returnsTrueOnReasonSignaled() {
-    ApplicationExitInfo oom = makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0,
-        OsConstants.SIGKILL);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_ANR, 0, 0);
+    ApplicationExitInfo oom =
+        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, OsConstants.SIGKILL);
+    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
 
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(
-        nonOom,
-        oom
-    ));
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
 
     assertTrue(isOom);
   }
 
   @Test
   public void testIsOom_returnTrueOnReasonLowMemory() {
-    ApplicationExitInfo oom = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_LOW_MEMORY, /*SUBREASON_OOM_KILL=*/30, 0);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(
-        ApplicationExitInfo.REASON_ANR, 0, 0);
+    ApplicationExitInfo oom =
+        makeApplicationExitInfo(
+            ApplicationExitInfo.REASON_LOW_MEMORY, /* SUBREASON_OOM_KILL= */ 30, 0);
+    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
 
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(
-        nonOom,
-        oom
-    ));
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
 
     assertTrue(isOom);
   }
 
-  private ApplicationExitInfo makeApplicationExitInfo(
-      int reason, int subreason, int status) {
+  private ApplicationExitInfo makeApplicationExitInfo(int reason, int subreason, int status) {
     Parcel dest = Parcel.obtain();
 
     dest.writeInt(1);
@@ -682,7 +668,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     dest.writeLong(1L);
     dest.writeLong(1L);
     dest.writeString("");
-    dest.writeByteArray(new byte[]{});
+    dest.writeByteArray(new byte[] {});
     dest.setDataPosition(0);
 
     return ApplicationExitInfo.CREATOR.createFromParcel(dest);

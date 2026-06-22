@@ -188,11 +188,13 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     CrashlyticsReport report = makeTestReport(sessionId);
     CrashlyticsReport.Session.Event event = makeTestEvent("crash", "reason");
 
-    ProfilingManagerInfo pmi = ProfilingManagerInfo.builder()
-        .setProfilingTrigger(ProfilingTrigger.builder()
-            .setTrigger(android.os.ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
-            .build())
-        .build();
+    ProfilingManagerInfo pmi =
+        ProfilingManagerInfo.builder()
+            .setProfilingTrigger(
+                ProfilingTrigger.builder()
+                    .setTrigger(android.os.ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
+                    .build())
+            .build();
 
     reportPersistence.persistReport(report);
     reportPersistence.persistEvent(event, sessionId);
@@ -203,7 +205,17 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
     assertEquals(1, reports.size());
     assertEquals(1, reports.get(0).getReport().getSession().getEvents().size());
-    assertEquals(pmi, reports.get(0).getReport().getSession().getEvents().get(0).getApp().getExecution().getProfilingManagerInfo());
+    assertEquals(
+        pmi,
+        reports
+            .get(0)
+            .getReport()
+            .getSession()
+            .getEvents()
+            .get(0)
+            .getApp()
+            .getExecution()
+            .getProfilingManagerInfo());
   }
 
   @Test

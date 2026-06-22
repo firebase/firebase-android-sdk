@@ -150,11 +150,15 @@ public class SessionReportingCoordinator {
       UserMetadata userMetadataForSession) {
 
     ApplicationExitInfo relevantApplicationExitInfo =
-        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList, aei -> {
-          // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
-          // all ApplicationExitInfos that fall within the session.
-          return aei.getReason() != ApplicationExitInfo.REASON_ANR;
-        });
+        findRelevantApplicationExitInfo(
+            sessionId,
+            applicationExitInfoList,
+            aei -> {
+              // If the ApplicationExitInfo is not an ANR, but it was within the session, loop
+              // through
+              // all ApplicationExitInfos that fall within the session.
+              return aei.getReason() != ApplicationExitInfo.REASON_ANR;
+            });
 
     if (relevantApplicationExitInfo == null) {
       Logger.getLogger().v("No relevant ApplicationExitInfo occurred during session: " + sessionId);
@@ -176,22 +180,24 @@ public class SessionReportingCoordinator {
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   public void persistProfilingManagerInfo(
-      String sessionId,
-      List<Integer> triggers,
-      List<ApplicationExitInfo> applicationExitInfoList
-  ) {
-    Optional<Integer> trigger = triggers.stream()
-        .findFirst()
-        .or(() -> isOom(sessionId, applicationExitInfoList)
-            ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM) : Optional.empty());
+      String sessionId, List<Integer> triggers, List<ApplicationExitInfo> applicationExitInfoList) {
+    Optional<Integer> trigger =
+        triggers.stream()
+            .findFirst()
+            .or(
+                () ->
+                    isOom(sessionId, applicationExitInfoList)
+                        ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM)
+                        : Optional.empty());
 
-    trigger.ifPresent(t -> reportPersistence.persistProfilingManagerInfo(
-        ProfilingManagerInfo.builder()
-            .setProfilingTrigger(ProfilingManagerInfo.ProfilingTrigger.builder()
-                .setTrigger(t)
-                .build())
-            .build(), sessionId
-    ));
+    trigger.ifPresent(
+        t ->
+            reportPersistence.persistProfilingManagerInfo(
+                ProfilingManagerInfo.builder()
+                    .setProfilingTrigger(
+                        ProfilingManagerInfo.ProfilingTrigger.builder().setTrigger(t).build())
+                    .build(),
+                sessionId));
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -471,7 +477,9 @@ public class SessionReportingCoordinator {
   /** Finds the first ANR ApplicationExitInfo within the session. */
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
-      String sessionId, List<ApplicationExitInfo> applicationExitInfoList, Predicate<ApplicationExitInfo> skip) {
+      String sessionId,
+      List<ApplicationExitInfo> applicationExitInfoList,
+      Predicate<ApplicationExitInfo> skip) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
 
     // The order of ApplicationExitInfos is latest first.
@@ -496,17 +504,23 @@ public class SessionReportingCoordinator {
   @VisibleForTesting
   boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
     ApplicationExitInfo relevant =
-        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList, aei -> {
-          // Most devices should support REASON_LOW_MEMORY
-          boolean viaLowMemory = aei.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
-              && aei.getDescription() != null && aei.getDescription().contains("OOM");
-          // In cases where the above isn't supported, fall back to a more primitive check
-          boolean viaSignaled = aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
-              && aei.getStatus() == OsConstants.SIGKILL;
+        findRelevantApplicationExitInfo(
+            sessionId,
+            applicationExitInfoList,
+            aei -> {
+              // Most devices should support REASON_LOW_MEMORY
+              boolean viaLowMemory =
+                  aei.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
+                      && aei.getDescription() != null
+                      && aei.getDescription().contains("OOM");
+              // In cases where the above isn't supported, fall back to a more primitive check
+              boolean viaSignaled =
+                  aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
+                      && aei.getStatus() == OsConstants.SIGKILL;
 
-          // Skip all that aren't related to OOMs
-          return !viaLowMemory && !viaSignaled;
-        });
+              // Skip all that aren't related to OOMs
+              return !viaLowMemory && !viaSignaled;
+            });
 
     return relevant != null;
   }

@@ -962,59 +962,71 @@ class CrashlyticsController {
           .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
     }
   }
+
   // endregion
 
   // region ProfilingManager
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   private void writeProfilingManagerInfo(String sessionId) {
-    ActivityManager manager =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
     // For anomaly triggers, there should be a file written to disk by the registered consumer.
     // However, for OOMs, it is less guaranteed that the process had enough resources to write the
     // corresponding file. This is ok because we can check ApplicationExitInfo to see if an OOM
     // occurred.
-    List<Integer> triggers = fileStore.getSessionFiles(sessionId, (dir, name) -> List.of(
-        TRIGGER_TYPE_ANOMALY_FILENAME,
-        TRIGGER_TYPE_OOM_FILENAME
-    ).contains(name)).stream()
-        .map(triggerFile -> {
-          switch (triggerFile.getName()) {
-            case TRIGGER_TYPE_ANOMALY_FILENAME: return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
-            case TRIGGER_TYPE_OOM_FILENAME: return ProfilingTrigger.TRIGGER_TYPE_OOM;
-          }
+    List<Integer> triggers =
+        fileStore
+            .getSessionFiles(
+                sessionId,
+                (dir, name) ->
+                    List.of(TRIGGER_TYPE_ANOMALY_FILENAME, TRIGGER_TYPE_OOM_FILENAME)
+                        .contains(name))
+            .stream()
+            .map(
+                triggerFile -> {
+                  switch (triggerFile.getName()) {
+                    case TRIGGER_TYPE_ANOMALY_FILENAME:
+                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+                    case TRIGGER_TYPE_OOM_FILENAME:
+                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+                  }
 
-          return ProfilingTrigger.TRIGGER_TYPE_NONE;
-        })
-        .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
-        .collect(Collectors.toList());
+                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
+                })
+            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+            .collect(Collectors.toList());
 
     List<ApplicationExitInfo> appExits = manager.getHistoricalProcessExitReasons(null, 0, 0);
 
     reportingCoordinator.persistProfilingManagerInfo(sessionId, triggers, appExits);
   }
-  
+
   @SuppressLint("WrongConstant") // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private void registerProfilingManagerListener(String sessionId, @Background Executor backgroundExecutor) {
+  private void registerProfilingManagerListener(
+      String sessionId, @Background Executor backgroundExecutor) {
     ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
 
-    profilingManager.addProfilingTriggers(List.of(
-        new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_OOM).build(),
-        new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_ANOMALY).build()
-    ));
-    profilingManager.registerForAllProfilingResults(backgroundExecutor, (result) -> {
-      writeTriggerTypeFile(sessionId, result.getTriggerType());
-    });
+    profilingManager.addProfilingTriggers(
+        List.of(
+            new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_OOM).build(),
+            new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_ANOMALY).build()));
+    profilingManager.registerForAllProfilingResults(
+        backgroundExecutor,
+        (result) -> {
+          writeTriggerTypeFile(sessionId, result.getTriggerType());
+        });
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
   void writeTriggerTypeFile(String sessionId, int triggerType) {
     String triggerFilename =
-        triggerType == ProfilingTrigger.TRIGGER_TYPE_ANOMALY ? TRIGGER_TYPE_ANOMALY_FILENAME :
-        triggerType == ProfilingTrigger.TRIGGER_TYPE_OOM ? TRIGGER_TYPE_OOM_FILENAME :
-        "trigger-type-unknown";
+        triggerType == ProfilingTrigger.TRIGGER_TYPE_ANOMALY
+            ? TRIGGER_TYPE_ANOMALY_FILENAME
+            : triggerType == ProfilingTrigger.TRIGGER_TYPE_OOM
+                ? TRIGGER_TYPE_OOM_FILENAME
+                : "trigger-type-unknown";
 
     try {
       if (!fileStore.getSessionFile(sessionId, triggerFilename).createNewFile()) {

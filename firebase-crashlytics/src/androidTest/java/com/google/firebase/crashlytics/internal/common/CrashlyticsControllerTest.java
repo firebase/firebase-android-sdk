@@ -575,26 +575,29 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   @Test
   public void testWritingProfilingManagerTriggerAnomaly() {
     LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder()
-        .setLogFileManager(logFileManager)
-        .build();
+    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
 
     controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_ANOMALY);
 
-    List<Integer> triggers = testFileStore.getSessionFiles("sessionId", (dir, name) -> List.of(
-            "trigger-type-anomaly",
-            "trigger-type-oom"
-        ).contains(name)).stream()
-        .map(triggerFile -> {
-          switch (triggerFile.getName()) {
-            case "trigger-type-anomaly": return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
-            case "trigger-type-oom": return ProfilingTrigger.TRIGGER_TYPE_OOM;
-          }
+    List<Integer> triggers =
+        testFileStore
+            .getSessionFiles(
+                "sessionId",
+                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
+            .stream()
+            .map(
+                triggerFile -> {
+                  switch (triggerFile.getName()) {
+                    case "trigger-type-anomaly":
+                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+                    case "trigger-type-oom":
+                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+                  }
 
-          return ProfilingTrigger.TRIGGER_TYPE_NONE;
-        })
-        .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
-        .collect(Collectors.toList());
+                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
+                })
+            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+            .collect(Collectors.toList());
 
     assertFalse(triggers.isEmpty());
     assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_ANOMALY));
@@ -604,26 +607,29 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   @Test
   public void testWritingProfilingManagerTriggerOom() {
     LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder()
-        .setLogFileManager(logFileManager)
-        .build();
+    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
 
     controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_OOM);
 
-    List<Integer> triggers = testFileStore.getSessionFiles("sessionId", (dir, name) -> List.of(
-            "trigger-type-anomaly",
-            "trigger-type-oom"
-        ).contains(name)).stream()
-        .map(triggerFile -> {
-          switch (triggerFile.getName()) {
-            case "trigger-type-anomaly": return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
-            case "trigger-type-oom": return ProfilingTrigger.TRIGGER_TYPE_OOM;
-          }
+    List<Integer> triggers =
+        testFileStore
+            .getSessionFiles(
+                "sessionId",
+                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
+            .stream()
+            .map(
+                triggerFile -> {
+                  switch (triggerFile.getName()) {
+                    case "trigger-type-anomaly":
+                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+                    case "trigger-type-oom":
+                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+                  }
 
-          return ProfilingTrigger.TRIGGER_TYPE_NONE;
-        })
-        .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
-        .collect(Collectors.toList());
+                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
+                })
+            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+            .collect(Collectors.toList());
 
     assertFalse(triggers.isEmpty());
     assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_OOM));

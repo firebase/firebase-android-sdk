@@ -91,7 +91,7 @@ public class CrashlyticsReportJsonTransform {
 
   @NonNull
   public CrashlyticsReport.ProfilingManagerInfo profilingManagerInfoFromJson(@NonNull String json)
-    throws IOException {
+      throws IOException {
     try (JsonReader reader = new JsonReader(new StringReader(json))) {
       return parseProfilingManagerInfo(reader);
     } catch (IllegalStateException e) {

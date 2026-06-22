@@ -156,8 +156,7 @@ public class CrashlyticsReportPersistence {
    */
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   public void persistProfilingManagerInfo(
-      @NonNull ProfilingManagerInfo profilingManagerInfo,
-      @NonNull String sessionId) {
+      @NonNull ProfilingManagerInfo profilingManagerInfo, @NonNull String sessionId) {
     try {
       String json = TRANSFORM.profilingManagerInfoToJson(profilingManagerInfo);
       writeTextFile(fileStore.getSessionFile(sessionId, PROFILING_MANAGER_INFO_FILE_NAME), json);
@@ -401,23 +400,31 @@ public class CrashlyticsReportPersistence {
   private Event decorateWithProfilingManagerInfoIfFatal(String sessionId, Event event) {
     if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN && isFatalEvent(event)) {
       Optional<ProfilingManagerInfo> profilingManagerInfo =
-          Optional
-              .of(fileStore.getSessionFile(sessionId, PROFILING_MANAGER_INFO_FILE_NAME))
+          Optional.of(fileStore.getSessionFile(sessionId, PROFILING_MANAGER_INFO_FILE_NAME))
               .filter(File::exists)
-              .flatMap(f -> {
-                try {
-                  return Optional.of(TRANSFORM.profilingManagerInfoFromJson(readTextFile(f)));
-                } catch (IOException e) {
-                  Logger.getLogger().w("Unable to read the Profiling Manager file ", e);
-                  return Optional.empty();
-                }
-              });
+              .flatMap(
+                  f -> {
+                    try {
+                      return Optional.of(TRANSFORM.profilingManagerInfoFromJson(readTextFile(f)));
+                    } catch (IOException e) {
+                      Logger.getLogger().w("Unable to read the Profiling Manager file ", e);
+                      return Optional.empty();
+                    }
+                  });
 
-      return profilingManagerInfo.map(info -> event.toBuilder().setApp(
-          event.getApp().toBuilder().setExecution(
-              event.getApp().getExecution().toBuilder().setProfilingManagerInfo(info).build()
-          ).build()
-      ).build()).orElse(event);
+      return profilingManagerInfo
+          .map(
+              info ->
+                  event.toBuilder()
+                      .setApp(
+                          event.getApp().toBuilder()
+                              .setExecution(
+                                  event.getApp().getExecution().toBuilder()
+                                      .setProfilingManagerInfo(info)
+                                      .build())
+                              .build())
+                      .build())
+          .orElse(event);
     }
 
     return event;
