@@ -477,13 +477,13 @@ internal class DataConnectGrpcRPCs(
 
       override fun sendingMessagesFailed(exception: Throwable) {}
 
-      override fun receivedMessage(message: StreamResponse) {}
-
       override fun receivingMessagesComplete() {}
 
       override fun receivingMessagesFailed(exception: Throwable) {}
 
       override fun onCallReady() {}
+
+      override fun onCallHeaders(headers: Metadata) {}
 
       override fun onCallMessage(message: StreamResponse) {
         logger.logGrpcReceived(
@@ -520,6 +520,9 @@ internal class DataConnectGrpcRPCs(
 
     override fun onCloseTrailers(trailers: Metadata): String =
       trailers.toStructProto(authUid).toCompactString()
+
+    override fun onHeaders(headers: Metadata): String =
+      headers.toStructProto(authUid).toCompactString()
 
     override fun request(message: StreamRequest): String = message.toCompactString(authUid)
 
