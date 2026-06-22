@@ -63,7 +63,6 @@ import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.CallOptions
-import io.grpc.Channel as GrpcChannel
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -521,6 +520,9 @@ internal class DataConnectGrpcRPCs(
 
     override fun onCloseTrailers(trailers: Metadata): String =
       trailers.toStructProto(authUid).toCompactString()
+
+    override fun onHeaders(headers: Metadata): String =
+      headers.toStructProto(authUid).toCompactString()
 
     override fun request(message: StreamRequest): String = message.toCompactString(authUid)
 
