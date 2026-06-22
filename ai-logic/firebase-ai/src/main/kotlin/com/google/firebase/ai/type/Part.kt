@@ -489,7 +489,7 @@ internal fun InternalPart.toPublic(): Part {
         thoughtSignature
       )
     is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri, thought ?: false, thoughtSignature)
+      FileDataPart(fileData.fileUri, fileData.mimeType, thought ?: false, thoughtSignature)
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(
         executableCode.language,
@@ -504,7 +504,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
-    is UnknownPart.Internal -> UnknownPart()
+    is UnknownPart.Internal -> UnknownPart(thought ?: false)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."

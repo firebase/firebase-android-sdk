@@ -694,4 +694,26 @@ internal class SerializationTests {
     org.junit.Assert.assertEquals(true, functionCallPrimary.isThought)
     org.junit.Assert.assertEquals("signature-xyz", functionCallPrimary.thoughtSignature)
   }
+
+  @Test
+  fun `FileDataPart constructors set isThought and thoughtSignature correctly`() {
+    val fileDataPartSecondary =
+      com.google.firebase.ai.type.FileDataPart("gs://bucket/file.jpg", "image/jpeg")
+    org.junit.Assert.assertEquals("gs://bucket/file.jpg", fileDataPartSecondary.uri)
+    org.junit.Assert.assertEquals("image/jpeg", fileDataPartSecondary.mimeType)
+    org.junit.Assert.assertEquals(false, fileDataPartSecondary.isThought)
+    org.junit.Assert.assertEquals(null, fileDataPartSecondary.thoughtSignature)
+
+    val fileDataPartPrimary =
+      com.google.firebase.ai.type.FileDataPart(
+        "gs://bucket/file.jpg",
+        "image/jpeg",
+        true,
+        "signature-xyz"
+      )
+    org.junit.Assert.assertEquals("gs://bucket/file.jpg", fileDataPartPrimary.uri)
+    org.junit.Assert.assertEquals("image/jpeg", fileDataPartPrimary.mimeType)
+    org.junit.Assert.assertEquals(true, fileDataPartPrimary.isThought)
+    org.junit.Assert.assertEquals("signature-xyz", fileDataPartPrimary.thoughtSignature)
+  }
 }
