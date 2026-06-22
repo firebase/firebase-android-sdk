@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -290,7 +291,7 @@ class FirebaseDataConnectImplUnitTest {
         deferredAppCheckProvider = deferredAppCheckProvider,
         creator = mockk(relaxed = true),
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
-        secureRandom = Random,
+        idStringGenerator = IdStringGenerator(Random.Default),
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }

@@ -23,14 +23,47 @@ show_help() {
   say "This can be useful for running instrumentation tests"
   say "without the overhead of rendering the Android UI."
   say
-  say "Syntax: $0 [avd]"
+  say "Syntax: $0 [avd] [-- emulator_flags...]"
   say
   say "The AVD to use may be specified as the first argument,"
   say "and _must_ be specified if there is more than one AVD"
   say "configured in the Android emulator."
   say
+  say "Any arguments after '--' are passed directly to the emulator command."
+  say
   say "The ANDROID_HOME environment variable must be set and is used"
   say "to find the Android emulator binary."
+}
+
+host_cpu_arch() {
+  case "$(uname -m)" in
+    arm64|aarch64) say "arm64-v8a" ;;
+    x86_64|amd64)  say "x86_64" ;;
+    *)             say "unknown" ;;
+  esac
+}
+
+say_sample_create_avd_command() {
+  local -r sdk_package="system-images;android-36;google_apis;$(host_cpu_arch)"
+  local -r avdmanager_cmd="${ANDROID_HOME}/cmdline-tools/latest/bin/avdmanager"
+  local -r avdmanager_args=(
+    "${avdmanager_cmd}"
+    --verbose
+    create
+    avd
+    --device
+    small_phone
+    --name
+    SmallPhoneAPI36
+    --package
+    "${sdk_package}"
+  )
+  say_args "${avdmanager_args[@]}"
+
+  local -r sdkmanager_cmd="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+  local -r sdkmanager_args=("${sdkmanager_cmd}" "${sdk_package}")
+  say "If needed, install the ${sdk_package} package by running:"
+  say_args "${sdkmanager_args[@]}"
 }
 
 # Parse the command-line arguments.
@@ -39,10 +72,22 @@ if (( ${#opt_help} )); then
   show_help
   exit 0
 fi
-if (( # == 1 )); then
-  typeset -r emulator_avd="$1"
-elif (( # > 1 )); then
-  say_error "unexpected command-line argument: $2" >&2
+
+typeset -i double_dash_index=${@[(i)--]}
+typeset -a script_args
+typeset -a emulator_extra_args
+if (( double_dash_index <= $# )); then
+  script_args=( "${@[1,double_dash_index-1]}" )
+  emulator_extra_args=( "${@[double_dash_index+1,$#]}" )
+else
+  script_args=( "$@" )
+  emulator_extra_args=( )
+fi
+
+if (( ${#script_args} == 1 )); then
+  typeset -r emulator_avd="${script_args[1]}"
+elif (( ${#script_args} > 1 )); then
+  say_error "unexpected command-line argument: ${script_args[2]}" >&2
   sayp "Run with %F{cyan}-h%f for help." >&2
   exit 2
 fi
@@ -70,6 +115,8 @@ if (( ! ${+emulator_avd} )) ; then
   typeset -r avds
   if (( ${#avds[@]} == 0 )) ; then
     say_error "no AVDs are configured in the Android emulator." >&2
+    say "To create an AVD, run this command:" >&2
+    say_sample_create_avd_command >&2
     exit 1
   elif (( ${#avds[@]} > 1 )) ; then
     say_error "${#avds[@]} AVDs are configured in the Android emulator." >&2
@@ -89,15 +136,16 @@ typeset -r args=(
   -no-audio
   -no-boot-anim
   -accel on
-  -gpu off
   -no-snapshot-load
   -no-snapshot-save
   -screen touch
   -netfast
   -no-sim
-  -timezone UTC
+  -timezone "Etc/UTC"
   -skip-adb-auth
   -no-metrics
+  -grpc-use-token
+  "${emulator_extra_args[@]}"
 )
 
 say_args "${args[@]}"

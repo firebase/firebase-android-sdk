@@ -1130,7 +1130,7 @@ object Values {
 
   private fun binaryEquals(left: Value, right: Value): Boolean {
     return getBinarySubtype(left) == getBinarySubtype(right) &&
-           getBinaryBytes(left) == getBinaryBytes(right)
+      getBinaryBytes(left) == getBinaryBytes(right)
   }
 
   private fun getBinarySubtype(value: Value): Int {

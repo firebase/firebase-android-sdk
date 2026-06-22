@@ -110,11 +110,22 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
+    return getToken(/* isLimitedUseToken= */ false);
+  }
+
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getLimitedUseToken() {
+    return getToken(/* isLimitedUseToken= */ true);
+  }
+
+  private Task<AppCheckToken> getToken(boolean isLimitedUseToken) {
     return debugSecretTask
         .onSuccessTask(
             liteExecutor,
             debugSecret -> {
-              ExchangeDebugTokenRequest request = new ExchangeDebugTokenRequest(debugSecret);
+              ExchangeDebugTokenRequest request =
+                  new ExchangeDebugTokenRequest(debugSecret, isLimitedUseToken);
               return Tasks.call(
                   blockingExecutor,
                   () ->

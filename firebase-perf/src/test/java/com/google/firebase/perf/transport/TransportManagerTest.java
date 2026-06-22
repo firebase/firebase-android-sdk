@@ -1103,6 +1103,48 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   // region Global Custom Attributes Behaviour
 
   @Test
+  public void logBuiltInTraces_globalCustomAttributesAreAdded() {
+    FirebasePerformance.getInstance().removeAttribute("experiment_id");
+    FirebasePerformance.getInstance().removeAttribute("user_tier");
+    FirebasePerformance.getInstance().putAttribute("experiment_id", "exp_123");
+    FirebasePerformance.getInstance().putAttribute("user_tier", "gold");
+
+    // 1. App Start Trace (_as)
+    TraceMetric appStartTrace = createValidTraceMetric().toBuilder().setName("_as").build();
+    testTransportManager.log(appStartTrace);
+    fakeExecutorService.runAll();
+    PerfMetric loggedAppStart = getLastLoggedEvent(times(1));
+    assertThat(loggedAppStart.getApplicationInfo().getCustomAttributesMap())
+        .containsEntry("experiment_id", "exp_123");
+    clearLastLoggedEvents();
+
+    // 2. Screen Trace (_st_MainActivity)
+    TraceMetric screenTrace =
+        createValidTraceMetric().toBuilder()
+            .setName("_st_MainActivity")
+            .putCounters(Constants.CounterNames.FRAMES_TOTAL.toString(), 100L)
+            .build();
+    testTransportManager.log(screenTrace);
+    fakeExecutorService.runAll();
+    PerfMetric loggedScreenTrace = getLastLoggedEvent(times(1));
+    assertThat(loggedScreenTrace.getApplicationInfo().getCustomAttributesMap())
+        .containsEntry("user_tier", "gold");
+    clearLastLoggedEvents();
+
+    // 3. Network Request
+    NetworkRequestMetric networkMetric = createValidNetworkRequestMetric();
+    testTransportManager.log(networkMetric);
+    fakeExecutorService.runAll();
+    PerfMetric loggedNetworkMetric = getLastLoggedEvent(times(1));
+    assertThat(loggedNetworkMetric.getApplicationInfo().getCustomAttributesMap())
+        .containsEntry("experiment_id", "exp_123");
+
+    // Cleanup
+    FirebasePerformance.getInstance().removeAttribute("experiment_id");
+    FirebasePerformance.getInstance().removeAttribute("user_tier");
+  }
+
+  @Test
   public void logTraceMetric_globalCustomAttributesAreAdded() {
     FirebasePerformance.getInstance().putAttribute("test_key1", "test_value1");
     FirebasePerformance.getInstance().putAttribute("test_key2", "test_value2");

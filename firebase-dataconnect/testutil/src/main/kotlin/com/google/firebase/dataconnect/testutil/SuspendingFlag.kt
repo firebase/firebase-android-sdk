@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.testutil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 
 /** Encapsulates a boolean "flag", allowing coroutines to suspend until the flag is set. */
 class SuspendingFlag {
@@ -56,4 +57,17 @@ class SuspendingFlag {
   fun set() {
     _isSet.value = true
   }
+
+  /**
+   * Sets the flag encapsulated by this [SuspendingFlag], returning the old value.
+   *
+   * @return the value of the flag prior to this call; that is, returns `false` if the flag was not
+   * set and was set by this call, or `true` if the flag was already set and this call had no
+   * effect.
+   *
+   * @see set
+   * @see isSet
+   * @see await
+   */
+  fun getAndSet(): Boolean = _isSet.getAndUpdate { true }
 }

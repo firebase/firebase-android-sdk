@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.model.Values.isDouble;
-import static com.google.firebase.firestore.model.Values.isInt64Value;
+import static com.google.firebase.firestore.model.Values.isInteger;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -29,14 +29,16 @@ import com.google.firestore.v1.Value;
  * Converts all field values to longs or doubles and resolves overflows to
  * Long.MAX_VALUE/Long.MIN_VALUE.
  */
-public class NumericIncrementTransformOperation implements TransformOperation {
-  private Value operand;
-
+public class NumericIncrementTransformOperation extends NumericTransformOperation {
   public NumericIncrementTransformOperation(Value operand) {
-    hardAssert(
-        Values.isNumber(operand),
-        "NumericIncrementTransformOperation expects a NumberValue operand");
-    this.operand = operand;
+    super(operand);
+  }
+
+  @Override
+  public Value computeBaseValue(@Nullable Value previousValue) {
+    return Values.isNumber(previousValue)
+        ? previousValue
+        : Value.newBuilder().setIntegerValue(0).build();
   }
 
   @Override
@@ -44,10 +46,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     Value baseValue = computeBaseValue(previousValue);
 
     // Return an integer value only if the previous value and the operand is an integer.
-    if (isInt64Value(baseValue) && isInt64Value(operand)) {
+    if (isInteger(baseValue) && isInteger(operand)) {
       long sum = safeIncrement(baseValue.getIntegerValue(), operandAsLong());
       return Value.newBuilder().setIntegerValue(sum).build();
-    } else if (isInt64Value(baseValue)) {
+    } else if (isInteger(baseValue)) {
       double sum = baseValue.getIntegerValue() + operandAsDouble();
       return Value.newBuilder().setDoubleValue(sum).build();
     } else {
@@ -58,26 +60,6 @@ public class NumericIncrementTransformOperation implements TransformOperation {
       double sum = baseValue.getDoubleValue() + operandAsDouble();
       return Value.newBuilder().setDoubleValue(sum).build();
     }
-  }
-
-  @Override
-  public Value applyToRemoteDocument(@Nullable Value previousValue, Value transformResult) {
-    return transformResult;
-  }
-
-  public Value getOperand() {
-    return operand;
-  }
-
-  /**
-   * Inspects the provided value, returning the provided value if it is already a NumberValue,
-   * otherwise returning a coerced IntegerValue of 0.
-   */
-  @Override
-  public Value computeBaseValue(@Nullable Value previousValue) {
-    return Values.isNumber(previousValue)
-        ? previousValue
-        : Value.newBuilder().setIntegerValue(0).build();
   }
 
   /**
@@ -99,10 +81,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     }
   }
 
-  private double operandAsDouble() {
+  protected double operandAsDouble() {
     if (isDouble(operand)) {
       return operand.getDoubleValue();
-    } else if (isInt64Value(operand)) {
+    } else if (isInteger(operand)) {
       return operand.getIntegerValue();
     } else {
       throw fail(
@@ -111,10 +93,10 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     }
   }
 
-  private long operandAsLong() {
+  protected long operandAsLong() {
     if (isDouble(operand)) {
       return (long) operand.getDoubleValue();
-    } else if (isInt64Value(operand)) {
+    } else if (isInteger(operand)) {
       return operand.getIntegerValue();
     } else {
       throw fail(

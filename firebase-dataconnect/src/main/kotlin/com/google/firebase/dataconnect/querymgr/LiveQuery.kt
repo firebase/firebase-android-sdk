@@ -23,17 +23,16 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import com.google.firebase.dataconnect.core.SourcedData
+import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.random.Random
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -50,10 +49,9 @@ internal class LiveQuery(
   private val operationName: String,
   private val variables: Struct,
   parentCoroutineScope: CoroutineScope,
-  nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcClient: DataConnectGrpcClient,
   private val registeredDataDeserializerFactory: RegisteredDataDeserializerFactory,
-  private val secureRandom: Random,
+  private val idStringGenerator: IdStringGenerator,
   parentLogger: Logger,
 ) : AutoCloseable {
   private val logger =
@@ -67,10 +65,8 @@ internal class LiveQuery(
     }
 
   private val coroutineScope =
-    createSupervisorCoroutineScope(
-      nonBlockingCoroutineDispatcher,
+    parentCoroutineScope.createChildSupervisorScope(
       logger,
-      parent = parentCoroutineScope.coroutineContext[Job],
       coroutineName = "LiveQuery[${logger.nameWithId}]",
     )
 
@@ -82,7 +78,7 @@ internal class LiveQuery(
   private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserializer<*>>()
   private data class Update(
     val requestId: String,
-    val sequencedResult: SequencedReference<Result<OperationResult>>
+    val sequencedResult: SequencedReference<Result<SourcedData<OperationResult>>>
   )
   // Also, `initialDataDeserializerUpdate` must only be accessed while
   // `dataDeserializersWriteMutex` is held.
@@ -97,7 +93,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-  ): SequencedReference<Result<DataSourcePair<T>>> {
+  ): SequencedReference<Result<SourcedData<T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
@@ -137,7 +133,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    callback: suspend (SequencedReference<Result<DataSourcePair<T>>>) -> Unit,
+    callback: suspend (SequencedReference<Result<SourcedData<T>>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer =
       registerDataDeserializer(dataDeserializer, dataSerializersModule)
@@ -175,7 +171,7 @@ internal class LiveQuery(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ) {
-    val requestId = "qry" + secureRandom.nextAlphanumericString(length = 10)
+    val requestId = idStringGenerator.next("qry")
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =
@@ -255,7 +251,10 @@ internal class LiveQuery(
           }
       }
 
-  data class Key(val operationName: String, val variablesHash: ImmutableByteArray)
+  data class Key(val operationName: String, val variablesHash: ImmutableByteArray) {
+    override fun toString() =
+      "LiveQuery.Key(operationName=$operationName, variablesHash=${variablesHash.to0xHexString()})"
+  }
 
   override fun close() {
     logger.debug("close() called")

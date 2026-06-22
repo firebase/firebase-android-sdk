@@ -68,7 +68,7 @@ kotlin {
 
 dependencies {
   implementation(libs.genai.prompt)
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta02")
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta03")
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

@@ -693,7 +693,7 @@ internal class VertexAIUnarySnapshotTests {
         secondGroundingSupport.segment.shouldNotBeNull()
         secondGroundingSupport.segment.startIndex shouldBe 57
         secondGroundingSupport.segment.partIndex shouldBe 0
-        secondGroundingSupport.segment.endIndex shouldBe 123
+        secondGroundingSupport.segment.endIndex shouldBe 123 - 4 // UTF-8 to UTF-16
         secondGroundingSupport.segment.text shouldBe
           "The temperature is 67°F (19°C), but it feels like 75°F (24°C)."
         secondGroundingSupport.groundingChunkIndices.first() shouldBe 1

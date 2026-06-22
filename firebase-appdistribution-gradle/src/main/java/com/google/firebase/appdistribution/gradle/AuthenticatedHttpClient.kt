@@ -16,11 +16,11 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.googleapis.GoogleUtils
 import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.HttpContent
 import com.google.api.client.http.HttpRequestFactory
+import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.HttpTransport
 import com.google.api.client.http.javanet.NetHttpTransport
 import java.io.IOException
@@ -34,8 +34,8 @@ private constructor(
   private val httpRequestFactory: HttpRequestFactory,
 ) {
   constructor(
-    credential: Credential
-  ) : this(newGoogleHttpTransport().createRequestFactory(credential))
+    requestInitializer: HttpRequestInitializer
+  ) : this(newGoogleHttpTransport().createRequestFactory(requestInitializer))
 
   constructor(httpTransport: HttpTransport) : this(httpTransport.createRequestFactory())
 
