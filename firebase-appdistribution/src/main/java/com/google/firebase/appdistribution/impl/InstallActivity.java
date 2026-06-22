@@ -70,7 +70,10 @@ public class InstallActivity extends AppCompatActivity {
       return;
     }
 
-    startAndroidPackageInstallerIntent();
+    if (!startAndroidPackageInstallerIntent()) {
+      finish();
+      return;
+    }
   }
 
   @Override
@@ -136,10 +139,18 @@ public class InstallActivity extends AppCompatActivity {
     return intent;
   }
 
-  private void startAndroidPackageInstallerIntent() {
-    installInProgress = true;
+  private boolean startAndroidPackageInstallerIntent() {
     Intent originalIntent = getIntent();
+    if (originalIntent == null) {
+      LogWrapper.e(TAG, "No intent provided");
+      return false;
+    }
     String path = originalIntent.getStringExtra("INSTALL_PATH");
+    if (path == null || path.isEmpty()) {
+      LogWrapper.e(TAG, "No INSTALL_PATH extra provided");
+      return false;
+    }
+    installInProgress = true;
     Intent intent = new Intent(Intent.ACTION_VIEW);
     File apkFile = new File(path);
     String APK_MIME_TYPE = "application/vnd.android.package-archive";
@@ -164,5 +175,6 @@ public class InstallActivity extends AppCompatActivity {
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
     LogWrapper.v(TAG, "Kicking off install as new activity");
     startActivity(intent);
+    return true;
   }
 }

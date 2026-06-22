@@ -1,5 +1,31 @@
 # Unreleased
 
+- [fixed] Realtime query subscriptions now correctly throw an exception when
+  the Firebase Auth user changes, instead of silently stopping emitting.
+  ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
+- [fixed] Realtime query subscriptions could fail abruptly if the auth
+  token changed while connected.
+  ([#8312](https://github.com/firebase/firebase-android-sdk/pull/8312))
+- [fixed] An infinite loop could occur when Auth and/or App Check tokens were
+  refreshed.
+  ([#8319](https://github.com/firebase/firebase-android-sdk/pull/8319))
+
+# 17.3.1
+
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
+  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+  ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
+- [changed] Realtime query results now update the local cache as query
+  results are received.
+  ([#8220](https://github.com/firebase/firebase-android-sdk/pull/8220))
+- [fixed] Realtime query subscriptions now update the Firebase Auth token if it
+  refreshed during the lifetime of the connection, avoiding an UNAUTHENTICATED
+  error at the expiry of the original Auth token. It also terminates the Flow
+  with an exception if the Firebase Auth user changes.
+  ([#8278](https://github.com/firebase/firebase-android-sdk/pull/8278))
+
+# 17.3.0
+
 - [feature] `QuerySubscription.flow` gains
   [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
   ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))

@@ -16,12 +16,20 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.LatLng
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.RetrievalConfig
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldContainIgnoringCase
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
@@ -101,5 +109,51 @@ class TemplateIntegrationTests {
         it shouldContainIgnoringCase customerName
         it shouldContainIgnoringCase topic
       }
+  }
+
+  @Test
+  @Ignore("Model is prone to return specifically London instead of New York")
+  fun testTemplateGroundingCity_googleAI(): Unit = runBlocking {
+    val model =
+      FirebaseAI.getInstance(AIModels.app(), GenerativeBackend.googleAI())
+        .templateGenerativeModel(
+          tools = listOf(TemplateTool.googleMaps()),
+          toolConfig =
+            TemplateToolConfig(
+              RetrievalConfig(
+                latLng = LatLng(latitude = 40.72849, longitude = -74.01054),
+                languageCode = "en_US",
+              )
+            )
+        )
+    val responses =
+      model
+        .generateContentStream("maps-test-template-google-ai", mapOf("landmark" to "city"))
+        .toList()
+    responses
+      .joinToString { it.text ?: "" }
+      .lowercase()
+      .replace(",", "")
+      .replace("  ", " ") // Model sometimes doubles spacing
+      .let { it shouldContainIgnoringCase "new york" }
+  }
+
+  @Test
+  fun testTemplateToolsUrlContext_googleAI(): Unit = runBlocking {
+    val model =
+      FirebaseAI.getInstance(AIModels.app(), GenerativeBackend.googleAI())
+        .templateGenerativeModel(
+          tools = listOf(), // URLContext not provided, still can read links
+        )
+    val response =
+      model.generateContent(
+        "url-context-test-template-google-ai",
+        mapOf(
+          "url" to "https://en.wikipedia.org/wiki/Kasane_Teto",
+          "question" to "What is the given name of the linked individual?",
+        )
+      )
+    response.text?.lowercase() shouldContain "teto"
+    response.text?.lowercase() shouldNotContain "kasane"
   }
 }

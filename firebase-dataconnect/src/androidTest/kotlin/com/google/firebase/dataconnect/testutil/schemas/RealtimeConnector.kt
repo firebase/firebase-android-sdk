@@ -55,9 +55,13 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
   class GetStringByKeyQuery(val connector: RealtimeConnector) {
 
-    suspend fun execute(key: Key): Data.Item? = execute(Variables(key))
+    fun variables(key: Key): Variables = Variables(key)
+
+    suspend fun execute(key: Key): Data.Item? = execute(variables(key))
 
     suspend fun execute(variables: Variables): Data.Item? = queryRef(variables).execute().data.item
+
+    fun queryRef(key: Key) = queryRef(variables(key))
 
     fun queryRef(variables: Variables) =
       connector.dataConnect.query(OPERATION_NAME, variables, serializer<Data>(), serializer())
@@ -70,7 +74,12 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     @Serializable
     data class Data(val item: Item?) {
       constructor(name: String) : this(Item(name))
-      @Serializable data class Item(val name: String)
+      @Serializable
+      data class Item(val name: String) {
+        companion object {
+          fun fromNameOrNull(name: String?): Item? = if (name == null) null else Item(name)
+        }
+      }
     }
 
     companion object {

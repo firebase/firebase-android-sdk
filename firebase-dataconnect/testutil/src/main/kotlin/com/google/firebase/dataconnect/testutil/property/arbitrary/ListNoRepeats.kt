@@ -22,6 +22,9 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.asSample
 import kotlin.random.nextInt
 
+fun <T> Arb.Companion.listNoRepeat(elementArb: Arb<T>, size: Int): Arb<List<T>> =
+  listNoRepeat(elementArb, size..size)
+
 fun <T> Arb.Companion.listNoRepeat(elementArb: Arb<T>, sizeRange: IntRange): Arb<List<T>> =
   ListNoRepeatsArb(elementArb, sizeRange)
 

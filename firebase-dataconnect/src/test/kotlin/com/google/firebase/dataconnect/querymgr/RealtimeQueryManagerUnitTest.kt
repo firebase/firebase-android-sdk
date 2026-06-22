@@ -68,6 +68,7 @@ class RealtimeQueryManagerUnitTest {
         coroutineScope = backgroundScope,
         idStringGenerator = IdStringGenerator(rs.random),
         serialization = DataConnectSerialization(StandardTestDispatcher(testScheduler)),
+        cache = null,
         logger = newMockLogger("s78hgm6fff")
       )
 
@@ -104,6 +105,7 @@ class RealtimeQueryManagerUnitTest {
         coroutineScope = backgroundScope,
         idStringGenerator = IdStringGenerator(rs.random),
         serialization = DataConnectSerialization(StandardTestDispatcher(testScheduler)),
+        cache = null,
         logger = newMockLogger("yzrpk2m6tt")
       )
 

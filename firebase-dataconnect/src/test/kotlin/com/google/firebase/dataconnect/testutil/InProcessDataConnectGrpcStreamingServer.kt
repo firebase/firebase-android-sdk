@@ -336,9 +336,14 @@ suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
 
 suspend inline fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   .awaitUntilStreamRequest(
+  description: String? = null,
+  onIgnoredItem: (InProcessDataConnectGrpcStreamingServer.Event) -> Unit = {},
   predicate: (StreamRequest) -> Boolean = { true }
 ): InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
-  awaitUntilItem("event is StreamRequest") {
+  awaitUntilItem(
+    "event is StreamRequest (description=$description)",
+    onIgnoredItem = onIgnoredItem
+  ) {
     if (
       it is InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived &&
         predicate(it.streamRequest)
@@ -378,10 +383,12 @@ suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   }
 
 suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
-  .awaitUntilSubscribeStreamRequest():
-  InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
+  .awaitUntilSubscribeStreamRequest(
+  description: String? = null,
+  onIgnoredItem: (InProcessDataConnectGrpcStreamingServer.Event) -> Unit = {},
+): InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived =
   withClue("awaiting 'subscribe' StreamRequest message") {
-    awaitUntilStreamRequest { it.hasSubscribe() }
+    awaitUntilStreamRequest(description, onIgnoredItem) { it.hasSubscribe() }
   }
 
 suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
@@ -414,8 +421,24 @@ suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>
   }
 }
 
-suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitResponseSender():
-  StreamObserver<StreamResponse> = awaitConnectRpcStarted().responseObserver
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitResponseSender(
+  description: String? = null,
+  onIgnoredItem: (InProcessDataConnectGrpcStreamingServer.Event) -> Unit = {},
+): StreamObserver<StreamResponse> =
+  awaitConnectRpcStarted(
+      description,
+      onIgnoredItem,
+    )
+    .responseObserver
 
-suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitConnectRpcStarted():
-  InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted = awaitUntilItemIsInstance()
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitConnectRpcStarted(
+  description: String? = null,
+  onIgnoredItem: (InProcessDataConnectGrpcStreamingServer.Event) -> Unit = {},
+): InProcessDataConnectGrpcStreamingServer.Event.ConnectRpcStarted =
+  awaitUntilItemIsInstance(
+    description,
+    onIgnoredItem,
+  )
+
+suspend fun ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>.awaitCall():
+  InProcessDataConnectGrpcStreamingServer.Event.Call = awaitUntilItemIsInstance()

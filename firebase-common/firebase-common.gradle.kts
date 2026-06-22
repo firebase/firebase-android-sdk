@@ -50,7 +50,10 @@ android {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
   }
-  lint { targetSdk = targetSdkVersion }
+  lint {
+    targetSdk = targetSdkVersion
+    baseline = file("lint-baseline.xml")
+  }
 }
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
