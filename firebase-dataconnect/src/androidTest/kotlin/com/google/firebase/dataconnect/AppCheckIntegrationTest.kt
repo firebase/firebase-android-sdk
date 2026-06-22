@@ -18,21 +18,28 @@ package com.google.firebase.dataconnect
 
 import app.cash.turbine.test
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy.SERVER_ONLY
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckProviderFactory
 import com.google.firebase.dataconnect.testutil.InvalidInstrumentationArgumentException
+import com.google.firebase.dataconnect.testutil.awaitStatusException
+import com.google.firebase.dataconnect.testutil.awaitUntilItem
 import com.google.firebase.dataconnect.testutil.getInstrumentationArgument
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.asClue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.next
+import kotlin.time.Duration
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeNotNull
@@ -41,14 +48,6 @@ import org.junit.Before
 import org.junit.Test
 
 class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
-
-  private val personSchema by lazy { PersonSchema(dataConnectFactory) }
-
-  private val appCheck: FirebaseAppCheck
-    get() = FirebaseAppCheck.getInstance(personSchema.dataConnect.app)
-
-  private val appId: String
-    get() = personSchema.dataConnect.app.options.applicationId
 
   @Before
   fun skipIfUsingEmulator() {
@@ -71,28 +70,26 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryAndMutationShouldSucceedWhenAppCheckTokenIsProvided() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val appCheck = getAppCheck(dataConnect)
+    val appId = getAppId(dataConnect)
     appCheck.installAppCheckProviderFactory(DataConnectTestAppCheckProviderFactory(appId))
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val name = "name_" + Arb.dataConnect.alphabeticString(length = 20).sample()
 
-    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
-    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
-    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
+    val key = connector.insertString(name)
+    val queryResult = connector.getStringByKey.queryRef(key).execute(SERVER_ONLY)
 
-    personSchema.createPerson(id = person1Id, name = "TestName1", age = 42).execute()
-    personSchema.createPerson(id = person2Id, name = "TestName2", age = 43).execute()
-    personSchema.createPerson(id = person3Id, name = "TestName3", age = 44).execute()
-    val queryResult = personSchema.getPerson(id = person2Id).execute()
-
-    queryResult.asClue {
-      it.data.person shouldBe PersonSchema.GetPersonQuery.Data.Person("TestName2", 43)
-    }
+    queryResult.asClue { it.data.item.shouldNotBeNull().name shouldBe name }
   }
 
   @Test
   fun queryShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    val queryRef = personSchema.getPerson(id = personId)
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("51E1EB46-A833-46C2-8B97-AA767A457F7A")
 
     val thrownException = shouldThrow<StatusException> { queryRef.execute() }
 
@@ -103,9 +100,10 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   fun mutationShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    val personName = Arb.alphanumericString(prefix = "personName").next()
-    val mutationRef = personSchema.createPerson(id = personId, name = personName)
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val name = "name_" + Arb.dataConnect.alphabeticString(length = 20).sample()
+    val mutationRef = connector.insertString.mutationRef(name)
 
     val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
 
@@ -113,59 +111,76 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun queryShouldRetryIfAppCheckTokenIsExpired() = runTest {
-    val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
-    println("$APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument: $expiredToken")
-    assumeNotNull(
-      "This test can only be run if an expired token is provided." +
-        " To get an expired token, set the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
-        " instrumentation argument to \"collect\", which will cause this test to simply get" +
-        " and print an App Check token in the logcat. Then, wait until that token expires," +
-        " which is typically 1 hour, and re-run this test, instead setting the" +
-        " $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument to the token" +
-        " printed when \"collect\" was specified, which should now be expired" +
-        " (error code rqbahvqjk8)",
-      expiredToken
-    )
-
-    if (expiredToken == "collect") {
-      val appCheckProviderFactory = DataConnectTestAppCheckProviderFactory(appId)
-      val appCheckProvider = appCheckProviderFactory.create(firebaseAppFactory.newInstance())
-      val token = appCheckProvider.getToken().await().token
-      println("43nyfb9epw Here is the App Check token (without the quotes): \"$token\"")
-      return@runTest
-    }
-
-    // Install an App Check provider that will initially produce the expired token, and will fetch
-    // a new, valid token on subsequent requests.
-    val appCheckProviderFactory =
-      DataConnectTestAppCheckProviderFactory(appId, initialToken = expiredToken)
-    appCheck.installAppCheckProviderFactory(appCheckProviderFactory)
-
-    // Make sure that the App Check doesn't refresh the expired token for us, as it races with
-    // the Data Connect SDKs logic to refresh the token.
-    appCheck.setTokenAutoRefreshEnabled(false)
-
+  fun queryShouldRetryIfAppCheckTokenIsExpired() = testRetryIfAppCheckTokenIsExpired {
     // Send an ExecuteQuery request that should be retired because the first request is sent with
     // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
     // request retry.
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    personSchema.getPerson(id = personId).execute()
+    val queryRef = connector.getStringByKey.queryRef("DAE78A79-F2AB-4800-8683-FA20AF0391C3")
+    queryRef.execute(SERVER_ONLY)
+  }
 
-    appCheckProviderFactory.tokens.test {
-      withClue("token1") {
-        val token = awaitItem()
-        token.token shouldBe expiredToken
-      }
-      withClue("token2") {
-        val token = awaitItem()
-        token.token shouldNotBe expiredToken
+  @Test
+  fun mutationShouldRetryIfAppCheckTokenIsExpired() = testRetryIfAppCheckTokenIsExpired {
+    // Send an ExecuteMutation request that should be retired because the first request is sent with
+    // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
+    // request retry.
+    val name = "name_" + Arb.dataConnect.alphabeticString(length = 20).sample()
+    val mutationRef = connector.insertString.mutationRef(name)
+    mutationRef.execute()
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionShouldSucceedWhenAppCheckTokenIsProvided() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val appCheck = getAppCheck(dataConnect)
+    val appId = getAppId(dataConnect)
+    appCheck.installAppCheckProviderFactory(DataConnectTestAppCheckProviderFactory(appId))
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val (name1, name2) = Arb.dataConnect.alphabeticString(length = 20).pair().sample()
+    val key = connector.insertString(name1)
+    val querySubscription = connector.getStringByKey.queryRef(key).subscribe()
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess().data.item.shouldNotBeNull().name shouldBe name1
+      connector.updateString(key, name2)
+      awaitUntilItem("name2") {
+        it.result.shouldBeSuccess().data.item.shouldNotBeNull().name == name2
       }
     }
   }
 
   @Test
-  fun mutationShouldRetryIfAppCheckTokenIsExpired() = runTest {
+  fun realtimeQuerySubscriptionShouldFailWhenAppCheckTokenIsThePlaceholder() =
+    runTest(timeout = Duration.INFINITE) {
+      // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
+      // appcheck token is sent at all.
+      val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+      val connector = RealtimeConnector.getInstance(dataConnect)
+      val queryRef = connector.getStringByKey.queryRef("60685DEE-98E9-4E8E-93E4-D756772D21D3")
+      val querySubscription = queryRef.subscribe()
+
+      querySubscription.flow.test(timeout = Duration.INFINITE) {
+        awaitStatusException(Status.Code.UNAUTHENTICATED)
+      }
+    }
+
+  @Test
+  fun realtimeQuerySubscriptionShouldRetryIfAppCheckTokenIsExpired() =
+    testRetryIfAppCheckTokenIsExpired {
+      // Subscribe to a query where the Connect RPC should be retired because the first request is
+      // sent with the expired token, which should fail with UNAUTHORIZED, triggering a token
+      // refresh and request retry.
+      val queryRef = connector.getStringByKey.queryRef("BD6DBD34-6870-4956-89CA-FBE462EAB2DF")
+      val querySubscription = queryRef.subscribe()
+
+      querySubscription.flow.test { awaitItem() }
+    }
+
+  class TestRetryIfAppCheckTokenIsExpiredContext(val connector: RealtimeConnector)
+
+  private fun testRetryIfAppCheckTokenIsExpired(
+    block: suspend TestRetryIfAppCheckTokenIsExpiredContext.() -> Unit
+  ) = runTest {
     val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
     println("$APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument: $expiredToken")
     assumeNotNull(
@@ -180,6 +195,9 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
       expiredToken
     )
 
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val appId = getAppId(dataConnect)
+
     if (expiredToken == "collect") {
       val appCheckProviderFactory = DataConnectTestAppCheckProviderFactory(appId)
       val appCheckProvider = appCheckProviderFactory.create(firebaseAppFactory.newInstance())
@@ -187,6 +205,10 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
       println("5xtk6tg4pe Here is the App Check token (without the quotes): \"$token\"")
       return@runTest
     }
+
+    val appCheck = getAppCheck(dataConnect)
+    appCheck.installAppCheckProviderFactory(DataConnectTestAppCheckProviderFactory(appId))
+    val connector = RealtimeConnector.getInstance(dataConnect)
 
     // Install an App Check provider that will initially produce the expired token, and will fetch
     // a new, valid token on subsequent requests.
@@ -198,13 +220,10 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
     // the Data Connect SDKs logic to refresh the token.
     appCheck.setTokenAutoRefreshEnabled(false)
 
-    // Send an ExecuteMutation request that should be retired because the first request is sent with
-    // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
-    // request retry.
-    val personId = Arb.alphanumericString(prefix = "personId").next()
-    val personName = Arb.alphanumericString(prefix = "personName").next()
-    personSchema.createPerson(id = personId, name = personName).execute()
+    // Run the test-specific block of code.
+    with(TestRetryIfAppCheckTokenIsExpiredContext(connector)) { block() }
 
+    // Verify that the App Check tokens are requested from the provider.
     appCheckProviderFactory.tokens.test {
       withClue("token1") {
         val token = awaitItem()
@@ -238,3 +257,9 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 }
+
+private fun getAppCheck(dataConnect: FirebaseDataConnect): FirebaseAppCheck =
+  FirebaseAppCheck.getInstance(dataConnect.app)
+
+private fun getAppId(dataConnect: FirebaseDataConnect): String =
+  dataConnect.app.options.applicationId
