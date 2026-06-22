@@ -493,12 +493,13 @@ public class SessionReportingCoordinator {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+  @VisibleForTesting
+  boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
     ApplicationExitInfo relevant =
         findRelevantApplicationExitInfo(sessionId, applicationExitInfoList, aei -> {
           // Most devices should support REASON_LOW_MEMORY
           boolean viaLowMemory = aei.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
-              && "OOM".equals(aei.getDescription());
+              && aei.getDescription() != null && aei.getDescription().contains("OOM");
           // In cases where the above isn't supported, fall back to a more primitive check
           boolean viaSignaled = aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
               && aei.getStatus() == OsConstants.SIGKILL;

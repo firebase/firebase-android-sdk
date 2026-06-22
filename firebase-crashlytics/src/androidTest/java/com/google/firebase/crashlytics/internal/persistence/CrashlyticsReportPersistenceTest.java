@@ -21,10 +21,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import androidx.annotation.Nullable;
+import androidx.test.filters.SdkSuppress;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Application;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
@@ -176,6 +179,31 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
             .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(Collections.singletonList(testEvent)),
         finalizedReport);
+  }
+
+  @SdkSuppress(minSdkVersion = 37) // ProfilingManager, ProfilingTrigger
+  @Test
+  public void testLoadFinalizedReports_reportWithProfilingManagerTrigger_containsTriggers() {
+    String sessionId = "sessionId";
+    CrashlyticsReport report = makeTestReport(sessionId);
+    CrashlyticsReport.Session.Event event = makeTestEvent("crash", "reason");
+
+    ProfilingManagerInfo pmi = ProfilingManagerInfo.builder()
+        .setProfilingTrigger(ProfilingTrigger.builder()
+            .setTrigger(android.os.ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
+            .build())
+        .build();
+
+    reportPersistence.persistReport(report);
+    reportPersistence.persistEvent(event, sessionId);
+    reportPersistence.persistProfilingManagerInfo(pmi, sessionId);
+    reportPersistence.finalizeReports("skipSession", System.currentTimeMillis());
+
+    List<CrashlyticsReportWithSessionId> reports = reportPersistence.loadFinalizedReports();
+
+    assertEquals(1, reports.size());
+    assertEquals(1, reports.get(0).getReport().getSession().getEvents().size());
+    assertEquals(pmi, reports.get(0).getReport().getSession().getEvents().get(0).getApp().getExecution().getProfilingManagerInfo());
   }
 
   @Test

@@ -1009,7 +1009,8 @@ class CrashlyticsController {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private void writeTriggerTypeFile(String sessionId, int triggerType) {
+  @VisibleForTesting
+  void writeTriggerTypeFile(String sessionId, int triggerType) {
     String triggerFilename =
         triggerType == ProfilingTrigger.TRIGGER_TYPE_ANOMALY ? TRIGGER_TYPE_ANOMALY_FILENAME :
         triggerType == ProfilingTrigger.TRIGGER_TYPE_OOM ? TRIGGER_TYPE_OOM_FILENAME :
