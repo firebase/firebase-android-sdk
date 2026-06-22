@@ -63,6 +63,7 @@ import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.CallOptions
+import io.grpc.Channel as GrpcChannel
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -477,13 +478,13 @@ internal class DataConnectGrpcRPCs(
 
       override fun sendingMessagesFailed(exception: Throwable) {}
 
-      override fun receivedMessage(message: StreamResponse) {}
-
       override fun receivingMessagesComplete() {}
 
       override fun receivingMessagesFailed(exception: Throwable) {}
 
       override fun onCallReady() {}
+
+      override fun onCallHeaders(headers: Metadata) {}
 
       override fun onCallMessage(message: StreamResponse) {
         logger.logGrpcReceived(
