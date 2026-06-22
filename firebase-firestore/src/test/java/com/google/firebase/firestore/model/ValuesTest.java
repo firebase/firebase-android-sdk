@@ -118,6 +118,10 @@ public class ValuesTest {
         .addEqualityGroup(wrap(1.0), wrap(1.0))
         .addEqualityGroup(wrap(1.1), wrap(1.1))
         .addEqualityGroup(wrap(blob(0, 1, 2)), wrap(blob(0, 1, 2)))
+        .addEqualityGroup(
+            wrap(blob(1, 2)),
+            wrap(Blob.createBsonBinary(0, new byte[] {1, 2})),
+            wrap(manualBsonBinary(0, new byte[] {1, 2})))
         .addEqualityGroup(wrap(blob(0, 1)))
         .addEqualityGroup(wrap("string"), wrap("string"))
         .addEqualityGroup(wrap("strin"))
@@ -255,8 +259,14 @@ public class ValuesTest {
         .addEqualityGroup(wrap("\u00e9a"))
 
         // blobs
-        .addEqualityGroup(wrap(blob()))
-        .addEqualityGroup(wrap(blob(0)))
+        .addEqualityGroup(
+            wrap(blob()),
+            wrap(Blob.createBsonBinary(0, new byte[] {})),
+            wrap(manualBsonBinary(0, new byte[] {})))
+        .addEqualityGroup(
+            wrap(blob(0)),
+            wrap(Blob.createBsonBinary(0, new byte[] {0})),
+            wrap(manualBsonBinary(0, new byte[] {0})))
         .addEqualityGroup(wrap(blob(0, 1, 2, 3, 4)))
         .addEqualityGroup(wrap(blob(0, 1, 2, 4, 3)))
         .addEqualityGroup(wrap(blob(255)))
@@ -264,8 +274,11 @@ public class ValuesTest {
         // bson binary data
         .addEqualityGroup(
             wrap(Blob.createBsonBinary(1, new byte[] {})),
-            wrap(Blob.createBsonBinary(1, ByteString.EMPTY)))
-        .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {0})))
+            wrap(Blob.createBsonBinary(1, ByteString.EMPTY)),
+            wrap(manualBsonBinary(1, new byte[] {})))
+        .addEqualityGroup(
+            wrap(Blob.createBsonBinary(1, new byte[] {0})),
+            wrap(manualBsonBinary(1, new byte[] {0})))
         .addEqualityGroup(wrap(Blob.createBsonBinary(5, new byte[] {1, 2})))
         .addEqualityGroup(wrap(Blob.createBsonBinary(5, new byte[] {1, 2, 3})))
         .addEqualityGroup(wrap(Blob.createBsonBinary(7, new byte[] {1})))
@@ -373,16 +386,18 @@ public class ValuesTest {
         .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap("foo"))), wrap(""))
         .addEqualityGroup(wrap("\000"))
 
-        // blobs
-        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(blob(1, 2, 3)))), wrap(blob()))
-        .addEqualityGroup(wrap(blob(0)))
-
-        // bson binary data
+        // blobs & bson binaries
         .addEqualityGroup(
+            wrap(getLowerBound(TestUtil.wrap(blob(1, 2, 3)))),
             wrap(getLowerBound(TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2, 3})))),
+            wrap(blob()),
             wrap(Blob.createBsonBinary(0, new byte[] {})),
-            wrap(Blob.createBsonBinary((byte) 0, ByteString.EMPTY)))
-        .addEqualityGroup(wrap(Blob.createBsonBinary(0, new byte[] {0})))
+            wrap(Blob.createBsonBinary((byte) 0, ByteString.EMPTY)),
+            wrap(manualBsonBinary(0, new byte[] {})))
+        .addEqualityGroup(
+            wrap(blob(0)),
+            wrap(Blob.createBsonBinary(0, new byte[] {0})),
+            wrap(manualBsonBinary(0, new byte[] {0})))
 
         // resource names
         .addEqualityGroup(
@@ -469,14 +484,14 @@ public class ValuesTest {
         .addEqualityGroup(wrap("\000"))
         .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap("\000"))))
 
-        // blobs
+        // blobs & bson binaries
         .addEqualityGroup(wrap(blob(255)))
-        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(blob(255)))))
-
-        // bson binary data
         .addEqualityGroup(wrap(Blob.createBsonBinary(128, new byte[] {1, 2})))
         .addEqualityGroup(
-            wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(0, new byte[] {})))))
+            wrap(getUpperBound(TestUtil.wrap(blob(255)))),
+            wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2})))),
+            wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(0, new byte[] {})))),
+            wrap(getUpperBound(manualBsonBinary(0, new byte[] {}))))
 
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
@@ -667,8 +682,8 @@ public class ValuesTest {
   }
 
   /** Small helper class that uses ProtoValues for equals() and compareTo(). */
-  public static class EqualsWrapper implements Comparable<EqualsWrapper> {
-    public final Value proto;
+  private static class EqualsWrapper implements Comparable<EqualsWrapper> {
+    private final Value proto;
 
     EqualsWrapper(Value proto) {
       this.proto = proto;
@@ -676,17 +691,48 @@ public class ValuesTest {
 
     @Override
     public boolean equals(Object o) {
-      return o instanceof EqualsWrapper && proto.equals(((EqualsWrapper) o).proto);
+      if (!(o instanceof EqualsWrapper)) {
+        return false;
+      }
+      Value other = ((EqualsWrapper) o).proto;
+      if (Values.typeOrder(proto) == Values.TYPE_ORDER_BLOB
+          && Values.typeOrder(other) == Values.TYPE_ORDER_BLOB) {
+        return Values.equals(proto, other);
+      }
+      return proto.equals(other);
     }
 
     @Override
     public int hashCode() {
+      if (Values.typeOrder(proto) == Values.TYPE_ORDER_BLOB) {
+        int subtype = getBinarySubtype(proto);
+        ByteString bytes = getBinaryBytes(proto);
+        return 31 * subtype + bytes.hashCode();
+      }
       return proto.hashCode();
     }
 
     @Override
     public int compareTo(EqualsWrapper o) {
       return Values.compare(proto, o.proto);
+    }
+
+    private static int getBinarySubtype(Value value) {
+      if (value.getValueTypeCase() == Value.ValueTypeCase.BYTES_VALUE) {
+        return 0;
+      }
+      ByteString bytes =
+          value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+      return bytes.byteAt(0) & 0xFF;
+    }
+
+    private static ByteString getBinaryBytes(Value value) {
+      if (value.getValueTypeCase() == Value.ValueTypeCase.BYTES_VALUE) {
+        return value.getBytesValue();
+      }
+      ByteString bytes =
+          value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+      return bytes.substring(1);
     }
   }
 
@@ -696,5 +742,18 @@ public class ValuesTest {
 
   private EqualsWrapper wrap(Object entry) {
     return new EqualsWrapper(TestUtil.wrap(entry));
+  }
+
+  private static Value manualBsonBinary(int subtype, byte[] bytes) {
+    byte[] encodedBytes = new byte[bytes.length + 1];
+    encodedBytes[0] = (byte) subtype;
+    System.arraycopy(bytes, 0, encodedBytes, 1, bytes.length);
+    return Value.newBuilder()
+        .setMapValue(
+            com.google.firestore.v1.MapValue.newBuilder()
+                .putFields(
+                    Values.RESERVED_BSON_BINARY_KEY,
+                    Value.newBuilder().setBytesValue(ByteString.copyFrom(encodedBytes)).build()))
+        .build();
   }
 }

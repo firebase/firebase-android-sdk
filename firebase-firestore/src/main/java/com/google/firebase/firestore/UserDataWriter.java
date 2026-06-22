@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.model.ServerTimestamps.getPreviousVa
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_ARRAY;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BLOB;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BOOLEAN;
-import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_BINARY;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_OBJECT_ID;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BSON_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_GEOPOINT;
@@ -101,7 +100,11 @@ public class UserDataWriter {
       case TYPE_ORDER_STRING:
         return value.getStringValue();
       case TYPE_ORDER_BLOB:
-        return Blob.fromByteString(value.getBytesValue());
+        if (value.getValueTypeCase() == Value.ValueTypeCase.BYTES_VALUE) {
+          return Blob.fromByteString(value.getBytesValue());
+        } else {
+          return convertBsonBinary(value.getMapValue().getFieldsMap());
+        }
       case TYPE_ORDER_GEOPOINT:
         return new GeoPoint(
             value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
@@ -111,8 +114,6 @@ public class UserDataWriter {
         return convertBsonObjectId(value.getMapValue().getFieldsMap());
       case TYPE_ORDER_BSON_TIMESTAMP:
         return convertBsonTimestamp(value.getMapValue().getFieldsMap());
-      case TYPE_ORDER_BSON_BINARY:
-        return convertBsonBinary(value.getMapValue().getFieldsMap());
       case TYPE_ORDER_REGEX:
         return convertRegex(value.getMapValue().getFieldsMap());
       case TYPE_ORDER_MAX_KEY:

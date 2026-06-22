@@ -77,17 +77,6 @@ object Values {
       )
       .build()
 
-  private val MIN_BSON_BINARY_VALUE: Value =
-    Value.newBuilder()
-      .setMapValue(
-        MapValue.newBuilder()
-          .putFields(
-            RESERVED_BSON_BINARY_KEY,
-            Value.newBuilder().setBytesValue(ByteString.copyFrom(byteArrayOf(0))).build()
-          )
-      )
-      .build()
-
   private val MIN_BSON_TIMESTAMP_VALUE: Value =
     Value.newBuilder()
       .setMapValue(
@@ -182,15 +171,15 @@ object Values {
   const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 7
   const val TYPE_ORDER_STRING: Int = 8
   const val TYPE_ORDER_BLOB: Int = 9
-  const val TYPE_ORDER_BSON_BINARY: Int = 10
-  const val TYPE_ORDER_REFERENCE: Int = 11
-  const val TYPE_ORDER_BSON_OBJECT_ID: Int = 12
-  const val TYPE_ORDER_GEOPOINT: Int = 13
-  const val TYPE_ORDER_REGEX: Int = 14
-  const val TYPE_ORDER_ARRAY: Int = 15
-  const val TYPE_ORDER_VECTOR: Int = 16
-  const val TYPE_ORDER_MAP: Int = 17
-  const val TYPE_ORDER_MAX_KEY: Int = 18
+  const val TYPE_ORDER_BSON_BINARY: Int = 9
+  const val TYPE_ORDER_REFERENCE: Int = 10
+  const val TYPE_ORDER_BSON_OBJECT_ID: Int = 11
+  const val TYPE_ORDER_GEOPOINT: Int = 12
+  const val TYPE_ORDER_REGEX: Int = 13
+  const val TYPE_ORDER_ARRAY: Int = 14
+  const val TYPE_ORDER_VECTOR: Int = 15
+  const val TYPE_ORDER_MAP: Int = 16
+  const val TYPE_ORDER_MAX_KEY: Int = 17
 
   const val TYPE_ORDER_MAX_VALUE: Int = Int.MAX_VALUE
 
@@ -261,6 +250,7 @@ object Values {
     return when (leftType) {
       TYPE_ORDER_NUMBER_NAN,
       TYPE_ORDER_NUMBER -> numberEquals(left, right)
+      TYPE_ORDER_BLOB -> binaryEquals(left, right)
       TYPE_ORDER_ARRAY -> arrayEquals(left, right)
       TYPE_ORDER_VECTOR,
       TYPE_ORDER_MAP -> objectEquals(left, right)
@@ -391,8 +381,7 @@ object Values {
           ServerTimestamps.getLocalWriteTime(right)
         )
       TYPE_ORDER_STRING -> Util.compareUtf8Strings(left.stringValue, right.stringValue)
-      TYPE_ORDER_BLOB -> Util.compareByteStrings(left.bytesValue, right.bytesValue)
-      TYPE_ORDER_BSON_BINARY -> compareBsonBinary(left.mapValue, right.mapValue)
+      TYPE_ORDER_BLOB -> compareBinaries(left, right)
       TYPE_ORDER_REFERENCE -> compareReferences(left.referenceValue, right.referenceValue)
       TYPE_ORDER_BSON_OBJECT_ID -> compareBsonObjectId(left.mapValue, right.mapValue)
       TYPE_ORDER_GEOPOINT -> compareGeoPoints(left.geoPointValue, right.geoPointValue)
@@ -497,12 +486,6 @@ object Values {
   }
 
   private fun isIntegerValue(value: Value): Boolean = value.hasIntegerValue() || isInt32Value(value)
-
-  private fun compareBsonBinary(left: MapValue, right: MapValue): Int {
-    val lhs = left.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
-    val rhs = right.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
-    return Util.compareByteStrings(lhs, rhs)
-  }
 
   private fun compareBsonTimestamp(left: MapValue, right: MapValue): Int {
     val leftFields = left.fieldsMap[RESERVED_BSON_TIMESTAMP_KEY]!!.mapValue.fieldsMap
@@ -796,7 +779,7 @@ object Values {
             MapRepresentation.VECTOR -> MIN_VECTOR_VALUE
             MapRepresentation.BSON_OBJECT_ID -> MIN_BSON_OBJECT_ID_VALUE
             MapRepresentation.BSON_TIMESTAMP -> MIN_BSON_TIMESTAMP_VALUE
-            MapRepresentation.BSON_BINARY -> MIN_BSON_BINARY_VALUE
+            MapRepresentation.BSON_BINARY -> MIN_BYTES
             MapRepresentation.REGEX -> MIN_REGEX_VALUE
             MapRepresentation.INT32,
             MapRepresentation.DECIMAL128 -> MIN_NUMBER
@@ -821,7 +804,7 @@ object Values {
         ValueTypeCase.DOUBLE_VALUE -> MIN_TIMESTAMP
         ValueTypeCase.TIMESTAMP_VALUE -> MIN_BSON_TIMESTAMP_VALUE
         ValueTypeCase.STRING_VALUE -> MIN_BYTES
-        ValueTypeCase.BYTES_VALUE -> MIN_BSON_BINARY_VALUE
+        ValueTypeCase.BYTES_VALUE -> MIN_REFERENCE
         ValueTypeCase.REFERENCE_VALUE -> MIN_BSON_OBJECT_ID_VALUE
         ValueTypeCase.GEO_POINT_VALUE -> MIN_REGEX_VALUE
         ValueTypeCase.ARRAY_VALUE -> MIN_VECTOR_VALUE
@@ -1131,5 +1114,38 @@ object Values {
     }
 
     return MapRepresentation.REGULAR_MAP
+  }
+
+  private fun compareBinaries(left: Value, right: Value): Int {
+    val leftSubtype = getBinarySubtype(left)
+    val rightSubtype = getBinarySubtype(right)
+    val subtypeCmp = leftSubtype.compareTo(rightSubtype)
+    if (subtypeCmp != 0) {
+      return subtypeCmp
+    }
+    val leftBytes = getBinaryBytes(left)
+    val rightBytes = getBinaryBytes(right)
+    return Util.compareByteStrings(leftBytes, rightBytes)
+  }
+
+  private fun binaryEquals(left: Value, right: Value): Boolean {
+    return getBinarySubtype(left) == getBinarySubtype(right) &&
+           getBinaryBytes(left) == getBinaryBytes(right)
+  }
+
+  private fun getBinarySubtype(value: Value): Int {
+    if (value.valueTypeCase == ValueTypeCase.BYTES_VALUE) {
+      return 0
+    }
+    val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    return bytes.byteAt(0).toInt() and 0xFF
+  }
+
+  private fun getBinaryBytes(value: Value): ByteString {
+    if (value.valueTypeCase == ValueTypeCase.BYTES_VALUE) {
+      return value.bytesValue
+    }
+    val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    return bytes.substring(1)
   }
 }

@@ -63,7 +63,8 @@ public class TypeTest {
         || name.startsWith("invalidBsonTimestamp")
         || name.startsWith("testCanUseTypedAccessors")
         || name.startsWith("testTypeAccessorsCanReturnNull")
-        || name.startsWith("snapshotListenerSortsDifferentTypesSameAsServer")) {
+        || name.startsWith("snapshotListenerSortsDifferentTypesSameAsServer")
+        || name.startsWith("testNativeAndBsonBinaryOrderingAndEquality")) {
       org.junit.Assume.assumeTrue(
           "BSON types require Firestore Enterprise Database",
           com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition()
@@ -217,6 +218,50 @@ public class TypeTest {
             MaxKey.instance());
 
     verifySuccessfulWriteReadCycle(map("BsonTypes", data), testDocument());
+  }
+
+  @Test
+  public void testNativeAndBsonBinaryOrderingAndEquality() throws Exception {
+    CollectionReference colRef = testCollection();
+    DocumentReference doc1 = colRef.document("doc1");
+    DocumentReference doc2 = colRef.document("doc2");
+
+    // doc1 has BSON binary, subtype 0, bytes [2] (large)
+    // doc2 has Native binary, subtype 0, bytes [1] (small)
+    waitFor(doc1.set(map("binary", Blob.createBsonBinary(0, new byte[] {2}))));
+    waitFor(doc2.set(map("binary", Blob.fromBytes(new byte[] {1}))));
+
+    // Test 1: Ordering
+    // Both have subtype 0. Since [1] < [2], Native binary [1] (doc2) sorts before BSON binary [2]
+    // (doc1).
+    // Expected: ["doc2", "doc1"]
+    Query orderedQuery = colRef.orderBy("binary");
+    assertSDKQueryResultsConsistentWithBackend(
+        colRef,
+        orderedQuery,
+        map(
+            "doc1", map("binary", Blob.createBsonBinary(0, new byte[] {2})),
+            "doc2", map("binary", Blob.fromBytes(new byte[] {1}))),
+        Arrays.asList("doc2", "doc1"));
+
+    // Test 2: Equality
+    // A query for whereEqualTo("binary", Blob.fromBytes(new byte[] {1}))
+    // should match doc2 (native [1]) and also a BSON binary with subtype 0 and bytes [1].
+    // Let's write another document doc3 with BSON binary, subtype 0, bytes [1]
+    DocumentReference doc3 = colRef.document("doc3");
+    waitFor(doc3.set(map("binary", Blob.createBsonBinary(0, new byte[] {1}))));
+
+    Query equalityQuery = colRef.whereEqualTo("binary", Blob.fromBytes(new byte[] {1}));
+    // Since doc2 (native [1]) and doc3 (BSON [1], subtype 0) are equal on the backend,
+    // both should be returned, sorted by document ID: ["doc2", "doc3"]
+    assertSDKQueryResultsConsistentWithBackend(
+        colRef,
+        equalityQuery,
+        map(
+            "doc1", map("binary", Blob.createBsonBinary(0, new byte[] {2})),
+            "doc2", map("binary", Blob.fromBytes(new byte[] {1})),
+            "doc3", map("binary", Blob.createBsonBinary(0, new byte[] {1}))),
+        Arrays.asList("doc2", "doc3"));
   }
 
   @Test
