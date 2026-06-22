@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Upgraded `isThought` and `thoughtSignature` to be public on the `Part` interface and exposed primary constructors for all `Part` subclasses to support complete object reconstruction.
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
