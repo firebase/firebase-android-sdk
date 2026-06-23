@@ -26,6 +26,7 @@ import com.google.firebase.firestore.RegexValue;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import java.util.concurrent.ExecutionException;
@@ -491,5 +492,87 @@ public class FirestoreIndexValueWriterTest {
     expectedDirectionalEncoder.writeInfinity();
     byte[] expectedBytes = expectedEncoder.getEncodedBytes();
     Assert.assertArrayEquals(actualBytes, expectedBytes);
+  }
+
+  @Test
+  public void testBsonBinarySubtype0AndStandardBlobIndexSorting() {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+
+    // Standard Blob: bytes [255]
+    Value standardBlob = dataReader.parseQueryValue(Blob.fromBytes(new byte[] {(byte) 255}));
+
+    // BSON Binary Subtype 0: empty bytes, manually created as MapValue representation
+    Value bsonBinarySubtype0 = manualBsonBinary(0, new byte[] {});
+
+    // 1. In memory, standardBlob (value 255) is greater than bsonBinarySubtype0 (value empty)
+    Assert.assertTrue(Values.compare(standardBlob, bsonBinarySubtype0) > 0);
+
+    // 2. In index, standardBlob (type label 30) is written before BsonBinarySubtype0 (type label 31)
+    IndexByteEncoder encoderA = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        standardBlob, encoderA.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] bytesA = encoderA.getEncodedBytes();
+
+    IndexByteEncoder encoderB = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        bsonBinarySubtype0, encoderB.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] bytesB = encoderB.getEncodedBytes();
+
+    // Assertion showing the sorting inversion: Standard Blob is LESS than BSON Subtype 0 in index,
+    // even though it was GREATER than BSON Subtype 0 in memory.
+    Assert.assertTrue(compareBytes(bytesA, bytesB) < 0);
+  }
+
+  @Test
+  public void testBsonTimestampYear2038SortingInversion() {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+
+    // Time 1: 0 seconds (year 1970)
+    Value ts1970 = dataReader.parseQueryValue(new BsonTimestamp(0, 0));
+    // Time 2: 2^31 seconds (year 2038)
+    Value ts2038 = dataReader.parseQueryValue(new BsonTimestamp(2147483648L, 0));
+
+    // 1. In memory, ts2038 is greater than ts1970
+    Assert.assertTrue(Values.compare(ts2038, ts1970) > 0);
+
+    // 2. In index, because it's packed as signed long (setting the sign bit to 1 for ts2038),
+    // ts2038 sorts BEFORE ts1970 (lexicographically)!
+    IndexByteEncoder encoder1970 = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        ts1970, encoder1970.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] bytes1970 = encoder1970.getEncodedBytes();
+
+    IndexByteEncoder encoder2038 = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        ts2038, encoder2038.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    byte[] bytes2038 = encoder2038.getEncodedBytes();
+
+    // Assertion showing the sorting inversion: ts2038 is LESS than ts1970 in the index.
+    Assert.assertTrue(compareBytes(bytes2038, bytes1970) < 0);
+  }
+
+  private static Value manualBsonBinary(int subtype, byte[] bytes) {
+    byte[] encodedBytes = new byte[bytes.length + 1];
+    encodedBytes[0] = (byte) subtype;
+    System.arraycopy(bytes, 0, encodedBytes, 1, bytes.length);
+    return Value.newBuilder()
+        .setMapValue(
+            com.google.firestore.v1.MapValue.newBuilder()
+                .putFields(
+                    Values.RESERVED_BSON_BINARY_KEY,
+                    Value.newBuilder().setBytesValue(ByteString.copyFrom(encodedBytes)).build()))
+        .build();
+  }
+
+  private static int compareBytes(byte[] a, byte[] b) {
+    int len = Math.min(a.length, b.length);
+    for (int i = 0; i < len; i++) {
+      int aVal = a[i] & 0xFF;
+      int bVal = b[i] & 0xFF;
+      if (aVal != bVal) {
+        return Integer.compare(aVal, bVal);
+      }
+    }
+    return Integer.compare(a.length, b.length);
   }
 }

@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Assert;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -375,6 +376,29 @@ public class POJOTest {
     POJO otherData = doc.toObject(POJO.class);
     assertEquals(data, otherData);
   }
+
+  @Test
+  public void testWriteAndReadBsonBinarySubtype0RoundTripCoercion() {
+    CollectionReference collection = testCollection();
+    Map<String, Object> data = new HashMap<>();
+
+    // Subtype 0 BSON Binary Blob
+    Blob original = Blob.createBsonBinary(0, new byte[] {1, 2, 3});
+    Assert.assertTrue(original.isBson());
+    assertEquals(0, original.getSubType());
+
+    data.put("binary", original);
+    DocumentReference docRef = waitFor(collection.add(data));
+    DocumentSnapshot snapshot = waitFor(docRef.get());
+
+    // Read back
+    Blob returned = snapshot.getBlob("binary");
+    // Assert it is no longer BSON, but standard Blob (since subtype 0 BSON is coerced to standard bytes)
+    Assert.assertFalse(returned.isBson());
+    assertEquals(0, returned.getSubType());
+    Assert.assertArrayEquals(original.toBytes(), returned.toBytes());
+  }
+
 
   @Test
   public void testDocumentIdAnnotation() {
