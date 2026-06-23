@@ -477,7 +477,7 @@ package com.google.firebase.ai.type {
     property public boolean isThought;
     property public final String outcome;
     property public final String output;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.CodeExecutionResultPart.Companion Companion;
   }
 
@@ -574,7 +574,7 @@ package com.google.firebase.ai.type {
     property public final String code;
     property public boolean isThought;
     property public final String language;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.ExecutableCodePart.Companion Companion;
   }
 
@@ -595,7 +595,7 @@ package com.google.firebase.ai.type {
     method public boolean isThought();
     property public boolean isThought;
     property public final String mimeType;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     property public final String uri;
     field public static final com.google.firebase.ai.type.FileDataPart.Companion Companion;
   }
@@ -672,7 +672,7 @@ package com.google.firebase.ai.type {
     property public final String? id;
     property public boolean isThought;
     property public final String name;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.FunctionCallPart.Companion Companion;
   }
 
@@ -722,7 +722,7 @@ package com.google.firebase.ai.type {
     property public final String name;
     property public final java.util.List<com.google.firebase.ai.type.Part> parts;
     property public final kotlinx.serialization.json.JsonObject response;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.FunctionResponsePart.Companion Companion;
   }
 
@@ -993,7 +993,7 @@ package com.google.firebase.ai.type {
     property public final String? displayName;
     property public final android.graphics.Bitmap image;
     property public boolean isThought;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.ImagePart.Companion Companion;
   }
 
@@ -1260,7 +1260,7 @@ package com.google.firebase.ai.type {
     property public final byte[] inlineData;
     property public boolean isThought;
     property public final String mimeType;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.InlineDataPart.Companion Companion;
   }
 
@@ -1614,8 +1614,10 @@ package com.google.firebase.ai.type {
   }
 
   public interface Part {
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public abstract boolean isThought;
+    property public abstract String? thoughtSignature;
   }
 
   public final class PartKt {
@@ -1980,7 +1982,7 @@ package com.google.firebase.ai.type {
     method public boolean isThought();
     property public boolean isThought;
     property public final String text;
-    property public final String? thoughtSignature;
+    property public String? thoughtSignature;
     field public static final com.google.firebase.ai.type.TextPart.Companion Companion;
   }
 
