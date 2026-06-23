@@ -375,7 +375,7 @@ private suspend inline fun <T> signIn(
 private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser =
   signIn(dataConnect) {
     val authResult = signInAnonymously().await()
-    return checkNotNull(authResult.user) {
+    checkNotNull(authResult.user) {
       "internal error kz97svg6c3: signInAnonymously().await().user is null"
     }
   }
