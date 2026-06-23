@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Added static factory methods `create` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8347)
+- [feature] Added static factory methods `create` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
 
 # 17.13.0
 
