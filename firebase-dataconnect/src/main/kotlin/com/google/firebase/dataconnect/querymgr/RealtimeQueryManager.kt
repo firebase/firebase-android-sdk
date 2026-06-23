@@ -184,7 +184,7 @@ internal class RealtimeQueryManager(
           }
         }
         is State.Connected -> {
-          if (!currentState.stream.isPermanentlyFailedDueToFirebaseUserChange) {
+          if (!currentState.stream.isPermanentlyFailed) {
             return currentState
           }
           state.compareAndSet(currentState, State.Disconnected)

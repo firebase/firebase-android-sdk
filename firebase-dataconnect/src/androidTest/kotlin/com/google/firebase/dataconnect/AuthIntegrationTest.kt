@@ -16,7 +16,11 @@
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.test
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.dataconnect.core.FirebaseUserChangedException
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
@@ -25,6 +29,9 @@ import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
 import google.firebase.dataconnect.proto.executeMutationResponse
@@ -33,12 +40,18 @@ import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.asClue
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContainNull
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.result.shouldBeFailure
+import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import java.util.concurrent.CopyOnWriteArrayList
@@ -62,18 +75,12 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
-  private val auth: FirebaseAuth by lazy {
-    DataConnectBackend.fromInstrumentationArguments()
-      .authBackend
-      .getFirebaseAuth(personSchema.dataConnect.app)
-  }
-
   @Test
   fun authenticatedRequestsAreSuccessful() = runTest {
     val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
     val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
     val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
-    signIn(personSchema.dataConnect)
+    signIn(personSchema)
 
     personSchema.createPersonAuth(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPersonAuth(id = person2Id, name = "TestName2", age = 43).execute()
@@ -85,10 +92,10 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryFailsAfterUserSignsOut() = runTest {
-    signIn(personSchema.dataConnect)
+    signIn(personSchema)
     // Verify that we are signed in by executing a query, which should succeed.
     personSchema.getPersonAuth(id = "foo").execute()
-    signOut()
+    signOut(personSchema)
 
     val thrownException =
       shouldThrow<StatusException> { personSchema.getPersonAuth(id = "foo").execute() }
@@ -98,10 +105,10 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun mutationFailsAfterUserSignsOut() = runTest {
-    signIn(personSchema.dataConnect)
+    signIn(personSchema)
     // Verify that we are signed in by executing a mutation, which should succeed.
     personSchema.createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo").execute()
-    signOut()
+    signOut(personSchema)
 
     val thrownException =
       shouldThrow<StatusException> {
@@ -127,7 +134,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     backgroundScope.launch {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
-    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
     signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef =
@@ -156,7 +163,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     backgroundScope.launch {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
-    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
     signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
@@ -178,7 +185,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
         responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
-    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
     signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef = dataConnect.query(operationName, Unit, serializer<Unit>(), serializer<Unit>())
@@ -195,7 +202,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
         responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
-    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
     signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
@@ -206,16 +213,88 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     thrownException.asClue { it.status shouldBe Status.UNAUTHENTICATED }
   }
 
-  private suspend fun signIn(dataConnect: FirebaseDataConnect) {
-    dataConnect.awaitAuthReady()
-    val authResult = auth.run { signInAnonymously().await() }
-    withClue("authResult.user returned from signInAnonymously()") {
-      authResult.user.shouldNotBeNull()
+  @Test
+  fun realtimeQuerySubscriptionUnauthenticated() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKeyAuth.queryRef("E922A1E7-9F3C-4EF4-807E-CB163006F6D9")
+    queryRef.subscribe().flow.test {
+      val item = awaitItem()
+      val exception = item.result.shouldBeFailure<DataConnectOperationException>()
+
+      assertSoftly {
+        withClue("exception.message") {
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "unauthenticated"
+        }
+        withClue("exception.response.data") { exception.response.data.shouldBeNull() }
+        withClue("exception.response.errors") { exception.response.errors.shouldNotBeEmpty() }
+      }
+
+      cancelAndIgnoreRemainingEvents()
     }
   }
 
-  private fun signOut() {
-    auth.run { signOut() }
+  @Test
+  fun realtimeQuerySubscriptionAuthenticated() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    signIn(dataConnect)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val key = connector.insertString("value0")
+    val queryRef = connector.getStringByKeyAuth.queryRef(key)
+    queryRef.subscribe().flow.test {
+      withClue("item1") {
+        val item = awaitItem().result.shouldBeSuccess().data.item
+        item.shouldNotBeNull().name.shouldBe("value0")
+      }
+
+      connector.updateString(key, "value1")
+
+      withClue("item2") {
+        val item = awaitItem().result.shouldBeSuccess().data.item
+        item.shouldNotBeNull().name.shouldBe("value1")
+      }
+
+      cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionErrorsOnSignIn() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("FEE580E8-D824-4DF3-86CA-C235B122A203")
+    queryRef.subscribe().flow.test {
+      awaitItem().result.shouldBeSuccess()
+      val newUser = signIn(dataConnect)
+
+      val exception = awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "null"
+        exception.message shouldContainWithNonAbuttingText newUser.uid
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
+      }
+    }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionErrorsOnSignOut() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("866B2B88-3B59-44E4-A66E-4760E97BBF2A")
+    val oldUser = signIn(dataConnect)
+    queryRef.subscribe().flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signOut(dataConnect)
+
+      val exception = awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "null"
+        exception.message shouldContainWithNonAbuttingText oldUser.uid
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
+      }
+    }
   }
 
   @Serializable data class TestData(val foo: String)
@@ -225,3 +304,24 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
   }
 }
+
+private fun getFirebaseAuth(app: FirebaseApp): FirebaseAuth =
+  DataConnectBackend.fromInstrumentationArguments().authBackend.getFirebaseAuth(app)
+
+private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser {
+  dataConnect.awaitAuthReady()
+  val auth = getFirebaseAuth(dataConnect.app)
+  val authResult = auth.signInAnonymously().await()
+  return checkNotNull(authResult.user) {
+    "internal error kz97svg6c3: signInAnonymously().user was null"
+  }
+}
+
+private suspend fun signIn(personSchema: PersonSchema) = signIn(personSchema.dataConnect)
+
+private fun signOut(dataConnect: FirebaseDataConnect) {
+  val auth = getFirebaseAuth(dataConnect.app)
+  auth.signOut()
+}
+
+private fun signOut(personSchema: PersonSchema) = signOut(personSchema.dataConnect)

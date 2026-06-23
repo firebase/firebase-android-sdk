@@ -1066,7 +1066,7 @@ class QuerySubscriptionImplUnitTest {
   private suspend fun TestScope.testFlowReconnectsUponConnectionClosureWithGrpcFailureStatusCode(
     createException: (Status.Code) -> Throwable
   ) {
-    failureGrpcStatusCodes.forEach { code ->
+    retryableFailureGrpcStatusCodes.forEach { code ->
       withClue("code=$code") {
         val exception = createException(code)
         testFlowReconnectsUponConnectionClosure { it.onError(exception) }
@@ -1451,5 +1451,5 @@ private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestD
   onNext(StreamResponse.newBuilder().setRequestId(requestId).setData(encodeToStruct(data)).build())
 }
 
-private val failureGrpcStatusCodes: List<Status.Code> =
-  Status.Code.entries.filterNot { it == Status.Code.OK }
+private val retryableFailureGrpcStatusCodes: List<Status.Code> =
+  Status.Code.entries.filterNot { it == Status.Code.OK || it == Status.Code.UNAUTHENTICATED }
