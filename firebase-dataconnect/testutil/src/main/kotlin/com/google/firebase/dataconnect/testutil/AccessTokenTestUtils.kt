@@ -233,13 +233,12 @@ class TestInteropAppCheckTokenProvider(val token: String) : BaseInteropAppCheckT
   val getTokenCalls: List<GetTokenCall>
     get() = lock.withLock { _getTokenCalls.toList() }
 
-  override fun getToken(forceRefresh: Boolean) =
-    lock.withLock {
-      _getTokenCalls.add(GetTokenCall(forceRefresh))
-      Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
-        TestAppCheckTokenResultImpl(token)
-      )
-    }
+  override fun getToken(
+    forceRefresh: Boolean
+  ): Task<com.google.firebase.appcheck.AppCheckTokenResult> {
+    lock.withLock { _getTokenCalls.add(GetTokenCall(forceRefresh)) }
+    return Tasks.forResult(TestAppCheckTokenResultImpl(token))
+  }
 
   override fun getLimitedUseToken() = TODO("not implemented")
 
