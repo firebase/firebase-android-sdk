@@ -1345,12 +1345,13 @@ class QuerySubscriptionImplUnitTest {
         status.code shouldBe Status.Code.UNAUTHENTICATED
         status.description shouldBe "Request is missing required authentication credential"
 
-        getTokenCalls
-          ?.invoke()
-          ?.shouldContainExactly(
-            GetTokenCall(forceRefresh = false),
-            GetTokenCall(forceRefresh = true)
-          )
+        if (getTokenCalls != null) {
+          getTokenCalls()
+            .shouldContainExactly(
+              GetTokenCall(forceRefresh = false),
+              GetTokenCall(forceRefresh = true)
+            )
+        }
 
         serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
