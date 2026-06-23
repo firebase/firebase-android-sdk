@@ -513,7 +513,7 @@ public final class UserDataReader {
   }
 
   private Value parseBlob(Blob blob) {
-    if (blob.isBson() && blob.getSubType() != 0) {
+    if (blob.getSubType() != 0) {
       MapValue.Builder mapBuilder = MapValue.newBuilder();
       mapBuilder.putFields(
           Values.RESERVED_BSON_BINARY_KEY,

@@ -1329,6 +1329,35 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testIndexesBlobAndBsonBinaryOrderingAndMatching() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 1, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.DESCENDING));
+
+    addDoc("coll/doc_blob", map("key", blob(1, 2, 3)));
+    addDoc("coll/doc_bson0", map("key", Blob.createBsonBinary(0, new byte[] {1, 2, 3})));
+    addDoc("coll/doc_bson1", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
+
+    Query query = query("coll").orderBy(orderBy("key", "asc"));
+    verifyResults(query, "coll/doc_blob", "coll/doc_bson0", "coll/doc_bson1");
+
+    query = query("coll").orderBy(orderBy("key", "desc"));
+    verifyResults(query, "coll/doc_bson1", "coll/doc_bson0", "coll/doc_blob");
+
+    query = query("coll").filter(filter("key", "==", blob(1, 2, 3)));
+    verifyResults(query, "coll/doc_blob", "coll/doc_bson0");
+
+    query =
+        query("coll").filter(filter("key", "==", Blob.createBsonBinary(0, new byte[] {1, 2, 3})));
+    verifyResults(query, "coll/doc_blob", "coll/doc_bson0");
+
+    query =
+        query("coll").filter(filter("key", "==", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
+    verifyResults(query, "coll/doc_bson1");
+  }
+
+  @Test
   public void testIndexesBsonTimestamp() {
     indexManager.addFieldIndex(
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "key", FieldIndex.Segment.Kind.ASCENDING));
@@ -1644,6 +1673,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll/j", map("key", new BsonTimestamp(1, 2)));
     addDoc("coll/k", map("key", "string"));
     addDoc("coll/l", map("key", blob(1, 2, 3)));
+    addDoc("coll/m0", map("key", Blob.createBsonBinary(0, new byte[] {1, 2, 3})));
     addDoc("coll/m", map("key", Blob.createBsonBinary(1, new byte[] {1, 2, 3})));
     addDoc("coll/n", map("key", ref("foo/bar")));
     addDoc("coll/o", map("key", new BsonObjectId("507f191e810c19729de860ea")));
@@ -1666,6 +1696,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         "coll/o", // objectId
         "coll/n", // reference
         "coll/m", // bsonBinary
+        "coll/m0", // bsonBinary subtype 0
         "coll/l", // bytes
         "coll/k", // string
         "coll/j", // bsonTimestamp

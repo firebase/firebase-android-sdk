@@ -160,6 +160,24 @@ public class FirestoreIndexValueWriterTest {
   }
 
   @Test
+  public void writeIndexValueSupportsBsonBinarySubtype0()
+      throws ExecutionException, InterruptedException {
+    UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
+    Value bsonValue = dataReader.parseQueryValue(Blob.createBsonBinary(0, new byte[] {1, 2, 3}));
+    Value nativeValue = dataReader.parseQueryValue(Blob.fromBytes(new byte[] {1, 2, 3}));
+
+    IndexByteEncoder bsonEncoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        bsonValue, bsonEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+
+    IndexByteEncoder nativeEncoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        nativeValue, nativeEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+
+    Assert.assertArrayEquals(bsonEncoder.getEncodedBytes(), nativeEncoder.getEncodedBytes());
+  }
+
+  @Test
   public void writeIndexValueSupportsBsonBinaryWithEmptyData()
       throws ExecutionException, InterruptedException {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);

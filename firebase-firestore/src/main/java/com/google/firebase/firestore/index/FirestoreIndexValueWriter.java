@@ -260,10 +260,15 @@ public class FirestoreIndexValueWriter {
   }
 
   private void writeIndexBlob(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
-    writeValueTypeLabel(encoder, INDEX_TYPE_BSON_BINARY);
-
-    encoder.writeBytes(
-        mapValue.getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue());
+    ByteString bytes = mapValue.getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+    int subtype = bytes.isEmpty() ? -1 : (bytes.byteAt(0) & 0xFF);
+    if (subtype == 0) {
+      writeValueTypeLabel(encoder, INDEX_TYPE_BLOB);
+      encoder.writeBytes(bytes.substring(1));
+    } else {
+      writeValueTypeLabel(encoder, INDEX_TYPE_BSON_BINARY);
+      encoder.writeBytes(bytes);
+    }
     writeTruncationMarker(encoder);
   }
 

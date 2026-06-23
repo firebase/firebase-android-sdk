@@ -31,12 +31,10 @@ import java.util.Objects;
 public class Blob implements Comparable<Blob> {
   private final ByteString bytes;
   private final int subtype;
-  private final boolean isBson;
 
-  private Blob(ByteString bytes, int subtype, boolean isBson) {
+  private Blob(ByteString bytes, int subtype) {
     this.bytes = bytes;
     this.subtype = subtype;
-    this.isBson = isBson;
   }
 
   /**
@@ -51,7 +49,7 @@ public class Blob implements Comparable<Blob> {
   @NonNull
   public static Blob fromBytes(@NonNull byte[] bytes) {
     checkNotNull(bytes, "Provided bytes array must not be null.");
-    return new Blob(ByteString.copyFrom(bytes), 0, false);
+    return new Blob(ByteString.copyFrom(bytes), 0);
   }
 
   /** @hide */
@@ -59,7 +57,7 @@ public class Blob implements Comparable<Blob> {
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static Blob fromByteString(@NonNull ByteString bytes) {
     checkNotNull(bytes, "Provided ByteString must not be null.");
-    return new Blob(bytes, 0, false);
+    return new Blob(bytes, 0);
   }
 
   /**
@@ -71,7 +69,7 @@ public class Blob implements Comparable<Blob> {
   @NonNull
   public static Blob createBsonBinary(@NonNull byte[] bytes) {
     checkNotNull(bytes, "Provided bytes array must not be null.");
-    return new Blob(ByteString.copyFrom(bytes), 0, true);
+    return new Blob(ByteString.copyFrom(bytes), 0);
   }
 
   /**
@@ -89,7 +87,7 @@ public class Blob implements Comparable<Blob> {
       throw new IllegalArgumentException(
           "The subtype for Blob must be a value in the inclusive [0, 255] range.");
     }
-    return new Blob(ByteString.copyFrom(bytes), subtype, true);
+    return new Blob(ByteString.copyFrom(bytes), subtype);
   }
 
   /** @hide */
@@ -101,7 +99,7 @@ public class Blob implements Comparable<Blob> {
       throw new IllegalArgumentException(
           "The subtype for Blob must be a value in the inclusive [0, 255] range.");
     }
-    return new Blob(bytes, subtype, true);
+    return new Blob(bytes, subtype);
   }
 
   /**
@@ -113,15 +111,6 @@ public class Blob implements Comparable<Blob> {
     return subtype;
   }
 
-  /**
-   * Returns true if this Blob is a BSON binary data type.
-   *
-   * @return Whether this Blob represents BSON binary data.
-   */
-  public boolean isBson() {
-    return isBson;
-  }
-
   /** @return The bytes of this blob as a new byte[] array. */
   @NonNull
   public byte[] toBytes() {
@@ -131,13 +120,7 @@ public class Blob implements Comparable<Blob> {
   @Override
   @NonNull
   public String toString() {
-    return "Blob { bytes="
-        + Util.toDebugString(bytes)
-        + ", isBson="
-        + isBson
-        + ", subtype="
-        + subtype
-        + " }";
+    return "Blob { bytes=" + Util.toDebugString(bytes) + ", subtype=" + subtype + " }";
   }
 
   /** @hide */
