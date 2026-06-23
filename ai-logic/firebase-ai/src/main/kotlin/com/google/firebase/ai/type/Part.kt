@@ -34,6 +34,7 @@ import org.json.JSONObject
 public interface Part {
   public val isThought: Boolean
   public val thoughtSignature: String?
+    get() = null
 }
 
 /** Represents text or string based data sent to and received from requests. */
