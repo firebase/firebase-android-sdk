@@ -40,10 +40,20 @@ public class TextPart
 internal constructor(
   public val text: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   public constructor(text: String) : this(text, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      text: String,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): TextPart = TextPart(text, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -64,7 +74,7 @@ internal constructor(
   public val outcome: String,
   public val output: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -72,6 +82,19 @@ internal constructor(
 
   /** Indicates if the code execution was successful */
   public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    @Deprecated("Part of the model response. Do not instantiate directly.")
+    public fun create(
+      outcome: String,
+      output: String,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): CodeExecutionResultPart =
+      CodeExecutionResultPart(outcome, output, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -95,11 +118,23 @@ internal constructor(
   public val language: String,
   public val code: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    @Deprecated("Part of the model response. Do not instantiate directly.")
+    public fun create(
+      language: String,
+      code: String,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): ExecutableCodePart = ExecutableCodePart(language, code, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -125,7 +160,7 @@ internal constructor(
   public val image: Bitmap,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
@@ -133,6 +168,17 @@ internal constructor(
 
   /** @param image [Bitmap] to convert into a [Part] */
   public constructor(image: Bitmap, displayName: String) : this(image, displayName, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      image: Bitmap,
+      displayName: String? = null,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): ImagePart = ImagePart(image, displayName, isThought, thoughtSignature)
+  }
 
   internal fun toInlineDataPart() =
     InlineDataPart(
@@ -151,7 +197,7 @@ internal constructor(
   public val mimeType: String,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -175,6 +221,19 @@ internal constructor(
     mimeType: String,
     displayName: String
   ) : this(inlineData, mimeType, displayName, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      inlineData: ByteArray,
+      mimeType: String,
+      displayName: String? = null,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): InlineDataPart =
+      InlineDataPart(inlineData, mimeType, displayName, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -212,7 +271,7 @@ internal constructor(
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -227,6 +286,18 @@ internal constructor(
     args: Map<String, JsonElement>,
     id: String? = null,
   ) : this(name, args, id, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      name: String,
+      args: Map<String, JsonElement>,
+      id: String? = null,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): FunctionCallPart = FunctionCallPart(name, args, id, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -252,7 +323,7 @@ internal constructor(
   public val id: String? = null,
   public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -296,6 +367,18 @@ internal constructor(
     public fun from(jsonObject: JsonObject, parts: List<Part> = emptyList()): FunctionResponsePart {
       return FunctionResponsePart("", jsonObject, null, parts)
     }
+
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      name: String,
+      response: JsonObject,
+      id: String? = null,
+      parts: List<Part> = emptyList(),
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): FunctionResponsePart =
+      FunctionResponsePart(name, response, id, parts, isThought, thoughtSignature)
   }
 }
 
@@ -305,7 +388,7 @@ internal constructor(
   public val uri: String,
   public val mimeType: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -315,6 +398,17 @@ internal constructor(
    * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
    */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
+
+  public companion object {
+    @JvmStatic
+    @JvmOverloads
+    public fun create(
+      uri: String,
+      mimeType: String,
+      isThought: Boolean = false,
+      thoughtSignature: String? = null
+    ): FileDataPart = FileDataPart(uri, mimeType, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -331,8 +425,13 @@ internal constructor(
   }
 }
 
-internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
-  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
+internal data class UnknownPart(
+  public override val isThought: Boolean = false,
+  public val thoughtSignature: String? = null
+) : Part {
+  @Serializable
+  internal data class Internal(val thought: Boolean? = null, val thoughtSignature: String? = null) :
+    InternalPart
 }
 
 /** Returns the part as a [String] if it represents text, and null otherwise */
@@ -485,7 +584,7 @@ internal fun InternalPart.toPublic(): Part {
         thoughtSignature
       )
     is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri, thought ?: false, thoughtSignature)
+      FileDataPart(fileData.fileUri, fileData.mimeType, thought ?: false, thoughtSignature)
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(
         executableCode.language,
@@ -500,7 +599,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
-    is UnknownPart.Internal -> UnknownPart()
+    is UnknownPart.Internal -> UnknownPart(thought ?: false, thoughtSignature)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
