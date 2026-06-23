@@ -1,0 +1,7 @@
+{
+    "name": "test_release",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-perf"
+    ]
+}
