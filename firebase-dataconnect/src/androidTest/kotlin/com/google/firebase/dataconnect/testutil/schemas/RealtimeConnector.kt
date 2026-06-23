@@ -99,6 +99,8 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
     fun variables(key: Key): GetStringByKeyQuery.Variables = GetStringByKeyQuery.Variables(key)
 
+    suspend fun execute(key: Key): GetStringByKeyQuery.Data.Item? = execute(variables(key))
+
     suspend fun execute(variables: GetStringByKeyQuery.Variables): GetStringByKeyQuery.Data.Item? =
       queryRef(variables).execute().data.item
 
@@ -132,12 +134,16 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     fun mutationRef(variables: Variables) =
       connector.dataConnect.mutation(OPERATION_NAME, variables, serializer<Data>(), serializer())
 
+    fun mutationRef(name: String) = mutationRef(Variables(name))
+
     companion object {
       const val OPERATION_NAME = "RealtimeString_Insert"
     }
   }
 
   class InsertStringMutationAuth(val connector: RealtimeConnector) {
+
+    suspend fun execute(name: String): Key = execute(InsertStringMutation.Variables(name = name))
 
     suspend fun execute(variables: InsertStringMutation.Variables): Key =
       mutationRef(variables).execute().data.key

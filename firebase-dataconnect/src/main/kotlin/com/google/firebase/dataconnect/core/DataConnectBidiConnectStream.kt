@@ -46,14 +46,15 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -77,7 +78,13 @@ import kotlinx.coroutines.launch
  *
  * @param flow The flow that, when collected, opens the bidirectional streaming "Connect" RPC with
  * the backend and sends responses received from the backend downstream.
+ * @param authToken A flow of sequenced authentication tokens to use for metadata headers and to
+ * monitor for changes that may require stream updates.
+ * @param shouldRetry A suspending callback invoked upon connection failure to determine the
+ * [RetryStrategy] (retry immediately, retry after backoff, or fail permanently by throwing).
+ * @param idStringGenerator Generator used to create unique connection and request identifiers.
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
+ * @param logger The [Logger] instance to use for diagnostic and debugging logs.
  */
 internal class DataConnectBidiConnectStream(
   flow:
@@ -86,14 +93,15 @@ internal class DataConnectBidiConnectStream(
         StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
       >
     >,
-  dataConnectAuth: DataConnectAuth,
+  authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
+  shouldRetry: suspend (Throwable) -> RetryStrategy,
   idStringGenerator: IdStringGenerator,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
 
-  val isPermanentlyFailedDueToFirebaseUserChange: Boolean
-    get() = firebaseUserChangedFlow.replayCache.isNotEmpty()
+  val isPermanentlyFailed: Boolean
+    get() = _permanentFailureFlow.replayCache.isNotEmpty()
 
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
@@ -101,16 +109,13 @@ internal class DataConnectBidiConnectStream(
    */
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
 
-  /**
-   * A flow that emits a [FirebaseUserChangedException] when the connection is permanently failed
-   * due to the Firebase Auth user changing.
-   */
-  private val _firebaseUserChangedFlow =
-    MutableSharedFlow<FirebaseUserChangedException>(
+  /** A flow that emits an exception when the connection is permanently failed. */
+  private val _permanentFailureFlow =
+    MutableSharedFlow<Throwable>(
       replay = 1,
       onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-  private val firebaseUserChangedFlow = _firebaseUserChangedFlow.asSharedFlow()
+  private val permanentFailureFlow = _permanentFailureFlow.asSharedFlow()
 
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
@@ -120,7 +125,7 @@ internal class DataConnectBidiConnectStream(
     val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
 
     val sharedFlow =
-      mergeGrpcAndAuth(flow, dataConnectAuth)
+      mergeGrpcAndAuth(flow, authToken)
         .mapNotNull { event ->
           with(connectionStateUpdater) { connectionStateFlow.update(event) }
           when (event) {
@@ -134,12 +139,6 @@ internal class DataConnectBidiConnectStream(
           }
         }
         .map(SubscriptionEvent::Message)
-        .catch { exception ->
-          if (exception is FirebaseUserChangedException) {
-            _firebaseUserChangedFlow.emit(exception)
-          }
-          throw exception
-        }
         .onCompletion { throwable ->
           with(connectionStateUpdater) {
             connectionStateFlow.update(GrpcAuthMergedFlowEvent.Disconnect)
@@ -147,12 +146,26 @@ internal class DataConnectBidiConnectStream(
           throw throwable ?: Exception("to be handled by retryWhen")
         }
         .retryWhen { cause, attempt ->
-          if (cause is FirebaseUserChangedException || attempt > 2) {
-            false
-          } else {
-            delay(1.seconds)
-            logger.debug { "retrying connection" }
-            true
+          val retryStrategy =
+            try {
+              shouldRetry(cause)
+            } catch (e: Throwable) {
+              currentCoroutineContext().ensureActive()
+              _permanentFailureFlow.emit(e)
+              throw e
+            }
+
+          when (retryStrategy) {
+            RetryStrategy.RETRY_IMMEDIATELY -> true
+            RetryStrategy.RETRY_AFTER_BACKOFF -> {
+              if (attempt > 2) {
+                false
+              } else {
+                delay(1.seconds)
+                logger.debug { "retrying connection" }
+                true
+              }
+            }
           }
         }
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
@@ -234,7 +247,7 @@ internal class DataConnectBidiConnectStream(
     return merge(
         subscriptionFlow,
         scopeCompletedFlow,
-        firebaseUserChangedFlow.transform { throw it },
+        permanentFailureFlow.transform { throw it },
       )
       .transformWhile {
         if (it !== null && coroutineScope.isActive) {
@@ -467,6 +480,11 @@ internal class DataConnectBidiConnectStream(
     }
   }
 
+  enum class RetryStrategy {
+    RETRY_IMMEDIATELY,
+    RETRY_AFTER_BACKOFF,
+  }
+
   companion object {
 
     @VisibleForTesting
@@ -512,11 +530,11 @@ private fun mergeGrpcAndAuth(
         StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
       >
     >,
-  dataConnectAuth: DataConnectAuth,
+  authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
 ): Flow<GrpcAuthMergedFlowEvent> =
   mergeColdAndHotFlow(
     coldFlow = grpcBidiFlow.map(GrpcAuthMergedFlowEvent::Grpc),
-    hotFlow = dataConnectAuth.token.map(GrpcAuthMergedFlowEvent::Auth)
+    hotFlow = authToken.map(GrpcAuthMergedFlowEvent::Auth)
   )
 
 private sealed interface GrpcAuthMergedFlowEvent {

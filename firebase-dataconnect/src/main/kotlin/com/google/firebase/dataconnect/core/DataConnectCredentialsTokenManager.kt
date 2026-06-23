@@ -117,9 +117,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   private val _token = MutableStateFlow(SequencedReference<R?>(nextSequenceNumber(), null))
 
   /**
-   * The last token returned from [getToken]
-   *
-   * Returns null if [getToken] has never been called or never completed successfully.
+   * The last token returned from [getToken], or a [SequencedReference] with a null value if
+   * [getToken] has never been called and returned a value.
    *
    * After [close] the value of this flow is _not_ cleared, and will remain unchanged indefinitely.
    */

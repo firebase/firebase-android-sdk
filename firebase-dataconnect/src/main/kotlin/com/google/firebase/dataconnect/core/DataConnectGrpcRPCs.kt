@@ -25,8 +25,10 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
+import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.RetryStrategy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -63,6 +65,7 @@ import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.CallOptions
+import io.grpc.Channel as GrpcChannel
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -74,7 +77,6 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -156,7 +158,7 @@ internal class DataConnectGrpcRPCs(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     authToken: GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation($operationName)"
@@ -237,7 +239,7 @@ internal class DataConnectGrpcRPCs(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
     authToken: GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
   ): SqliteSequencedReference<ExecuteQueryResult> {
     val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery($operationName)"
@@ -369,16 +371,110 @@ internal class DataConnectGrpcRPCs(
     }
   }
 
+  private class ConnectionTokenManager(
+    private val requestId: String,
+    private val dataConnectAuth: DataConnectAuth,
+    private val dataConnectAppCheck: DataConnectAppCheck,
+    initialAuthToken: SequencedReference<GetAuthTokenResult?>,
+  ) {
+
+    val authToken
+      get() = dataConnectAuth.token
+
+    val authUid: AuthUid? = initialAuthToken.ref?.authUid
+
+    private var initialAuthToken: SequencedReference<GetAuthTokenResult?>? = initialAuthToken
+    private var lastTokens: Tokens? = null
+    private var nextTokens: Tokens? = null
+
+    data class Tokens(
+      val auth: SequencedReference<GetAuthTokenResult?>,
+      val appCheck: SequencedReference<GetAppCheckTokenResult?>,
+    )
+
+    private val Tokens.authTokenString: String?
+      get() = auth.ref?.token
+    private val Tokens.appCheckTokenString: String?
+      get() = appCheck.ref?.token
+
+    private fun Tokens.hasSameTokensAs(other: Tokens): Boolean =
+      authTokenString == other.authTokenString && appCheckTokenString == other.appCheckTokenString
+
+    suspend fun getTokens(): Tokens {
+      val nextTokens = this.nextTokens
+      val tokens =
+        if (nextTokens != null) {
+          this.nextTokens = null
+          nextTokens
+        } else {
+          fetchTokens()
+        }
+
+      lastTokens = tokens
+      return tokens
+    }
+
+    suspend fun forceRefresh(): Boolean {
+      dataConnectAuth.forceRefresh()
+      dataConnectAppCheck.forceRefresh()
+
+      val tokens = fetchTokens()
+      this.nextTokens = tokens
+
+      val lastTokens = this.lastTokens ?: return true
+      return !lastTokens.hasSameTokensAs(tokens)
+    }
+
+    private suspend fun fetchTokens(): Tokens {
+      val authToken = fetchAuthToken()
+      val appCheckToken = dataConnectAppCheck.getToken(requestId)
+      return Tokens(authToken, appCheckToken)
+    }
+
+    private suspend fun fetchAuthToken(): SequencedReference<GetAuthTokenResult?> {
+      initialAuthToken?.let {
+        initialAuthToken = null
+        return it
+      }
+
+      val token = dataConnectAuth.getToken(requestId)
+
+      val uidFromToken = token.ref?.authUid
+      if (uidFromToken != authUid) {
+        throw FirebaseUserChangedException("ytd7yf2geh", authUid, uidFromToken)
+      }
+
+      return token
+    }
+  }
+
   suspend fun connect(
     streamId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     dataConnectAuth: DataConnectAuth,
     dataConnectAppCheck: DataConnectAppCheck,
     idStringGenerator: IdStringGenerator,
-  ): DataConnectBidiConnectStream {
-    val initialAuthToken = AtomicReference(dataConnectAuth.getToken(streamId))
-    val connectionAuthUid = initialAuthToken.get().ref?.authUid
+  ): DataConnectBidiConnectStream =
+    connect(
+      streamId,
+      callerSdkType,
+      ConnectionTokenManager(
+        streamId,
+        dataConnectAuth,
+        dataConnectAppCheck,
+        dataConnectAuth.getToken(streamId)
+      ),
+      lazyGrpcChannel.get(),
+      idStringGenerator,
+    )
 
+  private fun connect(
+    streamId: String,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    tokenManager: ConnectionTokenManager,
+    grpcChannel: GrpcChannel,
+    idStringGenerator: IdStringGenerator,
+  ): DataConnectBidiConnectStream {
     val initRequest =
       StreamRequest.newBuilder().setRequestId("init").setName(connectorResourceName).build()
 
@@ -387,7 +483,7 @@ internal class DataConnectGrpcRPCs(
     val grpcBidiFlowListener =
       ConnectGrpcBidiFlowListener(
         streamId = streamId,
-        authUid = connectionAuthUid,
+        authUid = tokenManager.authUid,
         initRequest = initRequest,
         kotlinMethodName = "connect()",
       )
@@ -395,19 +491,14 @@ internal class DataConnectGrpcRPCs(
     val createHeaders:
       suspend (String) -> GrpcBidiFlow.HeadersResult<SequencedReference<GetAuthTokenResult?>> =
       {
-        val authToken = initialAuthToken.getAndSet(null) ?: dataConnectAuth.getToken(streamId)
-        val authUid = authToken.ref?.authUid
-        if (authUid != connectionAuthUid) {
-          throw FirebaseUserChangedException("ytd7yf2geh", connectionAuthUid, authUid)
-        }
-        val appCheckToken = dataConnectAppCheck.getToken(streamId)
+        val (authToken, appCheckToken) = tokenManager.getTokens()
         val metadata = grpcMetadata.get(authToken.ref, appCheckToken.ref, callerSdkType)
         GrpcBidiFlow.HeadersResult(metadata, authToken)
       }
 
     val flow =
       GrpcBidiFlow.create(
-        grpcChannel = lazyGrpcChannel.get(),
+        grpcChannel = grpcChannel,
         method = ConnectorStreamServiceGrpc.getConnectMethod(),
         callOptions = CallOptions.DEFAULT.withExecutor(blockingCoroutineDispatcher.asExecutor()),
         headers = createHeaders,
@@ -416,9 +507,24 @@ internal class DataConnectGrpcRPCs(
         listener = grpcBidiFlowListener,
       )
 
+    val shouldRetry: suspend (Throwable) -> RetryStrategy = { exception ->
+      if (exception is FirebaseUserChangedException) {
+        throw exception
+      } else if (isUnauthenticatedFailure(exception)) {
+        if (tokenManager.forceRefresh()) {
+          RetryStrategy.RETRY_IMMEDIATELY
+        } else {
+          throw exception
+        }
+      } else {
+        RetryStrategy.RETRY_AFTER_BACKOFF
+      }
+    }
+
     return DataConnectBidiConnectStream(
       flow,
-      dataConnectAuth,
+      tokenManager.authToken,
+      shouldRetry = shouldRetry,
       idStringGenerator,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
@@ -826,3 +932,10 @@ internal class FirebaseUserChangedException(
     "Firebase user changed from uid=${currentAuthUid?.string} " +
       "to uid=${newAuthUid?.string} [$errorCode]"
   )
+
+private fun isUnauthenticatedFailure(e: Throwable): Boolean =
+  when (e) {
+    is StatusException -> e.status.code == Status.Code.UNAUTHENTICATED
+    is StatusRuntimeException -> e.status.code == Status.Code.UNAUTHENTICATED
+    else -> false
+  }
