@@ -28,11 +28,11 @@ import java.lang.reflect.WildcardType;
  *
  * <ol>
  *   <li>Primitive types
- *   <li>Array Types: primitive arrays(i.e. {@code int[]}) and object arrays(i.e. {@code Foo[]})
- *   <li>Plain class types. i.e. {@code Foo}
- *   <li>Generic types. i.e. {@code Foo<String, Double>}
- *   <li>Wildcard types: only support {@code Foo<? extend Bar>} by downgrading it to {@code
- *       Foo<Bar>}, and throw exception when stumbled upon {@code Foo<? super Bar>}.
+ *   <li>Array Types: primitive arrays (like {@code int[]}) and object arrays (like {@code Foo[]})
+ *   <li>Plain class types, for example, {@code Foo}
+ *   <li>Generic types, for example, {@code Foo<String, Double>}
+ *   <li>Wildcard types: only support {@code Foo<? extend Bar>} by downgrading it to
+         {@code Foo<Bar>}, and throw exception when stumbled upon {@code Foo<? super Bar>}.
  * </ol>
  */
 public abstract class TypeToken<T> {
@@ -175,7 +175,7 @@ public abstract class TypeToken<T> {
 
   /**
    * {@link ArrayToken} is used to represent Array types in a type-safe manner. such as: primitive
-   * arrays(i.e. {@code int[]}) and object arrays(i.e. {@code Foo[]})
+   * arrays (that is, {@code int[]}) and object arrays (that is, {@code Foo[]})
    */
   public static class ArrayToken<T> extends TypeToken<T> {
     private final TypeToken<?> componentType;
