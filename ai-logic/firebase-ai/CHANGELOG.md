@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Exposed `thoughtSignature` and `isThought` properties on `Part` implementations. (#8347)
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
