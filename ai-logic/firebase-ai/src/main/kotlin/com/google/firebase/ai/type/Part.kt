@@ -37,10 +37,10 @@ public interface Part {
 
 /** Represents text or string based data sent to and received from requests. */
 public class TextPart
-internal constructor(
+public constructor(
   public val text: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   public constructor(text: String) : this(text, false, null)
@@ -60,11 +60,11 @@ internal constructor(
  * @property isThought Indicates whether the response is a thought.
  */
 public class CodeExecutionResultPart
-internal constructor(
+public constructor(
   public val outcome: String,
   public val output: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -91,11 +91,11 @@ internal constructor(
  * @property isThought Indicates whether the response is a thought.
  */
 public class ExecutableCodePart
-internal constructor(
+public constructor(
   public val language: String,
   public val code: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -121,11 +121,11 @@ internal constructor(
  * JPEG encoding at 80% quality before being sent to the server.
  */
 public class ImagePart
-internal constructor(
+public constructor(
   public val image: Bitmap,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
@@ -146,12 +146,12 @@ internal constructor(
 
 /** Represents binary data with an associated MIME type sent to and received from requests. */
 public class InlineDataPart
-internal constructor(
+public constructor(
   public val inlineData: ByteArray,
   public val mimeType: String,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -207,12 +207,12 @@ public class InlineData(
 
 /** Represents function call name and params received from requests. */
 public class FunctionCallPart
-internal constructor(
+public constructor(
   public val name: String,
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -246,13 +246,13 @@ internal constructor(
 
 /** Represents function call output to be returned to the model when it requests a function call. */
 public class FunctionResponsePart
-internal constructor(
+public constructor(
   public val name: String,
   public val response: JsonObject,
   public val id: String? = null,
   public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -301,11 +301,11 @@ internal constructor(
 
 /** Represents file data stored in Cloud Storage for Firebase, referenced by URI. */
 public class FileDataPart
-internal constructor(
+public constructor(
   public val uri: String,
   public val mimeType: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -331,8 +331,13 @@ internal constructor(
   }
 }
 
-internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
-  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
+internal data class UnknownPart(
+  public override val isThought: Boolean = false,
+  public val thoughtSignature: String? = null
+) : Part {
+  @Serializable
+  internal data class Internal(val thought: Boolean? = null, val thoughtSignature: String? = null) :
+    InternalPart
 }
 
 /** Returns the part as a [String] if it represents text, and null otherwise */
@@ -485,7 +490,7 @@ internal fun InternalPart.toPublic(): Part {
         thoughtSignature
       )
     is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri, thought ?: false, thoughtSignature)
+      FileDataPart(fileData.fileUri, fileData.mimeType, thought ?: false, thoughtSignature)
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(
         executableCode.language,
@@ -500,7 +505,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
-    is UnknownPart.Internal -> UnknownPart()
+    is UnknownPart.Internal -> UnknownPart(thought ?: false, thoughtSignature)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
