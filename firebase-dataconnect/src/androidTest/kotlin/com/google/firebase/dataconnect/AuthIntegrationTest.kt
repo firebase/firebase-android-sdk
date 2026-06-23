@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.test
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.dataconnect.core.FirebaseUserChangedException
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
@@ -297,6 +298,67 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeAfterErroringOnSignIn() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("5EB095CB-25EF-4F69-AD17-073EA5DFDEE3")
+    val querySubscription = queryRef.subscribe()
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signIn(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeErrorsOnSignOut() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("B94007D9-0F5A-4665-9D45-F2CD6D9C95A4")
+    signIn(dataConnect)
+    val querySubscription = queryRef.subscribe()
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signOut(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeErrorsOnSignOutThenSignBackIn() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKeyAuth.queryRef("33D2591F-7CD1-465A-A241-02A07F8851E0")
+    val querySubscription = queryRef.subscribe()
+
+    val email = "sree9hqjks@google.com"
+    val password = "casmwbbs4g"
+    signIn(dataConnect) {
+      try {
+        createUserWithEmailAndPassword(email, password).await()
+      } catch (_: FirebaseAuthUserCollisionException) {
+        signInWithEmailAndPassword(email, password).await()
+      }
+    }
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signOut(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    signIn(dataConnect) { signInWithEmailAndPassword(email, password).await() }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
   @Serializable data class TestData(val foo: String)
 
   private companion object {
@@ -308,14 +370,22 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 private fun getFirebaseAuth(app: FirebaseApp): FirebaseAuth =
   DataConnectBackend.fromInstrumentationArguments().authBackend.getFirebaseAuth(app)
 
-private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser {
+private suspend inline fun <T> signIn(
+  dataConnect: FirebaseDataConnect,
+  signIn: FirebaseAuth.() -> T
+): T {
   dataConnect.awaitAuthReady()
   val auth = getFirebaseAuth(dataConnect.app)
-  val authResult = auth.signInAnonymously().await()
-  return checkNotNull(authResult.user) {
-    "internal error kz97svg6c3: signInAnonymously().user was null"
-  }
+  return signIn(auth)
 }
+
+private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser =
+  signIn(dataConnect) {
+    val authResult = signInAnonymously().await()
+    return checkNotNull(authResult.user) {
+      "internal error kz97svg6c3: signInAnonymously().await().user is null"
+    }
+  }
 
 private suspend fun signIn(personSchema: PersonSchema) = signIn(personSchema.dataConnect)
 
