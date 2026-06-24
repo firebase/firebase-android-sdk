@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.util.coroutines
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -57,13 +57,13 @@ import kotlinx.coroutines.flow.flow
  * All methods and properties of [ConflatedSignal] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  */
-internal class ConflatedSignal {
+internal class ConflatedSignal<T : Any> {
 
-  private val signalState = AtomicBoolean(false)
+  private val signalState = AtomicReference<T?>(null)
   private val channel = Channel<Unit>(CONFLATED)
 
   /**
-   * A cold [Flow] that emits [Unit] every time a signal is received.
+   * A cold [Flow] that emits [T] every time a signal is received.
    *
    * ### Important Concurrency & Competing-Consumer Semantics
    *
@@ -76,10 +76,9 @@ internal class ConflatedSignal {
    * them (either resuming a direct [await] caller or emitting to a single flow collector). It will
    * *not* broadcast the signal to all collectors.
    */
-  val signals: Flow<Unit> = flow {
+  val signals: Flow<T> = flow {
     while (true) {
-      await()
-      emit(Unit)
+      emit(await())
     }
   }
 
@@ -88,22 +87,22 @@ internal class ConflatedSignal {
    * call to [await] or a collector of [signals].
    */
   val hasPendingSignal: Boolean
-    get() = signalState.get()
+    get() = signalState.get() != null
 
   /**
    * Emits a signal to resume a suspended waiter, if one is present, or buffers the signal for the
    * next waiter if none are currently awaiting.
    *
    * Because this signal is conflated, multiple sequential calls to [signal] without intervening
-   * calls to [await] (or collectors of [signal]) will be merged into a single signal. Only one
+   * calls to [await] (or collectors of [signals]) will be merged into a single signal. Only one
    * [await] call (or [signals] collector) will be resumed immediately, regardless of how many times
    * [signal] was called.
    *
    * This method is non-blocking, thread-safe, and safe to call from any context (including outside
    * of coroutines).
    */
-  fun signal() {
-    signalState.set(true)
+  fun signal(value: T) {
+    signalState.set(value)
     channel.trySend(Unit)
   }
 
@@ -126,14 +125,24 @@ internal class ConflatedSignal {
    * [await] is suspended, it will not resume successfully, even if it consumed a signal, but throws
    * a [CancellationException].
    */
-  suspend fun await() {
+  suspend fun await(): T {
     while (true) {
-      if (signalState.compareAndSet(true, false)) {
-        break
+      val current = signalState.get()
+      if (current != null) {
+        if (signalState.compareAndSet(current, null)) {
+          return current
+        }
       }
       channel.receive()
     }
   }
 
   override fun toString() = "ConflatedSignal(hasPendingSignal=$hasPendingSignal)"
+}
+
+/**
+ * Extension function to allow signaling a [ConflatedSignal] of [Unit] without passing an argument.
+ */
+internal fun ConflatedSignal<Unit>.signal() {
+  signal(Unit)
 }

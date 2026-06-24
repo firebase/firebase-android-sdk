@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
+import com.google.firebase.dataconnect.util.coroutines.signal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
 import com.google.protobuf.Struct
@@ -289,7 +290,7 @@ internal class DataConnectBidiConnectStream(
       val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
-      private val subscribeOrResumeSignal: ConflatedSignal,
+      private val subscribeOrResumeSignal: ConflatedSignal<Unit>,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
 
@@ -384,7 +385,7 @@ internal class DataConnectBidiConnectStream(
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: AuthUid?,
-      subscribeOrResumeSignal: ConflatedSignal,
+      subscribeOrResumeSignal: ConflatedSignal<Unit>,
     ) {
       var subscribed = false
       try {
@@ -423,7 +424,7 @@ internal class DataConnectBidiConnectStream(
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
 
-        val subscribeOrResumeSignal = ConflatedSignal()
+        val subscribeOrResumeSignal = ConflatedSignal<Unit>()
         if (isPendingSubscription) {
           subscribeOrResumeSignal.signal()
         }
