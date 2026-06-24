@@ -154,10 +154,8 @@ public class SessionReportingCoordinator {
             sessionId,
             applicationExitInfoList,
             aei -> {
-              // If the ApplicationExitInfo is not an ANR, but it was within the session, loop
-              // through
-              // all ApplicationExitInfos that fall within the session.
-              return aei.getReason() != ApplicationExitInfo.REASON_ANR;
+              // Get the first ANR ApplicationExitInfo that occurred within this session
+              return aei.getReason() == ApplicationExitInfo.REASON_ANR;
             });
 
     if (relevantApplicationExitInfo == null) {
@@ -479,22 +477,17 @@ public class SessionReportingCoordinator {
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
       String sessionId,
       List<ApplicationExitInfo> applicationExitInfoList,
-      Predicate<ApplicationExitInfo> skip) {
+      Predicate<ApplicationExitInfo> predicate) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
 
     // The order of ApplicationExitInfos is latest first.
     // Java For-each preserves the order.
     for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
       // ApplicationExitInfo did not occur during the session.
-      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
-        return null;
+      if (applicationExitInfo.getTimestamp() >= sessionStartTime
+          && predicate.test(applicationExitInfo)) {
+        return applicationExitInfo;
       }
-
-      if (skip.test(applicationExitInfo)) {
-        continue;
-      }
-
-      return applicationExitInfo;
     }
 
     return null;
@@ -518,8 +511,8 @@ public class SessionReportingCoordinator {
                   aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
                       && aei.getStatus() == OsConstants.SIGKILL;
 
-              // Skip all that aren't related to OOMs
-              return !viaLowMemory && !viaSignaled;
+              // Get the first instance that is an OOM
+              return viaLowMemory || viaSignaled;
             });
 
     return relevant != null;
