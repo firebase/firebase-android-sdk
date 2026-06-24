@@ -47,10 +47,8 @@ val Project.sdkDir: File
 val Project.androidJar: File?
   get() {
     val android = project.extensions.findByType(LibraryExtension::class.java) ?: return null
-    return android.bootClasspath.firstOrNull { it.name == "android.jar" } ?: File(
-      sdkDir,
-      String.format("/platforms/%s/android.jar", android.compileSdkVersion)
-    )
+    return android.bootClasspath.firstOrNull { it.name == "android.jar" }
+      ?: File(sdkDir, String.format("/platforms/%s/android.jar", android.compileSdkVersion))
   }
 
 /**
