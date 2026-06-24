@@ -967,7 +967,7 @@ class QuerySubscriptionImplUnitTest {
 
           val resumeRequest = serverCollector.awaitUntilResumeStreamRequest().streamRequest
           val apiClientHeader = resumeRequest.headersMap["x-goog-api-client"]
-          apiClientHeader shouldBe dataConnect.googApiClientHeaderValue(callerSdkType1)
+          apiClientHeader shouldBe dataConnect.googApiClientHeaderValue(callerSdkType2)
 
           clientCollector2.cancelAndIgnoreRemainingEvents()
           clientCollector1.cancelAndIgnoreRemainingEvents()

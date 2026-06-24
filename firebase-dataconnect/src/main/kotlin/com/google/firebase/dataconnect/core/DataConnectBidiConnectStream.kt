@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
-import com.google.firebase.dataconnect.util.coroutines.signal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
 import com.google.protobuf.Struct
@@ -189,7 +188,9 @@ internal class DataConnectBidiConnectStream(
    * @param operationName The name of the operation to execute.
    * @param variables The variables for the operation.
    * @param callerSdkType The type of caller that is making the request.
-   * @return A [Flow] of [ExecuteResponse] objects for the subscription.
+   * @return A [Flow] of [ExecuteResponse] objects for the subscription. The coroutine context that
+   * collects the flow **MUST** have a [CallerSdkTypeElement] element. This allows each individual
+   * flow collector to specify its own [CallerSdkType].
    */
   fun subscribe(
     requestId: String,
@@ -199,7 +200,7 @@ internal class DataConnectBidiConnectStream(
   ): Flow<ExecuteResponse> {
     val state = AtomicReference<SubscriptionState>(SubscriptionState.Disconnected)
 
-    fun sendSubscribeOrResume() {
+    fun sendSubscribeOrResume(callerSdkType: CallerSdkType) {
       while (true) {
         when (val currentState = state.get()) {
           is SubscriptionState.Connected -> {
@@ -241,7 +242,13 @@ internal class DataConnectBidiConnectStream(
         .onSubscription { emit(MessageOrSubscribe.Subscribed) }
         .transform { messageOrSubscribe ->
           when (messageOrSubscribe) {
-            MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
+            MessageOrSubscribe.Subscribed -> {
+              val callerSdkTypeElement = currentCoroutineContext()[CallerSdkTypeElement]
+              checkNotNull(callerSdkTypeElement) {
+                "internal error c6se9nvv5w: currentCoroutineContext()[CallerSdkTypeElement]==null"
+              }
+              sendSubscribeOrResume(callerSdkTypeElement.callerSdkType)
+            }
             is MessageOrSubscribe.Message -> emit(messageOrSubscribe)
           }
         }
