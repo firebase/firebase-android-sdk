@@ -33,8 +33,6 @@ import org.json.JSONObject
 /** Interface representing data sent to and received from requests. */
 public interface Part {
   public val isThought: Boolean
-  public val thoughtSignature: String?
-    get() = null
 }
 
 /** Represents text or string based data sent to and received from requests. */
@@ -42,7 +40,7 @@ public class TextPart
 internal constructor(
   public val text: String,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   public constructor(text: String) : this(text, false, null)
@@ -76,7 +74,7 @@ internal constructor(
   public val outcome: String,
   public val output: String,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -120,7 +118,7 @@ internal constructor(
   public val language: String,
   public val code: String,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -162,7 +160,7 @@ internal constructor(
   public val image: Bitmap,
   public val displayName: String?,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
@@ -199,7 +197,7 @@ internal constructor(
   public val mimeType: String,
   public val displayName: String?,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -273,7 +271,7 @@ internal constructor(
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -325,7 +323,7 @@ internal constructor(
   public val id: String? = null,
   public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -390,7 +388,7 @@ internal constructor(
   public val uri: String,
   public val mimeType: String,
   public override val isThought: Boolean,
-  public override val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -429,7 +427,7 @@ internal constructor(
 
 internal data class UnknownPart(
   public override val isThought: Boolean = false,
-  public override val thoughtSignature: String? = null
+  public val thoughtSignature: String? = null
 ) : Part {
   @Serializable
   internal data class Internal(val thought: Boolean? = null, val thoughtSignature: String? = null) :
