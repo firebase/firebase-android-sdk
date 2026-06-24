@@ -97,7 +97,7 @@ internal class DataConnectGrpcRPCs(
   @get:VisibleForTesting val connectorResourceName: String,
   private val nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
-  private val grpcMetadata: DataConnectGrpcMetadata,
+  @get:VisibleForTesting val grpcMetadata: DataConnectGrpcMetadata,
   private val cache: DataConnectCache?,
   parentLogger: Logger,
 ) {

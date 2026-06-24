@@ -878,6 +878,42 @@ class QuerySubscriptionImplUnitTest {
     }
   }
 
+  @Test
+  fun `x-goog-api-client header is sent with subscribe request`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.enum<CallerSdkType>(),
+      Arb.dataConnect.deferredAuthProvider(),
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { callerSdkType, deferredAuthProvider, deferredAppCheckProvider ->
+      val dataConnect =
+        dataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = deferredAuthProvider,
+          deferredAppCheckProvider = deferredAppCheckProvider,
+        )
+
+      try {
+        val subscription =
+          queryRef(dataConnect = dataConnect, callerSdkType = callerSdkType).subscribe()
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+          val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest
+
+          val apiClientHeader = subscribeRequest.headersMap["x-goog-api-client"]
+          apiClientHeader shouldBe dataConnect.googApiClientHeaderValue(callerSdkType)
+
+          serverCollector.cancelAndIgnoreRemainingEvents()
+          clientCollector.cancelAndIgnoreRemainingEvents()
+        }
+      } finally {
+        dataConnect.suspendingClose()
+      }
+    }
+  }
+
   private suspend fun TestScope.testDataConnectInitialHeader(
     server: InProcessDataConnectGrpcStreamingServer,
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
@@ -1702,6 +1738,7 @@ class QuerySubscriptionImplUnitTest {
     dataConnect: FirebaseDataConnectImpl? = null,
     operationName: String? = null,
     variables: TestVariables? = null,
+    callerSdkType: CallerSdkType? = null,
   ): QueryRefImpl<TestData, TestVariables> =
     QueryRefImpl(
       dataConnect = dataConnect ?: dataConnect(),
@@ -1709,7 +1746,7 @@ class QuerySubscriptionImplUnitTest {
       variables = variables ?: testVariablesArb().sample(),
       dataDeserializer = serializer<TestData>(),
       variablesSerializer = serializer(),
-      callerSdkType = Arb.enum<CallerSdkType>().sample(),
+      callerSdkType = callerSdkType ?: Arb.enum<CallerSdkType>().sample(),
       dataSerializersModule = Arb.dataConnect.serializersModule().sample(),
       variablesSerializersModule = Arb.dataConnect.serializersModule().sample(),
     )
@@ -1802,3 +1839,6 @@ private fun StreamObserver<StreamResponse>.onNext(requestId: String, data: TestD
 
 private val retryableFailureGrpcStatusCodes: List<Status.Code> =
   Status.Code.entries.filterNot { it == Status.Code.OK || it == Status.Code.UNAUTHENTICATED }
+
+private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: CallerSdkType): String =
+  grpcRPCs.grpcMetadata.googApiClientHeaderValue(callerSdkType)
