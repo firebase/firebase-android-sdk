@@ -60,6 +60,7 @@ import com.google.firebase.dataconnect.testutil.awaitUntilSubscribeStreamRequest
 import com.google.firebase.dataconnect.testutil.property.arbitrary.authUid
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -907,6 +908,70 @@ class QuerySubscriptionImplUnitTest {
 
           serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+        }
+      } finally {
+        dataConnect.suspendingClose()
+      }
+    }
+  }
+
+  @Test
+  fun `x-goog-api-client header is sent with resume request`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(
+      propTestConfig,
+      Arb.enum<CallerSdkType>().pair(),
+      Arb.dataConnect.deferredAuthProvider(),
+      Arb.dataConnect.deferredAppCheckProvider(),
+    ) { (callerSdkType1, callerSdkType2), deferredAuthProvider, deferredAppCheckProvider ->
+      val dataConnect =
+        dataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = deferredAuthProvider,
+          deferredAppCheckProvider = deferredAppCheckProvider,
+        )
+
+      try {
+        val operationName = "opName_${alphabeticStringArb().sample()}"
+        val variables = testVariablesArb().sample()
+
+        val ref1 =
+          queryRef(
+            dataConnect = dataConnect,
+            operationName = operationName,
+            variables = variables,
+            callerSdkType = callerSdkType1,
+          )
+        val ref2 =
+          queryRef(
+            dataConnect = dataConnect,
+            operationName = operationName,
+            variables = variables,
+            callerSdkType = callerSdkType2,
+          )
+
+        val subscription1 = ref1.subscribe()
+        val subscription2 = ref2.subscribe()
+
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector1 =
+            subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
+
+          // Wait for the first subscriber's subscribe request
+          serverCollector.awaitUntilSubscribeStreamRequest()
+
+          // Start the second subscriber's flow, which triggers a resume request
+          val clientCollector2 =
+            subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
+
+          val resumeRequest = serverCollector.awaitUntilResumeStreamRequest().streamRequest
+          val apiClientHeader = resumeRequest.headersMap["x-goog-api-client"]
+          apiClientHeader shouldBe dataConnect.googApiClientHeaderValue(callerSdkType1)
+
+          clientCollector2.cancelAndIgnoreRemainingEvents()
+          clientCollector1.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
