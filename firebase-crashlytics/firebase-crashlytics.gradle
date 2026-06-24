@@ -99,7 +99,7 @@ dependencies {
     testImplementation(libs.androidx.test.runner)
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.robolectric)
+    testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation(libs.truth)
     testImplementation(project(":integ-testing"))
 

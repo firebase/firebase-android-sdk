@@ -23,6 +23,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.os.Bundle;
 import com.google.firebase.FirebaseApp;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
