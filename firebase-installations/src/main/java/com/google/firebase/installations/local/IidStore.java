@@ -16,11 +16,8 @@ package com.google.firebase.installations.local;
 
 import static android.content.ContentValues.TAG;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Base64;
 import android.util.Log;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
