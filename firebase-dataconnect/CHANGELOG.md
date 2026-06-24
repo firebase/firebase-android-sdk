@@ -12,6 +12,10 @@
 - [fixed] Expired Auth and/or App Check tokens were not automatically refreshed
   when rejected by the server upon connection.
   ([#8346](https://github.com/firebase/firebase-android-sdk/pull/8346))
+- [changed] Realtime query subscriptions now include SDK type metadata
+  (core vs. generated SDK) in request headers, matching the behavior of
+  standard query executions.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.3.1
 
