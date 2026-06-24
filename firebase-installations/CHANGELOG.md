@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Migrated from SharedPreferences to DataStore
+
 # 19.1.1
 
 - [fixed] Addressed FidListener not getting invoked when a FID is created.
