@@ -33,6 +33,8 @@ Here are some of the APIs that are candidate for inclusion:
 
 ## Add `@SubclassOptInRequired` to interfaces
 
+http://go/data-connect-subclass-optin-kotlin-api-proposal
+
 https://github.com/Kotlin/KEEP/issues/320
 
 https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-subclass-opt-in-required/
