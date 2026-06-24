@@ -81,6 +81,7 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
+        callerSdkType = callerSdkTypeArb.sample(),
       )
 
     executeResponseFlow.test {
@@ -101,6 +102,7 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
+        callerSdkType = callerSdkTypeArb.sample(),
       )
 
     executeResponseFlow.test {

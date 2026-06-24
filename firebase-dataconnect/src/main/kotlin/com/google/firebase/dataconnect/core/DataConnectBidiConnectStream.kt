@@ -17,8 +17,10 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.FIREBASE_AUTH_TOKEN_HEADER
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.CoroutineUtils.mergeColdAndHotFlow
@@ -184,12 +186,14 @@ internal class DataConnectBidiConnectStream(
    * @param requestId A unique identifier for this request, used to correlate incoming responses.
    * @param operationName The name of the operation to execute.
    * @param variables The variables for the operation.
+   * @param callerSdkType The type of caller that is making the request.
    * @return A [Flow] of [ExecuteResponse] objects for the subscription.
    */
   fun subscribe(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
   ): Flow<ExecuteResponse> {
     val state = AtomicReference<SubscriptionState>(SubscriptionState.Disconnected)
 
@@ -742,7 +746,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
   private fun authTokenUpdateStreamRequest(authToken: String): StreamRequestProto =
     StreamRequestProto.newBuilder()
       .setRequestId(idStringGenerator.next("auth"))
-      .putHeaders("x-firebase-auth-token", authToken)
+      .putHeaders(FIREBASE_AUTH_TOKEN_HEADER, authToken)
       .build()
 }
 

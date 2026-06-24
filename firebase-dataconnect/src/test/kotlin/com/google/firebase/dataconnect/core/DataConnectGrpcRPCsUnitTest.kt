@@ -724,12 +724,19 @@ class DataConnectGrpcRPCsUnitTest {
       val cleanupsRegistration = cleanups.register(server)
       server.open()
       val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
+      val callerSdkType = Arb.enum<CallerSdkType>().bind()
 
       server.events.test {
         val stream = dataConnectGrpcRPCs.connect(randomSource())
         expectNoEvents()
 
-        val subscriptionFlow = stream.subscribe("req1", "opName", StructProto.getDefaultInstance())
+        val subscriptionFlow =
+          stream.subscribe(
+            "req1",
+            "opName",
+            StructProto.getDefaultInstance(),
+            callerSdkType,
+          )
         expectNoEvents()
 
         backgroundScope.launch { subscriptionFlow.collect() }
