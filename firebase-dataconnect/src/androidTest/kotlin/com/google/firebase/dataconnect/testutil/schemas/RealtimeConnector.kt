@@ -99,6 +99,10 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
     fun variables(key: Key): GetStringByKeyQuery.Variables = GetStringByKeyQuery.Variables(key)
 
+    suspend fun execute(id: String): GetStringByKeyQuery.Data.Item? = execute(UUID.fromString(id))
+
+    suspend fun execute(id: UUID): GetStringByKeyQuery.Data.Item? = execute(Key(id))
+
     suspend fun execute(key: Key): GetStringByKeyQuery.Data.Item? = execute(variables(key))
 
     suspend fun execute(variables: GetStringByKeyQuery.Variables): GetStringByKeyQuery.Data.Item? =
@@ -147,6 +151,8 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
     suspend fun execute(variables: InsertStringMutation.Variables): Key =
       mutationRef(variables).execute().data.key
+
+    fun mutationRef(name: String) = mutationRef(InsertStringMutation.Variables(name))
 
     fun mutationRef(variables: InsertStringMutation.Variables) =
       connector.dataConnect.mutation(

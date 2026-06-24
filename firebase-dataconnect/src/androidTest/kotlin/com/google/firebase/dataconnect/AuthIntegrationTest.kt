@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.test
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.dataconnect.core.FirebaseUserChangedException
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
@@ -27,13 +28,10 @@ import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.awaitAuthReady
 import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.util.nextAlphanumericString
 import google.firebase.dataconnect.proto.executeMutationResponse
 import google.firebase.dataconnect.proto.executeQueryResponse
 import io.grpc.Metadata
@@ -55,7 +53,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
@@ -69,60 +66,54 @@ import org.junit.Test
 
 class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
-  private val key = "e6w33rw36t"
-
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
-
-  private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
   @Test
   fun authenticatedRequestsAreSuccessful() = runTest {
-    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
-    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
-    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
-    signIn(personSchema)
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    signIn(dataConnect)
+    val names = List(3) { sampleName() }
 
-    personSchema.createPersonAuth(id = person1Id, name = "TestName1", age = 42).execute()
-    personSchema.createPersonAuth(id = person2Id, name = "TestName2", age = 43).execute()
-    personSchema.createPersonAuth(id = person3Id, name = "TestName3", age = 44).execute()
-    val queryResult = personSchema.getPersonAuth(id = person2Id).execute()
-
-    queryResult.asClue { it.data.person shouldBe GetPersonAuthQuery.Data.Person("TestName2", 43) }
+    val keys = names.map { connector.insertStringAuth.execute(it) }
+    val item = connector.getStringByKeyAuth.execute(keys.last())
+    item.asClue { it.shouldNotBeNull().name shouldBe names.last() }
   }
 
   @Test
   fun queryFailsAfterUserSignsOut() = runTest {
-    signIn(personSchema)
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef: QueryRef<*, *> =
+      connector.getStringByKeyAuth.queryRef("D0B6AAA6-6ADD-4790-BC06-F63A21855899")
+
+    signIn(dataConnect)
     // Verify that we are signed in by executing a query, which should succeed.
-    personSchema.getPersonAuth(id = "foo").execute()
-    signOut(personSchema)
+    queryRef.execute()
+    signOut(dataConnect)
 
-    val thrownException =
-      shouldThrow<StatusException> { personSchema.getPersonAuth(id = "foo").execute() }
-
+    val thrownException = shouldThrow<StatusException> { queryRef.execute() }
     thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
   fun mutationFailsAfterUserSignsOut() = runTest {
-    signIn(personSchema)
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val mutationRef: MutationRef<*, *> = connector.insertStringAuth.mutationRef("yzpbs55jsj")
+
+    signIn(dataConnect)
     // Verify that we are signed in by executing a mutation, which should succeed.
-    personSchema.createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo").execute()
-    signOut(personSchema)
+    mutationRef.execute()
+    signOut(dataConnect)
 
-    val thrownException =
-      shouldThrow<StatusException> {
-        personSchema
-          .createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo")
-          .execute()
-      }
-
+    val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
     thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
   fun queryShouldRetryOnUnauthenticated() = runTest {
-    val responseData = buildStructProto { put("foo", key) }
+    val responseData = buildStructProto { put("foo", "sxzfa4bqkk") }
     val executeQueryResponse = executeQueryResponse { data = responseData }
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
@@ -142,7 +133,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
     val actualResponse = queryRef.execute()
 
-    actualResponse.asClue { it.data shouldBe TestData(key) }
+    actualResponse.asClue { it.data shouldBe TestData("sxzfa4bqkk") }
     withClue("authTokens") {
       authTokens.shouldNotContainNull()
       authTokens.shouldHaveAtLeastSize(2)
@@ -151,7 +142,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun mutationShouldRetryOnUnauthenticated() = runTest {
-    val responseData = buildStructProto { put("foo", key) }
+    val responseData = buildStructProto { put("foo", "nyecckzvsb") }
     val executeMutationResponse = executeMutationResponse { data = responseData }
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
@@ -171,7 +162,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
     val actualResponse = mutationRef.execute()
 
-    actualResponse.asClue { it.data shouldBe TestData(key) }
+    actualResponse.asClue { it.data shouldBe TestData("nyecckzvsb") }
     withClue("authTokens") {
       authTokens.shouldNotContainNull()
       authTokens.shouldHaveAtLeastSize(2)
@@ -297,6 +288,70 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeAfterErroringOnSignIn() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("5EB095CB-25EF-4F69-AD17-073EA5DFDEE3")
+    val querySubscription = queryRef.subscribe()
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signIn(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeErrorsOnSignOut() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKey.queryRef("B94007D9-0F5A-4665-9D45-F2CD6D9C95A4")
+    signIn(dataConnect)
+    val querySubscription = queryRef.subscribe()
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signOut(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
+  @Test
+  fun realtimeQuerySubscriptionCanResubscribeErrorsOnSignOutThenSignBackIn() = runTest {
+    val dataConnect = dataConnectFactory.newInstance(RealtimeConnector.config)
+    val connector = RealtimeConnector.getInstance(dataConnect)
+    val queryRef = connector.getStringByKeyAuth.queryRef("33D2591F-7CD1-465A-A241-02A07F8851E0")
+    val querySubscription = queryRef.subscribe()
+
+    val email = "sree9hqjks@google.com"
+    val password = "casmwbbs4g"
+    signIn(dataConnect) {
+      try {
+        createUserWithEmailAndPassword(email, password).await()
+      } catch (_: FirebaseAuthUserCollisionException) {
+        signInWithEmailAndPassword(email, password).await()
+      }
+    }
+
+    querySubscription.flow.test {
+      awaitItem().result.shouldBeSuccess()
+      signOut(dataConnect)
+      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+    }
+
+    signIn(dataConnect) { signInWithEmailAndPassword(email, password).await() }
+
+    querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
+  }
+
+  private fun sampleName(): String =
+    "name_" + Arb.dataConnect.alphabeticString(length = 20).sample()
+
   @Serializable data class TestData(val foo: String)
 
   private companion object {
@@ -308,20 +363,24 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 private fun getFirebaseAuth(app: FirebaseApp): FirebaseAuth =
   DataConnectBackend.fromInstrumentationArguments().authBackend.getFirebaseAuth(app)
 
-private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser {
+private suspend inline fun <T> signIn(
+  dataConnect: FirebaseDataConnect,
+  signIn: FirebaseAuth.() -> T
+): T {
   dataConnect.awaitAuthReady()
   val auth = getFirebaseAuth(dataConnect.app)
-  val authResult = auth.signInAnonymously().await()
-  return checkNotNull(authResult.user) {
-    "internal error kz97svg6c3: signInAnonymously().user was null"
-  }
+  return signIn(auth)
 }
 
-private suspend fun signIn(personSchema: PersonSchema) = signIn(personSchema.dataConnect)
+private suspend fun signIn(dataConnect: FirebaseDataConnect): FirebaseUser =
+  signIn(dataConnect) {
+    val authResult = signInAnonymously().await()
+    checkNotNull(authResult.user) {
+      "internal error kz97svg6c3: signInAnonymously().await().user is null"
+    }
+  }
 
 private fun signOut(dataConnect: FirebaseDataConnect) {
   val auth = getFirebaseAuth(dataConnect.app)
   auth.signOut()
 }
-
-private fun signOut(personSchema: PersonSchema) = signOut(personSchema.dataConnect)
