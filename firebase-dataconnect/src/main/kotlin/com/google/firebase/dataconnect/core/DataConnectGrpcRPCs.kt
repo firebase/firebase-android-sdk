@@ -526,6 +526,7 @@ internal class DataConnectGrpcRPCs(
       tokenManager.authToken,
       shouldRetry = shouldRetry,
       idStringGenerator,
+      grpcMetadata,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }

@@ -99,6 +99,7 @@ internal class DataConnectBidiConnectStream(
   authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
   shouldRetry: suspend (Throwable) -> RetryStrategy,
   idStringGenerator: IdStringGenerator,
+  private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -202,7 +203,7 @@ internal class DataConnectBidiConnectStream(
       while (true) {
         when (val currentState = state.get()) {
           is SubscriptionState.Connected -> {
-            currentState.enqueueSubscribeOrResume()
+            currentState.enqueueSubscribeOrResume(callerSdkType)
             break
           }
           SubscriptionState.DisconnectedWithPendingSubscription -> break
@@ -229,7 +230,7 @@ internal class DataConnectBidiConnectStream(
             SubscriptionState.Disconnected
           }
         }
-        .transformToMessage(requestId, operationName, variables, state)
+        .transformToMessage(requestId, operationName, variables, callerSdkType, state)
         .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
         .buffer(capacity = Channel.CONFLATED) // use CONFLATED to drop stale data
         .shareIn(
@@ -290,12 +291,12 @@ internal class DataConnectBidiConnectStream(
       val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
-      private val subscribeOrResumeSignal: ConflatedSignal<Unit>,
+      private val subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
 
-      fun enqueueSubscribeOrResume() {
-        subscribeOrResumeSignal.signal()
+      fun enqueueSubscribeOrResume(callerSdkType: CallerSdkType) {
+        subscribeOrResumeSignal.signal(callerSdkType)
         subscribeOrResumeJob.start()
       }
 
@@ -339,6 +340,7 @@ internal class DataConnectBidiConnectStream(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
     state: AtomicReference<SubscriptionState>,
   ): Flow<SubscriptionEvent.Message> {
     val subscribeRequest =
@@ -373,6 +375,7 @@ internal class DataConnectBidiConnectStream(
       subscribeRequest = subscribeRequest,
       resumeRequest = resumeRequest,
       cancelRequest = cancelRequest,
+      callerSdkType = callerSdkType,
     )
   }
 
@@ -381,20 +384,32 @@ internal class DataConnectBidiConnectStream(
     subscribeRequest: StreamRequestProto,
     resumeRequest: StreamRequestProto,
     cancelRequest: StreamRequestProto,
+    callerSdkType: CallerSdkType,
   ): Flow<SubscriptionEvent.Message> {
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: AuthUid?,
-      subscribeOrResumeSignal: ConflatedSignal<Unit>,
+      subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
     ) {
       var subscribed = false
       try {
-        subscribeOrResumeSignal.signals.collect {
+        subscribeOrResumeSignal.signals.collect { callerSdkType ->
+          val value = grpcMetadata.googApiClientHeaderValue(callerSdkType)
           if (!subscribed) {
-            trySendOrThrow(authUid, subscribeRequest)
+            val request =
+              subscribeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
             subscribed = true
           } else {
-            trySendOrThrow(authUid, resumeRequest)
+            val request =
+              resumeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
           }
         }
       } finally {
@@ -424,9 +439,9 @@ internal class DataConnectBidiConnectStream(
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
 
-        val subscribeOrResumeSignal = ConflatedSignal<Unit>()
+        val subscribeOrResumeSignal = ConflatedSignal<CallerSdkType>()
         if (isPendingSubscription) {
-          subscribeOrResumeSignal.signal()
+          subscribeOrResumeSignal.signal(callerSdkType)
         }
         val subscribeOrResumeJob =
           coroutineScope.launch(start = CoroutineStart.LAZY) {
