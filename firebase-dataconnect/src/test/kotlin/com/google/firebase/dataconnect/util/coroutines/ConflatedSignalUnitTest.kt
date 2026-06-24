@@ -157,6 +157,37 @@ class ConflatedSignalUnitTest {
   }
 
   @Test
+  fun `pendingSignal is initially null`() {
+    val signal = ConflatedSignal<String>()
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `pendingSignal is the signaled value after signal is called`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.pendingSignal shouldBe "hello"
+  }
+
+  @Test
+  fun `pendingSignal transitions to null after await completes`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.pendingSignal shouldBe "hello"
+
+    signal.await() shouldBe "hello"
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `pendingSignal remains the latest value after multiple signals`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("first")
+    signal.signal("second")
+    signal.pendingSignal shouldBe "second"
+  }
+
+  @Test
   fun `signals flow emits immediately if there is a pending signal`() = runTest {
     val signal = ConflatedSignal<Unit>()
     signal.signal()

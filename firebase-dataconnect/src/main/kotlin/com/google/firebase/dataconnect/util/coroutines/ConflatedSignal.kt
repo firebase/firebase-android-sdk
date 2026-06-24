@@ -95,6 +95,14 @@ internal class ConflatedSignal<T : Any> {
     get() = signalState.get() != null
 
   /**
+   * The value of the pending signal, or `null` if there is no pending signal.
+   *
+   * Reading this property does not consume the signal.
+   */
+  val pendingSignal: T?
+    get() = signalState.get()
+
+  /**
    * Emits a signal carrying the given [value].
    *
    * If a waiter is currently suspended (either in [await] or collecting from [signals]), it is
