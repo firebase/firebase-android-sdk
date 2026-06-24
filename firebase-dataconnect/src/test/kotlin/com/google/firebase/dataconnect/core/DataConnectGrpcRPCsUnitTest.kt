@@ -739,7 +739,7 @@ class DataConnectGrpcRPCsUnitTest {
           )
         expectNoEvents()
 
-        backgroundScope.launch { subscriptionFlow.collect() }
+        backgroundScope.launch(CallerSdkTypeElement(callerSdkType)) { subscriptionFlow.collect() }
         val streamRequest: StreamRequest = awaitUntilInitStreamRequest().streamRequest
 
         withClue("streamRequest=${streamRequest.print().value}") {

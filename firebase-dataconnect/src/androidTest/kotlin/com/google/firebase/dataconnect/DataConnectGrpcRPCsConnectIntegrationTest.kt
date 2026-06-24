@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.core.CallerSdkTypeElement
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.ExecuteResponse
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
@@ -50,6 +51,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
 import org.junit.Before
@@ -76,15 +78,16 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     val key = keyArb.sample()
 
     val stream = dataConnectGrpcRPCs.connect()
+    val callerSdkType = callerSdkTypeArb.sample()
     val executeResponseFlow: Flow<ExecuteResponse> =
       stream.subscribe(
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
-        callerSdkType = callerSdkTypeArb.sample(),
+        callerSdkType,
       )
 
-    executeResponseFlow.test {
+    executeResponseFlow.flowOn(CallerSdkTypeElement(callerSdkType)).test {
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = null)
     }
   }
@@ -97,15 +100,16 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     val key = connector.insertString(name = name1)
 
     val stream = dataConnectGrpcRPCs.connect()
+    val callerSdkType = callerSdkTypeArb.sample()
     val executeResponseFlow: Flow<ExecuteResponse> =
       stream.subscribe(
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
-        callerSdkType = callerSdkTypeArb.sample(),
+        callerSdkType,
       )
 
-    executeResponseFlow.test {
+    executeResponseFlow.flowOn(CallerSdkTypeElement(callerSdkType)).test {
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name1)
       connector.updateString(key, name = name2)
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name2)
