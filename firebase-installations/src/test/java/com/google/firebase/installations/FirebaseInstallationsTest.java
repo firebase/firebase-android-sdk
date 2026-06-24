@@ -33,6 +33,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.SharedPreferences;
+import androidx.datastore.preferences.core.PreferencesKeys;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -40,6 +41,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.datastorage.JavaDataStorage;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
@@ -55,6 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import kotlin.Unit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -359,103 +362,103 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_wildcard() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|123|GCM", "tokenGCM")
-        .putString("|T|123|FCM", "tokenFCM")
-        .putString("|T|123|*", "tokenWILDCARD")
-        .putString("|T|123|", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|123|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|123|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|123|*"), "tokenWILDCARD");
+      prefs.set(PreferencesKeys.stringKey("|T|123|"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertThat(iidStore.readToken()).isEqualTo("tokenWILDCARD");
   }
 
   @Test
   public void testReadToken_fcm() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|123|GCM", "tokenGCM")
-        .putString("|T|123|FCM", "tokenFCM")
-        .putString("|T|unused|*", "tokenWILDCARD")
-        .putString("|T|123|", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|123|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|123|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenWILDCARD");
+      prefs.set(PreferencesKeys.stringKey("|T|123|"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertThat(iidStore.readToken()).isEqualTo("tokenFCM");
   }
 
   @Test
   public void testReadToken_gcm() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|123|GCM", "tokenGCM")
-        .putString("|T|unused|FCM", "tokenFCM")
-        .putString("|T|unused|*", "tokenWILDCARD")
-        .putString("|T|123|", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|123|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenWILDCARD");
+      prefs.set(PreferencesKeys.stringKey("|T|123|"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertThat(iidStore.readToken()).isEqualTo("tokenGCM");
   }
 
   @Test
   public void testReadToken_empty() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|unused|GCM", "tokenGCM")
-        .putString("|T|unused|FCM", "tokenFCM")
-        .putString("|T|unused|*", "tokenWILDCARD")
-        .putString("|T|123|", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenWILDCARD");
+      prefs.set(PreferencesKeys.stringKey("|T|123|"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertThat(iidStore.readToken()).isEqualTo("tokenEMPTY");
   }
 
   @Test
   public void testReadToken_null() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|unused|GCM", "tokenGCM")
-        .putString("|T|unused|FCM", "tokenFCM")
-        .putString("|T|unused|*", "tokenWILDCARD")
-        .putString("|T|123|BLAH", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenWILDCARD");
+      prefs.set(PreferencesKeys.stringKey("|T|123|BLAH"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertNull(iidStore.readToken());
   }
 
   @Test
   public void testReadToken_withJsonformatting() {
-    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs
-        .edit()
-        .putString("|T|123|OTHER", "tokenOTHER")
-        .putString("|T|unused|*", "tokenFOREIGN")
-        .putString("|T|unused|GCM", "tokenGCM")
-        .putString("|T|unused|FCM", "tokenFCM")
-        .putString("|T|123|*", "{\"token\" : \"thetoken\"}")
-        .putString("|T|123|BLAH", "tokenEMPTY")
-        .commit();
+    JavaDataStorage dataStorage = new JavaDataStorage(firebaseApp.getApplicationContext(), "test");
+    dataStorage.editSync(prefs -> {
+      prefs.set(PreferencesKeys.stringKey("|T|123|OTHER"), "tokenOTHER");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|*"), "tokenFOREIGN");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|GCM"), "tokenGCM");
+      prefs.set(PreferencesKeys.stringKey("|T|unused|FCM"), "tokenFCM");
+      prefs.set(PreferencesKeys.stringKey("|T|123|*"), "{\"token\" : \"thetoken\"}");
+      prefs.set(PreferencesKeys.stringKey("|T|123|"), "tokenEMPTY");
+      return Unit.INSTANCE;
+    });
 
-    IidStore iidStore = new IidStore(prefs, "123");
+    IidStore iidStore = new IidStore(dataStorage, "123");
     assertThat(iidStore.readToken()).isEqualTo("thetoken");
   }
 

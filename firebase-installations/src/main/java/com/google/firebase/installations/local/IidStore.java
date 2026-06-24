@@ -24,7 +24,10 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.datastore.preferences.core.Preferences;
+import androidx.datastore.preferences.core.PreferencesKeys;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.datastorage.JavaDataStorage;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,31 +44,28 @@ import org.json.JSONObject;
  */
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
-  private static final String STORE_KEY_PUB = "|S||P|";
-  private static final String STORE_KEY_ID = "|S|id";
+  private static final Preferences.Key<String> STORE_KEY_PUB = PreferencesKeys.stringKey("|S||P|");
+  private static final Preferences.Key<String> STORE_KEY_ID = PreferencesKeys.stringKey("|S|id");
   private static final String STORE_KEY_TOKEN = "|T|";
   private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
   private static final String[] ALLOWABLE_SCOPES = new String[] {"*", "FCM", "GCM", ""};
 
-  @GuardedBy("iidPrefs")
-  private final SharedPreferences iidPrefs;
+  private final JavaDataStorage iidDataStore;
 
   private final String defaultSenderId;
 
   public IidStore(@NonNull FirebaseApp firebaseApp) {
-    iidPrefs =
-        firebaseApp
-            .getApplicationContext()
-            .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+    this.iidDataStore =
+        new JavaDataStorage(firebaseApp.getApplicationContext(), IID_SHARED_PREFS_NAME);
 
     defaultSenderId = getDefaultSenderId(firebaseApp);
   }
 
   @VisibleForTesting
-  public IidStore(@NonNull SharedPreferences iidPrefs, @Nullable String defaultSenderId) {
-    this.iidPrefs = iidPrefs;
+  public IidStore(@NonNull JavaDataStorage iidDataStore, @Nullable String defaultSenderId) {
+    this.iidDataStore = iidDataStore;
     this.defaultSenderId = defaultSenderId;
   }
 
@@ -93,23 +93,21 @@ public class IidStore {
     return projectNumber;
   }
 
-  private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
-    return STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope;
+  private Preferences.Key<String> createTokenKey(@NonNull String senderId, @NonNull String scope) {
+    return PreferencesKeys.stringKey(STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope);
   }
 
   @Nullable
   public String readToken() {
-    synchronized (iidPrefs) {
-      for (String scope : ALLOWABLE_SCOPES) {
-        String tokenKey = createTokenKey(defaultSenderId, scope);
-        String token = iidPrefs.getString(tokenKey, null);
-        if (token != null && !token.isEmpty()) {
-          return token.startsWith(JSON_ENCODED_PREFIX) ? parseIidTokenFromJson(token) : token;
-        }
+    for (String scope : ALLOWABLE_SCOPES) {
+      Preferences.Key<String> tokenKey = createTokenKey(defaultSenderId, scope);
+      String token = iidDataStore.getSync(tokenKey, null);
+      if (token != null && !token.isEmpty()) {
+        return token.startsWith(JSON_ENCODED_PREFIX) ? parseIidTokenFromJson(token) : token;
       }
-
-      return null;
     }
+
+    return null;
   }
 
   private String parseIidTokenFromJson(String token) {
@@ -124,47 +122,41 @@ public class IidStore {
 
   @Nullable
   public String readIid() {
-    synchronized (iidPrefs) {
-      // Background: Some versions of the IID-SDK store the Instance-ID in local storage,
-      // others only store the App-Instance's Public-Key that can be used to calculate the
-      // Instance-ID.
+    // Background: Some versions of the IID-SDK store the Instance-ID in local storage,
+    // others only store the App-Instance's Public-Key that can be used to calculate the
+    // Instance-ID.
 
-      // If such a version was used by this App-Instance, we can directly read the existing
-      // Instance-ID from storage and return it
-      String id = readInstanceIdFromLocalStorage();
+    // If such a version was used by this App-Instance, we can directly read the existing
+    // Instance-ID from storage and return it
+    String id = readInstanceIdFromLocalStorage();
 
-      if (id != null) {
-        return id;
-      }
-
-      // If this App-Instance did not store the Instance-ID in local storage, we may be able to find
-      // its Public-Key in order to calculate the App-Instance's Instance-ID.
-      return readPublicKeyFromLocalStorageAndCalculateInstanceId();
+    if (id != null) {
+      return id;
     }
+
+    // If this App-Instance did not store the Instance-ID in local storage, we may be able to find
+    // its Public-Key in order to calculate the App-Instance's Instance-ID.
+    return readPublicKeyFromLocalStorageAndCalculateInstanceId();
   }
 
   @Nullable
   private String readInstanceIdFromLocalStorage() {
-    synchronized (iidPrefs) {
-      return iidPrefs.getString(STORE_KEY_ID, /* defaultValue= */ null);
-    }
+    return iidDataStore.getSync(STORE_KEY_ID, /* defaultValue= */ null);
   }
 
   @Nullable
   private String readPublicKeyFromLocalStorageAndCalculateInstanceId() {
-    synchronized (iidPrefs) {
-      String base64PublicKey = iidPrefs.getString(STORE_KEY_PUB, /* defaultValue= */ null);
-      if (base64PublicKey == null) {
-        return null;
-      }
-
-      PublicKey publicKey = parseKey(base64PublicKey);
-      if (publicKey == null) {
-        return null;
-      }
-
-      return getIdFromPublicKey(publicKey);
+    String base64PublicKey = iidDataStore.getSync(STORE_KEY_PUB, /* defaultValue= */ null);
+    if (base64PublicKey == null) {
+      return null;
     }
+
+    PublicKey publicKey = parseKey(base64PublicKey);
+    if (publicKey == null) {
+      return null;
+    }
+
+    return getIdFromPublicKey(publicKey);
   }
 
   @Nullable
