@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Avoid Android SQLite CursorWindow exceptions and OOMs by reading cached documents larger than 1MB in chunks.
+
 # 26.4.0
 
 - [feature] Added support for `minimum` and `maximum` FieldValue operations.
