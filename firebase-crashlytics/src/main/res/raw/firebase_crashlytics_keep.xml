@@ -14,4 +14,5 @@
   ~ limitations under the License.
   -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@string/com.google.firebase.crashlytics_*" />
+    tools:keep="@string/com.google.firebase.crashlytics_*,@bool/com_crashlytics_RequireBuildId" />
+    

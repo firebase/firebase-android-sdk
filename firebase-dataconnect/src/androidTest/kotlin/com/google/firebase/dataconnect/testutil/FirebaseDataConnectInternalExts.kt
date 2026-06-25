@@ -24,3 +24,6 @@ suspend fun FirebaseDataConnect.awaitAuthReady() =
 
 suspend fun FirebaseDataConnect.awaitAppCheckReady() =
   (this as FirebaseDataConnectInternal).awaitAppCheckReady()
+
+internal val FirebaseDataConnect.dataConnectGrpcRPCs
+  get() = (this as FirebaseDataConnectInternal).grpcRPCs

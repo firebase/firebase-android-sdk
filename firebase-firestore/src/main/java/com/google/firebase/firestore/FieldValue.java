@@ -102,6 +102,42 @@ public abstract class FieldValue {
     }
   }
 
+  /** {@code FieldValue} class for {@link #minimum()} transforms. */
+  static class NumericMinimumFieldValue extends FieldValue {
+    private final Number operand;
+
+    NumericMinimumFieldValue(Number operand) {
+      this.operand = operand;
+    }
+
+    @Override
+    String getMethodName() {
+      return "FieldValue.minimum";
+    }
+
+    Number getOperand() {
+      return operand;
+    }
+  }
+
+  /** {@code FieldValue} class for {@link #maximum()} transforms. */
+  static class NumericMaximumFieldValue extends FieldValue {
+    private final Number operand;
+
+    NumericMaximumFieldValue(Number operand) {
+      this.operand = operand;
+    }
+
+    @Override
+    String getMethodName() {
+      return "FieldValue.maximum";
+    }
+
+    Number getOperand() {
+      return operand;
+    }
+  }
+
   private static final DeleteFieldValue DELETE_INSTANCE = new DeleteFieldValue();
   private static final ServerTimestampFieldValue SERVER_TIMESTAMP_INSTANCE =
       new ServerTimestampFieldValue();
@@ -181,6 +217,50 @@ public abstract class FieldValue {
   @NonNull
   public static FieldValue increment(double l) {
     return new NumericIncrementFieldValue(l);
+  }
+
+  /**
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to set the field to the minimum of its current value and the given value.
+   *
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
+   */
+  @NonNull
+  public static FieldValue minimum(long l) {
+    return new NumericMinimumFieldValue(l);
+  }
+
+  /**
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to set the field to the minimum of its current value and the given value.
+   *
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
+   */
+  @NonNull
+  public static FieldValue minimum(double l) {
+    return new NumericMinimumFieldValue(l);
+  }
+
+  /**
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to set the field to the maximum of its current value and the given value.
+   *
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
+   */
+  @NonNull
+  public static FieldValue maximum(long l) {
+    return new NumericMaximumFieldValue(l);
+  }
+
+  /**
+   * Returns a special value that can be used with {@code set()} or {@code update()} that tells the
+   * server to set the field to the maximum of its current value and the given value.
+   *
+   * @return The {@code FieldValue} sentinel for use in a call to {@code set()} or {@code update()}.
+   */
+  @NonNull
+  public static FieldValue maximum(double l) {
+    return new NumericMaximumFieldValue(l);
   }
 
   /**

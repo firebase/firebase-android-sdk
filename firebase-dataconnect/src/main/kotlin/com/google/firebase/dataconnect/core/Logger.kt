@@ -21,7 +21,7 @@ import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -40,12 +40,13 @@ internal interface Logger {
   fun log(exception: Throwable?, level: LogLevel, message: String)
 }
 
+private val idStringGenerator = IdStringGenerator(Random.Default)
+
 private class LoggerImpl(override val name: String) : Logger {
 
-  override val id: String by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { "lgr" + Random.nextAlphanumericString(length = 10) }
+  override val id: String = idStringGenerator.next("lgr")
 
-  override val nameWithId: String by lazy(LazyThreadSafetyMode.PUBLICATION) { "$name[id=$id]" }
+  override val nameWithId: String = "$name[id=$id]"
 
   override fun log(exception: Throwable?, level: LogLevel, message: String) {
     val fullMessage = "[${BuildConfig.VERSION_NAME}] $nameWithId $message"
@@ -74,12 +75,20 @@ internal object LoggerGlobals {
       logger.logChanges(logLevelFlow.value, logLevelFlow, GlobalScope)
     }
 
+  inline fun Logger.debug(exception: Throwable?, message: () -> Any?) {
+    if (logLevel.value <= LogLevel.DEBUG) debug(exception, "${message()}")
+  }
+
   inline fun Logger.debug(message: () -> Any?) {
     if (logLevel.value <= LogLevel.DEBUG) debug("${message()}")
   }
 
   fun Logger.debug(message: String) {
     if (logLevel.value <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
+  }
+
+  fun Logger.debug(exception: Throwable?, message: String) {
+    if (logLevel.value <= LogLevel.DEBUG) log(exception, LogLevel.DEBUG, message)
   }
 
   inline fun Logger.warn(message: () -> Any?) {

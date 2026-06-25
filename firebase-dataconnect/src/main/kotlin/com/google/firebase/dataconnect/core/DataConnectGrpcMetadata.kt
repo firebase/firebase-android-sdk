@@ -20,10 +20,12 @@ import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.StructProtoBuilder
 import com.google.protobuf.Struct
 import io.grpc.Metadata
 
@@ -53,7 +55,7 @@ internal class DataConnectGrpcMetadata(
 
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
-  private fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
+  fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
     val components = buildList {
       add("gl-kotlin/$kotlinVersion")
       add("gl-android/$androidVersion")
@@ -98,7 +100,8 @@ internal class DataConnectGrpcMetadata(
 
   companion object {
     // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
-    fun Metadata.toStructProto(authUid: String?): Struct = buildStructProto {
+    // NOTE: Keep the implementation of this method in parity with StructProtoBuilder.putHeaders().
+    fun Metadata.toStructProto(authUid: AuthUid?): Struct = buildStructProto {
       val keys: List<Metadata.Key<String>> = run {
         val keySet: MutableSet<String> = keys().toMutableSet()
         // Always explicitly include the auth header in the returned string, even if it is absent.
@@ -114,7 +117,8 @@ internal class DataConnectGrpcMetadata(
           else {
             values.map {
               when (key.name()) {
-                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken() + " (authUid=$authUid)"
+                firebaseAuthTokenHeader.name() ->
+                  it.toScrubbedAccessToken() + " (authUid=${authUid?.string})"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }
@@ -127,8 +131,45 @@ internal class DataConnectGrpcMetadata(
       }
     }
 
+    // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
+    // NOTE: Keep the implementation of this method in parity with Metadata.toStructProto().
+    fun StructProtoBuilder.putHeaders(
+      authUid: AuthUid?,
+      key: String,
+      headers: Map<String, String>
+    ) {
+      putStruct(key) {
+        val keys: List<String> =
+          buildSet {
+              addAll(headers.keys)
+              // Always explicitly include the auth header in the returned string, even if it is
+              // absent.
+              add(firebaseAuthTokenHeader.name())
+              add(firebaseAppCheckTokenHeader.name())
+            }
+            .sorted()
+
+        keys.forEach { key ->
+          val value = headers[key]
+          val scrubbedValue =
+            value?.let {
+              when (key) {
+                firebaseAuthTokenHeader.name() ->
+                  it.toScrubbedAccessToken() + " (authUid=${authUid?.string})"
+                firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
+                else -> it
+              }
+            }
+
+          put(key, scrubbedValue)
+        }
+      }
+    }
+
+    const val FIREBASE_AUTH_TOKEN_HEADER = "x-firebase-auth-token"
+
     private val firebaseAuthTokenHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(FIREBASE_AUTH_TOKEN_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     private val firebaseAppCheckTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
@@ -136,8 +177,10 @@ internal class DataConnectGrpcMetadata(
     private val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
 
+    const val GOOG_API_CLIENT_HEADER = "x-goog-api-client"
+
     private val googApiClientHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     @Suppress("SpellCheckingInspection")
     private val gmpAppIdHeader: Metadata.Key<String> =

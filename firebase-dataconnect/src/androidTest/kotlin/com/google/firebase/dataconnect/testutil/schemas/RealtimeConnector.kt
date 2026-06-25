@@ -18,9 +18,12 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import io.kotest.assertions.print.print
 import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -29,11 +32,18 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
   val dataConnect: FirebaseDataConnect = dataConnectInternal
 
+  internal val dataConnectGrpcRPCs: DataConnectGrpcRPCs by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { dataConnectInternal.grpcRPCs }
+
   val resourceName: String = dataConnectInternal.connectorResourceName
 
   val getStringByKey = GetStringByKeyQuery(this)
 
+  val getStringByKeyAuth = GetStringByKeyQueryAuth(this)
+
   val insertString = InsertStringMutation(this)
+
+  val insertStringAuth = InsertStringMutationAuth(this)
 
   val updateString = UpdateStringMutation(this)
 
@@ -49,22 +59,71 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
   class GetStringByKeyQuery(val connector: RealtimeConnector) {
 
-    suspend fun execute(key: Key): Data.Item? = execute(Variables(key))
+    fun variables(key: Key): Variables = Variables(key)
+
+    suspend fun execute(key: Key): Data.Item? = execute(variables(key))
 
     suspend fun execute(variables: Variables): Data.Item? = queryRef(variables).execute().data.item
+
+    fun queryRef(id: String) = queryRef(UUID.fromString(id))
+
+    fun queryRef(id: UUID) = queryRef(Key(id))
+
+    fun queryRef(key: Key) = queryRef(variables(key))
 
     fun queryRef(variables: Variables) =
       connector.dataConnect.query(OPERATION_NAME, variables, serializer<Data>(), serializer())
 
-    @Serializable data class Variables(val key: Key)
+    @Serializable
+    data class Variables(val key: Key) {
+      constructor(id: UUID) : this(Key(id))
+    }
 
     @Serializable
     data class Data(val item: Item?) {
-      @Serializable data class Item(val name: String)
+      constructor(name: String) : this(Item(name))
+      @Serializable
+      data class Item(val name: String) {
+        companion object {
+          fun fromNameOrNull(name: String?): Item? = if (name == null) null else Item(name)
+        }
+      }
     }
 
     companion object {
       const val OPERATION_NAME = "RealtimeString_GetByKey"
+    }
+  }
+
+  class GetStringByKeyQueryAuth(val connector: RealtimeConnector) {
+
+    fun variables(key: Key): GetStringByKeyQuery.Variables = GetStringByKeyQuery.Variables(key)
+
+    suspend fun execute(id: String): GetStringByKeyQuery.Data.Item? = execute(UUID.fromString(id))
+
+    suspend fun execute(id: UUID): GetStringByKeyQuery.Data.Item? = execute(Key(id))
+
+    suspend fun execute(key: Key): GetStringByKeyQuery.Data.Item? = execute(variables(key))
+
+    suspend fun execute(variables: GetStringByKeyQuery.Variables): GetStringByKeyQuery.Data.Item? =
+      queryRef(variables).execute().data.item
+
+    fun queryRef(id: String) = queryRef(UUID.fromString(id))
+
+    fun queryRef(id: UUID) = queryRef(Key(id))
+
+    fun queryRef(key: Key) = queryRef(variables(key))
+
+    fun queryRef(variables: GetStringByKeyQuery.Variables) =
+      connector.dataConnect.query(
+        OPERATION_NAME,
+        variables,
+        serializer<GetStringByKeyQuery.Data>(),
+        serializer()
+      )
+
+    companion object {
+      const val OPERATION_NAME = "RealtimeString_GetByKey_Auth"
     }
   }
 
@@ -79,8 +138,32 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     fun mutationRef(variables: Variables) =
       connector.dataConnect.mutation(OPERATION_NAME, variables, serializer<Data>(), serializer())
 
+    fun mutationRef(name: String) = mutationRef(Variables(name))
+
     companion object {
       const val OPERATION_NAME = "RealtimeString_Insert"
+    }
+  }
+
+  class InsertStringMutationAuth(val connector: RealtimeConnector) {
+
+    suspend fun execute(name: String): Key = execute(InsertStringMutation.Variables(name = name))
+
+    suspend fun execute(variables: InsertStringMutation.Variables): Key =
+      mutationRef(variables).execute().data.key
+
+    fun mutationRef(name: String) = mutationRef(InsertStringMutation.Variables(name))
+
+    fun mutationRef(variables: InsertStringMutation.Variables) =
+      connector.dataConnect.mutation(
+        OPERATION_NAME,
+        variables,
+        serializer<InsertStringMutation.Data>(),
+        serializer()
+      )
+
+    companion object {
+      const val OPERATION_NAME = "RealtimeString_Insert_Auth"
     }
   }
 
@@ -128,8 +211,21 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
         serviceId = "sid2ehn9ct8te",
       )
 
-    fun getInstance(dataConnectFactory: TestDataConnectFactory): RealtimeConnector {
-      val dataConnect = dataConnectFactory.newInstance(config)
+    fun getInstance(
+      dataConnectFactory: TestDataConnectFactory,
+      backend: DataConnectBackend? = null,
+    ): RealtimeConnector {
+      val dataConnect = dataConnectFactory.newInstance(config, backend)
+      return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
+    }
+
+    fun getInstance(dataConnect: FirebaseDataConnect): RealtimeConnector {
+      require(dataConnect.config == config) {
+        "The given FirebaseDataConnect has a config that " +
+          "does not match the config required for RealtimeConnector: " +
+          "actual=${dataConnect.config.print().value}, " +
+          "expected=${config.print().value}"
+      }
       return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
     }
   }

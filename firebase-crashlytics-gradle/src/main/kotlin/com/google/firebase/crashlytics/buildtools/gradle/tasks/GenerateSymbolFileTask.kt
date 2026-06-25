@@ -31,7 +31,6 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.csym.NdkCSymGener
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -87,46 +86,31 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
   /**
    * Sets and validates the unstripped native libs directories.
    *
-   * Validate the [unstrippedNativeLibsOverride] does not contain a directory manually set to the
-   * output of the [SingleArtifact.MERGED_NATIVE_LIBS] without include the dependency.
+   * Validate the [unstrippedNativeLibsOverride] is not empty at execution phase, with a fallback
+   * natively pointing out to [SingleArtifact.MERGED_NATIVE_LIBS] directory.
    *
    * This happens because for a while the plugin did not properly handle product flavors, so
    * customers would manually configure this to the output of the merged native libs task in a way
    * that didn't include the task dependencies.
    */
-  private fun validateUnstrippedNativeLibsDirs(
-    project: Project,
+  private fun setUnstrippedNativeLibsDirs(
     variant: Variant,
     unstrippedNativeLibsOverride: ConfigurableFileCollection,
   ) {
-    if (unstrippedNativeLibsOverride.isEmpty) {
-      unstrippedNativeLibsDirs.setFrom(variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))
-      return
-    }
+    // Extract default provider outside the lambda to avoid closure capture,
+    // thus preventing possible Gradle serialization issues.
+    val defaultMergedNativeLibs = variant.artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS)
 
-    val mergedNativeLibsOutput = "build/intermediates/merged_native_libs/${variant.name}/out"
-    if (unstrippedNativeLibsOverride.any { it.path.contains(mergedNativeLibsOutput) }) {
-      val mergedNativeLibsTask = "merge${variant.name.capitalized()}NativeLibs"
-
-      val dependencies =
-        unstrippedNativeLibsOverride.buildDependencies
-          .getDependencies(null)
-          .mapNotNull { it?.name }
-          .toSet()
-
-      if (!dependencies.contains(mergedNativeLibsTask)) {
-        try {
-          dependsOn(project.tasks.getByPath(mergedNativeLibsTask))
-        } catch (ex: UnknownTaskException) {
-          logger.warn(
-            "The unstrippedNativeLibsDir manually overridden to output of $mergedNativeLibsTask " +
-              "task. This is not necessary, it is safe to remove $mergedNativeLibsOutput from " +
-              "the unstrippedNativeLibsDir override."
-          )
+    // Setting provider as a lazy mechanism which will be invoked at execution phase.
+    this.unstrippedNativeLibsDirs.setFrom(
+      project.provider {
+        if (unstrippedNativeLibsOverride.isEmpty) {
+          defaultMergedNativeLibs
+        } else {
+          unstrippedNativeLibsOverride
         }
       }
-    }
-    unstrippedNativeLibsDirs.setFrom(unstrippedNativeLibsOverride)
+    )
   }
 
   /** Sets and validates the symbol generator type. */
@@ -181,24 +165,12 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
         this.breakpadExtractionDir.set(buildDir(project, variant, "dump_syms"))
         this.symbolFileOutputDir.set(buildDir(project, variant, "nativeSymbols"))
 
-        validateUnstrippedNativeLibsDirs(
-          project,
+        setUnstrippedNativeLibsDirs(
           variant,
           crashlyticsExtension.unstrippedNativeLibsOverride,
         )
 
         validateSymbolGeneratorType(project, crashlyticsExtension.symbolGeneratorType)
-
-        printDebugProperties()
       }
-  }
-
-  private fun printDebugProperties() {
-    logger.debug("GenerateSymbolFileTask:")
-    logger.debug("  unstrippedNativeLibsDirs: ${unstrippedNativeLibsDirs.asPath}")
-    logger.debug("  breakpadBinary: ${breakpadBinary.orNull?.asFile?.path}")
-    logger.debug("  symbolGeneratorType: ${symbolGeneratorType.orNull?.toString()}")
-    logger.debug("  breakpadExtractionDir: ${breakpadExtractionDir.orNull?.asFile?.path}")
-    logger.debug("  symbolFileOutputDir: ${symbolFileOutputDir.orNull?.asFile?.path}")
   }
 }

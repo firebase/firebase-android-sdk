@@ -72,6 +72,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
       "com.google.firebase.messaging.RECEIVE_DIRECT_BOOT";
 
   static final String ACTION_NEW_TOKEN = "com.google.firebase.messaging.NEW_TOKEN";
+  static final String ACTION_FCM_REGISTERED = "com.google.firebase.messaging.FCM_REGISTERED";
+  static final String ACTION_FCM_UNREGISTERED = "com.google.firebase.messaging.FCM_UNREGISTERED";
   static final String EXTRA_TOKEN = "token";
 
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
@@ -159,9 +161,55 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    *
    * @param token The token used for sending messages to this application instance. This token is
    *     the same as the one retrieved by {@link FirebaseMessaging#getToken()}.
+   * @deprecated Use {@link #onRegistered(String)} instead.
    */
   @WorkerThread
+  @Deprecated
   public void onNewToken(@NonNull String token) {}
+
+  /**
+   * Called when the current app instance has been successfully registered with FCM.
+   *
+   * <p>This method provides the unique Firebase Installation ID (FID), which should be used to
+   * target this app instance for direct-send messaging.
+   *
+   * <p>This callback is triggered in the following scenarios:
+   *
+   * <ul>
+   *   <li>When the registration first succeeds after app install (if auto-init is enabled).
+   *   <li>When the registration is refreshed due to invalidation or updates (if auto-init is
+   *       enabled).
+   *   <li>Immediately after a direct call to {@link FirebaseMessaging#register()}.
+   * </ul>
+   *
+   * <p>Ensure the provided `installationId` is uploaded if it hasn't been previously or it might
+   * have been deleted on 404s.
+   *
+   * <p><b>Note:</b> To use this API, you must enable it by adding {@code <meta-data
+   * android:name="firebase_messaging_installation_id_enabled" android:value="true" />} to your
+   * app's manifest.
+   *
+   * @param installationId The Firebase Installation ID used for sending messages to the current app
+   *     instance.
+   */
+  @WorkerThread
+  public void onRegistered(@NonNull String installationId) {}
+
+  /**
+   * Called when the current app instance has been successfully unregistered from FCM via a call to
+   * {@code FirebaseMessaging.unregister()}.
+   *
+   * <p>This method confirms that the specified FID is no longer active for receiving FCM messages.
+   *
+   * <p><b>Note:</b> To use this API, you must enable it by adding {@code <meta-data
+   * android:name="firebase_messaging_installation_id_enabled" android:value="true" />} to your
+   * app's manifest.
+   *
+   * @param installationId The Firebase Installation ID of the current app instance that was
+   *     unregistered with FCM.
+   */
+  @WorkerThread
+  public void onUnregistered(@NonNull String installationId) {}
 
   /** @hide */
   @Override
@@ -179,6 +227,10 @@ public class FirebaseMessagingService extends EnhancedIntentService {
       handleMessageIntent(intent);
     } else if (ACTION_NEW_TOKEN.equals(action)) {
       onNewToken(intent.getStringExtra(EXTRA_TOKEN));
+    } else if (ACTION_FCM_REGISTERED.equals(action)) {
+      onRegistered(intent.getStringExtra(EXTRA_TOKEN));
+    } else if (ACTION_FCM_UNREGISTERED.equals(action)) {
+      onUnregistered(intent.getStringExtra(EXTRA_TOKEN));
     } else {
       Log.d(TAG, "Unknown intent action: " + intent.getAction());
     }

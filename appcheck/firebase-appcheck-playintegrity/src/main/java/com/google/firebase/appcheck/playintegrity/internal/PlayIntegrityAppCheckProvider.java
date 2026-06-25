@@ -75,12 +75,23 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
+    return getToken(/* isLimitedUseToken= */ false);
+  }
+
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getLimitedUseToken() {
+    return getToken(/* isLimitedUseToken= */ true);
+  }
+
+  private Task<AppCheckToken> getToken(boolean isLimitedUseToken) {
     return getPlayIntegrityAttestation()
         .onSuccessTask(
             liteExecutor,
             integrityTokenResponse -> {
               ExchangePlayIntegrityTokenRequest request =
-                  new ExchangePlayIntegrityTokenRequest(integrityTokenResponse.token());
+                  new ExchangePlayIntegrityTokenRequest(
+                      integrityTokenResponse.token(), isLimitedUseToken);
               return Tasks.call(
                   blockingExecutor,
                   () ->

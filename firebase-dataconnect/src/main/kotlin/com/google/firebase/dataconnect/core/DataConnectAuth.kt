@@ -21,25 +21,31 @@ import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.internal.InternalTokenResult
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await
 
 internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+  idStringGenerator: IdStringGenerator,
   parentCoroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
   DataConnectCredentialsTokenManager<InternalAuthProvider, GetAuthTokenResult>(
     deferredProvider = deferredAuthProvider,
+    idStringGenerator = idStringGenerator,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-  private val idTokenListener = IdTokenListenerImpl(logger)
+
+  @Suppress("LeakingThis") private val weakThis = WeakReference(this)
+
+  private val idTokenListener = IdTokenListenerImpl(weakThis)
 
   @DeferredApi
   override fun addTokenListener(provider: InternalAuthProvider) =
@@ -53,11 +59,26 @@ internal class DataConnectAuth(
       GetAuthTokenResult(it.token, it.getAuthUid())
     }
 
-  data class GetAuthTokenResult(override val token: String?, val authUid: String?) : GetTokenResult
+  override fun onClose() {
+    weakThis.clear()
+  }
 
-  private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
+  @JvmInline
+  value class AuthUid(val string: String) {
+    override fun toString() = "AuthUid($string)"
+  }
+
+  data class GetAuthTokenResult(override val token: String?, val authUid: AuthUid?) :
+    GetTokenResult {
+    override fun toString() =
+      "GetAuthTokenResult(authUid=$authUid, token=${token?.toScrubbedAccessToken()})"
+  }
+
+  private class IdTokenListenerImpl(
+    private val dataConnectAuthRef: WeakReference<DataConnectAuth>
+  ) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
-      logger.debug { "onIdTokenChanged(token=${tokenResult.token?.toScrubbedAccessToken()})" }
+      dataConnectAuthRef.get()?.onTokenChanged(tokenResult.token)
     }
   }
 
@@ -65,6 +86,9 @@ internal class DataConnectAuth(
 
     // The "sub" claim is documented to be "a non-empty string and must be the uid of the user or
     // device". See http://goo.gle/4oGjEQt for the relevant Firebase documentation.
-    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): String? = claims["sub"] as? String
+    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): AuthUid? {
+      val sub = claims["sub"] as? String
+      return if (sub === null) null else AuthUid(sub)
+    }
   }
 }

@@ -117,14 +117,29 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
 
   @get:OutputFile abstract val baselineFile: RegularFileProperty
 
+  @get:org.gradle.api.tasks.Optional
+  @get:org.gradle.api.tasks.OutputDirectory
+  val agentDocsDir: File?
+    get() =
+      if (project.name == "firebase-firestore")
+        project.file("${project.layout.buildDirectory.get().asFile}/agent-docs")
+      else null
+
   @get:Input abstract val updateBaseline: Property<Boolean>
 
   @TaskAction
   fun run() {
     val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
 
-    val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
-    project.androidJar?.let { classPath += listOf(it.absolutePath) }
+    val classPathList = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
+    project.androidJar?.let { classPathList += listOf(it.absolutePath) }
+
+    if (project.name == "firebase-firestore") {
+      val compiledDebug = project.file("build/tmp/kotlin-classes/debug")
+      val compiledRelease = project.file("build/tmp/kotlin-classes/release")
+      if (compiledDebug.exists()) classPathList += listOf(compiledDebug.absolutePath)
+      if (compiledRelease.exists()) classPathList += listOf(compiledRelease.absolutePath)
+    }
 
     project.runMetalavaWithArgs(
       execOperations,
@@ -132,7 +147,7 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
         "--source-path",
         sourcePath,
         "--classpath",
-        classPath.joinToString(":"),
+        classPathList.joinToString(":"),
         "--api",
         apiTxtFile.get().asFile.absolutePath,
         "--format=v3",
@@ -143,6 +158,75 @@ abstract class GenerateApiTxtTask @Inject constructor(private val execOperations
         else listOf(),
       ignoreFailure = true,
     )
+
+    if (project.name == "firebase-firestore") {
+      val classPathString = classPathList.joinToString(":")
+      val fsSourcePath = project.file("src/main/java").absolutePath
+
+      generateAgentDocs(
+        targetFiles =
+          listOf(project.file("src/main/java/com/google/firebase/firestore/Pipeline.kt")),
+        stubDirName = "doc-stubs-pipeline",
+        outputFileName = "pipeline.docs.txt",
+        classPathString = classPathString,
+        sourcePath = fsSourcePath,
+      )
+
+      generateAgentDocs(
+        targetFiles =
+          listOf(
+            project.file("src/main/java/com/google/firebase/firestore/pipeline/expressions.kt"),
+            project.file("src/main/java/com/google/firebase/firestore/pipeline/aggregates.kt"),
+          ),
+        stubDirName = "doc-stubs-expressions",
+        outputFileName = "expressions.docs.txt",
+        classPathString = classPathString,
+        sourcePath = fsSourcePath,
+      )
+    }
+  }
+
+  private fun generateAgentDocs(
+    targetFiles: List<File>,
+    stubDirName: String,
+    outputFileName: String,
+    classPathString: String,
+    sourcePath: String,
+  ) {
+    val docStubsDir = project.file("${project.layout.buildDirectory.get().asFile}/$stubDirName")
+    docStubsDir.deleteRecursively()
+
+    project.runMetalavaWithArgs(
+      execOperations,
+      listOf(
+        "--source-path",
+        sourcePath,
+        "--source-files",
+        targetFiles.joinToString(",") { it.absolutePath },
+        "--classpath",
+        classPathString,
+        "--doc-stubs",
+        docStubsDir.absolutePath,
+        "--format=v3",
+      ),
+      ignoreFailure = false,
+    )
+
+    val agentDocsFile =
+      project.file("${project.layout.buildDirectory.get().asFile}/agent-docs/$outputFileName")
+    project.file("${project.layout.buildDirectory.get().asFile}/agent-docs").mkdirs()
+    val content = buildString {
+      docStubsDir
+        .walkTopDown()
+        .filter { it.isFile && (it.extension == "java" || it.extension == "kt") }
+        .sortedBy { it.name }
+        .forEach { f ->
+          append("// File: ${f.name}\n")
+          append(f.readText())
+          append("\n\n")
+        }
+    }
+    agentDocsFile.writeText(content)
   }
 }
 
