@@ -149,12 +149,11 @@ internal class ConflatedSignal<T : Any> {
   suspend fun await(): T {
     while (true) {
       val current = signalState.get()
-      if (current != null) {
-        if (signalState.compareAndSet(current, null)) {
-          return current
-        }
+      if (current == null) {
+        channel.receive()
+      } else if (signalState.compareAndSet(current, null)) {
+        return current
       }
-      channel.receive()
     }
   }
 
