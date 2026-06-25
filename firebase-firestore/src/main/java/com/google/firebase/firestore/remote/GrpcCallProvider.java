@@ -57,6 +57,11 @@ public class GrpcCallProvider {
   // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
   // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+
+  // This is used to increase the max inbound message size from the 4MB default to 17MB,
+  // in order to support 16MB docs + overhead.
+  // https://grpc.github.io/grpc-java/javadoc/io/grpc/okhttp/OkHttpServerBuilder.html#maxInboundMessageSize(int)
+  private static final int MAX_INBOUND_MESSAGE_SIZE = 17 * 1024 * 1024;
   private DelayedTask connectivityAttemptTimer;
 
   private final Context context;
@@ -107,6 +112,9 @@ public class GrpcCallProvider {
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
+
+    // Increase the maximum inbound message size from 4MB to 17MB, to support 16MB docs.
+    channelBuilder.maxInboundMessageSize(MAX_INBOUND_MESSAGE_SIZE);
 
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
     // respond more gracefully to network change events (such as switching from cell to wifi).

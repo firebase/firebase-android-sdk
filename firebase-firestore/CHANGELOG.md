@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Increased the gRPC maximum inbound message size limit to 17MB to support downloading Cloud Firestore documents of up to 16MB.
+
 # 26.4.0
 
 - [feature] Added support for `minimum` and `maximum` FieldValue operations.
