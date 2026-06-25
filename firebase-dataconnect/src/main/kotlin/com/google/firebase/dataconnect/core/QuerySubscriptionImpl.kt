@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 internal class QuerySubscriptionImpl<Data, Variables>(
   override val query: QueryRefImpl<Data, Variables>,
@@ -51,7 +52,10 @@ internal class QuerySubscriptionImpl<Data, Variables>(
     }
 
     try {
-      realtimeQueryManager.subscribe(query).collect { resultSender.onRealtimeUpdate(it) }
+      val realtimeFlow = realtimeQueryManager.subscribe(query)
+      withContext(CallerSdkTypeElement(query.callerSdkType)) {
+        realtimeFlow.collect { resultSender.onRealtimeUpdate(it) }
+      }
     } finally {
       nonRealtimeJob.cancel()
     }

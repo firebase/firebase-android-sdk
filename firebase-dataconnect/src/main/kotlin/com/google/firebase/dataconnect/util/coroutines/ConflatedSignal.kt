@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.util.coroutines
 
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -24,25 +24,28 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 /**
- * A coroutine-based signaling mechanism that allows a waiter to suspend until notified by a sender,
- * conflating multiple signals into one signal.
+ * A coroutine-based signaling mechanism that allows a waiter to suspend until a sender provides a
+ * signal value of type [T], conflating multiple signal values by retaining only the latest one.
  *
- * This class is designed to coordinate execution flow between asynchronous operations (such as a
- * producer and a consumer). A consumer can wait for a signal either by calling the suspending
- * method [await] or by collecting from the [signals] flow. In both cases, the consumer will resume
- * immediately once a producer calls [signal].
+ * This class is designed to coordinate execution flow and transfer data between asynchronous
+ * operations (such as a producer and a consumer). A consumer can wait for a signal value either by
+ * calling the suspending method [await] or by collecting from the [signals] flow. In both cases,
+ * the consumer will resume immediately and receive the value once a producer calls [signal].
+ *
+ * @param T the non-nullable type of the signal value (payload) carried by this signal.
  *
  * ### Key Behavioral Characteristics
  *
  * * **Single Signal Delivery / Competing Consumers:** If multiple coroutines are waiting for a
  * signal, whether they are suspended in [await] or collecting from the [signals] flow, then exactly
- * _one_ of them will be resumed/notified upon [signal] being called, chosen indeterminately. This
- * is *not* a broadcast event or a `signalAll` style primitive. Waiters and flow collectors
- * **compete** for signals.
- * * **Signal Conflation:** The signal is conflated and persistent until consumed. If [signal] is
- * called multiple times before any coroutine awaits, only a single signal is retained. The first
- * subsequent waiter (either via [await] or [signals] collection) will consume the signal and resume
- * immediately, while any further waiters will suspend.
+ * _one_ of them will be resumed with the value upon [signal] being called, chosen indeterminately.
+ * This is *not* a broadcast event or a `signalAll` style primitive. Waiters and flow collectors
+ * **compete** for signals and their associated values.
+ * * **Signal Conflation:** The signal value is conflated and persistent until consumed. If [signal]
+ * is called multiple times before any coroutine awaits, only the **most recent** signal value is
+ * retained, and all previous values are overwritten and lost. The first subsequent waiter (either
+ * via [await] or [signals] collection) will consume this latest value and resume immediately, while
+ * any further waiters will suspend.
  *
  * ### Prompt cancellation guarantee
  *
@@ -57,29 +60,30 @@ import kotlinx.coroutines.flow.flow
  * All methods and properties of [ConflatedSignal] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  */
-internal class ConflatedSignal {
+internal class ConflatedSignal<T : Any> {
 
-  private val signalState = AtomicBoolean(false)
+  private val signalState = AtomicReference<T?>(null)
   private val channel = Channel<Unit>(CONFLATED)
 
   /**
-   * A cold [Flow] that emits [Unit] every time a signal is received.
+   * A cold [Flow] that emits the signal value of type [T] every time a signal is successfully
+   * consumed by this flow collector.
    *
    * ### Important Concurrency & Competing-Consumer Semantics
    *
-   * This is a **competing-consumer** flow. Because [ConflatedSignal] only resumes one waiter per
-   * signal, collectors of this flow **compete** for signals with each other and with direct callers
-   * of [await].
+   * This is a **competing-consumer** flow. Because [ConflatedSignal] only delivers the signal value
+   * to one waiter per signal, collectors of this flow **compete** for signals with each other and
+   * with direct callers of [await].
    *
    * Specifically, if multiple collectors are actively collecting this flow concurrently, or if some
-   * coroutines are suspended in [await], a single call to [signal] will notify exactly **one** of
-   * them (either resuming a direct [await] caller or emitting to a single flow collector). It will
-   * *not* broadcast the signal to all collectors.
+   * coroutines are suspended in [await], a single call to [signal] will deliver the value to
+   * exactly **one** of them (either returning the value to a direct [await] caller or emitting the
+   * value to a single flow collector, chosen indeterminately). It will *not* broadcast the signal
+   * value to all collectors.
    */
-  val signals: Flow<Unit> = flow {
+  val signals: Flow<T> = flow {
     while (true) {
-      await()
-      emit(Unit)
+      emit(await())
     }
   }
 
@@ -88,52 +92,78 @@ internal class ConflatedSignal {
    * call to [await] or a collector of [signals].
    */
   val hasPendingSignal: Boolean
+    get() = signalState.get() != null
+
+  /**
+   * The value of the pending signal, or `null` if there is no pending signal.
+   *
+   * Reading this property does not consume the signal.
+   */
+  val pendingSignal: T?
     get() = signalState.get()
 
   /**
-   * Emits a signal to resume a suspended waiter, if one is present, or buffers the signal for the
-   * next waiter if none are currently awaiting.
+   * Emits a signal carrying the given [value].
+   *
+   * If a waiter is currently suspended (either in [await] or collecting from [signals]), it is
+   * resumed and receives this [value]. If no waiters are currently awaiting, the [value] is
+   * buffered as a pending signal for the next waiter.
    *
    * Because this signal is conflated, multiple sequential calls to [signal] without intervening
-   * calls to [await] (or collectors of [signal]) will be merged into a single signal. Only one
-   * [await] call (or [signals] collector) will be resumed immediately, regardless of how many times
-   * [signal] was called.
+   * consumption (via [await] or [signals]) will overwrite the pending value, retaining only the
+   * **most recent** [value]. Only one waiter will be resumed with this latest value, and all
+   * previously signaled values since the last consumption are lost.
    *
    * This method is non-blocking, thread-safe, and safe to call from any context (including outside
    * of coroutines).
+   *
+   * @param value the signal value of type [T] to emit.
    */
-  fun signal() {
-    signalState.set(true)
+  fun signal(value: T) {
+    signalState.set(value)
     channel.trySend(Unit)
   }
 
   /**
-   * Suspends the calling coroutine until a signal is received via [signal].
+   * Suspends the calling coroutine until a signal value of type [T] is received.
    *
-   * If a signal has already been emitted and not yet consumed, this method returns immediately,
-   * consuming that signal.
+   * If a signal value has already been emitted and not yet consumed, this method returns
+   * immediately, returning and consuming that value.
+   *
+   * @return the signal value of type [T] that was emitted.
    *
    * ### Important Concurrency & Competing-Consumer Semantics
    *
-   * Direct callers of [await] **compete** for signals with each other and with active collectors of
-   * the [signals] flow. Specifically, if multiple coroutines are waiting (either suspended in
-   * [await] or collecting from [signals]), a single call to [signal] will resume/notify exactly
-   * **one** of them, chosen indeterminately. It will *not* broadcast the signal to all.
+   * Direct callers of [await] **compete** for signals and their values with each other and with
+   * active collectors of the [signals] flow. Specifically, if multiple coroutines are waiting
+   * (either suspended in [await] or collecting from [signals]), a single call to [signal] will
+   * deliver the value and resume exactly **one** of them, chosen indeterminately. It will *not*
+   * broadcast the value to all.
    *
    * ### Prompt cancellation guarantee
    *
-   * This function provides **prompt cancellation guarantee**. That is, if the job is canceled while
-   * [await] is suspended, it will not resume successfully, even if it consumed a signal, but throws
-   * a [CancellationException].
+   * This function provides a **prompt cancellation guarantee**. That is, if the job is canceled
+   * while [await] is suspended, it will not resume successfully (even if it technically received a
+   * signal value), but will throw a [CancellationException].
    */
-  suspend fun await() {
+  suspend fun await(): T {
     while (true) {
-      if (signalState.compareAndSet(true, false)) {
-        break
+      val current = signalState.get()
+      if (current == null) {
+        channel.receive()
+      } else if (signalState.compareAndSet(current, null)) {
+        return current
       }
-      channel.receive()
     }
   }
 
   override fun toString() = "ConflatedSignal(hasPendingSignal=$hasPendingSignal)"
+}
+
+/**
+ * Extension function to allow signaling a [ConflatedSignal] of type [Unit] without passing an
+ * argument, mimicking the original parameterless `signal()` behavior.
+ */
+internal fun ConflatedSignal<Unit>.signal() {
+  signal(Unit)
 }
