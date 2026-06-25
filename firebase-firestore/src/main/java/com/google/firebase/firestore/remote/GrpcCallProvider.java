@@ -36,6 +36,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
+import io.grpc.okhttp.OkHttpChannelBuilder;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +58,7 @@ public class GrpcCallProvider {
   // reconnecting again, rather than waiting up to 2+ minutes for gRPC to timeout.
   // More details about usage can be found in GrpcCallProvider.onConnectivityStateChanged().
   private static final int CONNECTIVITY_ATTEMPT_TIMEOUT_MS = 15 * 1000;
+
   private DelayedTask connectivityAttemptTimer;
 
   private final Context context;
@@ -95,13 +97,22 @@ public class GrpcCallProvider {
     ManagedChannelBuilder<?> channelBuilder;
     if (overrideChannelBuilderSupplier != null) {
       channelBuilder = overrideChannelBuilderSupplier.get();
+
+      if (channelBuilder instanceof OkHttpChannelBuilder) {
+        ((OkHttpChannelBuilder) channelBuilder)
+            .flowControlWindow(databaseInfo.getGrpcFlowControlWindow());
+      }
     } else {
-      channelBuilder = ManagedChannelBuilder.forTarget(databaseInfo.getHost());
+      OkHttpChannelBuilder okHttpBuilder = OkHttpChannelBuilder.forTarget(databaseInfo.getHost());
+      okHttpBuilder.flowControlWindow(databaseInfo.getGrpcFlowControlWindow());
+
       if (!databaseInfo.isSslEnabled()) {
         // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
         // It merely turns off SSL encryption.
-        channelBuilder.usePlaintext();
+        okHttpBuilder.usePlaintext();
       }
+
+      channelBuilder = okHttpBuilder;
     }
 
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
