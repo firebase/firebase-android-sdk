@@ -1749,7 +1749,7 @@ class QuerySubscriptionImplUnitTest {
       if (serverLocalBindPort === null) {
         Arb.dataConnect.dataConnectSettings().sample()
       } else {
-        DataConnectSettings("localhost:$serverLocalBindPort", sslEnabled = false)
+        DataConnectSettings("127.0.0.1:$serverLocalBindPort", sslEnabled = false)
       }
 
     return FirebaseDataConnectImpl(

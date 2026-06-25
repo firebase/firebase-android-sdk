@@ -90,7 +90,7 @@ class InProcessDataConnectGrpcServer :
         executeMutationResponse ?: Params.defaults.executeMutationResponse,
       )
     val grpcServer =
-      OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+      OkHttpServerBuilder.forPort(loopbackPortZeroAddress, InsecureServerCredentials.create())
         .addService(connectorService)
         .intercept(serverInterceptor)
         .build()
