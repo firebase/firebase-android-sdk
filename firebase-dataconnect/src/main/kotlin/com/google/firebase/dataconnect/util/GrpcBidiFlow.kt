@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.asSendChannel
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
+import com.google.firebase.dataconnect.util.coroutines.signal
 import io.grpc.CallOptions
 import io.grpc.Channel as GrpcChannel
 import io.grpc.ClientCall
@@ -217,7 +218,7 @@ internal object GrpcBidiFlow {
 
       val clientCall: ClientCall<RequestT, ResponseT> = grpcChannel.newCall(method, callOptions)
 
-      val clientCallReadySignal = ConflatedSignal()
+      val clientCallReadySignal = ConflatedSignal<Unit>()
       suspend fun suspendUntilClientCallReady() {
         // Spurious "ready" signals are possible, so check clientCall.isReady to verify.
         // See the documentation for ClientCall.Listener.onReady() for details.
