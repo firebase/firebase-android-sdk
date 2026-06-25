@@ -17,8 +17,8 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -56,11 +56,11 @@ class MultiFlavorAppFunctionalTests {
     )
 
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":uploadCrashlyticsMappingFileProFrenchRelease", "--configuration-cache")
-        .build()
+      buildGradleRunner(
+        projectDir,
+        ":uploadCrashlyticsMappingFileProFrenchRelease",
+        "--configuration-cache"
+      )
 
     assertThat(result.output).contains(variantAppId)
   }
@@ -68,11 +68,11 @@ class MultiFlavorAppFunctionalTests {
   @Test
   fun `override the app for a specific package name`() {
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":uploadCrashlyticsMappingFileProFrenchProd", "--configuration-cache")
-        .build()
+      buildGradleRunner(
+        projectDir,
+        ":uploadCrashlyticsMappingFileProFrenchProd",
+        "--configuration-cache"
+      )
 
     // This is the app id specific for package name suffix .prod
     assertThat(result.output).contains("1:2:android:2b")

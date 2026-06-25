@@ -227,7 +227,7 @@ class ApkUpdater {
     try {
       String applicationName =
           context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
-      return applicationName + ".apk";
+      return String.format("%s.%s", applicationName, "apk");
     } catch (Exception e) {
       LogWrapper.w(
           TAG,

@@ -73,7 +73,8 @@ internal class OnDeviceGenerativeModelProvider(
         response.candidates.map { Candidate.fromInterop(it) },
         InferenceSource.ON_DEVICE,
         null,
-        null
+        null,
+        response.modelVersion
       )
     }
 
@@ -122,7 +123,8 @@ internal class OnDeviceGenerativeModelProvider(
             it.candidates.map { candidate -> Candidate.fromInterop(candidate) },
             InferenceSource.ON_DEVICE,
             null,
-            null
+            null,
+            it.modelVersion
           )
         }
     )

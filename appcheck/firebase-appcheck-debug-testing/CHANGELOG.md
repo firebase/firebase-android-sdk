@@ -1,5 +1,13 @@
 # Unreleased
 
+# 19.2.0
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 19.1.0
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 19.0.2
 
 - [unchanged] Updated to keep [app_check] SDK versions aligned.

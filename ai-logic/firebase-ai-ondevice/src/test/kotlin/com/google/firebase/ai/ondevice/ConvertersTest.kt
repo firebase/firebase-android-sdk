@@ -103,4 +103,22 @@ internal class ConvertersTest {
     assertThat(mlKitRequest.candidateCount).isEqualTo(1)
     assertThat(mlKitRequest.maxOutputTokens).isEqualTo(256)
   }
+
+  @Test
+  fun `GenerateContentResponse toInterop should convert correctly and populate modelVersion`() {
+    val mlKitCandidate =
+      mock(Candidate::class.java).apply {
+        `when`(text).thenReturn("hello")
+        `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
+      }
+    val mlKitResponse =
+      mock(com.google.mlkit.genai.prompt.GenerateContentResponse::class.java).apply {
+        `when`(candidates).thenReturn(listOf(mlKitCandidate))
+      }
+    val interopResponse = mlKitResponse.toInterop("gemini-3.1-flash-lite")
+
+    assertThat(interopResponse.candidates.size).isEqualTo(1)
+    assertThat(interopResponse.candidates[0].text).isEqualTo("hello")
+    assertThat(interopResponse.modelVersion).isEqualTo("gemini-3.1-flash-lite")
+  }
 }

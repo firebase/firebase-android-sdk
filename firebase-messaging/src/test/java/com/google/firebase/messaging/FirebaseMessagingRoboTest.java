@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.messaging.FirebaseMessaging.GMS_PACKAGE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.clearInvocations;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -34,6 +35,7 @@ import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build.VERSION_CODES;
@@ -100,9 +102,19 @@ public final class FirebaseMessagingRoboTest {
   private final FakeScheduledExecutorService fakeScheduledExecutorService =
       new FakeScheduledExecutorService();
 
+  private void writeTokenToStore(String token) {
+    Store store = new Store(ApplicationProvider.getApplicationContext());
+    store.saveToken(
+        "", Metadata.getDefaultSenderId(FirebaseApp.getInstance()), token, "appVersion");
+  }
+
   @Before
   public void setUp() throws InterruptedException, ExecutionException, TimeoutException {
     FirebaseIidRoboTestHelper.addGmsCorePackageInfo();
+    PackageInfo gmsPackageInfo =
+        shadowOf(ApplicationProvider.getApplicationContext().getPackageManager())
+            .getInternalMutablePackageInfo("com.google.android.gms");
+    gmsPackageInfo.requestedPermissionsFlags = new int[] {PackageInfo.REQUESTED_PERMISSION_GRANTED};
     FirebaseApp.clearInstancesForTest();
     context = ApplicationProvider.getApplicationContext();
     // Set the app's uid so that ProxyNotificationInitializer.allowedToUse() returns true.
@@ -286,10 +298,11 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
-    when(mockGmsRpc.getToken()).thenReturn(Tasks.forResult("fake_token"));
+    when(mockGmsRpc.getToken(false)).thenReturn(Tasks.forResult("fake_token"));
 
     Task<String> getTokenTask = messaging.getToken();
 
@@ -304,24 +317,29 @@ public final class FirebaseMessagingRoboTest {
     resetForTokenTests();
     FirebaseInstanceIdInternal mockFiid = mock(FirebaseInstanceIdInternal.class);
     GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    FirebaseInstallationsApi mockInstallationsApi = mock(FirebaseInstallationsApi.class);
     FirebaseMessaging messaging =
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             mockFiid,
             EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
-            mock(Metadata.class),
+            new Metadata(context),
             mockGmsRpc,
+            mockInstallationsApi,
             Runnable::run,
             Runnable::run,
             Runnable::run);
     when(mockFiid.getTokenTask()).thenReturn(Tasks.forResult("fake_token"));
+    when(mockInstallationsApi.getId()).thenReturn(Tasks.forResult("fid"));
+    when(mockGmsRpc.getToken(false)).thenReturn(Tasks.forResult("fake_token"));
 
     Task<String> getTokenTask = messaging.getToken();
 
     ShadowLooper.idleMainLooper();
     assertThat(Tasks.await(getTokenTask, 5, SECONDS)).isEqualTo("fake_token");
-    verifyNoMoreInteractions(mockGmsRpc);
+    verify(mockFiid).getTokenTask();
+    verifyNoInteractions(mockGmsRpc);
   }
 
   @Test
@@ -336,18 +354,19 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
-    when(mockGmsRpc.getToken()).thenReturn(Tasks.forResult("fake_token"));
-    when(mockGmsRpc.deleteToken()).thenReturn(Tasks.forResult(null));
+    when(mockGmsRpc.getToken(false)).thenReturn(Tasks.forResult("fake_token"));
+    when(mockGmsRpc.deleteToken(false)).thenReturn(Tasks.forResult(null));
     Tasks.await(messaging.getToken());
 
     Task<Void> deleteTokenTask = messaging.deleteToken();
 
     ShadowLooper.idleMainLooper();
     Tasks.await(deleteTokenTask, 5, SECONDS);
-    verify(mockGmsRpc).deleteToken();
+    verify(mockGmsRpc).deleteToken(false);
     // TODO: Verify delete from store.
   }
 
@@ -362,19 +381,23 @@ public final class FirebaseMessagingRoboTest {
             mockFiid,
             EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
-            mock(Metadata.class),
+            new Metadata(context),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
 
+    writeTokenToStore("fake_token");
     Task<Void> deleteTokenTask = messaging.deleteToken();
 
     ShadowLooper.idleMainLooper();
     Tasks.await(deleteTokenTask, 5, SECONDS);
     verify(mockFiid)
-        .deleteToken(FirebaseIidRoboTestHelper.SENDER_ID, FirebaseMessaging.INSTANCE_ID_SCOPE);
-    verifyNoMoreInteractions(mockGmsRpc);
+        .deleteToken(
+            Metadata.getDefaultSenderId(FirebaseApp.getInstance()),
+            FirebaseMessaging.INSTANCE_ID_SCOPE);
+    verifyNoInteractions(mockGmsRpc);
   }
 
   @Test
@@ -391,6 +414,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -409,6 +433,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             mock(Metadata.class),
             mock(GmsRpc.class),
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -591,6 +616,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -618,6 +644,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -735,6 +762,7 @@ public final class FirebaseMessagingRoboTest {
         mock(Subscriber.class),
         mock(Metadata.class),
         gmsRpc,
+        mock(FirebaseInstallationsApi.class),
         Runnable::run,
         Runnable::run,
         Runnable::run);
@@ -784,7 +812,7 @@ public final class FirebaseMessagingRoboTest {
     resetForTokenTests();
     GmsRpc mockGmsRpc = mock(GmsRpc.class);
     TaskCompletionSource<String> tokenTaskCompletionSource = new TaskCompletionSource<>();
-    when(mockGmsRpc.getToken()).thenReturn(tokenTaskCompletionSource.getTask());
+    when(mockGmsRpc.getToken(false)).thenReturn(tokenTaskCompletionSource.getTask());
     FirebaseMessaging messaging =
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
@@ -793,6 +821,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
+            mock(FirebaseInstallationsApi.class),
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -831,6 +860,420 @@ public final class FirebaseMessagingRoboTest {
     verifyOnNewTokenNotInvoked();
   }
 
+  @Test
+  public void testGetToken_throwsWhenV1Enabled() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("dummy_fid"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mock(GmsRpc.class),
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<String> task = messaging.getToken();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testRegister_throwsWhenV1Disabled() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", false);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mock(GmsRpc.class),
+            mock(FirebaseInstallationsApi.class),
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.register();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testDeleteToken_throwsWhenV1Enabled() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("dummy_fid"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mock(GmsRpc.class),
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.deleteToken();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void testUnregister_throwsWhenV1Disabled() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", false);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mock(GmsRpc.class),
+            mock(FirebaseInstallationsApi.class),
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.unregister();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IllegalStateException.class);
+  }
+
+  private void verifyOnRegisteredInvoked(String token) throws InterruptedException {
+    Intent serviceIntent = null;
+    for (int i = 0; i < 50; i++) {
+      serviceIntent = shadowOf(context).getNextStartedService();
+      if (serviceIntent != null) {
+        break;
+      }
+      Thread.sleep(50);
+    }
+    assertThat(serviceIntent).isNotNull();
+    assertThat(serviceIntent.getPackage()).isEqualTo(context.getPackageName());
+    assertThat(serviceIntent.getAction()).isEqualTo("com.google.firebase.MESSAGING_EVENT");
+
+    Intent messagingIntent = ServiceStarter.getInstance().getMessagingEvent();
+    assertThat(messagingIntent).isNotNull();
+    assertThat(messagingIntent.getAction())
+        .isEqualTo("com.google.firebase.messaging.FCM_REGISTERED");
+    assertThat(messagingIntent.getStringExtra("token")).isEqualTo(token);
+  }
+
+  private void verifyOnUnregisteredInvoked(String token) throws InterruptedException {
+    Intent serviceIntent = null;
+    for (int i = 0; i < 50; i++) {
+      serviceIntent = shadowOf(context).getNextStartedService();
+      if (serviceIntent != null) {
+        break;
+      }
+      Thread.sleep(50);
+    }
+    assertThat(serviceIntent).isNotNull();
+    assertThat(serviceIntent.getPackage()).isEqualTo(context.getPackageName());
+    assertThat(serviceIntent.getAction()).isEqualTo("com.google.firebase.MESSAGING_EVENT");
+
+    Intent messagingIntent = ServiceStarter.getInstance().getMessagingEvent();
+    assertThat(messagingIntent).isNotNull();
+    assertThat(messagingIntent.getAction())
+        .isEqualTo("com.google.firebase.messaging.FCM_UNREGISTERED");
+    assertThat(messagingIntent.getStringExtra("token")).isEqualTo(token);
+  }
+
+  @Test
+  public void testRegister_v1Flow_success() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_token"));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.getToken(true)).thenReturn(Tasks.forResult("fake_token"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.register();
+    ShadowLooper.idleMainLooper();
+
+    assertThat(Tasks.await(task, 5, SECONDS)).isNull();
+    verifyOnRegisteredInvoked("fake_token");
+    assertThat(messaging.getTokenWithoutTriggeringSync()).isNotNull();
+    assertThat(messaging.getTokenWithoutTriggeringSync().token).isEqualTo("fake_token");
+  }
+
+  @Test
+  public void testRegister_v1Flow_getTokenFailure_propagatesException() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    Metadata mockMetadata = mock(Metadata.class);
+    when(mockMetadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_fid"));
+    // Mock mockFis.getToken(false) to fail
+    Exception fisException = new Exception("Simulated FIS Failure");
+    when(mockFis.getToken(false)).thenReturn(Tasks.forException(fisException));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            mockMetadata,
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.register();
+    ShadowLooper.idleMainLooper();
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IOException.class);
+    assertThat(task.getException()).hasMessageThat().contains("FCM Registration failed!");
+    assertThat(task.getException().getCause()).isInstanceOf(ExecutionException.class);
+    assertThat(task.getException().getCause().getCause())
+        .hasMessageThat()
+        .contains("Simulated FIS Failure");
+  }
+
+  @Test
+  public void testUnregister_v1Flow_success() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    writeTokenToStore("fake_token");
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_token"));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.deleteToken(true)).thenReturn(Tasks.forResult(null));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.unregister();
+    ShadowLooper.idleMainLooper();
+
+    Tasks.await(task, 5, SECONDS);
+    verifyOnUnregisteredInvoked("fake_token");
+    assertThat(messaging.getTokenWithoutTriggeringSync()).isNull();
+  }
+
+  @Test
+  public void testUnregister_v1Flow_getTokenFailure_propagatesException() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    writeTokenToStore("fake_token");
+
+    Metadata mockMetadata = mock(Metadata.class);
+    when(mockMetadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_fid"));
+    // Mock mockFis.getToken(false) to fail
+    Exception fisException = new Exception("Simulated FIS Failure");
+    when(mockFis.getToken(false)).thenReturn(Tasks.forException(fisException));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            mockMetadata,
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.unregister();
+    ShadowLooper.idleMainLooper();
+
+    try {
+      Tasks.await(task, 5, SECONDS);
+      fail("Expected ExecutionException");
+    } catch (Exception e) {
+      Throwable rootCause = e;
+      while (rootCause.getCause() != null) {
+        rootCause = rootCause.getCause();
+      }
+      assertThat(rootCause).hasMessageThat().contains("Simulated FIS Failure");
+    }
+  }
+
+  @Test
+  public void testRegister_v1Flow_differentFid_reRegisters() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+
+    // Cache an old FID/token.
+    writeTokenToStore("fid_old");
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fid_new"));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.getToken(true)).thenReturn(Tasks.forResult("fid_new"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    Task<Void> task = messaging.register();
+    ShadowLooper.idleMainLooper();
+
+    assertThat(Tasks.await(task, 5, SECONDS)).isNull();
+    verifyOnRegisteredInvoked("fid_new");
+    assertThat(messaging.getTokenWithoutTriggeringSync()).isNotNull();
+    assertThat(messaging.getTokenWithoutTriggeringSync().token).isEqualTo("fid_new");
+  }
+
+  @Test
+  public void testAutoInitEnabled_v1Flow_triggersRegistration() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+    editManifestApplicationMetadata().putBoolean("firebase_messaging_auto_init_enabled", true);
+
+    FirebaseMessaging.syncExecutor = fakeScheduledExecutorService;
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_token"));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.getToken(true)).thenReturn(Tasks.forResult("fake_token"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    assertThat(messaging.isAutoInitEnabled()).isTrue();
+    assertThat(messaging.isGmsCorePresent()).isTrue();
+    assertThat(fakeScheduledExecutorService.hasNextScheduledTask()).isTrue();
+
+    fakeScheduledExecutorService.simulateNormalOperationFor(0, SECONDS);
+    ShadowLooper.idleMainLooper();
+
+    verifyOnRegisteredInvoked("fake_token");
+    assertThat(messaging.getTokenWithoutTriggeringSync()).isNotNull();
+    assertThat(messaging.getTokenWithoutTriggeringSync().token).isEqualTo("fake_token");
+  }
+
+  @Test
+  public void testAutoInitDisabled_v1Flow_doesNotTriggerRegistration() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata()
+        .putBoolean("firebase_messaging_installation_id_enabled", true);
+    editManifestApplicationMetadata().putBoolean("firebase_messaging_auto_init_enabled", false);
+
+    FirebaseMessaging.syncExecutor = fakeScheduledExecutorService;
+
+    FirebaseInstallationsApi mockFis = mock(FirebaseInstallationsApi.class);
+    when(mockFis.getId()).thenReturn(Tasks.forResult("fake_token"));
+
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.getToken(true)).thenReturn(Tasks.forResult("fake_token"));
+
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockFis,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    fakeScheduledExecutorService.simulateNormalOperationFor(0, SECONDS);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+    verifyOnNewTokenNotInvoked();
+    assertThat(messaging.getTokenWithoutTriggeringSync()).isNull();
+  }
+
   private Bundle editManifestApplicationMetadata() {
     return shadowOf(ApplicationProvider.getApplicationContext().getPackageManager())
         .getInternalMutablePackageInfo(context.getPackageName())
@@ -846,8 +1289,18 @@ public final class FirebaseMessagingRoboTest {
     // Reset the Store so that it doesn't keep the token SharedPreferences that might have a stored
     // token.
     FirebaseMessaging.clearStoreForTest();
+    // Clear any persisted auto-init preference.
+    context
+        .getSharedPreferences("com.google.firebase.messaging", Context.MODE_PRIVATE)
+        .edit()
+        .clear()
+        .commit();
     // Clear out any Services that have already been started.
     shadowOf(context).clearStartedServices();
+    // Deny access network state permission to bypass connection check in SyncTask.
+    shadowOf(context).denyPermissions("android.permission.ACCESS_NETWORK_STATE");
+    // Reset ServiceStarter singleton to clear out its queue.
+    ServiceStarter.setForTesting(null);
   }
 
   private void verifyOnNewTokenInvoked(String token) {
@@ -861,6 +1314,16 @@ public final class FirebaseMessagingRoboTest {
   }
 
   private void verifyOnNewTokenNotInvoked() {
-    assertThat(shadowOf(context).getNextStartedService()).isNull();
+    Intent serviceIntent = shadowOf(context).getNextStartedService();
+    assertThat(serviceIntent).isNull();
+  }
+
+  @Test
+  public void testGetInstance_withFisInitFailure() {
+    FirebaseApp.clearInstancesForTest();
+    // We don't initialize FirebaseApp, so FirebaseApp.getInstance() returns null.
+    // Which causes FirebaseMessaging.getInstance() to throw NullPointerException.
+
+    assertThrows(IllegalStateException.class, FirebaseMessaging::getInstance);
   }
 }

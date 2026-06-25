@@ -17,9 +17,9 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -62,36 +62,16 @@ class CrashlyticsExtensionTests {
   @Test
   fun `set unstrippedNativeLibsDir to single path`() {
     buildFile.writeText(
-      """
-        import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
-
-        plugins {
-          id("com.android.application") version "8.1.4"
-          id("com.google.gms.google-services") version "4.4.1"
-          id("com.google.firebase.crashlytics") version "$pluginVersion"
-        }
-
-        android {
-          compileSdk = 33
-          namespace = "com.google.firebase.testing.crashlytics"
-
-          buildTypes {
-            debug {
-              configure<CrashlyticsExtension> {
-                unstrippedNativeLibsDir = "/some/absolute/string/path"
-              }
-            }
-          }
-        }
-      """
+      getBuildFileStringTemplate("unstrippedNativeLibsDir = \"/some/absolute/string/path\"")
     )
 
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments("-d", ":tasks", "--configuration-cache")
-        .build()
+      buildGradleRunner(
+        projectDir,
+        "generateCrashlyticsSymbolFileDebug",
+        "verifyCrashlyticsPaths",
+        "--configuration-cache"
+      )
 
     assertThat(result.output).contains("/some/absolute/string/path")
   }
@@ -99,43 +79,29 @@ class CrashlyticsExtensionTests {
   @Test
   fun `set unstrippedNativeLibsDir to array of multiple path types`() {
     buildFile.writeText(
-      """
-        import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
-
-        plugins {
-          id("com.android.application") version "8.1.4"
-          id("com.google.gms.google-services") version "4.4.1"
-          id("com.google.firebase.crashlytics") version "$pluginVersion"
-        }
-
-        android {
-          compileSdk = 33
-          namespace = "com.google.firebase.testing.crashlytics"
-
-          buildTypes {
-            debug {
-              configure<CrashlyticsExtension> {
-                unstrippedNativeLibsDir = arrayOf(
+      getBuildFileStringTemplate(
+        """
+        unstrippedNativeLibsDir = arrayOf(
                   "/some/absolute/string/path",
                   "/another/absolute/string/path",
                   File("/a/file/object/path"),
                   project.files("/absolute/project/file/path"),
                   "relative/path",
                   project.files("relative/project/file/path"),
+                  "build/intermediates/merged_native_libs/debug/out"
                 )
-              }
-            }
-          }
-        }
-      """
+    """
+          .trimIndent()
+      )
     )
 
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments("-d", ":tasks", "--configuration-cache")
-        .build()
+      buildGradleRunner(
+        projectDir,
+        "generateCrashlyticsSymbolFileDebug",
+        "verifyCrashlyticsPaths",
+        "--configuration-cache"
+      )
 
     assertThat(result.output).contains("/some/absolute/string/path")
     assertThat(result.output).contains("/another/absolute/string/path")
@@ -145,12 +111,33 @@ class CrashlyticsExtensionTests {
     // Verify the relative paths were made absolute by checking the prepended slash
     assertThat(result.output).contains("/relative/path")
     assertThat(result.output).contains("/relative/project/file/path")
+
+    // Verify warning is not present when manual overrides points to mergeDebugNativeLibs output but
+    // is set up using an array.
+    // The warning is expected to be shown as a notification for users who in the past make use of a
+    // widely known workaround for flavors and native merged libraries handling.
+    // There is no real use case for passing this path in an array, but just to prove the solution
+    // only aims for single provided overrides this check is added.
+    assertThat(result.output)
+      .doesNotContain("it is safe to remove from the unstrippedNativeLibsDir")
   }
 
   @Test
   fun `set unstrippedNativeLibsDir to invalid type throws`() {
-    buildFile.writeText(
-      """
+    buildFile.writeText(getBuildFileStringTemplate("unstrippedNativeLibsDir = 42"))
+
+    val thrown =
+      Assertions.assertThrows(UnexpectedBuildFailure::class.java) {
+        buildGradleRunner(projectDir, "generateCrashlyticsSymbolFileDebug", "--configuration-cache")
+      }
+
+    assertThat(thrown)
+      .hasMessageThat()
+      .contains("Cannot convert the provided notation to a File: 42")
+  }
+
+  private fun getBuildFileStringTemplate(unstrippedNativeLibsDirArg: String): String =
+    """
         import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 
         plugins {
@@ -166,25 +153,29 @@ class CrashlyticsExtensionTests {
           buildTypes {
             debug {
               configure<CrashlyticsExtension> {
-                unstrippedNativeLibsDir = 42
+                nativeSymbolUploadEnabled = true
+                $unstrippedNativeLibsDirArg
               }
             }
           }
         }
+        
+        // Custom test task to print the configured paths at realization phase.
+        abstract class VerifyPathsTask : DefaultTask() {
+            @get:InputFiles
+            abstract val filesToVerify: ConfigurableFileCollection
+            @TaskAction
+            fun verify() {
+                filesToVerify.forEach { 
+                    println("VERIFIED_PATH=" + it.absolutePath) 
+                }
+            }
+        }
+        tasks.register<VerifyPathsTask>("verifyCrashlyticsPaths") {
+            val debugBuildType = android.buildTypes.getByName("debug")
+            val extension = debugBuildType.extensions.getByName("firebaseCrashlytics") as CrashlyticsExtension
+            
+            filesToVerify.setFrom(extension.unstrippedNativeLibsDir)
+        }
       """
-    )
-
-    val thrown =
-      Assertions.assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":tasks", "--configuration-cache")
-          .build()
-      }
-
-    assertThat(thrown)
-      .hasMessageThat()
-      .contains("Cannot convert the provided notation to a File or URI: 42")
-  }
 }

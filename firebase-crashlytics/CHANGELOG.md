@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.0.6
+
 - [fixed] Fixed race condition that caused logs from background threads to not be attached to
   reports in some cases [#8034]
 - [changed] Updated `firebase-sessions` dependency to v3.0.6

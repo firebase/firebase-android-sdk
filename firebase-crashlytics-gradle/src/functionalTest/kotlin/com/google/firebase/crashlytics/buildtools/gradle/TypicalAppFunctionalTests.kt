@@ -17,9 +17,9 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.BeforeEach
@@ -40,12 +40,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `inject mapping file id on app build`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     assertThat(result.output)
       .contains(
@@ -56,12 +51,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `inject version control info on release app build`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease")
 
     assertThat(result.task(":injectCrashlyticsVersionControlInfoRelease")?.outcome)
       .isEqualTo(SUCCESS)
@@ -69,12 +59,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `upload mapping file automatically during minified app build`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     assertThat(result.task(":uploadCrashlyticsMappingFileRelease")?.outcome).isEqualTo(SUCCESS)
     assertThat(result.output)
@@ -86,12 +71,7 @@ class TypicalAppFunctionalTests {
     strings = [":injectCrashlyticsMappingFileIdDebug", ":injectCrashlyticsMappingFileIdRelease"]
   )
   fun `inject some mapping file id regardless of obfuscation`(taskName: String) {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(taskName)
-        .build()
+    val result = buildGradleRunner(projectDir, taskName)
 
     assertThat(result.output)
       .contains(
@@ -104,12 +84,7 @@ class TypicalAppFunctionalTests {
   fun `upload mapping file with obfuscation`() {
     val taskName = ":uploadCrashlyticsMappingFileRelease"
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(taskName, "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, taskName, "--configuration-cache")
 
     assertThat(result.output)
       .contains(
@@ -122,12 +97,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `upload mapping file task without obfuscation not registered`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":tasks", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":tasks", "--configuration-cache")
 
     assertThat(result.output).doesNotContain("uploadCrashlyticsMappingFileDebug")
   }
@@ -160,12 +130,7 @@ class TypicalAppFunctionalTests {
       """
     )
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     assertThat(result.task("uploadCrashlyticsMappingFileRelease")).isNull()
   }
@@ -182,11 +147,7 @@ class TypicalAppFunctionalTests {
   fun `does not register ndk tasks on non-native app`(taskName: String) {
     val thrown =
       assertThrows<UnexpectedBuildFailure> {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(taskName, "--configuration-cache")
-          .build()
+        buildGradleRunner(projectDir, taskName, "--configuration-cache")
       }
 
     assertThat(thrown).hasMessageThat().contains("not found")
@@ -194,12 +155,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `building typical app without obfuscation injects blank mapping file id`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleDebug", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleDebug", "--configuration-cache")
 
     // The debug variant does not have minify enabled, so inject blank mapping file id
     assertThat(result.task(":injectCrashlyticsMappingFileIdDebug")?.outcome).isEqualTo(SUCCESS)
@@ -211,12 +167,7 @@ class TypicalAppFunctionalTests {
 
   @Test
   fun `building typical app with obfuscation injects mapping file id`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     // The release variant does have minify enabled
     assertThat(result.task(":injectCrashlyticsMappingFileIdRelease")?.outcome).isEqualTo(SUCCESS)
@@ -257,12 +208,7 @@ class TypicalAppFunctionalTests {
       """
     )
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     assertThat(result.task(":uploadCrashlyticsMappingFileRelease")?.outcome).isEqualTo(SUCCESS)
     assertThat(result.output)

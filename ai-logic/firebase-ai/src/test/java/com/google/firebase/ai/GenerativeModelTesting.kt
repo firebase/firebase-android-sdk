@@ -34,12 +34,16 @@ import com.google.firebase.ai.type.HarmBlockMethod
 import com.google.firebase.ai.type.HarmBlockThreshold
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.MultiSpeakerVoiceConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.ServerException
+import com.google.firebase.ai.type.SpeakerVoiceConfig
+import com.google.firebase.ai.type.SpeechConfig
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.ThinkingLevel
+import com.google.firebase.ai.type.Voice
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
@@ -447,6 +451,137 @@ internal class GenerativeModelTesting {
     request.text.let {
       it shouldContainJsonKey "generation_config"
       it.shouldContainJsonKeyValue("$.generation_config.thinking_config.thinking_level", "MEDIUM")
+    }
+  }
+
+  @Test
+  fun `correctly setting speechConfig with singleVoice in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        actualModel =
+          CloudGenerativeModelProvider(
+            "gemini-2.5-flash",
+            generationConfig =
+              generationConfig {
+                speechConfig = SpeechConfig(voice = Voice("Puck"), languageCode = "en-US")
+              },
+            controller = apiController
+          ),
+        requestOptions = RequestOptions()
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Puck"
+      )
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
+    }
+  }
+
+  @Test
+  fun `correctly setting speechConfig with multiSpeakerVoiceConfig in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        actualModel =
+          CloudGenerativeModelProvider(
+            "gemini-2.5-flash",
+            generationConfig =
+              generationConfig {
+                speechConfig =
+                  SpeechConfig(
+                    multiSpeakerVoiceConfig =
+                      MultiSpeakerVoiceConfig(
+                        speakerVoiceConfigs =
+                          listOf(
+                            SpeakerVoiceConfig(speaker = "Speaker1", voice = Voice("Puck")),
+                            SpeakerVoiceConfig(speaker = "Speaker2", voice = Voice("Charon"))
+                          )
+                      ),
+                    languageCode = "en-US"
+                  )
+              },
+            controller = apiController
+          ),
+        requestOptions = RequestOptions()
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].speaker",
+        "Speaker1"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Puck"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].speaker",
+        "Speaker2"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Charon"
+      )
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
     }
   }
 

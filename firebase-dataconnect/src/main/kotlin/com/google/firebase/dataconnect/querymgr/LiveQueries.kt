@@ -17,13 +17,12 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.core.DataConnectSerialization
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
-import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.ReferenceCounted
 import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,6 +33,7 @@ import kotlinx.coroutines.withContext
 
 internal class LiveQueries(
   private val liveQueryFactory: LiveQueryFactory,
+  private val serialization: DataConnectSerialization,
   private val blockingDispatcher: CoroutineDispatcher,
   parentLogger: Logger,
 ) {
@@ -63,17 +63,11 @@ internal class LiveQueries(
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
   private suspend fun <R, V> acquireLiveQuery(query: QueryRef<R, V>): LiveQuery {
     val variablesStruct =
-      withContext(blockingDispatcher) {
-        if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
-          (query.variables as DataConnectUntypedVariables).variables.toStructProto()
-        } else {
-          encodeToStruct(
-            query.variables,
-            query.variablesSerializer,
-            query.variablesSerializersModule
-          )
-        }
-      }
+      serialization.encodeVariables(
+        query.variables,
+        query.variablesSerializer,
+        query.variablesSerializersModule,
+      )
 
     val variablesHash: ImmutableByteArray =
       withContext(blockingDispatcher) { variablesStruct.calculateSha512() }

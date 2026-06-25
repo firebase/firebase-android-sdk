@@ -31,4 +31,11 @@ data class ErrorPayload(
   @SerializedName("message") val message: String? = null,
   @SerializedName("code") val code: Int = 0,
   @SerializedName("status") val status: String? = null,
+  @SerializedName("details") val details: List<ErrorDetail>? = null,
+)
+
+data class ErrorDetail(
+  @SerializedName("@type") val type: String? = null,
+  @SerializedName("message") val message: String? = null,
+  @SerializedName("locale") val locale: String? = null,
 )

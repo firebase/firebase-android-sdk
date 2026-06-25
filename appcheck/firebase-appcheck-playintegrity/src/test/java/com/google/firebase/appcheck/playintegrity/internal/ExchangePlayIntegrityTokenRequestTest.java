@@ -31,12 +31,27 @@ public class ExchangePlayIntegrityTokenRequestTest {
   @Test
   public void toJsonString_expectSerialized() throws Exception {
     ExchangePlayIntegrityTokenRequest exchangePlayIntegrityTokenRequest =
-        new ExchangePlayIntegrityTokenRequest(PLAY_INTEGRITY_TOKEN);
+        new ExchangePlayIntegrityTokenRequest(PLAY_INTEGRITY_TOKEN, /* isLimitedUseToken= */ false);
 
     String jsonString = exchangePlayIntegrityTokenRequest.toJsonString();
     JSONObject jsonObject = new JSONObject(jsonString);
 
     assertThat(jsonObject.getString(ExchangePlayIntegrityTokenRequest.PLAY_INTEGRITY_TOKEN_KEY))
         .isEqualTo(PLAY_INTEGRITY_TOKEN);
+    assertThat(jsonObject.opt(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY)).isNull();
+  }
+
+  @Test
+  public void toJsonString_limitedUse_expectSerialized() throws Exception {
+    ExchangePlayIntegrityTokenRequest exchangePlayIntegrityTokenRequest =
+        new ExchangePlayIntegrityTokenRequest(PLAY_INTEGRITY_TOKEN, /* isLimitedUseToken= */ true);
+
+    String jsonString = exchangePlayIntegrityTokenRequest.toJsonString();
+    JSONObject jsonObject = new JSONObject(jsonString);
+
+    assertThat(jsonObject.getString(ExchangePlayIntegrityTokenRequest.PLAY_INTEGRITY_TOKEN_KEY))
+        .isEqualTo(PLAY_INTEGRITY_TOKEN);
+    assertThat(jsonObject.optBoolean(ExchangePlayIntegrityTokenRequest.LIMITED_USE_TOKEN_KEY))
+        .isTrue();
   }
 }

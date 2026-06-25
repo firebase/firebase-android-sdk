@@ -52,6 +52,7 @@ internal object AppDistributionExtensionCombiner {
     returnExtension.testNonBlocking = primary.testNonBlocking ?: default.testNonBlocking
     returnExtension.testCases = primary.testCases ?: default.testCases
     returnExtension.testCasesFile = primary.testCasesFile ?: default.testCasesFile
+    returnExtension.resultsBucket = primary.resultsBucket ?: default.resultsBucket
     return returnExtension
   }
 
@@ -111,6 +112,7 @@ internal object AppDistributionExtensionCombiner {
     coalesce(preferred.testNonBlocking, default.testNonBlocking)
     coalesce(preferred.testCases, default.testCases)
     coalesce(preferred.testCasesFile, default.testCasesFile)
+    coalesce(preferred.resultsBucket, default.resultsBucket)
     // default has been mutated.
     return default
   }
@@ -145,6 +147,7 @@ internal object AppDistributionExtensionCombiner {
     coalesce(preferred.testNonBlocking, default.testNonBlocking)
     coalesce(preferred.testCases, default.testCases)
     coalesce(preferred.testCasesFile, default.testCasesFile)
+    coalesce(preferred.resultsBucket, default.resultsBucket)
     // Preferred has been mutated
     return preferred
   }
