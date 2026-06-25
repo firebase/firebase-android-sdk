@@ -32,7 +32,7 @@ import java.lang.reflect.WildcardType;
  *   <li>Plain class types, for example, {@code Foo}
  *   <li>Generic types, for example, {@code Foo<String, Double>}
  *   <li>Wildcard types: only support {@code Foo<? extend Bar>} by downgrading it to
-         {@code Foo<Bar>}, and throw exception when stumbled upon {@code Foo<? super Bar>}.
+ * {@code Foo<Bar>}, and throw exception when stumbled upon {@code Foo<? super Bar>}.
  * </ol>
  */
 public abstract class TypeToken<T> {
