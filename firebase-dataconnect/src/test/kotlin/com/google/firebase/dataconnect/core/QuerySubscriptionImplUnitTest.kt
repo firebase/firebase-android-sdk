@@ -229,8 +229,8 @@ class QuerySubscriptionImplUnitTest {
         }
       }
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -265,8 +265,8 @@ class QuerySubscriptionImplUnitTest {
         }
       }
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -383,8 +383,8 @@ class QuerySubscriptionImplUnitTest {
       dataConnect.close()
       serverCollector.awaitUntilClientClosesConnection()
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -402,8 +402,8 @@ class QuerySubscriptionImplUnitTest {
       dataConnect.close()
       clientCollector.awaitComplete()
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
       clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -641,8 +641,8 @@ class QuerySubscriptionImplUnitTest {
           exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
           exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
-          serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
@@ -698,8 +698,8 @@ class QuerySubscriptionImplUnitTest {
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
-            serverCollector.cancelAndIgnoreRemainingEvents()
             clientCollector.cancelAndIgnoreRemainingEvents()
+            serverCollector.cancelAndIgnoreRemainingEvents()
           }
         } finally {
           dataConnect.suspendingClose()
@@ -777,8 +777,8 @@ class QuerySubscriptionImplUnitTest {
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
-            serverCollector.cancelAndIgnoreRemainingEvents()
             clientCollector.cancelAndIgnoreRemainingEvents()
+            serverCollector.cancelAndIgnoreRemainingEvents()
           }
         } finally {
           dataConnect.suspendingClose()
@@ -906,8 +906,8 @@ class QuerySubscriptionImplUnitTest {
           val apiClientHeader = subscribeRequest.headersMap["x-goog-api-client"]
           apiClientHeader shouldBe dataConnect.googApiClientHeaderValue(callerSdkType)
 
-          serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
@@ -1011,8 +1011,8 @@ class QuerySubscriptionImplUnitTest {
         val callEvent = serverCollector.awaitCall()
         callEvent.headers.get(header) shouldBe expectedHeaderValue
 
-        serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
     } finally {
       dataConnect.suspendingClose()
@@ -1393,8 +1393,8 @@ class QuerySubscriptionImplUnitTest {
             GetTokenCall(forceRefresh = true)
           )
 
-        serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
     } finally {
       dataConnect.suspendingClose()
@@ -1454,8 +1454,8 @@ class QuerySubscriptionImplUnitTest {
             )
         }
 
-        serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
     } finally {
       dataConnect.suspendingClose()
@@ -1505,8 +1505,8 @@ class QuerySubscriptionImplUnitTest {
         val reconnectionHeaders = serverCollector.awaitCall().headers
         reconnectionHeaders.get(header) shouldBe expectedHeaderValue2
 
-        serverCollector.cancelAndIgnoreRemainingEvents()
         clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
     } finally {
       dataConnect.suspendingClose()
@@ -1593,8 +1593,8 @@ class QuerySubscriptionImplUnitTest {
             it.headersMap["x-firebase-auth-token"] shouldBe authToken2
           }
 
-          serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
@@ -1648,8 +1648,8 @@ class QuerySubscriptionImplUnitTest {
             unsetReconnectPendingAuthTokenForTesting(postReconnectPendingAuthToken)
           }
 
-          serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
@@ -1704,8 +1704,8 @@ class QuerySubscriptionImplUnitTest {
             unsetReconnectPendingAuthTokenForTesting(postReconnectPendingAuthToken)
           }
 
-          serverCollector.cancelAndIgnoreRemainingEvents()
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
         }
       } finally {
         dataConnect.suspendingClose()
