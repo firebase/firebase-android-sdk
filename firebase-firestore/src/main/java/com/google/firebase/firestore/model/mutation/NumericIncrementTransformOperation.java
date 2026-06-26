@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.model.Values.isDouble;
 import static com.google.firebase.firestore.model.Values.isInteger;
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -77,6 +78,30 @@ public class NumericIncrementTransformOperation extends NumericTransformOperatio
       return Long.MIN_VALUE;
     } else {
       return Long.MAX_VALUE;
+    }
+  }
+
+  protected double operandAsDouble() {
+    if (isDouble(operand)) {
+      return operand.getDoubleValue();
+    } else if (isInteger(operand)) {
+      return operand.getIntegerValue();
+    } else {
+      throw fail(
+          "Expected 'operand' to be of Number type, but was "
+              + operand.getClass().getCanonicalName());
+    }
+  }
+
+  protected long operandAsLong() {
+    if (isDouble(operand)) {
+      return (long) operand.getDoubleValue();
+    } else if (isInteger(operand)) {
+      return operand.getIntegerValue();
+    } else {
+      throw fail(
+          "Expected 'operand' to be of Number type, but was "
+              + operand.getClass().getCanonicalName());
     }
   }
 }

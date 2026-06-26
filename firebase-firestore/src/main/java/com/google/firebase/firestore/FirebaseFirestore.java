@@ -691,7 +691,6 @@ public class FirebaseFirestore {
         });
     return source.getTask();
   }
-  ;
 
   /**
    * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that

@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+
 # 26.4.0
 
 - [feature] Added support for `minimum` and `maximum` FieldValue operations.
