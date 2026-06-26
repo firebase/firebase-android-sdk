@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-@file:SharedWithAndroidTest
-
 package com.google.firebase.dataconnect.testutil
 
-import io.grpc.okhttp.OkHttpServerBuilder
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 
 /**
- * The [SocketAddress] to specify to [OkHttpServerBuilder.forPort] to have a server find to a random
- * available port on the loopback interface.
+ * The [SocketAddress] to specify to `OkHttpServerBuilder.forPort()` to have a server find to a
+ * random available port on the loopback interface.
  *
- * This is better than specifying just a port number to [OkHttpServerBuilder.forPort] because
+ * This is better than specifying just a port number to `OkHttpServerBuilder.forPort()` because
  * without specifying the loopback interface it will (attempt to) bind to _all_ network interfaces,
  * which is both undesirable from a security standpoint and also wasteful work.
  */
-val loopbackPortZeroAddress = InetSocketAddress("127.0.0.1", 0)
+fun loopbackAddressForPort(port: Int) = InetSocketAddress("127.0.0.1", port)

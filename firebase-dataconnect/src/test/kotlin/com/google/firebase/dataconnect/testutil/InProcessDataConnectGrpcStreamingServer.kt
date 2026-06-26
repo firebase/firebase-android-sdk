@@ -185,7 +185,10 @@ class InProcessDataConnectGrpcStreamingServer : AutoCloseable {
           val future = CompletableFuture<Unit>()
           val eventHandler = EventHandler(_events, listener)
           val server =
-            OkHttpServerBuilder.forPort(loopbackPortZeroAddress, InsecureServerCredentials.create())
+            OkHttpServerBuilder.forPort(
+                loopbackAddressForPort(port),
+                InsecureServerCredentials.create(),
+              )
               .addService(ConnectorStreamingServiceImpl(eventHandler))
               .intercept(ServerInterceptorImpl(eventHandler))
               .build()
