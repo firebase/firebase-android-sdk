@@ -18,12 +18,19 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFir
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import com.google.android.gms.tasks.Task;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -31,30 +38,81 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class LargeDocumentTest {
 
-  // These tests require a pre-seeded database containing specific large documents.
-  private static final String SEED_COLLECTION = "serverSdkTests";
-  private static final String DOC_15_9MB_UNICODE = "doc_15_9MB_unicode";
-  private static final String COL_LARGE_DOCS = "col_large_docs";
+  private static String seedCollection;
+  private static String unicodePayload;
+  private static String asciiPayload;
 
-  // Extended timeout required for large document tests due to gRPC flow control
-  // window defaults (64KB), which result in longer read times over the network.
-  private static final int TIMEOUT_MS = 60000;
+  // Exteneded timeout because these tests can be slow.
+  private static final int TIMEOUT_MS = 120000;
+
+  private static String generateUnicodeString(int targetUtf8Bytes) {
+    StringBuilder sb = new StringBuilder();
+    String emoji = "🚀"; // 4 bytes in UTF-8
+    int bytes = 0;
+    while (bytes < targetUtf8Bytes) {
+      if (bytes % 2 == 0 && bytes + 4 <= targetUtf8Bytes) {
+        sb.append(emoji);
+        bytes += 4;
+      } else {
+        sb.append('a');
+        bytes += 1;
+      }
+    }
+    return sb.toString();
+  }
+
+  private static String generateAsciiString(int sizeInBytes) {
+    char[] chars = new char[sizeInBytes];
+    Arrays.fill(chars, 'a');
+    return new String(chars);
+  }
+
+  @BeforeClass
+  public static void setUpClass() {
+    FirebaseFirestore db = testFirestore();
+    seedCollection = "large_doc_tests_" + System.currentTimeMillis();
+
+    int targetBytes = (int) Math.floor(15.9 * 1024 * 1024);
+    unicodePayload = generateUnicodeString(targetBytes);
+    asciiPayload = generateAsciiString(targetBytes);
+
+    DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
+    DocumentReference docA = db.collection(seedCollection).document("doc_a");
+    DocumentReference docB = db.collection(seedCollection).document("doc_b");
+
+    Map<String, Object> dataUnicode = new HashMap<>();
+    dataUnicode.put("chunk", unicodePayload);
+    Map<String, Object> dataAscii = new HashMap<>();
+    dataAscii.put("chunk", asciiPayload);
+
+    waitFor(docRef.set(dataUnicode));
+    waitFor(docA.set(dataAscii));
+    waitFor(docB.set(dataAscii));
+  }
+
+  @AfterClass
+  public static void tearDownClass() {
+    if (seedCollection != null) {
+      FirebaseFirestore db = testFirestore();
+      try {
+        waitFor(db.collection(seedCollection).document("doc_15_9MB_unicode").delete());
+        waitFor(db.collection(seedCollection).document("doc_a").delete());
+        waitFor(db.collection(seedCollection).document("doc_b").delete());
+      } catch (Exception e) {
+        // Suppress cleanup exceptions
+      }
+    }
+  }
 
   @After
   public void tearDown() {
     com.google.firebase.firestore.testutil.IntegrationTestUtil.tearDown();
   }
 
-  private String generateString(int sizeInBytes) {
-    char[] chars = new char[sizeInBytes];
-    Arrays.fill(chars, 'a');
-    return new String(chars);
-  }
-
   @Test(timeout = TIMEOUT_MS)
   public void testReadAndCacheLargeUnicodeDocument() {
     FirebaseFirestore db = testFirestore();
-    DocumentReference docRef = db.collection(SEED_COLLECTION).document(DOC_15_9MB_UNICODE);
+    DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
 
     DocumentSnapshot serverSnapshot = waitFor(docRef.get(Source.SERVER));
     assertTrue(serverSnapshot.exists());
@@ -83,7 +141,7 @@ public class LargeDocumentTest {
             .build();
     db.setFirestoreSettings(settings);
 
-    CollectionReference colRef = db.collection(COL_LARGE_DOCS);
+    CollectionReference colRef = db.collection(seedCollection);
     DocumentReference docA = colRef.document("doc_a");
     DocumentReference docB = colRef.document("doc_b");
 
@@ -108,36 +166,47 @@ public class LargeDocumentTest {
   @Test(timeout = TIMEOUT_MS)
   public void testWatchStreamInitializationAndDiff() throws Exception {
     FirebaseFirestore db = testFirestore();
-    DocumentReference docRef = db.collection(SEED_COLLECTION).document(DOC_15_9MB_UNICODE);
+    DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
 
     // Verify that the initial snapshot of a large document is received successfully
     // without triggering stream cancellation loops.
-    Task<DocumentSnapshot> firstSnapshotTask = docRef.get(Source.SERVER);
-    DocumentSnapshot firstSnapshot = waitFor(firstSnapshotTask);
-    assertTrue(firstSnapshot.exists());
+    CountDownLatch updateLatch = new CountDownLatch(1);
+    ListenerRegistration registration =
+        docRef.addSnapshotListener(
+            (snapshot, error) -> {
+              if (snapshot != null
+                  && snapshot.exists()
+                  && snapshot.contains("differential_field")) {
+                updateLatch.countDown();
+              }
+            });
 
-    // TODO: Enable the differential update assertions below once client SDK write streams
-    // support the 16MB limit.
-    /*
-    Map<String, Object> updateData = new HashMap<>();
-    updateData.put("differential_field", "updated_value");
-    waitFor(docRef.update(updateData));
+    try {
+      Task<DocumentSnapshot> firstSnapshotTask = docRef.get(Source.SERVER);
+      DocumentSnapshot firstSnapshot = waitFor(firstSnapshotTask);
+      assertTrue(firstSnapshot.exists());
 
-    // Wait for the snapshot listener to fire a second time to verify stream continuity.
-    */
+      Map<String, Object> updateData = new HashMap<>();
+      updateData.put("differential_field", "updated_value");
+      waitFor(docRef.update(updateData));
+
+      assertTrue(
+          "Watch stream should deliver differential update",
+          updateLatch.await(60, TimeUnit.SECONDS));
+    } finally {
+      registration.remove();
+    }
   }
 
-  // TODO: Enable this test. Currently it times out after not receiving a response from the backend.
-  /*
   @Test(timeout = TIMEOUT_MS)
   public void testOversizedPayloadRejection() {
     FirebaseFirestore db = testFirestore();
-    DocumentReference docRef = db.collection(SEED_COLLECTION).document("temp_oversized_doc");
+    DocumentReference docRef = db.collection(seedCollection).document("temp_oversized_doc");
 
     Map<String, Object> data = new HashMap<>();
     // 16.1MB payload
     int oversizedPayloadBytes = (16 * 1024 * 1024) + 102400;
-    data.put("largeField", generateString(oversizedPayloadBytes));
+    data.put("largeField", generateAsciiString(oversizedPayloadBytes));
 
     try {
       waitFor(docRef.set(data));
@@ -145,16 +214,41 @@ public class LargeDocumentTest {
     } catch (Exception e) {
       assertTrue(e.getCause() instanceof FirebaseFirestoreException);
       FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e.getCause();
-
-      assertEquals(Code.INVALID_ARGUMENT, firestoreException.getCode());
+      assertEquals(
+          FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
     }
   }
-  */
+
+  @Test(timeout = TIMEOUT_MS)
+  public void testWriteValidLargeDocument() {
+    FirebaseFirestore db = testFirestore();
+    String tempDocId = "temp_valid_large_doc_" + System.currentTimeMillis();
+    DocumentReference docRef = db.collection(seedCollection).document(tempDocId);
+
+    try {
+      int targetBytes = (int) Math.floor(15.9 * 1024 * 1024);
+      String largePayload = generateAsciiString(targetBytes);
+      Map<String, Object> data = new HashMap<>();
+      data.put("chunk", largePayload);
+
+      waitFor(docRef.set(data));
+
+      DocumentSnapshot snapshot = waitFor(docRef.get(Source.SERVER));
+      assertTrue(snapshot.exists());
+      assertEquals(largePayload, snapshot.getString("chunk"));
+    } finally {
+      try {
+        waitFor(docRef.delete());
+      } catch (Exception e) {
+        // Suppress cleanup exceptions
+      }
+    }
+  }
 
   @Test(timeout = TIMEOUT_MS)
   public void testTransactionReadModifyWrite() {
     FirebaseFirestore db = testFirestore();
-    DocumentReference docRef = db.collection(SEED_COLLECTION).document(DOC_15_9MB_UNICODE);
+    DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
 
     Task<Void> transactionTask =
         db.runTransaction(
@@ -172,7 +266,7 @@ public class LargeDocumentTest {
   @Test(timeout = TIMEOUT_MS)
   public void testQueryLargeDocuments() {
     FirebaseFirestore db = testFirestore();
-    CollectionReference colRef = db.collection(COL_LARGE_DOCS);
+    CollectionReference colRef = db.collection(seedCollection);
 
     Query query = colRef.whereIn(FieldPath.documentId(), Arrays.asList("doc_a", "doc_b"));
 
@@ -197,7 +291,7 @@ public class LargeDocumentTest {
   @Test(timeout = TIMEOUT_MS)
   public void testQueryLargeDocumentsForcesLocalScan() {
     FirebaseFirestore db = testFirestore();
-    CollectionReference colRef = db.collection(COL_LARGE_DOCS);
+    CollectionReference colRef = db.collection(seedCollection);
 
     waitFor(colRef.document("doc_a").get(Source.SERVER));
     waitFor(colRef.document("doc_b").get(Source.SERVER));
