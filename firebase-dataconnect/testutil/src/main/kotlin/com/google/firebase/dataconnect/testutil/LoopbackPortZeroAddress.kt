@@ -20,7 +20,7 @@ import java.net.InetSocketAddress
 import java.net.SocketAddress
 
 /**
- * The [SocketAddress] to specify to `OkHttpServerBuilder.forPort()` to have a server find to a
+ * The [SocketAddress] to specify to `OkHttpServerBuilder.forPort()` to have a server bind to a
  * random available port on the loopback interface.
  *
  * This is better than specifying just a port number to `OkHttpServerBuilder.forPort()` because
