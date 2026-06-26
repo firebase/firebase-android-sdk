@@ -17,8 +17,10 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.FIREBASE_AUTH_TOKEN_HEADER
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.CoroutineUtils.mergeColdAndHotFlow
@@ -96,6 +98,7 @@ internal class DataConnectBidiConnectStream(
   authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
   shouldRetry: suspend (Throwable) -> RetryStrategy,
   idStringGenerator: IdStringGenerator,
+  private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -184,20 +187,24 @@ internal class DataConnectBidiConnectStream(
    * @param requestId A unique identifier for this request, used to correlate incoming responses.
    * @param operationName The name of the operation to execute.
    * @param variables The variables for the operation.
-   * @return A [Flow] of [ExecuteResponse] objects for the subscription.
+   * @param callerSdkType The type of caller that is making the request.
+   * @return A [Flow] of [ExecuteResponse] objects for the subscription. The coroutine context that
+   * collects the flow **MUST** have a [CallerSdkTypeElement] element. This allows each individual
+   * flow collector to specify its own [CallerSdkType].
    */
   fun subscribe(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
   ): Flow<ExecuteResponse> {
     val state = AtomicReference<SubscriptionState>(SubscriptionState.Disconnected)
 
-    fun sendSubscribeOrResume() {
+    fun sendSubscribeOrResume(callerSdkType: CallerSdkType) {
       while (true) {
         when (val currentState = state.get()) {
           is SubscriptionState.Connected -> {
-            currentState.enqueueSubscribeOrResume()
+            currentState.enqueueSubscribeOrResume(callerSdkType)
             break
           }
           SubscriptionState.DisconnectedWithPendingSubscription -> break
@@ -224,7 +231,7 @@ internal class DataConnectBidiConnectStream(
             SubscriptionState.Disconnected
           }
         }
-        .transformToMessage(requestId, operationName, variables, state)
+        .transformToMessage(requestId, operationName, variables, callerSdkType, state)
         .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
         .buffer(capacity = Channel.CONFLATED) // use CONFLATED to drop stale data
         .shareIn(
@@ -235,7 +242,13 @@ internal class DataConnectBidiConnectStream(
         .onSubscription { emit(MessageOrSubscribe.Subscribed) }
         .transform { messageOrSubscribe ->
           when (messageOrSubscribe) {
-            MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
+            MessageOrSubscribe.Subscribed -> {
+              val callerSdkTypeElement = currentCoroutineContext()[CallerSdkTypeElement]
+              checkNotNull(callerSdkTypeElement) {
+                "internal error c6se9nvv5w: currentCoroutineContext()[CallerSdkTypeElement]==null"
+              }
+              sendSubscribeOrResume(callerSdkTypeElement.callerSdkType)
+            }
             is MessageOrSubscribe.Message -> emit(messageOrSubscribe)
           }
         }
@@ -285,12 +298,12 @@ internal class DataConnectBidiConnectStream(
       val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
-      private val subscribeOrResumeSignal: ConflatedSignal,
+      private val subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
 
-      fun enqueueSubscribeOrResume() {
-        subscribeOrResumeSignal.signal()
+      fun enqueueSubscribeOrResume(callerSdkType: CallerSdkType) {
+        subscribeOrResumeSignal.signal(callerSdkType)
         subscribeOrResumeJob.start()
       }
 
@@ -334,6 +347,7 @@ internal class DataConnectBidiConnectStream(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
     state: AtomicReference<SubscriptionState>,
   ): Flow<SubscriptionEvent.Message> {
     val subscribeRequest =
@@ -368,6 +382,7 @@ internal class DataConnectBidiConnectStream(
       subscribeRequest = subscribeRequest,
       resumeRequest = resumeRequest,
       cancelRequest = cancelRequest,
+      callerSdkType = callerSdkType,
     )
   }
 
@@ -376,20 +391,32 @@ internal class DataConnectBidiConnectStream(
     subscribeRequest: StreamRequestProto,
     resumeRequest: StreamRequestProto,
     cancelRequest: StreamRequestProto,
+    callerSdkType: CallerSdkType,
   ): Flow<SubscriptionEvent.Message> {
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: AuthUid?,
-      subscribeOrResumeSignal: ConflatedSignal,
+      subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
     ) {
       var subscribed = false
       try {
-        subscribeOrResumeSignal.signals.collect {
+        subscribeOrResumeSignal.signals.collect { callerSdkType ->
+          val value = grpcMetadata.googApiClientHeaderValue(callerSdkType)
           if (!subscribed) {
-            trySendOrThrow(authUid, subscribeRequest)
+            val request =
+              subscribeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
             subscribed = true
           } else {
-            trySendOrThrow(authUid, resumeRequest)
+            val request =
+              resumeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
           }
         }
       } finally {
@@ -419,9 +446,9 @@ internal class DataConnectBidiConnectStream(
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
 
-        val subscribeOrResumeSignal = ConflatedSignal()
+        val subscribeOrResumeSignal = ConflatedSignal<CallerSdkType>()
         if (isPendingSubscription) {
-          subscribeOrResumeSignal.signal()
+          subscribeOrResumeSignal.signal(callerSdkType)
         }
         val subscribeOrResumeJob =
           coroutineScope.launch(start = CoroutineStart.LAZY) {
@@ -742,7 +769,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
   private fun authTokenUpdateStreamRequest(authToken: String): StreamRequestProto =
     StreamRequestProto.newBuilder()
       .setRequestId(idStringGenerator.next("auth"))
-      .putHeaders("x-firebase-auth-token", authToken)
+      .putHeaders(FIREBASE_AUTH_TOKEN_HEADER, authToken)
       .build()
 }
 

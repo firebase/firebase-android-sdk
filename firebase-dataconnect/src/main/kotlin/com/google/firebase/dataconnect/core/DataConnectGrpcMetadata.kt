@@ -55,7 +55,7 @@ internal class DataConnectGrpcMetadata(
 
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
-  private fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
+  fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
     val components = buildList {
       add("gl-kotlin/$kotlinVersion")
       add("gl-android/$androidVersion")
@@ -166,8 +166,10 @@ internal class DataConnectGrpcMetadata(
       }
     }
 
+    const val FIREBASE_AUTH_TOKEN_HEADER = "x-firebase-auth-token"
+
     private val firebaseAuthTokenHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(FIREBASE_AUTH_TOKEN_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     private val firebaseAppCheckTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
@@ -175,8 +177,10 @@ internal class DataConnectGrpcMetadata(
     private val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
 
+    const val GOOG_API_CLIENT_HEADER = "x-goog-api-client"
+
     private val googApiClientHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     @Suppress("SpellCheckingInspection")
     private val gmpAppIdHeader: Metadata.Key<String> =
