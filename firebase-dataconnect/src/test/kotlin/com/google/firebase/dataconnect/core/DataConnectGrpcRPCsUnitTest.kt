@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
+import com.google.firebase.dataconnect.testutil.loopbackAddressForPort
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -872,7 +873,7 @@ open class DataConnectGrpcRPCsUnitTest {
   private fun startServer(): StartServerResult {
     val connectorServiceImpl = ConnectorServiceImpl()
     val grpcServer =
-      OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+      OkHttpServerBuilder.forPort(loopbackAddressForPort(0), InsecureServerCredentials.create())
         .addService(connectorServiceImpl)
         .build()
 
@@ -912,7 +913,7 @@ open class DataConnectGrpcRPCsUnitTest {
   ): DataConnectGrpcRPCs =
     DataConnectGrpcRPCs(
       context = RuntimeEnvironment.getApplication(),
-      host = "localhost:$port",
+      host = "127.0.0.1:$port",
       sslEnabled = false,
       connectorResourceName = connectorResourceNameArb.bind(),
       nonBlockingCoroutineDispatcher = Dispatchers.Default,

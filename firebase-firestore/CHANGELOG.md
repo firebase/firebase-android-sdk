@@ -1,6 +1,7 @@
 # Unreleased
 
-- [changed] Avoid Android SQLite CursorWindow exceptions and OOMs by reading cached documents larger than 1MB in chunks.
+- [changed] Added support for caching documents larger than 1MB by reading them in chunks from the local SQLite database.
+- [changed] Prevent OutOfMemory errors in debug logging by truncating large protobuf payloads and strings.
 
 # 26.4.0
 
