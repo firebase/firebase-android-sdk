@@ -32,7 +32,8 @@ internal data class GuideValues(
   val minItems: Int?,
   val maxItems: Int?,
   val format: String?,
-  val description: String?
+  val description: String?,
+  val enumValues: List<String>?,
 )
 
 internal fun getGuideValuesFromAnnotation(
@@ -45,7 +46,8 @@ internal fun getGuideValuesFromAnnotation(
     minItems = getIntFromAnnotation(guideAnnotation, "minItems"),
     maxItems = getIntFromAnnotation(guideAnnotation, "maxItems"),
     format = getStringFromAnnotation(guideAnnotation, "format"),
-    description = description
+    description = description,
+    enumValues = getStringListFromAnnotation(guideAnnotation, "enumValues")
   )
 
 internal fun getDescriptionFromAnnotations(
@@ -101,6 +103,21 @@ internal fun getStringFromAnnotation(
     return null
   }
   return guidePropertyStringValue
+}
+
+internal fun getStringListFromAnnotation(
+  guideAnnotation: KSAnnotation?,
+  listName: String,
+): List<String>? {
+  val guidePropertyStringListValue =
+    guideAnnotation
+      ?.arguments
+      ?.firstOrNull { it.name?.getShortName()?.equals(listName) == true }
+      ?.value as? List<*>
+  if (guidePropertyStringListValue.isNullOrEmpty()) {
+    return null
+  }
+  return guidePropertyStringListValue?.filterIsInstance<String>()
 }
 
 internal fun extractBaseKdoc(kdoc: String): String? {
