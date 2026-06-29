@@ -74,7 +74,10 @@ public class DeviceCacheManager {
       serialExecutor.execute(
           () -> {
             if (sharedPref == null && appContext != null) {
-              this.sharedPref = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+              SharedPreferences prefs =
+                  appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+              prefs.getAll();
+              this.sharedPref = prefs;
             }
           });
     }
