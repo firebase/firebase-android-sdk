@@ -889,6 +889,7 @@ internal constructor(
   private val addFields: Array<Selectable>? = null,
   // TODO(search) enable with backend support
   //  private val queryEnhancement: QueryEnhancement? = null,
+  private val facets: Array<out FacetDefinition>? = null,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SearchStage>("search", options) {
   override fun self(options: InternalOptions) =
@@ -902,6 +903,7 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
       options
     )
   override fun canonicalId(): String {
@@ -921,6 +923,7 @@ internal constructor(
     // if (!select.contentEquals(other.select)) return false
     if (!addFields.contentEquals(other.addFields)) return false
     // if (queryEnhancement != other.queryEnhancement) return false
+    if (!facets.contentEquals(other.facets)) return false
     if (options != other.options) return false
     return true
   }
@@ -935,6 +938,7 @@ internal constructor(
     // result = 31 * result + (select?.contentHashCode() ?: 0)
     result = 31 * result + (addFields?.contentHashCode() ?: 0)
     // result = 31 * result + (queryEnhancement?.hashCode() ?: 0)
+    result = 31 * result + (facets?.contentHashCode() ?: 0)
     result = 31 * result + options.hashCode()
     return result
   }
@@ -1068,6 +1072,7 @@ internal constructor(
       //      select,
       allAddFields,
       //      queryEnhancement,
+      facets,
       options
     )
   }
@@ -1111,6 +1116,7 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
       options
     )
   }
@@ -1130,6 +1136,7 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
       options
     )
   }
@@ -1151,6 +1158,7 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
       options
     )
   }
@@ -1167,6 +1175,7 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
       options
     )
   }
@@ -1183,6 +1192,41 @@ internal constructor(
       //      select,
       addFields,
       //      queryEnhancement,
+      facets,
+      options
+    )
+  }
+
+  /** Specify the facets to discover. */
+  fun withFacets(facets: List<FacetDefinition>): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
+      facets.toTypedArray(),
+      options
+    )
+  }
+
+  /** Specify the facets to discover. */
+  fun withFacets(vararg facets: FacetDefinition): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
+      facets.copyOf(),
       options
     )
   }

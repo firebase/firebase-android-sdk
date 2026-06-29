@@ -40,6 +40,8 @@ import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.FacetBucket
+import com.google.firebase.firestore.pipeline.FacetDefinition
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestOptions
 import com.google.firebase.firestore.pipeline.FindNearestStage
@@ -126,6 +128,11 @@ internal constructor(
 
     /** List of all the results */
     val results: List<PipelineResult> = results
+
+    /** The facet results of the pipeline execution. */
+    @get:Beta
+    val facetResults: List<FacetResult>
+      get() = throw UnsupportedOperationException("not implemented")
 
     override fun iterator() = results.iterator()
 
@@ -1426,4 +1433,11 @@ internal interface PipelineResultObserver {
   )
   fun onComplete(executionTime: Timestamp)
   fun onError(exception: FirebaseFirestoreException)
+}
+
+@Beta class FacetBucketResult(val bucket: FacetBucket, val count: Long)
+
+@Beta
+class FacetResult(val fieldName: String, val buckets: List<FacetBucketResult>) {
+  fun toDefinition(): FacetDefinition = FacetDefinition(fieldName, buckets.map { it.bucket })
 }

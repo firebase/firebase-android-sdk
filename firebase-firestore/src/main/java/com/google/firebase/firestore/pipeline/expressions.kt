@@ -7980,61 +7980,165 @@ abstract class Expression internal constructor() {
     //     * @param lowerBound Lower bound (inclusive).
     //     * @param upperBound Upper bound (inclusive).
     //     */
-    //    // TODO(search) between is internal and unimplemented until supported by the backend
-    //    @JvmStatic
-    //    internal fun between(
-    //      fieldName: String,
-    //      lowerBound: Expression,
-    //      upperBound: Expression
-    //    ): BooleanExpression =
-    //      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
+    /**
+     * Evaluates if the value in the field specified by `fieldName` is between the evaluated values
+     * for `lowerBound` (inclusive) and `upperBound` (inclusive).
+     *
+     * @param fieldName Determine if this field is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
+     */
+    @Beta
+    @JvmStatic
+    fun between(
+      fieldName: String,
+      lowerBound: Expression,
+      upperBound: Expression
+    ): BooleanExpression =
+      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
 
-    //    /**
-    //     * Evaluates if the value in the field specified by `fieldName` is between the values for
-    //     * `lowerBound` (inclusive) and `upperBound` (inclusive).
-    //     *
-    //     * @param fieldName Determine if this field is between two bounds.
-    //     * @param lowerBound Lower bound (inclusive).
-    //     * @param upperBound Upper bound (inclusive).
-    //     */
-    //    @JvmStatic
-    //    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any):
-    // BooleanExpression =
-    //      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+    /**
+     * Evaluates if the value in the field specified by `fieldName` is between the values for
+     * `lowerBound` (inclusive) and `upperBound` (inclusive).
+     *
+     * @param fieldName Determine if this field is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
+     */
+    @Beta
+    @JvmStatic
+    fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression =
+      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
 
-    //    /**
-    //     * Evaluates if the result of the specified `expression` is between the results of
-    // `lowerBound`
-    //     * (inclusive) and `upperBound` (inclusive).
-    //     *
-    //     * @param expression Determine if the result of this expression is between two bounds.
-    //     * @param lowerBound Lower bound (inclusive).
-    //     * @param upperBound Upper bound (inclusive).
-    //     */
-    //    @JvmStatic
-    //    internal fun between(
-    //      expression: Expression,
-    //      lowerBound: Expression,
-    //      upperBound: Expression
-    //    ): BooleanExpression =
-    //      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
+    /**
+     * Evaluates if the result of the specified `expression` is between the results of `lowerBound`
+     * (inclusive) and `upperBound` (inclusive).
+     *
+     * @param expression Determine if the result of this expression is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
+     */
+    @Beta
+    @JvmStatic
+    fun between(
+      expression: Expression,
+      lowerBound: Expression,
+      upperBound: Expression
+    ): BooleanExpression =
+      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
 
-    //    /**
-    //     * Evaluates if the result of the specified `expression` is between the `lowerBound`
-    // (inclusive)
-    //     * and `upperBound` (inclusive).
-    //     *
-    //     * @param expression Determine if the result of this expression is between two bounds.
-    //     * @param lowerBound Lower bound (inclusive).
-    //     * @param upperBound Upper bound (inclusive).
-    //     */
-    //    @JvmStatic
-    //    internal fun between(
-    //      expression: Expression,
-    //      lowerBound: Any,
-    //      upperBound: Any
-    //    ): BooleanExpression =
-    //      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+    /**
+     * Evaluates if the result of the specified `expression` is between the `lowerBound` (inclusive)
+     * and `upperBound` (inclusive).
+     *
+     * @param expression Determine if the result of this expression is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
+     */
+    @Beta
+    @JvmStatic
+    fun between(expression: Expression, lowerBound: Any, upperBound: Any): BooleanExpression =
+      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+
+    @Beta
+    @JvmStatic
+    fun inBuckets(field: Field, vararg buckets: FacetBucket): BooleanExpression {
+      throw UnsupportedOperationException("not implemented")
+    }
+
+    @Beta
+    @JvmStatic
+    fun inBuckets(fieldName: String, vararg buckets: FacetBucket): BooleanExpression =
+      inBuckets(field(fieldName), *buckets)
+
+    @Beta
+    @JvmStatic
+    fun scalarFacet(field: Field, vararg values: String): FacetDefinition =
+      field.scalarFacet(*values)
+
+    @Beta
+    @JvmStatic
+    fun scalarFacet(fieldName: String, vararg values: String): FacetDefinition =
+      scalarFacet(field(fieldName), *values)
+
+    @Beta
+    @JvmStatic
+    fun scalarFacetWithNumBuckets(
+      field: Field,
+      numBuckets: Int,
+      bucketDataTypes: List<String>? = null
+    ): FacetDefinition = field.scalarFacetWithNumBuckets(numBuckets, bucketDataTypes)
+
+    @Beta
+    @JvmStatic
+    fun scalarFacetWithNumBuckets(
+      fieldName: String,
+      numBuckets: Int,
+      bucketDataTypes: List<String>? = null
+    ): FacetDefinition = scalarFacetWithNumBuckets(field(fieldName), numBuckets, bucketDataTypes)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      field: Field,
+      firstBound: Number,
+      secondBound: Number,
+      vararg additionalBounds: Number
+    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      fieldName: String,
+      firstBound: Number,
+      secondBound: Number,
+      vararg additionalBounds: Number
+    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      field: Field,
+      firstBound: Date,
+      secondBound: Date,
+      vararg additionalBounds: Date
+    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      fieldName: String,
+      firstBound: Date,
+      secondBound: Date,
+      vararg additionalBounds: Date
+    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      field: Field,
+      firstBound: Timestamp,
+      secondBound: Timestamp,
+      vararg additionalBounds: Timestamp
+    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun rangeFacet(
+      fieldName: String,
+      firstBound: Timestamp,
+      secondBound: Timestamp,
+      vararg additionalBounds: Timestamp
+    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+
+    @Beta
+    @JvmStatic
+    fun facet(field: Field, vararg buckets: FacetBucket): FacetDefinition = field.facet(*buckets)
+
+    @Beta
+    @JvmStatic
+    fun facet(fieldName: String, vararg buckets: FacetBucket): FacetDefinition =
+      facet(field(fieldName), *buckets)
   }
 
   //  // TODO(search) SnippetOptions is internal until supported by the backend
@@ -11062,52 +11166,49 @@ abstract class Expression internal constructor() {
   //    throw NotImplementedError()
   //  }
   //
-  //  /**
-  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
-  //   * `upperBound` (inclusive).
-  //   *
-  //   * @example
-  //   * ```
-  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
-  //   * field('tireWidth').between(constant(2.2), constant(2.4))
-  //   *
-  //   * // This is functionally equivalent to
-  //   * and(
-  //   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
-  //   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
-  //   * ```
-  //   *
-  //   * @param lowerBound Lower bound (inclusive).
-  //   * @param upperBound Upper bound (inclusive).
-  //   *
-  //   * TODO(search) publish between - out of scope for first release
-  //   */
-  //  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
-  //    Companion.between(this, lowerBound, upperBound)
+  /**
+   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+   * `upperBound` (inclusive).
+   *
+   * @example
+   * ```
+   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+   * field('tireWidth').between(constant(2.2), constant(2.4))
+   *
+   * // This is functionally equivalent to
+   * and(
+   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
+   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
+   * ```
+   *
+   * @param lowerBound Lower bound (inclusive).
+   * @param upperBound Upper bound (inclusive).
+   */
+  @Beta
+  fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
+    Companion.between(this, lowerBound, upperBound)
   //
-  //  /**
-  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
-  //   * `upperBound` (inclusive).
-  //   *
-  //   * @example
-  //   * ```
-  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
-  //   * field('tireWidth').between(2.2, 2.4)
-  //   *
-  //   * // This is functionally equivalent to
-  //   * and(
-  //   *   field('tireWidth').greaterThanOrEqual(2.2),
-  //   *   field('tireWidth').lessThanOrEqual(2.4))
-  //   * ```
-  //   *
-  //   * @param lowerBound Lower bound (inclusive).
-  //   * @param upperBound Upper bound (inclusive).
-  //   *
-  //   * TODO(search) publish between - out of scope for first release
-  //   */
-  //  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
-  //    Companion.between(this, lowerBound, upperBound)
-  //
+  /**
+   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+   * `upperBound` (inclusive).
+   *
+   * @example
+   * ```
+   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+   * field('tireWidth').between(2.2, 2.4)
+   *
+   * // This is functionally equivalent to
+   * and(
+   *   field('tireWidth').greaterThanOrEqual(2.2),
+   *   field('tireWidth').lessThanOrEqual(2.4))
+   * ```
+   *
+   * @param lowerBound Lower bound (inclusive).
+   * @param upperBound Upper bound (inclusive).
+   */
+  @Beta
+  fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
+    Companion.between(this, lowerBound, upperBound)
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
@@ -11242,6 +11343,55 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
    */
   @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
+  @Beta
+  fun scalarFacet(vararg values: String): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun scalarFacetWithNumBuckets(
+    numBuckets: Int,
+    bucketDataTypes: List<String>? = null
+  ): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun rangeFacet(
+    firstBound: Date,
+    secondBound: Date,
+    vararg additionalBounds: Date
+  ): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun rangeFacet(
+    firstBound: Number,
+    secondBound: Number,
+    vararg additionalBounds: Number
+  ): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun rangeFacet(
+    firstBound: Timestamp,
+    secondBound: Timestamp,
+    vararg additionalBounds: Timestamp
+  ): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun facet(vararg buckets: FacetBucket): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun inBuckets(vararg buckets: FacetBucket): BooleanExpression =
+    Expression.inBuckets(this, *buckets)
+
   //  /**
   //   * Perform a full-text search on this field.
   //   *
@@ -11356,6 +11506,10 @@ internal constructor(
 
 /** A class that represents a filter condition. */
 abstract class BooleanExpression : Expression() {
+
+  @Beta
+  fun and(booleanExpression: BooleanExpression): BooleanExpression =
+    Expression.and(this, booleanExpression)
 
   /**
    * Creates an aggregation that counts the number of stage inputs where the this boolean expression
@@ -11644,3 +11798,31 @@ private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
   override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
   override fun toString() = "Pipeline(...)"
 }
+
+@Beta
+abstract class FacetBucket private constructor() {
+  @Beta data class Scalar(val value: String) : FacetBucket()
+
+  @Beta data class Range(val lowerBound: Any, val upperBound: Any) : FacetBucket()
+
+  @Beta object Default : FacetBucket()
+
+  companion object {
+    @JvmStatic fun scalarBucket(value: String): FacetBucket = Scalar(value)
+
+    @JvmStatic
+    fun rangeBucket(lowerBound: Number, upperBound: Number): FacetBucket =
+      Range(lowerBound, upperBound)
+
+    @JvmStatic
+    fun rangeBucket(lowerBound: Date, upperBound: Date): FacetBucket = Range(lowerBound, upperBound)
+
+    @JvmStatic
+    fun rangeBucket(lowerBound: Timestamp, upperBound: Timestamp): FacetBucket =
+      Range(lowerBound, upperBound)
+
+    @JvmStatic fun defaultBucket(): FacetBucket = Default
+  }
+}
+
+@Beta class FacetDefinition(val fieldName: String, val buckets: List<FacetBucket>)

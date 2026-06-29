@@ -17,10 +17,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.score
+import com.google.firebase.firestore.pipeline.FacetBucket.Companion.defaultBucket
+import com.google.firebase.firestore.pipeline.FacetBucket.Companion.rangeBucket
+import com.google.firebase.firestore.pipeline.FacetBucket.Companion.scalarBucket
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import org.junit.Assume
@@ -697,4 +701,195 @@ class PipelineSearchTest {
   //    val snip2 = snapshot2.results[0].get("snippet") as String
   //    assertThat(snip2.length).isGreaterThan(snip1.length)
   //  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun supportsNumberFacetDiscovery() {
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withFacets(field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100))
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+
+    val facetResult = snapshot.facetResults[0]
+    assertThat(facetResult.fieldName).isEqualTo("average_price_per_person")
+    assertThat(facetResult.buckets[0].bucket).isEqualTo(rangeBucket(0, 10))
+    assertThat(facetResult.buckets[0].count).isEqualTo(3)
+    assertThat(facetResult.buckets[1].bucket).isEqualTo(rangeBucket(10, 20))
+    assertThat(facetResult.buckets[1].count).isEqualTo(5)
+    assertThat(facetResult.buckets[2].bucket).isEqualTo(rangeBucket(20, 30))
+    assertThat(facetResult.buckets[2].count).isEqualTo(0)
+    assertThat(facetResult.buckets[4].bucket).isEqualTo(defaultBucket())
+    assertThat(facetResult.buckets[4].count).isEqualTo(4)
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun supportsStringFacetDiscovery() {
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(documentMatches("t-shirt"))
+            .withFacets(field("size").scalarFacet("XS", "S", "M", "XM", "L", "XL"))
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+
+    val facetResult = snapshot.facetResults[0]
+    assertThat(facetResult.fieldName).isEqualTo("size")
+    assertThat(facetResult.buckets[0].bucket).isEqualTo(scalarBucket("XS"))
+    assertThat(facetResult.buckets[0].count).isEqualTo(1)
+    assertThat(facetResult.buckets[1].bucket).isEqualTo(scalarBucket("S"))
+    assertThat(facetResult.buckets[1].count).isEqualTo(5)
+    assertThat(facetResult.buckets[3].bucket).isEqualTo(scalarBucket("XM"))
+    assertThat(facetResult.buckets[3].count).isEqualTo(0)
+    assertThat(facetResult.buckets[5].bucket).isEqualTo(defaultBucket())
+    assertThat(facetResult.buckets[5].count).isEqualTo(4)
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun supportsDateFacetDiscovery() {
+    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withFacets(
+              field("open_date")
+                .rangeFacet(
+                  Timestamp(dateFormat.parse("1990-01-01")),
+                  Timestamp(dateFormat.parse("2020-01-01")),
+                  Timestamp(dateFormat.parse("2025-01-01")),
+                  Timestamp(dateFormat.parse("2026-01-01")),
+                  Timestamp(dateFormat.parse("2030-01-01"))
+                )
+            )
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+
+    val facetResult = snapshot.facetResults[0]
+    assertThat(facetResult.fieldName).isEqualTo("open_date")
+    assertThat(facetResult.buckets[0].bucket)
+      .isEqualTo(
+        rangeBucket(
+          Timestamp(dateFormat.parse("1990-01-01")),
+          Timestamp(dateFormat.parse("2020-01-01"))
+        )
+      )
+    assertThat(facetResult.buckets[0].count).isEqualTo(3)
+    assertThat(facetResult.buckets[1].bucket)
+      .isEqualTo(
+        rangeBucket(
+          Timestamp(dateFormat.parse("2020-01-01")),
+          Timestamp(dateFormat.parse("2025-01-01"))
+        )
+      )
+    assertThat(facetResult.buckets[1].count).isEqualTo(5)
+    assertThat(facetResult.buckets[2].bucket)
+      .isEqualTo(
+        rangeBucket(
+          Timestamp(dateFormat.parse("2025-01-01")),
+          Timestamp(dateFormat.parse("2026-01-01"))
+        )
+      )
+    assertThat(facetResult.buckets[2].count).isEqualTo(0)
+    assertThat(facetResult.buckets[4].bucket).isEqualTo(defaultBucket())
+    assertThat(facetResult.buckets[4].count).isEqualTo(4)
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun secondSearchMatchingOneFacetBucket() {
+    val facets = arrayOf(field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100))
+
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(SearchStage.withQuery(documentMatches("waffles")).withFacets(facets[0]))
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+
+    val priceFacet = snapshot.facetResults[0]
+    val selectedBucket = priceFacet.buckets[1].bucket
+
+    val ppl2 =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(
+              documentMatches("waffles").and(field(priceFacet.fieldName).inBuckets(selectedBucket))
+            )
+            .withFacets(facets[0])
+        )
+
+    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun secondSearchMatchingMultipleBucketsOnMultipleFacets() {
+    val priceFacetDef = field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100)
+    val cuisineFacetDef =
+      field("cuisine")
+        .scalarFacet(
+          "American",
+          "Italian",
+          "Mexican",
+          "Chinese",
+          "Japanese",
+          "Indian",
+          "Mediterranean",
+          "Thai",
+          "French",
+          "Turkish"
+        )
+
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withFacets(priceFacetDef, cuisineFacetDef)
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+
+    val priceFacetResult = snapshot.facetResults[0]
+    val cuisineFacetResult = snapshot.facetResults[1]
+
+    val ppl2 =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(
+              documentMatches("waffles")
+                .and(
+                  field(priceFacetResult.fieldName)
+                    .inBuckets(rangeBucket(10, 20), rangeBucket(30, 100))
+                )
+                .and(
+                  field(cuisineFacetResult.fieldName)
+                    .inBuckets(scalarBucket("Italian"), scalarBucket("French"))
+                )
+            )
+            .withFacets(priceFacetDef, cuisineFacetDef)
+        )
+
+    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
+  }
 }
