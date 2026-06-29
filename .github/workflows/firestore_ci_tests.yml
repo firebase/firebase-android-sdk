@@ -304,8 +304,9 @@ jobs:
       - name: Start Emulator
         env:
           EXPERIMENTAL_MODE: true
+          JAVA_TOOL_OPTIONS: -Xmx1024m
         run: |
-          gcloud emulators firestore start --host-port=127.0.0.1:8080 --quiet &
+          gcloud emulators firestore start --host-port=127.0.0.1:8080 > firestore-emulator.log 2>&1 &
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -324,17 +325,19 @@ jobs:
         with:
           api-level: 31
           arch: x86_64
-          ram-size: 4096M
-          heap-size: 4096M
+          ram-size: 2048M
+          heap-size: 2048M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="emulator" -PbackendEdition="enterprise"
+            ./gradlew -Dorg.gradle.jvmargs="-Xmx2048m" firebase-firestore:connectedCheck withErrorProne -PtargetBackend="emulator" -PbackendEdition="enterprise"
       - name: Upload logs
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: emulator-logcat.txt
-          path: logcat.txt
+          name: emulator-logs
+          path: |
+            logcat.txt
+            firestore-emulator.log
           retention-days: 7
           if-no-files-found: ignore
 
