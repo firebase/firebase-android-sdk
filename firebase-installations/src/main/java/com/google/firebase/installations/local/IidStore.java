@@ -43,7 +43,7 @@ public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final Preferences.Key<String> STORE_KEY_PUB = PreferencesKeys.stringKey("|S||P|");
   private static final Preferences.Key<String> STORE_KEY_ID = PreferencesKeys.stringKey("|S|id");
-  private static final String STORE_KEY_TOKEN = "|T|";
+  private static final String STORE_KEY_TOKEN_PREFIX = "|T|";
   private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
@@ -91,7 +91,8 @@ public class IidStore {
   }
 
   private Preferences.Key<String> createTokenKey(@NonNull String senderId, @NonNull String scope) {
-    return PreferencesKeys.stringKey(STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope);
+    return PreferencesKeys.stringKey(
+        STORE_KEY_TOKEN_PREFIX + senderId + STORE_KEY_SEPARATOR + scope);
   }
 
   @Nullable
