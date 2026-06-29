@@ -151,7 +151,7 @@ public final class SQLiteRemoteDocumentCacheTest extends RemoteDocumentCacheTest
   }
 
   @Test
-  public void testDocumentJustBelowLimitDoesNotChunk() {
+  public void testDocumentJustBelowLimitWorks() {
     int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
     SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
     try {
@@ -176,7 +176,7 @@ public final class SQLiteRemoteDocumentCacheTest extends RemoteDocumentCacheTest
   }
 
   @Test
-  public void testDocumentJustAboveLimitChunks() {
+  public void testDocumentJustAboveLimitWorks() {
     int oldLimit = SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT;
     SQLiteRemoteDocumentCache.SAFE_CURSOR_LIMIT = 100;
     try {
