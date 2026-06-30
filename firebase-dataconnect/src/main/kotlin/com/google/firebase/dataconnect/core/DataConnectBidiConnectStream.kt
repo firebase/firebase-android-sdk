@@ -39,7 +39,7 @@ import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -103,6 +103,8 @@ internal class DataConnectBidiConnectStream(
   private val logger: Logger,
 ) {
 
+  private val retryBackoff = RetryBackoffCalculator()
+
   val isPermanentlyFailed: Boolean
     get() = _permanentFailureFlow.replayCache.isNotEmpty()
 
@@ -137,7 +139,10 @@ internal class DataConnectBidiConnectStream(
             is GrpcAuthMergedFlowEvent.Grpc ->
               when (event.event) {
                 is GrpcBidiFlow.Event.ConnectionInfo -> null
-                is GrpcBidiFlow.Event.Message -> event.event
+                is GrpcBidiFlow.Event.Message -> {
+                  retryBackoff.reset()
+                  event.event
+                }
               }
           }
         }
@@ -148,7 +153,7 @@ internal class DataConnectBidiConnectStream(
           }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { cause, attempt ->
+        .retryWhen { cause, _ ->
           val retryStrategy =
             try {
               shouldRetry(cause)
@@ -161,13 +166,12 @@ internal class DataConnectBidiConnectStream(
           when (retryStrategy) {
             RetryStrategy.RETRY_IMMEDIATELY -> true
             RetryStrategy.RETRY_AFTER_BACKOFF -> {
-              if (attempt > 2) {
-                false
-              } else {
-                delay(1.seconds)
-                logger.debug { "retrying connection" }
-                true
+              val backoffMs = retryBackoff.next()
+              logger.debug {
+                "waiting ${backoffMs}ms before retrying connection, " + "which failed due to $cause"
               }
+              delay(backoffMs.milliseconds)
+              true
             }
           }
         }
