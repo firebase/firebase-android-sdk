@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
@@ -11,7 +13,6 @@
 
 - [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8188)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
-- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
 
 # 17.12.0
 
