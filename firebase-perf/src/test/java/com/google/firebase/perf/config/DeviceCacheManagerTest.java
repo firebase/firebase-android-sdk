@@ -58,11 +58,11 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
 
     deviceCacheManager.setContext(warmUpContext);
 
-    verify(spyPrefs, never()).getAll();
+    verify(spyPrefs, never()).contains("");
 
     fakeScheduledExecutorService.runAll();
 
-    verify(spyPrefs).getAll();
+    verify(spyPrefs).contains("");
   }
 
   @Test

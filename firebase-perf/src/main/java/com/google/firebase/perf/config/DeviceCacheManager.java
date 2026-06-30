@@ -76,7 +76,7 @@ public class DeviceCacheManager {
             if (sharedPref == null && appContext != null) {
               SharedPreferences prefs =
                   appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-              prefs.getAll();
+              prefs.contains("");
               this.sharedPref = prefs;
             }
           });
