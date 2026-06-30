@@ -29,6 +29,7 @@ jobs:
           ref: ${{ github.sha }}
           # Specify fetch-depth so we can query the log, the default is a shallow clone.
           fetch-depth: 0
+          persist-credentials: false
       - name: Check if version was updated in git history
         id: check_version
         run: |
@@ -60,6 +61,7 @@ jobs:
         with:
           repository: firebase/firebase-cpp-sdk
           ref: main
+          persist-credentials: false
 
       - name: Get firebase-workflow-trigger token
         uses: tibdex/github-app-token@021a2405c7f990db57f5eae5397423dcc554159c

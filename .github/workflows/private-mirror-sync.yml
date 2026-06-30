@@ -16,12 +16,14 @@ jobs:
           ref: main
           fetch-depth: 0
           submodules: true
+          persist-credentials: false
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           submodules: true
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
+          persist-credentials: false
       - name: Force push HEAD to private repo main branch
         run: |
           git config --local user.name google-oss-bot
