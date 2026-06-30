@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import android.app.ApplicationExitInfo;
 import android.os.Parcel;
 import android.system.OsConstants;
+import androidx.test.filters.SdkSuppress;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -638,6 +639,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     assertTrue(isOom);
   }
 
+  @SdkSuppress(minSdkVersion = 37)
   @Test
   public void testIsOom_returnTrueOnReasonLowMemory() {
     ApplicationExitInfo oom =
