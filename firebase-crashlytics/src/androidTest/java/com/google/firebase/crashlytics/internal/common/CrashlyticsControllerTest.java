@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.ProfilingTrigger;
 import androidx.test.filters.SdkSuppress;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -62,6 +63,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -567,6 +569,70 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
+  }
+
+  @SdkSuppress(minSdkVersion = 37) // ProfilingManager
+  @Test
+  public void testWritingProfilingManagerTriggerAnomaly() {
+    LogFileManager logFileManager = new LogFileManager(testFileStore);
+    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
+
+    controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_ANOMALY);
+
+    List<Integer> triggers =
+        testFileStore
+            .getSessionFiles(
+                "sessionId",
+                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
+            .stream()
+            .map(
+                triggerFile -> {
+                  switch (triggerFile.getName()) {
+                    case "trigger-type-anomaly":
+                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+                    case "trigger-type-oom":
+                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+                  }
+
+                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
+                })
+            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+            .collect(Collectors.toList());
+
+    assertFalse(triggers.isEmpty());
+    assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_ANOMALY));
+  }
+
+  @SdkSuppress(minSdkVersion = 37) // ProfilingTrigger
+  @Test
+  public void testWritingProfilingManagerTriggerOom() {
+    LogFileManager logFileManager = new LogFileManager(testFileStore);
+    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
+
+    controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_OOM);
+
+    List<Integer> triggers =
+        testFileStore
+            .getSessionFiles(
+                "sessionId",
+                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
+            .stream()
+            .map(
+                triggerFile -> {
+                  switch (triggerFile.getName()) {
+                    case "trigger-type-anomaly":
+                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+                    case "trigger-type-oom":
+                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+                  }
+
+                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
+                })
+            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
+            .collect(Collectors.toList());
+
+    assertFalse(triggers.isEmpty());
+    assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_OOM));
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
