@@ -15,7 +15,7 @@
  */
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_PROJECT_NUMBER
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_TESTER_EMAILS
 import com.google.firebase.appdistribution.gradle.OptionsUtils.getValueFromStringOrFile
@@ -27,14 +27,11 @@ class TesterManagementOptions(
   emailsValue: String? = null,
   emailsFile: String? = null,
   serviceCredentialsFile: String? = null,
-  credentialsRetriever: CredentialsRetriever =
-    CredentialsRetriever(
-      GoogleNetHttpTransport.newTrustedTransport(),
-      AppDistributionEnvironmentImpl()
-    )
+  credentialsRetriever: CredentialsRetriever = CredentialsRetriever()
 ) {
   val emails = splitCommaOrNewlineSeparatedString(getValueFromStringOrFile(emailsValue, emailsFile))
-  val credential = credentialsRetriever.getAuthCredential(serviceCredentialsFile)
+  val credential: HttpCredentialsAdapter? =
+    credentialsRetriever.getAuthCredential(serviceCredentialsFile)
 
   init {
     // If project number is set it would be greater than 0, the default primitive value

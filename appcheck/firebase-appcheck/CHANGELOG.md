@@ -1,5 +1,11 @@
 # Unreleased
 
+# 19.2.0
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 19.1.0
+
 - [fixed] Fixed issue preventing limited use tokens from being correctly generated. (#8204)
 - [changed] Added new `getLimitedUseToken` to `AppCheckProvider` interface, that default to
   calling `getToken`. (#8204)

@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.SourcedData
 import com.google.firebase.dataconnect.util.CoroutineUtils.createChildSupervisorScope
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -77,7 +78,7 @@ internal class LiveQuery(
   private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserializer<*>>()
   private data class Update(
     val requestId: String,
-    val sequencedResult: SequencedReference<Result<OperationResult>>
+    val sequencedResult: SequencedReference<Result<SourcedData<OperationResult>>>
   )
   // Also, `initialDataDeserializerUpdate` must only be accessed while
   // `dataDeserializersWriteMutex` is held.
@@ -92,7 +93,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-  ): SequencedReference<Result<DataSourcePair<T>>> {
+  ): SequencedReference<Result<SourcedData<T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
@@ -132,7 +133,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    callback: suspend (SequencedReference<Result<DataSourcePair<T>>>) -> Unit,
+    callback: suspend (SequencedReference<Result<SourcedData<T>>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer =
       registerDataDeserializer(dataDeserializer, dataSerializersModule)

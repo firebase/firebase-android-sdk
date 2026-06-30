@@ -78,7 +78,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
       - name: firebase-firestore Integ Tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
@@ -172,7 +172,7 @@ jobs:
         continue-on-error: true
 
       - name: Firestore Enterprise DB Integ Tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
@@ -238,7 +238,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
 
       - name: Firestore Nightly Integ Tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
@@ -315,7 +315,7 @@ jobs:
           cache: gradle
 
       - name: Firestore Emulator Integ Tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci

@@ -6,6 +6,11 @@ concurrency:
 
 on:
   pull_request:
+    paths:
+      # Don't trigger health checks on Data Connect since they are not consulted by anyone.
+      - '!.github/workflows/dataconnect.yml'
+      - '!.github/workflows/dataconnect_demo.yml'
+      - '!firebase-dataconnect/**'
   push:
     branches:
       - main

@@ -24,8 +24,6 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
-import google.firebase.dataconnect.proto.executeMutationResponse
-import google.firebase.dataconnect.proto.executeQueryResponse
 import io.grpc.InsecureServerCredentials
 import io.grpc.Metadata
 import io.grpc.Server
@@ -90,7 +88,7 @@ class InProcessDataConnectGrpcServer :
         executeMutationResponse ?: Params.defaults.executeMutationResponse,
       )
     val grpcServer =
-      OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+      OkHttpServerBuilder.forPort(loopbackAddressForPort(0), InsecureServerCredentials.create())
         .addService(connectorService)
         .intercept(serverInterceptor)
         .build()

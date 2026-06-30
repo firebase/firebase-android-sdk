@@ -38,6 +38,9 @@ internal data class SequencedReference<out T>(val sequenceNumber: Long, val ref:
     fun <T, U> SequencedReference<T>.map(block: (T) -> U): SequencedReference<U> =
       SequencedReference(sequenceNumber, block(ref))
 
+    fun <T> SequencedReference<T?>.asNonNullRefOrNull(): SequencedReference<T>? =
+      if (ref == null) null else @Suppress("UNCHECKED_CAST") (this as SequencedReference<T>)
+
     suspend fun <T, U> SequencedReference<T>.mapSuspending(
       block: suspend (T) -> U
     ): SequencedReference<U> = SequencedReference(sequenceNumber, block(ref))
@@ -75,5 +78,10 @@ internal data class SequencedReference<out T>(val sequenceNumber: Long, val ref:
           "expected ref to have type ${U::class.qualifiedName}, " +
             "but got ${ref::class.qualifiedName} ($ref)"
         )
+
+    fun <T> maxOfBySequenceNumber(
+      ref1: SequencedReference<T>,
+      ref2: SequencedReference<T>,
+    ): SequencedReference<T> = if (ref1.sequenceNumber >= ref2.sequenceNumber) ref1 else ref2
   }
 }

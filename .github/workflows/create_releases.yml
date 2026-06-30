@@ -22,12 +22,14 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create base branch
-        uses: peterjgrainger/action-create-branch@08259812c8ebdbf1973747f9297e332fa078d3c1
-        with:
-          branch: 'releases/${{ inputs.name }}'
+        run: |
+          gh api repos/${{ github.repository }}/git/refs \
+            -f ref="refs/heads/releases/${{ inputs.name }}" \
+            -f sha="${{ github.sha }}"
 
   create-pull-request:
     runs-on: ubuntu-latest
+    needs: create-branches
     permissions:
       contents: write
       pull-requests: write

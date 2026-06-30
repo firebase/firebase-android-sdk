@@ -1,6 +1,15 @@
 # Unreleased
 
-- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
+# 17.13.0
+
+- [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
+  Integrated `SpeechConfig` into `GenerationConfig` to support Text-to-speech generation (TTS). (#8100)
+- [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
+- [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
+
+# 17.12.1
+
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8188)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
 - [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
 

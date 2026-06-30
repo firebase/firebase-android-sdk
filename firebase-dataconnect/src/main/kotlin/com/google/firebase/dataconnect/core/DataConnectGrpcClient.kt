@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite.SqliteSequencedReference
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlError
@@ -40,7 +41,6 @@ internal class DataConnectGrpcClient(
   data class OperationResult(
     val data: Struct?,
     val errors: List<GraphqlError>,
-    val source: DataSource,
   )
 
   suspend fun executeQuery(
@@ -49,7 +49,7 @@ internal class DataConnectGrpcClient(
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-  ): OperationResult {
+  ): SourcedData<OperationResult> {
     val executeQueryResult =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") { authToken, appCheckToken
         ->
@@ -64,7 +64,7 @@ internal class DataConnectGrpcClient(
         )
       }
 
-    return executeQueryResult.toOperationResult()
+    return executeQueryResult.toSourcedOperationResult()
   }
 
   suspend fun executeMutation(
@@ -90,7 +90,6 @@ internal class DataConnectGrpcClient(
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList,
-      source = DataSource.SERVER,
     )
   }
 
@@ -99,23 +98,21 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     idStringGenerator: IdStringGenerator,
   ): DataConnectBidiConnectStream =
-    grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "connect") { authToken, appCheckToken ->
-      connect(
-        requestId,
-        callerSdkType,
-        authToken,
-        appCheckToken,
-        idStringGenerator,
-      )
-    }
+    grpcRPCs.connect(
+      requestId,
+      callerSdkType,
+      dataConnectAuth,
+      dataConnectAppCheck,
+      idStringGenerator,
+    )
 
   private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,
     kotlinMethodName: String,
     block: T.(GetAuthTokenResult?, GetAppCheckTokenResult?) -> R,
   ): R {
-    val authToken1 = dataConnectAuth.getToken(requestId)
-    val appCheckToken1 = dataConnectAppCheck.getToken(requestId)
+    val authToken1 = dataConnectAuth.getToken(requestId).ref
+    val appCheckToken1 = dataConnectAppCheck.getToken(requestId).ref
 
     return try {
       block(authToken1, appCheckToken1)
@@ -133,13 +130,17 @@ internal class DataConnectGrpcClient(
       dataConnectAuth.forceRefresh()
       dataConnectAppCheck.forceRefresh()
 
-      val authToken2 = dataConnectAuth.getToken(requestId)
-      val appCheckToken2 = dataConnectAppCheck.getToken(requestId)
+      val authToken2 = dataConnectAuth.getToken(requestId).ref
+      val appCheckToken2 = dataConnectAppCheck.getToken(requestId).ref
 
       block(authToken2, appCheckToken2)
     }
   }
 }
+
+private fun SqliteSequencedReference<DataConnectGrpcRPCs.ExecuteQueryResult>
+  .toSourcedOperationResult(): SourcedData<DataConnectGrpcClient.OperationResult> =
+  SourcedData(ref.dataSource, sqliteSequenceNumber, ref.toOperationResult())
 
 private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
   DataConnectGrpcClient.OperationResult =
@@ -148,12 +149,17 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
       DataConnectGrpcClient.OperationResult(
         data = data,
         errors = emptyList(),
-        source = DataSource.CACHE,
       )
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
         errors = response.errorsList,
-        source = DataSource.SERVER,
       )
   }
+
+private val DataConnectGrpcRPCs.ExecuteQueryResult.dataSource: DataSource
+  get() =
+    when (this) {
+      is DataConnectGrpcRPCs.ExecuteQueryResult.FromCache -> DataSource.CACHE
+      is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer -> DataSource.SERVER
+    }

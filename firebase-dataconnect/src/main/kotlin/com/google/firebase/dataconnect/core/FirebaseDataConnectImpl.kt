@@ -194,7 +194,7 @@ internal class FirebaseDataConnectImpl(
             val grpcRPCs = createDataConnectGrpcRPCs(backendInfo, cache)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcClient)
-            val realtimeQueryManager = createRealtimeQueryManager(grpcClient)
+            val realtimeQueryManager = createRealtimeQueryManager(grpcClient, cache)
             State.Initialized(cache, grpcRPCs, grpcClient, queryManager, realtimeQueryManager)
           }
           is State.Initialized -> currentState
@@ -371,12 +371,16 @@ internal class FirebaseDataConnectImpl(
     return QueryManager(liveQueries)
   }
 
-  private fun createRealtimeQueryManager(grpcClient: DataConnectGrpcClient): RealtimeQueryManager =
+  private fun createRealtimeQueryManager(
+    grpcClient: DataConnectGrpcClient,
+    cache: DataConnectCache?,
+  ): RealtimeQueryManager =
     RealtimeQueryManager(
       grpcClient = grpcClient,
       coroutineScope = coroutineScope,
       idStringGenerator = idStringGenerator,
       serialization = serialization,
+      cache = cache,
       logger = Logger("RealtimeQueryManager").apply { debug { "created by ${logger.nameWithId}" } },
     )
 
