@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
