@@ -8053,83 +8053,103 @@ abstract class Expression internal constructor() {
 
     @Beta
     @JvmStatic
-    fun scalarFacet(field: Field, vararg values: String): FacetDefinition =
-      field.scalarFacet(*values)
+    fun stringFacet(field: Field, vararg values: String): FacetDefinition =
+      field.stringFacet(*values)
 
     @Beta
     @JvmStatic
-    fun scalarFacet(fieldName: String, vararg values: String): FacetDefinition =
-      scalarFacet(field(fieldName), *values)
+    fun stringFacet(fieldName: String, vararg values: String): FacetDefinition =
+      stringFacet(field(fieldName), *values)
 
     @Beta
     @JvmStatic
-    fun scalarFacetWithNumBuckets(
+    fun stringFacetWithNumBuckets(
       field: Field,
       numBuckets: Int,
       bucketDataTypes: List<String>? = null
-    ): FacetDefinition = field.scalarFacetWithNumBuckets(numBuckets, bucketDataTypes)
+    ): FacetDefinition = field.stringFacetWithNumBuckets(numBuckets, bucketDataTypes)
 
     @Beta
     @JvmStatic
-    fun scalarFacetWithNumBuckets(
+    fun stringFacetWithNumBuckets(
       fieldName: String,
       numBuckets: Int,
       bucketDataTypes: List<String>? = null
-    ): FacetDefinition = scalarFacetWithNumBuckets(field(fieldName), numBuckets, bucketDataTypes)
+    ): FacetDefinition = stringFacetWithNumBuckets(field(fieldName), numBuckets, bucketDataTypes)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun numberFacet(
       field: Field,
       firstBound: Number,
       secondBound: Number,
       vararg additionalBounds: Number
-    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = field.numberFacet(firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun numberFacet(
       fieldName: String,
       firstBound: Number,
       secondBound: Number,
       vararg additionalBounds: Number
-    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = numberFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun numberFacetWithNumBuckets(field: Field, numBuckets: Int): FacetDefinition =
+      field.numberFacetWithNumBuckets(numBuckets)
+
+    @Beta
+    @JvmStatic
+    fun numberFacetWithNumBuckets(fieldName: String, numBuckets: Int): FacetDefinition =
+      numberFacetWithNumBuckets(field(fieldName), numBuckets)
+
+    @Beta
+    @JvmStatic
+    fun dateFacet(
       field: Field,
       firstBound: Date,
       secondBound: Date,
       vararg additionalBounds: Date
-    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = field.dateFacet(firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun dateFacet(
       fieldName: String,
       firstBound: Date,
       secondBound: Date,
       vararg additionalBounds: Date
-    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = dateFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun dateFacetWithNumBuckets(field: Field, numBuckets: Int): FacetDefinition =
+      field.dateFacetWithNumBuckets(numBuckets)
+
+    @Beta
+    @JvmStatic
+    fun dateFacetWithNumBuckets(fieldName: String, numBuckets: Int): FacetDefinition =
+      dateFacetWithNumBuckets(field(fieldName), numBuckets)
+
+    @Beta
+    @JvmStatic
+    fun dateFacet(
       field: Field,
       firstBound: Timestamp,
       secondBound: Timestamp,
       vararg additionalBounds: Timestamp
-    ): FacetDefinition = field.rangeFacet(firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = field.dateFacet(firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
-    fun rangeFacet(
+    fun dateFacet(
       fieldName: String,
       firstBound: Timestamp,
       secondBound: Timestamp,
       vararg additionalBounds: Timestamp
-    ): FacetDefinition = rangeFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
+    ): FacetDefinition = dateFacet(field(fieldName), firstBound, secondBound, *additionalBounds)
 
     @Beta
     @JvmStatic
@@ -8139,6 +8159,16 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun facet(fieldName: String, vararg buckets: FacetBucket): FacetDefinition =
       facet(field(fieldName), *buckets)
+
+    @Beta
+    @JvmStatic
+    fun facet(field: Field): FacetDefinitionBuilder =
+      FacetDefinitionBuilder(field.fieldPath.canonicalString())
+
+    @Beta
+    @JvmStatic
+    fun facet(fieldName: String): FacetDefinitionBuilder =
+      FacetDefinitionBuilder(fieldName)
   }
 
   //  // TODO(search) SnippetOptions is internal until supported by the backend
@@ -11344,12 +11374,12 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
   @Beta
-  fun scalarFacet(vararg values: String): FacetDefinition {
+  fun stringFacet(vararg values: String): FacetDefinition {
     throw UnsupportedOperationException("not implemented")
   }
 
   @Beta
-  fun scalarFacetWithNumBuckets(
+  fun stringFacetWithNumBuckets(
     numBuckets: Int,
     bucketDataTypes: List<String>? = null
   ): FacetDefinition {
@@ -11357,7 +11387,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   }
 
   @Beta
-  fun rangeFacet(
+  fun dateFacet(
     firstBound: Date,
     secondBound: Date,
     vararg additionalBounds: Date
@@ -11366,7 +11396,12 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   }
 
   @Beta
-  fun rangeFacet(
+  fun dateFacetWithNumBuckets(numBuckets: Int): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun numberFacet(
     firstBound: Number,
     secondBound: Number,
     vararg additionalBounds: Number
@@ -11375,7 +11410,12 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   }
 
   @Beta
-  fun rangeFacet(
+  fun numberFacetWithNumBuckets(numBuckets: Int): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+
+  @Beta
+  fun dateFacet(
     firstBound: Timestamp,
     secondBound: Timestamp,
     vararg additionalBounds: Timestamp
@@ -11387,6 +11427,10 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   fun facet(vararg buckets: FacetBucket): FacetDefinition {
     throw UnsupportedOperationException("not implemented")
   }
+
+  @Beta
+  fun facet(): FacetDefinitionBuilder =
+    FacetDefinitionBuilder(fieldPath.canonicalString())
 
   @Beta
   fun inBuckets(vararg buckets: FacetBucket): BooleanExpression =
@@ -11801,28 +11845,102 @@ private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
 
 @Beta
 abstract class FacetBucket private constructor() {
-  @Beta data class Scalar(val value: String) : FacetBucket()
+  @Beta
+  enum class Bound {
+    OPEN,
+    CLOSED
+  }
 
-  @Beta data class Range(val lowerBound: Any, val upperBound: Any) : FacetBucket()
+  @Beta data class Scalar(val value: Any) : FacetBucket()
+
+  @Beta
+  data class Range(
+    val lowerBound: Any,
+    val lowerBoundType: Bound,
+    val upperBound: Any,
+    val upperBoundType: Bound
+  ) : FacetBucket() {
+    constructor(lowerBound: Any, upperBound: Any) : this(
+      lowerBound, Bound.CLOSED, upperBound, Bound.OPEN
+    )
+  }
 
   @Beta object Default : FacetBucket()
 
   companion object {
     @JvmStatic fun scalarBucket(value: String): FacetBucket = Scalar(value)
 
+    @JvmStatic fun scalarBucket(value: Number): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: Date): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: Timestamp): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: Boolean): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: GeoPoint): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: ByteArray): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: Blob): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: DocumentReference): FacetBucket = Scalar(value)
+
+    @JvmStatic fun scalarBucket(value: VectorValue): FacetBucket = Scalar(value)
+
     @JvmStatic
     fun rangeBucket(lowerBound: Number, upperBound: Number): FacetBucket =
       Range(lowerBound, upperBound)
 
     @JvmStatic
+    fun rangeBucket(
+      lowerBound: Number,
+      lowerBoundType: Bound,
+      upperBound: Number,
+      upperBoundType: Bound
+    ): FacetBucket = Range(lowerBound, lowerBoundType, upperBound, upperBoundType)
+
+    @JvmStatic
     fun rangeBucket(lowerBound: Date, upperBound: Date): FacetBucket = Range(lowerBound, upperBound)
+
+    @JvmStatic
+    fun rangeBucket(
+      lowerBound: Date,
+      lowerBoundType: Bound,
+      upperBound: Date,
+      upperBoundType: Bound
+    ): FacetBucket = Range(lowerBound, lowerBoundType, upperBound, upperBoundType)
 
     @JvmStatic
     fun rangeBucket(lowerBound: Timestamp, upperBound: Timestamp): FacetBucket =
       Range(lowerBound, upperBound)
 
+    @JvmStatic
+    fun rangeBucket(
+      lowerBound: Timestamp,
+      lowerBoundType: Bound,
+      upperBound: Timestamp,
+      upperBoundType: Bound
+    ): FacetBucket = Range(lowerBound, lowerBoundType, upperBound, upperBoundType)
+
     @JvmStatic fun defaultBucket(): FacetBucket = Default
   }
 }
 
-@Beta class FacetDefinition(val fieldName: String, val buckets: List<FacetBucket>)
+@Beta class FacetDefinition internal constructor(val fieldName: String, val buckets: List<FacetBucket>)
+
+@Beta
+class FacetDefinitionBuilder internal constructor(private val fieldName: String) {
+  fun withBuckets(vararg buckets: FacetBucket): FacetDefinition =
+    FacetDefinition(fieldName, buckets.toList())
+
+  fun withBuckets(buckets: List<FacetBucket>): FacetDefinition =
+    FacetDefinition(fieldName, buckets)
+
+  fun withNumBuckets(
+    numBuckets: Int,
+    bucketDataTypes: List<String>? = null
+  ): FacetDefinition {
+    throw UnsupportedOperationException("not implemented")
+  }
+}

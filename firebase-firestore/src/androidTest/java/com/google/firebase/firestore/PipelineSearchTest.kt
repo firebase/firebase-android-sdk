@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
+import com.google.firebase.firestore.pipeline.Expression.Companion.facet
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.score
 import com.google.firebase.firestore.pipeline.FacetBucket.Companion.defaultBucket
@@ -711,7 +712,7 @@ class PipelineSearchTest {
         .collection(COLLECTION_NAME)
         .search(
           SearchStage.withQuery(documentMatches("waffles"))
-            .withFacets(field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100))
+            .withFacets(field("average_price_per_person").numberFacet(0, 10, 20, 30, 100))
         )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
@@ -737,7 +738,7 @@ class PipelineSearchTest {
         .collection(COLLECTION_NAME)
         .search(
           SearchStage.withQuery(documentMatches("t-shirt"))
-            .withFacets(field("size").scalarFacet("XS", "S", "M", "XM", "L", "XL"))
+            .withFacets(field("size").stringFacet("XS", "S", "M", "XM", "L", "XL"))
         )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
@@ -766,7 +767,7 @@ class PipelineSearchTest {
           SearchStage.withQuery(documentMatches("waffles"))
             .withFacets(
               field("open_date")
-                .rangeFacet(
+                .dateFacet(
                   Timestamp(dateFormat.parse("1990-01-01")),
                   Timestamp(dateFormat.parse("2020-01-01")),
                   Timestamp(dateFormat.parse("2025-01-01")),
@@ -811,7 +812,7 @@ class PipelineSearchTest {
   @Test
   @org.junit.Ignore("Unimplemented")
   fun secondSearchMatchingOneFacetBucket() {
-    val facets = arrayOf(field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100))
+    val facets = arrayOf(field("average_price_per_person").numberFacet(0, 10, 20, 30, 100))
 
     val ppl =
       firestore
@@ -840,11 +841,57 @@ class PipelineSearchTest {
 
   @Test
   @org.junit.Ignore("Unimplemented")
+  fun supportFacetWithBucketsFluentPattern() {
+    val facetDef =
+      facet("rating")
+        .withBuckets(
+          scalarBucket(1),
+          scalarBucket(2),
+          scalarBucket(3),
+          scalarBucket(4),
+          scalarBucket(5),
+          rangeBucket(5, 100),
+          defaultBucket()
+        )
+
+    val ppl =
+      firestore
+        .pipeline()
+        .collection("restaurants")
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withFacets(facetDef)
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
+  fun supportFacetWithNumBucketsFluentPattern() {
+    val facetDef =
+      facet("cuisine")
+        .withNumBuckets(10, listOf("string"))
+
+    val ppl =
+      firestore
+        .pipeline()
+        .collection("restaurants")
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withFacets(facetDef)
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  }
+
+  @Test
+  @org.junit.Ignore("Unimplemented")
   fun secondSearchMatchingMultipleBucketsOnMultipleFacets() {
-    val priceFacetDef = field("average_price_per_person").rangeFacet(0, 10, 20, 30, 100)
+    val priceFacetDef = field("average_price_per_person").numberFacet(0, 10, 20, 30, 100)
     val cuisineFacetDef =
       field("cuisine")
-        .scalarFacet(
+        .stringFacet(
           "American",
           "Italian",
           "Mexican",
