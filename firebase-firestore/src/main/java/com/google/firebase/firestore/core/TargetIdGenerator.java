@@ -53,6 +53,24 @@ public class TargetIdGenerator {
     return new TargetIdGenerator(SYNC_ENGINE_ID, 1);
   }
 
+  /**
+   * Creates and returns a new TargetIdGenerator for remote target cache watches.
+   *
+   * @return A new instance of TargetIdGenerator starting at 1000 (even).
+   */
+  public static TargetIdGenerator forRemoteTargetCache() {
+    return new TargetIdGenerator(QUERY_CACHE_ID, 1000);
+  }
+
+  /**
+   * Creates and returns a new TargetIdGenerator for remote sync engine watches.
+   *
+   * @return A new instance of TargetIdGenerator starting at 1001 (odd).
+   */
+  public static TargetIdGenerator forRemoteSyncEngine() {
+    return new TargetIdGenerator(SYNC_ENGINE_ID, 1001);
+  }
+
   private static final int QUERY_CACHE_ID = 0;
   private static final int SYNC_ENGINE_ID = 1;
 
