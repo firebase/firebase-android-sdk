@@ -143,10 +143,22 @@ internal class OnDeviceGenerativeModelProvider(
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
-    )
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val schemaObject = com.google.firebase.ai.ondevice.interop.SchemaObject(jsonSchema.clazz)
+
+    val response = onDeviceModel.generateObject(request, schemaObject)
+    val contentResponse =
+      GenerateContentResponse(
+        response.response.candidates.map { Candidate.fromInterop(it) },
+        InferenceSource.ON_DEVICE,
+        null,
+        null,
+        response.response.modelVersion
+      )
+    GenerateObjectResponse(contentResponse, jsonSchema, response.decodedObject)
   }
 
   /**
