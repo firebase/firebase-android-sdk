@@ -8048,8 +8048,18 @@ abstract class Expression internal constructor() {
 
     @Beta
     @JvmStatic
+    fun inBuckets(field: Field, buckets: List<FacetBucket>): BooleanExpression =
+      inBuckets(field, *buckets.toTypedArray())
+
+    @Beta
+    @JvmStatic
     fun inBuckets(fieldName: String, vararg buckets: FacetBucket): BooleanExpression =
       inBuckets(field(fieldName), *buckets)
+
+    @Beta
+    @JvmStatic
+    fun inBuckets(fieldName: String, buckets: List<FacetBucket>): BooleanExpression =
+      inBuckets(field(fieldName), buckets)
 
     @Beta
     @JvmStatic
@@ -11435,6 +11445,10 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   @Beta
   fun inBuckets(vararg buckets: FacetBucket): BooleanExpression =
     Expression.inBuckets(this, *buckets)
+
+  @Beta
+  fun inBuckets(buckets: List<FacetBucket>): BooleanExpression =
+    inBuckets(*buckets.toTypedArray())
 
   //  /**
   //   * Perform a full-text search on this field.
