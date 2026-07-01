@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -136,44 +137,42 @@ public class CrashlyticsControllerRobolectricTest {
   }
 
   @Test
-  public void testFinalizeSessions_relevantAnr_setsDidPreviousExecutionEndWithAnr()
-      throws Exception {
-    final String sessionIdPrevious = "sessionIdPrevious";
-    final String sessionId = "sessionId";
+  public void testDidCrashOnPreviousExecution_relevantAnr_returnsTrue() throws Exception {
+    final String previousSessionId = "previousSessionId";
     final CrashlyticsController controller = createController();
     addAppExitInfo(ApplicationExitInfo.REASON_ANR);
-    List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
-    when(mockSessionReportingCoordinator.didRelevantAnrOccur(
-            eq(sessionIdPrevious), eq(testApplicationExitInfo)))
+        .thenReturn(new TreeSet<>(Collections.singletonList(previousSessionId)));
+    when(mockSessionReportingCoordinator.didRelevantAnrOccur(eq(previousSessionId), any()))
         .thenReturn(true);
-    mockSettingsProvider(true, false);
-    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+
+    AtomicBoolean didCrashOnPrevious = new AtomicBoolean(false);
+    crashlyticsWorkers.common.submit(
+        () -> didCrashOnPrevious.set(controller.didCrashOnPreviousExecution()));
     // cannot use await since it check preconditions if blocking main thread
     Thread.sleep(100);
 
-    assertTrue(controller.didPreviousExecutionEndWithAnr());
+    assertTrue(didCrashOnPrevious.get());
   }
 
   @Test
-  public void testFinalizeSessions_noRelevantAnr_leavesDidPreviousExecutionEndWithAnrFalse()
-      throws Exception {
-    final String sessionIdPrevious = "sessionIdPrevious";
-    final String sessionId = "sessionId";
+  public void testDidCrashOnPreviousExecution_noRelevantAnr_returnsFalse() throws Exception {
+    final String previousSessionId = "previousSessionId";
     final CrashlyticsController controller = createController();
     addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
+        .thenReturn(new TreeSet<>(Collections.singletonList(previousSessionId)));
     // didRelevantAnrOccur returns false by default for the mock.
-    mockSettingsProvider(true, false);
-    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+
+    AtomicBoolean didCrashOnPrevious = new AtomicBoolean(false);
+    crashlyticsWorkers.common.submit(
+        () -> didCrashOnPrevious.set(controller.didCrashOnPreviousExecution()));
     // cannot use await since it check preconditions if blocking main thread
     Thread.sleep(100);
 
-    assertFalse(controller.didPreviousExecutionEndWithAnr());
+    assertFalse(didCrashOnPrevious.get());
   }
 
   @Test

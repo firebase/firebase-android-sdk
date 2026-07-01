@@ -119,10 +119,6 @@ class CrashlyticsController {
   // A token to make sure that checkForUnsentReports only gets called once.
   final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
-  // Set during initialization's session finalization when the previous session ended with an ANR,
-  // so didCrashOnPreviousExecution() reports ANRs alongside JVM and native crashes.
-  private volatile boolean didPreviousExecutionEndWithAnr = false;
-
   CrashlyticsController(
       Context context,
       IdManager idManager,
@@ -322,7 +318,8 @@ class CrashlyticsController {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
       final String sessionId = getCurrentSessionId();
-      return sessionId != null && nativeComponent.hasCrashDataForSession(sessionId);
+      return sessionId != null
+          && (nativeComponent.hasCrashDataForSession(sessionId) || hasAnrForSession(sessionId));
     }
 
     Logger.getLogger().v("Found previous crash marker.");
@@ -934,11 +931,6 @@ class CrashlyticsController {
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
       if (applicationExitInfoList.size() != 0) {
-        // Record whether the previous session ended with an ANR so didCrashOnPreviousExecution()
-        // can report it, without re-querying the system or blocking the main thread.
-        if (reportingCoordinator.didRelevantAnrOccur(sessionId, applicationExitInfoList)) {
-          didPreviousExecutionEndWithAnr = true;
-        }
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
             UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
@@ -953,9 +945,15 @@ class CrashlyticsController {
     }
   }
 
-  /** Whether the previous execution ended with an ANR, detected during session finalization. */
-  boolean didPreviousExecutionEndWithAnr() {
-    return didPreviousExecutionEndWithAnr;
+  private boolean hasAnrForSession(String sessionId) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      ActivityManager activityManager =
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      List<ApplicationExitInfo> applicationExitInfoList =
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+      return reportingCoordinator.didRelevantAnrOccur(sessionId, applicationExitInfoList);
+    }
+    return false;
   }
 
   // endregion
