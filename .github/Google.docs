@@ -1,0 +1,138 @@
+I'll help you with the GitHub Docs page on configuring issue templates. Let me retrieve that documentation for you.I found the GitHub Docs page you're looking for! Here's a summary of [Configuring issue templates for your repository](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository):
+
+## Key sections:
+
+**Creating Issue Templates:**
+- Navigate to repository **Settings** → **Issues** → **Set up templates**
+- Choose from standard templates (Bug report, Feature request) or create a custom one
+- Edit the template content and set optional info like title, assignees, and labels
+- The template name must be more than 3 characters
+- Commit to the default branch to make it available
+
+**Creating Issue Forms:**
+- Use YAML format for customizable web form fields (text inputs, dropdowns, checkboxes, file uploads)
+- Store files in `.github/ISSUE_TEMPLATE` folder with `.yml` extension
+- Example fields: `name`, `description`, `title`, `labels`, `assignees`, `type`, and `body`
+- The `name` field must be more than 3 characters to display
+
+**Configuring the Template Chooser:**
+- Create a `.github/ISSUE_TEMPLATE/config.yml` file to customize the template selection experience
+- Set `blank_issues_enabled: false` to require template usage
+- Add `contact_links` to direct users to external resources (support forums, security bounty, etc.)
+
+**Changing Template Order:**
+- Templates appear alphanumerically and grouped by filetype (YAML before Markdown)
+- Prefix filenames with numbers to control order: `1-bug.yml`, `2-feature.yml`, etc.
+- For 10+ templates, use zero-padding: `01-feature.yml`, `02-support.yml`, `11-bug.yml`
+
+What would you like help with regarding issue templates?I'll help you with all aspects of GitHub issue templates! Let me break this down into actionable steps:
+
+## 1. **Setting Up New Issue Templates**
+
+**Quick Start:**
+- Go to your repository → **Settings** → **Issues**
+- Click **Set up templates**
+- Choose from built-in templates (Bug report, Feature request) or create custom ones
+- Edit the template content and configure metadata
+- Commit to your default branch
+
+## 2. **Creating Custom Issue Forms (YAML)**
+
+**File Structure:**
+```yaml
+name: Bug Report
+description: Report a bug to help us improve
+title: "[BUG] "
+labels: ["bug"]
+assignees: ["username"]
+body:
+  - type: markdown
+    attributes:
+      value: "## Bug Report"
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      placeholder: "Describe the bug..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity"
+      options:
+        - Low
+        - Medium
+        - High
+```
+
+**Save as:** `.github/ISSUE_TEMPLATE/bug-report.yml`
+
+## 3. **Disabling Blank Issues**
+
+Create `.github/ISSUE_TEMPLATE/config.yml`:
+```yaml
+blank_issues_enabled: false
+contact_links:
+  - name: Support Forum
+    url: https://github.com/community
+    about: Ask questions and share ideas
+```
+
+## 4. **Organizing Template Order**
+
+Use numbered prefixes:
+- `01-bug-report.yml`
+- `02-feature-request.yml`
+- `03-documentation.yml`
+
+(Use zero-padding for 10+ templates)
+
+## 5. **Adding Contact Links**
+
+In `config.yml`:
+```yaml
+contact_links:
+  - name: "Report Security Issue"
+    url: "https://your-site.com/security"
+    about: "Please report security vulnerabilities here"
+  - name: "GitHub Community"
+    url: "https://github.com/community"
+    about: "Ask questions in our community forum"
+```
+
+## 6. **Best Practices**
+
+✅ **Do:**
+- Keep template names meaningful and >3 characters
+- Use YAML for complex forms with validation
+- Test templates before publishing
+- Include clear instructions in template descriptions
+- Use labels, assignees, and projects strategically
+
+❌ **Don't:**
+- Make required fields too restrictive
+- Require excessive information upfront
+- Mix too many templates (3-5 is ideal)
+- Leave templates outdated or unused
+
+## 7. **Troubleshooting**
+
+| Issue | Solution |
+|-------|----------|
+| Templates not showing | Commit to default branch; wait a few minutes |
+| Title too short | Template name must be >3 characters |
+| Form fields not appearing | Check YAML syntax (use valid indentation) |
+| Template chooser hidden | Check `config.yml` and `blank_issues_enabled` |
+
+---
+
+**What would you like to implement first?** I can help you:
+- Create a specific template
+- Set up your `.github/ISSUE_TEMPLATE` folder
+- Configure `config.yml`
+- Or anything else you need!
