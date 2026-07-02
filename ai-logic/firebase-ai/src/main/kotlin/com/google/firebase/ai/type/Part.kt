@@ -46,12 +46,19 @@ internal constructor(
   public constructor(text: String) : this(text, false, null)
 
   public companion object {
+    /**
+     * Creates a [TextPart] with advanced thinking metadata.
+     *
+     * @param text The text content of the part.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       text: String,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      isThought: Boolean,
+      thoughtSignature: String?
     ): TextPart = TextPart(text, isThought, thoughtSignature)
   }
 
@@ -84,14 +91,21 @@ internal constructor(
   public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
 
   public companion object {
+    /**
+     * Creates a [CodeExecutionResultPart] with advanced thinking metadata.
+     *
+     * @param outcome The result of the execution.
+     * @param output The stdout from the code execution, or an error message if it failed.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    @Deprecated("Part of the model response. Do not instantiate directly.")
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       outcome: String,
       output: String,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      isThought: Boolean,
+      thoughtSignature: String?
     ): CodeExecutionResultPart =
       CodeExecutionResultPart(outcome, output, isThought, thoughtSignature)
   }
@@ -125,14 +139,21 @@ internal constructor(
   public constructor(language: String, code: String) : this(language, code, false, null)
 
   public companion object {
+    /**
+     * Creates an [ExecutableCodePart] with advanced thinking metadata.
+     *
+     * @param language The programming language of the code.
+     * @param code The source code to be executed.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    @Deprecated("Part of the model response. Do not instantiate directly.")
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       language: String,
       code: String,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      isThought: Boolean,
+      thoughtSignature: String?
     ): ExecutableCodePart = ExecutableCodePart(language, code, isThought, thoughtSignature)
   }
 
@@ -170,13 +191,21 @@ internal constructor(
   public constructor(image: Bitmap, displayName: String) : this(image, displayName, false, null)
 
   public companion object {
+    /**
+     * Creates an [ImagePart] with advanced thinking metadata.
+     *
+     * @param image [Bitmap] to convert into a [Part].
+     * @param displayName The name of the file, including the extension.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       image: Bitmap,
-      displayName: String? = null,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      displayName: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
     ): ImagePart = ImagePart(image, displayName, isThought, thoughtSignature)
   }
 
@@ -223,14 +252,23 @@ internal constructor(
   ) : this(inlineData, mimeType, displayName, false, null)
 
   public companion object {
+    /**
+     * Creates an [InlineDataPart] with advanced thinking metadata.
+     *
+     * @param inlineData The binary data as a [ByteArray].
+     * @param mimeType An IANA standard MIME type.
+     * @param displayName The name of the file, including the extension.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       inlineData: ByteArray,
       mimeType: String,
-      displayName: String? = null,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      displayName: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
     ): InlineDataPart =
       InlineDataPart(inlineData, mimeType, displayName, isThought, thoughtSignature)
   }
@@ -288,14 +326,23 @@ internal constructor(
   ) : this(name, args, id, false, null)
 
   public companion object {
+    /**
+     * Creates a [FunctionCallPart] with advanced thinking metadata.
+     *
+     * @param name The name of the function to call.
+     * @param args The function parameters and values as a [Map].
+     * @param id Unique id of the function call.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       name: String,
       args: Map<String, JsonElement>,
-      id: String? = null,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      id: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
     ): FunctionCallPart = FunctionCallPart(name, args, id, isThought, thoughtSignature)
   }
 
@@ -368,15 +415,25 @@ internal constructor(
       return FunctionResponsePart("", jsonObject, null, parts)
     }
 
+    /**
+     * Creates a [FunctionResponsePart] with advanced thinking metadata.
+     *
+     * @param name The name of the called function.
+     * @param response The response produced by the function as a [JsonObject].
+     * @param id Matching `id` for a [FunctionCallPart], if one was provided.
+     * @param parts Additional response parts, if any.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       name: String,
       response: JsonObject,
-      id: String? = null,
-      parts: List<Part> = emptyList(),
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      id: String?,
+      parts: List<Part>,
+      isThought: Boolean,
+      thoughtSignature: String?
     ): FunctionResponsePart =
       FunctionResponsePart(name, response, id, parts, isThought, thoughtSignature)
   }
@@ -400,13 +457,21 @@ internal constructor(
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 
   public companion object {
+    /**
+     * Creates a [FileDataPart] with advanced thinking metadata.
+     *
+     * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase.
+     * @param mimeType An IANA standard MIME type.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
     @JvmStatic
-    @JvmOverloads
-    public fun create(
+    @PublicPreviewAPI
+    public fun createWithThinking(
       uri: String,
       mimeType: String,
-      isThought: Boolean = false,
-      thoughtSignature: String? = null
+      isThought: Boolean,
+      thoughtSignature: String?
     ): FileDataPart = FileDataPart(uri, mimeType, isThought, thoughtSignature)
   }
 

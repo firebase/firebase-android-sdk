@@ -673,7 +673,7 @@ internal class SerializationTests {
     org.junit.Assert.assertEquals(null, textPartSecondary.thoughtSignature)
 
     val textPartPrimary =
-      com.google.firebase.ai.type.TextPart.create("hello", true, "signature-xyz")
+      com.google.firebase.ai.type.TextPart.createWithThinking("hello", true, "signature-xyz")
     org.junit.Assert.assertEquals(true, textPartPrimary.isThought)
     org.junit.Assert.assertEquals("signature-xyz", textPartPrimary.thoughtSignature)
   }
@@ -685,7 +685,7 @@ internal class SerializationTests {
     org.junit.Assert.assertEquals(null, functionCallSecondary.thoughtSignature)
 
     val functionCallPrimary =
-      com.google.firebase.ai.type.FunctionCallPart.create(
+      com.google.firebase.ai.type.FunctionCallPart.createWithThinking(
         "func",
         emptyMap(),
         "id-123",
@@ -706,7 +706,7 @@ internal class SerializationTests {
     org.junit.Assert.assertEquals(null, fileDataPartSecondary.thoughtSignature)
 
     val fileDataPartPrimary =
-      com.google.firebase.ai.type.FileDataPart.create(
+      com.google.firebase.ai.type.FileDataPart.createWithThinking(
         "gs://bucket/file.jpg",
         "image/jpeg",
         true,
