@@ -131,7 +131,12 @@ internal class RealtimeQueryManager(
     val coroutineName = "${logger.nameWithId}-subscribe(rid=$requestId)[ecpvdvmzvj]"
     val job =
       coroutineScope.async(CoroutineName(coroutineName)) {
-        connection.subscribe(requestId = requestId, operationName = operationName, variables)
+        connection.subscribe(
+          requestId = requestId,
+          operationName = operationName,
+          variables,
+          callerSdkType,
+        )
       }
 
     return job.await()
@@ -142,6 +147,7 @@ internal class RealtimeQueryManager(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
   ): Flow<SqliteSequencedReference<DataConnectGrpcClient.OperationResult>> {
     // calculateQueryId() is a CPU intensive operation that should NOT be performed on the main
     // thread. This is the first reason why this method assumes it's running in this.coroutineScope.
@@ -153,7 +159,7 @@ internal class RealtimeQueryManager(
     mutex.withLock {
       return flowByQueryId.getOrPut(queryId) {
         stream
-          .subscribe(requestId, operationName, variables)
+          .subscribe(requestId, operationName, variables, callerSdkType)
           .updateCache(cache, queryId)
           .mapToOperationResponse()
       }

@@ -75,7 +75,9 @@ internal constructor(
   private val firebaseApp: FirebaseApp,
   private val connectionFactory:
     (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? =
-    null
+    null,
+  private val hasFunction: ((FunctionCallPart) -> Boolean)? = null,
+  private val executeFunction: (suspend (FunctionCallPart) -> FunctionResponsePart)? = null
 ) {
   /**
    * Coroutine scope that we batch data on for network related behavior.
@@ -580,6 +582,14 @@ internal constructor(
               // It's fine to suspend here since you can't have a function call running concurrently
               // with an audio response
               sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
+            } else if (
+              hasFunction != null &&
+                executeFunction != null &&
+                it.functionCalls.all { f -> hasFunction.invoke(f) }
+            ) {
+              sendFunctionResponse(
+                it.functionCalls.map { call -> executeFunction.invoke(call) }.toList()
+              )
             } else {
               Log.w(
                 TAG,

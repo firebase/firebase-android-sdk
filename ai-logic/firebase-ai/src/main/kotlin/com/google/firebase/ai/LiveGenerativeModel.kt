@@ -20,7 +20,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.JSON
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FirebaseAutoFunctionException
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.LiveClientSetupMessage
 import com.google.firebase.ai.type.LiveGenerationConfig
@@ -40,8 +44,11 @@ import io.ktor.websocket.readBytes
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 
 /**
  * Represents a multimodal model (like Gemini) capable of real-time content generation based on
@@ -140,13 +147,64 @@ internal constructor(
         session = webSession,
         blockingDispatcher = blockingDispatcher,
         firebaseApp = firebaseApp,
-        connectionFactory = connectFactory
+        connectionFactory = connectFactory,
+        hasFunction = ::hasFunction,
+        executeFunction = ::executeFunction
       )
     } catch (e: ClosedReceiveChannelException) {
       val reason = webSession?.closeReason?.await()
       val message =
         "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
       throw ServiceConnectionHandshakeFailedException(message, e)
+    }
+  }
+
+  internal fun hasFunction(call: FunctionCallPart): Boolean {
+    return tools
+      .flatMap { it.autoFunctionDeclarations ?: emptyList() }
+      .firstOrNull { it.name == call.name && it.functionReference != null } != null
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
+    if (tools.isEmpty()) {
+      throw RuntimeException("No registered tools")
+    }
+    val tool = tools.flatMap { it.autoFunctionDeclarations ?: emptyList() }
+    val declaration =
+      tool.firstOrNull { it.name == call.name }
+        ?: throw RuntimeException("No registered function named ${call.name}")
+    return executeFunction<Any, Any>(
+      call,
+      declaration as AutoFunctionDeclaration<Any, Any>,
+      JsonObject(call.args).toString()
+    )
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun <I : Any, O : Any> executeFunction(
+    functionCall: FunctionCallPart,
+    functionDeclaration: AutoFunctionDeclaration<I, O>,
+    parameter: String
+  ): FunctionResponsePart {
+    val inputDeserializer = functionDeclaration.inputSchema.getSerializer()
+    val input = JSON.decodeFromString(inputDeserializer, parameter)
+    val functionReference =
+      functionDeclaration.functionReference
+        ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
+    try {
+      val output = functionReference.invoke(input)
+      val outputSerializer = functionDeclaration.outputSchema?.getSerializer()
+      if (outputSerializer != null) {
+        return FunctionResponsePart.from(
+            JSON.encodeToJsonElement(outputSerializer, output).jsonObject
+          )
+          .normalizeAgainstCall(functionCall)
+      }
+      return (output as FunctionResponsePart).normalizeAgainstCall(functionCall)
+    } catch (e: FirebaseAutoFunctionException) {
+      return FunctionResponsePart.from(JsonObject(mapOf("error" to JsonPrimitive(e.message))))
+        .normalizeAgainstCall(functionCall)
     }
   }
 

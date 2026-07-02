@@ -97,7 +97,7 @@ internal class DataConnectGrpcRPCs(
   @get:VisibleForTesting val connectorResourceName: String,
   private val nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
-  private val grpcMetadata: DataConnectGrpcMetadata,
+  @get:VisibleForTesting val grpcMetadata: DataConnectGrpcMetadata,
   private val cache: DataConnectCache?,
   parentLogger: Logger,
 ) {
@@ -526,6 +526,7 @@ internal class DataConnectGrpcRPCs(
       tokenManager.authToken,
       shouldRetry = shouldRetry,
       idStringGenerator,
+      grpcMetadata,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }
@@ -751,7 +752,7 @@ internal class DataConnectGrpcRPCs(
 
         // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
         // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-        // failsafe.
+        // failsafe. Googlers see go/firestore-android-sdk-keepalive for details.
         it.keepAliveTime(30, TimeUnit.SECONDS)
 
         it.executor(executor)

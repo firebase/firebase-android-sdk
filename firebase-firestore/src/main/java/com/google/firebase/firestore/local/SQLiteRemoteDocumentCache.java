@@ -54,6 +54,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /** The number of bind args per collection group in {@link #getAll(String, IndexOffset, int)} */
   @VisibleForTesting static final int BINDS_PER_STATEMENT = 9;
 
+  /** The safe limit for CursorWindow (1 MB). */
+  @VisibleForTesting static int SAFE_CURSOR_LIMIT = 1024 * 1024;
+
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
   private IndexManager indexManager;
@@ -163,7 +166,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
-            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
+            "SELECT "
+                + "CASE WHEN LENGTH(contents) <= "
+                + SAFE_CURSOR_LIMIT
+                + " THEN contents ELSE NULL END, "
+                + "read_time_seconds, read_time_nanos, document_type, path, "
+                + "LENGTH(contents) "
                 + "FROM remote_documents "
                 + "WHERE path IN (",
             bindVars,
@@ -173,7 +181,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+          .forEach(
+              row -> {
+                // Attempt to get the payload (NULL if > 1MB)
+                byte[] payload = row.getBlob(0);
+
+                int blobLength = row.getInt(5);
+
+                if (payload == null && blobLength > 0) {
+                  // This is a massive document, fetch it in chunks.
+                  String path = row.getString(4);
+                  payload = fetchMassiveDocumentInChunks(db, path, blobLength, SAFE_CURSOR_LIMIT);
+                }
+
+                processRowInBackground(backgroundQueue, results, row, payload, /*filter*/ null);
+              });
     }
     backgroundQueue.drain();
 
@@ -184,6 +206,46 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     synchronized (results) {
       return results;
     }
+  }
+
+  /** Fetches a large document in chunks using SQLite's SUBSTR to bypass CursorWindow limits. */
+  @VisibleForTesting
+  byte[] fetchMassiveDocumentInChunks(
+      SQLitePersistence db, String path, int totalLength, int chunkSize) {
+
+    byte[] fullPayload = new byte[totalLength];
+
+    int currentOffset = 1; // SQLite SUBSTR is 1-indexed for offsets
+    int destPos = 0;
+
+    while (currentOffset <= totalLength) {
+      byte[] chunk =
+          db.query("SELECT SUBSTR(contents, ?, ?) FROM remote_documents WHERE path = ?")
+              .binding(currentOffset, chunkSize, path)
+              .firstValue(row -> row.getBlob(0));
+
+      if (chunk != null && chunk.length > 0) {
+        System.arraycopy(chunk, 0, fullPayload, destPos, chunk.length);
+        destPos += chunk.length;
+        currentOffset += chunk.length;
+      } else {
+        throw new IllegalStateException(
+            "Failed to fetch chunk for massive document at path: " + path);
+      }
+    }
+
+    if (destPos != totalLength) {
+      throw new IllegalStateException(
+          "Failed to fetch all chunks for massive document at path: "
+              + path
+              + ". Expected "
+              + totalLength
+              + " bytes, but read "
+              + destPos
+              + " bytes.");
+    }
+
+    return fullPayload;
   }
 
   @Override
@@ -230,7 +292,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     StringBuilder sql =
         repeatSequence(
-            "SELECT contents, read_time_seconds, read_time_nanos, document_type, path "
+            "SELECT "
+                + "CASE WHEN LENGTH(contents) <= "
+                + SAFE_CURSOR_LIMIT
+                + " THEN contents ELSE NULL END, "
+                + "read_time_seconds, read_time_nanos, document_type, path, "
+                + "LENGTH(contents) "
                 + "FROM remote_documents "
                 + "WHERE path >= ? AND path < ? AND path_length = ? "
                 + (tryFilterDocumentType == null
@@ -270,7 +337,19 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     int cnt =
         db.query(sql.toString())
             .binding(bindVars)
-            .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+            .forEach(
+                row -> {
+                  byte[] payload = row.getBlob(0);
+                  int blobLength = row.getInt(5);
+
+                  if (payload == null && blobLength > 0) {
+                    // Massive document detected, fetch it in chunks
+                    String path = row.getString(4);
+                    payload = fetchMassiveDocumentInChunks(db, path, blobLength, SAFE_CURSOR_LIMIT);
+                  }
+
+                  processRowInBackground(backgroundQueue, results, row, payload, filter);
+                });
     if (context != null) {
       context.incrementDocumentReadCount(cnt);
     }
@@ -298,8 +377,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
+      byte[] rawDocument,
       @Nullable Function<MutableDocument, Boolean> filter) {
-    byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
     boolean documentTypeIsNull = row.isNull(3);
