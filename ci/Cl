@@ -1,0 +1,42 @@
+I'll load the PR understanding ability to give you a comprehensive review of this pull request.Now let me fetch the PR data to understand what this pull request is about:## Summary
+
+**PR #6063: Fix main branch name in various CI tasks** — Merged ✅
+
+This is a straightforward housekeeping PR that updates branch name references from `master` to `main` across 9 GitHub Actions workflow files.
+
+### Key Details
+
+| Aspect | Details |
+|--------|---------|
+| **Status** | Merged (June 28, 2024) |
+| **Author** | [emilypgoogle](https://github.com/emilypgoogle) |
+| **Merged By** | [rlazo](https://github.com/rlazo) |
+| **Changes** | 9 files, +13/-13 lines (minimal scope) |
+| **Labels** | `size/S`, `no-changelog` |
+| **Reviews** | 5 comments |
+
+### Files Changed
+
+All changes are in `.github/workflows/` directory, updating branch references:
+
+1. `.github/workflows/ci_tests.yml` — `master` → `main`
+2. `.github/workflows/diff-javadoc.yml` — Multiple references in step names and conditions
+3. `.github/workflows/health-metrics.yml` — Branch trigger + condition check
+4. `.github/workflows/jekyll-gh-pages.yml` — Branch trigger
+5. `.github/workflows/merge-to-main.yml` — Branch trigger
+6. `.github/workflows/post_release_cleanup.yml` — Pull request base branch
+7. `.github/workflows/private-mirror-sync.yml` — Branch trigger
+8. `.github/workflows/release-note-changes.yml` — Branch trigger
+9. `.github/workflows/update-cpp-sdk-on-release.yml` — Branch trigger with inline comment
+
+### Context
+
+This reflects a repository-wide default branch rename from `master` to `main`. All CI tasks that were configured to run on the old branch name needed updating to maintain automation on the new primary branch.I understand you want to create something, but I need more context. Based on the PR you're looking at (#6063), what would you like me to create?
+
+Some possibilities:
+- **Create a branch** — for follow-up work related to this PR
+- **Create an issue** — to track related CI or branch naming work
+- **Create a file** — to document or implement something based on these changes
+- **Create a pull request** — with new changes
+
+What would be most helpful?
