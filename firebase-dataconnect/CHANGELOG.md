@@ -16,6 +16,9 @@
   (core vs. generated SDK) in request headers, matching the behavior of
   standard query executions.
   ([#8356](https://github.com/firebase/firebase-android-sdk/pull/8356))
+- [changed] Realtime query subscriptions now retry connecting using an
+  exponential backoff strategy.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.3.1
 
