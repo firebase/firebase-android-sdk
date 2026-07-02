@@ -40,10 +40,27 @@ public class TextPart
 internal constructor(
   public val text: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   public constructor(text: String) : this(text, false, null)
+
+  public companion object {
+    /**
+     * Creates a [TextPart] with advanced thinking metadata.
+     *
+     * @param text The text content of the part.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      text: String,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): TextPart = TextPart(text, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -64,7 +81,7 @@ internal constructor(
   public val outcome: String,
   public val output: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
@@ -72,6 +89,26 @@ internal constructor(
 
   /** Indicates if the code execution was successful */
   public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
+
+  public companion object {
+    /**
+     * Creates a [CodeExecutionResultPart] with advanced thinking metadata.
+     *
+     * @param outcome The result of the execution.
+     * @param output The stdout from the code execution, or an error message if it failed.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      outcome: String,
+      output: String,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): CodeExecutionResultPart =
+      CodeExecutionResultPart(outcome, output, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -95,11 +132,30 @@ internal constructor(
   public val language: String,
   public val code: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   @Deprecated("Part of the model response. Do not instantiate directly.")
   public constructor(language: String, code: String) : this(language, code, false, null)
+
+  public companion object {
+    /**
+     * Creates an [ExecutableCodePart] with advanced thinking metadata.
+     *
+     * @param language The programming language of the code.
+     * @param code The source code to be executed.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      language: String,
+      code: String,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): ExecutableCodePart = ExecutableCodePart(language, code, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -125,7 +181,7 @@ internal constructor(
   public val image: Bitmap,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
@@ -133,6 +189,25 @@ internal constructor(
 
   /** @param image [Bitmap] to convert into a [Part] */
   public constructor(image: Bitmap, displayName: String) : this(image, displayName, false, null)
+
+  public companion object {
+    /**
+     * Creates an [ImagePart] with advanced thinking metadata.
+     *
+     * @param image [Bitmap] to convert into a [Part].
+     * @param displayName The name of the file, including the extension.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      image: Bitmap,
+      displayName: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): ImagePart = ImagePart(image, displayName, isThought, thoughtSignature)
+  }
 
   internal fun toInlineDataPart() =
     InlineDataPart(
@@ -151,7 +226,7 @@ internal constructor(
   public val mimeType: String,
   public val displayName: String?,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -175,6 +250,28 @@ internal constructor(
     mimeType: String,
     displayName: String
   ) : this(inlineData, mimeType, displayName, false, null)
+
+  public companion object {
+    /**
+     * Creates an [InlineDataPart] with advanced thinking metadata.
+     *
+     * @param inlineData The binary data as a [ByteArray].
+     * @param mimeType An IANA standard MIME type.
+     * @param displayName The name of the file, including the extension.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      inlineData: ByteArray,
+      mimeType: String,
+      displayName: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): InlineDataPart =
+      InlineDataPart(inlineData, mimeType, displayName, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -212,7 +309,7 @@ internal constructor(
   public val args: Map<String, JsonElement>,
   public val id: String? = null,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -227,6 +324,27 @@ internal constructor(
     args: Map<String, JsonElement>,
     id: String? = null,
   ) : this(name, args, id, false, null)
+
+  public companion object {
+    /**
+     * Creates a [FunctionCallPart] with advanced thinking metadata.
+     *
+     * @param name The name of the function to call.
+     * @param args The function parameters and values as a [Map].
+     * @param id Unique id of the function call.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      name: String,
+      args: Map<String, JsonElement>,
+      id: String?,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): FunctionCallPart = FunctionCallPart(name, args, id, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -252,7 +370,7 @@ internal constructor(
   public val id: String? = null,
   public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -296,6 +414,28 @@ internal constructor(
     public fun from(jsonObject: JsonObject, parts: List<Part> = emptyList()): FunctionResponsePart {
       return FunctionResponsePart("", jsonObject, null, parts)
     }
+
+    /**
+     * Creates a [FunctionResponsePart] with advanced thinking metadata.
+     *
+     * @param name The name of the called function.
+     * @param response The response produced by the function as a [JsonObject].
+     * @param id Matching `id` for a [FunctionCallPart], if one was provided.
+     * @param parts Additional response parts, if any.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      name: String,
+      response: JsonObject,
+      id: String?,
+      parts: List<Part>,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): FunctionResponsePart =
+      FunctionResponsePart(name, response, id, parts, isThought, thoughtSignature)
   }
 }
 
@@ -305,7 +445,7 @@ internal constructor(
   public val uri: String,
   public val mimeType: String,
   public override val isThought: Boolean,
-  internal val thoughtSignature: String?
+  public val thoughtSignature: String?
 ) : Part {
 
   /**
@@ -315,6 +455,25 @@ internal constructor(
    * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
    */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
+
+  public companion object {
+    /**
+     * Creates a [FileDataPart] with advanced thinking metadata.
+     *
+     * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase.
+     * @param mimeType An IANA standard MIME type.
+     * @param isThought Indicates whether the response is a thought.
+     * @param thoughtSignature The signature associated with the thought, if any.
+     */
+    @JvmStatic
+    @PublicPreviewAPI
+    public fun createWithThinking(
+      uri: String,
+      mimeType: String,
+      isThought: Boolean,
+      thoughtSignature: String?
+    ): FileDataPart = FileDataPart(uri, mimeType, isThought, thoughtSignature)
+  }
 
   @Serializable
   internal data class Internal(
@@ -331,8 +490,13 @@ internal constructor(
   }
 }
 
-internal data class UnknownPart(public override val isThought: Boolean = false) : Part {
-  @Serializable internal data class Internal(val thought: Boolean? = null) : InternalPart
+internal data class UnknownPart(
+  public override val isThought: Boolean = false,
+  public val thoughtSignature: String? = null
+) : Part {
+  @Serializable
+  internal data class Internal(val thought: Boolean? = null, val thoughtSignature: String? = null) :
+    InternalPart
 }
 
 /** Returns the part as a [String] if it represents text, and null otherwise */
@@ -485,7 +649,7 @@ internal fun InternalPart.toPublic(): Part {
         thoughtSignature
       )
     is FileDataPart.Internal ->
-      FileDataPart(fileData.mimeType, fileData.fileUri, thought ?: false, thoughtSignature)
+      FileDataPart(fileData.fileUri, fileData.mimeType, thought ?: false, thoughtSignature)
     is ExecutableCodePart.Internal ->
       ExecutableCodePart(
         executableCode.language,
@@ -500,7 +664,7 @@ internal fun InternalPart.toPublic(): Part {
         thought ?: false,
         thoughtSignature
       )
-    is UnknownPart.Internal -> UnknownPart()
+    is UnknownPart.Internal -> UnknownPart(thought ?: false, thoughtSignature)
     else ->
       throw com.google.firebase.ai.type.SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
