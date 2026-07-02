@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -47,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -131,6 +134,45 @@ public class CrashlyticsControllerRobolectricTest {
             eq(testApplicationExitInfo),
             any(LogFileManager.class),
             any(UserMetadata.class));
+  }
+
+  @Test
+  public void testDidCrashOnPreviousExecution_relevantAnr_returnsTrue() throws Exception {
+    final String previousSessionId = "previousSessionId";
+    final CrashlyticsController controller = createController();
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+
+    when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
+        .thenReturn(new TreeSet<>(Collections.singletonList(previousSessionId)));
+    when(mockSessionReportingCoordinator.didRelevantAnrOccur(eq(previousSessionId), any()))
+        .thenReturn(true);
+
+    AtomicBoolean didCrashOnPrevious = new AtomicBoolean(false);
+    crashlyticsWorkers.common.submit(
+        () -> didCrashOnPrevious.set(controller.didCrashOnPreviousExecution()));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
+
+    assertTrue(didCrashOnPrevious.get());
+  }
+
+  @Test
+  public void testDidCrashOnPreviousExecution_noRelevantAnr_returnsFalse() throws Exception {
+    final String previousSessionId = "previousSessionId";
+    final CrashlyticsController controller = createController();
+    addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
+
+    when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
+        .thenReturn(new TreeSet<>(Collections.singletonList(previousSessionId)));
+    // didRelevantAnrOccur returns false by default for the mock.
+
+    AtomicBoolean didCrashOnPrevious = new AtomicBoolean(false);
+    crashlyticsWorkers.common.submit(
+        () -> didCrashOnPrevious.set(controller.didCrashOnPreviousExecution()));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
+
+    assertFalse(didCrashOnPrevious.get());
   }
 
   @Test

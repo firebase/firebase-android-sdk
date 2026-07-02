@@ -318,7 +318,8 @@ class CrashlyticsController {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
       final String sessionId = getCurrentSessionId();
-      return sessionId != null && nativeComponent.hasCrashDataForSession(sessionId);
+      return sessionId != null
+          && (nativeComponent.hasCrashDataForSession(sessionId) || hasAnrForSession(sessionId));
     }
 
     Logger.getLogger().v("Found previous crash marker.");
@@ -943,5 +944,17 @@ class CrashlyticsController {
           .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
     }
   }
+
+  private boolean hasAnrForSession(String sessionId) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      ActivityManager activityManager =
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      List<ApplicationExitInfo> applicationExitInfoList =
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+      return reportingCoordinator.didRelevantAnrOccur(sessionId, applicationExitInfoList);
+    }
+    return false;
+  }
+
   // endregion
 }
