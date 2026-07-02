@@ -1,6 +1,8 @@
 # Unreleased
 
 - [changed] Increased the gRPC maximum inbound message size limit to 17MB to support downloading Cloud Firestore documents of up to 16MB.
+- [changed] Added support for caching documents larger than 1MB by reading them in chunks from the local SQLite database.
+- [changed] Prevent OutOfMemory errors in debug logging by truncating large protobuf payloads and strings.
 
 # 26.4.0
 

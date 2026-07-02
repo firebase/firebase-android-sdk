@@ -111,6 +111,7 @@ public class GrpcCallProvider {
 
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
+    // Googlers see go/firestore-android-sdk-keepalive for details.
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
 
     // Increase the maximum inbound message size from 4MB to 17MB, to support 16MB docs.
