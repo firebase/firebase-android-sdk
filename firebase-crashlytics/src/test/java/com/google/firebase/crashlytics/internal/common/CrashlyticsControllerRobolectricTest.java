@@ -53,6 +53,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowActivityManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class CrashlyticsControllerRobolectricTest {
@@ -205,7 +206,12 @@ public class CrashlyticsControllerRobolectricTest {
         activityManager.getRunningAppProcesses().get(0);
     shadowOf(activityManager)
         .addApplicationExitInfo(
-            runningAppProcessInfo.processName, runningAppProcessInfo.pid, reason, 1);
+            ShadowActivityManager.ApplicationExitInfoBuilder.newBuilder()
+                .setRealUid(runningAppProcessInfo.pid)
+                .setProcessName(runningAppProcessInfo.processName)
+                .setReason(reason)
+                .setStatus(1)
+                .build());
   }
 
   private List<ApplicationExitInfo> getApplicationExitInfoList() {

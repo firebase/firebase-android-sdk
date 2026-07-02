@@ -9,6 +9,13 @@
 - [fixed] An infinite loop could occur when Auth and/or App Check tokens were
   refreshed.
   ([#8319](https://github.com/firebase/firebase-android-sdk/pull/8319))
+- [fixed] Expired Auth and/or App Check tokens were not automatically refreshed
+  when rejected by the server upon connection.
+  ([#8346](https://github.com/firebase/firebase-android-sdk/pull/8346))
+- [changed] Realtime query subscriptions now include SDK type metadata
+  (core vs. generated SDK) in request headers, matching the behavior of
+  standard query executions.
+  ([#8356](https://github.com/firebase/firebase-android-sdk/pull/8356))
 
 # 17.3.1
 

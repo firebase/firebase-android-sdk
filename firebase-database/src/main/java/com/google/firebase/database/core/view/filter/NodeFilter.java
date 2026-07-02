@@ -62,7 +62,7 @@ public interface NodeFilter {
   /**
    * Since updates to filtered nodes might require nodes to be pulled in from "outside" the node,
    * this interface can help to get complete children that can be pulled in. A class implementing
-   * this interface takes potentially multiple sources (e.g. user writes, server data from other
+   * this interface takes potentially multiple sources (for example, user writes, server data from other
    * views etc.) to try it's best to get a complete child that might be useful in pulling into the
    * view.
    */

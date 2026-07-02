@@ -189,7 +189,7 @@ public final class FirebaseOptions {
   }
 
   /**
-   * API key used for authenticating requests from your app, e.g.
+   * API key used for authenticating requests from your app, for example
    * AIzaSyDdVgKwhZl0sTTTLZ7iTmt1r3N2cJLnaDk, used to identify your app to Google servers.
    */
   @NonNull
@@ -203,14 +203,14 @@ public final class FirebaseOptions {
     return applicationId;
   }
 
-  /** The database root URL, e.g. http://abc-xyz-123.firebaseio.com. */
+  /** The database root URL, for example http://abc-xyz-123.firebaseio.com. */
   @Nullable
   public String getDatabaseUrl() {
     return databaseUrl;
   }
 
   /**
-   * The tracking ID for Google Analytics, e.g. UA-12345678-1, used to configure Google Analytics.
+   * The tracking ID for Google Analytics, for example UA-12345678-1, used to configure Google Analytics.
    *
    * @hide
    */
@@ -230,19 +230,19 @@ public final class FirebaseOptions {
     return gcmSenderId;
   }
 
-  /** The Google Cloud Storage bucket name, e.g. abc-xyz-123.storage.firebase.com. */
+  /** The Google Cloud Storage bucket name, for example abc-xyz-123.storage.firebase.com. */
   @Nullable
   public String getStorageBucket() {
     return storageBucket;
   }
 
-  /** The reCAPTCHA site key for you app, e.g. 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
+  /** The reCAPTCHA site key for you app, for example 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
   @Nullable
   public String getRecaptchaSiteKey() {
     return recaptchaSiteKey;
   }
 
-  /** The Google Cloud project ID, e.g. my-project-1234 */
+  /** The Google Cloud project ID, for example my-project-1234 */
   @Nullable
   public String getProjectId() {
     return projectId;

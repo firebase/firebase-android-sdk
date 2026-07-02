@@ -106,6 +106,7 @@ public class GrpcCallProvider {
 
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
+    // Googlers see go/firestore-android-sdk-keepalive for details.
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
 
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to

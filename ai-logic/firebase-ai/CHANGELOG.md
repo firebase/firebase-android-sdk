@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
