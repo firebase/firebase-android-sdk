@@ -46,7 +46,7 @@ class TestFirebaseAppFactory : FactoryTestRule<FirebaseApp, Nothing>() {
     // Work around app crash due to IllegalStateException from FirebaseAuth if `delete()` is called
     // very quickly after `FirebaseApp.getInstance()`. See b/378116261 for details.
     @OptIn(DelicateCoroutinesApi::class)
-    GlobalScope.launch(Dispatchers.IO) {
+    GlobalScope.launch(Dispatchers.Default) {
       delay(1.seconds)
       instance.delete()
     }
