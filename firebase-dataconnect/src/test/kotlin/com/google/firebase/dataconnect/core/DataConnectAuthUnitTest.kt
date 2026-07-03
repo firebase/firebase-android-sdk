@@ -227,11 +227,8 @@ class DataConnectAuthUnitTest {
     val latch = SuspendingCountDownLatch(100)
     val jobs =
       List(latch.count) {
-        backgroundScope.async(Dispatchers.IO) {
-          latch.run {
-            countDown()
-            await()
-          }
+        backgroundScope.async(Dispatchers.Default) {
+          latch.countDown().await()
           dataConnectAuth.close()
         }
       }
@@ -502,11 +499,8 @@ class DataConnectAuthUnitTest {
     val latch = SuspendingCountDownLatch(500)
     val jobs =
       List(latch.count) {
-        backgroundScope.async(Dispatchers.IO) {
-          latch.run {
-            countDown()
-            await()
-          }
+        backgroundScope.async(Dispatchers.Default) {
+          latch.countDown().await()
           dataConnectAuth.getToken(requestId)
         }
       }
