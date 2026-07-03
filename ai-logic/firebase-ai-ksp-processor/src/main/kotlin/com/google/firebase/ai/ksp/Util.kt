@@ -103,6 +103,21 @@ internal fun getStringFromAnnotation(
   return guidePropertyStringValue
 }
 
+internal fun getStringListFromAnnotation(
+  guideAnnotation: KSAnnotation?,
+  listName: String,
+): List<String>? {
+  val guidePropertyStringListValue =
+    guideAnnotation
+      ?.arguments
+      ?.firstOrNull { it.name?.getShortName()?.equals(listName) == true }
+      ?.value as? List<*>
+  if (guidePropertyStringListValue.isNullOrEmpty()) {
+    return null
+  }
+  return guidePropertyStringListValue?.filterIsInstance<String>()
+}
+
 internal fun extractBaseKdoc(kdoc: String): String? {
   return baseKdocRegex.matchEntire(kdoc)?.groups?.get(1)?.value?.trim().let {
     if (it.isNullOrEmpty()) null else it
