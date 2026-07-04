@@ -12,6 +12,10 @@ env:
   PERF_E2E_GOOGLE_SERVICES: ${{ secrets.PERF_E2E_GOOGLE_SERVICES }}
   FTL_RESULTS_BUCKET: fireescape
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   test:
     runs-on: ubuntu-latest

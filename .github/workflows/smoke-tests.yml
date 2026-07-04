@@ -2,6 +2,9 @@ name: Smoke Tests
 
 on: [ pull_request ]
 
+permissions:
+  contents: read
+
 jobs:
   smoke-tests:
     if: github.event.pull_request.head.repo.full_name == github.repository

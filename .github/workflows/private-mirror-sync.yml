@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   sync:
     if: github.repository == 'FirebasePrivate/firebase-android-sdk'

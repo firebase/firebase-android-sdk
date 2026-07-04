@@ -11,6 +11,9 @@ concurrency:
 env:
   SESSIONS_E2E_GOOGLE_SERVICES: ${{ secrets.SESSIONS_E2E_GOOGLE_SERVICES }}
 
+permissions:
+  contents: read
+
 jobs:
   test:
 

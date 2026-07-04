@@ -6,6 +6,9 @@ on:
     branches:
       - 'releases/**'
 
+permissions:
+  contents: read
+
 jobs:
   build-artifacts:
     runs-on: ubuntu-latest

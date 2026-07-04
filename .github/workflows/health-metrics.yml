@@ -20,6 +20,9 @@ on:
 env:
   GITHUB_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
 
+permissions:
+  contents: read
+
 jobs:
   coverage:
     name: Coverage
