@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   determine_changed:
     name: "Determine changed modules"
@@ -20,6 +23,7 @@ jobs:
         with:
           fetch-depth: 2
           submodules: true
+          persist-credentials: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -52,6 +56,7 @@ jobs:
         with:
           fetch-depth: 2
           submodules: true
+          persist-credentials: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -139,6 +144,7 @@ jobs:
         with:
           fetch-depth: 2
           submodules: true
+          persist-credentials: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
