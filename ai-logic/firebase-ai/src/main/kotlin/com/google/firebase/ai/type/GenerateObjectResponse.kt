@@ -41,6 +41,9 @@ internal constructor(
   @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? {
     val candidate = response.candidates[candidateIndex]
+    if (candidate.objectResponse != null) {
+      @Suppress("UNCHECKED_CAST") return candidate.objectResponse as T?
+    }
 
     val deserializer = schema.getSerializer()
     val text =

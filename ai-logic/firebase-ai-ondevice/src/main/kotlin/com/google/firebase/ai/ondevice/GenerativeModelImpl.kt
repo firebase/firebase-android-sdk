@@ -53,6 +53,60 @@ internal class GenerativeModelImpl(
       throw getMappingException(e)
     }
 
+  override suspend fun <T : Any> generateObject(
+    request: GenerateContentRequest,
+    outputClass: kotlin.reflect.KClass<T>
+  ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop<T> =
+    try {
+      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
+      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Calling ML Kit generateTypedContentRequest")
+      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${outputClass.qualifiedName}")
+      val companionClassName = "${outputClass.java.name}_MlKitCompanion"
+      val targetClass =
+        try {
+          Class.forName(companionClassName).kotlin
+        } catch (e: Exception) {
+          outputClass
+        }
+      android.util.Log.i(
+        "MLKIT_IO",
+        "[SDK_BRIDGE] Resolved ML Kit Class: ${targetClass.qualifiedName}"
+      )
+      android.util.Log.i(
+        "MLKIT_IO",
+        "[SDK_BRIDGE] includeSchemaInPrompt: true (ML Kit manages prompt formatting)"
+      )
+      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
+
+      @Suppress("UNCHECKED_CAST")
+      val mlkitRequest =
+        com.google.mlkit.genai.prompt.generateTypedContentRequest(
+          generateContentRequest = request.toMlKit(),
+          outputClass = targetClass as kotlin.reflect.KClass<Any>,
+          includeSchemaInPrompt = true
+        )
+      val response = mlkitModel.generateContent(mlkitRequest)
+      val candidate = response.candidates.firstOrNull()
+      val mlkitInstance = candidate?.response
+      android.util.Log.i(
+        "MLKIT_IO",
+        "[SDK_BRIDGE] ML Kit returned structured instance: $mlkitInstance (${mlkitInstance?.javaClass?.name})"
+      )
+
+      @Suppress("UNCHECKED_CAST")
+      val sdkInstance =
+        if (mlkitInstance != null && mlkitInstance.javaClass.name.endsWith("_MlKitCompanion")) {
+          val toSdkMethod = mlkitInstance.javaClass.getMethod("toSdk")
+          toSdkMethod.invoke(mlkitInstance) as T
+        } else {
+          mlkitInstance as T
+        }
+
+      com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop(sdkInstance, "")
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
   override suspend fun countTokens(request: GenerateContentRequest): CountTokensResponse =
     try {
       val response = mlkitModel.countTokens(request.toMlKit())
