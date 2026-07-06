@@ -19,6 +19,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: false
+        persist-credentials: false
 
     - name: Filter paths
       id: filter
