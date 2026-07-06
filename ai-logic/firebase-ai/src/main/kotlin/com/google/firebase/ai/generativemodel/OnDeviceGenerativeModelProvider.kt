@@ -33,6 +33,7 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.ObjectSource
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
@@ -158,12 +159,12 @@ internal class OnDeviceGenerativeModelProvider(
         finishReason = FinishReason.STOP,
         finishMessage = null,
         groundingMetadata = null,
-        urlContextMetadata = null,
-        objectResponse = interopResponse.instance
+        urlContextMetadata = null
       )
+    @Suppress("UNCHECKED_CAST")
     GenerateObjectResponse(
       GenerateContentResponse(listOf(candidate), InferenceSource.ON_DEVICE, null, null, "ondevice"),
-      jsonSchema
+      ObjectSource.FromInstance(listOf(interopResponse.instance as T))
     )
   }
 

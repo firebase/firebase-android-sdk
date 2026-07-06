@@ -52,8 +52,7 @@ internal constructor(
   public val finishReason: FinishReason?,
   public val finishMessage: String?,
   public val groundingMetadata: GroundingMetadata?,
-  public val urlContextMetadata: UrlContextMetadata?,
-  internal val objectResponse: Any? = null
+  public val urlContextMetadata: UrlContextMetadata?
 ) {
 
   @OptIn(PublicPreviewAPI::class)

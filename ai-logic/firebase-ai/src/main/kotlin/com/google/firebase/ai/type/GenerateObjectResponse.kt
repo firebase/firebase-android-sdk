@@ -19,6 +19,12 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
+internal sealed interface ObjectSource<T : Any> {
+  data class FromText<T : Any>(val schema: JsonSchema<T>) : ObjectSource<T>
+
+  data class FromInstance<T : Any>(val instances: List<T>) : ObjectSource<T>
+}
+
 /**
  * A [GenerateContentResponse] augmented with class information.
  *
@@ -27,8 +33,13 @@ import kotlinx.serialization.json.Json
 public class GenerateObjectResponse<T : Any>
 internal constructor(
   public val response: GenerateContentResponse,
-  internal val schema: JsonSchema<T>
+  internal val source: ObjectSource<T>
 ) {
+
+  internal constructor(
+    response: GenerateContentResponse,
+    schema: JsonSchema<T>
+  ) : this(response, ObjectSource.FromText(schema))
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this
@@ -39,21 +50,26 @@ internal constructor(
    * @throws SerializationException if an error occurs during deserialization
    */
   @OptIn(InternalSerializationApi::class)
-  public fun getObject(candidateIndex: Int = 0): T? {
-    val candidate = response.candidates[candidateIndex]
-    if (candidate.objectResponse != null) {
-      @Suppress("UNCHECKED_CAST") return candidate.objectResponse as T?
+  public fun getObject(candidateIndex: Int = 0): T? =
+    when (source) {
+      is ObjectSource.FromInstance -> source.instances.getOrNull(candidateIndex)
+      is ObjectSource.FromText -> {
+        val candidate = response.candidates.getOrNull(candidateIndex)
+        if (candidate == null) {
+          null
+        } else {
+          val deserializer = source.schema.getSerializer()
+          val text =
+            candidate.content.parts
+              .filter { !it.isThought }
+              .filterIsInstance<TextPart>()
+              .joinToString(" ") { it.text }
+          if (text.isEmpty()) {
+            null
+          } else {
+            Json.decodeFromString(deserializer, text) as T?
+          }
+        }
+      }
     }
-
-    val deserializer = schema.getSerializer()
-    val text =
-      candidate.content.parts
-        .filter { !it.isThought }
-        .filterIsInstance<TextPart>()
-        .joinToString(" ") { it.text }
-    if (text.isEmpty()) {
-      return null
-    }
-    return Json.decodeFromString(deserializer, text) as T?
-  }
 }
