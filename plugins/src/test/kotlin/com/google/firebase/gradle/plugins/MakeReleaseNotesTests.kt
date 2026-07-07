@@ -19,6 +19,7 @@ package com.google.firebase.gradle.plugins
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.BeforeClass
@@ -40,6 +41,32 @@ class MakeReleaseNotesTests : FunSpec() {
 
     releaseNoteFile.shouldExist()
     releaseNoteFile.readText() shouldBe expectedReleaseNoteFile.readText()
+  }
+
+  @Test
+  fun `Creates release notes with 3 hashes when nestedHeader is not set`() {
+    buildReleaseNotes()
+
+    val releaseNoteFile =
+      testProjectDirectory.root.childFile(
+        "firebase-storage/build/tmp/makeReleaseNotes/release_notes.md"
+      )
+
+    releaseNoteFile.shouldExist()
+    releaseNoteFile.readLines().first() shouldStartWith "### "
+  }
+
+  @Test
+  fun `Creates release notes with 4 hashes when nestedHeader is set to true`() {
+    buildReleaseNotes()
+
+    val releaseNoteFile =
+      testProjectDirectory.root.childFile(
+        "firebase-firestore/build/tmp/makeReleaseNotes/release_notes.md"
+      )
+
+    releaseNoteFile.shouldExist()
+    releaseNoteFile.readLines().first() shouldStartWith "#### "
   }
 
   private fun buildReleaseNotes() =
