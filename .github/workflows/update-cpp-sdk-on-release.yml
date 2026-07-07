@@ -12,6 +12,9 @@ on:
       # Only run this if a gradle.properties file is touched.
       - '**/gradle.properties'
 
+permissions:
+  contents: read
+
 jobs:
   check_if_version_changed:
     name: Check if released version changed
@@ -29,6 +32,7 @@ jobs:
           ref: ${{ github.sha }}
           # Specify fetch-depth so we can query the log, the default is a shallow clone.
           fetch-depth: 0
+          persist-credentials: false
       - name: Check if version was updated in git history
         id: check_version
         run: |
@@ -60,14 +64,18 @@ jobs:
         with:
           repository: firebase/firebase-cpp-sdk
           ref: main
+          persist-credentials: false
 
       - name: Get firebase-workflow-trigger token
-        uses: tibdex/github-app-token@021a2405c7f990db57f5eae5397423dcc554159c
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         id: generate-token
         with:
-          app_id: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_ID }}
-          private_key: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_PRIVATE_KEY }}
-          repository: firebase/firebase-cpp-sdk
+          app-id: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_ID }}
+          private-key: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_PRIVATE_KEY }}
+          owner: firebase
+          repositories: firebase-cpp-sdk
+          permission-actions: write
+          permission-contents: write
 
       - name: Trigger firebase-cpp-sdk update
         run: |
