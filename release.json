@@ -1,0 +1,21 @@
+{
+    "name": "m183",
+    "libraries": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-installations",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-perf",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice-interop",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}
