@@ -28,11 +28,11 @@ import io.kotest.property.arbitrary.choice
  * digit count, clamping them to the requested boundaries, and then using [Arb.choice] to first
  * uniformly pick a digit count, and then pick a value within that count.
  *
- * @param T The numeric type (e.g., [Int], [Long]).
- * @param R The range type (e.g., [IntRange], [LongRange]).
- * @property maxDigitCount The maximum number of digits possible for the numeric type [T] (e.g., 10
+ * @param T The numeric type (for example, [Int], [Long]).
+ * @param R The range type (for example, [IntRange], [LongRange]).
+ * @property maxDigitCount The maximum number of digits possible for the numeric type [T] (for example, 10
  * for [Int], 19 for [Long]).
- * @property fullRange The absolute minimum and maximum bounds for the numeric type [T] (e.g.,
+ * @property fullRange The absolute minimum and maximum bounds for the numeric type [T] (for example,
  * `Int.MIN_VALUE..Int.MAX_VALUE`).
  */
 internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R : ClosedRange<T>>(
