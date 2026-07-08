@@ -1,0 +1,282 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
+    # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+
+    - name: Build with Gradle Wrapper
+      run: ./gradlew build
+
+    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
+    #
+    # - name: Setup Gradle
+    #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+    #   with:
+    #     gradle-version: '8.9'
+    #
+    # - name: Build with Gradle 8.9
+    #   run: gradle build
+
+  dependency-submission:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
+    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
+    - name: Generate and submit dependency graph
+      uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+Ah, I see you've pasted a Java/Gradle CI workflow — probably to show me a template you like and ask for a .NET equivalent that mirrors that structure.
+
+If that's the case, here's a direct .NET translation of that Gradle workflow, keeping the same job breakdown (build + dependency submission) but using setup-dotnet, NuGet caching, and the Microsoft dependency submission toolkit for .NET:
+
+```yaml
+# .github/workflows/dotnet-ci-gradle-style.yml
+name: .NET CI (matching Gradle workflow style)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'            # change to your target framework
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.vbproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Submit dependencies to GitHub dependency graph
+        uses: microsoft/dependency-submission-toolkit@v1
+        with:
+          project-files: |
+            ./src/**/*.csproj
+```
+
+---
+
+🧠 What this does
+
+· build job – restores, builds, and tests your .NET project, with NuGet caching (just like the Gradle wrapper cache).
+· dependency-submission job – runs the official .NET dependency submission toolkit, which populates your repo’s dependency graph (used for Dependabot alerts and SBOM). This mirrors the Gradle dependency-submission functionality but for NuGet/Proprietary packages.
+
+---
+
+🧩 If you actually wanted a Gradle → .NET CI/CD with the GitHub Pages deployment from before
+
+Just combine both: keep the build job above, then on version tags, add a deploy job that does the Blazor WASM → GitHub Pages steps. But I kept this answer focused on your pasted template — I don’t want to overload you.
+
+Would you like me to merge the CI style of that Gradle workflow with the GitHub Pages CD from earlier into one clean file? Or was this just a request for a simple .NET CI that matches the Gradle layout? Let me know and I'll tailor it exactly.
+Perfect! I’ll merge the Gradle‑style CI (build, test, dependency graph) with the Blazor WASM → GitHub Pages CD into one clean workflow.
+It runs on every push/PR to main, and automatically deploys the latest Blazor build to GitHub Pages when the main branch is updated. You can easily change the deploy trigger to a version tag instead.
+
+```yaml
+# .github/workflows/dotnet-ci-cd-pages.yml
+name: .NET CI/CD – GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:   # allow manual runs
+
+permissions:
+  contents: write      # for dependency graph & gh-pages push
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  BLAZOR_PROJECT: './src/MyBlazorApp/MyBlazorApp.csproj'   # <-- update to your project
+
+jobs:
+  # ── CI: Build, Test, Dependency Graph ─────────────────
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.vbproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.BLAZOR_PROJECT }}
+      - name: Build
+        run: dotnet build ${{ env.BLAZOR_PROJECT }} --no-restore -c Release
+      - name: Test
+        run: dotnet test --no-build -c Release --verbosity normal || true   # remove '|| true' if you have tests
+
+      # Publish the Blazor app (artifact for deployment job)
+      - name: Publish Blazor
+        if: github.ref == 'refs/heads/main'
+        run: |
+          dotnet publish ${{ env.BLAZOR_PROJECT }} -c Release -o ./published
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blazor-app
+          path: ./published/wwwroot
+
+  # ── Dependency Submission (like Gradle's dependency-submission) ──
+  dependency-submission:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Submit dependencies to GitHub dependency graph
+        uses: microsoft/dependency-submission-toolkit@v1
+        with:
+          project-files: |
+            ${{ env.BLAZOR_PROJECT }}
+
+  # ── CD: Deploy to GitHub Pages (only on push to main) ──
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: blazor-app
+          path: ./wwwroot
+
+      # If your repo is not <username>.github.io, fix the base href
+      - name: Set base path
+        run: |
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          if [ "$REPO_NAME" != "${{ github.repository_owner }}.github.io" ]; then
+            sed -i "s|<base href=\"/\" />|<base href=\"/${REPO_NAME}/\" />|" ./wwwroot/index.html
+          fi
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./wwwroot
+          publish_branch: gh-pages
+          force_orphan: true
+```
+
+---
+
+🧠 What this gives you
+
+Job When What it does
+build-and-test Every push/PR Restores, builds, tests & publishes Blazor. Uploads artifact on main.
+dependency-submission After build-and-test Feeds your NuGet dependency graph to GitHub (like the Gradle submission job).
+deploy-pages Only on push to main Downloads the Blazor artifact, adjusts base tag, deploys to gh-pages.
+
+---
+
+⚙️ Adjustments you’ll want to make
+
+1. BLAZOR_PROJECT – set the correct path to your .csproj.
+2. Test step – remove || true if you have test projects; I added it so the workflow doesn’t fail when no tests are found.
+3. Deploy trigger – switch if: github.ref == 'refs/heads/main' to if: startsWith(github.ref, 'refs/tags/v') if you want to deploy only on version tags.
+4. Dependency graph – works automatically with GitHub’s Dependabot / supply‑chain features.
+
+---
+
+🚀 After the first successful run
+
+Go to Settings → Pages → set source to Deploy from a branch → gh-pages → / (root) → Save.
+Your Blazor app will be live at https://<username>.github.io/<repo>.
+
+---
+
+Let me know if you want me to add a GitHub Release step on version tags, a NuGet package push, or anything else. This should give you the full “Gradle‑style CI + GitHub Pages CD” you were looking for.
