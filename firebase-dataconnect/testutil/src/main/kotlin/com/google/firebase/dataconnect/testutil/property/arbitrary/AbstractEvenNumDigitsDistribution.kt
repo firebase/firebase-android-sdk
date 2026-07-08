@@ -30,10 +30,10 @@ import io.kotest.property.arbitrary.choice
  *
  * @param T The numeric type (for example, [Int], [Long]).
  * @param R The range type (for example, [IntRange], [LongRange]).
- * @property maxDigitCount The maximum number of digits possible for the numeric type [T] (for example, 10
- * for [Int], 19 for [Long]).
- * @property fullRange The absolute minimum and maximum bounds for the numeric type [T] (for example,
- * `Int.MIN_VALUE..Int.MAX_VALUE`).
+ * @property maxDigitCount The maximum number of digits possible for the numeric type [T] (for
+ * example, 10 for [Int], 19 for [Long]).
+ * @property fullRange The absolute minimum and maximum bounds for the numeric type [T] (for
+ * example, `Int.MIN_VALUE..Int.MAX_VALUE`).
  */
 internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R : ClosedRange<T>>(
   private val maxDigitCount: Int,
