@@ -151,20 +151,22 @@ internal class OnDeviceGenerativeModelProvider(
 
     val request = buildOnDeviceGenerateContentRequest(prompt)
     val interopResponse = onDeviceModel.generateObject(request, jsonSchema.clazz)
-    val candidate =
-      Candidate(
-        content = content { text(interopResponse.rawJson) },
-        safetyRatings = emptyList(),
-        citationMetadata = null,
-        finishReason = FinishReason.STOP,
-        finishMessage = null,
-        groundingMetadata = null,
-        urlContextMetadata = null
-      )
+    val candidates =
+      interopResponse.instances.map {
+        Candidate(
+          content = content { text("") },
+          safetyRatings = emptyList(),
+          citationMetadata = null,
+          finishReason = FinishReason.STOP,
+          finishMessage = null,
+          groundingMetadata = null,
+          urlContextMetadata = null
+        )
+      }
     @Suppress("UNCHECKED_CAST")
     GenerateObjectResponse(
-      GenerateContentResponse(listOf(candidate), InferenceSource.ON_DEVICE, null, null, "ondevice"),
-      ObjectSource.FromInstance(listOf(interopResponse.instance as T))
+      GenerateContentResponse(candidates, InferenceSource.ON_DEVICE, null, null, "ondevice"),
+      ObjectSource.FromInstance(interopResponse.instances as List<T>)
     )
   }
 

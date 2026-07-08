@@ -20,7 +20,7 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
 internal sealed interface ObjectSource<T : Any> {
-  data class FromText<T : Any>(val schema: JsonSchema<T>) : ObjectSource<T>
+  data class FromSchema<T : Any>(val schema: JsonSchema<T>) : ObjectSource<T>
 
   data class FromInstance<T : Any>(val instances: List<T>) : ObjectSource<T>
 }
@@ -39,7 +39,7 @@ internal constructor(
   internal constructor(
     response: GenerateContentResponse,
     schema: JsonSchema<T>
-  ) : this(response, ObjectSource.FromText(schema))
+  ) : this(response, ObjectSource.FromSchema(schema))
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this
@@ -53,7 +53,7 @@ internal constructor(
   public fun getObject(candidateIndex: Int = 0): T? =
     when (source) {
       is ObjectSource.FromInstance -> source.instances.getOrNull(candidateIndex)
-      is ObjectSource.FromText -> {
+      is ObjectSource.FromSchema -> {
         val candidate = response.candidates.getOrNull(candidateIndex)
         if (candidate == null) {
           null

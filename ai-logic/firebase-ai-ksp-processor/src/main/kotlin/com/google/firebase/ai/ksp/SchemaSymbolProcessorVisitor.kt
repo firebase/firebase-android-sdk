@@ -302,6 +302,8 @@ internal class SchemaSymbolProcessorVisitor(
       FileSpec.builder(packageName, companionClassName).addAnnotation(Generated::class)
 
     val classBuilder = TypeSpec.classBuilder(companionClassName).addModifiers(KModifier.DATA)
+    val keepAnnotation = AnnotationSpec.builder(ClassName("androidx.annotation", "Keep")).build()
+    classBuilder.addAnnotation(keepAnnotation)
 
     val generableAnn =
       classDeclaration.annotations.firstOrNull { it.shortName.getShortName() == "Generable" }
@@ -318,6 +320,7 @@ internal class SchemaSymbolProcessorVisitor(
     val primaryConstructor = FunSpec.constructorBuilder()
     val toSdkBuilder =
       FunSpec.builder("toSdk")
+        .addAnnotation(keepAnnotation)
         .returns(ClassName(packageName, classDeclaration.simpleName.asString()))
     val toSdkArgs = mutableListOf<String>()
 

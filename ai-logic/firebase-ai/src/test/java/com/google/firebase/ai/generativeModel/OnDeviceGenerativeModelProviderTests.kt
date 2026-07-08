@@ -107,22 +107,27 @@ internal class OnDeviceGenerativeModelProviderTests {
     response.inferenceSource shouldBe InferenceSource.ON_DEVICE
   }
 
+  private data class TestMovieReview(val title: String, val rating: Int)
+
   @Test
   fun `generateObject delegates to onDeviceModel`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
-    val schema = JsonSchema.string()
+    val dummyInstance = TestMovieReview("Inception", 5)
+    val schema: JsonSchema<TestMovieReview> = mockk {
+      every { clazz } returns TestMovieReview::class
+    }
     val interopResponse =
-      com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop<String>(
-        instance = "test object",
-        rawJson = "\"test object\""
+      com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<TestMovieReview>(
+        instance = dummyInstance
       )
-    coEvery { onDeviceModel.generateObject(any(), any<kotlin.reflect.KClass<String>>()) } returns
-      interopResponse
+    coEvery {
+      onDeviceModel.generateObject(any(), any<kotlin.reflect.KClass<TestMovieReview>>())
+    } returns interopResponse
 
     val response = provider.generateObject(schema, prompt)
 
     response.response.inferenceSource shouldBe InferenceSource.ON_DEVICE
-    response.getObject() shouldBe "test object"
+    response.getObject() shouldBe dummyInstance
   }
 
   @Test

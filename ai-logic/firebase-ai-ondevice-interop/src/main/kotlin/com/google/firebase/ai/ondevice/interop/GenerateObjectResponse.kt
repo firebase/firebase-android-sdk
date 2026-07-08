@@ -19,7 +19,9 @@ package com.google.firebase.ai.ondevice.interop
 /**
  * Represents a structured object generation response from the on-device model interop layer.
  *
- * @property instance The generated object instance returned directly by the model engine.
- * @property rawJson The raw JSON string representation of the object, if available.
+ * @property instances The list of generated object instances across all candidates returned
+ * directly by the model engine.
  */
-public class GenerateObjectResponseInterop<T>(public val instance: T, public val rawJson: String) {}
+public class GenerateObjectResponse<T>(public val instances: List<T>) {
+  public constructor(instance: T) : this(listOf(instance))
+}
