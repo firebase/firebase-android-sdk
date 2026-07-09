@@ -17,10 +17,10 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.mavenLocal
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -59,11 +59,11 @@ class AppWithoutGoogleServicesFunctionalTests {
 
     val thrown =
       assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":uploadCrashlyticsMappingFileRelease", "--configuration-cache")
-          .build()
+        buildGradleRunner(
+          projectDir,
+          ":uploadCrashlyticsMappingFileRelease",
+          "--configuration-cache"
+        )
       }
 
     assertThat(thrown).hasMessageThat().contains("Google-Services plugin not found")
@@ -94,11 +94,11 @@ class AppWithoutGoogleServicesFunctionalTests {
 
     val thrown =
       assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":uploadCrashlyticsMappingFileRelease", "--configuration-cache")
-          .build()
+        buildGradleRunner(
+          projectDir,
+          ":uploadCrashlyticsMappingFileRelease",
+          "--configuration-cache"
+        )
       }
 
     assertThat(thrown)
@@ -131,11 +131,11 @@ class AppWithoutGoogleServicesFunctionalTests {
 
     val thrown =
       assertThrows(UnexpectedBuildFailure::class.java) {
-        GradleRunner.create()
-          .withGradleVersion("8.1")
-          .withProjectDir(projectDir)
-          .withArguments(":uploadCrashlyticsMappingFileRelease", "--configuration-cache")
-          .build()
+        buildGradleRunner(
+          projectDir,
+          ":uploadCrashlyticsMappingFileRelease",
+          "--configuration-cache"
+        )
       }
 
     assertThat(thrown).hasMessageThat().contains("Google-Services plugin not configured properly")

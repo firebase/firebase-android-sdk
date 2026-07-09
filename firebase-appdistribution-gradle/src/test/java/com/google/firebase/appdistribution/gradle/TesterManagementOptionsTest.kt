@@ -15,7 +15,7 @@
  */
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.auth.oauth2.Credential
+import com.google.auth.http.HttpCredentialsAdapter
 import com.google.common.collect.ImmutableList
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_PROJECT_NUMBER
 import com.google.firebase.appdistribution.gradle.AppDistributionException.Reason.MISSING_TESTER_EMAILS
@@ -30,7 +30,7 @@ import org.mockito.kotlin.whenever
 @RunWith(MockitoJUnitRunner::class)
 class TesterManagementOptionsTest {
   private val mockCredentialsRetriever: CredentialsRetriever = mock()
-  private val mockCredential: Credential = mock()
+  private val mockCredential: HttpCredentialsAdapter = mock()
 
   @Test
   fun testValidateAndBuild_successfullyBuildsOptions() {

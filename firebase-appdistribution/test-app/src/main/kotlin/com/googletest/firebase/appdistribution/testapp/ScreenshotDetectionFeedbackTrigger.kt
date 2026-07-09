@@ -28,8 +28,8 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import com.google.firebase.appdistribution.appDistribution
 import com.google.firebase.Firebase
+import com.google.firebase.appdistribution.appDistribution
 import java.util.*
 
 class ScreenshotDetectionFeedbackTrigger(

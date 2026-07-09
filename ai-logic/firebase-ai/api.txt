@@ -13,6 +13,32 @@ package com.google.firebase.ai {
     property public final java.util.List<com.google.firebase.ai.type.Content> history;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class DownloadStatus {
+    ctor public DownloadStatus();
+  }
+
+  public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadCompleted();
+  }
+
+  public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadFailed(com.google.firebase.ai.type.FirebaseAIException exception);
+    method public com.google.firebase.ai.type.FirebaseAIException getException();
+    property public final com.google.firebase.ai.type.FirebaseAIException exception;
+  }
+
+  public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadInProgress(long totalBytesDownloaded);
+    method public long getTotalBytesDownloaded();
+    property public final long totalBytesDownloaded;
+  }
+
+  public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadStarted(long bytesToDownload);
+    method public long getBytesToDownload();
+    property public final long bytesToDownload;
+  }
+
   public final class FirebaseAI {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null);
@@ -78,8 +104,10 @@ package com.google.firebase.ai {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
+    method public com.google.firebase.ai.OnDeviceExtension? getOnDeviceExtension();
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
-    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public final com.google.firebase.ai.OnDeviceExtension? onDeviceExtension;
   }
 
   @Deprecated public final class ImagenModel {
@@ -143,6 +171,12 @@ package com.google.firebase.ai {
   public static final class OnDeviceConfig.Companion {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceExtension {
+    method public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.OnDeviceModelStatus>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.DownloadStatus> download();
+    method public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceModelOption {
     field public static final com.google.firebase.ai.OnDeviceModelOption.Companion Companion;
     field public static final com.google.firebase.ai.OnDeviceModelOption PREVIEW;
@@ -151,6 +185,17 @@ package com.google.firebase.ai {
   }
 
   public static final class OnDeviceModelOption.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceModelStatus {
+    field public static final com.google.firebase.ai.OnDeviceModelStatus AVAILABLE;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus.Companion Companion;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus DOWNLOADABLE;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus DOWNLOADING;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus UNAVAILABLE;
+  }
+
+  public static final class OnDeviceModelStatus.Companion {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
@@ -168,8 +213,8 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
-    method public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
+    method @Deprecated public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
 }
@@ -460,13 +505,21 @@ package com.google.firebase.ai.type {
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
     ctor @Deprecated public CodeExecutionResultPart(String outcome, String output);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.CodeExecutionResultPart createWithThinking(String outcome, String output, boolean isThought, String? thoughtSignature);
     method public boolean executionSucceeded();
     method public String getOutcome();
     method public String getOutput();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public boolean isThought;
     property public final String outcome;
     property public final String output;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.CodeExecutionResultPart.Companion Companion;
+  }
+
+  public static final class CodeExecutionResultPart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.CodeExecutionResultPart createWithThinking(String outcome, String output, boolean isThought, String? thoughtSignature);
   }
 
   public final class Content {
@@ -546,22 +599,38 @@ package com.google.firebase.ai.type {
 
   public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
     ctor @Deprecated public ExecutableCodePart(String language, String code);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ExecutableCodePart createWithThinking(String language, String code, boolean isThought, String? thoughtSignature);
     method public String getCode();
     method public String getLanguage();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public final String code;
     property public boolean isThought;
     property public final String language;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.ExecutableCodePart.Companion Companion;
+  }
+
+  public static final class ExecutableCodePart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.ExecutableCodePart createWithThinking(String language, String code, boolean isThought, String? thoughtSignature);
   }
 
   public final class FileDataPart implements com.google.firebase.ai.type.Part {
     ctor public FileDataPart(String uri, String mimeType);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.FileDataPart createWithThinking(String uri, String mimeType, boolean isThought, String? thoughtSignature);
     method public String getMimeType();
+    method public String? getThoughtSignature();
     method public String getUri();
     method public boolean isThought();
     property public boolean isThought;
     property public final String mimeType;
+    property public final String? thoughtSignature;
     property public final String uri;
+    field public static final com.google.firebase.ai.type.FileDataPart.Companion Companion;
+  }
+
+  public static final class FileDataPart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.FileDataPart createWithThinking(String uri, String mimeType, boolean isThought, String? thoughtSignature);
   }
 
   public final class FinishReason {
@@ -617,14 +686,22 @@ package com.google.firebase.ai.type {
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.FunctionCallPart createWithThinking(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id, boolean isThought, String? thoughtSignature);
     method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
     method public String? getId();
     method public String getName();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
     property public final String? id;
     property public boolean isThought;
     property public final String name;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.FunctionCallPart.Companion Companion;
+  }
+
+  public static final class FunctionCallPart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.FunctionCallPart createWithThinking(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id, boolean isThought, String? thoughtSignature);
   }
 
   public final class FunctionCallingConfig {
@@ -650,20 +727,24 @@ package com.google.firebase.ai.type {
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response);
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null);
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null, java.util.List<? extends com.google.firebase.ai.type.Part> parts = emptyList());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.FunctionResponsePart createWithThinking(String name, kotlinx.serialization.json.JsonObject response, String? id, java.util.List<? extends com.google.firebase.ai.type.Part> parts, boolean isThought, String? thoughtSignature);
     method public String? getId();
     method public String getName();
     method public java.util.List<com.google.firebase.ai.type.Part> getParts();
     method public kotlinx.serialization.json.JsonObject getResponse();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public final String? id;
     property public boolean isThought;
     property public final String name;
     property public final java.util.List<com.google.firebase.ai.type.Part> parts;
     property public final kotlinx.serialization.json.JsonObject response;
+    property public final String? thoughtSignature;
     field public static final com.google.firebase.ai.type.FunctionResponsePart.Companion Companion;
   }
 
   public static final class FunctionResponsePart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.FunctionResponsePart createWithThinking(String name, kotlinx.serialization.json.JsonObject response, String? id, java.util.List<? extends com.google.firebase.ai.type.Part> parts, boolean isThought, String? thoughtSignature);
     method public com.google.firebase.ai.type.FunctionResponsePart from(kotlinx.serialization.json.JsonObject jsonObject, java.util.List<? extends com.google.firebase.ai.type.Part> parts = emptyList());
   }
 
@@ -673,6 +754,7 @@ package com.google.firebase.ai.type {
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     method public com.google.firebase.ai.InferenceSource getInferenceSource();
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
+    method public String? getModelVersion();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
     method public String? getText();
     method public String? getThoughtSummary();
@@ -681,6 +763,7 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
     property public final com.google.firebase.ai.InferenceSource inferenceSource;
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
+    property public final String? modelVersion;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
     property public final String? text;
     property public final String? thoughtSummary;
@@ -711,6 +794,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchemaJson(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseSchemaJson);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
@@ -725,6 +809,7 @@ package com.google.firebase.ai.type {
     field public String? responseMimeType;
     field public java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities;
     field public com.google.firebase.ai.type.Schema? responseSchema;
+    field public com.google.firebase.ai.type.SpeechConfig? speechConfig;
     field public java.util.List<java.lang.String>? stopSequences;
     field public Float? temperature;
     field public com.google.firebase.ai.type.ThinkingConfig? thinkingConfig;
@@ -910,12 +995,20 @@ package com.google.firebase.ai.type {
   public final class ImagePart implements com.google.firebase.ai.type.Part {
     ctor public ImagePart(android.graphics.Bitmap image);
     ctor public ImagePart(android.graphics.Bitmap image, String displayName);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagePart createWithThinking(android.graphics.Bitmap image, String? displayName, boolean isThought, String? thoughtSignature);
     method public String? getDisplayName();
     method public android.graphics.Bitmap getImage();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public final String? displayName;
     property public final android.graphics.Bitmap image;
     property public boolean isThought;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.ImagePart.Companion Companion;
+  }
+
+  public static final class ImagePart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.ImagePart createWithThinking(android.graphics.Bitmap image, String? displayName, boolean isThought, String? thoughtSignature);
   }
 
   public final class ImageSize {
@@ -1161,14 +1254,22 @@ package com.google.firebase.ai.type {
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {
     ctor public InlineDataPart(byte[] inlineData, String mimeType);
     ctor public InlineDataPart(byte[] inlineData, String mimeType, String displayName);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.InlineDataPart createWithThinking(byte[] inlineData, String mimeType, String? displayName, boolean isThought, String? thoughtSignature);
     method public String? getDisplayName();
     method public byte[] getInlineData();
     method public String getMimeType();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public final String? displayName;
     property public final byte[] inlineData;
     property public boolean isThought;
     property public final String mimeType;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.InlineDataPart.Companion Companion;
+  }
+
+  public static final class InlineDataPart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.InlineDataPart createWithThinking(byte[] inlineData, String mimeType, String? displayName, boolean isThought, String? thoughtSignature);
   }
 
   public final class InvalidAPIKeyException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -1511,6 +1612,12 @@ package com.google.firebase.ai.type {
     property public final int tokenCount;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class MultiSpeakerVoiceConfig {
+    ctor public MultiSpeakerVoiceConfig(java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> speakerVoiceConfigs);
+    method public java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> getSpeakerVoiceConfigs();
+    property public final java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> speakerVoiceConfigs;
+  }
+
   public interface Part {
     method public boolean isThought();
     property public abstract boolean isThought;
@@ -1838,10 +1945,25 @@ package com.google.firebase.ai.type {
     property public final Integer? targetTokens;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
-    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeakerVoiceConfig {
+    ctor public SpeakerVoiceConfig(String speaker, com.google.firebase.ai.type.Voice voice);
+    method public String getSpeaker();
     method public com.google.firebase.ai.type.Voice getVoice();
+    property public final String speaker;
     property public final com.google.firebase.ai.type.Voice voice;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
+    ctor public SpeechConfig(com.google.firebase.ai.type.MultiSpeakerVoiceConfig multiSpeakerVoiceConfig);
+    ctor public SpeechConfig(com.google.firebase.ai.type.MultiSpeakerVoiceConfig multiSpeakerVoiceConfig, String? languageCode = null);
+    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
+    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice, String? languageCode = null);
+    method public String? getLanguageCode();
+    method public com.google.firebase.ai.type.MultiSpeakerVoiceConfig? getMultiSpeakerVoiceConfig();
+    method public com.google.firebase.ai.type.Voice? getVoice();
+    property public final String? languageCode;
+    property public final com.google.firebase.ai.type.MultiSpeakerVoiceConfig? multiSpeakerVoiceConfig;
+    property public final com.google.firebase.ai.type.Voice? voice;
   }
 
   public abstract class StringFormat {
@@ -1879,23 +2001,36 @@ package com.google.firebase.ai.type {
 
   public final class TemplateTool {
     method public static com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+    method public static com.google.firebase.ai.type.TemplateTool googleMaps();
+    method public static com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     field public static final com.google.firebase.ai.type.TemplateTool.Companion Companion;
   }
 
   public static final class TemplateTool.Companion {
     method public com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+    method public com.google.firebase.ai.type.TemplateTool googleMaps();
+    method public com.google.firebase.ai.type.TemplateTool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
   }
 
   public final class TemplateToolConfig {
     ctor public TemplateToolConfig();
+    ctor public TemplateToolConfig(com.google.firebase.ai.type.RetrievalConfig? retrievalConfig);
   }
 
   public final class TextPart implements com.google.firebase.ai.type.Part {
     ctor public TextPart(String text);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.TextPart createWithThinking(String text, boolean isThought, String? thoughtSignature);
     method public String getText();
+    method public String? getThoughtSignature();
     method public boolean isThought();
     property public boolean isThought;
     property public final String text;
+    property public final String? thoughtSignature;
+    field public static final com.google.firebase.ai.type.TextPart.Companion Companion;
+  }
+
+  public static final class TextPart.Companion {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.TextPart createWithThinking(String text, boolean isThought, String? thoughtSignature);
   }
 
   public final class ThinkingConfig {

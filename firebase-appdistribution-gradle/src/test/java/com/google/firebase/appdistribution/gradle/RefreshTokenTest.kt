@@ -16,22 +16,22 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.http.HttpTransport
+import com.google.auth.oauth2.UserCredentials
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class RefreshTokenTest {
-  private var httpTransport: HttpTransport =
-    SuccessWithContent("{\"access_token\":\"access-token\"}")
-
   @Test
   fun testGenerateCredentialFrom() {
     val refreshToken = "test-fresh-token"
-    val expectedAccessToken = "access-token"
-    val token = RefreshToken(refreshToken, httpTransport)
+    val token = RefreshToken(refreshToken)
     val credentials = token.generateNewCredentials()
     assertNotNull(credentials)
-    assertEquals(expectedAccessToken, credentials.accessToken)
+
+    val userCreds = credentials.credentials as UserCredentials
+    assertEquals(refreshToken, userCreds.refreshToken)
+    assertEquals(RefreshToken.CLIENT_ID, userCreds.clientId)
+    assertEquals(RefreshToken.CLIENT_SECRET, userCreds.clientSecret)
   }
 }

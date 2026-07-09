@@ -86,4 +86,18 @@ public interface GenerativeModel {
    * @throws [FirebaseAIOnDeviceNotAvailableException] if model is not available.
    */
   public suspend fun warmup()
+
+  /**
+   * Checks the current status / availability of the on-device AI model.
+   *
+   * @return An [OnDeviceModelStatusInterop] indicating the current state of the model.
+   */
+  public suspend fun checkStatus(): OnDeviceModelStatusInterop
+
+  /**
+   * Initiates the download of the on-device AI model.
+   *
+   * @return A [Flow] of [DownloadStatusInterop] objects representing the download lifecycle.
+   */
+  public fun download(): Flow<DownloadStatusInterop>
 }

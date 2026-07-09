@@ -78,6 +78,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           finishMessage shouldBe "Finished successfully"
         }
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -93,6 +94,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
         }
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -110,6 +112,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
         }
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -129,6 +132,7 @@ internal class DevAPIStreamingSnapshotTests {
           it.thoughtSignature.shouldNotBeNull()
           it.thoughtSignature.shouldStartWith("CiIBVKhc7vB")
         }
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 

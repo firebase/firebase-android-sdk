@@ -12,6 +12,10 @@ env:
   PERF_E2E_GOOGLE_SERVICES: ${{ secrets.PERF_E2E_GOOGLE_SERVICES }}
   FTL_RESULTS_BUCKET: fireescape
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,6 +25,8 @@ jobs:
     steps:
       - name: Checkout firebase-android-sdk
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
@@ -50,7 +56,7 @@ jobs:
             --target_environment=${{ matrix.environment }}
       - name: Notify developers upon failures
         if: ${{ failure() }}
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const owner = context.repo.owner;
@@ -96,7 +102,7 @@ jobs:
             }
       - name: Upload test artifacts
         if: always()
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-artifacts (${{ matrix.environment }})
           path: |

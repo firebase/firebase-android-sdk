@@ -52,6 +52,7 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -62,11 +63,14 @@ import kotlinx.serialization.json.jsonObject
  * types.
  */
 public class GenerativeModel
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   private val actualModel: GenerativeModelProvider,
   internal val requestOptions: RequestOptions,
-  private val tools: List<Tool> = emptyList()
+  private val tools: List<Tool> = emptyList(),
+  @PublicPreviewAPI public val onDeviceExtension: OnDeviceExtension? = null
 ) {
+
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
    *
@@ -241,7 +245,12 @@ internal constructor(
    *
    * @throws [FirebaseAIException] if the warmup failed.
    */
-  @PublicPreviewAPI public suspend fun warmUp(): Unit = actualModel.warmUp()
+  @Deprecated(
+    message = "Use onDeviceExtension?.warmUp() instead",
+    replaceWith = ReplaceWith("onDeviceExtension?.warmUp()")
+  )
+  @PublicPreviewAPI
+  public suspend fun warmUp(): Unit = actualModel.warmUp()
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
@@ -384,10 +393,21 @@ internal constructor(
 
     @OptIn(PublicPreviewAPI::class)
     internal fun build(): GenerativeModel {
+      val includesOnDevice =
+        onDeviceFactoryProvider != null && onDeviceConfig.mode != InferenceMode.ONLY_IN_CLOUD
+      val onDeviceExtension =
+        if (includesOnDevice) {
+          onDeviceFactoryProvider
+            ?.newGenerativeModel(onDeviceConfig.modelOption?.toInterop())
+            ?.let { OnDeviceExtension(it) }
+        } else {
+          null
+        }
       return GenerativeModel(
         tools = tools,
         actualModel = getModelProvider(),
-        requestOptions = requestOptions
+        requestOptions = requestOptions,
+        onDeviceExtension = onDeviceExtension
       )
     }
   }
@@ -404,4 +424,37 @@ internal class NetworkStatusChecker(private val connectivityManager: Connectivit
         it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
       ?: false
+}
+
+/** Extension class for performing on-device operations. */
+@PublicPreviewAPI
+public class OnDeviceExtension
+internal constructor(
+  private val onDeviceGenerativeModel: com.google.firebase.ai.ondevice.interop.GenerativeModel
+) {
+  /**
+   * Checks the current status / availability of the on-device AI model.
+   *
+   * @return An [OnDeviceModelStatus] object indicating the current state of the model.
+   */
+  public suspend fun checkStatus(): OnDeviceModelStatus =
+    OnDeviceModelStatus.fromInterop(onDeviceGenerativeModel.checkStatus())
+
+  /**
+   * Initiates the download of the on-device AI model.
+   *
+   * @return A [Flow] of [DownloadStatus] objects representing the download lifecycle.
+   */
+  public fun download(): Flow<DownloadStatus> {
+    return onDeviceGenerativeModel.download().map { DownloadStatus.fromInterop(it) }
+  }
+
+  /**
+   * Warms up the model to reduce latency for the first request.
+   *
+   * @throws [FirebaseAIException] if the warmup failed.
+   */
+  public suspend fun warmUp() {
+    onDeviceGenerativeModel.warmup()
+  }
 }

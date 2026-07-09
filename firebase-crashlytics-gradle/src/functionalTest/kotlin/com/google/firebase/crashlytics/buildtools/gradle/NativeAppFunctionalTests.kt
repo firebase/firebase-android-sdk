@@ -17,10 +17,10 @@
 package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.buildGradleRunner
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.mavenLocal
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPluginTest.Companion.pluginVersion
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,12 +33,7 @@ class NativeAppFunctionalTests {
 
   @Test
   fun `only variants with nativeSymbolUploadEnabled register symbol tasks`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":tasks", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":tasks", "--configuration-cache")
 
     // The release variant has nativeSymbolUploadEnabled set to true.
     assertThat(result.output).contains("uploadCrashlyticsSymbolFileRelease")
@@ -52,12 +47,7 @@ class NativeAppFunctionalTests {
     val generateTask = ":generateCrashlyticsSymbolFileRelease"
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(uploadTask, "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, uploadTask, "--configuration-cache")
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -105,12 +95,7 @@ class NativeAppFunctionalTests {
     val generateTask = ":generateCrashlyticsSymbolFileRelease"
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(uploadTask, "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, uploadTask, "--configuration-cache")
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -130,15 +115,12 @@ class NativeAppFunctionalTests {
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(
-          uploadTask,
-          "-Pcom.google.firebase.crashlytics.breakpadBinary=dump_syms.o",
-          "--configuration-cache"
-        )
-        .build()
+      buildGradleRunner(
+        projectDir,
+        uploadTask,
+        "-Pcom.google.firebase.crashlytics.breakpadBinary=dump_syms.o",
+        "--configuration-cache"
+      )
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -182,12 +164,7 @@ class NativeAppFunctionalTests {
     val generateTask = ":generateCrashlyticsSymbolFileRelease"
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(uploadTask, "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, uploadTask, "--configuration-cache")
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -231,17 +208,14 @@ class NativeAppFunctionalTests {
     val generateTask = ":generateCrashlyticsSymbolFileRelease"
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
+    // Set csym by property, which overrides the extension.
     val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        // Set csym by property, which overrides the extension.
-        .withArguments(
-          uploadTask,
-          "-Pcom.google.firebase.crashlytics.symbolGenerator=csym",
-          "--configuration-cache"
-        )
-        .build()
+      buildGradleRunner(
+        projectDir,
+        uploadTask,
+        "-Pcom.google.firebase.crashlytics.symbolGenerator=csym",
+        "--configuration-cache"
+      )
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -257,12 +231,7 @@ class NativeAppFunctionalTests {
     val generateTask = ":generateCrashlyticsSymbolFileRelease"
     val uploadTask = ":uploadCrashlyticsSymbolFileRelease"
 
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(uploadTask, "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, uploadTask, "--configuration-cache")
 
     assertThat(result.task(generateTask)?.outcome).isEqualTo(SUCCESS)
     assertThat(result.task(uploadTask)?.outcome).isEqualTo(SUCCESS)
@@ -275,12 +244,7 @@ class NativeAppFunctionalTests {
 
   @Test
   fun `building a native app generates build ids`() {
-    val result =
-      GradleRunner.create()
-        .withGradleVersion("8.1")
-        .withProjectDir(projectDir)
-        .withArguments(":assembleRelease", "--configuration-cache")
-        .build()
+    val result = buildGradleRunner(projectDir, ":assembleRelease", "--configuration-cache")
 
     assertThat(result.task(":injectCrashlyticsBuildIdsRelease")?.outcome).isEqualTo(SUCCESS)
   }

@@ -17,6 +17,7 @@
 package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
+import com.google.firebase.ai.ondevice.interop.DownloadStatusInterop
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
@@ -24,6 +25,7 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownExceptio
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
+import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.common.GenAiException.ErrorCode
@@ -46,7 +48,7 @@ internal class GenerativeModelImpl(
   override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
     try {
       val response = mlkitModel.generateContent(request.toMlKit())
-      response.toInterop()
+      response.toInterop(mlkitModel.getBaseModelName())
     } catch (e: GenAiException) {
       throw getMappingException(e)
     }
@@ -65,7 +67,7 @@ internal class GenerativeModelImpl(
     return mlkitModel
       .generateContentStream(request.toMlKit())
       .catch { throw getMappingException(it) }
-      .map { it.toInterop() }
+      .map { it.toInterop(mlkitModel.getBaseModelName()) }
   }
 
   override suspend fun getBaseModelName(): String = mlkitModel.getBaseModelName()
@@ -82,6 +84,14 @@ internal class GenerativeModelImpl(
     } catch (e: GenAiException) {
       throw getMappingException(e)
     }
+
+  override suspend fun checkStatus(): OnDeviceModelStatusInterop {
+    return mlkitModel.checkStatus().toInteropStatus()
+  }
+
+  override fun download(): Flow<DownloadStatusInterop> {
+    return mlkitModel.download().map { it.toInterop() }
+  }
 
   /**
    * Throws the [FirebaseAIOnDeviceException] subclass that maps to the input exception.

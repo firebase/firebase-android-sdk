@@ -34,8 +34,8 @@ on:
 env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
-  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.15.0' }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '24' }}
+  FDC_INPUT_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
@@ -54,6 +54,16 @@ jobs:
         with:
           show-progress: false
 
+      - name: Initialize FDC_FIREBASE_TOOLS_VERSION environment variable
+        run: |
+          set -euo pipefail
+          if [[ -n "$FDC_INPUT_FIREBASE_TOOLS_VERSION" ]]; then
+            version="$FDC_INPUT_FIREBASE_TOOLS_VERSION"
+          else
+            version="$(cat firebase-dataconnect/ci/firebase-tools-version.txt)"
+          fi
+          echo "FDC_FIREBASE_TOOLS_VERSION=${version}" >> "$GITHUB_ENV"
+
       - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           java-version: ${{ env.FDC_JAVA_VERSION }}
@@ -63,7 +73,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
@@ -83,7 +93,7 @@ jobs:
           npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
       - name: Restore Gradle Cache
-        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
         if: github.event_name != 'schedule'
         with:
           path: |
@@ -135,7 +145,7 @@ jobs:
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle Cache
-        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
         if: github.event_name == 'schedule'
         with:
           path: |
@@ -152,7 +162,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Restore AVD Cache
-        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
         if: github.event_name != 'schedule'
         id: restore-avd-cache
         with:
@@ -165,7 +175,7 @@ jobs:
 
       - name: Create AVD
         if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-matched-key == ''
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         with:
           api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
           arch: x86_64
@@ -175,7 +185,7 @@ jobs:
           script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
 
       - name: Save AVD Cache
-        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
         if: github.event_name == 'schedule'
         with:
           path: |
@@ -244,7 +254,7 @@ jobs:
 
       - name: Gradle connectedCheck
         id: connectedCheck
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a #v2.37.0
         # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
         # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
         # A later step in this "job" will fail the job if this step fails
@@ -259,7 +269,7 @@ jobs:
             set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload Log Files
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integration_test_logs
           path: "**/*.log"
@@ -267,7 +277,7 @@ jobs:
           compression-level: 9
 
       - name: Upload Gradle Build Reports
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integration_test_gradle_build_reports
           path: firebase-dataconnect/**/build/reports/
@@ -403,6 +413,7 @@ jobs:
     needs:
       - 'integration-test'
       - 'actionlint-dataconnect-yml'
+      - 'zshellcheck'
       - 'python-ci-unit-tests'
       - 'python-ci-lint'
       - 'python-ci-format'
@@ -428,6 +439,7 @@ jobs:
           cat >'${{ runner.temp }}/job_results.txt' <<EOF
           integration-test:${{ needs.integration-test.result }}
           actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
+          zshellcheck:${{ needs.zshellcheck.result }}
           python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
           python-ci-lint:${{ needs.python-ci-lint.result }}
           python-ci-format:${{ needs.python-ci-format.result }}

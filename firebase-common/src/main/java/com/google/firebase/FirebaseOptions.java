@@ -36,8 +36,9 @@ public final class FirebaseOptions {
   private static final String DATABASE_URL_RESOURCE_NAME = "firebase_database_url";
   private static final String GA_TRACKING_ID_RESOURCE_NAME = "ga_trackingId";
   private static final String GCM_SENDER_ID_RESOURCE_NAME = "gcm_defaultSenderId";
-  private static final String STORAGE_BUCKET_RESOURCE_NAME = "google_storage_bucket";
   private static final String PROJECT_ID_RESOURCE_NAME = "project_id";
+  private static final String RECAPTCHA_SITE_KEY_RESOURCE_NAME = "recaptcha_site_key";
+  private static final String STORAGE_BUCKET_RESOURCE_NAME = "google_storage_bucket";
 
   private final String apiKey;
   private final String applicationId;
@@ -45,6 +46,7 @@ public final class FirebaseOptions {
   private final String gaTrackingId;
   private final String gcmSenderId;
   private final String storageBucket;
+  private final String recaptchaSiteKey;
   private final String projectId;
 
   /** Builder for constructing FirebaseOptions. */
@@ -55,6 +57,7 @@ public final class FirebaseOptions {
     private String gaTrackingId;
     private String gcmSenderId;
     private String storageBucket;
+    private String recaptchaSiteKey;
     private String projectId;
 
     /** Constructs an empty builder. */
@@ -73,6 +76,7 @@ public final class FirebaseOptions {
       gaTrackingId = options.gaTrackingId;
       gcmSenderId = options.gcmSenderId;
       storageBucket = options.storageBucket;
+      recaptchaSiteKey = options.recaptchaSiteKey;
       projectId = options.projectId;
     }
 
@@ -116,6 +120,12 @@ public final class FirebaseOptions {
     }
 
     @NonNull
+    public Builder setRecaptchaSiteKey(@Nullable String recaptchaSiteKey) {
+      this.recaptchaSiteKey = recaptchaSiteKey;
+      return this;
+    }
+
+    @NonNull
     public Builder setProjectId(@Nullable String projectId) {
       this.projectId = projectId;
       return this;
@@ -124,7 +134,14 @@ public final class FirebaseOptions {
     @NonNull
     public FirebaseOptions build() {
       return new FirebaseOptions(
-          applicationId, apiKey, databaseUrl, gaTrackingId, gcmSenderId, storageBucket, projectId);
+          applicationId,
+          apiKey,
+          databaseUrl,
+          gaTrackingId,
+          gcmSenderId,
+          storageBucket,
+          recaptchaSiteKey,
+          projectId);
     }
   }
 
@@ -135,6 +152,7 @@ public final class FirebaseOptions {
       @Nullable String gaTrackingId,
       @Nullable String gcmSenderId,
       @Nullable String storageBucket,
+      @Nullable String recaptchaSiteKey,
       @Nullable String projectId) {
     Preconditions.checkState(!isEmptyOrWhitespace(applicationId), "ApplicationId must be set.");
     this.applicationId = applicationId;
@@ -143,6 +161,7 @@ public final class FirebaseOptions {
     this.gaTrackingId = gaTrackingId;
     this.gcmSenderId = gcmSenderId;
     this.storageBucket = storageBucket;
+    this.recaptchaSiteKey = recaptchaSiteKey;
     this.projectId = projectId;
   }
 
@@ -165,11 +184,12 @@ public final class FirebaseOptions {
         reader.getString(GA_TRACKING_ID_RESOURCE_NAME),
         reader.getString(GCM_SENDER_ID_RESOURCE_NAME),
         reader.getString(STORAGE_BUCKET_RESOURCE_NAME),
+        reader.getString(RECAPTCHA_SITE_KEY_RESOURCE_NAME),
         reader.getString(PROJECT_ID_RESOURCE_NAME));
   }
 
   /**
-   * API key used for authenticating requests from your app, e.g.
+   * API key used for authenticating requests from your app, for example
    * AIzaSyDdVgKwhZl0sTTTLZ7iTmt1r3N2cJLnaDk, used to identify your app to Google servers.
    */
   @NonNull
@@ -183,14 +203,14 @@ public final class FirebaseOptions {
     return applicationId;
   }
 
-  /** The database root URL, e.g. http://abc-xyz-123.firebaseio.com. */
+  /** The database root URL, for example http://abc-xyz-123.firebaseio.com. */
   @Nullable
   public String getDatabaseUrl() {
     return databaseUrl;
   }
 
   /**
-   * The tracking ID for Google Analytics, e.g. UA-12345678-1, used to configure Google Analytics.
+   * The tracking ID for Google Analytics, for example UA-12345678-1, used to configure Google Analytics.
    *
    * @hide
    */
@@ -210,13 +230,19 @@ public final class FirebaseOptions {
     return gcmSenderId;
   }
 
-  /** The Google Cloud Storage bucket name, e.g. abc-xyz-123.storage.firebase.com. */
+  /** The Google Cloud Storage bucket name, for example abc-xyz-123.storage.firebase.com. */
   @Nullable
   public String getStorageBucket() {
     return storageBucket;
   }
 
-  /** The Google Cloud project ID, e.g. my-project-1234 */
+  /** The reCAPTCHA site key for you app, for example 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
+  @Nullable
+  public String getRecaptchaSiteKey() {
+    return recaptchaSiteKey;
+  }
+
+  /** The Google Cloud project ID, for example my-project-1234 */
   @Nullable
   public String getProjectId() {
     return projectId;
@@ -234,13 +260,21 @@ public final class FirebaseOptions {
         && Objects.equal(gaTrackingId, other.gaTrackingId)
         && Objects.equal(gcmSenderId, other.gcmSenderId)
         && Objects.equal(storageBucket, other.storageBucket)
+        && Objects.equal(recaptchaSiteKey, other.recaptchaSiteKey)
         && Objects.equal(projectId, other.projectId);
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        applicationId, apiKey, databaseUrl, gaTrackingId, gcmSenderId, storageBucket, projectId);
+        applicationId,
+        apiKey,
+        databaseUrl,
+        gaTrackingId,
+        gcmSenderId,
+        storageBucket,
+        recaptchaSiteKey,
+        projectId);
   }
 
   @Override
@@ -251,6 +285,7 @@ public final class FirebaseOptions {
         .add("databaseUrl", databaseUrl)
         .add("gcmSenderId", gcmSenderId)
         .add("storageBucket", storageBucket)
+        .add("recaptchaSiteKey", recaptchaSiteKey)
         .add("projectId", projectId)
         .toString();
   }

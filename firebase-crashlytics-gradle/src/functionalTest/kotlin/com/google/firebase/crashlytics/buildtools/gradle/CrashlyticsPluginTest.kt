@@ -18,9 +18,11 @@ package com.google.firebase.crashlytics.buildtools.gradle
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.gradle.testkit.runner.UnexpectedBuildFailure
+import org.gradle.util.GradleVersion
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -99,11 +101,11 @@ class CrashlyticsPluginTest {
     // Instead, the test tasks all depend on :crashlytics-gradle:publishToMavenLocal, and the
     // local plugin version is exposed as a system property.
     val result =
-      GradleRunner.create()
-        .withGradleVersion(gradleVersion)
-        .withProjectDir(projectDir)
-        .withArguments(":injectCrashlyticsMappingFileIdRelease", "--configuration-cache")
-        .build()
+      buildGradleRunner(
+        projectDir,
+        ":injectCrashlyticsMappingFileIdRelease",
+        "--configuration-cache"
+      )
 
     assertThat(result.output)
       .contains(
@@ -223,5 +225,13 @@ class CrashlyticsPluginTest {
     val mavenLocal: String =
       System.getProperty("crashlytics.maven.artifacts.path")?.let { """maven(url = "$it")""" }
         ?: "mavenLocal()"
+
+    /** GradleRunner util method used by the whole functional test module. */
+    fun buildGradleRunner(projectDir: File, vararg arguments: String): BuildResult =
+      GradleRunner.create()
+        .withGradleVersion(GradleVersion.current().version)
+        .withProjectDir(projectDir)
+        .withArguments(*arguments)
+        .build()
   }
 }

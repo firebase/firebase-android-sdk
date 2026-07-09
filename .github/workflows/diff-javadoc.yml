@@ -17,6 +17,7 @@ jobs:
         with:
           fetch-depth: 2
           submodules: true
+          persist-credentials: false
 
       - name: Set up JDK 17
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -38,6 +39,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.base_ref }}
+          persist-credentials: false
 
       - name: Generate docs for main
         run: ./gradlew kotlindoc
@@ -62,6 +64,6 @@ jobs:
 
       - name: Add comment
         continue-on-error: true
-        uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
+        uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # v3.11.0
         with:
           message-path: diff.md

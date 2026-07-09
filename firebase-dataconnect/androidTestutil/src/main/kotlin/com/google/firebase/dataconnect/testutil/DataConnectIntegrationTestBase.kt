@@ -39,6 +39,8 @@ abstract class DataConnectIntegrationTestBase {
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory(firebaseAppFactory)
 
+  @get:Rule val cleanups = CleanupsRule()
+
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
   val rs: RandomSource by randomSeedTestRule.rs
@@ -67,6 +69,12 @@ abstract class DataConnectIntegrationTestBase {
       append(string.bind())
     }
   }
+
+  /**
+   * Convenience extension function on [Arb] that gets a non-edge-case value using [rs] for the
+   * randomness source.
+   */
+  fun <T> Arb<T>.sample(): T = sample(rs).value
 
   companion object {
     val testConnectorConfig: ConnectorConfig

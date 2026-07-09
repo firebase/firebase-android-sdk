@@ -19,8 +19,9 @@ plugins {
 firebaseLibrary {
     libraryGroup = "appcheck"
     releaseNotes {
-        name.set("{{app_check}} Play integrity")
+        name.set("{{app_check}} Play Integrity")
         versionName.set("appcheck-playintegrity")
+        nestedHeader.set(true)
     }
 }
 

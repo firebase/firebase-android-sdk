@@ -128,6 +128,8 @@ class GmsRpc {
   /** hashed value of developer chosen (nick)name of Firebase Core SDK (a.k.a. FirebaseApp) */
   private static final String PARAM_FIREBASE_APP_NAME_HASH = "firebase-app-name-hash";
 
+  private static final String PARAM_API_KEY = "Goog-Api-Key";
+
   // --- End of the params for /register3
 
   /**
@@ -187,45 +189,23 @@ class GmsRpc {
     this.firebaseInstallations = firebaseInstallations;
   }
 
-  Task<String> getToken() {
+  Task<String> getToken(boolean useV1Registration) {
     Task<Bundle> rpcTask =
-        startRpc(Metadata.getDefaultSenderId(app), SCOPE_ALL, /* extras= */ new Bundle());
+        startRpc(
+            Metadata.getDefaultSenderId(app),
+            SCOPE_ALL,
+            /* extras= */ new Bundle(),
+            useV1Registration);
     return extractResponseWhenComplete(rpcTask);
   }
 
-  Task<?> deleteToken() {
+  Task<?> deleteToken(boolean useV1Registration) {
     Bundle extras = new Bundle();
     // Server looks at both delete and X-delete so don't need to include both
     extras.putString(EXTRA_DELETE, "1");
 
-    Task<Bundle> rpcTask = startRpc(Metadata.getDefaultSenderId(app), SCOPE_ALL, extras);
-    return extractResponseWhenComplete(rpcTask);
-  }
-
-  Task<?> subscribeToTopic(String cachedToken, String topic) {
-    Bundle extras = new Bundle();
-    // registration servlet expects this for topics
-    extras.putString(EXTRA_TOPIC, TOPIC_PREFIX + topic);
-    // Sends the request to registration servlet and throws on failure.
-    // We do not cache the topic subscription requests and simply make the
-    // server request each time.
-
-    String to = cachedToken;
-    String scope = TOPIC_PREFIX + topic;
-    Task<Bundle> rpcTask = startRpc(to, scope, extras);
-    return extractResponseWhenComplete(rpcTask);
-  }
-
-  Task<?> unsubscribeFromTopic(String cachedToken, String topic) {
-    Bundle extras = new Bundle();
-    // registration servlet expects this for topics
-    extras.putString(EXTRA_TOPIC, TOPIC_PREFIX + topic);
-    extras.putString(EXTRA_DELETE, "1");
-
-    String to = cachedToken;
-    String scope = TOPIC_PREFIX + topic;
-
-    Task<Bundle> rpcTask = startRpc(to, scope, extras);
+    Task<Bundle> rpcTask =
+        startRpc(Metadata.getDefaultSenderId(app), SCOPE_ALL, extras, useV1Registration);
     return extractResponseWhenComplete(rpcTask);
   }
 
@@ -237,9 +217,9 @@ class GmsRpc {
     return rpc.getProxiedNotificationData();
   }
 
-  private Task<Bundle> startRpc(String to, String scope, Bundle extras) {
+  private Task<Bundle> startRpc(String to, String scope, Bundle extras, boolean useV1Registration) {
     try {
-      setDefaultAttributesToBundle(to, scope, extras);
+      setDefaultAttributesToBundle(to, scope, extras, useV1Registration);
     } catch (InterruptedException | ExecutionException e) {
       return Tasks.forException(e);
     }
@@ -261,7 +241,8 @@ class GmsRpc {
     }
   }
 
-  private void setDefaultAttributesToBundle(String to, String scope, Bundle extras)
+  private void setDefaultAttributesToBundle(
+      String to, String scope, Bundle extras, boolean useV1Registration)
       throws ExecutionException, InterruptedException { // Thrown by Tasks.await() on errors.
     extras.putString(EXTRA_SCOPE, scope);
     extras.putString(EXTRA_SENDER, to);
@@ -275,6 +256,11 @@ class GmsRpc {
     extras.putString(PARAM_APP_VER_CODE, metadata.getAppVersionCode());
     extras.putString(PARAM_APP_VER_NAME, metadata.getAppVersionName());
     extras.putString(PARAM_FIREBASE_APP_NAME_HASH, getHashedFirebaseAppName());
+
+    if (useV1Registration) {
+      // Means developer opted for v1 registration. So we need to add api key.
+      extras.putString(PARAM_API_KEY, app.getOptions().getApiKey());
+    }
 
     try {
       String fisAuthToken = Tasks.await(firebaseInstallations.getToken(false)).getToken();

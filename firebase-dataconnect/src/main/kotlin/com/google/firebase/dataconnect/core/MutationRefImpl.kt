@@ -18,19 +18,12 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
-import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
-import com.google.firebase.util.nextAlphanumericString
 import java.util.Objects
-import kotlin.random.Random
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -44,7 +37,6 @@ internal class MutationRefImpl<Data, Variables>(
   callerSdkType: FirebaseDataConnect.CallerSdkType,
   dataSerializersModule: SerializersModule?,
   variablesSerializersModule: SerializersModule?,
-  private val secureRandom: Random,
 ) :
   MutationRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -61,7 +53,7 @@ internal class MutationRefImpl<Data, Variables>(
   internal val logger = Logger("MutationRefImpl[$operationName]")
 
   @VisibleForTesting
-  internal fun randomRequestId(): String = "mut" + secureRandom.nextAlphanumericString(length = 10)
+  internal fun randomRequestId(): String = dataConnect.idStringGenerator.next("mut")
 
   override suspend fun execute(): MutationResultImpl {
     val requestId = randomRequestId()
@@ -70,19 +62,15 @@ internal class MutationRefImpl<Data, Variables>(
         requestId = requestId,
         operationName = operationName,
         variables =
-          withContext(dataConnect.blockingDispatcher) {
-            if (variablesSerializer === DataConnectUntypedVariables.Serializer) {
-              (variables as DataConnectUntypedVariables).variables.toStructProto()
-            } else {
-              encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
-            }
-          },
+          dataConnect.serialization.encodeVariables(
+            variables,
+            variablesSerializer,
+            variablesSerializersModule,
+          ),
         callerSdkType,
       )
       .runCatching {
-        withContext(dataConnect.blockingDispatcher) {
-          deserialize(dataDeserializer, dataSerializersModule)
-        }
+        dataConnect.serialization.decodeData(data, errors, dataDeserializer, dataSerializersModule)
       }
       .onFailure {
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
@@ -103,7 +91,6 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
-      secureRandom = secureRandom,
     )
 
   override fun copy(
@@ -124,7 +111,6 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
-      secureRandom = secureRandom,
     )
 
   override fun <NewVariables> withVariablesSerializer(
@@ -141,7 +127,6 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
-      secureRandom = secureRandom,
     )
 
   override fun <NewData> withDataDeserializer(
@@ -157,7 +142,6 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
-      secureRandom = secureRandom,
     )
 
   override fun hashCode(): Int = Objects.hash("MutationRefImpl", super.hashCode())

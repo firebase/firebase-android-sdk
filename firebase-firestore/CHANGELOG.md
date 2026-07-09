@@ -1,5 +1,14 @@
 # Unreleased
 
+- [changed] Added support for caching documents larger than 1MB by reading them in chunks from the local SQLite database.
+- [changed] Prevent OutOfMemory errors in debug logging by truncating large protobuf payloads and strings.
+
+# 26.4.0
+
+- [feature] Added support for `minimum` and `maximum` FieldValue operations.
+
+# 26.3.0
+
 - [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.
 - [feature] Added support for Pipeline expressions `arraySlice`, `arraySliceToEnd`, `arrayFilter`, `arrayTransform` and `arrayTransformWithIndex`.
   [#7989](https://github.com/firebase/firebase-android-sdk/pull/7989)

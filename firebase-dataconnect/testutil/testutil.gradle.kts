@@ -67,6 +67,7 @@ dependencies {
   compileOnly(libs.commons.statistics.inference)
 
   implementation(libs.androidx.test.junit)
+  implementation(libs.grpc.api)
   implementation(libs.kotest.assertions)
   implementation(libs.kotest.property)
   implementation(libs.kotlin.coroutines.test)
@@ -77,6 +78,7 @@ dependencies {
   implementation(libs.robolectric)
   implementation(libs.testonly.three.ten.abp)
   implementation(libs.truth)
+  implementation(libs.turbine)
 
   testImplementation(libs.commons.statistics.inference)
 }

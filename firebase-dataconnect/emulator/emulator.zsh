@@ -101,6 +101,7 @@ parse_args() {
 run_command() {
   logn "Running command: "
   say_args "$@"
+  "$@"
 }
 
 print_podman_compose_status() {

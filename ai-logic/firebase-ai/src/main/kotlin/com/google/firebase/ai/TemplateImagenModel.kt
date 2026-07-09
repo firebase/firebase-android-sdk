@@ -36,7 +36,12 @@ import org.json.JSONObject
  *
  * See the documentation for a list of
  * [supported models](https://firebase.google.com/docs/ai-logic/models).
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
 @PublicPreviewAPI
 public class TemplateImagenModel
 internal constructor(
@@ -75,7 +80,12 @@ internal constructor(
    *
    * @param templateId The ID of server prompt template.
    * @param inputs the inputs needed to fill in the prompt
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated. Migrate your apps to use Gemini Image Models")
   public suspend fun generateImages(
     templateId: String,
     inputs: Map<String, Any>

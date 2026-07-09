@@ -17,7 +17,8 @@
 # This script replaces mock response files for Vertex AI unit tests with a fresh
 # clone of the shared repository of Vertex AI test data.
 
-RESPONSES_VERSION='v16.*' # The major version of mock responses to use
+RESPONSES_VERSION='v17.*' # The major version of mock responses to use
+BRANCH_NAME=${1:-main}
 REPO_NAME="vertexai-sdk-test-data"
 REPO_LINK="https://github.com/FirebaseExtended/$REPO_NAME.git"
 
@@ -25,7 +26,7 @@ set -x
 
 cd "$(dirname "$0")/src/test/resources" || exit
 rm -rf "$REPO_NAME"
-git clone "$REPO_LINK" --quiet || exit
+git clone "$REPO_LINK" --branch "$BRANCH_NAME" --quiet || exit
 cd "$REPO_NAME" || exit
 
 # Find and checkout latest tag matching major version

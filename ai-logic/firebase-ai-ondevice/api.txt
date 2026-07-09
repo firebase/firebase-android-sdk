@@ -1,54 +1,44 @@
 // Signature format: 3.0
 package com.google.firebase.ai.ondevice {
 
-  public abstract class DownloadStatus {
-    ctor public DownloadStatus();
+  @Deprecated public abstract class DownloadStatus {
+    ctor @Deprecated public DownloadStatus();
   }
 
-  public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.ondevice.DownloadStatus {
-    ctor public DownloadStatus.DownloadCompleted();
+  @Deprecated public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.ondevice.DownloadStatus {
+    ctor @Deprecated public DownloadStatus.DownloadCompleted();
   }
 
-  public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.ondevice.DownloadStatus {
-    method public com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException getException();
-    property public final com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException exception;
+  @Deprecated public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method @Deprecated public com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException getException();
+    property @Deprecated public final com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException exception;
   }
 
-  public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.ondevice.DownloadStatus {
-    method public long getTotalBytesDownloaded();
-    property public final long totalBytesDownloaded;
+  @Deprecated public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method @Deprecated public long getTotalBytesDownloaded();
+    property @Deprecated public final long totalBytesDownloaded;
   }
 
-  public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.ondevice.DownloadStatus {
-    method public long getBytesToDownload();
-    property public final long bytesToDownload;
+  @Deprecated public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method @Deprecated public long getBytesToDownload();
+    property @Deprecated public final long bytesToDownload;
   }
 
   public final class FirebaseAIOnDevice {
-    method public suspend Object? checkStatus(com.google.firebase.ai.ondevice.OnDeviceModelOption option, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.OnDeviceModelStatus>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.DownloadStatus> download(com.google.firebase.ai.ondevice.OnDeviceModelOption option);
+    method @Deprecated public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.OnDeviceModelStatus>);
+    method @Deprecated public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.DownloadStatus> download();
     field public static final com.google.firebase.ai.ondevice.FirebaseAIOnDevice INSTANCE;
   }
 
-  public final class OnDeviceModelOption {
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption.Companion Companion;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption PREVIEW;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption PREVIEW_FAST;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption STABLE;
+  @Deprecated public final class OnDeviceModelStatus {
+    field @Deprecated public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus AVAILABLE;
+    field @Deprecated public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADABLE;
+    field @Deprecated public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADING;
+    field @Deprecated public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus UNAVAILABLE;
   }
 
-  public static final class OnDeviceModelOption.Companion {
-  }
-
-  public final class OnDeviceModelStatus {
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus AVAILABLE;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus.Companion Companion;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADABLE;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADING;
-    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus UNAVAILABLE;
-  }
-
-  public static final class OnDeviceModelStatus.Companion {
+  @Deprecated public static final class OnDeviceModelStatus.Companion {
   }
 
 }

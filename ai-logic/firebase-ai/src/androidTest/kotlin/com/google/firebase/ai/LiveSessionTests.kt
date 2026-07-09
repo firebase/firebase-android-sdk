@@ -22,11 +22,9 @@ import android.media.MediaMetadataRetriever
 import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.ai.type.ActivityDetectionConfig
 import com.google.firebase.ai.type.AudioTranscriptionConfig
-import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FunctionDeclaration
 import com.google.firebase.ai.type.FunctionResponsePart
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.InlineData
-import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
@@ -36,8 +34,10 @@ import com.google.firebase.ai.type.RealtimeInputConfig
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SessionResumptionConfig
+import com.google.firebase.ai.type.SpeechConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.activityDetectionConfig
+import com.google.firebase.ai.type.Voice
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
 import com.google.firebase.ai.type.realtimeInputConfig
@@ -69,7 +69,7 @@ class LiveSessionTests {
     listOf(
       Tool.functionDeclarations(
         listOf(
-          com.google.firebase.ai.type.FunctionDeclaration(
+          FunctionDeclaration(
             name = "getLastName",
             description = "Gets the last name of a person.",
             parameters =
@@ -112,21 +112,6 @@ class LiveSessionTests {
       }
   }
 
-  private fun getLiveModel(
-    modelName: String,
-    config: LiveGenerationConfig? = null,
-    systemInstruction: Content? = null,
-    tools: List<Tool>? = null
-  ): LiveGenerativeModel {
-    val firebaseAI = FirebaseAI.getInstance(AIModels.app(), GenerativeBackend.googleAI())
-    return firebaseAI.liveModel(
-      modelName = modelName,
-      generationConfig = config,
-      systemInstruction = systemInstruction,
-      tools = tools
-    )
-  }
-
   fun resourceAsBytes(resource: Int): ByteArray {
     val context = ApplicationProvider.getApplicationContext<Context>()
     return context.resources.openRawResource(resource).use { it.readBytes() }
@@ -135,7 +120,7 @@ class LiveSessionTests {
   @Test
   fun testSendAudioRealtime_receiveAudioOutputTranscripts(): Unit = runBlocking {
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = generationConfig,
         systemInstruction = SystemInstructions.helloGoodbye
@@ -157,7 +142,7 @@ class LiveSessionTests {
   @Test
   fun testSendVideoRealtime_receiveAudioOutputTranscripts(): Unit = runBlocking {
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = generationConfig,
         systemInstruction = SystemInstructions.animalInVideo
@@ -213,7 +198,7 @@ class LiveSessionTests {
   @Test
   fun testRealtime_functionCalling(): Unit = runBlocking {
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = generationConfig,
         tools = tools,
@@ -259,7 +244,7 @@ class LiveSessionTests {
   @Ignore("This test fails because we do not implement setting turnComplete at all")
   fun testIncremental_works(): Unit = runBlocking {
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = generationConfig,
         systemInstruction = SystemInstructions.yesOrNo
@@ -279,7 +264,7 @@ class LiveSessionTests {
 
   @Test
   fun testResumption(): Unit = runBlocking {
-    val liveModel = getLiveModel(modelName = modelName, config = generationConfig)
+    val liveModel = AIModels.getGoogleLiveModel(modelName = modelName, config = generationConfig)
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
@@ -306,6 +291,26 @@ class LiveSessionTests {
     session.send("What is my favorite color?")
     val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
     text.toLowerCasePreservingASCIIRules() shouldContain "blue"
+  }
+
+  @Test
+  fun testRealtime_speechConfig(): Unit = runBlocking {
+    val config = liveGenerationConfig {
+      responseModality = ResponseModality.AUDIO
+      outputAudioTranscription = AudioTranscriptionConfig()
+      speechConfig = SpeechConfig(voice = Voice("Charon"), languageCode = "en-US")
+    }
+    for (liveModel in AIModels.getAllLiveModels(config = config)) {
+      val session = liveModel.connect()
+      try {
+        session.sendTextRealtime("Hello")
+        val text =
+          withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+        text.shouldNotBeNull()
+      } finally {
+        session.close()
+      }
+    }
   }
 
   private suspend fun LiveSession.collectNextAudioOutputTranscript(): String {

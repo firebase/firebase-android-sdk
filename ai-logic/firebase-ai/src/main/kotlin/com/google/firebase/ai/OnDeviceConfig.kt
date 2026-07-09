@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.PublicPreviewAPI
 
 /**
@@ -142,3 +143,90 @@ internal fun OnDeviceModelOption.toInterop():
       )
     else -> throw IllegalArgumentException("Unknown option")
   }
+
+/** Represents the current status of the on-device AI model. */
+@PublicPreviewAPI
+public class OnDeviceModelStatus private constructor(private val value: String) {
+  override fun toString(): String = value
+
+  override fun equals(other: Any?): Boolean = other is OnDeviceModelStatus && value == other.value
+
+  override fun hashCode(): Int = value.hashCode()
+
+  public companion object {
+    /** The on-device model is unavailable on the device. */
+    @JvmField public val UNAVAILABLE: OnDeviceModelStatus = OnDeviceModelStatus("UNAVAILABLE")
+
+    /** The on-device model is available for download. */
+    @JvmField public val DOWNLOADABLE: OnDeviceModelStatus = OnDeviceModelStatus("DOWNLOADABLE")
+
+    /** The on-device model is currently being downloaded. */
+    @JvmField public val DOWNLOADING: OnDeviceModelStatus = OnDeviceModelStatus("DOWNLOADING")
+
+    /** The on-device model is available and ready for use. */
+    @JvmField public val AVAILABLE: OnDeviceModelStatus = OnDeviceModelStatus("AVAILABLE")
+
+    internal fun fromInterop(
+      status: com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
+    ): OnDeviceModelStatus =
+      when (status) {
+        com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop.UNAVAILABLE ->
+          UNAVAILABLE
+        com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop.DOWNLOADABLE ->
+          DOWNLOADABLE
+        com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop.DOWNLOADING ->
+          DOWNLOADING
+        com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop.AVAILABLE -> AVAILABLE
+        else -> UNAVAILABLE
+      }
+  }
+}
+
+/** An abstract class representing the status of an on-device model download operation. */
+@PublicPreviewAPI
+public abstract class DownloadStatus {
+  /** Represents when a download has just started. */
+  public class DownloadStarted(public val bytesToDownload: Long) : DownloadStatus() {
+    override fun equals(other: Any?): Boolean =
+      other is DownloadStarted && bytesToDownload == other.bytesToDownload
+    override fun hashCode(): Int = bytesToDownload.hashCode()
+  }
+
+  /** Represents when a download is actively in progress. */
+  public class DownloadInProgress(public val totalBytesDownloaded: Long) : DownloadStatus() {
+    override fun equals(other: Any?): Boolean =
+      other is DownloadInProgress && totalBytesDownloaded == other.totalBytesDownloaded
+    override fun hashCode(): Int = totalBytesDownloaded.hashCode()
+  }
+
+  /** Represents when a download has failed. */
+  public class DownloadFailed(public val exception: FirebaseAIException) : DownloadStatus() {
+    override fun equals(other: Any?): Boolean =
+      other is DownloadFailed && exception == other.exception
+    override fun hashCode(): Int = exception.hashCode()
+  }
+
+  /** Represents when a download has successfully completed. */
+  public class DownloadCompleted : DownloadStatus() {
+    override fun equals(other: Any?): Boolean = other is DownloadCompleted
+    override fun hashCode(): Int = javaClass.hashCode()
+  }
+
+  internal companion object {
+    internal fun fromInterop(
+      status: com.google.firebase.ai.ondevice.interop.DownloadStatusInterop
+    ): DownloadStatus =
+      when (status) {
+        is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadStarted ->
+          DownloadStarted(status.bytesToDownload)
+        is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadInProgress ->
+          DownloadInProgress(status.totalBytesDownloaded)
+        is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadCompleted ->
+          DownloadCompleted()
+        is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadFailed ->
+          DownloadFailed(FirebaseAIException.from(status.exception))
+        else ->
+          DownloadFailed(FirebaseAIException.from(IllegalStateException("Unknown download status")))
+      }
+  }
+}
