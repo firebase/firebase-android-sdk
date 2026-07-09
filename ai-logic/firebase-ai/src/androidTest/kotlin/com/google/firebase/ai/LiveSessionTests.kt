@@ -20,27 +20,27 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import androidx.test.core.app.ApplicationProvider
+import com.google.firebase.ai.type.ActivityDetectionConfig
 import com.google.firebase.ai.type.AudioTranscriptionConfig
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.InlineData
-import com.google.firebase.ai.type.LiveActivityDetection
 import com.google.firebase.ai.type.LiveGenerationConfig
-import com.google.firebase.ai.type.LiveRealtimeInputConfig
 import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.LiveSessionResumptionUpdate
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.RealtimeInputConfig
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.Tool
+import com.google.firebase.ai.type.activityDetectionConfig
 import com.google.firebase.ai.type.content
-import com.google.firebase.ai.type.liveActivityDetection
 import com.google.firebase.ai.type.liveGenerationConfig
-import com.google.firebase.ai.type.liveRealtimeInputConfig
+import com.google.firebase.ai.type.realtimeInputConfig
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -328,8 +328,8 @@ class LiveSessionTests {
     val config = liveGenerationConfig {
       responseModality = ResponseModality.AUDIO
       outputAudioTranscription = AudioTranscriptionConfig()
-      realtimeInputConfig = liveRealtimeInputConfig {
-        automaticActivityDetection = liveActivityDetection { disabled = true }
+      realtimeInputConfig = realtimeInputConfig {
+        automaticActivityDetection = ActivityDetectionConfig.disabled()
       }
     }
     val liveModel =
@@ -356,15 +356,14 @@ class LiveSessionTests {
     val config = liveGenerationConfig {
       responseModality = ResponseModality.AUDIO
       outputAudioTranscription = AudioTranscriptionConfig()
-      realtimeInputConfig = liveRealtimeInputConfig {
-        activityHandling = LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT
-        turnCoverage = LiveRealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
-        automaticActivityDetection = liveActivityDetection {
-          startSensitivity = LiveActivityDetection.Sensitivity.HIGH
-          endSensitivity = LiveActivityDetection.Sensitivity.LOW
+      realtimeInputConfig = realtimeInputConfig {
+        activityHandling = RealtimeInputConfig.ActivityHandling.NO_INTERRUPT
+        turnCoverage = RealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
+        automaticActivityDetection = activityDetectionConfig {
+          startSensitivity = ActivityDetectionConfig.Sensitivity.HIGH
+          endSensitivity = ActivityDetectionConfig.Sensitivity.LOW
           prefixPaddingMS = 100
           silenceDurationMS = 500
-          disabled = false
         }
       }
     }

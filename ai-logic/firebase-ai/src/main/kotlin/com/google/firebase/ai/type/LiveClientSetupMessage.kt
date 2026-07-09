@@ -38,7 +38,7 @@ internal class LiveClientSetupMessage(
   val outputAudioTranscription: AudioTranscriptionConfig.Internal?,
   val sessionResumption: SessionResumptionConfig.Internal?,
   val contextWindowCompression: ContextWindowCompressionConfig.Internal?,
-  val realtimeInputConfig: LiveRealtimeInputConfig.Internal?,
+  val realtimeInputConfig: RealtimeInputConfig.Internal?,
 ) {
   @Serializable
   internal class Internal(val setup: LiveClientSetup) {
@@ -55,7 +55,7 @@ internal class LiveClientSetupMessage(
       @SerialName("context_window_compression")
       val contextWindowCompression: ContextWindowCompressionConfig.Internal? = null,
       @SerialName("realtime_input_config")
-      val realtimeInputConfig: LiveRealtimeInputConfig.Internal? = null,
+      val realtimeInputConfig: RealtimeInputConfig.Internal? = null,
     )
   }
 

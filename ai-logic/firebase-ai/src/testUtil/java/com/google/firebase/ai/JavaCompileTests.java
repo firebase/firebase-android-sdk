@@ -34,6 +34,7 @@ import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
 import com.google.firebase.ai.java.TemplateChatFutures;
 import com.google.firebase.ai.java.TemplateGenerativeModelFutures;
+import com.google.firebase.ai.type.ActivityDetectionConfig;
 import com.google.firebase.ai.type.AspectRatio;
 import com.google.firebase.ai.type.BlockReason;
 import com.google.firebase.ai.type.Candidate;
@@ -63,9 +64,7 @@ import com.google.firebase.ai.type.ImagenMaskReference;
 import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
 import com.google.firebase.ai.type.LatLng;
-import com.google.firebase.ai.type.LiveActivityDetection;
 import com.google.firebase.ai.type.LiveGenerationConfig;
-import com.google.firebase.ai.type.LiveRealtimeInputConfig;
 import com.google.firebase.ai.type.LiveServerContent;
 import com.google.firebase.ai.type.LiveServerMessage;
 import com.google.firebase.ai.type.LiveServerSetupComplete;
@@ -76,6 +75,7 @@ import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.Part;
 import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.PublicPreviewAPI;
+import com.google.firebase.ai.type.RealtimeInputConfig;
 import com.google.firebase.ai.type.ResponseModality;
 import com.google.firebase.ai.type.RetrievalConfig;
 import com.google.firebase.ai.type.SafetyRating;
@@ -186,14 +186,13 @@ public class JavaCompileTests {
         .setResponseModality(ResponseModality.AUDIO)
         .setSpeechConfig(new SpeechConfig(new Voice("AOEDE")))
         .setRealtimeInputConfig(
-            new LiveRealtimeInputConfig.Builder()
-                .setActivityHandling(LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT)
-                .setTurnCoverage(LiveRealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY)
+            new RealtimeInputConfig.Builder()
+                .setActivityHandling(RealtimeInputConfig.ActivityHandling.NO_INTERRUPT)
+                .setTurnCoverage(RealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY)
                 .setAutomaticActivityDetection(
-                    new LiveActivityDetection.Builder()
-                        .setDisabled(true)
-                        .setStartSensitivity(LiveActivityDetection.Sensitivity.HIGH)
-                        .setEndSensitivity(LiveActivityDetection.Sensitivity.LOW)
+                    new ActivityDetectionConfig.Builder()
+                        .setStartSensitivity(ActivityDetectionConfig.Sensitivity.HIGH)
+                        .setEndSensitivity(ActivityDetectionConfig.Sensitivity.LOW)
                         .setPrefixPaddingMS(100)
                         .setSilenceDurationMS(500)
                         .build())

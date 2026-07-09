@@ -36,7 +36,7 @@ import kotlinx.serialization.Serializable
  * automatic activity detection is disabled, the user must send activity signals manually.
  */
 @PublicPreviewAPI
-public class LiveActivityDetection
+public class ActivityDetectionConfig
 private constructor(
   internal val startSensitivity: Sensitivity?,
   internal val endSensitivity: Sensitivity?,
@@ -62,13 +62,12 @@ private constructor(
     }
   }
 
-  /** Builder for creating a [LiveActivityDetection]. */
+  /** Builder for creating an [ActivityDetectionConfig]. */
   public class Builder {
     @JvmField public var startSensitivity: Sensitivity? = null
     @JvmField public var endSensitivity: Sensitivity? = null
     @JvmField public var prefixPaddingMS: Int? = null
     @JvmField public var silenceDurationMS: Int? = null
-    @JvmField public var disabled: Boolean? = null
 
     public fun setStartSensitivity(sensitivity: Sensitivity): Builder = apply {
       this.startSensitivity = sensitivity
@@ -86,16 +85,14 @@ private constructor(
       this.silenceDurationMS = durationMs
     }
 
-    public fun setDisabled(disabled: Boolean): Builder = apply { this.disabled = disabled }
-
-    /** Create a new [LiveActivityDetection] with the attached arguments. */
-    public fun build(): LiveActivityDetection =
-      LiveActivityDetection(
+    /** Create a new [ActivityDetectionConfig] with the attached arguments. */
+    public fun build(): ActivityDetectionConfig =
+      ActivityDetectionConfig(
         startSensitivity,
         endSensitivity,
         prefixPaddingMS,
         silenceDurationMS,
-        disabled
+        null
       )
   }
 
@@ -120,15 +117,31 @@ private constructor(
   public companion object {
     /** Creates a new [Builder]. */
     @JvmStatic public fun builder(): Builder = Builder()
+
+    /**
+     * Disables automatic activity detection.
+     *
+     * When automatic activity detection is disabled, the user must send activity signals manually
+     * using [LiveSession.sendStartActivityRealtime] and [LiveSession.sendStopActivityRealtime].
+     */
+    @JvmStatic
+    public fun disabled(): ActivityDetectionConfig =
+      ActivityDetectionConfig(
+        startSensitivity = null,
+        endSensitivity = null,
+        prefixPaddingMS = null,
+        silenceDurationMS = null,
+        disabled = true
+      )
   }
 }
 
-/** Helper method to construct a [LiveActivityDetection] in a DSL-like manner. */
+/** Helper method to construct an [ActivityDetectionConfig] in a DSL-like manner. */
 @OptIn(PublicPreviewAPI::class)
-public fun liveActivityDetection(
-  init: LiveActivityDetection.Builder.() -> Unit
-): LiveActivityDetection {
-  val builder = LiveActivityDetection.builder()
+public fun activityDetectionConfig(
+  init: ActivityDetectionConfig.Builder.() -> Unit
+): ActivityDetectionConfig {
+  val builder = ActivityDetectionConfig.builder()
   builder.init()
   return builder.build()
 }

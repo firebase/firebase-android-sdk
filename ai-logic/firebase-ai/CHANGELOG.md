@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Added support for `LiveRealtimeInputConfig` and `LiveActivityDetection` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
+- [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
 
 - [feature] Added support for `ImageConfig` and `finishMessage`. (#8020)
 

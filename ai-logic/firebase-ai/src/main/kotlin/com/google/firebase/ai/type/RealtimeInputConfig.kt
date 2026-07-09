@@ -31,9 +31,9 @@ import kotlinx.serialization.Serializable
  * starting and ending of the activity.
  */
 @PublicPreviewAPI
-public class LiveRealtimeInputConfig
+public class RealtimeInputConfig
 private constructor(
-  internal val automaticActivityDetection: LiveActivityDetection?,
+  internal val automaticActivityDetection: ActivityDetectionConfig?,
   internal val activityHandling: ActivityHandling?,
   internal val turnCoverage: TurnCoverage?
 ) {
@@ -72,13 +72,13 @@ private constructor(
     }
   }
 
-  /** Builder for creating a [LiveRealtimeInputConfig]. */
+  /** Builder for creating a [RealtimeInputConfig]. */
   public class Builder {
-    @JvmField public var automaticActivityDetection: LiveActivityDetection? = null
+    @JvmField public var automaticActivityDetection: ActivityDetectionConfig? = null
     @JvmField public var activityHandling: ActivityHandling? = null
     @JvmField public var turnCoverage: TurnCoverage? = null
 
-    public fun setAutomaticActivityDetection(config: LiveActivityDetection): Builder = apply {
+    public fun setAutomaticActivityDetection(config: ActivityDetectionConfig): Builder = apply {
       this.automaticActivityDetection = config
     }
 
@@ -90,9 +90,9 @@ private constructor(
       this.turnCoverage = coverage
     }
 
-    /** Create a new [LiveRealtimeInputConfig] with the attached arguments. */
-    public fun build(): LiveRealtimeInputConfig =
-      LiveRealtimeInputConfig(automaticActivityDetection, activityHandling, turnCoverage)
+    /** Create a new [RealtimeInputConfig] with the attached arguments. */
+    public fun build(): RealtimeInputConfig =
+      RealtimeInputConfig(automaticActivityDetection, activityHandling, turnCoverage)
   }
 
   internal fun toInternal(): Internal =
@@ -105,7 +105,7 @@ private constructor(
   @Serializable
   internal data class Internal(
     @SerialName("automatic_activity_detection")
-    val automaticActivityDetection: LiveActivityDetection.Internal? = null,
+    val automaticActivityDetection: ActivityDetectionConfig.Internal? = null,
     @SerialName("activity_handling") val activityHandling: String? = null,
     @SerialName("turn_coverage") val turnCoverage: String? = null
   )
@@ -116,12 +116,10 @@ private constructor(
   }
 }
 
-/** Helper method to construct a [LiveRealtimeInputConfig] in a DSL-like manner. */
+/** Helper method to construct a [RealtimeInputConfig] in a DSL-like manner. */
 @OptIn(PublicPreviewAPI::class)
-public fun liveRealtimeInputConfig(
-  init: LiveRealtimeInputConfig.Builder.() -> Unit
-): LiveRealtimeInputConfig {
-  val builder = LiveRealtimeInputConfig.builder()
+public fun realtimeInputConfig(init: RealtimeInputConfig.Builder.() -> Unit): RealtimeInputConfig {
+  val builder = RealtimeInputConfig.builder()
   builder.init()
   return builder.build()
 }

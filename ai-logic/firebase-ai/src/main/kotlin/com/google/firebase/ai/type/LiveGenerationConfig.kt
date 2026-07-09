@@ -78,7 +78,7 @@ private constructor(
   internal val inputAudioTranscription: AudioTranscriptionConfig?,
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
   internal val contextWindowCompression: ContextWindowCompressionConfig?,
-  internal val realtimeInputConfig: LiveRealtimeInputConfig?,
+  internal val realtimeInputConfig: RealtimeInputConfig?,
 ) {
 
   /**
@@ -123,7 +123,7 @@ private constructor(
     @JvmField public var inputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var contextWindowCompression: ContextWindowCompressionConfig? = null
-    @JvmField public var realtimeInputConfig: LiveRealtimeInputConfig? = null
+    @JvmField public var realtimeInputConfig: RealtimeInputConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -159,7 +159,7 @@ private constructor(
         this.contextWindowCompression = config
       }
 
-    public fun setRealtimeInputConfig(config: LiveRealtimeInputConfig?): Builder = apply {
+    public fun setRealtimeInputConfig(config: RealtimeInputConfig?): Builder = apply {
       this.realtimeInputConfig = config
     }
 

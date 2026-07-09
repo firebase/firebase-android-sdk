@@ -23,14 +23,14 @@ import kotlinx.serialization.encodeToString
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
-internal class LiveRealtimeInputConfigTest {
+internal class RealtimeInputConfigTest {
 
   @Test
-  fun `Basic LiveRealtimeInputConfig`() {
-    val config = liveRealtimeInputConfig {
-      activityHandling = LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT
-      turnCoverage = LiveRealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
-      automaticActivityDetection = liveActivityDetection { disabled = true }
+  fun `Basic RealtimeInputConfig`() {
+    val config = realtimeInputConfig {
+      activityHandling = RealtimeInputConfig.ActivityHandling.NO_INTERRUPT
+      turnCoverage = RealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
+      automaticActivityDetection = ActivityDetectionConfig.disabled()
     }
 
     val expectedJson =
@@ -49,13 +49,12 @@ internal class LiveRealtimeInputConfigTest {
   }
 
   @Test
-  fun `LiveActivityDetection full config`() {
-    val detection = liveActivityDetection {
-      startSensitivity = LiveActivityDetection.Sensitivity.HIGH
-      endSensitivity = LiveActivityDetection.Sensitivity.LOW
+  fun `ActivityDetectionConfig full config`() {
+    val detection = activityDetectionConfig {
+      startSensitivity = ActivityDetectionConfig.Sensitivity.HIGH
+      endSensitivity = ActivityDetectionConfig.Sensitivity.LOW
       prefixPaddingMS = 100
       silenceDurationMS = 500
-      disabled = false
     }
 
     val expectedJson =
@@ -64,8 +63,7 @@ internal class LiveRealtimeInputConfigTest {
           "start_of_speech_sensitivity": "START_SENSITIVITY_HIGH",
           "end_of_speech_sensitivity": "END_SENSITIVITY_LOW",
           "prefix_padding_ms": 100,
-          "silence_duration_ms": 500,
-          "disabled": false
+          "silence_duration_ms": 500
       }
       """
         .trimIndent()
@@ -76,24 +74,24 @@ internal class LiveRealtimeInputConfigTest {
   @Test
   fun `DSL correctly delegates to Builder`() {
     val config =
-      LiveRealtimeInputConfig.builder()
-        .setActivityHandling(LiveRealtimeInputConfig.ActivityHandling.INTERRUPT)
+      RealtimeInputConfig.builder()
+        .setActivityHandling(RealtimeInputConfig.ActivityHandling.INTERRUPT)
         .build()
 
-    val configDsl = liveRealtimeInputConfig {
-      activityHandling = LiveRealtimeInputConfig.ActivityHandling.INTERRUPT
+    val configDsl = realtimeInputConfig {
+      activityHandling = RealtimeInputConfig.ActivityHandling.INTERRUPT
     }
 
     config.activityHandling?.shouldBeEqual(
-      configDsl.activityHandling as LiveRealtimeInputConfig.ActivityHandling
+      configDsl.activityHandling as RealtimeInputConfig.ActivityHandling
     )
   }
 
   @Test
-  fun `LiveClientSetupMessage includes LiveRealtimeInputConfig in serialization`() {
+  fun `LiveClientSetupMessage includes RealtimeInputConfig in serialization`() {
     val config = liveGenerationConfig {
-      realtimeInputConfig = liveRealtimeInputConfig {
-        activityHandling = LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT
+      realtimeInputConfig = realtimeInputConfig {
+        activityHandling = RealtimeInputConfig.ActivityHandling.NO_INTERRUPT
       }
     }
     val message =
