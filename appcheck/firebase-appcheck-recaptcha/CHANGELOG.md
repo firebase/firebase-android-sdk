@@ -1,5 +1,7 @@
 # Unreleased
 
+# 19.1.0
+
 - [changed] Added warning logs when failing to initialize the reCAPTCHA client or
   exchange attestation for a token (#8330)
 
