@@ -1,5 +1,9 @@
 # Unreleased
 
+- [changed] Realtime query subscriptions now retry connecting using an
+  exponential backoff strategy.
+  ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381))
+
 # 17.3.2
 
 - [fixed] Realtime query subscriptions now correctly throw an exception when
@@ -18,9 +22,6 @@
   (core vs. generated SDK) in request headers, matching the behavior of
   standard query executions.
   ([#8356](https://github.com/firebase/firebase-android-sdk/pull/8356))
-- [changed] Realtime query subscriptions now retry connecting using an
-  exponential backoff strategy.
-  ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381))
 
 # 17.3.1
 
