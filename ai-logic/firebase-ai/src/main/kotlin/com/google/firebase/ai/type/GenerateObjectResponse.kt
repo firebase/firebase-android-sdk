@@ -19,12 +19,6 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
-internal sealed interface ObjectSource<T : Any> {
-  data class FromSchema<T : Any>(val schema: JsonSchema<T>) : ObjectSource<T>
-
-  data class FromInstance<T : Any>(val instances: List<T>) : ObjectSource<T>
-}
-
 /**
  * A [GenerateContentResponse] augmented with class information.
  *
@@ -33,13 +27,23 @@ internal sealed interface ObjectSource<T : Any> {
 public class GenerateObjectResponse<T : Any>
 internal constructor(
   public val response: GenerateContentResponse,
-  internal val source: ObjectSource<T>
+  internal val schema: JsonSchema<T>?,
+  internal var instances: MutableList<T?>?
 ) {
 
   internal constructor(
     response: GenerateContentResponse,
     schema: JsonSchema<T>
-  ) : this(response, ObjectSource.FromSchema(schema))
+  ) : this(response, schema = schema, instances = null)
+
+  internal constructor(
+    response: GenerateContentResponse,
+    instances: List<T>
+  ) : this(
+    response,
+    schema = null,
+    instances = (instances as? MutableList<T?>) ?: instances.toMutableList()
+  )
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this
@@ -50,26 +54,31 @@ internal constructor(
    * @throws SerializationException if an error occurs during deserialization
    */
   @OptIn(InternalSerializationApi::class)
-  public fun getObject(candidateIndex: Int = 0): T? =
-    when (source) {
-      is ObjectSource.FromInstance -> source.instances.getOrNull(candidateIndex)
-      is ObjectSource.FromSchema -> {
-        val candidate = response.candidates.getOrNull(candidateIndex)
-        if (candidate == null) {
-          null
-        } else {
-          val deserializer = source.schema.getSerializer()
-          val text =
-            candidate.content.parts
-              .filter { !it.isThought }
-              .filterIsInstance<TextPart>()
-              .joinToString(" ") { it.text }
-          if (text.isEmpty()) {
-            null
-          } else {
-            Json.decodeFromString(deserializer, text) as T?
-          }
-        }
-      }
+  public fun getObject(candidateIndex: Int = 0): T? {
+    // 1. Fast Path / Cache Hit: Return immediately if already resolved or in memory
+    instances?.getOrNull(candidateIndex)?.let {
+      return it
     }
+
+    // 2. Cache Miss (Cloud response on first access): Deserialize using schema
+    if (schema == null) return null
+    val candidate = response.candidates.getOrNull(candidateIndex) ?: return null
+    val text =
+      candidate.content.parts
+        .filter { !it.isThought }
+        .filterIsInstance<TextPart>()
+        .joinToString(" ") { it.text }
+    if (text.isEmpty()) return null
+
+    val deserialized = Json.decodeFromString(schema.getSerializer(), text) as T?
+
+    // 3. Save to instances list for future accesses (lazy loading) and return
+    if (instances == null) {
+      instances = MutableList(response.candidates.size) { null }
+    }
+    if (candidateIndex < (instances?.size ?: 0)) {
+      instances?.set(candidateIndex, deserialized)
+    }
+    return deserialized
+  }
 }
