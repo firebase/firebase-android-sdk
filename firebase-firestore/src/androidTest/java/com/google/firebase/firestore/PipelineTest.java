@@ -105,6 +105,9 @@ import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
+import com.google.firebase.firestore.pipeline.WindowSpec;
+import com.google.firebase.firestore.pipeline.TimeGranularity;
+import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -4290,4 +4293,105 @@ public class PipelineTest {
     }
     return Collections.unmodifiableMap(res);
   }
+
+  @Test
+  public void testWindowFunctionsGroupAverage() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60)))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.overPartition("product"),
+                AggregateFunction.average("salesPrice").alias("productAveragePrice"),
+                AggregateFunction.countAll().alias("windowCount")
+            )
+            .sortBy(ascending("product"), ascending("salesPrice"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(4);
+    
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("productAveragePrice")).isEqualTo(21.0);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(2L);
+
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("productAveragePrice")).isEqualTo(21.0);
+    
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("productAveragePrice")).isEqualTo(45.0);
+  }
+
+  @Test
+  public void testWindowFunctionsDocumentMovingAverage() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60)))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.overDocuments(ascending("salesPrice"), 1, 1).overPartition("product"),
+                AggregateFunction.average("salesPrice").alias("movingAverage")
+            )
+            .sortBy(ascending("product"), ascending("salesPrice"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(4);
+
+    // Document moving average of preceding 1, following 1
+    // phone sorted salesPrice: 12, 30
+    // for phone 12 (preceding: none, self: 12, following: 30) -> avg = (12+30)/2 = 21.0
+    // for phone 30 (preceding: 12, self: 30, following: none) -> avg = (12+30)/2 = 21.0
+    assertThat(results.get(0).getData().get("movingAverage")).isEqualTo(21.0);
+    assertThat(results.get(1).getData().get("movingAverage")).isEqualTo(21.0);
+  }
+
+  @Test
+  public void testWindowFunctionsRange() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60)))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.overRange(ascending("salesPrice"), 30, WindowSpec.CURRENT).overPartition("product"),
+                AggregateFunction.sum("salesPrice").alias("runningSum")
+            )
+            .sortBy(ascending("product"), ascending("salesPrice"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(4);
+
+    // phone running sum with range 30 preceding to current
+    // phone sorted: 12, 30
+    // for phone 12: boundary value range: [-18, 12] -> matches 12 -> sum = 12
+    // for phone 30: boundary value range: [0, 30] -> matches 12, 30 -> sum = 42
+    assertThat(results.get(0).getData().get("runningSum")).isEqualTo(12L);
+    assertThat(results.get(1).getData().get("runningSum")).isEqualTo(42L);
+  }
 }
+

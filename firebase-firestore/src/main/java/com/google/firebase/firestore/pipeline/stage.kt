@@ -1736,3 +1736,58 @@ internal constructor(
     return result
   }
 }
+
+internal class AddWindowFieldsStage
+internal constructor(
+  private val window: FinalWindowSpec,
+  private val fields: Map<String, AggregateFunction>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<AddWindowFieldsStage>("add_window_fields", options) {
+
+  companion object {
+    @JvmStatic
+    fun withFields(
+      window: FinalWindowSpec,
+      field: AliasedAggregate,
+      vararg additionalFields: AliasedAggregate
+    ): AddWindowFieldsStage {
+      val fields =
+        additionalFields.fold(mapOf(field.alias to field.expr)) { acc, next ->
+          if (acc.containsKey(next.alias)) {
+            throw IllegalArgumentException("Duplicate alias: '${next.alias}'")
+          }
+          acc.plus(next.alias to next.expr)
+        }
+      return AddWindowFieldsStage(window, fields)
+    }
+  }
+
+  override fun self(options: InternalOptions) = AddWindowFieldsStage(window, fields, options)
+
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(
+      window.buildInternal(userDataReader),
+      encodeValue(fields.mapValues { entry -> entry.value.toProto(userDataReader) })
+    )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is AddWindowFieldsStage) return false
+    if (window != other.window) return false
+    if (fields != other.fields) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = window.hashCode()
+    result = 31 * result + fields.hashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+}
+

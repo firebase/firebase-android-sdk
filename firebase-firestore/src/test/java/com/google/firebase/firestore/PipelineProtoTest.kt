@@ -19,6 +19,9 @@ import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.SearchStage
+import com.google.firebase.firestore.pipeline.WindowSpec
+import com.google.firebase.firestore.pipeline.TimeGranularity
+import com.google.firebase.firestore.pipeline.AggregateFunction
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -102,4 +105,59 @@ class PipelineProtoTest {
     val addFields = options["add_fields"]!!
     assertThat(addFields.mapValue.fieldsMap["bar"]?.booleanValue).isTrue()
   }
+
+  @Test
+  fun testAddWindowFieldsProtoEncoding() {
+    val databaseId = DatabaseId.forDatabase("new-project", "(default)")
+    val firestore = FirebaseFirestoreIntegrationTestFactory(databaseId).firestore
+
+    val pipeline =
+      firestore
+        .pipeline()
+        .collection("foo")
+        .addWindowFields(
+          WindowSpec.overRange(field("date").ascending(), 30, WindowSpec.CURRENT)
+            .overPartition("department")
+            .withUnits(TimeGranularity.DAY),
+          AggregateFunction.rawAggregate("sum", field("sales")).alias("totalSales")
+        )
+
+    val request = pipeline.toExecutePipelineRequest(null)
+    val protoPipeline = request.structuredPipeline.pipeline
+    assertThat(protoPipeline.stagesCount).isEqualTo(2)
+
+    val windowStage = protoPipeline.getStages(1)
+    assertThat(windowStage.name).isEqualTo("add_window_fields")
+
+    val args = windowStage.argsList
+    assertThat(args.size).isEqualTo(2)
+
+    // Arg 0: WindowSpec
+    val windowSpec = args[0].mapValue.fieldsMap
+    
+    // Check group
+    val groupArray = windowSpec["group"]!!.arrayValue
+    assertThat(groupArray.getValues(0).fieldReferenceValue).isEqualTo("department")
+
+    // Check sort
+    val sortArray = windowSpec["sort"]!!.arrayValue
+    val sortEntry = sortArray.getValues(0).mapValue.fieldsMap
+    assertThat(sortEntry["direction"]!!.stringValue).isEqualTo("ascending")
+    assertThat(sortEntry["expression"]!!.fieldReferenceValue).isEqualTo("date")
+
+    // Check range frame
+    val rangeMap = windowSpec["range"]!!.mapValue.fieldsMap
+    assertThat(rangeMap["preceding"]!!.integerValue).isEqualTo(30L)
+    assertThat(rangeMap["following"]!!.stringValue).isEqualTo("current")
+
+    // Check unit
+    assertThat(windowSpec["unit"]!!.stringValue).isEqualTo("day")
+
+    // Arg 1: Accumulators
+    val fieldsMap = args[1].mapValue.fieldsMap
+    val totalSalesFunc = fieldsMap["totalSales"]!!.functionValue
+    assertThat(totalSalesFunc.name).isEqualTo("sum")
+    assertThat(totalSalesFunc.getArgs(0).fieldReferenceValue).isEqualTo("sales")
+  }
 }
+

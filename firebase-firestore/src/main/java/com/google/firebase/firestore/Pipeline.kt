@@ -24,6 +24,8 @@ import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
+import com.google.firebase.firestore.pipeline.AddWindowFieldsStage
+import com.google.firebase.firestore.pipeline.FinalWindowSpec
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateOptions
 import com.google.firebase.firestore.pipeline.AggregateStage
@@ -280,6 +282,21 @@ internal constructor(
    */
   fun addFields(field: Selectable, vararg additionalFields: Selectable): Pipeline =
     append(AddFieldsStage(arrayOf(field, *additionalFields)))
+
+  /**
+   * Adds window function results to the output documents of the pipeline.
+   *
+   * @param window The specification defining how documents are partitioned, ordered, and bounded.
+   * @param field The first window field to add, specified as an [AliasedAggregate].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addWindowFields(
+    window: FinalWindowSpec,
+    field: AliasedAggregate,
+    vararg additionalFields: AliasedAggregate
+  ): Pipeline = append(AddWindowFieldsStage.withFields(window, field, *additionalFields))
+
 
   /**
    * Remove fields from outputs of previous stages.
