@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.14.0
+
 - [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
 - [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
 

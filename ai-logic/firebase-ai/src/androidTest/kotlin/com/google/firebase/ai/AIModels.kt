@@ -32,10 +32,10 @@ public class AIModels {
     public var app: FirebaseApp? = null
 
     public val vertexAIFlashModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash")
+      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.5-flash")
     }
     public val vertexAIFlashLiteModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.vertexAI(), "gemini-2.5-flash-lite")
+      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.1-flash-lite")
     }
     public val vertexAI3_5FlashModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.5-flash")
@@ -44,7 +44,7 @@ public class AIModels {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.1-flash-lite")
     }
     public val googleAIFlashLiteModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-2.5-flash-lite")
+      getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.1-flash-lite")
     }
     public val googleAI3_5FlashModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.5-flash")
@@ -70,7 +70,7 @@ public class AIModels {
 
     public fun getGenerativeModel(
       backend: GenerativeBackend,
-      modelName: String = "gemini-2.5-flash",
+      modelName: String = "gemini-3.5-flash",
       config: GenerationConfig? = null
     ): GenerativeModel {
       return FirebaseAI.getInstance(app(), backend)
@@ -78,11 +78,11 @@ public class AIModels {
     }
 
     public fun getGenerativeModels(
-      modelName: String = "gemini-2.5-flash",
+      modelName: String = "gemini-3.5-flash",
       config: GenerationConfig? = null
     ): List<GenerativeModel> {
       return listOf(
-        getGenerativeModel(GenerativeBackend.vertexAI(), modelName, config),
+        getGenerativeModel(GenerativeBackend.vertexAI("global"), modelName, config),
         getGenerativeModel(GenerativeBackend.googleAI(), modelName, config),
       )
     }
