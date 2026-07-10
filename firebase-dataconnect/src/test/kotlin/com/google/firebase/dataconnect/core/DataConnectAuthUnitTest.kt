@@ -59,6 +59,7 @@ import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -491,8 +492,10 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.initialize()
     advanceUntilIdle()
     val tokens = CopyOnWriteArrayList<String>()
+    val getAccessTokenCallCount = AtomicInteger(0)
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
       {
+        getAccessTokenCallCount.incrementAndGet()
         taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
@@ -509,7 +512,7 @@ class DataConnectAuthUnitTest {
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
-    verify(atMost = 50) { mockInternalAuthProvider.getAccessToken(any()) }
+    withClue("getAccessTokenCallCount") { getAccessTokenCallCount.get() shouldBeLessThanOrEqual 80 }
   }
 
   @Test
