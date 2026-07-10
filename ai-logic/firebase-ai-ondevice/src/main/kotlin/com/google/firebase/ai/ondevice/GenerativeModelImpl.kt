@@ -55,19 +55,19 @@ internal class GenerativeModelImpl(
 
   override suspend fun <T : Any> generateObject(
     request: GenerateContentRequest,
-    shadowClass: kotlin.reflect.KClass<T>
+    schemaClass: kotlin.reflect.KClass<T>
   ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<T> =
     try {
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Calling ML Kit generateTypedContentRequest")
-      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${shadowClass.qualifiedName}")
-      val companionClassName = "${shadowClass.java.name}_MlKitCompanion"
+      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${schemaClass.qualifiedName}")
+      val companionClassName = "${schemaClass.java.name}_MlKitCompanion"
       val targetClass =
         try {
           Class.forName(companionClassName).kotlin
         } catch (e: Exception) {
-          if (shadowClass.java.name.endsWith("_MlKitCompanion")) {
-            shadowClass
+          if (schemaClass.java.name.endsWith("_MlKitCompanion")) {
+            schemaClass
           } else {
             throw IllegalArgumentException(
               "Shadow class $companionClassName not found for structured output. Ensure KSP processor is running and generated the MlKit companion class.",
