@@ -1,0 +1,99 @@
+Now I'll gather the necessary evidence to provide a comprehensive overview.Now let me look at the build configuration and key directories:Now I have enough information to provide a comprehensive overview.
+
+## What this is
+
+Firebase Android SDK is Google's official open-source Android library that brings Firebase's backend services to Android apps. It provides SDKs for Firestore, Realtime Database, Cloud Storage, Cloud Messaging, Crashlytics, Performance Monitoring, and 15+ other Firebase products—excluding Firebase Authentication and Analytics, which are maintained separately.
+
+### Stack
+- **Language(s):** Java and Kotlin
+- **Framework / runtime:** Android SDK (API 23+), Gradle (Kotlin DSL), Android Studio
+- **Notable libraries:** Firebase Components (dependency injection), Protobuf & Protocol Lite, Guava, Gson, Arrow Android (Kotlin support), Google Cloud protocol buffers
+
+## How it's organized
+
+```
+firebase-android-sdk/
+  firebase-common/              Shared SDK infrastructure, annotations (@Keep, @KeepForSdk, @PublicApi)
+  firebase-components/          Dependency injection & component registry
+  firebase-annotations/         Custom annotations for SDK tooling
+  
+  firebase-firestore/           Cloud Firestore (NoSQL database)
+  firebase-database/            Realtime Database
+  firebase-storage/             Cloud Storage
+  firebase-functions/           Callable Cloud Functions
+  firebase-messaging/           Cloud Messaging (FCM)
+  firebase-dynamic-links/       Dynamic links
+  
+  firebase-crashlytics/         Crash reporting
+  firebase-crashlytics-gradle/  Gradle plugin for Crashlytics
+  firebase-crashlytics-ndk/     Native crash capture (NDK)
+  
+  firebase-perf/                Performance Monitoring
+  firebase-perf-gradle/         Gradle plugin for instrumentation
+  firebase-config/              Remote Config
+  firebase-sessions/            Session tracking
+  firebase-abt/                 A/B Testing
+  firebase-installations/       Installation ID service
+  firebase-inappmessaging/      In-App Messaging
+  firebase-ml-modeldownloader/  ML Model Downloader
+  firebase-appdistribution/     App Distribution
+  firebase-dataconnect/         DataConnect
+  firebase-vertexai/            Vertex AI integration
+  
+  ai-logic/                     AI logic modules & KSP processor for code generation
+  encoders/                     Serialization/deserialization framework
+  transport/                    Transport layer for telemetry (CCT backend)
+  
+  plugins/                      Custom Gradle plugins (Firebase library plugin, CI, publishing)
+  ci/                           CI/CD tooling (Python fireci CLI)
+  gradle/                       Gradle configuration & version catalog
+  integ-testing/                Integration test utilities
+  tools/                        Lint tools and utilities
+  contributor-docs/             Developer onboarding & architectural docs
+```
+
+**How it fits together:** Each Firebase product has its own module (e.g., `firebase-firestore`) that depends on `firebase-common` for shared utilities and `firebase-components` for initialization. The `transport/` layer handles background telemetry delivery via the CCT protocol. Custom Gradle plugins in `plugins/` manage compilation, testing, proguard rules, and publishing. The `encoders/` framework provides serialization throughout the SDK. CI is orchestrated via Python (`ci/fireci/`) for test coordination across JVM unit tests and Firebase Test Lab device tests.
+
+## How to run it
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules git@github.com:firebase/firebase-android-sdk.git
+cd firebase-android-sdk
+
+# Import into Android Studio (Meerkat 2024.3.1+)
+# Use Import Project (Gradle) option
+
+# Run unit tests on a single module
+./gradlew :firebase-firestore:check
+
+# Run integration tests on emulator
+./gradlew :firebase-firestore:connectedCheck
+
+# Run on Firebase Test Lab
+./gradlew :firebase-firestore:deviceCheck
+
+# Publish a module locally for integration testing
+./gradlew -PprojectsToPublish="firebase-firestore,firebase-functions" \
+    publishReleasingLibrariesToMavenLocal
+
+# Format code
+./gradlew :firebase-firestore:spotlessApply
+```
+
+**Prerequisites:** NDK 21 for `firebase-crashlytics-ndk`; `google-services.json` for integration tests (add to repo root).
+
+## Try asking
+
+- What are the differences between firebase-database and firebase-firestore, and when should I use each?
+- How does the dependency injection system in firebase-components work, and which services are auto-initialized?
+- What does the encoders framework do and how are custom serialization rules applied across modules?I see you've shared the Firebase Android SDK repository URL. What would you like to know about it? Here are some things I can help with:
+
+- **Code exploration** — Find specific files, classes, or functionality
+- **Understanding architecture** — How modules interact, dependency patterns, build system
+- **Debugging issues** — Trace errors, analyze test failures, investigate build problems
+- **Making changes** — Create branches, modify files, push commits
+- **Pull requests** — Review PRs, summarize changes, check CI status
+- **Documentation** — Understand how features work, contributing guidelines
+
+What's your task?
