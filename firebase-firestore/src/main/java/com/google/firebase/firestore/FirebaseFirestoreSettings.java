@@ -34,6 +34,7 @@ public final class FirebaseFirestoreSettings {
 
   static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
   static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+  public static final int DEFAULT_GRPC_FLOW_CONTROL_WINDOW = 256 * 1024; // 256KB
 
   /** A Builder for creating {@code FirebaseFirestoreSettings}. */
   public static final class Builder {
@@ -43,6 +44,7 @@ public final class FirebaseFirestoreSettings {
 
     private long cacheSizeBytes;
     private LocalCacheSettings cacheSettings;
+    private int grpcFlowControlWindow;
 
     private boolean usedLegacyCacheSettings = false;
 
@@ -52,6 +54,7 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = true;
       persistenceEnabled = true;
       cacheSizeBytes = DEFAULT_CACHE_SIZE_BYTES;
+      grpcFlowControlWindow = DEFAULT_GRPC_FLOW_CONTROL_WINDOW;
     }
 
     /**
@@ -64,6 +67,7 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
+      grpcFlowControlWindow = settings.grpcFlowControlWindow;
       if (!persistenceEnabled || cacheSizeBytes != DEFAULT_CACHE_SIZE_BYTES) {
         usedLegacyCacheSettings = true;
       }
@@ -214,6 +218,26 @@ public final class FirebaseFirestoreSettings {
       return cacheSizeBytes;
     }
 
+    /**
+     * Sets the gRPC flow control window size.
+     *
+     * @param size The flow control window size in bytes. Must be non-negative.
+     * @return A settings object with the gRPC flow control window size set.
+     */
+    @NonNull
+    public Builder setGrpcFlowControlWindow(int size) {
+      if (size < 0) {
+        throw new IllegalArgumentException("flow control window size must be non-negative");
+      }
+      this.grpcFlowControlWindow = size;
+      return this;
+    }
+
+    /** @return the gRPC flow control window size. */
+    public int getGrpcFlowControlWindow() {
+      return grpcFlowControlWindow;
+    }
+
     @NonNull
     public FirebaseFirestoreSettings build() {
       if (!this.sslEnabled && this.host.equals(DEFAULT_HOST)) {
@@ -228,6 +252,7 @@ public final class FirebaseFirestoreSettings {
   private final boolean sslEnabled;
   private final boolean persistenceEnabled;
   private final long cacheSizeBytes;
+  private final int grpcFlowControlWindow;
 
   private LocalCacheSettings cacheSettings;
 
@@ -238,6 +263,7 @@ public final class FirebaseFirestoreSettings {
     persistenceEnabled = builder.persistenceEnabled;
     cacheSizeBytes = builder.cacheSizeBytes;
     cacheSettings = builder.cacheSettings;
+    grpcFlowControlWindow = builder.grpcFlowControlWindow;
   }
 
   @Override
@@ -250,6 +276,7 @@ public final class FirebaseFirestoreSettings {
     if (sslEnabled != that.sslEnabled) return false;
     if (persistenceEnabled != that.persistenceEnabled) return false;
     if (cacheSizeBytes != that.cacheSizeBytes) return false;
+    if (grpcFlowControlWindow != that.grpcFlowControlWindow) return false;
     if (!host.equals(that.host)) return false;
     return Objects.equals(cacheSettings, that.cacheSettings);
   }
@@ -260,6 +287,7 @@ public final class FirebaseFirestoreSettings {
     result = 31 * result + (sslEnabled ? 1 : 0);
     result = 31 * result + (persistenceEnabled ? 1 : 0);
     result = 31 * result + (int) (cacheSizeBytes ^ (cacheSizeBytes >>> 32));
+    result = 31 * result + grpcFlowControlWindow;
     result = 31 * result + (cacheSettings != null ? cacheSettings.hashCode() : 0);
     return result;
   }
@@ -268,19 +296,24 @@ public final class FirebaseFirestoreSettings {
   @NonNull
   public String toString() {
     return "FirebaseFirestoreSettings{"
-                + "host="
-                + host
-                + ", sslEnabled="
-                + sslEnabled
-                + ", persistenceEnabled="
-                + persistenceEnabled
-                + ", cacheSizeBytes="
-                + cacheSizeBytes
-                + ", cacheSettings="
-                + cacheSettings
-            == null
-        ? "null"
-        : cacheSettings.toString() + "}";
+        + "host="
+        + host
+        + ", sslEnabled="
+        + sslEnabled
+        + ", persistenceEnabled="
+        + persistenceEnabled
+        + ", cacheSizeBytes="
+        + cacheSizeBytes
+        + ", grpcFlowControlWindow="
+        + grpcFlowControlWindow
+        + ", cacheSettings="
+        + (cacheSettings == null ? "null" : cacheSettings.toString())
+        + "}";
+  }
+
+  /** Returns the gRPC flow control window size. */
+  public int getGrpcFlowControlWindow() {
+    return grpcFlowControlWindow;
   }
 
   /** Returns the host of the Cloud Firestore backend. */
