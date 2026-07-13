@@ -35,9 +35,19 @@ class MyServiceA : Service() {
       "CRASH" -> crash()
       "KILL" -> kill()
       "SESSION" -> session()
+      "OOM" -> oom()
     }
 
     return START_STICKY
+  }
+
+  private fun oom() {
+    val map = mutableMapOf<Int, ByteArray>()
+    var i = 0
+    while (true) {
+      // Allocate 10MB per iteration
+      map[i++] = ByteArray(1024 * 1024 * 10)
+    }
   }
 
   private fun ping() {

@@ -43,6 +43,14 @@ class SecondActivity : BaseActivity() {
     findViewById<Button>(R.id.second_crash_button).setOnClickListener {
       throw IllegalStateException("SecondActivity has crashed")
     }
+    findViewById<Button>(R.id.button_oom_java).setOnClickListener {
+      val map = mutableMapOf<Int, ByteArray>()
+      var i = 0
+      while (true) {
+        // Allocate 10MB per iteration
+        map[i++] = ByteArray(1024 * 1024 * 10)
+      }
+    }
     findViewById<Button>(R.id.second_create_trace).setOnClickListener {
       lifecycleScope.launch {
         val performanceTrace = FirebasePerformance.getInstance().newTrace("test_trace")

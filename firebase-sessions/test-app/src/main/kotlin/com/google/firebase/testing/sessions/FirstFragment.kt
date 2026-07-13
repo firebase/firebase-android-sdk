@@ -74,6 +74,14 @@ class FirstFragment : Fragment() {
         Thread.sleep(1_000)
       }
     }
+    binding.buttonOomJavaFragment.setOnClickListener {
+      val map = mutableMapOf<Int, ByteArray>()
+      var i = 0
+      while (true) {
+        // Allocate 10MB per iteration
+        map[i++] = ByteArray(1024 * 1024 * 10)
+      }
+    }
     binding.createTrace.setOnClickListener {
       lifecycleScope.launch(Dispatchers.IO) {
         val performanceTrace = performance.newTrace("test_trace")

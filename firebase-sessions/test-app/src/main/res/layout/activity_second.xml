@@ -39,6 +39,11 @@
     app:layout_constraintLeft_toLeftOf="parent" />
 
   <Button
+      android:id="@+id/button_oom_java"
+      android:layout_width="129dp"
+      android:layout_height="wrap_content"
+      android:text=" OOM (Java)" />
+  <Button
       android:id="@+id/second_create_trace"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"

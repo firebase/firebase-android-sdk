@@ -32,6 +32,7 @@ class MyServiceB : Service() {
       "PING" -> ping()
       "CRASH" -> crash()
       "KILL" -> kill()
+      "OOM" -> oom()
     }
 
     return START_STICKY
@@ -50,6 +51,15 @@ class MyServiceB : Service() {
   private fun kill() {
     Log.i(TAG, "killing process $myProcessName")
     exitProcess(0)
+  }
+
+  private fun oom() {
+    val map = mutableMapOf<Int, ByteArray>()
+    var i = 0
+    while (true) {
+      // Allocate 10MB per iteration
+      map[i++] = ByteArray(1024 * 1024 * 10)
+    }
   }
 
   override fun onBind(intent: Intent?): IBinder? = null

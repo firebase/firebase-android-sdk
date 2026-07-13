@@ -14,11 +14,12 @@
   ~ limitations under the License.
   -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent">
-  <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <LinearLayout
+      android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     tools:context=".FirstFragment">
@@ -127,6 +128,11 @@
             android:hint="@string/session_id_label"
             android:text="@string/no_session_text"/>
     </LinearLayout>
+    <Button
+        android:id="@+id/button_oom_java_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OOM (Java)" />
 
   </LinearLayout>
 </ScrollView>
