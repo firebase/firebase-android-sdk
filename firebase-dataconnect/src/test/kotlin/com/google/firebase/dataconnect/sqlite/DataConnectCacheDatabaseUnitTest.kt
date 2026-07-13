@@ -80,6 +80,7 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -131,6 +132,13 @@ class DataConnectCacheDatabaseUnitTest {
     if (lazyDataConnectCacheDatabase.isInitialized()) {
       runBlocking { lazyDataConnectCacheDatabase.value.close() }
     }
+  }
+
+  @After
+  fun clearAllMocksAfterwards() {
+    // Workaround OOM errors where mockk keeps references into roboelectric for method arguments.
+    // These strong references prevent the entire classloader from being GC'd.
+    clearAllMocks()
   }
 
   @Before
