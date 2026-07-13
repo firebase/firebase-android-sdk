@@ -16,7 +16,9 @@
 package com.google.firebase.dataconnect.testutil
 
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class Cleanups : AutoCloseable {
 
@@ -61,7 +63,25 @@ class Cleanups : AutoCloseable {
 
   override fun close() {
     val cleanups = transitionToClosing()
+    runBlocking { close(cleanups) }
+  }
 
+  suspend fun suspendingClose() {
+    val cleanups = transitionToClosing()
+    close(cleanups)
+  }
+
+  private suspend fun close(cleanups: List<Cleanup>) {
+    val doCloseResult = runCatching { doClose(cleanups) }
+
+    if (!state.compareAndSet(State.Closing, State.Closed)) {
+      error("internal error pnf3zhderx: transition to closed state failed")
+    }
+
+    doCloseResult.getOrThrow()
+  }
+
+  private suspend fun doClose(cleanups: List<Cleanup>) {
     var firstException: Throwable? = null
 
     cleanups.asReversed().forEach { cleanup ->
@@ -75,10 +95,6 @@ class Cleanups : AutoCloseable {
           firstException.addSuppressed(exception)
         }
       }
-    }
-
-    if (!state.compareAndSet(State.Closing, State.Closed)) {
-      error("internal error pnf3zhderx: transition to closed state failed")
     }
 
     if (firstException != null) {
@@ -101,19 +117,19 @@ class Cleanups : AutoCloseable {
 
   interface Cleanup {
     val name: String?
-    fun cleanup()
+    suspend fun cleanup()
   }
 
   private class SynchronousCleanup(override val name: String?, val action: () -> Unit) : Cleanup {
-    override fun cleanup() {
+    override suspend fun cleanup() {
       action()
     }
   }
 
   private class SuspendingCleanup(override val name: String?, val action: suspend () -> Unit) :
     Cleanup {
-    override fun cleanup() {
-      runBlocking { action() }
+    override suspend fun cleanup() {
+      action()
     }
   }
 
@@ -132,6 +148,59 @@ class Cleanups : AutoCloseable {
 
     object Closed : State {
       override fun toString() = "Closed"
+    }
+  }
+}
+
+interface CleanupsScope {
+
+  fun registerCleanup(autoCloseable: AutoCloseable)
+
+  fun registerCleanup(cleanup: () -> Unit)
+
+  fun registerCleanup(name: String?, cleanup: () -> Unit)
+
+  fun registerSuspendingCleanup(cleanup: suspend () -> Unit)
+
+  fun registerSuspendingCleanup(name: String?, cleanup: suspend () -> Unit)
+}
+
+private class CleanupsScopeImpl : CleanupsScope {
+
+  val cleanups = Cleanups()
+
+  override fun registerCleanup(autoCloseable: AutoCloseable): Unit =
+    cleanups.register(autoCloseable)
+
+  override fun registerCleanup(cleanup: () -> Unit): Unit = cleanups.register(cleanup)
+
+  override fun registerCleanup(name: String?, cleanup: () -> Unit): Unit =
+    cleanups.register(name, cleanup)
+
+  override fun registerSuspendingCleanup(cleanup: suspend () -> Unit): Unit =
+    cleanups.registerSuspending(cleanup)
+
+  override fun registerSuspendingCleanup(name: String?, cleanup: suspend () -> Unit): Unit =
+    cleanups.registerSuspending(name, cleanup)
+}
+
+suspend fun <T> cleanupsScope(block: suspend CleanupsScope.() -> T): T {
+  val scope = CleanupsScopeImpl()
+  var blockException: Throwable? = null
+  try {
+    return block(scope)
+  } catch (e: Throwable) {
+    blockException = e
+    throw e
+  } finally {
+    try {
+      withContext(NonCancellable) { scope.cleanups.suspendingClose() }
+    } catch (cleanupException: Throwable) {
+      if (blockException != null) {
+        blockException.addSuppressed(cleanupException)
+      } else {
+        throw cleanupException
+      }
     }
   }
 }

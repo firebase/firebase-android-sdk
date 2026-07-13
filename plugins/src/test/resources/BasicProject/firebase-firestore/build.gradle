@@ -12,5 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-include ":firebase-storage"
-include ":firebase-firestore"
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    releaseNotes {
+        name.set("{{firebase_firestore_full}}")
+        versionName.set("storage")
+        nestedHeader.set(true)
+    }
+}
+
+android{
+    namespace 'com.example.firebase.storage'
+    compileSdkVersion 26
+}

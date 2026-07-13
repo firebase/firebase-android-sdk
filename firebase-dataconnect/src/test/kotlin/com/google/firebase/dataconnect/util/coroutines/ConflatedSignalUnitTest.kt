@@ -325,4 +325,35 @@ class ConflatedSignalUnitTest {
       cancelAndIgnoreRemainingEvents()
     }
   }
+
+  @Test
+  fun `clear() discards pending signal and causes subsequent await to suspend`() = runTest {
+    val signal = ConflatedSignal<Unit>()
+    signal.signal()
+    signal.clear()
+
+    val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
+    job.isCompleted shouldBe false
+  }
+
+  @Test
+  fun `clear() updates hasPendingSignal and pendingSignal`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.clear()
+
+    signal.hasPendingSignal shouldBe false
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `clear() clears pending signal in signals flow`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.clear()
+
+    val job =
+      backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.signals.collect {} }
+    job.isCompleted shouldBe false
+  }
 }

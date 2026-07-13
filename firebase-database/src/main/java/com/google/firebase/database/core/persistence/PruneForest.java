@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * <p>Internally we store this as a single tree of booleans with the following characteristics: *
  * 'true' indicates a location that can be pruned, possibly with some excluded descendants. *
- * 'false' indicates a location that we should keep (i.e. exclude from pruning). * 'true' (prune)
+ * 'false' indicates a location that we should keep (that is, exclude from pruning). * 'true' (prune)
  * cannot be a descendant of 'false' (keep). This will trigger an exception. * 'true' cannot be a
  * descendant of 'true' (we'll just keep the more shallow 'true'). * 'false' cannot be a descendant
  * of 'false' (we'll just keep the more shallow 'false').

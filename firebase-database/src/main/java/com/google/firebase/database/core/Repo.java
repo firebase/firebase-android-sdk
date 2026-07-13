@@ -104,7 +104,7 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   /**
-   * Defers any initialization that is potentially expensive (e.g. disk access) and must be run on
+   * Defers any initialization that is potentially expensive (for example, disk access) and must be run on
    * the run loop
    */
   private void deferredInitialization() {

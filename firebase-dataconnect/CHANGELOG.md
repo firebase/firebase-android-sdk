@@ -1,5 +1,11 @@
 # Unreleased
 
+- [changed] Realtime query subscriptions now retry connecting using an
+  exponential backoff strategy.
+  ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381))
+
+# 17.3.2
+
 - [fixed] Realtime query subscriptions now correctly throw an exception when
   the Firebase Auth user changes, instead of silently stopping emitting.
   ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))

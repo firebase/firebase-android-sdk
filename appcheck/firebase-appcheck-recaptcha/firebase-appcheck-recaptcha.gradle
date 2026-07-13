@@ -19,9 +19,10 @@ plugins {
 firebaseLibrary {
     libraryGroup = "appcheck"
     releaseNotes {
-        name.set("{{app_check}} Recaptcha")
+        name.set("{{app_check}} reCAPTCHA")
         versionName.set("appcheck-recaptcha")
         enabled.set(true)
+        nestedHeader.set(true)
     }
 }
 

@@ -105,10 +105,11 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     }
 
     val versionClassifier = version.replace(".", "-")
+    val header = if (config.nestedHeader.getOrElse(false)) "####" else "###"
 
     val releaseNotes =
       """
-        |### ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
+        |${header} ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
         |
         |${unreleased.content.toReleaseNotes()}
       """
