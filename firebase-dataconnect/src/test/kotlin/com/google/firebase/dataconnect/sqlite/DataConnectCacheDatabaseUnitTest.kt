@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
-import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.Quadruple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.MIN_NONZERO_DURATION
@@ -85,7 +84,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
-import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
 import java.math.BigInteger
@@ -115,8 +113,6 @@ class DataConnectCacheDatabaseUnitTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-
-  @get:Rule val cleanups = CleanupsRule()
 
   private val lazyDataConnectCacheDatabase = lazy {
     val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
@@ -199,35 +195,7 @@ class DataConnectCacheDatabaseUnitTest {
 
   @Test
   fun `initialize() should re-throw exception from migrate() and close SQLiteDatabase`() = runTest {
-    mockkObject(DataConnectCacheDatabaseMigrator)
-    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
-    class TestMigrateException : Exception()
-    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
-
-    shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
-
-    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
-    verify(exactly = 1) {
-      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
-    }
-    sqliteDatabaseSlot.captured.isOpen shouldBe false
-  }
-
-  @Test
-  fun `initialize() should ignore exception closing SQLiteDatabase if migrate() throws`() =
-    runTest {
-      mockkObject(DataConnectSQLiteDatabaseOpener)
-      cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
-      class TestCloseException : Exception()
-      every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
-        {
-          val db = callOriginal()
-          val dbSpy = spyk(db)
-          every { dbSpy.close() } throws TestCloseException()
-          dbSpy
-        }
-      mockkObject(DataConnectCacheDatabaseMigrator)
-      cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    mockkObject(DataConnectCacheDatabaseMigrator) {
       class TestMigrateException : Exception()
       every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
 
@@ -237,50 +205,79 @@ class DataConnectCacheDatabaseUnitTest {
       verify(exactly = 1) {
         DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
       }
-      verify(exactly = 1) { sqliteDatabaseSlot.captured.close() }
+      sqliteDatabaseSlot.captured.isOpen shouldBe false
+    }
+  }
+
+  @Test
+  fun `initialize() should ignore exception closing SQLiteDatabase if migrate() throws`() =
+    runTest {
+      mockkObject(DataConnectSQLiteDatabaseOpener) {
+        class TestCloseException : Exception()
+        every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+          {
+            val db = callOriginal()
+            val dbSpy = spyk(db)
+            every { dbSpy.close() } throws TestCloseException()
+            dbSpy
+          }
+        mockkObject(DataConnectCacheDatabaseMigrator) {
+          class TestMigrateException : Exception()
+          every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws
+            TestMigrateException()
+
+          shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
+
+          val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+          verify(exactly = 1) {
+            DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+          }
+          verify(exactly = 1) { sqliteDatabaseSlot.captured.close() }
+        }
+      }
     }
 
   @Test
   fun `initialize() should run to completion if open() is interrupted by close()`() = runTest {
-    mockkObject(DataConnectSQLiteDatabaseOpener)
-    cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
-    val sqliteDatabaseRef = MutableStateFlow<SQLiteDatabase?>(null)
-    val closeJob = MutableStateFlow<Job?>(null)
-    every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
-      {
-        closeJob.value = launch { dataConnectCacheDatabase.close() }
-        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
-        val sqliteDatabase = callOriginal()
-        sqliteDatabaseRef.value = sqliteDatabase
-        sqliteDatabase
-      }
+    mockkObject(DataConnectSQLiteDatabaseOpener) {
+      val sqliteDatabaseRef = MutableStateFlow<SQLiteDatabase?>(null)
+      val closeJob = MutableStateFlow<Job?>(null)
+      every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+        {
+          closeJob.value = launch { dataConnectCacheDatabase.close() }
+          @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+          val sqliteDatabase = callOriginal()
+          sqliteDatabaseRef.value = sqliteDatabase
+          sqliteDatabase
+        }
 
-    dataConnectCacheDatabase.initialize() // should not throw
+      dataConnectCacheDatabase.initialize() // should not throw
 
-    closeJob.value.shouldNotBeNull().join()
-    sqliteDatabaseRef.value.shouldNotBeNull().isOpen shouldBe false
+      closeJob.value.shouldNotBeNull().join()
+      sqliteDatabaseRef.value.shouldNotBeNull().isOpen shouldBe false
+    }
   }
 
   @Test
   fun `initialize() should run to completion if migrate() is interrupted by close()`() = runTest {
-    mockkObject(DataConnectCacheDatabaseMigrator)
-    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
-    val closeJob = MutableStateFlow<Job?>(null)
-    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } answers
-      {
-        closeJob.value = launch { dataConnectCacheDatabase.close() }
-        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
-        callOriginal()
+    mockkObject(DataConnectCacheDatabaseMigrator) {
+      val closeJob = MutableStateFlow<Job?>(null)
+      every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } answers
+        {
+          closeJob.value = launch { dataConnectCacheDatabase.close() }
+          @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+          callOriginal()
+        }
+
+      dataConnectCacheDatabase.initialize() // should not throw
+
+      val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+      verify(exactly = 1) {
+        DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
       }
-
-    dataConnectCacheDatabase.initialize() // should not throw
-
-    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
-    verify(exactly = 1) {
-      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+      closeJob.value.shouldNotBeNull().join()
+      sqliteDatabaseSlot.captured.isOpen shouldBe false
     }
-    closeJob.value.shouldNotBeNull().join()
-    sqliteDatabaseSlot.captured.isOpen shouldBe false
   }
 
   @Test
