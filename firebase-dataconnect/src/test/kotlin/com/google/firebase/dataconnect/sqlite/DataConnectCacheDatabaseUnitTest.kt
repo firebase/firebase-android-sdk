@@ -48,6 +48,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.throwCombinedException
 import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
@@ -124,17 +125,18 @@ class DataConnectCacheDatabaseUnitTest {
     lazyDataConnectCacheDatabase::value
 
   @After
-  fun closeLazyDataConnectCacheDatabase() {
-    if (lazyDataConnectCacheDatabase.isInitialized()) {
-      runBlocking { lazyDataConnectCacheDatabase.value.close() }
-    }
-  }
+  fun closeLazyDataConnectCacheDatabaseAndClearAllMocks() {
+    throwCombinedException {
+      runCatching {
+        if (lazyDataConnectCacheDatabase.isInitialized()) {
+          runBlocking { lazyDataConnectCacheDatabase.value.close() }
+        }
+      }
 
-  @After
-  fun clearAllMocksAfterwards() {
-    // Workaround OOM errors where mockk keeps references into roboelectric for method arguments.
-    // These strong references prevent the entire classloader from being GC'd.
-    clearAllMocks()
+      // Workaround OOM errors where mockk keeps references into roboelectric for method arguments.
+      // These strong references prevent the entire classloader from being GC'd.
+      runCatching { clearAllMocks() }
+    }
   }
 
   @Before
