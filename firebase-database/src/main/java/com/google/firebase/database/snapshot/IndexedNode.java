@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * Represents a node together with an index. The index and node are updated in unison. In the case
- * where the index does not affect the ordering (i.e. the ordering is identical to the key ordering)
+ * where the index does not affect the ordering (that is, the ordering is identical to the key ordering)
  * this class uses a fallback index to save memory. Everything operating on the index must special
  * case the fallback index.
  */

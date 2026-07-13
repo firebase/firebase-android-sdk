@@ -752,7 +752,7 @@ internal class DataConnectGrpcRPCs(
 
         // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
         // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-        // failsafe.
+        // failsafe. Googlers see go/firestore-android-sdk-keepalive for details.
         it.keepAliveTime(30, TimeUnit.SECONDS)
 
         it.executor(executor)

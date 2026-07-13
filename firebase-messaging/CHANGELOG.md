@@ -1,5 +1,9 @@
 # Unreleased
 
+# 25.1.1
+
+- [changed] Fixed re-registration invocation with FID change (#8338)
+
 # 25.1.0
 
 - [feature] Added support for FCM registration using Firebase Installation ID (#8087)

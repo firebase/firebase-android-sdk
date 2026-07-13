@@ -27,12 +27,14 @@ import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSeq
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.sqlite.hydratedStructWithMutatedEntityValuesFrom
-import com.google.firebase.dataconnect.testutil.Cleanups
+import com.google.firebase.dataconnect.testutil.CleanupsScope
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
+import com.google.firebase.dataconnect.testutil.cleanupsScope
+import com.google.firebase.dataconnect.testutil.loopbackAddressForPort
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -102,12 +104,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.random.Random
 import kotlin.time.Duration
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -119,7 +122,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
-open class DataConnectGrpcRPCsUnitTest {
+class DataConnectGrpcRPCsUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
@@ -152,19 +155,19 @@ open class DataConnectGrpcRPCsUnitTest {
         fetchPolicy1Arb,
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb().orNull(nullProbability = 0.2),
+        cacheArb(testScheduler).orNull(nullProbability = 0.2),
       ) { (sample1, sample2), fetchPolicy1, authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
 
           val response1 = sample1.hydratedStruct.toExecuteQueryResponse()
           val response2 = sample2.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
+          registerCleanup(server)
 
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+          registerCleanup(dataConnectGrpcRPCs)
 
           val request = operationNameVariablesPairArb.bind()
 
@@ -207,10 +210,10 @@ open class DataConnectGrpcRPCsUnitTest {
       fetchPoliciesArb,
       Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-      cacheArb(),
+      cacheArb(testScheduler),
     ) { (fetchPolicy1, fetchPolicy2), authToken, appCheckToken, cache ->
-      Cleanups().use { cleanups ->
-        cleanups.register(cache)
+      cleanupsScope {
+        registerCleanup(cache)
         val (sample1, sample2) =
           QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
             .pair()
@@ -218,9 +221,9 @@ open class DataConnectGrpcRPCsUnitTest {
         val (request1, request2) = operationNameVariablesPairArb.distinctPair().bind()
 
         val server = startServer()
-        cleanups.register(server)
-        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
-        cleanups.register(dataConnectGrpcRPCs)
+        registerCleanup(server)
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+        registerCleanup(dataConnectGrpcRPCs)
 
         server.nextResponse = sample1.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
@@ -265,14 +268,14 @@ open class DataConnectGrpcRPCsUnitTest {
       propTestConfig,
       Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-      cacheArb(),
+      cacheArb(testScheduler),
     ) { authToken, appCheckToken, cache ->
-      Cleanups().use { cleanups ->
-        cleanups.register(cache)
+      cleanupsScope {
+        registerCleanup(cache)
         val server = startServer()
-        cleanups.register(server)
-        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
-        cleanups.register(dataConnectGrpcRPCs)
+        registerCleanup(server)
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+        registerCleanup(dataConnectGrpcRPCs)
         val request = operationNameVariablesPairArb.bind()
 
         val exception =
@@ -306,11 +309,11 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
       ) { authToken, appCheckToken ->
-        Cleanups().use { cleanups ->
+        cleanupsScope {
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = null)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = null)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           val exception =
@@ -352,16 +355,16 @@ open class DataConnectGrpcRPCsUnitTest {
         fetchPoliciesArb,
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(),
+        cacheArb(testScheduler),
       ) { sample, (fetchPolicy1, fetchPolicy2), authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val server = startServer()
-          cleanups.register(server)
+          registerCleanup(server)
           val response = sample.hydratedStruct.toExecuteQueryResponse()
           server.nextResponse = response
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           val result1 =
@@ -410,19 +413,19 @@ open class DataConnectGrpcRPCsUnitTest {
         fetchPoliciesArb,
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(),
+        cacheArb(testScheduler),
       ) { (fetchPolicy1, fetchPolicy2, fetchPolicy3, fetchPolicy4), authToken, appCheckToken, cache
         ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val server = startServer()
-          cleanups.register(server)
+          registerCleanup(server)
           val queryResultArb =
             QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
           val sample1 = queryResultArb.bind()
           val sample2 = queryResultArb.bind()
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val distinctExecuteQueryRequestArb = operationNameVariablesPairArb.distinct()
           val request1 = distinctExecuteQueryRequestArb.bind()
           val request2 = distinctExecuteQueryRequestArb.bind()
@@ -490,13 +493,13 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
       ) { sample, fetchPolicy, authToken, appCheckToken ->
-        Cleanups().use { cleanups ->
+        cleanupsScope {
           val response = sample.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = null)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = null)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response
@@ -525,16 +528,16 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE),
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(),
+        cacheArb(testScheduler),
       ) { sample, fetchPolicy, authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val response = sample.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response
@@ -564,17 +567,17 @@ open class DataConnectGrpcRPCsUnitTest {
         QueryResultArb(entityCountRange = 0..2).pair(),
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(),
+        cacheArb(testScheduler),
       ) { (sample1, sample2), authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val response1 = sample1.hydratedStruct.toExecuteQueryResponse()
           val response2 = sample2.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response1
@@ -622,16 +625,16 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.of(FetchPolicy.CACHE_ONLY, FetchPolicy.PREFER_CACHE),
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(),
+        cacheArb(testScheduler),
       ) { sample, fetchPolicy, authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val response = sample.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response
@@ -671,16 +674,16 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE),
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(maxAge = Arb.constant(Duration.ZERO)), // always stale
+        cacheArb(testScheduler, maxAge = Arb.constant(Duration.ZERO)), // always stale
       ) { sample, fetchPolicy1, authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val response = sample.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response
@@ -727,16 +730,16 @@ open class DataConnectGrpcRPCsUnitTest {
         Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE),
         Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
         Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
-        cacheArb(maxAge = Arb.constant(Duration.ZERO)), // always stale
+        cacheArb(testScheduler, maxAge = Arb.constant(Duration.ZERO)), // always stale
       ) { sample, fetchPolicy1, authToken, appCheckToken, cache ->
-        Cleanups().use { cleanups ->
-          cleanups.register(cache)
+        cleanupsScope {
+          registerCleanup(cache)
           val response = sample.hydratedStruct.toExecuteQueryResponse()
 
           val server = startServer()
-          cleanups.register(server)
-          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache = cache)
-          cleanups.register(dataConnectGrpcRPCs)
+          registerCleanup(server)
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = cache)
+          registerCleanup(dataConnectGrpcRPCs)
           val request = operationNameVariablesPairArb.bind()
 
           server.nextResponse = response
@@ -769,15 +772,15 @@ open class DataConnectGrpcRPCsUnitTest {
 
   @Test
   fun `connect() lazily sends init request on subscribe`() = runTest {
-    checkAll(propTestConfig, cacheArb().orNull(nullProbability = 0.2)) { cache ->
-      Cleanups().use { cleanups ->
-        cleanups.register(cache)
+    checkAll(propTestConfig, cacheArb(testScheduler).orNull(nullProbability = 0.2)) { cache ->
+      cleanupsScope {
+        registerCleanup(cache)
 
         val server = InProcessDataConnectGrpcStreamingServer()
-        cleanups.register(server)
+        registerCleanup(server)
         server.open()
-        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server, cache)
-        cleanups.register(dataConnectGrpcRPCs)
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+        registerCleanup(dataConnectGrpcRPCs)
         val callerSdkType = Arb.enum<CallerSdkType>().bind()
 
         server.events.test {
@@ -797,7 +800,7 @@ open class DataConnectGrpcRPCsUnitTest {
             backgroundScope.launch(CallerSdkTypeElement(callerSdkType)) {
               subscriptionFlow.collect()
             }
-          cleanups.registerSuspending { backgroundCollectJob.cancelAndJoin() }
+          registerSuspendingCleanup { backgroundCollectJob.cancelAndJoin() }
           val streamRequest: StreamRequest = awaitUntilInitStreamRequest().streamRequest
 
           withClue("streamRequest=${streamRequest.print().value}") {
@@ -872,7 +875,7 @@ open class DataConnectGrpcRPCsUnitTest {
   private fun startServer(): StartServerResult {
     val connectorServiceImpl = ConnectorServiceImpl()
     val grpcServer =
-      OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
+      OkHttpServerBuilder.forPort(loopbackAddressForPort(0), InsecureServerCredentials.create())
         .addService(connectorServiceImpl)
         .build()
 
@@ -897,36 +900,44 @@ open class DataConnectGrpcRPCsUnitTest {
   }
 
   private fun PropertyContext.newDataConnectGrpcRPCs(
+    testScheduler: TestCoroutineScheduler,
     server: StartServerResult,
     cache: DataConnectCache?
-  ): DataConnectGrpcRPCs = newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port, cache)
+  ): DataConnectGrpcRPCs =
+    newDataConnectGrpcRPCsForLocalhostServerOnPort(testScheduler, server.port, cache)
 
   private fun PropertyContext.newDataConnectGrpcRPCs(
+    testScheduler: TestCoroutineScheduler,
     server: InProcessDataConnectGrpcStreamingServer,
     cache: DataConnectCache?
-  ): DataConnectGrpcRPCs = newDataConnectGrpcRPCsForLocalhostServerOnPort(server.port, cache)
+  ): DataConnectGrpcRPCs =
+    newDataConnectGrpcRPCsForLocalhostServerOnPort(testScheduler, server.port, cache)
 
   private fun PropertyContext.newDataConnectGrpcRPCsForLocalhostServerOnPort(
+    testScheduler: TestCoroutineScheduler,
     port: Int,
     cache: DataConnectCache?
-  ): DataConnectGrpcRPCs =
-    DataConnectGrpcRPCs(
+  ): DataConnectGrpcRPCs {
+    val dispatcher = StandardTestDispatcher(testScheduler)
+    return DataConnectGrpcRPCs(
       context = RuntimeEnvironment.getApplication(),
-      host = "localhost:$port",
+      host = "127.0.0.1:$port",
       sslEnabled = false,
       connectorResourceName = connectorResourceNameArb.bind(),
-      nonBlockingCoroutineDispatcher = Dispatchers.Default,
-      blockingCoroutineDispatcher = Dispatchers.IO,
+      nonBlockingCoroutineDispatcher = dispatcher,
+      blockingCoroutineDispatcher = dispatcher,
       grpcMetadata = grpcMetadataArb.bind(),
       cache = cache,
       parentLogger = mockLogger,
     )
+  }
 
   private fun cacheArb(
+    testScheduler: TestCoroutineScheduler,
     maxAge: Arb<Duration> =
       Arb.dataConnect.maxAge(min = oneHourDuration).map { it.toKotlinDuration() }
   ): Arb<DataConnectCache> = arbitrary {
-    DataConnectCache(newDbFile(), maxAge = maxAge.bind(), Dispatchers.Default, mockLogger)
+    DataConnectCache(newDbFile(), maxAge.bind(), StandardTestDispatcher(testScheduler), mockLogger)
   }
 }
 
@@ -999,8 +1010,11 @@ private fun listValueFromPath(path: DataConnectPath): ListValueProto {
 private fun <T> T.sequenced(): SequencedReference<T> =
   SequencedReference(nextSequenceNumber(), this)
 
-private fun Cleanups.register(cache: DataConnectCache?) = registerSuspending { cache?.close() }
-
-private fun Cleanups.register(dataConnectGrpcRPCs: DataConnectGrpcRPCs) = registerSuspending {
-  dataConnectGrpcRPCs.close()
+private fun CleanupsScope.registerCleanup(cache: DataConnectCache?) = registerSuspendingCleanup {
+  cache?.close()
 }
+
+private fun CleanupsScope.registerCleanup(dataConnectGrpcRPCs: DataConnectGrpcRPCs) =
+  registerSuspendingCleanup {
+    dataConnectGrpcRPCs.close()
+  }
