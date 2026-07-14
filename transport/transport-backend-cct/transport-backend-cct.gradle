@@ -45,11 +45,14 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionName version
         consumerProguardFiles 'proguard.txt'
     }
+    testOptions {
+        targetSdk project.targetSdkVersion
+    }
+
     compileOptions {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
