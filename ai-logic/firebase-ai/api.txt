@@ -217,8 +217,6 @@ package com.google.firebase.ai {
     method @Deprecated public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
-}
-
 package com.google.firebase.ai.annotations {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Generable {

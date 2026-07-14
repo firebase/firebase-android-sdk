@@ -71,7 +71,10 @@ android {
 }
 
 kotlin {
-  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
   explicitApi()
 }
 
@@ -84,6 +87,7 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
+  api(libs.genai.structured.output) { exclude(group = "org.jetbrains.kotlin") }
   api("com.google.firebase:firebase-appcheck:19.2.0")
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)

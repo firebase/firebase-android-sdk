@@ -16,8 +16,8 @@
 
 package com.google.firebase.testing.processor
 
-import com.google.firebase.ai.annotations.Generable
-import com.google.firebase.ai.annotations.Guide
+import com.google.mlkit.genai.structuredoutput.annotations.Generable
+import com.google.mlkit.genai.structuredoutput.annotations.Guide
 
 /**
  * A test kdoc

@@ -121,6 +121,8 @@ firebase-annotations = { module = "com.google.firebase:firebase-annotations", ve
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
 genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiPrompt" }
+genai-schema = { module = "com.google.mlkit:genai-schema", version = "1.0.0-alpha1" }
+genai-structured-output = { module = "com.google.mlkit:genai-structured-output", version = "1.0.0-alpha1" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-dexmaker = { module = "com.google.dexmaker:dexmaker", version.ref = "dexmakerVersion" }
