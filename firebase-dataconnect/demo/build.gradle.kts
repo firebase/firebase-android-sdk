@@ -241,7 +241,12 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
         execSpec.environment("DATACONNECT_EMULATOR_BINARY_PATH", it.absolutePath)
       }
 
-      dataConnectPreviewFlags?.let { execSpec.environment("DATA_CONNECT_PREVIEW", it) }
+      dataConnectPreviewFlags?.let { 
+        // Set both environment variables to support both old and new emulator versions.
+        // The variable was renamed to SQL_CONNECT_PREVIEW in cl/944678266 (July 2026).
+        execSpec.environment("DATA_CONNECT_PREVIEW", it)
+        execSpec.environment("SQL_CONNECT_PREVIEW", it)
+      }
     }
   }
 }
