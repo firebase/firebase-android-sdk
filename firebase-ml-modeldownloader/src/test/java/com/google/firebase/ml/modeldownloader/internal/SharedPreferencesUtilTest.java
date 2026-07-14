@@ -27,6 +27,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import java.util.Set;
+import kotlin.Unit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,9 +123,12 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
-    sharedPreferencesUtil.clearDownloadingModelDetails(
-        sharedPreferencesUtil.getSharedPreferences().edit(),
-        CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+    sharedPreferencesUtil.dataStore.editSync(
+        prefs -> {
+          sharedPreferencesUtil.clearDownloadingModelDetails(
+              prefs, CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+          return Unit.INSTANCE;
+        });
     retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }

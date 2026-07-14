@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Internal fixes.
+
 # 26.0.2
 
 - [changed] Bumped internal dependencies.

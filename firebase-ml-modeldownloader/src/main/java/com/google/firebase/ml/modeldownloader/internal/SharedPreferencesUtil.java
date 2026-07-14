@@ -15,15 +15,17 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.datastore.preferences.core.MutablePreferences;
+import androidx.datastore.preferences.core.Preferences;
+import androidx.datastore.preferences.core.PreferencesKeys;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.datastorage.JavaDataStorage;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,12 +64,69 @@ public class SharedPreferencesUtil {
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
   private final CustomModel.Factory modelFactory;
+  @VisibleForTesting final JavaDataStorage dataStore;
 
   @Inject
   public SharedPreferencesUtil(FirebaseApp firebaseApp, CustomModel.Factory modelFactory) {
     this.firebaseApp = firebaseApp;
     this.persistenceKey = firebaseApp.getPersistenceKey();
     this.modelFactory = modelFactory;
+    this.dataStore =
+        new JavaDataStorage(firebaseApp.getApplicationContext(), PREFERENCES_PACKAGE_NAME);
+  }
+
+  @VisibleForTesting
+  public SharedPreferencesUtil(
+      FirebaseApp firebaseApp, CustomModel.Factory modelFactory, JavaDataStorage dataStore) {
+    this.firebaseApp = firebaseApp;
+    this.persistenceKey = firebaseApp.getPersistenceKey();
+    this.modelFactory = modelFactory;
+    this.dataStore = dataStore;
+  }
+
+  private Preferences.Key<String> localModelHashKey(String modelName) {
+    return PreferencesKeys.stringKey(
+        String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<String> localModelFilePathKey(String modelName) {
+    return PreferencesKeys.stringKey(
+        String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Long> localModelFileSizeKey(String modelName) {
+    return PreferencesKeys.longKey(
+        String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<String> downloadingModelHashKey(String modelName) {
+    return PreferencesKeys.stringKey(
+        String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Long> downloadingModelSizeKey(String modelName) {
+    return PreferencesKeys.longKey(
+        String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Long> downloadingModelIdKey(String modelName) {
+    return PreferencesKeys.longKey(
+        String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Long> downloadBeginTimeMsKey(String modelName) {
+    return PreferencesKeys.longKey(
+        String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Long> downloadingCompleteTimeMsKey(String modelName) {
+    return PreferencesKeys.longKey(
+        String.format(DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, modelName));
+  }
+
+  private Preferences.Key<Boolean> eventLoggingEnabledKey() {
+    return PreferencesKeys.booleanKey(
+        String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey));
   }
 
   /**
@@ -82,28 +141,20 @@ public class SharedPreferencesUtil {
    * @return current version of the Custom Model
    */
   @Nullable
-  public synchronized CustomModel getCustomModelDetails(@NonNull String modelName) {
-    String modelHash =
-        getSharedPreferences()
-            .getString(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName), null);
+  public CustomModel getCustomModelDetails(@NonNull String modelName) {
+    String modelHash = dataStore.getSync(localModelHashKey(modelName), null);
 
     if (modelHash == null || modelHash.isEmpty()) {
       // no model downloaded - check if model is being downloaded.
       return getDownloadingCustomModelDetails(modelName);
     }
 
-    String filePath =
-        getSharedPreferences()
-            .getString(String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName), "");
+    String filePath = dataStore.getSync(localModelFilePathKey(modelName), "");
 
-    long fileSize =
-        getSharedPreferences()
-            .getLong(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName), 0);
+    long fileSize = dataStore.getSync(localModelFileSizeKey(modelName), 0L);
 
     // if no-zero - local model is present and new model being downloaded
-    long id =
-        getSharedPreferences()
-            .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
+    long id = dataStore.getSync(downloadingModelIdKey(modelName), 0L);
 
     return modelFactory.create(modelName, modelHash, fileSize, id, filePath);
   }
@@ -117,24 +168,17 @@ public class SharedPreferencesUtil {
    * @return Download version of CustomModel
    */
   @Nullable
-  public synchronized CustomModel getDownloadingCustomModelDetails(@NonNull String modelName) {
-    String modelHash =
-        getSharedPreferences()
-            .getString(
-                String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName), null);
+  public CustomModel getDownloadingCustomModelDetails(@NonNull String modelName) {
+    String modelHash = dataStore.getSync(downloadingModelHashKey(modelName), null);
 
     if (modelHash == null || modelHash.isEmpty()) {
       // no model hash means no download in progress
       return null;
     }
 
-    long fileSize =
-        getSharedPreferences()
-            .getLong(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName), 0);
+    long fileSize = dataStore.getSync(downloadingModelSizeKey(modelName), 0L);
 
-    long id =
-        getSharedPreferences()
-            .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
+    long id = dataStore.getSync(downloadingModelIdKey(modelName), 0L);
 
     return modelFactory.create(modelName, modelHash, fileSize, id);
   }
@@ -144,24 +188,21 @@ public class SharedPreferencesUtil {
    *
    * @param customModel custom model details to be stored.
    */
-  public synchronized void setDownloadingCustomModelDetails(@NonNull CustomModel customModel) {
+  public void setDownloadingCustomModelDetails(@NonNull CustomModel customModel) {
     String modelName = customModel.getName();
     String modelHash = customModel.getModelHash();
     long downloadId = customModel.getDownloadId();
     long modelSize = customModel.getSize();
-    getSharedPreferences()
-        .edit()
-        .putString(
-            String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName), modelHash)
-        .putLong(
-            String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName), modelSize)
-        .putLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), downloadId)
-        // The following assumes the download will finish before the system reboots.
-        // If not, the download duration won't be correct, which isn't critical.
-        .putLong(
-            String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName),
-            SystemClock.elapsedRealtime())
-        .commit();
+    dataStore.editSync(
+        preferences -> {
+          preferences.set(downloadingModelHashKey(modelName), modelHash);
+          preferences.set(downloadingModelSizeKey(modelName), modelSize);
+          preferences.set(downloadingModelIdKey(modelName), downloadId);
+          // The following assumes the download will finish before the system reboots.
+          // If not, the download duration won't be correct, which isn't critical.
+          preferences.set(downloadBeginTimeMsKey(modelName), SystemClock.elapsedRealtime());
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -170,26 +211,26 @@ public class SharedPreferencesUtil {
    *
    * @param customModel custom model details to be stored.
    */
-  public synchronized void setLoadedCustomModelDetails(@NonNull CustomModel customModel)
+  public void setLoadedCustomModelDetails(@NonNull CustomModel customModel)
       throws IllegalArgumentException {
     Long id = customModel.getDownloadId();
     // only call when download is completed and download id is reset to 0;
     if (!id.equals(0L)) {
       throw new IllegalArgumentException("Only call when Custom model has completed download.");
     }
-    Editor editor = getSharedPreferences().edit();
-    clearDownloadingModelDetails(editor, customModel.getName());
+    dataStore.editSync(
+        preferences -> {
+          clearDownloadingModelDetails(preferences, customModel.getName());
 
-    String modelName = customModel.getName();
-    String hash = customModel.getModelHash();
-    long size = customModel.getSize();
-    String filePath = customModel.getLocalFilePath();
-    editor
-        .putString(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName), hash)
-        .putLong(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName), size)
-        .putString(
-            String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName), filePath)
-        .commit();
+          String modelName = customModel.getName();
+          String hash = customModel.getModelHash();
+          long size = customModel.getSize();
+          String filePath = customModel.getLocalFilePath();
+          preferences.set(localModelHashKey(modelName), hash);
+          preferences.set(localModelFileSizeKey(modelName), size);
+          preferences.set(localModelFilePathKey(modelName), filePath);
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -200,10 +241,13 @@ public class SharedPreferencesUtil {
    * @param customModelName custom model details to be stored.
    * @hide
    */
-  public synchronized void clearDownloadCustomModelDetails(@NonNull String customModelName)
+  public void clearDownloadCustomModelDetails(@NonNull String customModelName)
       throws IllegalArgumentException {
-    Editor editor = getSharedPreferences().edit();
-    clearDownloadingModelDetails(editor, customModelName);
+    dataStore.editSync(
+        preferences -> {
+          clearDownloadingModelDetails(preferences, customModelName);
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -214,16 +258,16 @@ public class SharedPreferencesUtil {
    *
    * @param modelName - name of model
    */
-  public synchronized void clearModelDetails(@NonNull String modelName) {
-    Editor editor = getSharedPreferences().edit();
+  public void clearModelDetails(@NonNull String modelName) {
+    dataStore.editSync(
+        preferences -> {
+          clearDownloadingModelDetails(preferences, modelName);
 
-    clearDownloadingModelDetails(editor, modelName);
-
-    editor
-        .remove(String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName))
-        .remove(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName))
-        .remove(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName))
-        .commit();
+          preferences.remove(localModelFilePathKey(modelName));
+          preferences.remove(localModelFileSizeKey(modelName));
+          preferences.remove(localModelHashKey(modelName));
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -232,7 +276,11 @@ public class SharedPreferencesUtil {
    * @return all shared preference keys for this app
    */
   public Set<String> getSharedPreferenceKeySet() {
-    return getSharedPreferences().getAll().keySet();
+    Set<String> stringKeys = new HashSet<>();
+    for (Preferences.Key<?> key : dataStore.getAllSync().keySet()) {
+      stringKeys.add(key.getName());
+    }
+    return stringKeys;
   }
 
   /**
@@ -242,13 +290,14 @@ public class SharedPreferencesUtil {
    *
    * @return list of Custom Models.
    */
-  public synchronized Set<CustomModel> listDownloadedModels() {
+  public Set<CustomModel> listDownloadedModels() {
     Set<CustomModel> customModels = new HashSet<>();
-    Set<String> keySet = getSharedPreferences().getAll().keySet();
+    Set<Preferences.Key<?>> keySet = dataStore.getAllSync().keySet();
 
-    for (String key : keySet) {
+    for (Preferences.Key<?> key : keySet) {
+      String keyName = key.getName();
       // if a local file path is present - get model details.
-      Matcher matcher = Pattern.compile(LOCAL_MODEL_FILE_PATH_MATCHER).matcher(key);
+      Matcher matcher = Pattern.compile(LOCAL_MODEL_FILE_PATH_MATCHER).matcher(keyName);
       if (matcher.find()) {
         String modelName = matcher.group(matcher.groupCount());
         CustomModel extractModel = getCustomModelDetails(modelName);
@@ -266,12 +315,9 @@ public class SharedPreferencesUtil {
    * @return whether or not firelog events should be logged. Checks shared preference, then
    *     manifest, finally defaults to Firebase wide data collection switch.
    */
-  public synchronized boolean getCustomModelStatsCollectionFlag() {
-    if (getSharedPreferences()
-        .contains(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))) {
-      return getSharedPreferences()
-          .getBoolean(
-              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+  public boolean getCustomModelStatsCollectionFlag() {
+    if (dataStore.contains(eventLoggingEnabledKey())) {
+      return dataStore.getSync(eventLoggingEnabledKey(), true);
     }
     Boolean manifestFlag =
         readModelDownloaderCollectionEnabledFromManifest(firebaseApp.getApplicationContext());
@@ -309,20 +355,16 @@ public class SharedPreferencesUtil {
    *
    * @param enable - False to turn off logging. True to turn on logging.
    */
-  public synchronized void setCustomModelStatsCollectionEnabled(Boolean enable) {
-    if (enable == null) {
-      getSharedPreferences()
-          .edit()
-          .remove(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))
-          .commit();
-    } else {
-      getSharedPreferences()
-          .edit()
-          .putBoolean(
-              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey),
-              enable)
-          .commit();
-    }
+  public void setCustomModelStatsCollectionEnabled(Boolean enable) {
+    dataStore.editSync(
+        preferences -> {
+          if (enable == null) {
+            preferences.remove(eventLoggingEnabledKey());
+          } else {
+            preferences.set(eventLoggingEnabledKey(), enable);
+          }
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -331,11 +373,8 @@ public class SharedPreferencesUtil {
    * @param customModel model
    * @return time in ms
    */
-  public synchronized long getModelDownloadBeginTimeMs(@NonNull CustomModel customModel) {
-    return getSharedPreferences()
-        .getLong(
-            String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
-            0L);
+  public long getModelDownloadBeginTimeMs(@NonNull CustomModel customModel) {
+    return dataStore.getSync(downloadBeginTimeMsKey(customModel.getName()), 0L);
   }
 
   /**
@@ -344,12 +383,8 @@ public class SharedPreferencesUtil {
    * @param customModel - model
    * @return time in ms
    */
-  public synchronized long getModelDownloadCompleteTimeMs(@NonNull CustomModel customModel) {
-    return getSharedPreferences()
-        .getLong(
-            String.format(
-                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
-            0L);
+  public long getModelDownloadCompleteTimeMs(@NonNull CustomModel customModel) {
+    return dataStore.getSync(downloadingCompleteTimeMsKey(customModel.getName()), 0L);
   }
 
   /**
@@ -358,15 +393,13 @@ public class SharedPreferencesUtil {
    * @param customModel - model
    * @param completionTimeInMs - time in ms
    */
-  public synchronized void setModelDownloadCompleteTimeMs(
+  public void setModelDownloadCompleteTimeMs(
       @NonNull CustomModel customModel, long completionTimeInMs) {
-    getSharedPreferences()
-        .edit()
-        .putLong(
-            String.format(
-                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
-            completionTimeInMs)
-        .apply();
+    dataStore.editSync(
+        preferences -> {
+          preferences.set(downloadingCompleteTimeMsKey(customModel.getName()), completionTimeInMs);
+          return kotlin.Unit.INSTANCE;
+        });
   }
 
   /**
@@ -375,20 +408,11 @@ public class SharedPreferencesUtil {
    * @param modelName - name of model
    */
   @VisibleForTesting
-  synchronized void clearDownloadingModelDetails(Editor editor, @NonNull String modelName) {
-    editor
-        .remove(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, modelName))
-        .apply();
-  }
-
-  @VisibleForTesting
-  SharedPreferences getSharedPreferences() {
-    return firebaseApp
-        .getApplicationContext()
-        .getSharedPreferences(PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE);
+  void clearDownloadingModelDetails(MutablePreferences preferences, @NonNull String modelName) {
+    preferences.remove(downloadingModelIdKey(modelName));
+    preferences.remove(downloadingModelHashKey(modelName));
+    preferences.remove(downloadingModelSizeKey(modelName));
+    preferences.remove(downloadBeginTimeMsKey(modelName));
+    preferences.remove(downloadingCompleteTimeMsKey(modelName));
   }
 }

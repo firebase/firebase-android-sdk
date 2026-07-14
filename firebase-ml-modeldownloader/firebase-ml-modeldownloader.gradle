@@ -111,6 +111,7 @@ dependencies {
     implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
     implementation libs.javax.inject
     implementation libs.kotlin.stdlib
+    implementation(libs.androidx.datastore.preferences)
 
     compileOnly libs.autovalue.annotations
 
