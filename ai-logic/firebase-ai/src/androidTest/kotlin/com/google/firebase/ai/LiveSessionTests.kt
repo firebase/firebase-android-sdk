@@ -36,8 +36,8 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.SpeechConfig
 import com.google.firebase.ai.type.Tool
-import com.google.firebase.ai.type.activityDetectionConfig
 import com.google.firebase.ai.type.Voice
+import com.google.firebase.ai.type.activityDetectionConfig
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
 import com.google.firebase.ai.type.realtimeInputConfig

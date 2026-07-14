@@ -1,4 +1,5 @@
 # Unreleased
+
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
 
 # 17.14.0
