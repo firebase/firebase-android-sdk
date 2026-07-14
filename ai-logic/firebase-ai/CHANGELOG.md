@@ -1,6 +1,8 @@
 # Unreleased
-
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
+
+# 17.14.0
+
 - [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
 - [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
 

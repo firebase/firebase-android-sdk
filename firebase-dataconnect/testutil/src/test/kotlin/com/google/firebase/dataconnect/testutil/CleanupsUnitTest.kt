@@ -161,4 +161,83 @@ class CleanupsUnitTest {
     exception.suppressed.toList().map { it.message } shouldContainExactly listOf("fail 1")
     executionOrder shouldContainExactly listOf("fourth", "first")
   }
+
+  @Test
+  fun `cleanupsScope returns block result and runs cleanups`() = runTest {
+    val executionOrder = mutableListOf<String>()
+    val result = cleanupsScope {
+      registerCleanup(AutoCloseable { executionOrder.add("cleanup1") })
+      registerCleanup { executionOrder.add("cleanup2") }
+      registerCleanup(name = "third") { executionOrder.add("cleanup3") }
+      registerSuspendingCleanup { executionOrder.add("cleanup4") }
+      registerSuspendingCleanup(name = "fifth") { executionOrder.add("cleanup5") }
+      "success"
+    }
+
+    result shouldBe "success"
+    executionOrder shouldContainExactly
+      listOf("cleanup5", "cleanup4", "cleanup3", "cleanup2", "cleanup1")
+  }
+
+  @Test
+  fun `cleanupsScope propagates block exception and runs cleanups`() = runTest {
+    val executionOrder = mutableListOf<String>()
+    val exception =
+      shouldThrow<RuntimeException> {
+        cleanupsScope {
+          registerCleanup { executionOrder.add("cleanup1") }
+          registerCleanup { executionOrder.add("cleanup2") }
+          throw RuntimeException("block failed")
+        }
+      }
+
+    exception.message shouldBe "block failed"
+    executionOrder shouldContainExactly listOf("cleanup2", "cleanup1")
+  }
+
+  @Test
+  fun `cleanupsScope propagates cleanup exception when block succeeds`() = runTest {
+    val exception =
+      shouldThrow<RuntimeException> {
+        cleanupsScope { registerCleanup { throw RuntimeException("cleanup failed") } }
+      }
+
+    exception.message shouldBe "cleanup failed"
+  }
+
+  @Test
+  fun `cleanupsScope suppresses cleanup exception on block exception`() = runTest {
+    val executionOrder = mutableListOf<String>()
+    val exception =
+      shouldThrow<RuntimeException> {
+        cleanupsScope {
+          registerCleanup { executionOrder.add("cleanup1") }
+          registerCleanup { throw RuntimeException("cleanup2 failed") }
+          registerCleanup { executionOrder.add("cleanup3") }
+          throw RuntimeException("block failed")
+        }
+      }
+
+    exception.message shouldBe "block failed"
+    exception.suppressed.toList().map { it.message } shouldContainExactly listOf("cleanup2 failed")
+    executionOrder shouldContainExactly listOf("cleanup3", "cleanup1")
+  }
+
+  @Test
+  fun `cleanupsScope suppresses subsequent cleanup exceptions on block exception`() = runTest {
+    val executionOrder = mutableListOf<String>()
+    val exception =
+      shouldThrow<RuntimeException> {
+        cleanupsScope {
+          registerCleanup { throw RuntimeException("cleanup1 failed") }
+          registerCleanup { throw RuntimeException("cleanup2 failed") }
+          registerCleanup { executionOrder.add("cleanup3") }
+          throw RuntimeException("block failed")
+        }
+      }
+
+    exception.message shouldBe "block failed"
+    exception.suppressed.toList().map { it.message } shouldContainExactly listOf("cleanup2 failed")
+    executionOrder shouldContainExactly listOf("cleanup3")
+  }
 }
