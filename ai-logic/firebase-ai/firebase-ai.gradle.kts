@@ -87,7 +87,7 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
-  api(libs.genai.structured.output) { exclude(group = "org.jetbrains.kotlin") }
+  api(libs.genai.schema)
   api("com.google.firebase:firebase-appcheck:19.2.0")
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
