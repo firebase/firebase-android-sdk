@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Added toggle for FirebaseCrashlytics logging [#2973]
+- [changed] Added toggle for Firebase Crashlytics logging [#2973]
 
 # 20.1.0
 
