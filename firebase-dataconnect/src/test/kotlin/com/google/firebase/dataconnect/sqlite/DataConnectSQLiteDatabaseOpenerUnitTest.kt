@@ -37,11 +37,13 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.next
+import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
 import java.io.File
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,6 +60,13 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
   private val rs: RandomSource by randomSeedTestRule.rs
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+
+  @After
+  fun clearAllMocksAfterwards() {
+    // Workaround OOM errors where mockk keeps references into roboelectric for method arguments.
+    // These strong references prevent the entire classloader from being GC'd.
+    clearAllMocks()
+  }
 
   @Test
   fun `open() should create the database file if it does not exist`() {
