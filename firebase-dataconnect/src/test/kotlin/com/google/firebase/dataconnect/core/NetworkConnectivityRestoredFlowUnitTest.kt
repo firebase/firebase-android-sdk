@@ -33,11 +33,12 @@ import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
 import com.google.firebase.dataconnect.util.coroutines.signal
-import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.asClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -57,6 +58,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
@@ -89,10 +91,19 @@ class NetworkConnectivityRestoredFlowUnitTest {
   fun `networkConnectivityRestoredFlow() when ConnectivityManager is null`() = runTest {
     val context: Context = mockk { every { getSystemService(CONNECTIVITY_SERVICE) } returns null }
 
-    val exception = shouldThrow<IllegalStateException> { networkConnectivityRestoredFlow(context) }
-    exception.message shouldContainWithNonAbuttingText "rfq632nm3m"
-    exception.message shouldContainWithNonAbuttingText ConnectivityManager::class.qualifiedName!!
-    exception.message shouldContainWithNonAbuttingText "null"
+    val exception = AtomicReference<Throwable>()
+    turbineScope {
+      val flow = networkConnectivityRestoredFlow(context)
+      val collector = flow.testIn(backgroundScope)
+      exception.set(collector.awaitError())
+    }
+
+    checkNotNull(exception.get()).asClue {
+      it.shouldBeInstanceOf<IllegalStateException>()
+      it.message shouldContainWithNonAbuttingText "yxzng5zfyg"
+      it.message shouldContainWithNonAbuttingText "getSystemService(CONNECTIVITY_SERVICE)"
+      it.message shouldContainWithNonAbuttingText "returned null"
+    }
   }
 
   @Test
@@ -104,10 +115,19 @@ class NetworkConnectivityRestoredFlowUnitTest {
       every { getSystemService(CONNECTIVITY_SERVICE) } returns connectivityManagerOfWrongType
     }
 
-    val exception = shouldThrow<IllegalStateException> { networkConnectivityRestoredFlow(context) }
-    exception.message shouldContainWithNonAbuttingText "rfq632nm3m"
-    exception.message shouldContainWithNonAbuttingText ConnectivityManager::class.qualifiedName!!
-    exception.message shouldContainWithNonAbuttingText connectivityManagerOfWrongType.toString()
+    val exception = AtomicReference<Throwable>()
+    turbineScope {
+      val flow = networkConnectivityRestoredFlow(context)
+      val collector = flow.testIn(backgroundScope)
+      exception.set(collector.awaitError())
+    }
+
+    checkNotNull(exception.get()).asClue {
+      it.shouldBeInstanceOf<IllegalStateException>()
+      it.message shouldContainWithNonAbuttingText "rfq632nm3m"
+      it.message shouldContainWithNonAbuttingText ConnectivityManager::class.qualifiedName!!
+      it.message shouldContainWithNonAbuttingText connectivityManagerOfWrongType.toString()
+    }
   }
 
   @Test

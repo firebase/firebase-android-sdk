@@ -56,41 +56,43 @@ internal data object NetworkConnectivityRestored
  * suggest that network connectivity is now (or continues to be) available.
  */
 internal fun networkConnectivityRestoredFlow(context: Context): Flow<NetworkConnectivityRestored> {
+  return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    networkConnectivityRestoredFlowAPI24(context)
+  } else {
+    networkConnectivityRestoredFlowAPI23(context)
+  }
+}
+
+private fun networkConnectivityRestoredFlowAPI23(
+  context: Context
+): Flow<NetworkConnectivityRestored> =
+  networkConnectivityRestoredFlow(context) {
+    val request = NetworkRequest.Builder().addCapability(NET_CAPABILITY_INTERNET).build()
+    registerNetworkCallback(request, it)
+  }
+
+@RequiresApi(Build.VERSION_CODES.N)
+private fun networkConnectivityRestoredFlowAPI24(
+  context: Context
+): Flow<NetworkConnectivityRestored> =
+  networkConnectivityRestoredFlow(context) { registerDefaultNetworkCallback(it) }
+
+private fun networkConnectivityRestoredFlow(
+  context: Context,
+  registerCallback: ConnectivityManager.(ConnectivityManager.NetworkCallback) -> Unit
+): Flow<NetworkConnectivityRestored> = flow {
   val connectivityManager = context.getSystemService(CONNECTIVITY_SERVICE)
+  checkNotNull(connectivityManager) {
+    "getSystemService(CONNECTIVITY_SERVICE) returned null; " +
+      "try adding android.permission.ACCESS_NETWORK_STATE to AndroidManifest.xml [yxzng5zfyg]"
+  }
   check(connectivityManager is ConnectivityManager) {
     "internal error rfq632nm3m: getSystemService(CONNECTIVITY_SERVICE) should have returned " +
       "an instance of ${ConnectivityManager::class.qualifiedName}, but got $connectivityManager"
   }
 
-  return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-    networkConnectivityRestoredFlowAPI24(connectivityManager)
-  } else {
-    networkConnectivityRestoredFlowAPI23(connectivityManager)
-  }
-}
-
-private fun networkConnectivityRestoredFlowAPI23(
-  connectivityManager: ConnectivityManager
-): Flow<NetworkConnectivityRestored> =
-  networkConnectivityRestoredFlow(connectivityManager) {
-    val request = NetworkRequest.Builder().addCapability(NET_CAPABILITY_INTERNET).build()
-    connectivityManager.registerNetworkCallback(request, it)
-  }
-
-@RequiresApi(Build.VERSION_CODES.N)
-private fun networkConnectivityRestoredFlowAPI24(
-  connectivityManager: ConnectivityManager
-): Flow<NetworkConnectivityRestored> =
-  networkConnectivityRestoredFlow(connectivityManager) {
-    connectivityManager.registerDefaultNetworkCallback(it)
-  }
-
-private fun networkConnectivityRestoredFlow(
-  connectivityManager: ConnectivityManager,
-  registerCallback: (ConnectivityManager.NetworkCallback) -> Unit
-): Flow<NetworkConnectivityRestored> = flow {
   val callback = NetworkCallbackImpl()
-  registerCallback(callback)
+  registerCallback(connectivityManager, callback)
 
   try {
     emitAll(callback.signal.signals)
