@@ -16,7 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.google.firebase.gradle.plugins.ci.Coverage
 import com.google.firebase.gradle.plugins.services.GMavenService
 import java.io.File
@@ -316,7 +316,7 @@ fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
     .allDependencies
     .mapNotNull { it as? ProjectDependency }
     .map {
-      project.project(it.dependencyProject.path).extensions.findByType<FirebaseLibraryExtension>()
+      project.project(it.path).extensions.findByType<FirebaseLibraryExtension>()
         ?: throw RuntimeException(
           "Project level dependencies must have the firebaseLibrary plugin. The following dependency does not: ${it.artifactName}"
         )
