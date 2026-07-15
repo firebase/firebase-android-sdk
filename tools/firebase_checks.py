@@ -139,8 +139,9 @@ def main():
             continue
         subproj_dir = find_subproject_dir(rel_file, repo_root, all_subprojects)
         if subproj_dir and subproj_dir not in seen_dirs:
-            seen_dirs.add(subproj_dir)
-            target_dirs.append(subproj_dir)
+            if os.path.isdir(os.path.join(repo_root, subproj_dir)):
+                seen_dirs.add(subproj_dir)
+                target_dirs.append(subproj_dir)
 
     if not target_dirs:
         print("No subproject directories with build Gradle files found for modified files.")
@@ -161,7 +162,8 @@ def main():
         return
 
     print("\nExecuting Gradle tasks...")
-    cmd = ["./gradlew"] + gradle_tasks
+    gradlew = os.path.join(repo_root, "gradlew" if os.name != "nt" else "gradlew.bat")
+    cmd = [gradlew] + gradle_tasks
     res = subprocess.run(cmd, cwd=repo_root)
     if res.returncode != 0:
         sys.exit(res.returncode)
