@@ -31,13 +31,21 @@ def get_modified_files(repo_root):
         check=True
     )
     files = []
-    for entry in res.stdout.split('\0'):
+    entries = res.stdout.split("\0")
+    i = 0
+    while i < len(entries):
+        entry = entries[i]
         if not entry:
+            i += 1
             continue
-        path_part = entry[3:]
-        if " -> " in path_part:
-            path_part = path_part.split(" -> ")[-1]
-        files.append(path_part)
+        status = entry[:2]
+        path = entry[3:]
+        if "R" in status or "C" in status:
+            i += 1
+            if i < len(entries):
+                path = entries[i]
+        files.append(path)
+        i += 1
     return files
 
 def get_subprojects_info(repo_root):
