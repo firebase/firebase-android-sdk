@@ -29,9 +29,16 @@ public class FirebaseSymbolProcessor(
   private val logger: KSPLogger,
 ) : SymbolProcessor {
   override fun process(resolver: Resolver): List<KSAnnotated> {
-    resolver
-      .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
+    val generableSymbols =
+      resolver.getSymbolsWithAnnotation(
+        "com.google.mlkit.genai.structuredoutput.annotations.Generable"
+      ) +
+        resolver.getSymbolsWithAnnotation("com.google.mlkit.genai.schema.annotations.Generable") +
+        resolver.getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
+
+    generableSymbols
       .filterIsInstance<KSClassDeclaration>()
+      .distinct()
       .map { it to SchemaSymbolProcessorVisitor(logger, codeGenerator) }
       .forEach { (klass, visitor) -> visitor.visitClassDeclaration(klass, Unit) }
 
