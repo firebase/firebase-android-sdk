@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.FIREBASE_AUTH_TOKEN_HEADER
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.CoroutineUtils.mergeColdAndHotFlow
@@ -26,6 +28,7 @@ import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
+import com.google.firebase.dataconnect.util.coroutines.signal
 import com.google.firebase.dataconnect.util.update
 import com.google.protobuf.Empty as EmptyProto
 import com.google.protobuf.Struct
@@ -36,7 +39,7 @@ import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -45,19 +48,20 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.shareIn
@@ -65,6 +69,7 @@ import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Manages a bidirectional gRPC stream for Data Connect operations.
@@ -76,7 +81,13 @@ import kotlinx.coroutines.launch
  *
  * @param flow The flow that, when collected, opens the bidirectional streaming "Connect" RPC with
  * the backend and sends responses received from the backend downstream.
+ * @param authToken A flow of sequenced authentication tokens to use for metadata headers and to
+ * monitor for changes that may require stream updates.
+ * @param shouldRetry A suspending callback invoked upon connection failure to determine the
+ * [RetryStrategy] (retry immediately, retry after backoff, or fail permanently by throwing).
+ * @param idStringGenerator Generator used to create unique connection and request identifiers.
  * @param coroutineScope The [CoroutineScope] to whose lifetime this object belongs.
+ * @param logger The [Logger] instance to use for diagnostic and debugging logs.
  */
 internal class DataConnectBidiConnectStream(
   flow:
@@ -85,14 +96,19 @@ internal class DataConnectBidiConnectStream(
         StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
       >
     >,
-  dataConnectAuth: DataConnectAuth,
+  authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
+  shouldRetry: suspend (Throwable) -> RetryStrategy,
   idStringGenerator: IdStringGenerator,
+  private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
 
-  val isPermanentlyFailedDueToAuthUidChange: Boolean
-    get() = authUidChangedFlow.replayCache.isNotEmpty()
+  private val retryBackoff = RetryBackoffCalculator()
+  private val resetAndRetryEvent = ConflatedSignal<Unit>()
+
+  val isPermanentlyFailed: Boolean
+    get() = _permanentFailureFlow.replayCache.isNotEmpty()
 
   /**
    * A flow that emits `null` when [coroutineScope] is canceled, which happens when
@@ -100,16 +116,13 @@ internal class DataConnectBidiConnectStream(
    */
   private val scopeCompletedFlow = coroutineScope.completedFlow().map { null }
 
-  /**
-   * A flow that emits a [AuthUidChangedException] when the connection is permanently failed due to
-   * the Firebase Auth user changing.
-   */
-  private val _authUidChangedFlow =
-    MutableSharedFlow<AuthUidChangedException>(
+  /** A flow that emits an exception when the connection is permanently failed. */
+  private val _permanentFailureFlow =
+    MutableSharedFlow<Throwable>(
       replay = 1,
       onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-  private val authUidChangedFlow = _authUidChangedFlow.asSharedFlow()
+  private val permanentFailureFlow = _permanentFailureFlow.asSharedFlow()
 
   private val connectionFlow: Flow<SubscriptionEvent> = run {
     val connectionStateFlow =
@@ -119,7 +132,8 @@ internal class DataConnectBidiConnectStream(
     val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
 
     val sharedFlow =
-      mergeGrpcAndAuth(flow, dataConnectAuth)
+      mergeGrpcAndAuth(flow, authToken)
+        .onStart { resetAndRetryEvent.clear() }
         .mapNotNull { event ->
           with(connectionStateUpdater) { connectionStateFlow.update(event) }
           when (event) {
@@ -128,30 +142,49 @@ internal class DataConnectBidiConnectStream(
             is GrpcAuthMergedFlowEvent.Grpc ->
               when (event.event) {
                 is GrpcBidiFlow.Event.ConnectionInfo -> null
-                is GrpcBidiFlow.Event.Message -> event.event
+                is GrpcBidiFlow.Event.Message -> {
+                  retryBackoff.reset()
+                  resetAndRetryEvent.clear()
+                  event.event
+                }
               }
           }
         }
         .map(SubscriptionEvent::Message)
-        .catch { exception ->
-          if (exception is AuthUidChangedException) {
-            _authUidChangedFlow.emit(exception)
-          }
-          throw exception
-        }
         .onCompletion { throwable ->
           with(connectionStateUpdater) {
             connectionStateFlow.update(GrpcAuthMergedFlowEvent.Disconnect)
           }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { cause, attempt ->
-          if (cause is AuthUidChangedException || attempt > 2) {
-            false
-          } else {
-            delay(1.seconds)
-            logger.debug { "retrying connection" }
-            true
+        .retryWhen { cause, _ ->
+          resetAndRetryEvent.clear()
+          val retryStrategy =
+            try {
+              shouldRetry(cause)
+            } catch (e: Throwable) {
+              currentCoroutineContext().ensureActive()
+              _permanentFailureFlow.emit(e)
+              throw e
+            }
+
+          when (retryStrategy) {
+            RetryStrategy.RETRY_IMMEDIATELY -> {
+              retryBackoff.reset()
+              true
+            }
+            RetryStrategy.RETRY_AFTER_BACKOFF -> {
+              val backoffMs = retryBackoff.next()
+              logger.debug {
+                "waiting ${backoffMs}ms before retrying connection, which failed due to $cause"
+              }
+              withTimeoutOrNull(backoffMs.milliseconds) {
+                onRetryBackoffForTesting.get()?.invoke(backoffMs)
+                resetAndRetryEvent.await()
+              }
+              resetAndRetryEvent.clear()
+              true
+            }
           }
         }
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
@@ -170,20 +203,24 @@ internal class DataConnectBidiConnectStream(
    * @param requestId A unique identifier for this request, used to correlate incoming responses.
    * @param operationName The name of the operation to execute.
    * @param variables The variables for the operation.
-   * @return A [Flow] of [ExecuteResponse] objects for the subscription.
+   * @param callerSdkType The type of caller that is making the request.
+   * @return A [Flow] of [ExecuteResponse] objects for the subscription. The coroutine context that
+   * collects the flow **MUST** have a [CallerSdkTypeElement] element. This allows each individual
+   * flow collector to specify its own [CallerSdkType].
    */
   fun subscribe(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
   ): Flow<ExecuteResponse> {
     val state = AtomicReference<SubscriptionState>(SubscriptionState.Disconnected)
 
-    fun sendSubscribeOrResume() {
+    fun sendSubscribeOrResume(callerSdkType: CallerSdkType) {
       while (true) {
         when (val currentState = state.get()) {
           is SubscriptionState.Connected -> {
-            currentState.enqueueSubscribeOrResume()
+            currentState.enqueueSubscribeOrResume(callerSdkType)
             break
           }
           SubscriptionState.DisconnectedWithPendingSubscription -> break
@@ -210,7 +247,7 @@ internal class DataConnectBidiConnectStream(
             SubscriptionState.Disconnected
           }
         }
-        .transformToMessage(requestId, operationName, variables, state)
+        .transformToMessage(requestId, operationName, variables, callerSdkType, state)
         .map<_, MessageOrSubscribe> { MessageOrSubscribe.Message(it) }
         .buffer(capacity = Channel.CONFLATED) // use CONFLATED to drop stale data
         .shareIn(
@@ -218,10 +255,20 @@ internal class DataConnectBidiConnectStream(
           started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
           replay = 0,
         )
-        .onSubscription { emit(MessageOrSubscribe.Subscribed) }
+        .onSubscription {
+          retryBackoff.reset()
+          resetAndRetryEvent.signal()
+          emit(MessageOrSubscribe.Subscribed)
+        }
         .transform { messageOrSubscribe ->
           when (messageOrSubscribe) {
-            MessageOrSubscribe.Subscribed -> sendSubscribeOrResume()
+            MessageOrSubscribe.Subscribed -> {
+              val callerSdkTypeElement = currentCoroutineContext()[CallerSdkTypeElement]
+              checkNotNull(callerSdkTypeElement) {
+                "internal error c6se9nvv5w: currentCoroutineContext()[CallerSdkTypeElement]==null"
+              }
+              sendSubscribeOrResume(callerSdkTypeElement.callerSdkType)
+            }
             is MessageOrSubscribe.Message -> emit(messageOrSubscribe)
           }
         }
@@ -233,7 +280,7 @@ internal class DataConnectBidiConnectStream(
     return merge(
         subscriptionFlow,
         scopeCompletedFlow,
-        authUidChangedFlow.transform { throw it },
+        permanentFailureFlow.transform { throw it },
       )
       .transformWhile {
         if (it !== null && coroutineScope.isActive) {
@@ -268,14 +315,15 @@ internal class DataConnectBidiConnectStream(
     }
 
     class Connected(
+      val connectionId: String,
       val outgoingRequests: SendChannel<StreamRequestProto>,
       private val hadPendingSubscription: Boolean,
-      private val subscribeOrResumeSignal: ConflatedSignal,
+      private val subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
       private val subscribeOrResumeJob: Job,
     ) : SubscriptionState {
 
-      fun enqueueSubscribeOrResume() {
-        subscribeOrResumeSignal.signal()
+      fun enqueueSubscribeOrResume(callerSdkType: CallerSdkType) {
+        subscribeOrResumeSignal.signal(callerSdkType)
         subscribeOrResumeJob.start()
       }
 
@@ -290,6 +338,7 @@ internal class DataConnectBidiConnectStream(
 
       override fun toString(): String =
         "Connected(" +
+          "connectionId=$connectionId, " +
           "hadPendingSubscription=$hadPendingSubscription, " +
           "subscribeOrResumeSignal.hasPendingSignal=${subscribeOrResumeSignal.hasPendingSignal}, " +
           "subscribeOrResumeJob={isActive=${subscribeOrResumeJob.isActive}, " +
@@ -318,6 +367,7 @@ internal class DataConnectBidiConnectStream(
     requestId: String,
     operationName: String,
     variables: Struct,
+    callerSdkType: CallerSdkType,
     state: AtomicReference<SubscriptionState>,
   ): Flow<SubscriptionEvent.Message> {
     val subscribeRequest =
@@ -352,6 +402,7 @@ internal class DataConnectBidiConnectStream(
       subscribeRequest = subscribeRequest,
       resumeRequest = resumeRequest,
       cancelRequest = cancelRequest,
+      callerSdkType = callerSdkType,
     )
   }
 
@@ -360,20 +411,32 @@ internal class DataConnectBidiConnectStream(
     subscribeRequest: StreamRequestProto,
     resumeRequest: StreamRequestProto,
     cancelRequest: StreamRequestProto,
+    callerSdkType: CallerSdkType,
   ): Flow<SubscriptionEvent.Message> {
 
     suspend fun SendChannel<StreamRequestProto>.subscribeOrResumeLoop(
       authUid: AuthUid?,
-      subscribeOrResumeSignal: ConflatedSignal,
+      subscribeOrResumeSignal: ConflatedSignal<CallerSdkType>,
     ) {
       var subscribed = false
       try {
-        subscribeOrResumeSignal.signals.collect {
+        subscribeOrResumeSignal.signals.collect { callerSdkType ->
+          val value = grpcMetadata.googApiClientHeaderValue(callerSdkType)
           if (!subscribed) {
-            trySendOrThrow(authUid, subscribeRequest)
+            val request =
+              subscribeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
             subscribed = true
           } else {
-            trySendOrThrow(authUid, resumeRequest)
+            val request =
+              resumeRequest
+                .toBuilder()
+                .putHeaders(DataConnectGrpcMetadata.GOOG_API_CLIENT_HEADER, value)
+                .build()
+            trySendOrThrow(authUid, request)
           }
         }
       } finally {
@@ -390,17 +453,22 @@ internal class DataConnectBidiConnectStream(
         val isPendingSubscription =
           when (currentState) {
             is SubscriptionState.Connected ->
-              error(
-                "internal error nqe9gre3ny: got event $event, " +
-                  "but state=$currentState (expected state=Disconnected)"
-              )
+              if (currentState.connectionId == event.connectionId) {
+                break // already connected; this can occur due to an auth token update
+              } else {
+                error(
+                  "internal error nqe9gre3ny: got event $event, " +
+                    "but state=$currentState (expected state=Disconnected or " +
+                    "state=Connected(connectionId=${event.connectionId}))"
+                )
+              }
             is SubscriptionState.Disconnected -> false
             is SubscriptionState.DisconnectedWithPendingSubscription -> true
           }
 
-        val subscribeOrResumeSignal = ConflatedSignal()
+        val subscribeOrResumeSignal = ConflatedSignal<CallerSdkType>()
         if (isPendingSubscription) {
-          subscribeOrResumeSignal.signal()
+          subscribeOrResumeSignal.signal(callerSdkType)
         }
         val subscribeOrResumeJob =
           coroutineScope.launch(start = CoroutineStart.LAZY) {
@@ -412,6 +480,7 @@ internal class DataConnectBidiConnectStream(
 
         val newState =
           SubscriptionState.Connected(
+            event.connectionId,
             event.outgoingRequests,
             hadPendingSubscription = isPendingSubscription,
             subscribeOrResumeSignal = subscribeOrResumeSignal,
@@ -458,9 +527,46 @@ internal class DataConnectBidiConnectStream(
     }
   }
 
-  private companion object {
+  enum class RetryStrategy {
+    RETRY_IMMEDIATELY,
+    RETRY_AFTER_BACKOFF,
+  }
 
-    fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
+  companion object {
+
+    @VisibleForTesting
+    fun setReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(null, token)
+      check(success) {
+        "setReconnectPendingAuthTokenForTesting() failed: a value is already set [b887589rta]"
+      }
+    }
+
+    @VisibleForTesting
+    fun unsetReconnectPendingAuthTokenForTesting(token: SequencedReference<GetAuthTokenResult>) {
+      val success = reconnectPendingAuthTokenForTesting.compareAndSet(token, null)
+      check(success) {
+        "unsetReconnectPendingAuthTokenForTesting() failed: " +
+          "the given value is NOT the one currently set [dmjgeq95a2]"
+      }
+    }
+
+    @VisibleForTesting
+    fun setOnRetryBackoffForTesting(callback: (backoffMillis: Long) -> Unit) {
+      val success = onRetryBackoffForTesting.compareAndSet(null, callback)
+      check(success) { "setOnRetryBackoffForTesting() failed: a value is already set [zxj2r8c95p]" }
+    }
+
+    @VisibleForTesting
+    fun unsetOnRetryBackoffForTesting(callback: (backoffMillis: Long) -> Unit) {
+      val success = onRetryBackoffForTesting.compareAndSet(callback, null)
+      check(success) {
+        "unsetOnRetryBackoffForTesting() failed: " +
+          "the given value is NOT the one currently set [trtd7y682q]"
+      }
+    }
+
+    private fun StreamResponseProto.toExecuteResponse(authUid: AuthUid?): ExecuteResponse? =
       if (!hasData() && errorsCount == 0) {
         null
       } else {
@@ -476,6 +582,11 @@ internal class DataConnectBidiConnectStream(
   }
 }
 
+private val reconnectPendingAuthTokenForTesting =
+  AtomicReference<SequencedReference<GetAuthTokenResult>>(null)
+
+private val onRetryBackoffForTesting = AtomicReference<(backoffMillis: Long) -> Unit>(null)
+
 private fun mergeGrpcAndAuth(
   grpcBidiFlow:
     Flow<
@@ -483,11 +594,11 @@ private fun mergeGrpcAndAuth(
         StreamRequestProto, StreamResponseProto, SequencedReference<GetAuthTokenResult?>
       >
     >,
-  dataConnectAuth: DataConnectAuth,
+  authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
 ): Flow<GrpcAuthMergedFlowEvent> =
   mergeColdAndHotFlow(
     coldFlow = grpcBidiFlow.map(GrpcAuthMergedFlowEvent::Grpc),
-    hotFlow = dataConnectAuth.token.map(GrpcAuthMergedFlowEvent::Auth)
+    hotFlow = authToken.map(GrpcAuthMergedFlowEvent::Auth)
   )
 
 private sealed interface GrpcAuthMergedFlowEvent {
@@ -608,27 +719,32 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     currentState: SubscriptionEvent.Connected,
     sequencedAuthToken: SequencedReference<GetAuthTokenResult?>,
   ): SubscriptionEvent.Connected? {
-    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
-      return null // ignore outdated auth token changes
-    }
-
-    val oldToken = currentState.authToken.ref?.token
-    val newToken = sequencedAuthToken.ref?.token
-    if (oldToken == newToken) {
-      return null // Do not re-send the same token, as that is wasteful.
-    }
-
     // Verify that the authUid has not changed; if so, then throw to abort the connection.
     // The caller will need to re-subscribe with the new authUid as the connection stream does
     // not support changing authUid mid-stream.
     val currentAuthUid = currentState.authToken.ref?.authUid
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
-      throw AuthUidChangedException(currentAuthUid, newAuthUid)
+      throw FirebaseUserChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
     }
 
+    // Ignore outdated auth token changes.
+    if (sequencedAuthToken.sequenceNumber <= currentState.authToken.sequenceNumber) {
+      return null
+    }
+
+    // Do not re-send the same token, as that is wasteful.
+    val oldToken = currentState.authToken.ref?.token
+    val newToken = sequencedAuthToken.ref?.token
+    if (oldToken == newToken) {
+      return null
+    }
+
+    // Do not send an empty token, as that is wasteful too (and should never happen in practice
+    // because if newToken==null and oldToken!=newToken then it must hold that
+    // currentAuthUid!=newAuthUid, and should have resulted in FirebaseUserChangedException above).
     if (newToken == null) {
-      return null // Do not send an empty token, as that is wasteful too.
+      return null
     }
 
     // Update the authToken on the stream.
@@ -675,7 +791,8 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
       is SubscriptionEvent.Connected -> currentState
       is SubscriptionEvent.Disconnected -> {
         val connectedState = SubscriptionEvent.Connected(event)
-        val pendingAuthToken = currentState.pendingAuthToken
+        val pendingAuthToken =
+          reconnectPendingAuthTokenForTesting.get() ?: currentState.pendingAuthToken
         if (pendingAuthToken == null) {
           connectedState
         } else {
@@ -689,7 +806,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
   private fun authTokenUpdateStreamRequest(authToken: String): StreamRequestProto =
     StreamRequestProto.newBuilder()
       .setRequestId(idStringGenerator.next("auth"))
-      .putHeaders("x-firebase-auth-token", authToken)
+      .putHeaders(FIREBASE_AUTH_TOKEN_HEADER, authToken)
       .build()
 }
 

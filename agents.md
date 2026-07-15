@@ -28,14 +28,17 @@ This file is useful for understanding the role of each subproject in the reposit
 To work with this repository, the Android SDK must be installed. Use the `sdkmanager` command-line
 tool for this purpose.
 
-1. **Install Android SDK Command-Line Tools**:
+1. **Install Java 17**
+   - All SDKs require Java 17 to build and run. Earlier or later versions will not suffice.
+     If multiple versions of java are installed, the `JAVA_HOME` environment variable can be set without modifying system configuration.
+2. **Install Android SDK Command-Line Tools**:
    - If not already installed, download the command-line tools from the
      [Android Studio page](https://developer.android.com/studio#command-line-tools-only).
    - Create a directory for the Android SDK, e.g., `android_sdk`.
    - Unzip the downloaded package. This will create a `cmdline-tools` directory. Move this
      directory to `android_sdk/cmdline-tools/latest`.
    - The final structure should be `android_sdk/cmdline-tools/latest/`.
-2. **Install required SDK packages**:
+3. **Install required SDK packages**:
    - Use `sdkmanager` to install the necessary platforms, build tools, and other packages. For
      example:
 
@@ -50,10 +53,10 @@ tool for this purpose.
      yes | sdkmanager --licenses
      ```
    - Refer to the specific requirements of the project to determine which packages to install.
-3. **Configure for integration tests**:
+4. **Configure for integration tests**:
    - To run integration tests, a `google-services.json` file is required.
    - Place this file in the root of the repository.
-4. **Install NDK for specific projects**:
+5. **Install NDK for specific projects**:
    - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
      You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
      would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
@@ -87,6 +90,16 @@ Unit tests run on the local JVM. They can be executed with the following command
 
 ```bash
 ./gradlew :<firebase-project>:check
+```
+
+#### Running Specific Unit Tests
+
+To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android   
+library modules, or `test` for Java library modules):
+
+```bash
+./gradlew :<firebase-project>:testDebugUnitTest --tests "com.google.firebase.package.ClassName"
+./gradlew :<firebase-project>:testDebugUnitTest --tests "com.google.firebase.package.ClassName.methodName"
 ```
 
 #### Integration Tests
@@ -170,8 +183,8 @@ project.
 
 ## External Dependencies
 
-Do not add, under any circunstance, any new dependency to a SDK that does not already exists in the
-`gradle/libs.versions.toml`, and even then, only do it if cxexplicitly asked to do so. The Firebase
+Do not add, under any circumstance, any new dependency to an SDK that does not already exist in the
+`gradle/libs.versions.toml`, and even then, only do it if explicitly asked to do so. The Firebase
 SDKs are designed to be lightweight, and adding new dependencies can increase the size of the final
 artifacts.
 

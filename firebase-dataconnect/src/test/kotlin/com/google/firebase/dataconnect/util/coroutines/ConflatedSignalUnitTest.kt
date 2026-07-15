@@ -42,7 +42,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `await returns immediately without suspending if there is a pending signal`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.signal()
 
     val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
@@ -52,7 +52,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `await suspends if there is NO pending signal`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
 
     val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
 
@@ -61,7 +61,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `multiple signals are conflated into one`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     repeat(10) { signal.signal() }
 
     val job1 = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
@@ -72,7 +72,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `each call to signal resumes one call to await, leaving the others suspended`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     val jobs =
       List(10) { backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() } }
     check(jobs.all { !it.isCompleted })
@@ -87,7 +87,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `suspended await() calls are promptly canceled`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
     job.cancel()
     yield()
@@ -96,7 +96,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `canceling suspended await() calls do not disturb other awaiters`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     val jobs =
       List(10) { backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() } }
 
@@ -117,20 +117,20 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `hasPendingSignal is initially false`() {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.hasPendingSignal shouldBe false
   }
 
   @Test
   fun `hasPendingSignal is true after signal is called`() {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.signal()
     signal.hasPendingSignal shouldBe true
   }
 
   @Test
   fun `hasPendingSignal transitions to false after await completes`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.signal()
     signal.hasPendingSignal shouldBe true
 
@@ -140,14 +140,14 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `hasPendingSignal remains true after multiple signals`() {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     repeat(5) { signal.signal() }
     signal.hasPendingSignal shouldBe true
   }
 
   @Test
   fun `hasPendingSignal remains false when multiple awaiters`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     repeat(5) { backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() } }
 
     repeat(100) {
@@ -157,8 +157,39 @@ class ConflatedSignalUnitTest {
   }
 
   @Test
+  fun `pendingSignal is initially null`() {
+    val signal = ConflatedSignal<String>()
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `pendingSignal is the signaled value after signal is called`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.pendingSignal shouldBe "hello"
+  }
+
+  @Test
+  fun `pendingSignal transitions to null after await completes`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.pendingSignal shouldBe "hello"
+
+    signal.await() shouldBe "hello"
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `pendingSignal remains the latest value after multiple signals`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("first")
+    signal.signal("second")
+    signal.pendingSignal shouldBe "second"
+  }
+
+  @Test
   fun `signals flow emits immediately if there is a pending signal`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.signal()
 
     signal.signals.test {
@@ -169,7 +200,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `signals flow collection suspends if there is NO pending signal`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
 
     val job =
       backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.signals.collect {} }
@@ -179,7 +210,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `signals flow emits when signal is called`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
 
     signal.signals.test {
       signal.signal()
@@ -190,7 +221,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `multiple signals are conflated in the signals flow`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     repeat(10) { signal.signal() }
 
     signal.signals.test {
@@ -201,7 +232,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `multiple collectors of signals flow compete for signals`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
 
     turbineScope {
       val collector1 = signal.signals.testIn(backgroundScope, name = "collector1")
@@ -221,7 +252,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `signals flow collectors compete with direct awaiters`() = runTest {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
 
     turbineScope {
       val collector = signal.signals.testIn(backgroundScope, name = "collector")
@@ -241,7 +272,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `toString contains hasPendingSignal=false initially`() {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     check(!signal.hasPendingSignal)
 
     assertSoftly {
@@ -252,7 +283,7 @@ class ConflatedSignalUnitTest {
 
   @Test
   fun `toString contains hasPendingSignal=true after signal`() {
-    val signal = ConflatedSignal()
+    val signal = ConflatedSignal<Unit>()
     signal.signal()
     check(signal.hasPendingSignal)
 
@@ -260,5 +291,69 @@ class ConflatedSignalUnitTest {
       signal.toString() shouldContainWithNonAbuttingText "ConflatedSignal"
       signal.toString() shouldContainWithNonAbuttingTextIgnoringCase "hasPendingSignal=true"
     }
+  }
+
+  @Test
+  fun `await returns the signaled value`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+
+    val result = signal.await()
+    result shouldBe "hello"
+  }
+
+  @Test
+  fun `signals are conflated to the latest value`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("A")
+    signal.signal("B")
+
+    val result = signal.await()
+    result shouldBe "B"
+  }
+
+  @Test
+  fun `signals flow emissions carry correct values`() = runTest {
+    val signal = ConflatedSignal<String>()
+
+    signal.signals.test {
+      signal.signal("hello")
+      awaitItem() shouldBe "hello"
+
+      signal.signal("world")
+      awaitItem() shouldBe "world"
+      cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `clear() discards pending signal and causes subsequent await to suspend`() = runTest {
+    val signal = ConflatedSignal<Unit>()
+    signal.signal()
+    signal.clear()
+
+    val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
+    job.isCompleted shouldBe false
+  }
+
+  @Test
+  fun `clear() updates hasPendingSignal and pendingSignal`() {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.clear()
+
+    signal.hasPendingSignal shouldBe false
+    signal.pendingSignal shouldBe null
+  }
+
+  @Test
+  fun `clear() clears pending signal in signals flow`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signal("hello")
+    signal.clear()
+
+    val job =
+      backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.signals.collect {} }
+    job.isCompleted shouldBe false
   }
 }

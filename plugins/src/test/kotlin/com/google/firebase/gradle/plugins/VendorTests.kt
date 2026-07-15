@@ -160,7 +160,7 @@ class VendorPluginTests {
             buildscript {
                 repositories {
                     google()
-                    jcenter()
+                    mavenCentral()
                 }
             }
             plugins {
@@ -169,7 +169,7 @@ class VendorPluginTests {
             }
             repositories {
                 google()
-                jcenter()
+                mavenCentral()
             }
 
             android {
@@ -177,7 +177,7 @@ class VendorPluginTests {
                     buildConfig true
                 }
               namespace 'com.example'
-              compileSdkVersion 26
+              compileSdkVersion 34
             }
             
             dependencies {
@@ -201,6 +201,7 @@ class VendorPluginTests {
       .withArguments("assemble")
       .withProjectDir(testProjectDir.root)
       .withPluginClasspath()
+      .forwardOutput()
       .build()
 
     val aarFile = File(testProjectDir.root, "build/outputs/aar/testlib-release.aar")

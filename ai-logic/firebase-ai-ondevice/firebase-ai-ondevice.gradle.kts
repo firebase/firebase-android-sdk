@@ -29,6 +29,7 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{firebase_ai_logic_ondevice_android}}")
     versionName.set("ai-ondevice")
+    nestedHeader.set(true)
   }
 }
 
@@ -68,7 +69,7 @@ kotlin {
 
 dependencies {
   implementation(libs.genai.prompt)
-  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta03")
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

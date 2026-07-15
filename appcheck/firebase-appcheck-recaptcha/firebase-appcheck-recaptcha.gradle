@@ -19,8 +19,10 @@ plugins {
 firebaseLibrary {
     libraryGroup = "appcheck"
     releaseNotes {
-        name.set("{{app_check}} Recaptcha")
+        name.set("{{app_check}} reCAPTCHA")
         versionName.set("appcheck-recaptcha")
+        enabled.set(true)
+        nestedHeader.set(true)
     }
 }
 
@@ -49,7 +51,7 @@ dependencies {
     implementation(libs.dagger.dagger)
 
     api project(':appcheck:firebase-appcheck')
-    api project(':firebase-common')
+    api "com.google.firebase:firebase-common:22.1.0"
     api libs.firebase.components
     api 'com.google.android.recaptcha:recaptcha:18.7.1'
 
