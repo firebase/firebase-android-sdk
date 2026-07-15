@@ -53,7 +53,7 @@ dependencies {
   // resolution works, otherwise it breaks Fireperf Test Apps.
   // See https://github.com/gradle/gradle/issues/12286
   implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
-  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21")
+  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
   implementation(libs.org.json)
   implementation(libs.bundles.maven.resolver)
 
