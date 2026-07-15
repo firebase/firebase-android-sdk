@@ -100,8 +100,8 @@ private fun arbs(
       if (it.type !in excludes) {
         add(it.factory())
       }
-      addAll(extras)
     }
+    addAll(extras)
   }
 
   scalarArbs.forEach { yield(it) }
