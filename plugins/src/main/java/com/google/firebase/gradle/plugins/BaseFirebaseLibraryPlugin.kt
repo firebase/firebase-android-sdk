@@ -316,7 +316,7 @@ fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
     .allDependencies
     .mapNotNull { it as? ProjectDependency }
     .map {
-      project.project(it.path).extensions.findByType<FirebaseLibraryExtension>()
+      project.project(it.dependencyProject.path).extensions.findByType<FirebaseLibraryExtension>()
         ?: throw RuntimeException(
           "Project level dependencies must have the firebaseLibrary plugin. The following dependency does not: ${it.artifactName}"
         )
