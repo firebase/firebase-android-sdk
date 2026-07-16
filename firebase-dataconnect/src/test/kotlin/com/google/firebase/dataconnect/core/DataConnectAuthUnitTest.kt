@@ -59,7 +59,7 @@ import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeLessThan
-import io.kotest.matchers.ints.shouldBeLessThanOrEqual
+import io.kotest.matchers.longs.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -88,6 +88,7 @@ import io.mockk.slot
 import io.mockk.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.LongAdder
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -492,10 +493,10 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.initialize()
     advanceUntilIdle()
     val tokens = CopyOnWriteArrayList<String>()
-    val getAccessTokenCallCount = AtomicInteger(0)
+    val getAccessTokenCallCount = LongAdder()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
       {
-        getAccessTokenCallCount.incrementAndGet()
+        getAccessTokenCallCount.add(1)
         taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
@@ -512,7 +513,7 @@ class DataConnectAuthUnitTest {
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
-    withClue("getAccessTokenCallCount") { getAccessTokenCallCount.get() shouldBeLessThanOrEqual 80 }
+    withClue("getAccessTokenCallCount") { getAccessTokenCallCount.sum() shouldBeLessThanOrEqual 80 }
   }
 
   @Test
