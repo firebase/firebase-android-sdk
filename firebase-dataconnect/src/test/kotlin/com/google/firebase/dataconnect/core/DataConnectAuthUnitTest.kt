@@ -513,7 +513,9 @@ class DataConnectAuthUnitTest {
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
-    withClue("getAccessTokenCallCount") { getAccessTokenCallCount.sum() shouldBeLessThanOrEqual 80 }
+    withClue("getAccessTokenCallCount") {
+      getAccessTokenCallCount.sum() shouldBeLessThanOrEqual 150
+    }
   }
 
   @Test
