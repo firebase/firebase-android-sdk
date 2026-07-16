@@ -35,7 +35,7 @@ android {
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
+        targetSdk project.targetSdkVersion
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
