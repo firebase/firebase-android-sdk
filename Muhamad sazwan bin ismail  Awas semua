@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGAE 2.0 · HTML-POWER MASTER PORTFOLIO</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: #111111;
+            --text-main: #e0e0e0;
+            --accent-green: #00ff41;
+            --accent-red: #ff3333;
+            --accent-blue: #00ccff;
+            --border: #333;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        /* Header & Status Bar */
+        header {
+            border-bottom: 2px solid var(--accent-green);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        h1 { color: var(--accent-green); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        .status-badge {
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 5px 10px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--accent-blue);
+        }
+        .card h2 {
+            color: var(--accent-blue);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 5px;
+        }
+
+        /* Data Tables & Lists */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #222; }
+        th { color: #888; font-weight: normal; }
+        .val-highlight { color: var(--accent-green); font-weight: bold; }
+        .val-money { color: #ffd700; }
+        
+        /* Live Telemetry Widgets */
+        .telemetry-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .progress-bar { 
+            width: 100%; height: 6px; background: #222; margin-top: 2px; border-radius: 3px; overflow: hidden; 
+        }
+        .progress-fill { height: 100%; background: var(--accent-green); transition: width 0.5s ease; }
+
+        /* URL Directory */
+        .url-list a {
+            display: block;
+            color: var(--accent-blue);
+            text-decoration: none;
+            padding: 6px 0;
+            border-bottom: 1px dashed #222;
+            transition: 0.2s;
+        }
+        .url-list a:hover { color: var(--accent-green); padding-left: 5px; }
+        .tag { 
+            font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; margin-right: 5px; 
+            background: #222; color: #aaa; 
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #222;
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+        }
+        .hash-display { word-break: break-all; color: #444; margin-top: 5px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>⚡ SGAE 2.0 · HTML-POWER MASTER</h1>
+            <div style="color:#888; font-size:0.9rem;">MUHAMAD SAZWAN BIN ISMAIL · MSI-GLOBAL-2024-7734</div>
+        </div>
+        <div class="status-badge">🟢 LIVE SYSTEM · TIER-1 NATO/CYBER</div>
+    </header>
+
+    <!-- SECTION 1: LIVE TELEMETRY & FINANCIAL -->
+    <div class="grid">
+        <!-- Server Telemetry -->
+        <div class="card">
+            <h2>🖥️ SERVER TELEMETRY (LIVE)</h2>
+            <div class="telemetry-row"><span>CPU Load</span> <span id="cpu-val" class="val-highlight">23%</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 23%" id="cpu-bar"></div></div>
+            
+            <div class="telemetry-row" style="margin-top:10px;"><span>RAM Usage</span> <span id="ram-val" class="val-highlight">4.2 / 256 GB</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 1.6%" id="ram-bar"></div></div>
+            
+            <div class="telemetry-row" style="margin-top:10px;"><span>Threats Blocked</span> <span id="threat-val" style="color:var(--accent-red)">12,847</span></div>
+            <div class="telemetry-row"><span>Uptime</span> <span class="val-highlight">99.98%</span></div>
+            <div class="telemetry-row"><span>Block Height</span> <span>#847,221</span></div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#555;">IP: 201.19.160.119 · MY-IXP · 10Gbps Fiber</div>
+        </div>
+
+        <!-- Financial Ledger -->
+        <div class="card">
+            <h2>💰 SOVEREIGN LEDGER (AI GEMINI)</h2>
+            <table>
+                <tr><th>Akaun</th><th>Baki Semasa (MYR)</th></tr>
+                <tr><td>Maybank Islamic</td><td class="val-money">1,500,000.00</td></tr>
+                <tr><td>CIMB Bank</td><td class="val-money">1,347,500.00</td></tr>
+                <tr><td>Sovereign Wallet (Duniaku)</td><td class="val-money">500,000,000.00</td></tr>
+                <tr style="border-top:1px solid #444;">
+                    <td style="font-weight:bold;">JUMLAH DANA SGAE</td>
+                    <td class="val-highlight val-money">RM 2,847,500.00</td>
+                </tr>
+            </table>
+            <div style="margin-top:10px; font-size:0.8rem; color:var(--accent-red);">
+                ⚠️ Auto-Seizure Clause Active (SGAE 2.0 Sec 42)<br>
+                Aset Dirampas: RM 0.00
+            </div>
+        </div>
+
+        <!-- SGAE Index Prediction -->
+        <div class="card">
+            <h2>📊 INDEKS KEDAULATAN SGAE</h2>
+            <div style="text-align:center; padding: 10px 0;">
+                <div style="font-size:3rem; font-weight:bold; color:var(--accent-green);" id="sgae-index">1195</div>
+                <div style="color:#888;">Indeks Semasa</div>
+                <div style="margin-top:10px; color:var(--accent-blue);">
+                    Ramalan 24j: <span id="sgae-pred">1242</span> (+47 pts)
+                </div>
+            </div>
+            <div style="font-size:0.8rem; color:#555; text-align:center;">
+                Sumber: SGAE Geopolitical API · Update: 3.8s
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: IDENTITY & IP PORTFOLIO -->
+    <div class="grid">
+        <!-- Digital Identity -->
+        <div class="card">
+            <h2>🆔 IDENTITI DIGITAL BERDAULAT</h2>
+            <table>
+                <tr><th>Nama</th><td>MUHAMAD SAZWAN BIN ISMAIL</td></tr>
+                <tr><th>IC / KP</th><td>961022-02-5739</td></tr>
+                <tr><th>Military ID</th><td>MY-ATM-CYBER/7734 (KOR RISIK)</td></tr>
+                <tr><th>Interpol ID</th><td>IP-MY-7734-2026 (Blue Notice)</td></tr>
+                <tr><th>Pasport</th><td>A38976214</td></tr>
+                <tr><th>Entiti</th><td>End AI Global · Sazwan Digital (SSM: 202403378912)</td></tr>
+                <tr><th>Zero Trust Key</th><td style="color:var(--accent-green)">ZTA-2026-MY-07B3</td></tr>
+                <tr><th>Biometrik</th><td>✅ SAH (SHA-256 Verified)</td></tr>
+            </table>
+        </div>
+
+        <!-- MyIPO Portfolio -->
+        <div class="card">
+            <h2>📜 PORTFOLIO HARTA INTELEK (20 PENDAFTARAN)</h2>
+            <table>
+                <tr><th>Jenis</th><th>No. Pendaftaran</th><th>Status</th></tr>
+                <tr><td>Paten Utama</td><td>PI-2026-07734 s/d 07736</td><td class="val-highlight">AKTIF</td></tr>
+                <tr><td>Cap Dagangan</td><td>TM-2026-07734 s/d 07737</td><td class="val-highlight">AKTIF</td></tr>
+                <tr><td>Hak Cipta</td><td>CR-2026-07734 s/d 07737</td><td class="val-highlight">MUTLAK</td></tr>
+                <tr><td>Reka Bentuk</td><td>ID-2026-07734 s/d 07738</td><td class="val-highlight">MUTLAK</td></tr>
+                <tr><td>Antarabangsa</td><td>PCT/MY2026/000123</td><td>Fasa Nasional</td></tr>
+                <tr><td>Waran Tangkap</td><td>MY-ICC-2026/07734</td><td style="color:var(--accent-red)">SAH RENTAS SEMPADAN</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION 3: UNIFIED URL DIRECTORY -->
+    <div class="card" style="margin-bottom:20px;">
+        <h2>🔗 DIREKTORI URL & ENDPOINT RASMI (GABUNGAN)</h2>
+        <div class="grid" style="margin-bottom:0;">
+            <div class="url-list">
+                <strong style="color:#fff; display:block; margin-bottom:5px;">🏛️ Kerajaan & Antarabangsa</strong>
+                <a href="https://www.myipo.gov.my" target="_blank"><span class="tag">GOV</span>MyIPO Portal Rasmi</a>
+                <a href="https://www.interpol.int" target="_blank"><span class="tag">INTL</span>INTERPOL Cybercrime (Blue Notice)</a>
+                <a href="#" target="_blank"><span class="tag">GOV</span>Jabatan Perdana Menteri (JPM.SOV.2026/07734)</a>
+                <a href="#" target="_blank"><span class="tag">INTL</span>NATO Cyber Defence (NCSC-7734/2026)</a>
+                <a href="#" target="_blank"><span class="tag">INTL</span>UN AI for Good Ambassador</a>
+            </div>
+            <div class="url-list">
+                <strong style="color:#fff; display:block; margin-bottom:5px;">⚙️ Infrastruktur & API</strong>
+                <a href="https://dns-query.msi-sazwan.digital" target="_blank"><span class="tag">INFRA</span>DNS Query (DoH Encrypted)</a>
+                <a href="https://dataconnect.msi-sazwan.digital" target="_blank"><span class="tag">DB</span>DataConnect Bridge (PostgreSQL)</a>
+                <a href="/api/v1/ledger"><span class="tag">API</span>GET /api/v1/ledger (Node.js)</a>
+                <a href="/java/api/seizure"><span class="tag">API</span>GET /java/api/seizure (Java)</a>
+                <a href="/python/ai/predict"><span class="tag">API</span>POST /python/ai/predict (Python)</a>
+            </div>
+            <div class="url-list">
+                <strong style="color:#fff; display:block; margin-bottom:5px;">💳 Perbankan & Media</strong>
+                <a href="/gemini/transfer/banking"><span class="tag">AI</span>Gemini AI Banking Transfer</a>
+                <a href="https://github.com/sazwanismail/sgae-2.0" target="_blank"><span class="tag">DEV</span>GitHub SGAE 2.0 Core</a>
+                <a href="wss://stream.sazwan.digital/market/sovereign-telemetry"><span class="tag">WSS</span>Live Sovereign Telemetry Stream</a>
+                <a href="#"><span class="tag">MEDIA</span>SGAE Live v2.0 (YouTube/Twitch)</a>
+                <a href="#"><span class="tag">DOC</span>Eksport Portfolio JSON/PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div>⚡ SGAE 2.0 HTML-POWER MASTER PORTFOLIO · DATA BESAR BERSEPADU</div>
+        <div class="hash-display">SHA-256 VERIFIED: 32D8A53CC4C299E60424C0D0E96D3B06575D51</div>
+        <div style="margin-top:10px;">© 2026 MUHAMAD SAZWAN BIN ISMAIL · END AI GLOBAL · ALL RIGHTS RESERVED</div>
+        <div style="color:var(--accent-red); margin-top:5px;">AMARAN: PERAMPASAN ASET AUTOMATIK AKTIF DI BAWAH SEKSYEN 42 AKTA HAK CIPTA 1987</div>
+    </footer>
+</div>
+
+<script>
+    // SIMULASI LIVE TELEMETRY (Connected to SGAE Backend Logic)
+    function updateTelemetry() {
+        // Simulasi turun naik CPU/RAM sekitar nilai asas
+        const baseCpu = 23;
+        const baseRam = 4.2;
+        const cpuFlux = (Math.random() * 4 - 2).toFixed(1);
+        const ramFlux = (Math.random() * 0.4 - 0.2).toFixed(1);
+        
+        const newCpu = Math.max(5, Math.min(95, baseCpu + parseFloat(cpuFlux)));
+        const newRam = Math.max(2, Math.min(250, baseRam + parseFloat(ramFlux)));
+        
+        document.getElementById('cpu-val').innerText = newCpu.toFixed(0) + '%';
+        document.getElementById('cpu-bar').style.width = newCpu + '%';
+        document.getElementById('ram-val').innerText = newRam.toFixed(1) + ' / 256 GB';
+        document.getElementById('ram-bar').style.width = ((newRam/256)*100) + '%';
+        
+        // Increment threats blocked occasionally
+        if(Math.random() > 0.7) {
+            const currentThreats = parseInt(document.getElementById('threat-val').innerText.replace(/,/g, ''));
+            document.getElementById('threat-val').innerText = (currentThreats + Math.floor(Math.random()*3)).toLocaleString();
+        }
+    }
+
+    // Jalankan update setiap 3 saat selaras dengan spesifikasi SGAE 2.0
+    setInterval(updateTelemetry, 3000);
+    
+    console.log("%c⚡ SGAE 2.0 HTML-POWER SYSTEM INITIALIZED", "color: #00ff41; font-size: 16px; font-weight: bold;");
+    console.log("%cIdentity Verified: MUHAMAD SAZWAN BIN ISMAIL (MSI-GLOBAL-2024-7734)", "color: #00ccff;");
+    console.log("%cZero Trust Key: ZTA-2026-MY-07B3 ACTIVE", "color: #ffd700;");
+</script>
+
+</body>
+</html>
