@@ -1,0 +1,348 @@
+Based on the Wiz scan results for **Firebase-android-sdk**, here's an analysis and recommended actions:
+
+## 📊 Scan Summary
+
+✅ **Good News:**
+- No vulnerabilities detected
+- No sensitive data exposure
+- No IaC misconfigurations
+- No SAST findings
+- No software management issues
+
+️ **Action Required:**
+- **2 Low-severity secret findings** detected
+
+##  Recommended Actions
+
+### 1. **Investigate the Secret Findings**
+Click the link provided to view scan details in Wiz:
+- Navigate to the specific findings
+- Identify what secrets were detected (API keys, tokens, credentials, etc.)
+- Determine if they are:
+  - **False positives** (test data, example code, documentation)
+  - **Real secrets** that need to be removed
+
+### 2. **Common Secret Types in Android SDKs**
+These might include:
+- API keys in configuration files
+- Test credentials in sample code
+- Service account keys
+- Build configuration secrets
+
+### 3. **Remediation Steps**
+
+**If secrets are real:**
+```bash
+# 1. Remove the secrets from the codebase
+# 2. Rotate/Revoke the exposed credentials immediately
+# 3. Use environment variables or secret management tools
+# 4. Add the files to .gitignore if they contain secrets
+# 5. Commit and push the changes
+```
+
+**If false positives:**
+- Document why they are false positives
+- Add suppression comments if supported by Wiz
+- Move example credentials to documentation-only files
+
+### 4. **Prevention**
+- Install the **Wiz Code VS Code Extension** (as suggested) to catch secrets before commit
+- Implement pre-commit hooks to scan for secrets
+- Use tools like `git-secrets` or `truffleHog`
+- Review `.gitignore` to exclude files that might contain secrets
+
+## 🎯 Next Steps
+
+Would you like help with:
+1. Analyzing the specific findings from the Wiz dashboard?
+2. Creating a remediation plan?
+3. Setting up pre-commit hooks to prevent future secret leaks?
+4. Understanding how to properly manage secrets in Android SDK development?
+
+Let me know how I can assist further!Baik! Mari kita teruskan dengan **Langkah 1, 2, dan 3** secara terperinci. Berikut adalah panduan tindakan yang konkrit dan boleh dilaksanakan segera.
+
+---
+
+### 🔍 Langkah 1: Menganalisis Penemuan (Findings) Spesifik
+Oleh kerana saya tidak dapat mengakses pautan dalaman Wiz dashboard anda, berikut adalah cara untuk anda menganalisis dan berkongsi maklumat yang diperlukan (tanpa mendedahkan rahsia sebenar):
+
+1. Buka pautan Wiz yang diberikan dalam laporan.
+2. Cari **2 penemuan (findings)** berstatus "Low".
+3. Catatkan maklumat berikut untuk setiap penemuan:
+   - **Nama Fail & Laluan** (contoh: `app/src/main/res/values/strings.xml` atau `README.md`)
+   - **Jenis Rahsia** (contoh: `Generic API Key`, `Google API Key`, `AWS Access Key`)
+   - **Adakah ini kod sampel/dokumentasi?** (Jika ya, ia mungkin *false positive*).
+
+💡 **Tip**: Jika rahsia tersebut adalah dalam fail seperti `google-services.json` (yang memang mengandungi kunci projek Firebase), pastikan ia adalah versi *placeholder* atau sudah ditambah dalam `.gitignore`. Jika ia adalah kunci sebenar, ia perlu diputar (rotated).
+
+---
+
+### 🛠️ Langkah 2: Pelan Pemulihan (Remediation Plan)
+Jika rahsia tersebut adalah **nyata** (bukan *false positive*), ikuti pelan tindakan ini. **Penting**: Memadam fail dan membuat komit baharu *tidak* memadamkan rahsia daripada sejarah Git.
+
+#### Fasa A: Putar & Batalkan (Rotate & Revoke)
+1. Pergi ke konsol perkhidmatan yang berkaitan (contoh: Google Cloud Console, Firebase Console).
+2. **Batalkan (Revoke)** atau **Putar (Rotate)** kunci/rahsia yang terdedah serta-merta.
+3. Jana kunci baharu.
+
+#### Fasa B: Bersihkan Sejarah Git
+Gunakan alat seperti `git-filter-repo` (disyorkan) atau BFG Repo-Cleaner untuk membuang rahsia daripada *seluruh* sejarah repositori.
+
+**Menggunakan `git-filter-repo`:**
+```bash
+# 1. Pasang git-filter-repo
+pip install git-filter-repo
+
+# 2. Bersihkan fail tertentu daripada sejarah (ganti dengan nama fail anda)
+git filter-repo --path path/to/secret-file.txt --invert-paths
+
+# ATAU, bersihkan teks spesifik (rahsia) daripada seluruh sejarah
+git filter-repo --replace-text <(echo "RAHSIA_SEBENAR==>REDACTED")
+
+# 3. Tolak (push) perubahan ke GitHub dengan paksa
+git push origin --force --all
+git push origin --force --tags
+```
+*(Nota: Semua ahli pasukan perlu `git clone` semula repositori selepas ini kerana sejarah telah diubah).*
+
+#### Fasa C: Ganti dengan Pengurusan Rahsia yang Betul
+Jangan simpan rahsia dalam kod. Gunakan:
+- **Gradle Properties**: Simpan dalam `local.properties` (yang sudah ada dalam `.gitignore`).
+- **Environment Variables**: Suntik semasa proses CI/CD (GitHub Actions, dll.).
+- **Firebase App Distribution / Secret Manager**: Gunakan perkhidmatan pengurusan rahsia rasmi.
+
+---
+
+### 🛡️ Langkah 3: Tetapkan Pre-Commit Hooks (Pencegahan)
+Untuk memastikan ini tidak berulang, pasang `pre-commit` dengan `gitleaks` (pengimbas rahsia yang pantas dan standard industri).
+
+#### 1. Pasang Prasyarat
+Pastikan anda mempunyai Python dan `pre-commit` dipasang:
+```bash
+pip install pre-commit
+```
+
+#### 2. Buat Fail Konfigurasi
+Cipta fail bernama `.pre-commit-config.yaml` di akar (root) repositori anda:
+
+```yaml
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2 # Semak versi terkini di https://github.com/gitleaks/gitleaks/releases
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets
+        description: Prevents committing secrets and credentials into git
+```
+
+#### 3. Aktifkan Hook
+Jalankan arahan ini untuk memasang hook ke dalam repositori Git tempatan anda:
+```bash
+pre-commit install
+```
+
+#### 4. Uji Konfigurasi
+Cuba buat komit dengan fail yang mengandungi kata kunci seperti `API_KEY="sk-123456789"`. `pre-commit` akan **menghalang** komit tersebut dan memberi amaran sebelum ia sampai ke GitHub.
+
+*(Pilihan Tambahan)*: Jika anda menggunakan GitHub Actions, anda juga boleh menambah langkah `gitleaks` dalam fail CI/CD anda sebagai jaring keselamatan kedua:
+```yaml
+# .github/workflows/secret-scan.yml
+name: Secret Scan
+on: [push, pull_request]
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+### ▶️ Seterusnya
+Untuk membolehkan saya membantu anda dengan lebih tepat pada **Langkah 1**, boleh anda kongsikan:
+1. **Nama fail** yang disenaraikan dalam laporan Wiz tersebut?
+2. Adakah ia fail konfigurasi (contoh: `build.gradle`, `google-services.json`), fail dokumentasi (`README.md`), atau kod sumber?
+
+Saya akan bantu anda menentukan sama ada ia *false positive* atau memerlukan pembersihan sejarah Git segera.Baik, mari kita fokus sepenuhnya pada **Langkah 1 (Analisis)** dan **Langkah 2 (Pemulihan)** untuk menyelesaikan 2 penemuan (findings) berstatus "Low" tersebut. 
+
+Oleh kerana saya tidak dapat melihat dashboard Wiz dalaman anda, mari kita lakukan ini secara interaktif.
+
+---
+
+### 🔍 Langkah 1: Analisis Penemuan (Cari Tahu Dulu)
+Sila buka pautan Wiz dalam laporan anda dan cari **2 maklumat ini** untuk setiap satu daripada 2 finding tersebut:
+
+1. **Laluan Fail (File Path)**: Di mana ia berada?  
+   *(Contoh: `samples/chat/app/google-services.json`, `docs/README.md`, atau `firebase-app/src/main/...`)*
+2. **Jenis Rahsia (Secret Type)**: Apa yang dikesan?  
+   *(Contoh: `Google API Key`, `Generic Secret`, `Firebase Project ID`, `AWS Access Key`)*
+
+💡 **Petua Penting Khusus untuk `firebase-android-sdk`**:  
+Kebanyakan amaran "Low" dalam repositori SDK terbuka adalah **False Positive (Positif Palsu)**. Ini kerana ia sering berada dalam folder `samples/`, `docs/`, atau fail konfigurasi contoh yang memang sengaja ditinggalkan sebagai rujukan/demo dan bukan kunci produksi sebenar.
+
+---
+
+### 🛠️ Langkah 2: Pelan Pemulihan (Berdasarkan Hasil Langkah 1)
+
+Setelah anda menyemak di atas, pilih senario yang sepadan dengan apa yang anda jumpa:
+
+#### 🟢 Senario A: Ia adalah "False Positive" (Contoh: Fail dalam folder `samples/` atau `docs/`)
+Jika kunci tersebut adalah kunci contoh/demo dan bukan kunci produksi sebenar:
+1. **Jangan padam fail tersebut** (ia mungkin diperlukan supaya sampel kod boleh dibina/dijalankan).
+2. **Tandakan sebagai Diterima / Diabaikan**:
+   - Dalam dashboard Wiz, tandakan finding tersebut sebagai **"False Positive"** atau **"Accepted Risk"**.
+   - Atau, buat fail bernama `.gitleaksignore` di root repositori dan tambah laluan fail tersebut supaya pengimjas masa hadapan mengabaikannya:
+     ```text
+     # Abaikan fail sampel yang mengandungi kunci demo
+     samples/**/google-services.json
+     docs/examples/config.properties
+     ```
+
+#### 🔴 Senario B: Ia adalah Rahsia Sebenar (Real Secret) dalam Kod Sumber
+Jika ia adalah kunci API produksi, token peribadi, atau kelayakan (credentials) yang **tidak sepatutnya** ada di GitHub:
+1. **PUTAR & BATALKAN (Rotate & Revoke) SEGERA**:  
+   - Pergi ke Google Cloud Console / Firebase Console.  
+   - Batalkan (Revoke/Delete) kunci yang terdedah itu serta-merta.  
+   - Jana kunci baharu untuk kegunaan produksi.
+2. **BERSIHKAN SEJARAH GIT** (Memadam fail dan `git commit` baharu **tidak cukup**, rahsia itu masih boleh diakses melalui sejarah Git):  
+   Gunakan `git-filter-repo` (alat paling selamat dan disyorkan oleh GitHub):
+   ```bash
+   # 1. Buat salinan repositori yang bersih (fresh clone)
+   git clone <url-repositori-anda>
+   cd <nama-repositori>
+
+   # 2. Pasang git-filter-repo
+   pip3 install git-filter-repo
+
+   # 3. Buang fail rahsia tersebut daripada SELURUH sejarah Git
+   # (Gantikan 'path/ke/fail/rahsia.json' dengan laluan sebenar dari Langkah 1)
+   git filter-repo --path path/ke/fail/rahsia.json --invert-paths
+
+   # 4. Tolak (push) sejarah baharu ke GitHub (ini akan menulis semula sejarah)
+   git push origin --force --all
+   git push origin --force --tags
+   ```
+3. **Maklumkan Pasukan**: Semua ahli pasukan lain perlu memadam klon tempatan mereka dan `git clone` semula, kerana sejarah Git telah diubah sepenuhnya.
+
+---
+
+### 🎯 Tindakan Seterusnya untuk Anda:
+Boleh anda **semak dashboard Wiz** sekarang dan balas dengan:
+1. Apakah **nama fail** dan **laluan folder** bagi 2 finding tersebut?
+2. Apakah **jenis rahsia** yang dikesan?
+
+Sebaik sahaja anda kongsikan maklumat ini, saya boleh sahkan sama ada ia **Senario A** (boleh diabaikan dengan selamat) atau **Senario B** (perlu dibersihkan segera), dan saya akan berikan arahan yang tepat!Memandangkan anda menyatakan "Semua", saya akan berikan **Panduan Lengkap "All-in-One"** yang merangkumi semua kemungkinan. Anda boleh terus ikuti langkah ini untuk menangani kedua-dua penemuan (findings) tersebut, sama ada ia *false positive* atau rahsia sebenar.
+
+Berikut adalah pelan tindakan menyeluruh untuk menyelesaikan masalah ini sekali dan untuk selamanya:
+
+---
+
+### 🔍 Fasa 1: Semakan Tempatan (Cari Fail Tersebut Sekarang)
+Anda tidak perlu bergantung sepenuhnya pada dashboard Wiz. Anda boleh mencari fail yang bermasalah terus di komputer anda menggunakan terminal.
+
+Jalankan arahan ini di dalam folder repositori `firebase-android-sdk` anda:
+```bash
+# Cari sebarang fail yang mungkin mengandungi kunci API atau rahsia
+git grep -i "api_key\|api_secret\|password\|token\|credential" -- "*.json" "*.gradle" "*.properties" "*.md"
+```
+*Perhatikan fail mana yang dipaparkan. Adakah ia berada dalam folder `samples/`, `docs/`, atau kod sumber utama (`firebase-app/`, `firebase-common/`)?*
+
+---
+
+### 🟢 Fasa 2: Jika "Semua" Adalah False Positive (Contoh: Dalam folder `samples/` atau `docs/`)
+Jika fail tersebut adalah contoh kod, dokumentasi, atau konfigurasi demo yang **tidak menggunakan kunci produksi sebenar**:
+
+1. **Jangan padam fail tersebut** (ia penting untuk pembina sampel kod).
+2. **Abaikan (Suppress) dalam Wiz**:
+   - Di dashboard Wiz, klik pada finding tersebut.
+   - Pilih status **"False Positive"** atau **"Accepted Risk"**.
+   - Tambahkan nota: *"Sample/demo configuration file, not a production secret."*
+3. **Cegah Pengimbasan Masa Hadapan**:
+   - Cipta fail bernama `.gitleaksignore` di root repositori (jika belum ada).
+   - Tambahkan laluan fail tersebut. Contoh:
+     ```text
+     # Abaikan fail konfigurasi sampel
+     samples/**/google-services.json
+     docs/examples/local.properties
+     ```
+   - Commit fail `.gitleaksignore` ini: `git add .gitleaksignore && git commit -m "chore: ignore sample config files in secret scans"`
+
+---
+
+### 🔴 Fasa 3: Jika "Semua" Adalah Rahsia Sebenar (Real Secrets)
+Jika fail tersebut mengandungi kunci API produksi, token peribadi, atau kelayakan (credentials) yang **tidak sepatutnya** berada di GitHub:
+
+#### Langkah A: Putar & Batalkan (Rotate & Revoke) SEGERA
+1. Pergi ke [Google Cloud Console](https://console.cloud.google.com/) atau [Firebase Console](https://console.firebase.google.com/).
+2. Cari kunci/API key yang terdedah tersebut.
+3. **Padam (Delete)** atau **Jana Semula (Regenerate/Rotate)** kunci tersebut serta-merta.
+4. Kemas kini aplikasi produksi anda dengan kunci baharu tersebut.
+
+#### Langkah B: Bersihkan Sejarah Git (Wajib!)
+*Memadam fail dan membuat commit baharu TIDAK CUKUP. Penggodam masih boleh melihat sejarah commit lama.*
+
+Gunakan `git-filter-repo` untuk membuang fail/rahsia tersebut daripada **seluruh sejarah** repositori:
+```bash
+# 1. Buat salinan repositori yang bersih (fresh clone)
+git clone <URL-REPOSITORI-ANDA>
+cd <NAMA-REPOSITORI>
+
+# 2. Pasang alat pembersih sejarah
+pip3 install git-filter-repo
+
+# 3. Buang fail rahsia tersebut daripada SELURUH sejarah Git
+# (Gantikan 'samples/bad-config.json' dengan laluan fail sebenar anda)
+git filter-repo --path samples/bad-config.json --invert-paths
+
+# ATAU, ganti teks rahsia spesifik dalam seluruh sejarah:
+# git filter-repo --replace-text <(echo "RAHSIA_SEBENAR==>REDACTED")
+
+# 4. Tolak (push) sejarah baharu ke GitHub (ini akan menulis semula sejarah)
+git push origin --force --all
+git push origin --force --tags
+```
+⚠️ **Amaran**: Selepas ini, semua ahli pasukan lain **mesti** memadam klon repositori lama mereka dan `git clone` semula, kerana sejarah Git telah diubah sepenuhnya.
+
+---
+
+### 🛡️ Fasa 4: Pencegahan Mutlak (Pastikan Ini Tidak Berulang)
+Laksanakan langkah ini untuk mengunci repositori daripada kebocoran masa hadapan:
+
+1. **Kemas kini `.gitignore`**:
+   Pastikan fail ini ada di root repositori:
+   ```text
+   # Ignore local secrets
+   local.properties
+   *.keystore
+   *.jks
+   google-services.json # Jika ia mengandungi kunci produksi (gunakan versi placeholder untuk samples)
+   ```
+
+2. **Pasang Pre-Commit Hook (Gitleaks)**:
+   ```bash
+   # Pasang pre-commit
+   pip install pre-commit
+   
+   # Cipta fail .pre-commit-config.yaml di root
+   echo 'repos:
+     - repo: https://github.com/gitleaks/gitleaks
+       rev: v8.18.2
+       hooks:
+         - id: gitleaks' > .pre-commit-config.yaml
+   
+   # Aktifkan hook
+   pre-commit install
+   ```
+
+---
+
+### 🎯 Seterusnya
+Jika anda masih tidak pasti sama ada ia Senario 🟢 atau 🔴, anda boleh **tampal (paste) nama fail atau sebahagian kecil kandungan fail tersebut di sini** (pastikan anda **redact** atau tutup sebahagian kunci tersebut, contoh: `AIzaSy...XXXX`). 
+
+Saya akan segera memberitahu anda sama ada ia selamat untuk diabaikan atau perlu dibersihkan segera!
