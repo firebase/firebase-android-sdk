@@ -1755,7 +1755,7 @@ class QuerySubscriptionImplUnitTest {
 
     val waitTimes = times.zipWithNext { a, b -> b - a }
     check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
-    val expectedWaitTimes = getExpectedBackoffWaitTimes(99)
+    val expectedWaitTimes = getExpectedBackoffWaitTimes(waitTimes.size)
     waitTimes shouldContainExactly expectedWaitTimes
   }
 
@@ -2221,7 +2221,7 @@ private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: Call
 
 private fun getExpectedBackoffWaitTimes(count: Int = -1): List<Long> {
   require(count >= -1) { "invalid count: $count [ht5kab7ehc]" }
-  val calculator = RetryBackoffCalculator()
+  val calculator = RetryBackoffCalculator { 0.0 }
   val list = mutableListOf<Long>()
 
   while (true) {

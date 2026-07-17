@@ -28,7 +28,7 @@ import kotlin.math.roundToLong
  * 0.5) to introduce random jitter into backoff durations. This function must be thread-safe (safe
  * to call concurrently).
  */
-internal class RetryBackoffCalculator(private val getRandomJitter: () -> Double = { 0.0 }) {
+internal class RetryBackoffCalculator(private val getRandomJitter: () -> Double) {
   private val nextBackoffMs = AtomicLong(INITIAL_BACKOFF_MS)
 
   /** Resets the backoff duration to the initial backoff value. */

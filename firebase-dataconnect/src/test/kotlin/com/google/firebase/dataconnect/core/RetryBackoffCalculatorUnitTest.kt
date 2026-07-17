@@ -42,14 +42,14 @@ class RetryBackoffCalculatorUnitTest {
 
   @Test
   fun `next() first call returns initial backoff`() {
-    val retryBackoffCalculator = RetryBackoffCalculator()
+    val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     retryBackoffCalculator.next() shouldBe 1000L
   }
 
   @Test
   fun `next() after reset() returns initial backoff`() = runTest {
     checkAll(propTestConfig, Arb.int(0..100)) { nextCallCountBeforeReset ->
-      val retryBackoffCalculator = RetryBackoffCalculator()
+      val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
       repeat(nextCallCountBeforeReset) { retryBackoffCalculator.next() }
       retryBackoffCalculator.reset()
 
@@ -59,13 +59,13 @@ class RetryBackoffCalculatorUnitTest {
 
   @Test
   fun `next() returns correct values until reaching the max value`() {
-    val retryBackoffCalculator = RetryBackoffCalculator()
+    val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     backoffValues.forEach { expected -> retryBackoffCalculator.next() shouldBe expected }
   }
 
   @Test
   fun `next() never returns greater than the max value`() {
-    val retryBackoffCalculator = RetryBackoffCalculator()
+    val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     repeat(1000) {
       withClue("iteration=$it") { retryBackoffCalculator.next() shouldBeLessThanOrEqual 600000L }
     }
@@ -73,7 +73,7 @@ class RetryBackoffCalculatorUnitTest {
 
   @Test
   fun `next() returns the max value once it is reached`() {
-    val retryBackoffCalculator = RetryBackoffCalculator()
+    val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     var lastValue = retryBackoffCalculator.next()
     while (true) {
       val value = retryBackoffCalculator.next()
@@ -89,7 +89,7 @@ class RetryBackoffCalculatorUnitTest {
   @Test
   fun `reset() always resets`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.int(0..20), 20..20)) { interveningNextCallCounts ->
-      val retryBackoffCalculator = RetryBackoffCalculator()
+      val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
       interveningNextCallCounts.forEach { count ->
         if (count > 0) {
           retryBackoffCalculator.next() shouldBe 1000L
@@ -102,7 +102,7 @@ class RetryBackoffCalculatorUnitTest {
 
   @Test
   fun `next() concurrent calls behave correctly`() = runTest {
-    val retryBackoffCalculator = RetryBackoffCalculator()
+    val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     val latch = SuspendingCountDownLatch(50)
 
     val jobs =
@@ -115,7 +115,8 @@ class RetryBackoffCalculatorUnitTest {
 
     val results = jobs.awaitAll()
     val expected =
-      RetryBackoffCalculator().let { testCalculator -> List(jobs.size) { testCalculator.next() } }
+      RetryBackoffCalculator { 0.0 }
+        .let { testCalculator -> List(jobs.size) { testCalculator.next() } }
     results shouldContainExactlyInAnyOrder expected
   }
 
