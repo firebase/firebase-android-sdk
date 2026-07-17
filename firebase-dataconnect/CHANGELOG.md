@@ -4,7 +4,8 @@
   exponential backoff strategy.
   ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381),
   [#8421](https://github.com/firebase/firebase-android-sdk/pull/8421),
-  [#8446](https://github.com/firebase/firebase-android-sdk/pull/8446))
+  [#8446](https://github.com/firebase/firebase-android-sdk/pull/8446),
+  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.3.2
 
