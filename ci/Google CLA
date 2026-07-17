@@ -1,0 +1,221 @@
+Masalah ini sangat biasa berlaku dan boleh diselesaikan dengan beberapa langkah mudah. Berdasarkan mesej ralat tersebut, sistem Google CLA tidak dapat mengesan padanan antara **nama pengguna GitHub** atau **e-mel** yang anda gunakan dalam komit Git dengan rekod dalam pangkalan data Google CLA.
+
+Berikut adalah langkah demi langkah untuk menyelesaikannya:
+
+### 1. Semak dan Padankan E-mel Git Anda
+E-mel yang anda gunakan untuk membuat komit Git **mesti sama persis** dengan e-mel yang anda gunakan untuk menandatangani Google CLA.
+- Buka terminal dan semak e-mel git semasa anda:
+  ```bash
+  git config user.email
+  ```
+- Jika ia tidak sepadan dengan e-mel yang anda daftarkan di Google CLA, tetapkan semula:
+  ```bash
+  git config --global user.email "sazw********919@gmail.com" # Guna e-mel yang sama dengan CLA
+  git config --global user.name "Sazwanend"
+  ```
+
+### 2. Semak Tetapan Privasi E-mel GitHub
+Jika anda telah mengaktifkan pilihan **"Keep my email address private"** (Simpan alamat e-mel saya sebagai privasi) dalam tetapan GitHub, GitHub akan secara automatik menggunakan alamat e-mel `xxxxx@users.noreply.github.com` untuk komit anda. Ini akan menyebabkan CLA gagal disahkan.
+**Pilihan penyelesaian:**
+- **Pilihan A (Disyorkan)**: Log masuk ke [Google CLA](https://cla.developers.google.com/), pergi ke tetapan akaun anda, dan tambahkan alamat e-mel `@users.noreply.github.com` anda ke dalam senarai e-mel yang dilindungi CLA.
+- **Pilihan B**: Nyahaktifkan "Keep my email address private" di GitHub, kemudian betulkan komit anda (lihat Langkah 3).
+
+### 3. Betulkan Komit Git (Jika E-mel Salah)
+Jika anda telah membuat komit dengan e-mel yang salah, anda perlu membetulkannya dan menghantar semula (force push):
+```bash
+# 1. Ubah komit terakhir dengan pengarang dan e-mel yang betul
+git commit --amend --author="Sazwanend <sazw********919@gmail.com>" --no-edit
+
+# 2. Tolak (push) semula ke GitHub dengan force
+git push --force
+```
+*(Nota: Jika anda mempunyai lebih daripada satu komit, anda mungkin perlu menggunakan `git rebase -i` untuk mengubah semua komit yang terlibat).*
+
+### 4. Pastikan Nama Pengguna GitHub Dipautkan
+1. Pergi ke [https://cla.developers.google.com/](https://cla.developers.google.com/)
+2. Log masuk dengan akaun Google yang anda gunakan untuk menandatangani CLA.
+3. Pastikan nama pengguna GitHub **`Sazwanend`** tersenarai dan disahkan di bawah akaun anda. Jika tidak, tambah dan benarkan pautan tersebut.
+
+### 5. Segarkan Semula Semakan CLA (Refresh)
+Setelah anda memastikan e-mel dan nama pengguna sudah betul:
+1. Kembali ke halaman Pull Request (PR) anda di GitHub.
+2. Klik pautan **"Penyumbang Baharu: Kemas kini cek ini"** (New Contributor: Update this check) yang terdapat dalam mesej ralat bot CLA.
+3. Atau, cuba tinggalkan komen `/cla` di dalam PR tersebut (sesetengah repositori Google menyokong arahan ini untuk mencetuskan semakan semula secara manual).
+4. Tunggu 1–2 minit untuk bot CLA mengemas kini status.
+
+---
+
+**Ringkasan Pantas untuk Disemak:**
+- [ ] E-mel dalam `git config` = E-mel dalam Google CLA.
+- [ ] Nama pengguna GitHub `Sazwanend` sudah dipautkan di portal Google CLA.
+- [ ] Jika e-mel GitHub disembunyikan (private), alamat `@users.noreply.github.com` sudah ditambah ke dalam Google CLA.
+Jika anda masih menghadapi masalah selepas mencuba langkah di atas, sila maklumkan sama ada anda menandatangani CLA sebagai **Individu** atau **Korporat**, dan saya akan bantu anda dengan langkah yang lebih spesifik!
+Baik, mari kita selami langkah-langkah yang lebih mendalam dan spesifik. Jika langkah asas sebelumnya tidak berjaya, biasanya masalah ini berpunca daripada **sejarah komit yang kompleks**, **tetapan e-mel GitHub yang tersembunyi**, atau **kekeliruan antara CLA Individu vs Korporat**.
+
+Berikut adalah panduan lanjutan untuk menyelesaikan masalah Google CLA ini:
+
+---
+
+### 1. Semak E-mel pada Komit *Spesifik* (Bukan Sekadar Global Config)
+Kadangkala, tetapan `git config --global` anda sudah betul, tetapi komit tertentu (terutama jika dibuat melalui GitHub Web Editor, aplikasi desktop, atau komputer lain) menggunakan e-mel yang berbeza.
+
+**Cara semak:**
+1. Buka halaman Pull Request (PR) anda di GitHub.
+2. Klik pada tab **"Commits"**.
+3. Klik pada hash komit (contoh: `b275af4`) yang disenaraikan dalam ralat CLA.
+4. Lihat di bahagian bawah halaman komit tersebut, cari baris **"Author"**. 
+5. Pastikan e-mel di sebelah nama `Sazwanend` adalah **sama persis** dengan e-mel yang anda daftar di Google CLA.
+
+---
+
+### 2. Cara Tepat Menambah E-mel `noreply` GitHub ke Google CLA
+Jika anda mengaktifkan "Keep my email addresses private" di GitHub, GitHub akan menggunakan e-mel rawak seperti `12345678+Sazwanend@users.noreply.github.com`. Google CLA **tidak akan mengiktiraf** ini melainkan anda menambahnya secara manual.
+
+**Langkah demi langkah:**
+1. Pergi ke GitHub: **Settings** > **Emails**.
+2. Di bahagian "Keep my email addresses private", salin alamat e-mel `...@users.noreply.github.com` yang disediakan.
+3. Buka tab baharu dan pergi ke [Google CLA Manager](https://cla.developers.google.com/clas).
+4. Log masuk dengan akaun Google yang anda gunakan untuk menandatangani CLA.
+5. Cari bahagian **"Manage"** atau **"Edit"** di sebelah nama anda.
+6. Klik **"Add Email"** dan tampal (paste) alamat `...@users.noreply.github.com` tersebut.
+7. Simpan dan kembali ke PR GitHub anda.
+
+---
+
+### 3. Isu CLA Korporat vs Individu (Penting!)
+Ralat menunjukkan e-mel anda berakhir dengan `@gmail.com`. 
+- Jika anda menandatangani CLA sebagai **Individu**, e-mel Gmail itu sah.
+- **TETAPI**, jika syarikat anda sudah mempunyai Perjanjian CLA Korporat dengan Google, dan anda cuba menyumbang sebagai wakil syarikat, **e-mel Gmail peribadi anda TIDAK akan diiktiraf**. 
+- **Penyelesaian**: Anda mesti menandatangani CLA menggunakan **e-mel rasmi syarikat** anda, atau minta Pentadbir CLA (CLA Admin) di syarikat anda untuk menambah e-mel Gmail anda ke dalam senarai putih (whitelist) kumpulan penyumbang syarikat.
+
+---
+
+### 4. Membetulkan *Banyak* Komit Sekaligus (Interactive Rebase)
+Jika anda mempunyai lebih daripada satu komit dalam PR ini dan beberapa daripadanya menggunakan e-mel yang salah, `git commit --amend` tidak akan mencukupi. Anda perlu menggunakan `rebase`.
+
+**Langkah membetulkan 3 komit terakhir (contoh):**
+```bash
+# 1. Mulakan rebase interaktif untuk 3 komit terakhir
+git rebase -i HEAD~3
+
+# 2. Editor teks akan terbuka. Tukar perkataan "pick" kepada "edit" 
+#    untuk setiap komit yang mempunyai e-mel salah.
+#    Contoh:
+#    edit b275af4 Komit pertama
+#    edit c386bg5 Komit kedua
+#    save dan tutup editor.
+
+# 3. Git akan berhenti pada komit pertama. Ubah pengarangnya:
+git commit --amend --author="Sazwanend <sazw********919@gmail.com>" --no-edit
+
+# 4. Teruskan ke komit seterusnya:
+git rebase --continue
+
+# 5. Ulang langkah 3 dan 4 untuk setiap komit yang diminta "edit".
+
+# 6. Setelah selesai semua, tolak (push) perubahan ke GitHub:
+git push --force
+```
+
+---
+
+### 5. Memaksa Bot Google CLA untuk Semak Semula
+Setelah anda melakukan pembetulan di atas, bot CLA mungkin tidak mengemas kini status secara automatik serta-merta. Anda perlu mencetuskannya secara manual:
+
+1. **Kaedah 1**: Klik pautan **"Penyumbang Baharu: Kemas kini cek ini"** (New Contributor: Update this check) yang terdapat dalam komen bot CLA di PR anda.
+2. **Kaedah 2**: Tinggalkan komen baharu di dalam PR tersebut dengan hanya menulis:
+   ```text
+   /cla
+   ```
+   *(Ini adalah arahan biasa yang digunakan oleh bot cla-bot untuk menjalankan semakan semula).*
+3. **Kaedah 3**: Tutup (Close) PR tersebut, tunggu 10 saat, dan buka semula (Reopen) PR tersebut. Ini kadangkala mencetuskan webhook baharu.
+
+---
+
+### 6. Bersihkan Cache Pelayar (Browser)
+Kadangkala, laman web Google CLA menunjukkan maklumat lama kerana cache pelayar.
+- Buka pelayar dalam mod **Incognito / Private Browsing**.
+- Log masuk ke [https://cla.developers.google.com/](https://cla.developers.google.com/).
+- Sahkan sekali lagi bahawa nama pengguna GitHub `Sazwanend` dan e-mel yang betul tersenarai di sana.
+
+---
+
+### Masih Gagal?
+Jika anda telah mencuba semua langkah di atas dan ia masih gagal, sila balas dengan maklumat berikut supaya saya boleh bantu dengan lebih tepat:
+1. Adakah anda menandatangani CLA sebagai **Individu** atau **Korporat**?
+2. Apakah e-mel yang dipaparkan apabila anda menjalankan arahan `git log -1 --format='%ae %an'` di terminal anda?
+3. Adakah anda membuat komit ini melalui terminal, GitHub Desktop, atau terus di laman web GitHub?
+Baik! Memandangkan anda menjawab "Yes", saya anggap anda mungkin sudah mencuba beberapa langkah di atas atau bersedia untuk meneruskannya.
+
+Untuk memastikan kita berada di landasan yang betul dan dapat menyelesaikan masalah ini dengan cepat, boleh anda kongsikan status semasa:
+
+1. **Adakah ralat CLA itu sudah hilang** (bertukar menjadi ✅ hijau), atau masih ❌ merah?
+2. **Adakah anda sudah melakukan `git push --force`** selepas membetulkan tetapan e-mel?
+3. **Adakah anda menandatangani CLA sebagai Individu** atau mewakili **Syarikat**?
+
+---
+
+### Jika anda masih melihat ralat ❌, ini adalah "Penyelesaian Paling Berkesan" (3 Langkah Pantas):
+
+Kebanyakan kes berjaya diselesaikan dengan 3 arahan terminal ini. Pastikan anda menggantikannya dengan e-mel yang **sama** dengan yang anda daftar di Google CLA:
+
+**Langkah 1: Betulkan pengarang pada komit terakhir**
+```bash
+git commit --amend --author="Sazwanend <sazw********919@gmail.com>" --no-edit
+```
+*(Gantikan `<sazw********919@gmail.com>` dengan e-mel tepat yang anda guna untuk sign CLA)*
+
+**Langkah 2: Tolak (Push) semula ke GitHub dengan paksa**
+```bash
+git push --force
+```
+
+**Langkah 3: Paksa bot Google untuk semak semula**
+Pergi ke halaman Pull Request (PR) anda di GitHub, dan tinggalkan komen baharu dengan hanya menulis:
+```text
+/cla
+```
+Tunggu sekitar 1–2 minit. Bot sepatutnya akan mengemas kini status dan bertukar menjadi ✅ hijau.
+
+---
+
+Jika anda masih tersekat atau mendapat mesej ralat baharu selepas melakukan langkah di atas, sila **tampal (paste) mesej ralat tersebut di sini**, dan saya akan pandu anda langkah demi langkah untuk membaikinya!Baik! Saya harap langkah-langkah di atas membantu menyelesaikan masalah CLA anda. 
+
+Untuk memastikan saya boleh bantu dengan lebih baik, boleh kongsikan sedikit maklumat:
+
+### 📊 Status Semasa
+- ✅ **Sudah selesai** - CLA sudah hijau dan PR boleh digabungkan?
+- 🔄 **Sedang dalam proses** - Masih mencuba langkah-langkah di atas?
+- ❌ **Masih gagal** - Masih ada ralat selepas mencuba?
+
+---
+
+### 💡 Jika Masih Gagal, Cuba Cara Alternatif Ini:
+
+Kadang-kala, cara paling mudah adalah **menyemak terus melalui antara muka GitHub**:
+
+1. Pergi ke PR anda di GitHub
+2. Klik pada tab **"Commits"**
+3. Klik pada ikon pensel (edit) di sebelah komit yang bermasalah (`b275af4`)
+4. Di bahagian bawah, cari **"Committer"** dan **"Author"**
+5. Pastikan e-mel yang dipaparkan adalah **sama** dengan e-mel yang anda daftar di Google CLA
+6. Jika berbeza, klik **"Change"** dan betulkan di situ
+
+Cara ini lebih visual dan kadang-kala lebih mudah berbanding menggunakan command line.
+
+---
+
+### 🆘 Perlukan Bantuan Lanjut?
+
+Jika anda masih tersekat, saya boleh bantu dengan cara yang lebih spesifik. Hanya perlu kongsikan:
+
+1. **Output** daripada arahan ini (jalankan di terminal dalam folder projek anda):
+   ```bash
+   git log -1 --format='Author: %an <%ae>%nCommitter: %cn <%ce>'
+   ```
+
+2. **Screenshot** atau **tangkapan skrin** mesej ralat CLA yang terkini
+
+Dengan maklumat ini, saya boleh berikan penyelesaian yang **tepat sasaran** untuk masalah anda. 😊
+
+Terus semangat! Masalah CLA ini memang agak rumit pada mulanya, tetapi hampir sentiasa boleh diselesaikan.
