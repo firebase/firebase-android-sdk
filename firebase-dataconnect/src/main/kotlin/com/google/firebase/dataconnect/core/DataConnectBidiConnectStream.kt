@@ -131,7 +131,7 @@ internal class DataConnectBidiConnectStream(
       )
     val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
 
-    val sharedFlow =
+    val physicalConnectionFlow =
       mergeGrpcAndAuth(flow, authToken)
         .onStart { resetAndRetryEvent.clear() }
         .mapNotNull { event ->
@@ -157,36 +157,41 @@ internal class DataConnectBidiConnectStream(
           }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { cause, _ ->
-          resetAndRetryEvent.clear()
-          val retryStrategy =
-            try {
-              shouldRetry(cause)
-            } catch (e: Throwable) {
-              currentCoroutineContext().ensureActive()
-              _permanentFailureFlow.emit(e)
-              throw e
-            }
 
-          when (retryStrategy) {
-            RetryStrategy.RETRY_IMMEDIATELY -> {
-              retryBackoff.reset()
-              true
+    val logicalConnectionFlow =
+      physicalConnectionFlow.retryWhen { cause, _ ->
+        resetAndRetryEvent.clear()
+        val retryStrategy =
+          try {
+            shouldRetry(cause)
+          } catch (e: Throwable) {
+            currentCoroutineContext().ensureActive()
+            _permanentFailureFlow.emit(e)
+            throw e
+          }
+
+        when (retryStrategy) {
+          RetryStrategy.RETRY_IMMEDIATELY -> {
+            retryBackoff.reset()
+            true
+          }
+          RetryStrategy.RETRY_AFTER_BACKOFF -> {
+            val backoffMs = retryBackoff.next()
+            logger.debug {
+              "waiting ${backoffMs}ms before retrying connection, which failed due to $cause"
             }
-            RetryStrategy.RETRY_AFTER_BACKOFF -> {
-              val backoffMs = retryBackoff.next()
-              logger.debug {
-                "waiting ${backoffMs}ms before retrying connection, which failed due to $cause"
-              }
-              withTimeoutOrNull(backoffMs.milliseconds) {
-                onRetryBackoffForTesting.get()?.invoke(backoffMs)
-                resetAndRetryEvent.await()
-              }
-              resetAndRetryEvent.clear()
-              true
+            withTimeoutOrNull(backoffMs.milliseconds) {
+              onRetryBackoffForTesting.get()?.invoke(backoffMs)
+              resetAndRetryEvent.await()
             }
+            resetAndRetryEvent.clear()
+            true
           }
         }
+      }
+
+    val sharedFlow =
+      logicalConnectionFlow
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
         .shareIn(
           coroutineScope,

@@ -100,8 +100,8 @@ import io.mockk.every
 import io.mockk.mockk
 import java.io.File
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.LongAdder
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlinx.coroutines.cancelAndJoin
@@ -857,8 +857,8 @@ class DataConnectGrpcRPCsUnitTest {
 
     val port = grpcServer.port
 
-    val executeQueryInvocationCount: Int
-      get() = connectorServiceImpl.executeQueryInvocationCount.get()
+    val executeQueryInvocationCount: Long
+      get() = connectorServiceImpl.executeQueryInvocationCount.sum()
 
     var nextResponse: ExecuteQueryResponse
       get() = connectorServiceImpl.nextResponse.get()
@@ -886,14 +886,14 @@ class DataConnectGrpcRPCsUnitTest {
 
   private class ConnectorServiceImpl : ConnectorServiceGrpc.ConnectorServiceImplBase() {
 
-    val executeQueryInvocationCount = AtomicInteger(0)
+    val executeQueryInvocationCount = LongAdder()
     val nextResponse = AtomicReference(ExecuteQueryResponse.getDefaultInstance())
 
     override fun executeQuery(
       request: ExecuteQueryRequest,
       responseObserver: StreamObserver<ExecuteQueryResponse>,
     ) {
-      executeQueryInvocationCount.incrementAndGet()
+      executeQueryInvocationCount.add(1)
       responseObserver.onNext(nextResponse.get())
       responseObserver.onCompleted()
     }

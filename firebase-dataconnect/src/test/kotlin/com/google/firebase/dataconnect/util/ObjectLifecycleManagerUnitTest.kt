@@ -35,8 +35,8 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.LongAdder
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
@@ -70,7 +70,7 @@ class ObjectLifecycleManagerUnitTest {
 
       objectLifecycleManager.close()
 
-      objectLifecycleManager.createCallCount.get() shouldBe 0
+      objectLifecycleManager.createCallCount.sum() shouldBe 0
     }
 
   @Test
@@ -100,7 +100,7 @@ class ObjectLifecycleManagerUnitTest {
 
       repeat(100) { objectLifecycleManager.close() }
 
-      objectLifecycleManager.createCallCount.get() shouldBe 0
+      objectLifecycleManager.createCallCount.sum() shouldBe 0
       objectLifecycleManager.initializeCalls.shouldBeEmpty()
       objectLifecycleManager.destroyCalls.shouldBeEmpty()
     }
@@ -120,7 +120,7 @@ class ObjectLifecycleManagerUnitTest {
 
       jobs.joinAll()
 
-      objectLifecycleManager.createCallCount.get() shouldBe 0
+      objectLifecycleManager.createCallCount.sum() shouldBe 0
       objectLifecycleManager.initializeCalls.shouldBeEmpty()
       objectLifecycleManager.destroyCalls.shouldBeEmpty()
     }
@@ -145,7 +145,7 @@ class ObjectLifecycleManagerUnitTest {
 
       objectLifecycleManager.open()
 
-      objectLifecycleManager.createCallCount.get() shouldBe 1
+      objectLifecycleManager.createCallCount.sum() shouldBe 1
     }
 
   @Test
@@ -197,7 +197,7 @@ class ObjectLifecycleManagerUnitTest {
 
       jobs.joinAll()
 
-      objectLifecycleManager.createCallCount.get() shouldBe 1
+      objectLifecycleManager.createCallCount.sum() shouldBe 1
       objectLifecycleManager.initializeCalls shouldHaveSize 1
       objectLifecycleManager.initializeCalls.single() shouldBeSameInstanceAs testObject
     }
@@ -588,12 +588,12 @@ class ObjectLifecycleManagerUnitTest {
     logger: Logger = newMockLogger(),
   ) : ObjectLifecycleManager<TestType>(coroutineDispatcher, logger) {
 
-    val createCallCount = AtomicInteger(0)
+    val createCallCount = LongAdder()
     val initializeCalls = CopyOnWriteArrayList<TestType>()
     val destroyCalls = CopyOnWriteArrayList<TestType>()
 
     override fun create(): TestType {
-      createCallCount.incrementAndGet()
+      createCallCount.add(1)
       return createImpl()
     }
 
