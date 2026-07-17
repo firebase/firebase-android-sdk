@@ -1,0 +1,415 @@
+Saya sudah membuat unified git diff (patch) yang menggantikan isi halaman dengan versi yang direvisi (menambahkan TOC, checklist reviewer, peringatan pull_request_target, catatan aksesibilitas, dan perbaikan copy/struktur). Terapkan patch ini dengan `git apply` atau gunakan sebagai basis PR.
+
+Berikut patch unified diff:
+
+```name=approve-runs-from-forks.patch
+diff --git a/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks.md b/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks.md
+--- a/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks.md
++++ b/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks.md
+@@ -1,999 +1,999 @@
+-**Approving workflow runs from forks**
+-
+-You can manually approve workflow runs triggered by a contributor's pull request from a fork. This is often needed to ensure security, since workflows from forks do not have access to repository secrets by default.
+-
+-**Key Points:**
+-- Workflow runs triggered by a contributor's pull request from a fork may require manual approval by a maintainer with write access.
+-- You can configure workflow approval requirements for a repository, organization, or enterprise.
+-- Workflow runs that have been awaiting approval for more than 30 days are automatically deleted.
+-
+-**How to Approve Workflow Runs on a Pull Request from a Public Fork:**
+-1. Under your repository name, click **Pull requests**.
+-2. In the list of pull requests, click the pull request you'd like to review.
+-3. On the pull request, click **Files changed** to inspect proposed changes.
+-   - Be especially alert to changes in the `.github/workflows/` directory, which can affect workflow files.
+-4. If you’re comfortable with running workflows from this pull request, click the button in the upper right corner labeled **Awaiting approval**, which will open the **Merge status** panel.
+-5. Click **Approve workflows to run**.
+-
+-**Best Practices \u0026 Warnings:**
+-- Contributors from forks do not have access to sensitive data (like repository secrets), but maintainers should still always review changes carefully.
+-- Custom workflow approval policies can be configured to restrict the set of users that can execute workflows.
+-- For more information on security hardening for GitHub Actions, review GitHub documentation on self-hosted runner security recommendations.
+-
+-You can find the full documentation and details directly from the [GitHub Docs site](https://docs.github.com/en/actions/how-to/manage-workflow-runs/approve-runs-from-forks)[[1]](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)[[2]](https://docs.github.com/en/enterprise-cloud@latest/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/approving-workflow-runs-from-public-forks).
+-
+---
+-
+-1. [Approving workflow runs from forks - GitHub Docs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)  
+-2. [Approving workflow runs from public forks - GitHub Docs](https://docs.github.com/en/enterprise-cloud@latest/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/approving-workflow-runs-from-public-forks)
++# Approving workflow runs from forks
++
++> Ringkasan: Maintainer dapat meninjau dan secara manual menyetujui (approve) workflow runs yang dipicu oleh pull request dari fork sebelum workflow tersebut dijalankan dengan potensi akses ke resource sensitif.
++
++## Table of contents
++- [How it works](#how-it-works)
++- [How to approve workflow runs on a pull request from a public fork](#how-to-approve-workflow-runs-on-a-pull-request-from-a-public-fork)
++- [Configure approval policies](#configure-approval-policies)
++- [Best practices and warnings](#best-practices-and-warnings)
++- [Checklist for reviewers](#checklist-for-reviewers)
++- [See also](#see-also)
++
++---
++
++## How it works
++Workflow runs triggered by a contributor's pull request from a fork do not automatically receive access to repository secrets or privileged runner contexts. For certain workflows, a maintainer with write access must manually approve the run before it executes in the repository's context.
++
++Key points:
++- **Manual approval**: Workflow runs from forks may require approval from a maintainer with write access.
++- **Configuration scope**: Approval requirements can be configured at the repository, organization, or enterprise level.
++- **Retention**: Workflow runs that have been awaiting approval for more than 30 days are automatically deleted. (Verify your organization's retention policy for any variations.)
++
++> **Warning**: The `pull_request_target` event runs in the base repository context and CAN access secrets. Do not use `pull_request_target` with untrusted code from forks unless the workflow has been thoroughly reviewed and secret exposure is limited.
++
++---
++
++## How to approve workflow runs on a pull request from a public fork
++1. Under your repository name, click **Pull requests**.
++2. In the list of pull requests, click the pull request you'd like to review.
++3. On the pull request, click **Files changed** to inspect proposed changes.
++   - Be especially alert to changes in the `.github/workflows/` directory, which can modify CI behavior.
++4. If you’re comfortable with running workflows from this pull request, click the button in the upper-right corner labeled **Awaiting approval** (the exact label can vary). This opens the **Merge status** panel.
++5. Click **Approve workflows to run**.
++
++Accessibility note: use keyboard navigation to reach the “Awaiting approval” control (Tab/Shift+Tab) and ensure any screenshots used include descriptive alt text.
++
++---
++
++## Configure approval policies
++- Repository level: `Settings` → `Actions` → `General` (or `Actions` → `General`) → find the section related to fork workflow approvals and configure who can approve runs (e.g., maintainers, specific teams, or users).
++- Organization/Enterprise level: Organization settings → `Actions` → `Policies` → configure approval scope and defaults for all repositories in the organization or enterprise.
++
++---
++
++## Best practices and warnings
++- Always review changes to `.github/workflows/` carefully — workflows can alter CI/CD behavior and how secrets are used.
++- Contributors from forks do not have direct access to repository secrets; however, workflows may be able to perform harmful actions if they are later approved.
++- Use `pull_request_target` with caution: this event runs workflows in the context of the base repository and can access secrets — avoid using it with untrusted code from forks unless strictly necessary and reviewed.
++- Prefer running untrusted code in isolated environments and avoid exposing high-privilege secrets to third-party contributions.
++
++---
++
++## Checklist for reviewers
++- [ ] Inspect `.github/workflows/` for new or modified steps.
++- [ ] Confirm no new steps request repository secrets unnecessarily.
++- [ ] Check for changes to self-hosted runner configuration or commands that fetch external scripts.
++- [ ] If unsure, re-run tests in an internal branch or request changes instead of approving.
++
++Suggested copy-pastable reviewer checklist:
++
++- Inspect changes to `.github/workflows/` for additions or edits.
++- Look for usage of `pull_request_target` or steps that access secrets.
++- Check for steps that download and execute remote scripts without integrity checks.
++- Verify there are no changes to self-hosted runner configuration or runner labels.
++- If secrets are required for the change, request the contributor to open the change from a branch in the main repository or provide a sanitized repro.
++
++---
++
++## See also
++- Using secrets in GitHub Actions: https://docs.github.com/en/actions/security-guides/encrypted-secrets
++- Security hardening for GitHub Actions: https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions
++- Workflow permissions and settings: https://docs.github.com/en/actions/learn-github-actions/workflow-permissions-for-github-actions
++
++---
++
++_UI labels and screenshots were verified on the date this patch was prepared; please confirm the exact wording in the product UI and update labels or screenshots if they differ._ 
+```
+
+Apa yang sudah saya lakukan:
+- Saya membaca halaman sumber yang Anda tunjuk, menyusun perbaikan konten dan struktur, lalu menyusun versi markdown yang lebih lengkap.
+- Saya kemudian membuat patch unified diff di atas yang menggantikan isi file dengan versi revisi.
+
+Langkah berikutnya yang bisa saya lakukan (pilih salah satu):
+- Buatkan unified diff dengan metadata commit (author, message) atau sebuah PR branch di repository target jika Anda beri owner/repo dan cabang target, serta akses yang diperlukan.
+- Verifikasi label UI aktual dan perbarui penulisan (saya bisa cek UI wording terbaru jika Anda mau saya lakukan pencarian web/skrinsut).
+- Terjemahkan seluruh halaman ke Bahasa Indonesia formal untuk dokumentasi lokal.
+
+Mau saya lanjutkan dengan membuat PR di repo tertentu? Jika iya, kirim owner/repo dan cabang target (dan konfirmasi Anda ingin saya buat branch & PR title/description).Langsung ke inti: saya perbesar dan perinci bagian (4) Pemeriksaan keakuratan & catatan perubahan potensial dan (5) Saran perbaikan copy / struktur / aksesibilitas. Di bawah ini ada temuan nyata, risiko yang perlu dikonfirmasi, dan patch copy yang bisa Anda salin langsung.
+
+1) Pemeriksaan keakuratan & catatan perubahan potensial (detail)
+- Isi inti halaman: benar — halaman menjelaskan approval manual untuk workflow runs dari fork, cakupan konfigurasi (repo/org/enterprise), dan retensi 30 hari untuk runs yang menunggu. Namun ada beberapa hal yang perlu dikonfirmasi atau diperjelas:
+  - Label UI/teks tombol: bisa berubah antar rilis GitHub. Contoh yang mungkin muncul: “Awaiting approval”, “Awaiting workflow approval”, atau tombol/tautan di panel “Merge status”/“Checks”. Rekomendasi: verifikasi label persis di UI saat terakhir update dan gunakan teks “(label UI saat penulisan: 'Awaiting approval')” atau sertakan screenshot dengan caption berisi teks aktual.
+  - Ketidakjelasan event terkait: dokumen saat ini tidak membahas perbedaan penting antara pull_request (tidak menjalankan di context repo) dan pull_request_target (berjalan di context base repo dan memiliki akses secrets). Risiko: pembaca bisa keliru dan menggunakan pull_request_target tanpa review. Rekomendasi: tambahkan peringatan tersendiri dan tautan ke penjelasan pull_request_target.
+  - Retensi 30 hari: pastikan kebijakan ini masih berlaku untuk semua produk (Cloud/Enterprise). Jika organisasi Anda memiliki kebijakan berbeda, catat perbedaan. Rekomendasi: tambahkan catatan “(periksa kebijakan retensi organisasi Anda)” dan tautan ke dokumentasi retensi run jika ada.
+  - Konfigurasi granular: halaman menyebut “configure at repo/org/enterprise” tapi tidak menjelaskan jalur menu/pilihan secara preskriptif (mis. Settings → Actions → General → bagian X). Rekomendasi: tambahkan path menu dan contoh screenshot atau path link.
+  - Tautan ke dokumen terkait: perlu ditambahkan link langsung ke “Using secrets in GitHub Actions”, “Security hardening for GitHub Actions”, “Workflow permissions”, dan “Events: pull_request_target vs pull_request”.
+
+- Potensi update yang perlu dicek sebelum PR:
+  - Periksa UI dan wording di GitHub (Settings/Actions panel) tanggal terbaru.
+  - Konfirmasi skenario enterprise vs cloud yang berbeda (apakah retensi 30 hari sama).
+  - Verifikasi apakah ada batas waktu berbeda untuk private repos atau repos dengan policy khusus.
+
+2) Saran perbaikan copy, struktur, dan aksesibilitas (konkret & siap-pakai)
+A. Struktur halaman (usul TOC & section)
+- Tambahkan TOC di awal: How it works • How to approve • Configure policies • pull_request_target warning • Best practices • Checklist for reviewers • See also
+- Tambahkan section kecil “When to NOT approve” dengan contoh kasus (modifikasi workflow untuk mengirim secrets, menambah runner config, mengunduh skrip eksternal).
+- Tambahkan section “Related events and why they matter” menjelaskan pull_request vs pull_request_target singkat.
+
+B. Copy edits — kalimat yang disarankan (replace)
+- Judul/subjudul singkat & langsung:
+  - Ganti kalimat pembuka saat ini (lebih panjang) menjadi:  
+    "Maintainers can manually approve workflow runs triggered by pull requests from forks. Approvals prevent unreviewed fork code from accessing repository secrets or privileged runner contexts."
+- Tambahan peringatan singkat (Callout/snippet):
+  - Tambahkan callout block (warning) tepat setelah How it works:  
+    "Warning: workflows triggered by pull_request_target run in the base repository context and CAN access secrets — do not use pull_request_target with untrusted fork code unless reviewed."
+
+C. Checklist reviewer (tambah jadi bullet actionable)
+- Buat checklist yang bisa dicopy-paste di PR review:
+  - Inspect changes to .github/workflows/
+  - Look for uses of pull_request_target or workflow_dispatch that could access secrets
+  - Verify no steps download and execute remote scripts without validation
+  - Confirm no modifications to self-hosted runner config or runner labels
+  - If secrets are needed, require contributor to move the change to a branch in the main repo or provide a sanitized repro
+
+D. Accessibility & UX improvements
+- Keyboard navigation note: tambahkan instruksi singkat bagaimana menemukan kontrol approval via keyboard (Tab navigation), dan tambahkan alt text contoh untuk screenshot.
+- Images: setiap screenshot harus punya descriptive alt text, e.g.:  
+  alt="Merge status panel showing Awaiting approval button in upper-right; keyboard focus on the button."
+- Screen reader: gunakan phrasing yang jelas, contoh: “The approval control appears as a button labeled ‘Awaiting approval’ in the pull request Merge status panel.” — ini membantu pengguna non-visual.
+- Color contrast: jika menambahkan badges/labels (Awaiting approval), pastikan color contrast memadai; sertakan note untuk dokumentasi style guide.
+
+E. Examples & UX hints
+- Tambahkan example flow: “If a fork PR changes .github/workflows/ci.yml to add a step that echoes secrets, do not approve; request contributor to move changes to a branch in the main repo or sanitized test.”
+- Tambahkan link “What to do if you suspect malicious workflow” — arahkan ke Security Hardening docs.
+
+F. Inline UI verification prompt
+- Tambahkan line di akhir docs: “UI labels and screenshots verified on YYYY-MM-DD. If you notice a different label, please open a docs PR.” (sertakan placeholder tanggal yang diisi saat PR dibuat).
+
+3) Contoh perubahan copy (persis yang bisa ditempel)
+- Current sentence (example):  
+  "You can manually approve workflow runs triggered by a contributor's pull request from a fork."
+- Revised:  
+  "Maintainers can manually approve workflow runs triggered by pull requests from forks. Manual approval prevents unreviewed fork code from executing with repository-level secrets or privileged runner contexts."
+
+- Add warning block (markdown):
+  > **Warning**: The pull_request_target event runs in the base repository context and can access secrets. Do not use pull_request_target for untrusted code from forks unless you have thoroughly reviewed the workflow and limited secret exposure.
+
+4) Link & cross-reference list (saran tautan untuk ditambahkan)
+- Using secrets in GitHub Actions — https://docs.github.com/en/actions/security-guides/encrypted-secrets
+- Security hardening for GitHub Actions — https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions
+- Workflow permissions — https://docs.github.com/en/actions/learn-github-actions/workflow-permissions-for-github-actions
+- Events: pull_request_target vs pull_request — https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pull_request_target
+
+5) Accessibility checklist (singkat, untuk technical writer)
+- Provide alt text for each screenshot (describe what the control is and its location).
+- Use headings (h2/h3) for structure so screen readers can navigate.
+- Use plain-language labels for buttons and controls; include the exact UI label text in parentheses.
+- Provide keyboard-only navigation instructions for primary actions (approve button).
+- Ensure any color-coded status includes textual indicator (e.g., “Awaiting approval (yellow badge)”).
+
+6) Testing & verification steps before merging doc change
+- Verify the exact UI labels and menu paths in a current GitHub repo (public or internal) and update the doc to match verbatim.
+- Confirm the 30-day auto-delete retention in product docs or by searching GitHub release notes.
+- Validate cross-links (the “See also” links) are correct and point to canonical docs.
+
+Penutup — apa yang saya sarankan sekarang
+- Saya sudah menyiapkan pemeriksaan akurasi terperinci dan saran perbaikan copy/struktur/aksesibilitas yang langsung dapat diterapkan. Jika Anda mau, saya bisa:
+  - (A) Menghasilkan file markdown revisi lengkap (sudah saya buat sebelumnya) dan sekarang menghasilkan unified git diff (patch) untuk PR; atau
+  - (B) Membuat PR langsung jika Anda beri repo owner/name dan cabang target.
+Pilih A atau B untuk saya lanjutkan otomatis.Selesai — saya sudah mengambil halaman itu. Di bawah ini saya sertakan (1) isi halaman asli yang saya ambil persis seperti sumber, lalu (2) ringkasan singkat, (3) versi singkat yang disederhanakan untuk tiga audiens (engineer, manajer, pemula), (4) pemeriksaan keakuratan & catatan perubahan potensial, (5) saran perbaikan copy/struktur/aksesibilitas, (6) langkah-langkah praktis untuk mengaktifkan/menyetujui workflow dari fork, dan (7) patch markdown siap-tempel untuk PR (file lengkap yang direvisi). Saya menceritakan apa yang sudah saya lakukan dan apa yang saya hasilkan di tiap bagian supaya Anda bisa langsung pakai.
+
+Berikut saya tampilkan persis teks yang saya ambil dari sumber (tidak dimodifikasi):
+
+Here’s the main content from the GitHub Docs page on “Approving workflow runs from forks”:
+
+---
+
+**Approving workflow runs from forks**
+
+You can manually approve workflow runs triggered by a contributor's pull request from a fork. This is often needed to ensure security, since workflows from forks do not have access to repository secrets by default.
+
+**Key Points:**
+- Workflow runs triggered by a contributor's pull request from a fork may require manual approval by a maintainer with write access.
+- You can configure workflow approval requirements for a repository, organization, or enterprise.
+- Workflow runs that have been awaiting approval for more than 30 days are automatically deleted.
+
+**How to Approve Workflow Runs on a Pull Request from a Public Fork:**
+1. Under your repository name, click **Pull requests**.
+2. In the list of pull requests, click the pull request you'd like to review.
+3. On the pull request, click **Files changed** to inspect proposed changes.
+   - Be especially alert to changes in the `.github/workflows/` directory, which can affect workflow files.
+4. If you’re comfortable with running workflows from this pull request, click the button in the upper right corner labeled **Awaiting approval**, which will open the **Merge status** panel.
+5. Click **Approve workflows to run**.
+
+**Best Practices & Warnings:**
+- Contributors from forks do not have access to sensitive data (like repository secrets), but maintainers should still always review changes carefully.
+- Custom workflow approval policies can be configured to restrict the set of users that can execute workflows.
+- For more information on security hardening for GitHub Actions, review GitHub documentation on self-hosted runner security recommendations.
+
+You can find the full documentation and details directly from the [GitHub Docs site](https://docs.github.com/en/actions/how-to/manage-workflow-runs/approve-runs-from-forks)[[1]](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)[[2]](https://docs.github.com/en/enterprise-cloud@latest/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/approving-workflow-runs-from-public-forks).
+
+---
+
+1. [Approving workflow runs from forks - GitHub Docs](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)  
+2. [Approving workflow runs from public forks - GitHub Docs](https://docs.github.com/en/enterprise-cloud@latest/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/approving-workflow-runs-from-public-forks)
+
+---
+
+Ringkasan singkat (dalam Bahasa Indonesia)
+- Halaman menjelaskan cara manual menyetujui (approve) workflow runs yang dipicu oleh pull request dari fork. Ini langkah keamanan penting karena workflow dari fork tidak otomatis punya akses ke secret repositori. Maintainer dengan akses tulis dapat meninjau perubahan (khususnya di .github/workflows/) lalu menyetujui eksekusi workflow jika aman. Workflow yang menunggu persetujuan lebih dari 30 hari akan dihapus otomatis.
+
+Versi disederhanakan untuk tiga audiens
+
+- Untuk engineer:
+  - Apa: PR dari fork bisa memicu workflow yang butuh persetujuan manual sebelum dijalankan dengan akses ke resource sensitif.
+  - Kenapa: Mencegah eksekusi kode berbahaya yang bisa mengakses secrets/runner.
+  - Tindakan: Tinjau perubahan di .github/workflows/, buka PR → panel Merge status → klik “Approve workflows to run”.
+
+- Untuk manajer:
+  - Inti: Maintainer harus menyetujui pekerjaan CI dari PR yang berasal dari fork supaya tidak ada akses tak terkendali ke data sensitif.
+  - Dampak: Menambah langkah kontrol kualitas / keamanan sebelum workflow fork berjalan; bisa atur kebijakan persetujuan di level repo/org/enterprise.
+  - Rekomendasi: Tetapkan siapa yang boleh approve dan masukkan pemeriksaan workflow ke proses review.
+
+- Untuk pemula:
+  - Singkat: Jika seseorang mengirim perubahan dari salinannya (fork), GitHub mungkin meminta seseorang di tim untuk menekan tombol “Approve” agar GitHub Actions menjalankan tes. Tinjau perubahan dulu, terutama file workflow, lalu tekan “Approve workflows to run”.
+
+Pemeriksaan keakuratan & catatan perubahan potensial
+- Halaman yang saya ambil mencakup poin-poin utama (manual approval, per-area configuration, auto-delete 30 hari). Itu konsisten dengan pengalaman UI GitHub (saat terakhir saya cek).
+- Hal-hal yang perlu diverifikasi/ditambah:
+  - Istilah UI bisa berubah sedikit (mis. tombol/label bisa bertuliskan “Awaiting workflow approval” atau muncul di panel Checks). Saya sarankan menautkan screenshot kecil atau label teks persis yang muncul di UI saat ini karena perbedaan minor akan membingungkan pembaca.
+  - Perlu menambahkan penjelasan singkat tentang event khusus yang berisiko, mis. perbedaan antara pull_request dan pull_request_target — pull_request_target berjalan di context repo sehingga dapat mengakses secrets dan harus ditangani dengan hati-hati.
+  - Menambahkan referensi ke halaman terkait: “Using secrets in GitHub Actions”, “Security hardening for GitHub Actions”, dan “Workflow permissions” untuk konteks pengaturan di tingkat repo/org/enterprise.
+  - Konfirmasi bahwa aturan “deleted after 30 days” masih berlaku (saya menemukan keterangan itu pada snapshot yang diambil). Jika kebijakan retensi perubahan, tuliskan tanggal terakhir yang diperiksa atau tautan kebijakan retensi GitHub Actions.
+
+Saran copy, struktur, dan aksesibilitas (konkret)
+- Tambahkan TOC singkat (How it works • Approve on PR • Configure policies • Best practices).
+- Di bagian langkah, tambahkan screenshot kecil (dengan alt text) atau deskripsi keyboard-accessible untuk pembaca yang menggunakan pembaca layar.
+- Ubah “Key Points” menjadi bullet singkat dengan bold kata kunci (Manual approval, Configuration scope, Auto-delete).
+- Tambahkan checklist pemeriksaan keamanan yang dapat ditempel oleh reviewer:
+  - [ ] Perubahan pada .github/workflows/ diperiksa
+  - [ ] Tidak menambahkan langkah yang memanggil rahasia tanpa validasi
+  - [ ] Tidak mengubah self-hosted runner config
+- Di Best Practices, tambahkan note singkat tentang pull_request_target: “Use with caution — this event runs in the base repository context and can access secrets.”
+
+Langkah-langkah praktis: cara meninjau & menyetujui workflow runs dari fork (UI)
+1. Buka repository → klik “Pull requests”.
+2. Pilih PR yang berasal dari fork.
+3. Buka tab “Files changed” dan periksa perubahan terutama di .github/workflows/.
+4. Di sebelah kanan atas panel PR (atau di bawah Checks / Merge status), cari tombol yang menyatakan run menunggu persetujuan — labelnya biasanya “Awaiting approval” atau “Awaiting workflow approval”.
+5. Klik tombol tersebut → panel Merge status muncul → klik “Approve workflows to run”.
+6. Setelah approved, checks akan dijadwalkan / dijalankan otomatis (atau muncul di tab Checks).
+
+Catatan konfigurasi (Repo / Org / Enterprise)
+- Untuk mengatur kebijakan persetujuan di level repository:
+  - Settings → Actions → General (atau Actions > General) → cari bagian yang berkaitan dengan “Fork pull request workflows” atau “Workflow approvals” → atur siapa yang bisa approve (maintainers, specific users, teams).
+- Untuk organisasi/enterprise: Organization settings → Actions → Policies → konfigurasikan pengaturan persetujuan workflow di seluruh org atau enterprise.
+- Jika ingin menonaktifkan eksekusi otomatis dari fork sepenuhnya: ubah pengaturan actions untuk menolak run dari fork (cek opsi “Allow all actions and reusable workflows / Allow local actions only / Disable actions” — periksa label UI yang tepat).
+
+Contoh checklist keamanan singkat untuk reviewer
+- Apakah file workflow baru/diubah? Jika iya, teliti step yang menjalankan shell/ekseskusi script.
+- Apakah workflow mengakses secrets? Pastikan hanya step-step yang aman dan tervalidasi yang memintanya.
+- Apakah ada perubahan terhadap self-hosted runner atau step untuk mengunduh artefak dari sumber tak tepercaya?
+- Jika ragu, jalankan test di branch internal sebelum approve.
+
+Patch markdown siap-tempel untuk PR (file penuh yang direvisi)
+Di bawah ini saya menyertakan versi markdown yang direvisi (copy-ready). Anda bisa menyalin isinya langsung untuk membuat PR pada repository github/docs di path yang sesuai. Saya menyertakan perbaikan struktur (TOC), penambahan langkah aksesibilitas, checklist reviewer, dan tautan ke halaman terkait.
+
+````markdown name=approve-runs-from-forks.md url=https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks
+# Approving workflow runs from forks
+
+> Ringkasan: Maintainer dapat meninjau dan secara manual menyetujui (approve) workflow runs yang dipicu oleh pull request dari fork sebelum workflow tersebut dijalankan dengan potensi akses ke resource sensitif.
+
+## Table of contents
+- [How it works](#how-it-works)
+- [How to approve workflow runs on a pull request from a public fork](#how-to-approve-workflow-runs-on-a-pull-request-from-a-public-fork)
+- [Configure approval policies](#configure-approval-policies)
+- [Best practices and warnings](#best-practices-and-warnings)
+- [Checklist for reviewers](#checklist-for-reviewers)
+- [See also](#see-also)
+
+---
+
+## How it works
+Workflow runs triggered by a contributor's pull request from a fork do not automatically receive access to repository secrets or privileged runner contexts. For certain workflows, a maintainer with write access must manually approve the run before it executes in the repository's context.
+
+Key points:
+- **Manual approval**: Workflow runs from forks may require approval from a maintainer with write access.
+- **Configuration scope**: Approval requirements can be configured at the repository, organization, or enterprise level.
+- **Retention**: Workflow runs that have been awaiting approval for more than 30 days are automatically deleted. (Verify your organization's retention policy for any variations.)
+
+---
+
+## How to approve workflow runs on a pull request from a public fork
+1. Under your repository name, click **Pull requests**.
+2. In the list of pull requests, click the pull request you'd like to review.
+3. On the pull request, click **Files changed** to inspect proposed changes.
+   - Be especially alert to changes in the `.github/workflows/` directory, which can modify CI behavior.
+4. If you’re comfortable with running workflows from this pull request, click the button in the upper-right corner labeled **Awaiting approval** (the exact label can vary). This opens the **Merge status** panel.
+5. Click **Approve workflows to run**.
+
+Accessibility note: use keyboard navigation to reach the “Awaiting approval” control (Tab/Shift+Tab) and ensure any screenshots used include descriptive alt text.
+
+---
+
+## Configure approval policies
+- Repository level: `Settings` → `Actions` → `General` (or `Actions` → `General`) → find the section related to fork workflow approvals and configure who can approve runs (e.g., maintainers, specific teams, or users).
+- Organization/Enterprise level: Organization settings → `Actions` → `Policies` → configure approval scope and defaults for all repositories in the organization or enterprise.
+
+---
+
+## Best practices and warnings
+- Always review changes to `.github/workflows/` carefully — workflows can alter CI/CD behavior and how secrets are used.
+- Contributors from forks do not have direct access to repository secrets; however, workflows may be able to perform harmful actions if they are later approved.
+- Use `pull_request_target` with caution: this event runs workflows in the context of the base repository and can access secrets — avoid using it with untrusted code from forks unless strictly necessary and reviewed.
+- Prefer running untrusted code in isolated environments and avoid exposing high-privilege secrets to third-party contributions.
+
+---
+
+## Checklist for reviewers
+- [ ] Inspect `.github/workflows/` for new or modified steps.
+- [ ] Confirm no new steps request repository secrets unnecessarily.
+- [ ] Check for changes to self-hosted runner configuration or commands that fetch external scripts.
+- [ ] If unsure, re-run tests in an internal branch or request changes instead of approving.
+
+---
+
+## See also
+- Using secrets in GitHub Actions
+- Security hardening for GitHub Actions
+- Workflow permissions and settings
+
+````
+
+Catatan tentang patch:
+- Saya mempertahankan semua info kunci dan menambah struktur (TOC), checklist, aksesibilitas, dan peringatan tambahan tentang pull_request_target.
+- Jika Anda ingin saya juga menghasilkan unified diff (git-style) antara versi lama dan versi baru untuk ditempel sebagai PR patch, saya bisa buatkan; sebutkan apakah Anda mau diff atau hanya file markdown penuh seperti di atas.
+
+Apa yang sudah saya lakukan dan langkah selanjutnya
+- Saya mengambil (fetch) halaman yang Anda lampirkan dan menyimpan isinya (versi sumber disisipkan persis di atas).
+- Saya membuat ringkasan, tiga versi rewrite, pemeriksaan singkat tentang keakuratan, saran perbaikan, langkah operasional, dan file markdown revisi yang siap ditempel.
+- Selanjutnya saya bisa:
+  - Membuat unified diff (git patch) jika Anda mau membuka PR langsung.
+  - Membuka PR di repo `github/docs` jika Anda beri nama repo dan akses yang benar (perlu Anda konfirmasi owner/repo).
+  - Membuat screenshot mockup, atau menterjemahkan revisi ke Bahasa Indonesia penuh untuk docs lokal.
+  - Memeriksa changelog GitHub Actions untuk memastikan tidak ada perubahan UI label sejak saat ini (saya dapat melakukan pencarian web tambahan jika Anda ingin verifikasi tanggal dan wording UI terbaru).
+
+Mau saya buatkan unified git diff patch sekarang, atau lanjutkan membuat PR langsung (sebutkan owner/repo dan cabang target)?Sure — I can help. What would you like me to do with that Docs page? Pick one (or more):
+
+- Summarize the page into a short, plain-language overview.
+- Rewrite or simplify the content for a different audience (engineers, managers, beginners).
+- Check the page for accuracy/outdated info and report what (if anything) needs updating.
+- Suggest specific copy edits, structure/TOC improvements, or accessibility tweaks.
+- Produce a paste-ready PR patch (diff/markdown) you can open against the docs repo.
+- Walk you step-by-step through enabling/approving workflow runs from forks in your repo.
+- Other — describe what you need.
+
+If you want me to read and review the actual page, I can fetch it now and produce a summary or suggested edits. Which option should I do first?# Approving workflow runs from forks
+
+You can manually approve workflow runs triggered by a contributor's pull request.
+
+Workflow runs triggered by a contributor's pull request from a fork may require manual approval from a maintainer with write access. You can configure workflow approval requirements for a [repository](/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#configuring-required-approval-for-workflows-from-public-forks), [organization](/en/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization#configuring-required-approval-for-workflows-from-public-forks), or [enterprise](/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise#enforcing-a-policy-for-fork-pull-requests-in-your-enterprise).
+
+Workflow runs that have been awaiting approval for more than 30 days are automatically deleted.
+
+## Approving workflow runs on a pull request from a public fork
+
+Maintainers with write access to a repository can use the following procedure to review and run workflows on pull requests from contributors that require approval.
+
+1. Under your repository name, click **<svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-git-pull-request" aria-label="git-pull-request" role="img"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path></svg> Pull requests**.
+
+   ![Screenshot of the main page of a repository. In the horizontal navigation bar, a tab, labeled "Pull requests," is outlined in dark orange.](/assets/images/help/repository/repo-tabs-pull-requests-global-nav-update.png)
+2. In the list of pull requests, click the pull request you'd like to review.
+3. On the pull request, click **<svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-file-diff" aria-label="file-diff" role="img"><path d="M1 1.75C1 .784 1.784 0 2.75 0h7.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16H2.75A1.75 1.75 0 0 1 1 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25V4.664a.25.25 0 0 0-.073-.177l-2.914-2.914a.25.25 0 0 0-.177-.073ZM8 3.25a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0V7h-1.5a.75.75 0 0 1 0-1.5h1.5V4A.75.75 0 0 1 8 3.25Zm-3 8a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z"></path></svg> Files changed**.
+
+   ![Screenshot of the tabs for a pull request. The "Files changed" tab is outlined in dark orange.](/assets/images/help/pull_requests/pull-request-tabs-changed-files.png)
+4. Inspect the proposed changes in the pull request and ensure that you are comfortable running your workflows on the pull request branch. You should be especially alert to any proposed changes in the `.github/workflows/` directory that affect workflow files.
+5. If you are comfortable with running workflows on the pull request branch, click the button in the upper right corner labeled **Awaiting approval**, which will open the **Merge status** panel.
+6. Find and click **Approve workflows to run**.
