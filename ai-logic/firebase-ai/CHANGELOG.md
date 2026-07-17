@@ -1,10 +1,12 @@
 # Unreleased
 
-- [feature] Added support for `agentPlatform` as a Gemini backend. (#8437)
-- [deprecated] The `vertexAI` Gemini backend is now deprecated. As a
-  replacement, you can migrate to the `agentPlatform` backend. Note
-  that the default location for `agentPlatform` is "global," which
-  differs from `vertexAI` default location, which was "us-central1." (#8437)
+- [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
+  `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
+  AI to Gemini Enterprise Agent Platform. (#8437)
+
+  Note: The default location is now `global` instead of `us-central1` (no other
+  functionality has changed). To continue using `us-central1`, specify
+  `GenerativeBackend.agentPlatform(location = "us-central1"))`.
                                                                                                                                                         ##17.14.0
 # 17.14.0
 
