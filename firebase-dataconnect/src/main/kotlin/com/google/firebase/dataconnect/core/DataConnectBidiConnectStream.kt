@@ -203,17 +203,14 @@ internal class DataConnectBidiConnectStream(
         // potentially restored, rather than waiting for the entire backoff duration.
         val networkConnectivityRestoredFlowCollectJob =
           launch(CoroutineName("NetworkConnectivityRestoredFlowCollectJob")) {
-            val collectResult = runCatching {
+            try {
               networkConnectivityRestoredFlow.collect {
                 retryBackoff.reset()
                 resetAndRetryEvent.signal()
               }
-            }
-
-            ensureActive()
-
-            collectResult.onFailure {
-              logger.warn(it) {
+            } catch (e: Throwable) {
+              ensureActive()
+              logger.warn(e) {
                 "WARNING: monitoring network connectivity failed; " +
                   "automatic re-connection to the Data Connect server " +
                   "may take longer than strictly necessary [qhrqw5xvxc]"
