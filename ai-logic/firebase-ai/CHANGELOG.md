@@ -1,12 +1,12 @@
 # Unreleased
 
 - [feature] Added support for `agentPlatform` as a Gemini backend. (#8437)
-
 - [deprecated] The `vertexAI` Gemini backend is now deprecated. As a
   replacement, you can migrate to the `agentPlatform` backend. Note
   that the default location for `agentPlatform` is "global," which
   differs from `vertexAI` default location, which was "us-central1." (#8437)
                                                                                                                                                         ##17.14.0
+# 17.14.0
 
 - [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
 - [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
