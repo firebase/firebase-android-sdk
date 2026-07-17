@@ -40,6 +40,7 @@ import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -108,6 +109,7 @@ internal class DataConnectBidiConnectStream(
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
+  private val random: Random,
 ) {
 
   private val retryBackoff = RetryBackoffCalculator()

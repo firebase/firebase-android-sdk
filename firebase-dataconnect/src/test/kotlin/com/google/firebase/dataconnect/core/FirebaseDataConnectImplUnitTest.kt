@@ -294,6 +294,7 @@ class FirebaseDataConnectImplUnitTest {
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
         idStringGenerator = IdStringGenerator(Random.Default),
         networkConnectivityRestoredFlow = emptyFlow(),
+        random = Random.Default,
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }

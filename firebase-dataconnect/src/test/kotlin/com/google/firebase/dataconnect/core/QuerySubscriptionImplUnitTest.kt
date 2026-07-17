@@ -2078,6 +2078,7 @@ class QuerySubscriptionImplUnitTest {
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
       networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
+      random = Random.Default,
     )
   }
 
