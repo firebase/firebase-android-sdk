@@ -34,7 +34,6 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName version
         multiDexEnabled true
@@ -72,6 +71,7 @@ android {
     }
 
     testOptions {
+        targetSdk project.targetSdkVersion
         unitTests {
             includeAndroidResources true
         }
