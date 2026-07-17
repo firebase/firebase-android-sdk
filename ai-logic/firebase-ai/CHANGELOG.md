@@ -7,7 +7,7 @@
   Note: The default location is now `global` instead of `us-central1` (no other
   functionality has changed). To continue using `us-central1`, specify
   `GenerativeBackend.agentPlatform(location = "us-central1"))`.
-                                                                                                                                                        ##17.14.0
+
 # 17.14.0
 
 - [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
