@@ -122,6 +122,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -1978,6 +1979,7 @@ class QuerySubscriptionImplUnitTest {
       creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
+      networkConnectivityRestoredFlow = emptyFlow(),
     )
   }
 

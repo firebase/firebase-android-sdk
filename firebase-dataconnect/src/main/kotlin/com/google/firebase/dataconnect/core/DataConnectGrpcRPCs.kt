@@ -100,6 +100,7 @@ internal class DataConnectGrpcRPCs(
   @get:VisibleForTesting val grpcMetadata: DataConnectGrpcMetadata,
   private val cache: DataConnectCache?,
   parentLogger: Logger,
+  private val networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
 ) {
   private val logger =
     Logger("DataConnectGrpcRPCs").apply {
@@ -525,6 +526,7 @@ internal class DataConnectGrpcRPCs(
       flow,
       tokenManager.authToken,
       shouldRetry = shouldRetry,
+      networkConnectivityRestoredFlow,
       idStringGenerator,
       grpcMetadata,
       connectCoroutineScope,

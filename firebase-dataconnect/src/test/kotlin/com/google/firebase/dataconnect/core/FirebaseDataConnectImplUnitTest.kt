@@ -49,6 +49,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
@@ -292,6 +293,7 @@ class FirebaseDataConnectImplUnitTest {
         creator = mockk(relaxed = true),
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
         idStringGenerator = IdStringGenerator(Random.Default),
+        networkConnectivityRestoredFlow = emptyFlow(),
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }

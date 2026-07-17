@@ -53,6 +53,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
@@ -96,6 +97,7 @@ internal class FirebaseDataConnectImpl(
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
   override val idStringGenerator: IdStringGenerator,
+  private val networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -309,6 +311,7 @@ internal class FirebaseDataConnectImpl(
         grpcMetadata = grpcMetadata,
         cache = cache,
         parentLogger = logger,
+        networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
       )
 
     if (backendInfo.isEmulator) {

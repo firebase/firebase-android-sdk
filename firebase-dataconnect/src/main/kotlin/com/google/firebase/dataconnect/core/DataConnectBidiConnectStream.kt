@@ -98,6 +98,7 @@ internal class DataConnectBidiConnectStream(
     >,
   authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
   shouldRetry: suspend (Throwable) -> RetryStrategy,
+  networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
   idStringGenerator: IdStringGenerator,
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
