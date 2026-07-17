@@ -112,7 +112,7 @@ internal class DataConnectBidiConnectStream(
   private val random: Random,
 ) {
 
-  private val retryBackoff = RetryBackoffCalculator()
+  private val retryBackoff = RetryBackoffCalculator { random.nextDouble() - 0.5 }
   private val resetAndRetryEvent = ConflatedSignal<Unit>()
 
   val isPermanentlyFailed: Boolean

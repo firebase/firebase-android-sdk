@@ -2078,7 +2078,7 @@ class QuerySubscriptionImplUnitTest {
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
       networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
-      random = Random.Default,
+      random = ZeroJitterRandom,
     )
   }
 
@@ -2239,3 +2239,8 @@ private fun getExpectedBackoffWaitTimes(count: Int = -1): List<Long> {
 }
 
 private fun <T> List<T>.secondLast(): T = get(size - 2)
+
+private object ZeroJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.5
+}
