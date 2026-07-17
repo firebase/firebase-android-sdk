@@ -203,8 +203,8 @@ public class JavaCompileTests {
                     new ActivityDetectionConfig.Builder()
                         .setStartSensitivity(ActivityDetectionConfig.Sensitivity.HIGH)
                         .setEndSensitivity(ActivityDetectionConfig.Sensitivity.LOW)
-                        .setPrefixPaddingMS(100)
-                        .setSilenceDurationMS(500)
+                        .setPrefixPaddingMs(100)
+                        .setSilenceDurationMs(500)
                         .build())
                 .build())
         .build();

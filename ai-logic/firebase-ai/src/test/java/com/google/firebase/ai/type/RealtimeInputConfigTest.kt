@@ -53,8 +53,8 @@ internal class RealtimeInputConfigTest {
     val detection = activityDetectionConfig {
       startSensitivity = ActivityDetectionConfig.Sensitivity.HIGH
       endSensitivity = ActivityDetectionConfig.Sensitivity.LOW
-      prefixPaddingMS = 100
-      silenceDurationMS = 500
+      prefixPaddingMs = 100
+      silenceDurationMs = 500
     }
 
     val expectedJson =

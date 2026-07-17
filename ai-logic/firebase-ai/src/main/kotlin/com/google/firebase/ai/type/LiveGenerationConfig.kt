@@ -58,7 +58,7 @@ import kotlinx.serialization.Serializable
  * @property outputAudioTranscription Specifies the configuration for transcribing output audio from
  * the model.
  *
- * @property realtimeInputConfig Configures realtime input for the session
+ * @property realtimeInputConfig Configures realtime input for the session.
  *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)

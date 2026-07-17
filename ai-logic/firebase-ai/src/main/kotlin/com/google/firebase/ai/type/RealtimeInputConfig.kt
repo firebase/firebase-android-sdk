@@ -22,13 +22,6 @@ import kotlinx.serialization.Serializable
 /**
  * Configures model input behavior when generating content in the Live API via realtime supported
  * methods.
- *
- * @property automaticActivityDetection Configures automatic activity detection on the model. When
- * not set, automatic activity detection is enabled by default. If set, the user must send activity
- * signals.
- * @property activityHandling Defines how the model treats user input activity.
- * @property turnCoverage Defines which input is included in the user's turn, relative to the
- * starting and ending of the activity.
  */
 @PublicPreviewAPI
 public class RealtimeInputConfig
@@ -74,23 +67,37 @@ private constructor(
 
   /** Builder for creating a [RealtimeInputConfig]. */
   public class Builder {
+    /**
+     * Configures automatic activity detection on the model.
+     *
+     * When not set, automatic activity detection is enabled by default. If set, the user must send
+     * activity signals.
+     */
     @JvmField public var automaticActivityDetection: ActivityDetectionConfig? = null
+
+    /** Defines how the model treats user input activity. */
     @JvmField public var activityHandling: ActivityHandling? = null
+
+    /**
+     * Defines which input is included in the user's turn, relative to the starting and ending of
+     * the activity.
+     */
     @JvmField public var turnCoverage: TurnCoverage? = null
 
+    /** Sets [automaticActivityDetection]. */
     public fun setAutomaticActivityDetection(config: ActivityDetectionConfig): Builder = apply {
-      this.automaticActivityDetection = config
+      automaticActivityDetection = config
     }
 
+    /** Sets [activityHandling]. */
     public fun setActivityHandling(handling: ActivityHandling): Builder = apply {
-      this.activityHandling = handling
+      activityHandling = handling
     }
 
-    public fun setTurnCoverage(coverage: TurnCoverage): Builder = apply {
-      this.turnCoverage = coverage
-    }
+    /** Sets [turnCoverage]. */
+    public fun setTurnCoverage(coverage: TurnCoverage): Builder = apply { turnCoverage = coverage }
 
-    /** Create a new [RealtimeInputConfig] with the attached arguments. */
+    /** Creates a new [RealtimeInputConfig] with the configured options. */
     public fun build(): RealtimeInputConfig =
       RealtimeInputConfig(automaticActivityDetection, activityHandling, turnCoverage)
   }

@@ -19,29 +19,14 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Configures the model's automatic detection of user activity.
- *
- * @property startSensitivity Determines how likely the start of speech is detected.
- * @property endSensitivity Determines how likely the end of speech is detected.
- * @property prefixPaddingMS How long detected speech should be present before start-of-speech is
- * committed. The lower this value, the more sensitive the start-of-speech detection is and the
- * shorter the speech that can be recognized. However, this also increases the probability of false
- * positives.
- * @property silenceDurationMS How long silence (or non-speech) should be present before
- * end-of-speech is committed. The larger this value, the longer speech gaps can be without
- * interrupting the user's activity, but this will increase the model's latency.
- * @property disabled Disables automatic activity detection. When automatic activity detection is
- * enabled, the model will interpret detected voices and text as the start of activity. When
- * automatic activity detection is disabled, the user must send activity signals manually.
- */
+/** Configures the model's automatic detection of user activity. */
 @PublicPreviewAPI
 public class ActivityDetectionConfig
 private constructor(
   internal val startSensitivity: Sensitivity?,
   internal val endSensitivity: Sensitivity?,
-  internal val prefixPaddingMS: Int?,
-  internal val silenceDurationMS: Int?,
+  internal val prefixPaddingMs: Int?,
+  internal val silenceDurationMs: Int?,
   internal val disabled: Boolean?
 ) {
 
@@ -64,34 +49,56 @@ private constructor(
 
   /** Builder for creating an [ActivityDetectionConfig]. */
   public class Builder {
+    /** Determines how likely the start of speech is detected. */
     @JvmField public var startSensitivity: Sensitivity? = null
+
+    /** Determines how likely the end of speech is detected. */
     @JvmField public var endSensitivity: Sensitivity? = null
-    @JvmField public var prefixPaddingMS: Int? = null
-    @JvmField public var silenceDurationMS: Int? = null
 
+    /**
+     * How long (in milliseconds) detected speech should be present before start-of-speech is
+     * committed.
+     *
+     * The lower this value, the more sensitive the start-of-speech detection is and the shorter the
+     * speech that can be recognized. However, this also increases the probability of false
+     * positives.
+     */
+    @JvmField public var prefixPaddingMs: Int? = null
+
+    /**
+     * How long (in milliseconds) silence (or non-speech) should be present before end-of-speech is
+     * committed.
+     *
+     * The larger this value, the longer speech gaps can be without interrupting the user's
+     * activity, but this will increase the model's latency.
+     */
+    @JvmField public var silenceDurationMs: Int? = null
+
+    /** Sets [startSensitivity]. */
     public fun setStartSensitivity(sensitivity: Sensitivity): Builder = apply {
-      this.startSensitivity = sensitivity
+      startSensitivity = sensitivity
     }
 
+    /** Sets [endSensitivity]. */
     public fun setEndSensitivity(sensitivity: Sensitivity): Builder = apply {
-      this.endSensitivity = sensitivity
+      endSensitivity = sensitivity
     }
 
-    public fun setPrefixPaddingMS(paddingMs: Int): Builder = apply {
-      this.prefixPaddingMS = paddingMs
+    /** Sets [prefixPaddingMs] in milliseconds. */
+    public fun setPrefixPaddingMs(paddingMs: Int): Builder = apply { prefixPaddingMs = paddingMs }
+
+    /** Sets [silenceDurationMs] in milliseconds. */
+    public fun setSilenceDurationMs(durationMs: Int): Builder = apply {
+      silenceDurationMs = durationMs
     }
 
-    public fun setSilenceDurationMS(durationMs: Int): Builder = apply {
-      this.silenceDurationMS = durationMs
-    }
-
-    /** Create a new [ActivityDetectionConfig] with the attached arguments. */
+    /** Creates a new [ActivityDetectionConfig] with the configured options. */
     public fun build(): ActivityDetectionConfig =
       ActivityDetectionConfig(
         startSensitivity,
         endSensitivity,
-        prefixPaddingMS,
-        silenceDurationMS,
+        prefixPaddingMs,
+        silenceDurationMs,
         null
       )
   }
@@ -100,8 +107,8 @@ private constructor(
     Internal(
       startSensitivity = startSensitivity?.let { "START_SENSITIVITY_${it.value}" },
       endSensitivity = endSensitivity?.let { "END_SENSITIVITY_${it.value}" },
-      prefixPaddingMs = prefixPaddingMS,
-      silenceDurationMs = silenceDurationMS,
+      prefixPaddingMs = prefixPaddingMs,
+      silenceDurationMs = silenceDurationMs,
       disabled = disabled
     )
 
@@ -129,8 +136,8 @@ private constructor(
       ActivityDetectionConfig(
         startSensitivity = null,
         endSensitivity = null,
-        prefixPaddingMS = null,
-        silenceDurationMS = null,
+        prefixPaddingMs = null,
+        silenceDurationMs = null,
         disabled = true
       )
   }

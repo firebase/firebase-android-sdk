@@ -338,7 +338,7 @@ class LiveSessionTests {
       }
     }
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = config,
         systemInstruction = SystemInstructions.yesOrNo
@@ -367,13 +367,13 @@ class LiveSessionTests {
         automaticActivityDetection = activityDetectionConfig {
           startSensitivity = ActivityDetectionConfig.Sensitivity.HIGH
           endSensitivity = ActivityDetectionConfig.Sensitivity.LOW
-          prefixPaddingMS = 100
-          silenceDurationMS = 500
+          prefixPaddingMs = 100
+          silenceDurationMs = 500
         }
       }
     }
     val liveModel =
-      getLiveModel(
+      AIModels.getGoogleLiveModel(
         modelName = modelName,
         config = config,
         systemInstruction = SystemInstructions.yesOrNo

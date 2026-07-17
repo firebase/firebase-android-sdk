@@ -379,12 +379,12 @@ package com.google.firebase.ai.type {
     ctor public ActivityDetectionConfig.Builder();
     method public com.google.firebase.ai.type.ActivityDetectionConfig build();
     method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setEndSensitivity(com.google.firebase.ai.type.ActivityDetectionConfig.Sensitivity sensitivity);
-    method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setPrefixPaddingMS(int paddingMs);
-    method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setSilenceDurationMS(int durationMs);
+    method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setPrefixPaddingMs(int paddingMs);
+    method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setSilenceDurationMs(int durationMs);
     method public com.google.firebase.ai.type.ActivityDetectionConfig.Builder setStartSensitivity(com.google.firebase.ai.type.ActivityDetectionConfig.Sensitivity sensitivity);
     field public com.google.firebase.ai.type.ActivityDetectionConfig.Sensitivity? endSensitivity;
-    field public Integer? prefixPaddingMS;
-    field public Integer? silenceDurationMS;
+    field public Integer? prefixPaddingMs;
+    field public Integer? silenceDurationMs;
     field public com.google.firebase.ai.type.ActivityDetectionConfig.Sensitivity? startSensitivity;
   }
 
