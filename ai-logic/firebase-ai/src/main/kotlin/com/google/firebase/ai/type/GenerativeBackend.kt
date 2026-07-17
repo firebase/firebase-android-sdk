@@ -35,8 +35,8 @@ internal constructor(internal val location: String, internal val backend: Genera
      */
     @Deprecated(
       message =
-        "Use agentPlatform instead. Note that agentPlatform defaults to location \"global\" while" +
-          " vertexAI defaulted to \"us-central1\", which should be considered when migrating.",
+        "Use agentPlatform instead. Note that agentPlatform default location is \"global\" while" +
+          " vertexAI was \"us-central1\".",
       replaceWith = ReplaceWith("agentPlatform(location)")
     )
     @JvmStatic
