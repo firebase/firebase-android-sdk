@@ -132,7 +132,7 @@ private class NetworkCallbackImpl : ConnectivityManager.NetworkCallback() {
   }
 
   /**
-   * Notifies the callback when the network block status changes (e.g. background data saver rules
+   * Notifies the callback when the network block status changes (for example, background data saver rules
    * are toggled). We signal when the network becomes unblocked (`blocked == false`) so consumers
    * can attempt to reconnect.
    */
