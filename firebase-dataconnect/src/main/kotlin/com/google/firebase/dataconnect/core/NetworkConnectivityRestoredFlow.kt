@@ -132,9 +132,9 @@ private class NetworkCallbackImpl : ConnectivityManager.NetworkCallback() {
   }
 
   /**
-   * Notifies the callback when the network block status changes (for example, background data saver rules
-   * are toggled). We signal when the network becomes unblocked (`blocked == false`) so consumers
-   * can attempt to reconnect.
+   * Notifies the callback when the network block status changes (for example, background data saver
+   * rules are toggled). We signal when the network becomes unblocked (`blocked == false`) so
+   * consumers can attempt to reconnect.
    */
   @RequiresApi(Build.VERSION_CODES.Q)
   override fun onBlockedStatusChanged(network: Network, blocked: Boolean) {
