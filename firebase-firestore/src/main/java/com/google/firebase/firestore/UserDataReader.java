@@ -23,6 +23,9 @@ import com.google.common.base.Function;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;
 import com.google.firebase.firestore.FieldValue.DeleteFieldValue;
+import com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue;
+import com.google.firebase.firestore.FieldValue.NumericMaximumFieldValue;
+import com.google.firebase.firestore.FieldValue.NumericMinimumFieldValue;
 import com.google.firebase.firestore.FieldValue.ServerTimestampFieldValue;
 import com.google.firebase.firestore.core.UserData;
 import com.google.firebase.firestore.core.UserData.ParseAccumulator;
@@ -36,6 +39,8 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericMaximumTransformOperation;
+import com.google.firebase.firestore.model.mutation.NumericMinimumTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.util.Assert;
@@ -369,15 +374,26 @@ public final class UserDataReader {
       ArrayTransformOperation arrayRemove = new ArrayTransformOperation.Remove(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayRemove);
 
-    } else if (value
-        instanceof com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) {
-      com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue
-          numericIncrementFieldValue =
-              (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
+    } else if (value instanceof NumericIncrementFieldValue) {
+      NumericIncrementFieldValue numericIncrementFieldValue = (NumericIncrementFieldValue) value;
       Value operand = parseQueryValue(numericIncrementFieldValue.getOperand());
       NumericIncrementTransformOperation incrementOperation =
           new NumericIncrementTransformOperation(operand);
       context.addToFieldTransforms(context.getPath(), incrementOperation);
+
+    } else if (value instanceof NumericMinimumFieldValue) {
+      NumericMinimumFieldValue numericMinimumFieldValue = (NumericMinimumFieldValue) value;
+      Value operand = parseQueryValue(numericMinimumFieldValue.getOperand());
+      NumericMinimumTransformOperation minimumOperation =
+          new NumericMinimumTransformOperation(operand);
+      context.addToFieldTransforms(context.getPath(), minimumOperation);
+
+    } else if (value instanceof NumericMaximumFieldValue) {
+      NumericMaximumFieldValue numericMaximumFieldValue = (NumericMaximumFieldValue) value;
+      Value operand = parseQueryValue(numericMaximumFieldValue.getOperand());
+      NumericMaximumTransformOperation maximumOperation =
+          new NumericMaximumTransformOperation(operand);
+      context.addToFieldTransforms(context.getPath(), maximumOperation);
 
     } else {
       throw Assert.fail("Unknown FieldValue type: %s", Util.typeName(value));

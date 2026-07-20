@@ -62,6 +62,7 @@ internal constructor(
   testPasswordResource: String? = null,
   testCasesValue: String? = null,
   testCasesPath: String? = null,
+  val resultsBucket: String? = null,
 ) {
   val binary = getBinary(binaryPath)
   val releaseNotes: String? = getValueFromStringOrFile(releaseNotesValue, releaseNotesPath)

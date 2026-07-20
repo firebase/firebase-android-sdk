@@ -64,7 +64,7 @@ internal constructor(
     }
 
     /**
-     * Creates a [TemplateTool] instance that allows the model to use grounding with Google Maps.
+     * Creates a [TemplateTool] instance that allows the model to use Grounding with Google Maps.
      *
      * Grounding with Google Maps can be used to allow the model to connect to Google Maps to
      * incorporate location-based information into its responses.

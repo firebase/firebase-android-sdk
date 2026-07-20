@@ -16,22 +16,11 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource as DataSourceEnum
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.SqliteSequenceNumber
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
-internal sealed interface DataSource {
-
-  object Server : DataSource {
-    override fun toString() = "Server"
-  }
-
-  data class Cache(val sqliteSequenceNumber: SqliteSequenceNumber?) : DataSource {
-    override fun toString() = "Cache(sqliteSequenceNumber=${sqliteSequenceNumber?.sequenceNumber})"
-  }
+internal class CallerSdkTypeElement(val callerSdkType: CallerSdkType) :
+  AbstractCoroutineContextElement(Key) {
+  companion object Key : CoroutineContext.Key<CallerSdkTypeElement>
 }
-
-internal fun DataSource.toDataSourceEnum(): DataSourceEnum =
-  when (this) {
-    DataSource.Server -> DataSourceEnum.SERVER
-    is DataSource.Cache -> DataSourceEnum.CACHE
-  }

@@ -663,6 +663,11 @@ internal class DataConnectCacheDatabase(
     }
   }
 
+  suspend fun nextSequenceNumber(): SqliteSequenceNumber =
+    runReadWriteTransaction { sqliteDatabase ->
+      sqliteDatabase.nextSequenceNumber()
+    }
+
   private suspend inline fun <T> runReadWriteTransaction(
     crossinline block: suspend (SQLiteDatabase) -> T
   ): T {

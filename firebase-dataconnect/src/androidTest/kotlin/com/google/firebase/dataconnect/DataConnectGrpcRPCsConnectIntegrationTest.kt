@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.core.CallerSdkTypeElement
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.ExecuteResponse
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
@@ -29,6 +30,8 @@ import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStr
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlError as GraphqlErrorProto
 import io.kotest.assertions.assertSoftly
@@ -44,8 +47,11 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.uuid
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
 import org.junit.Before
@@ -72,14 +78,16 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     val key = keyArb.sample()
 
     val stream = dataConnectGrpcRPCs.connect()
+    val callerSdkType = callerSdkTypeArb.sample()
     val executeResponseFlow: Flow<ExecuteResponse> =
       stream.subscribe(
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
+        callerSdkType,
       )
 
-    executeResponseFlow.test {
+    executeResponseFlow.flowOn(CallerSdkTypeElement(callerSdkType)).test {
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = null)
     }
   }
@@ -92,14 +100,16 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     val key = connector.insertString(name = name1)
 
     val stream = dataConnectGrpcRPCs.connect()
+    val callerSdkType = callerSdkTypeArb.sample()
     val executeResponseFlow: Flow<ExecuteResponse> =
       stream.subscribe(
         requestId = requestIdArb.sample(),
         operationName = GetStringByKeyQuery.OPERATION_NAME,
         variables = key.encodeToGetStringByKeyQueryVariables(),
+        callerSdkType,
       )
 
-    executeResponseFlow.test {
+    executeResponseFlow.flowOn(CallerSdkTypeElement(callerSdkType)).test {
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name1)
       connector.updateString(key, name = name2)
       awaitItem().shouldBeGetStringByKeyQueryResponse(expectedName = name2)
@@ -112,8 +122,10 @@ class DataConnectGrpcRPCsConnectIntegrationTest : DataConnectIntegrationTestBase
     connect(
       streamId = streamIdArb.sample(),
       callerSdkType = callerSdkTypeArb.sample(),
-      authToken = null,
-      appCheckToken = null,
+      dataConnectAuth =
+        mockk(relaxed = true) { coEvery { getToken(any()) } answers { null.sequenced() } },
+      dataConnectAppCheck =
+        mockk(relaxed = true) { coEvery { getToken(any()) } answers { null.sequenced() } },
       idStringGenerator = IdStringGenerator(Random.Default),
     )
 }
@@ -145,3 +157,6 @@ private fun Struct.shouldBeGetStringByKeyQueryData(expectedName: String?) {
     data.item.shouldNotBeNull() shouldBe GetStringByKeyQuery.Data.Item(expectedName)
   }
 }
+
+private fun <T> T.sequenced(): SequencedReference<T> =
+  SequencedReference(nextSequenceNumber(), this)

@@ -21,9 +21,9 @@ import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.internal.InternalTokenResult
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await
@@ -42,7 +42,10 @@ internal class DataConnectAuth(
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-  private val idTokenListener = IdTokenListenerImpl(logger)
+
+  @Suppress("LeakingThis") private val weakThis = WeakReference(this)
+
+  private val idTokenListener = IdTokenListenerImpl(weakThis)
 
   @DeferredApi
   override fun addTokenListener(provider: InternalAuthProvider) =
@@ -56,17 +59,26 @@ internal class DataConnectAuth(
       GetAuthTokenResult(it.token, it.getAuthUid())
     }
 
+  override fun onClose() {
+    weakThis.clear()
+  }
+
   @JvmInline
   value class AuthUid(val string: String) {
     override fun toString() = "AuthUid($string)"
   }
 
   data class GetAuthTokenResult(override val token: String?, val authUid: AuthUid?) :
-    GetTokenResult
+    GetTokenResult {
+    override fun toString() =
+      "GetAuthTokenResult(authUid=$authUid, token=${token?.toScrubbedAccessToken()})"
+  }
 
-  private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
+  private class IdTokenListenerImpl(
+    private val dataConnectAuthRef: WeakReference<DataConnectAuth>
+  ) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
-      logger.debug { "onIdTokenChanged(token=${tokenResult.token?.toScrubbedAccessToken()})" }
+      dataConnectAuthRef.get()?.onTokenChanged(tokenResult.token)
     }
   }
 

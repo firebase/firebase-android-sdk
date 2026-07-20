@@ -55,18 +55,19 @@ sealed class Primitive(override val javaName: String, val defaultValue: String) 
  * Can be one of [Message] or [ProtoEnum].
  */
 sealed class UserDefined : ProtobufType() {
-  /** A fully qualified protobuf message name, i.e. `com.example.Outer.Inner`. */
+  /** A fully qualified protobuf message name, for example, `com.example.Outer.Inner`. */
   abstract val protobufFullName: String
 
   /**
-   * Specifies the scope that this type is defined in, i.e. a [Owner.Package] or a parent [Message].
+   * Specifies the scope that this type is defined in, that is, a [Owner.Package] or a parent
+   * [Message].
    */
   abstract val owner: Owner
 
   /** Unqualified name of this type */
   abstract val name: String
 
-  /** A fully qualified java name of this type, i.e. `com.example.Outer$Inner`. */
+  /** A fully qualified java name of this type, for example, `com.example.Outer$Inner`. */
   override val javaName: String
     get() = "${owner.javaName}${owner.scopeSeparator}$name"
 

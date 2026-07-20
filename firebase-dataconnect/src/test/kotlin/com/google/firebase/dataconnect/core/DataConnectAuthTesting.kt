@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.util
+package com.google.firebase.dataconnect.core
 
-/** A class that wraps a reference and associates a tag with it. */
-internal data class TaggedReference<out Tag, out T>(val tag: Tag, val ref: T)
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.GetTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 
-/**
- * Returns a new [TaggedReference] with the same [tag], but with its [ref] transformed by applying
- * the given [block] function to the current [ref].
- */
-internal inline fun <Tag, T, U> TaggedReference<Tag, T>.map(
-  block: (T) -> U
-): TaggedReference<Tag, U> = TaggedReference(tag, block(ref))
+internal fun taskForToken(
+  token: String?,
+  claims: Map<String, Any> = emptyMap()
+): Task<GetTokenResult> = Tasks.forResult(GetTokenResult(token, claims))
+
+internal fun taskForToken(token: String?, authUid: AuthUid?): Task<GetTokenResult> =
+  taskForToken(token, authUid?.let { mapOf("sub" to it.string) } ?: emptyMap())
