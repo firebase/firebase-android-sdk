@@ -17,6 +17,8 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.common.JSON
+import com.google.firebase.ai.type.RealtimeInputConfig.ActivityHandling
+import com.google.firebase.ai.type.RealtimeInputConfig.TurnCoverage
 import io.kotest.assertions.json.shouldEqualJson
 import io.kotest.matchers.equals.shouldBeEqual
 import kotlinx.serialization.encodeToString
@@ -28,8 +30,8 @@ internal class RealtimeInputConfigTest {
   @Test
   fun `Basic RealtimeInputConfig`() {
     val config = realtimeInputConfig {
-      activityHandling = RealtimeInputConfig.ActivityHandling.NO_INTERRUPT
-      turnCoverage = RealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY
+      activityHandling = ActivityHandling.NO_INTERRUPT
+      turnCoverage = TurnCoverage.ONLY_ACTIVITY
       automaticActivityDetection = ActivityDetectionConfig.disabled()
     }
 
@@ -74,25 +76,17 @@ internal class RealtimeInputConfigTest {
   @Test
   fun `DSL correctly delegates to Builder`() {
     val config =
-      RealtimeInputConfig.builder()
-        .setActivityHandling(RealtimeInputConfig.ActivityHandling.INTERRUPT)
-        .build()
+      RealtimeInputConfig.builder().setActivityHandling(ActivityHandling.INTERRUPT).build()
 
-    val configDsl = realtimeInputConfig {
-      activityHandling = RealtimeInputConfig.ActivityHandling.INTERRUPT
-    }
+    val configDsl = realtimeInputConfig { activityHandling = ActivityHandling.INTERRUPT }
 
-    config.activityHandling?.shouldBeEqual(
-      configDsl.activityHandling as RealtimeInputConfig.ActivityHandling
-    )
+    config.activityHandling?.shouldBeEqual(configDsl.activityHandling as ActivityHandling)
   }
 
   @Test
   fun `LiveClientSetupMessage includes RealtimeInputConfig in serialization`() {
     val config = liveGenerationConfig {
-      realtimeInputConfig = realtimeInputConfig {
-        activityHandling = RealtimeInputConfig.ActivityHandling.NO_INTERRUPT
-      }
+      realtimeInputConfig = realtimeInputConfig { activityHandling = ActivityHandling.NO_INTERRUPT }
     }
     val message =
       LiveClientSetupMessage(

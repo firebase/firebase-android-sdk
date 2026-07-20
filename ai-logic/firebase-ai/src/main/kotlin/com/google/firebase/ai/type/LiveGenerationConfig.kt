@@ -159,7 +159,7 @@ private constructor(
         this.contextWindowCompression = config
       }
 
-    public fun setRealtimeInputConfig(config: RealtimeInputConfig?): Builder = apply {
+    public fun setRealtimeInputConfig(config: RealtimeInputConfig): Builder = apply {
       this.realtimeInputConfig = config
     }
 

@@ -118,7 +118,7 @@ private constructor(
     @SerialName("end_of_speech_sensitivity") val endSensitivity: String? = null,
     @SerialName("prefix_padding_ms") val prefixPaddingMs: Int? = null,
     @SerialName("silence_duration_ms") val silenceDurationMs: Int? = null,
-    @SerialName("disabled") val disabled: Boolean? = null
+    val disabled: Boolean? = null
   )
 
   public companion object {
