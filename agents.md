@@ -181,6 +181,15 @@ This repository uses a combination of dependency injection frameworks:
 The project supports Proguarding. Proguard rules are defined in `proguard.txt` files within each
 project.
 
+## Code Review
+
+When reviewing code or preparing changes for review, ensure the following requirements are met:
+
+- **No Latin Abbreviations**: Do not use Latin abbreviations (such as `e.g.`, `i.e.`, or `etc.`) in code comments or strings. Use plain English alternatives instead (such as "for example", "that is", or "and so on").
+- **API File Updates**: When code modifies the public API, the corresponding `api.txt` file must be updated.
+- **Changelog Updates**: When changes to a subproject are non-trivial and user-visible, the corresponding `CHANGELOG.md` file must be updated.
+- **API Documentation**: All public APIs must be documented properly using standard doc comments (Javadoc or KDoc).
+
 ## External Dependencies
 
 Do not add, under any circumstance, any new dependency to an SDK that does not already exist in the
