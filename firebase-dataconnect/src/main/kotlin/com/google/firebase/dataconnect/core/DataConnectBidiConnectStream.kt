@@ -233,7 +233,10 @@ internal class DataConnectBidiConnectStream(
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
         .shareIn(
           coroutineScope,
-          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+          started =
+            SharingStarted.WhileSubscribed(
+              replayExpirationMillis = 0,
+            ),
           replay = 0,
         )
 
