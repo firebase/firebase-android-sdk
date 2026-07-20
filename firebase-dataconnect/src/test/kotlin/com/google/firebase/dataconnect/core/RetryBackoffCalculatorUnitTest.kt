@@ -16,8 +16,11 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.jitterTestCase
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxJitterBackoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minJitterBackoffValues
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
-import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -27,11 +30,9 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.checkAll
-import kotlin.math.roundToLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -134,7 +135,7 @@ class RetryBackoffCalculatorUnitTest {
 
   @Test
   fun `next() with varying jitter scales backoff correctly`() = runTest {
-    checkAll(propTestConfig, jitterTestCaseArb()) { (jitters, expectedBackoffs) ->
+    checkAll(propTestConfig, Arb.jitterTestCase()) { (jitters, expectedBackoffs) ->
       val retryBackoffCalculator = RetryBackoffCalculator(jitters.iterator()::next)
       expectedBackoffs.forEach { expected -> retryBackoffCalculator.next() shouldBe expected }
     }
@@ -148,83 +149,3 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
-
-private val backoffValues: List<Long> =
-  listOf(
-    1000,
-    1750,
-    3063,
-    5360,
-    9380,
-    16415,
-    28726,
-    50271,
-    87974,
-    153955,
-    269421,
-    471487,
-    600000,
-  )
-
-private val minJitterBackoffValues: List<Long> =
-  listOf(
-    500,
-    875,
-    1532,
-    2680,
-    4690,
-    8208,
-    14363,
-    25136,
-    43987,
-    76978,
-    134711,
-    235744,
-    300000,
-  )
-
-private val maxJitterBackoffValues: List<Long> =
-  listOf(
-    1500,
-    2625,
-    4595,
-    8040,
-    14070,
-    24623,
-    43089,
-    75407,
-    131961,
-    230933,
-    404132,
-    707231,
-    900000,
-  )
-
-private data class JitterTestCase(
-  val jitters: List<Double>,
-  val expectedBackoffs: List<Long>,
-) {
-
-  init {
-    check(jitters.size == expectedBackoffs.size) {
-      "internal error yds47wscpa: jitters.size=${jitters.size} must equal " +
-        "expectedBackoffs.size=${expectedBackoffs.size}"
-    }
-  }
-
-  override fun toString() =
-    "JitterTestCase(jitters=${jitters.print().value}, " +
-      "expectedBackoffs=${expectedBackoffs.print().value})"
-}
-
-private fun jitterTestCaseArb(): Arb<JitterTestCase> {
-  val unjitteredBackoffValues = backoffValues + List(5) { backoffValues.last() }
-  return arbitrary { rs ->
-    val jitters = List(unjitteredBackoffValues.size) { rs.random.nextDouble() - 0.5 }
-    val jitteredBackoffValues =
-      unjitteredBackoffValues.zip(jitters).map { (backoff, jitter) ->
-        backoff + (backoff * jitter).roundToLong()
-      }
-    JitterTestCase(jitters, jitteredBackoffValues)
-  }
-}

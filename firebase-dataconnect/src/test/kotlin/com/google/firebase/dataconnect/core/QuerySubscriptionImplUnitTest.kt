@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
@@ -1655,9 +1656,7 @@ class QuerySubscriptionImplUnitTest {
       dataConnect(server, networkConnectivityRestoredFlow = networkConnectivityRestoredFlow)
     val subscription = querySubscription(dataConnect)
 
-    val backoffWaitTimes = getExpectedBackoffWaitTimes()
-
-    backoffWaitTimes.forEachIndexed { failCountBeforeRetrying, lastBackoffWaitTime ->
+    backoffValues.forEachIndexed { failCountBeforeRetrying, lastBackoffWaitTime ->
       turbineScope {
         val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
         val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
@@ -1674,12 +1673,12 @@ class QuerySubscriptionImplUnitTest {
           val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
           serverCollector.awaitCall()
           val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-          check(time2 - time1 == backoffWaitTimes[retryIndex]) {
+          check(time2 - time1 == backoffValues[retryIndex]) {
             "internal error m6gwemnpw7: something is wrong with the test logic because the " +
               "expected backoff was different than expected; once this logic is fixed, " +
               "make sure to also fix the code after failConnection() below; " +
               "time2=$time2, time1=$time1 time2-time1=${time2 - time1}, retryIndex=$retryIndex, " +
-              "backoffWaitTimes[retryIndex]=${backoffWaitTimes[retryIndex]}, " +
+              "backoffValues[retryIndex]=${backoffValues[retryIndex]}, " +
               "failCountBeforeRetrying=$failCountBeforeRetrying"
           }
         }
@@ -1691,7 +1690,7 @@ class QuerySubscriptionImplUnitTest {
             delayMillis = lastBackoffWaitTime / 3,
             emit = networkConnectivityRestoredFlow::emit,
             serverCollector,
-            firstBackoffWaitTime = backoffWaitTimes[0]
+            firstBackoffWaitTime = backoffValues[0]
           )
         )
 
@@ -1755,7 +1754,10 @@ class QuerySubscriptionImplUnitTest {
 
     val waitTimes = times.zipWithNext { a, b -> b - a }
     check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
-    val expectedWaitTimes = getExpectedBackoffWaitTimes(waitTimes.size)
+    val expectedWaitTimes = buildList {
+      addAll(backoffValues)
+      while (size < waitTimes.size) add(last())
+    }
     waitTimes shouldContainExactly expectedWaitTimes
   }
 
@@ -2218,25 +2220,6 @@ private val retryableFailureGrpcStatusCodes: List<Status.Code> =
 
 private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: CallerSdkType): String =
   grpcRPCs.grpcMetadata.googApiClientHeaderValue(callerSdkType)
-
-private fun getExpectedBackoffWaitTimes(count: Int = -1): List<Long> {
-  require(count >= -1) { "invalid count: $count [ht5kab7ehc]" }
-  val calculator = RetryBackoffCalculator { 0.0 }
-  val list = mutableListOf<Long>()
-
-  while (true) {
-    if (count >= 0) {
-      if (list.size == count) {
-        break
-      }
-    } else if (list.size >= 2 && list.last() == list.secondLast()) {
-      break
-    }
-    list.add(calculator.next())
-  }
-
-  return list.toList()
-}
 
 private fun <T> List<T>.secondLast(): T = get(size - 2)
 
