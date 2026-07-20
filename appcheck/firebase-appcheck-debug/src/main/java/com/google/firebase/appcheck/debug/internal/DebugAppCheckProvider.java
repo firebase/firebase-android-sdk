@@ -67,6 +67,13 @@ public class DebugAppCheckProvider implements AppCheckProvider {
         debugSecret == null
             ? determineDebugSecret(firebaseApp, backgroundExecutor)
             : Tasks.forResult(debugSecret);
+    this.debugSecretTask.addOnSuccessListener(
+        liteExecutor,
+        secret ->
+            Log.d(
+                TAG,
+                "Enter this debug secret into the allow list in the Firebase Console for your project: "
+                    + secret));
   }
 
   @VisibleForTesting
@@ -98,10 +105,6 @@ public class DebugAppCheckProvider implements AppCheckProvider {
             debugSecret = UUID.randomUUID().toString();
             storageHelper.saveDebugSecret(debugSecret);
           }
-          Log.d(
-              TAG,
-              "Enter this debug secret into the allow list in the Firebase Console for your project: "
-                  + debugSecret);
           taskCompletionSource.setResult(debugSecret);
         });
     return taskCompletionSource.getTask();
