@@ -257,8 +257,8 @@ package com.google.firebase.firestore {
     method public String getHost();
     method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
-    field public static final int DEFAULT_GRPC_FLOW_CONTROL_WINDOW = 262144; // 0x40000
     field public static final long CACHE_SIZE_UNLIMITED = -1L; // 0xffffffffffffffffL
+    field public static final int DEFAULT_GRPC_FLOW_CONTROL_WINDOW = 262144; // 0x40000
   }
 
   public static final class FirebaseFirestoreSettings.Builder {

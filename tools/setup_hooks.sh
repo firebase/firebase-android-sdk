@@ -27,11 +27,11 @@ set -e
 
 echo "Running pre-commit hook: formatting and API generation..."
 
-PRE_STATUS="$(git status --porcelain)"
+PRE_STATUS="\$(git status --porcelain)"
 
 python3 "$REPO_ROOT/tools/firebase_checks.py"
 
-POST_STATUS="$(git status --porcelain)"
+POST_STATUS="\$(git status --porcelain)"
 
 if [ "\$PRE_STATUS" != "\$POST_STATUS" ]; then
     echo ""

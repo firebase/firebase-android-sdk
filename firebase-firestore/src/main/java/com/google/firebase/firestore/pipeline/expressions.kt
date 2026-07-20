@@ -334,8 +334,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates a [Field] instance representing the field at the given path.
      *
-     * The path can be a simple field name (e.g., "name") or a dot-separated path to a nested field
-     * (e.g., "address.city").
+     * The path can be a simple field name (for example, "name") or a dot-separated path to a nested
+     * field (for example, "address.city").
      *
      * @param name The path to the field.
      * @return A new [Field] instance representing the specified path.
@@ -353,8 +353,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates a [Field] instance representing the field at the given path.
      *
-     * The path can be a simple field name (e.g., "name") or a dot-separated path to a nested field
-     * (e.g., "address.city").
+     * The path can be a simple field name (for example, "name") or a dot-separated path to a nested
+     * field (for example, "address.city").
      *
      * ```kotlin
      * // Get the 'address.city' field
@@ -4912,7 +4912,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-     * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -4945,7 +4945,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-     * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -4978,7 +4978,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-     * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5011,7 +5011,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-     * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5044,7 +5044,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5077,7 +5077,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5104,7 +5104,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5137,7 +5137,7 @@ abstract class Expression internal constructor() {
      * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
      * "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
@@ -5330,8 +5330,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5356,8 +5356,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5381,8 +5381,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5406,8 +5406,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5431,8 +5431,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5457,8 +5457,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5482,8 +5482,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -5507,8 +5507,8 @@ abstract class Expression internal constructor() {
      * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
      * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
      * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
-     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-     * specified.
+     * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+     * if not specified.
      * @return A new [Expression] representing the extracted part.
      */
     @JvmStatic
@@ -9839,8 +9839,8 @@ abstract class Expression internal constructor() {
    * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
-   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database (for
+   * example, "America/Los_Angeles") or in the format "Etc/GMT-1".
    * @return A new [Expression] representing the truncated timestamp.
    */
   fun timestampTruncateWithTimezone(granularity: String, timezone: String): Expression =
@@ -9860,8 +9860,8 @@ abstract class Expression internal constructor() {
    * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
-   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
-   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database (for
+   * example, "America/Los_Angeles") or in the format "Etc/GMT-1".
    * @return A new [Expression] representing the truncated timestamp.
    */
   fun timestampTruncateWithTimezone(granularity: Expression, timezone: String): Expression =
@@ -9882,7 +9882,7 @@ abstract class Expression internal constructor() {
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
    * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
    * @return A new [Expression] representing the truncated timestamp.
    */
   fun timestampTruncateWithTimezone(granularity: String, timezone: Expression): Expression =
@@ -9903,7 +9903,7 @@ abstract class Expression internal constructor() {
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
    * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
-   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1".
    * @return A new [Expression] representing the truncated timestamp.
    */
   fun timestampTruncateWithTimezone(granularity: Expression, timezone: Expression): Expression =
@@ -10002,8 +10002,9 @@ abstract class Expression internal constructor() {
    * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
-   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
-   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database (for
+   * example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
    * @return A new [Expression] representing the extracted part.
    */
   fun timestampExtractWithTimezone(part: Expression, timezone: String): Expression =
@@ -10022,8 +10023,9 @@ abstract class Expression internal constructor() {
    * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
-   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
-   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database (for
+   * example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
    * @return A new [Expression] representing the extracted part.
    */
   fun timestampExtractWithTimezone(part: String, timezone: String): Expression =
@@ -10044,8 +10046,8 @@ abstract class Expression internal constructor() {
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
    * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
-   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-   * specified.
+   * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+   * if not specified.
    * @return A new [Expression] representing the extracted part.
    */
   fun timestampExtractWithTimezone(part: Expression, timezone: Expression): Expression =
@@ -10066,8 +10068,8 @@ abstract class Expression internal constructor() {
    * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
    * "isoweek", "month", "quarter", "year", and "isoyear".
    * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
-   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
-   * specified.
+   * database (for example, "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC"
+   * if not specified.
    * @return A new [Expression] representing the extracted part.
    */
   fun timestampExtractWithTimezone(part: String, timezone: Expression): Expression =
