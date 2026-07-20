@@ -30,6 +30,9 @@ import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.jitterTestCase
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxJitterBackoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minJitterBackoffValues
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
@@ -116,6 +119,8 @@ import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -1732,9 +1737,45 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `subsequent connection failures backoff exponentially`() = runTest {
+  fun `subsequent connection failures backoff exponentially, no jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = ZeroJitterRandom,
+      expectedBackoffs = backoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, min jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MinJitterRandom,
+      expectedBackoffs = minJitterBackoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, max jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MaxJitterRandom,
+      expectedBackoffs = maxJitterBackoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, varying jitter`() = runTest {
+    checkAll(propTestConfig, Arb.jitterTestCase()) { (jitters, expectedBackoffs) ->
+      testSubsequentConnectionFailuresBackoffExponentially(
+        random = SequenceRandom(jitters.asSequence() + generateSequence { jitters.last() }),
+        expectedBackoffs = expectedBackoffs,
+      )
+    }
+  }
+
+  private suspend fun TestScope.testSubsequentConnectionFailuresBackoffExponentially(
+    random: Random,
+    expectedBackoffs: List<Long>,
+  ) {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
+    val dataConnect = dataConnect(server, random = random)
     val subscription = querySubscription(dataConnect)
 
     val times = mutableListOf<Long>()
@@ -1755,7 +1796,7 @@ class QuerySubscriptionImplUnitTest {
     val waitTimes = times.zipWithNext { a, b -> b - a }
     check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
     val expectedWaitTimes = buildList {
-      addAll(backoffValues)
+      addAll(expectedBackoffs)
       while (size < waitTimes.size) add(last())
     }
     waitTimes shouldContainExactly expectedWaitTimes
@@ -2036,6 +2077,7 @@ class QuerySubscriptionImplUnitTest {
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
     networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
   ): FirebaseDataConnectImpl =
     dataConnect(
       server.port,
@@ -2043,6 +2085,7 @@ class QuerySubscriptionImplUnitTest {
       deferredAuthProvider,
       deferredAppCheckProvider,
       networkConnectivityRestoredFlow,
+      random,
     )
 
   private fun TestScope.dataConnect(
@@ -2053,6 +2096,7 @@ class QuerySubscriptionImplUnitTest {
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
     networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
   ): FirebaseDataConnectImpl {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
 
@@ -2080,7 +2124,7 @@ class QuerySubscriptionImplUnitTest {
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
       networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
-      random = ZeroJitterRandom,
+      random = random,
     )
   }
 
@@ -2226,4 +2270,26 @@ private fun <T> List<T>.secondLast(): T = get(size - 2)
 private object ZeroJitterRandom : Random() {
   override fun nextBits(bitCount: Int): Int = 0
   override fun nextDouble(): Double = 0.5
+}
+
+private object MinJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.0
+}
+
+private object MaxJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 1.0
+}
+
+private class SequenceRandom(jitters: Sequence<Double>) : Random() {
+
+  private val lock = ReentrantLock()
+  private val iterator = jitters.iterator()
+
+  override fun nextBits(bitCount: Int): Int = 0
+
+  override fun nextDouble(): Double {
+    return lock.withLock { iterator.next() + 0.5 }
+  }
 }
