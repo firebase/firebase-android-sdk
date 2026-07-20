@@ -787,16 +787,20 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerativeBackend {
+    method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform();
+    method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
     method public static com.google.firebase.ai.type.GenerativeBackend googleAI();
-    method public static com.google.firebase.ai.type.GenerativeBackend vertexAI();
-    method public static com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend vertexAI();
+    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
     field public static final com.google.firebase.ai.type.GenerativeBackend.Companion Companion;
   }
 
   public static final class GenerativeBackend.Companion {
+    method public com.google.firebase.ai.type.GenerativeBackend agentPlatform();
+    method public com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
     method public com.google.firebase.ai.type.GenerativeBackend googleAI();
-    method public com.google.firebase.ai.type.GenerativeBackend vertexAI();
-    method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend vertexAI();
+    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
   public final class GoogleMaps {

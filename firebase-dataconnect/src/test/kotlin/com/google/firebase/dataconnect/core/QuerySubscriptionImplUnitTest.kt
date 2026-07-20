@@ -71,8 +71,6 @@ import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
-import com.google.firebase.dataconnect.util.coroutines.signal
 import com.google.firebase.internal.InternalTokenResult
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
@@ -118,12 +116,18 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
@@ -1572,14 +1576,9 @@ class QuerySubscriptionImplUnitTest {
       serverCollector.awaitUntilSubscribeStreamRequest()
 
       // Abort the connection to trigger backoff delay
-      val backoffSignal = ConflatedSignal<Unit>()
-      val backoffCallback: (Long) -> Unit = { backoffSignal.signal() }
-      DataConnectBidiConnectStream.setOnRetryBackoffForTesting(backoffCallback)
-      try {
+      DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
         responseSender.onError(Status.UNAVAILABLE.asException())
         backoffSignal.await()
-      } finally {
-        DataConnectBidiConnectStream.unsetOnRetryBackoffForTesting(backoffCallback)
       }
 
       val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
@@ -1598,6 +1597,107 @@ class QuerySubscriptionImplUnitTest {
       clientCollector2.cancelAndIgnoreRemainingEvents()
       clientCollector1.cancelAndIgnoreRemainingEvents()
       serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `network connectivity restoration resets retries immediately`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      // Measure the simulated time that the backoff delays for.
+      failConnection()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+      serverCollector.awaitCall()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Verify that the backoff delay was aborted at delayMillis (which is guaranteed to be less
+      // than
+      // the backoff in effect) rather than waiting for the entire backoff.
+      (time2 - time1) shouldBe delayMillis
+    }
+
+  @Test
+  fun `network connectivity restoration resets backoff delay to initial value`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      failConnection()
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+
+      // Cause the retry after the NetworkConnectivityRestored event to fail again.
+      failConnection()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      serverCollector.awaitCall()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Verify that the backoff used in the retry after the NetworkConnectivityRestored event
+      // used the initial backoff, rather than continuing with the backoff it had used above.
+      (time2 - time1) shouldBe firstBackoffWaitTime
+    }
+
+  private data class TestNetworkConnectivityRestorationContext(
+    val failConnection: suspend () -> Unit,
+    val testScheduler: TestCoroutineScheduler,
+    val delayMillis: Long,
+    val emit: suspend (NetworkConnectivityRestored) -> Unit,
+    val serverCollector: ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>,
+    val firstBackoffWaitTime: Long,
+  )
+
+  private fun testNetworkConnectivityRestoration(
+    block: suspend TestNetworkConnectivityRestorationContext.() -> Unit
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    val networkConnectivityRestoredFlow = MutableSharedFlow<NetworkConnectivityRestored>()
+    val dataConnect =
+      dataConnect(server, networkConnectivityRestoredFlow = networkConnectivityRestoredFlow)
+    val subscription = querySubscription(dataConnect)
+
+    val backoffWaitTimes = getExpectedBackoffWaitTimes()
+
+    backoffWaitTimes.forEachIndexed { failCountBeforeRetrying, lastBackoffWaitTime ->
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+        val failConnection: suspend () -> Unit = {
+          val responseSender = serverCollector.awaitResponseSender()
+          DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
+            responseSender.onError(Status.UNAVAILABLE.asException())
+            backoffSignal.await()
+          }
+        }
+
+        repeat(failCountBeforeRetrying) { retryIndex ->
+          failConnection()
+          val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+          serverCollector.awaitCall()
+          val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+          check(time2 - time1 == backoffWaitTimes[retryIndex]) {
+            "internal error m6gwemnpw7: something is wrong with the test logic because the " +
+              "expected backoff was different than expected; once this logic is fixed, " +
+              "make sure to also fix the code after failConnection() below; " +
+              "time2=$time2, time1=$time1 time2-time1=${time2 - time1}, retryIndex=$retryIndex, " +
+              "backoffWaitTimes[retryIndex]=${backoffWaitTimes[retryIndex]}, " +
+              "failCountBeforeRetrying=$failCountBeforeRetrying"
+          }
+        }
+
+        block(
+          TestNetworkConnectivityRestorationContext(
+            failConnection,
+            testScheduler,
+            delayMillis = lastBackoffWaitTime / 3,
+            emit = networkConnectivityRestoredFlow::emit,
+            serverCollector,
+            firstBackoffWaitTime = backoffWaitTimes[0]
+          )
+        )
+
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -1645,7 +1745,6 @@ class QuerySubscriptionImplUnitTest {
 
       repeat(100) {
         val responseSender = serverCollector.awaitResponseSender()
-        serverCollector.awaitUntilSubscribeStreamRequest()
         times.add(@OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime)
         responseSender.onError(Status.UNAVAILABLE.asException())
       }
@@ -1656,10 +1755,7 @@ class QuerySubscriptionImplUnitTest {
 
     val waitTimes = times.zipWithNext { a, b -> b - a }
     check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
-    val expectedWaitTimes =
-      RetryBackoffCalculator().let { retryBackoffCalculator ->
-        List(waitTimes.size) { retryBackoffCalculator.next() }
-      }
+    val expectedWaitTimes = getExpectedBackoffWaitTimes(99)
     waitTimes shouldContainExactly expectedWaitTimes
   }
 
@@ -1937,12 +2033,14 @@ class QuerySubscriptionImplUnitTest {
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
   ): FirebaseDataConnectImpl =
     dataConnect(
       server.port,
       idStringGenerator,
       deferredAuthProvider,
       deferredAppCheckProvider,
+      networkConnectivityRestoredFlow,
     )
 
   private fun TestScope.dataConnect(
@@ -1952,6 +2050,7 @@ class QuerySubscriptionImplUnitTest {
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
   ): FirebaseDataConnectImpl {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
 
@@ -1978,6 +2077,7 @@ class QuerySubscriptionImplUnitTest {
       creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
+      networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
     )
   }
 
@@ -2117,3 +2217,24 @@ private val retryableFailureGrpcStatusCodes: List<Status.Code> =
 
 private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: CallerSdkType): String =
   grpcRPCs.grpcMetadata.googApiClientHeaderValue(callerSdkType)
+
+private fun getExpectedBackoffWaitTimes(count: Int = -1): List<Long> {
+  require(count >= -1) { "invalid count: $count [ht5kab7ehc]" }
+  val calculator = RetryBackoffCalculator()
+  val list = mutableListOf<Long>()
+
+  while (true) {
+    if (count >= 0) {
+      if (list.size == count) {
+        break
+      }
+    } else if (list.size >= 2 && list.last() == list.secondLast()) {
+      break
+    }
+    list.add(calculator.next())
+  }
+
+  return list.toList()
+}
+
+private fun <T> List<T>.secondLast(): T = get(size - 2)

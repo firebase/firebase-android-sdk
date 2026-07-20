@@ -107,6 +107,7 @@ import kotlin.time.Duration
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -929,6 +930,7 @@ class DataConnectGrpcRPCsUnitTest {
       grpcMetadata = grpcMetadataArb.bind(),
       cache = cache,
       parentLogger = mockLogger,
+      networkConnectivityRestoredFlow = emptyFlow(),
     )
   }
 

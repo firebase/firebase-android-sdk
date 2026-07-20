@@ -41,6 +41,8 @@ internal class FirebaseDataConnectFactory(
   // all instances generate unique IDs.
   private val idStringGenerator = IdStringGenerator(Random.Default)
 
+  private val networkConnectivityRestoredFlow = networkConnectivityRestoredFlow(context)
+
   init {
     firebaseApp.addLifecycleEventListener { _, _ -> close() }
   }
@@ -92,6 +94,7 @@ internal class FirebaseDataConnectFactory(
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
       idStringGenerator = idStringGenerator,
+      networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
     )
 
   fun remove(instance: FirebaseDataConnect) {
