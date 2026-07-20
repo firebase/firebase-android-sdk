@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
 - [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
   `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
   AI to Gemini Enterprise Agent Platform. (#8437)
