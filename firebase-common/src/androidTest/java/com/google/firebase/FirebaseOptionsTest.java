@@ -33,6 +33,7 @@ public class FirebaseOptionsTest {
   private static final String RECAPTCHA_SITE_KEY = "6L00000sAAAAAAaaaaaAAaa00000_AAAaAaaAa00";
   private static final String GCP_PROJECT_ID = "test-product-id";
 
+  @SuppressWarnings("deprecation")
   private static final FirebaseOptions ALL_VALUES_OPTIONS =
       new FirebaseOptions.Builder()
           .setApplicationId(GOOGLE_APP_ID)
@@ -46,6 +47,7 @@ public class FirebaseOptionsTest {
           .build();
 
   @Test
+  @SuppressWarnings("deprecation")
   public void createOptionsWithAllValuesSet() {
     FirebaseOptions firebaseOptions =
         new FirebaseOptions.Builder()

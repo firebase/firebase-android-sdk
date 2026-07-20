@@ -3,7 +3,8 @@ package com.google.firebase.appcheck.recaptcha {
 
   public class RecaptchaAppCheckProviderFactory implements com.google.firebase.appcheck.AppCheckProviderFactory {
     method public com.google.firebase.appcheck.AppCheckProvider create(com.google.firebase.FirebaseApp);
-    method public static com.google.firebase.appcheck.recaptcha.RecaptchaAppCheckProviderFactory getInstance();
+    method @Deprecated public static com.google.firebase.appcheck.recaptcha.RecaptchaAppCheckProviderFactory getInstance();
+    method public static com.google.firebase.appcheck.recaptcha.RecaptchaAppCheckProviderFactory getInstance(String);
   }
 
 }

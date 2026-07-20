@@ -39,7 +39,7 @@ package com.google.firebase {
     method public String? getDatabaseUrl();
     method public String? getGcmSenderId();
     method public String? getProjectId();
-    method public String? getRecaptchaSiteKey();
+    method @Deprecated public String? getRecaptchaSiteKey();
     method public String? getStorageBucket();
   }
 
@@ -52,7 +52,7 @@ package com.google.firebase {
     method public com.google.firebase.FirebaseOptions.Builder setDatabaseUrl(String?);
     method public com.google.firebase.FirebaseOptions.Builder setGcmSenderId(String?);
     method public com.google.firebase.FirebaseOptions.Builder setProjectId(String?);
-    method public com.google.firebase.FirebaseOptions.Builder setRecaptchaSiteKey(String?);
+    method @Deprecated public com.google.firebase.FirebaseOptions.Builder setRecaptchaSiteKey(String?);
     method public com.google.firebase.FirebaseOptions.Builder setStorageBucket(String?);
   }
 
