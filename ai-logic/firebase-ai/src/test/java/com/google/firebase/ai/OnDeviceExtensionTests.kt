@@ -85,12 +85,12 @@ internal class OnDeviceExtensionTests {
   }
 
   @Test
-  fun `getOnDeviceModelName calls interopModel getBaseModelName`() {
+  fun `getModelName calls interopModel getBaseModelName`() {
     runBlocking {
       coEvery { interopModel.getBaseModelName() } returns "nano-v3"
 
       val extension = OnDeviceExtension(interopModel)
-      val modelName = extension.getOnDeviceModelName()
+      val modelName = extension.getModelName()
 
       modelName shouldBe "nano-v3"
       coVerify(exactly = 1) { interopModel.getBaseModelName() }

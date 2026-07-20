@@ -458,12 +458,8 @@ internal constructor(
     onDeviceGenerativeModel.warmup()
   }
 
-  /**
-   * Returns the name of the on-device model.
-   *
-   * @return The name of the on-device model.
-   */
-  public suspend fun getOnDeviceModelName(): String {
+  /** Returns the name of the on-device model. */
+  public suspend fun getModelName(): String {
     return onDeviceGenerativeModel.getBaseModelName()
   }
 }
