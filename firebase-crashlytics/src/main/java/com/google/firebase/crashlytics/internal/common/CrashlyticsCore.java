@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -56,7 +58,9 @@ public class CrashlyticsCore {
   static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
 
   // Build ID related constants
-  static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
+  static final String LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
+  static final String CRASHLYTICS_REQUIRE_BUILD_ID =
+      "com.google.firebase.crashlytics.RequireBuildId";
   static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
 
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 3;
@@ -140,7 +144,13 @@ public class CrashlyticsCore {
     //  now that the buildId is now only used for mapping file association.
     final boolean requiresBuildId =
         CommonUtils.getBooleanResourceValue(
-            context, CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
+            context,
+            CRASHLYTICS_REQUIRE_BUILD_ID,
+            CommonUtils.getBooleanResourceValue(
+                context,
+                LEGACY_CRASHLYTICS_REQUIRE_BUILD_ID,
+                CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT));
+
     if (!isBuildIdValid(appData.buildId, requiresBuildId)) {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
@@ -199,6 +209,10 @@ public class CrashlyticsCore {
 
       controller.enableExceptionHandling(
           sessionIdentifier, Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
+
+      if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
+        controller.enableProfilingManagerListener(sessionIdentifier);
+      }
 
       if (initializeSynchronously && CommonUtils.canTryConnection(context)) {
         Logger.getLogger()

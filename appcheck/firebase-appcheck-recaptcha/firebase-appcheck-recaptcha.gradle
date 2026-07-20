@@ -17,23 +17,23 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup = "appcheck-norelease"
+    libraryGroup = "appcheck"
     releaseNotes {
-        name.set("{{app_check}} Recaptcha")
+        name.set("{{app_check}} reCAPTCHA")
         versionName.set("appcheck-recaptcha")
+        enabled.set(true)
+        nestedHeader.set(true)
     }
-    previewMode = "norelease"
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.appcheck.recaptcha"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -43,14 +43,17 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    testOptions.unitTests.includeAndroidResources = false
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = false
+    }
 }
 
 dependencies {
     implementation(libs.dagger.dagger)
 
     api project(':appcheck:firebase-appcheck')
-    api project(':firebase-common')
+    api "com.google.firebase:firebase-common:22.1.0"
     api libs.firebase.components
     api 'com.google.android.recaptcha:recaptcha:18.7.1'
 

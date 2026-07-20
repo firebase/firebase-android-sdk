@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.querymgr
+package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
-internal data class DataSourcePair<T>(val data: T, val source: DataSource)
+internal class CallerSdkTypeElement(val callerSdkType: CallerSdkType) :
+  AbstractCoroutineContextElement(Key) {
+  companion object Key : CoroutineContext.Key<CallerSdkTypeElement>
+}

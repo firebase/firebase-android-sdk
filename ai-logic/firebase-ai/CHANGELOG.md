@@ -1,6 +1,28 @@
 # Unreleased
 
-- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8107)
+- [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
+  `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
+  AI to Gemini Enterprise Agent Platform. (#8437)
+
+  Note: The default location is now `global` instead of `us-central1` (no other
+  functionality has changed). To continue using `us-central1`, specify
+  `GenerativeBackend.agentPlatform(location = "us-central1"))`.
+
+# 17.14.0
+
+- [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
+
+# 17.13.0
+
+- [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.
+  Integrated `SpeechConfig` into `GenerationConfig` to support Text-to-speech generation (TTS). (#8100)
+- [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)
+- [feature] Added [firebase_app_check] as a dependency of the SDK (#8225)
+
+# 17.12.1
+
+- [feature] Added the `retrievalConfig` argument to `TemplateToolConfig` (#8188)
 - [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
 
 # 17.12.0
@@ -176,4 +198,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

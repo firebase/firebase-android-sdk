@@ -23,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.JSON
+import com.google.firebase.ai.common.util.TEST_MODEL_NAME
 import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
 import com.google.firebase.ai.type.Candidate
@@ -34,12 +35,16 @@ import com.google.firebase.ai.type.HarmBlockMethod
 import com.google.firebase.ai.type.HarmBlockThreshold
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.MultiSpeakerVoiceConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.ServerException
+import com.google.firebase.ai.type.SpeakerVoiceConfig
+import com.google.firebase.ai.type.SpeechConfig
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.ThinkingLevel
+import com.google.firebase.ai.type.Voice
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
@@ -94,7 +99,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(
           timeout = 5.seconds,
           endpoint = "https://my.custom.endpoint",
@@ -112,7 +117,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         actualModel =
           CloudGenerativeModelProvider(
-            "gemini-2.5-flash",
+            TEST_MODEL_NAME,
             systemInstruction = content { text("system instruction") },
             controller = apiController
           ),
@@ -211,7 +216,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -223,7 +228,7 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
+        actualModel = CloudGenerativeModelProvider(TEST_MODEL_NAME, controller = apiController),
         requestOptions = RequestOptions()
       )
 
@@ -252,7 +257,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -267,7 +272,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         actualModel =
           CloudGenerativeModelProvider(
-            "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
+            "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/$TEST_MODEL_NAME",
             controller = apiController
           ),
         requestOptions = RequestOptions()
@@ -295,7 +300,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -318,7 +323,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         actualModel =
           CloudGenerativeModelProvider(
-            "gemini-2.5-flash",
+            TEST_MODEL_NAME,
             safetySettings = safetySettings,
             generativeBackend = GenerativeBackend.googleAI(),
             controller = apiController
@@ -345,7 +350,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -368,7 +373,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         actualModel =
           CloudGenerativeModelProvider(
-            "gemini-2.5-flash",
+            TEST_MODEL_NAME,
             safetySettings = safetySettings,
             generativeBackend = GenerativeBackend.vertexAI("us-central1"),
             controller = apiController
@@ -413,7 +418,7 @@ internal class GenerativeModelTesting {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -427,7 +432,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         actualModel =
           CloudGenerativeModelProvider(
-            "gemini-2.5-flash",
+            TEST_MODEL_NAME,
             generationConfig =
               generationConfig {
                 thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
@@ -450,11 +455,142 @@ internal class GenerativeModelTesting {
     }
   }
 
+  @Test
+  fun `correctly setting speechConfig with singleVoice in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        TEST_MODEL_NAME,
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        actualModel =
+          CloudGenerativeModelProvider(
+            TEST_MODEL_NAME,
+            generationConfig =
+              generationConfig {
+                speechConfig = SpeechConfig(voice = Voice("Puck"), languageCode = "en-US")
+              },
+            controller = apiController
+          ),
+        requestOptions = RequestOptions()
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Puck"
+      )
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
+    }
+  }
+
+  @Test
+  fun `correctly setting speechConfig with multiSpeakerVoiceConfig in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        TEST_MODEL_NAME,
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        actualModel =
+          CloudGenerativeModelProvider(
+            TEST_MODEL_NAME,
+            generationConfig =
+              generationConfig {
+                speechConfig =
+                  SpeechConfig(
+                    multiSpeakerVoiceConfig =
+                      MultiSpeakerVoiceConfig(
+                        speakerVoiceConfigs =
+                          listOf(
+                            SpeakerVoiceConfig(speaker = "Speaker1", voice = Voice("Puck")),
+                            SpeakerVoiceConfig(speaker = "Speaker2", voice = Voice("Charon"))
+                          )
+                      ),
+                    languageCode = "en-US"
+                  )
+              },
+            controller = apiController
+          ),
+        requestOptions = RequestOptions()
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].speaker",
+        "Speaker1"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[0].voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Puck"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].speaker",
+        "Speaker2"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multiSpeakerVoiceConfig.speakerVoiceConfigs[1].voiceConfig.prebuiltVoiceConfig.voiceName",
+        "Charon"
+      )
+      it.shouldContainJsonKeyValue("$.generation_config.speech_config.languageCode", "en-US")
+    }
+  }
+
   private fun generativeModelWithMockEngine(mockEngine: MockEngine): GenerativeModel {
     val apiController =
       APIController(
         "super_cool_test_key",
-        "gemini-2.5-flash",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -465,7 +601,7 @@ internal class GenerativeModelTesting {
       )
 
     return GenerativeModel(
-      actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
+      actualModel = CloudGenerativeModelProvider(TEST_MODEL_NAME, controller = apiController),
       requestOptions = RequestOptions()
     )
   }

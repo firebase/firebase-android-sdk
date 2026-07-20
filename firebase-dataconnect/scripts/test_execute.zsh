@@ -20,17 +20,18 @@ source "${0:A:h}/util/say.zsh"
 
 typeset -r project_root_dir="${0:A:h:h:h}"
 
-if (( # != 1 )); then
+if (( # < 1 )) || (( # > 2 )); then
   {
-    say_error "Expected exactly 1 command-line argument, but got $#: $*"
-    say "Usage: ${0:t} <test-class-name>"
+    say_error "Expected 1 or 2 command-line arguments, but got $#: $*"
+    say "Usage: ${0:t} <test-class-name> [test-method-name]"
     say "Example 1: ${0:t} RealtimeQuerySubscriptionImplUnitTest"
-    say "Example 2: ${0:t} com.google.firebase.dataconnect.core.RealtimeQuerySubscriptionImplUnitTest"
+    say "Example 2: ${0:t} com.google.firebase.dataconnect.core.RealtimeQuerySubscriptionImplUnitTest \"collecting flow after DataConnect is closed completes immediately\""
   } >&2
   exit 2
 fi
 
 typeset -r test_input="$1"
+typeset -r test_method="${2:-}"
 
 # Data structure linking source roots to their submodule and test type.
 # Format: "source_root  submodule  test_type"
@@ -207,6 +208,10 @@ fi
 
 # Construct gradle arguments
 if [[ "$test_type" == "unit" ]]; then
+  typeset test_filter="${fully_qualified_class}"
+  if [[ -n "$test_method" ]]; then
+    test_filter="${fully_qualified_class}.${test_method}"
+  fi
   typeset -ra args=(
     "${project_root_dir}/gradlew"
     "-p"
@@ -214,16 +219,20 @@ if [[ "$test_type" == "unit" ]]; then
     "--configure-on-demand"
     "${submodule}:testDebugUnitTest"
     "--tests"
-    "${fully_qualified_class}"
+    "${test_filter}"
   )
 elif [[ "$test_type" == "integration" ]]; then
+  typeset test_filter="${fully_qualified_class}"
+  if [[ -n "$test_method" ]]; then
+    test_filter="${fully_qualified_class}#${test_method}"
+  fi
   typeset -ra args=(
     "${project_root_dir}/gradlew"
     "-p"
     "${project_root_dir}"
     "--configure-on-demand"
     "${submodule}:connectedDebugAndroidTest"
-    "-Pandroid.testInstrumentationRunnerArguments.class=${fully_qualified_class}"
+    "-Pandroid.testInstrumentationRunnerArguments.class=${test_filter}"
   )
 else
   say_error "INTERNAL ERROR: unsupported value for test_type: $test_type" >&2

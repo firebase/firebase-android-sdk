@@ -3,7 +3,7 @@
 # it needs to match the protobuf version which grpc has transitive dependency on, which
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
-androidGradlePlugin = "8.6.1"
+androidGradlePlugin = "8.13.2"
 androidx-core = "1.13.1"
 androidx-test-core = "1.5.0"
 androidx-test-junit = "1.1.5"
@@ -55,7 +55,7 @@ mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.11"
 mockito = "5.20.0"
 mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
-playServicesCloudMessaging = "17.2.0"
+playServicesCloudMessaging = "17.4.0"
 playServicesStats = "17.0.2"
 playServicesVision = "20.1.3"
 protoGoogleCommonProtos = "1.18.0"
