@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
 - [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
 - [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
   `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
