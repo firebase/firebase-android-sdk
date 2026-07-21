@@ -39,7 +39,6 @@ package com.google.firebase {
     method public String? getDatabaseUrl();
     method public String? getGcmSenderId();
     method public String? getProjectId();
-    method @Deprecated public String? getRecaptchaSiteKey();
     method public String? getStorageBucket();
   }
 

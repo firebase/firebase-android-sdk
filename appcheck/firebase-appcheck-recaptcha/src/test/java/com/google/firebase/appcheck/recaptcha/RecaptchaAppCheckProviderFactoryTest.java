@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.recaptcha;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -63,44 +62,12 @@ public class RecaptchaAppCheckProviderFactoryTest {
   }
 
   @Test
-  public void getInstance_nullSiteKey_expectThrows() {
-    assertThrows(
-        NullPointerException.class, () -> RecaptchaAppCheckProviderFactory.getInstance(null));
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void getInstance_noArgs_returnsNonNullInstance() {
-    RecaptchaAppCheckProviderFactory factory = RecaptchaAppCheckProviderFactory.getInstance();
-    assertNotNull(factory);
-  }
-
-  @Test
   public void create_nonNullFirebaseApp_returnsRecaptchaAppCheckProvider() {
     RecaptchaAppCheckProviderFactory factory =
         RecaptchaAppCheckProviderFactory.getInstance(SITE_KEY_1);
     AppCheckProvider provider = factory.create(mockFirebaseApp);
     assertNotNull(provider);
     assertEquals(RecaptchaAppCheckProvider.class, provider.getClass());
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void create_siteKeyInOptions_returnsRecaptchaAppCheckProvider() {
-    when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(SITE_KEY_1);
-    RecaptchaAppCheckProviderFactory factory = RecaptchaAppCheckProviderFactory.getInstance();
-    AppCheckProvider provider = factory.create(mockFirebaseApp);
-    assertNotNull(provider);
-    assertEquals(RecaptchaAppCheckProvider.class, provider.getClass());
-    verify(mockComponent).get(SITE_KEY_1);
-  }
-
-  @Test
-  @SuppressWarnings("deprecation")
-  public void create_noSiteKeyInOptionsOrFactory_expectThrows() {
-    when(mockFirebaseOptions.getRecaptchaSiteKey()).thenReturn(null);
-    RecaptchaAppCheckProviderFactory factory = RecaptchaAppCheckProviderFactory.getInstance();
-    assertThrows(IllegalArgumentException.class, () -> factory.create(mockFirebaseApp));
   }
 
   @Test

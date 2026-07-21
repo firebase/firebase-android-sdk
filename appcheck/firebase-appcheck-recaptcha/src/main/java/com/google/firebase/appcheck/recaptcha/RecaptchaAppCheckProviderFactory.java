@@ -15,8 +15,6 @@
 package com.google.firebase.appcheck.recaptcha;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -33,19 +31,8 @@ public class RecaptchaAppCheckProviderFactory implements AppCheckProviderFactory
   private final String siteKey;
   private volatile RecaptchaAppCheckProvider provider;
 
-  private RecaptchaAppCheckProviderFactory(@Nullable String siteKey) {
+  private RecaptchaAppCheckProviderFactory(@NonNull String siteKey) {
     this.siteKey = siteKey;
-  }
-
-  /**
-   * Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance.
-   *
-   * @deprecated Use {@link #getInstance(String)} instead.
-   */
-  @Deprecated
-  @NonNull
-  public static RecaptchaAppCheckProviderFactory getInstance() {
-    return new RecaptchaAppCheckProviderFactory(null);
   }
 
   /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
@@ -59,18 +46,6 @@ public class RecaptchaAppCheckProviderFactory implements AppCheckProviderFactory
   @Override
   @SuppressWarnings({"FirebaseUseExplicitDependencies", "deprecation"})
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    String siteKey = this.siteKey;
-    if (siteKey == null) {
-      siteKey = firebaseApp.getOptions().getRecaptchaSiteKey();
-      Preconditions.checkNotEmpty(
-          siteKey,
-          "Missing site key from configuration. Verify your google-services.json file is updated.");
-      ProviderMultiResourceComponent component =
-          firebaseApp.get(ProviderMultiResourceComponent.class);
-      RecaptchaAppCheckProvider provider = component.get(siteKey);
-      provider.initializeRecaptchaClient();
-      return provider;
-    }
     if (provider == null) {
       synchronized (this) {
         if (provider == null) {
