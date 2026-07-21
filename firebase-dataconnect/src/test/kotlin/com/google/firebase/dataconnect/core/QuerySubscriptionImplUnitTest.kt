@@ -19,6 +19,7 @@ import android.content.Context.CONNECTIVITY_SERVICE
 import android.net.ConnectivityManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.ReceiveTurbine
+import app.cash.turbine.TurbineContext
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -26,6 +27,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
@@ -111,6 +113,7 @@ import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
@@ -2035,6 +2038,125 @@ class QuerySubscriptionImplUnitTest {
       }
     }
   }
+
+  @Test
+  fun `connection is kept alive for exactly 15 seconds after last subscriber unsubscribes`() =
+    testConnectionGracePeriod(Arb.long(0L until 15_000L)) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration less than 15 seconds
+      delay(context.delayMillis.milliseconds)
+
+      // Verify that the connection is still open (no close event received on serverCollector)
+      context.serverCollector.asChannel().tryReceive().getOrNull() shouldBe null
+
+      // Measure the remaining time until the client closes the connection
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
+      context.serverCollector.awaitUntilClientClosesConnection()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
+
+      (time2 - time1) shouldBe (15_000L - context.delayMillis)
+    }
+
+  @Test
+  fun `re-subscribing within 15-second grace period keeps the connection alive and reuses it`() =
+    testConnectionGracePeriod(Arb.long(100L until 15_000L)) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration less than 15 seconds
+      delay(context.delayMillis.milliseconds)
+
+      // Re-subscribe clientCollector2
+      val clientCollector2 =
+        context.subscription.flow.testIn(context.backgroundScope, name = "clientCollector2")
+
+      // Verify that the server receives a subscribe request for the connection, but the connection
+      // ID remains the same (proving reuse)
+      val subscribeRequest = context.serverCollector.awaitUntilSubscribeStreamRequest()
+      subscribeRequest.connectionId shouldBe context.initialConnectionId
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      // Wait for the new grace period to expire so we don't leak connection closure errors/events
+      context.serverCollector.awaitUntilClientClosesConnection()
+    }
+
+  @Test
+  fun `re-subscribing after 15-second grace period establishes a new connection`() =
+    testConnectionGracePeriod(Arb.long(15_000L..100_000L)) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration of at least 15 seconds
+      delay(context.delayMillis.milliseconds)
+
+      // Verify that the connection is closed
+      context.serverCollector.awaitUntilClientClosesConnection()
+
+      // Re-subscribe clientCollector2
+      val clientCollector2 =
+        context.subscription.flow.testIn(context.backgroundScope, name = "clientCollector2")
+
+      // Verify that a new connection is established
+      val connection2 = context.serverCollector.awaitConnectRpcStarted()
+      connection2.connectionId shouldNotBe context.initialConnectionId
+      context.serverCollector.awaitUntilInitStreamRequest()
+      context.serverCollector.awaitUntilSubscribeStreamRequest()
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      // Wait for connection to close to keep clean state
+      context.serverCollector.awaitUntilClientClosesConnection()
+    }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private fun testConnectionGracePeriod(
+    delayMillisArb: Arb<Long>,
+    block: suspend TurbineContext.(TestConnectionGracePeriodContext) -> Unit
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(propTestConfig, delayMillisArb, Arb.dataConnect.operationName(), testVariablesArb()) {
+      delayMillis,
+      operationName,
+      variables ->
+      runWithDataConnect(server) { dataConnect ->
+        val subscription = querySubscription(dataConnect, operationName, variables)
+
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector1 =
+            subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+
+          // Wait for initial connection and subscribe
+          val connection = serverCollector.awaitConnectRpcStarted()
+          serverCollector.awaitUntilInitStreamRequest()
+          serverCollector.awaitUntilSubscribeStreamRequest()
+
+          val context =
+            TestConnectionGracePeriodContext(
+              delayMillis = delayMillis,
+              serverCollector = serverCollector,
+              clientCollector1 = clientCollector1,
+              initialConnectionId = connection.connectionId,
+              subscription = subscription,
+              backgroundScope = backgroundScope,
+              testScheduler = testScheduler,
+            )
+
+          block(context)
+
+          serverCollector.cancelAndIgnoreRemainingEvents()
+        }
+      }
+    }
+  }
+
+  private data class TestConnectionGracePeriodContext(
+    val delayMillis: Long,
+    val serverCollector: ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>,
+    val clientCollector1: ReceiveTurbine<QuerySubscriptionResult<TestData, TestVariables>>,
+    val initialConnectionId: InProcessDataConnectGrpcStreamingServer.ConnectionId,
+    val subscription: QuerySubscriptionImpl<TestData, TestVariables>,
+    val backgroundScope: kotlinx.coroutines.CoroutineScope,
+    val testScheduler: TestCoroutineScheduler,
+  )
 
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()

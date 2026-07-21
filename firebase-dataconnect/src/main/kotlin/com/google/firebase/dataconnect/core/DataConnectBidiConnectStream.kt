@@ -235,6 +235,7 @@ internal class DataConnectBidiConnectStream(
           coroutineScope,
           started =
             SharingStarted.WhileSubscribed(
+              stopTimeoutMillis = 15_000,
               replayExpirationMillis = 0,
             ),
           replay = 0,
