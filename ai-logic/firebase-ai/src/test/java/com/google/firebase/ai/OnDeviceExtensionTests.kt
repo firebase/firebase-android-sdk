@@ -85,6 +85,19 @@ internal class OnDeviceExtensionTests {
   }
 
   @Test
+  fun `getModelName calls interopModel getBaseModelName`() {
+    runBlocking {
+      coEvery { interopModel.getBaseModelName() } returns "nano-v3"
+
+      val extension = OnDeviceExtension(interopModel)
+      val modelName = extension.getModelName()
+
+      modelName shouldBe "nano-v3"
+      coVerify(exactly = 1) { interopModel.getBaseModelName() }
+    }
+  }
+
+  @Test
   fun `onDeviceExtension is null when passed null in constructor`() {
     val model =
       GenerativeModel(
