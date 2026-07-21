@@ -79,6 +79,7 @@ public class RecaptchaAppCheckProviderFactoryTest {
     factory.create(mockFirebaseApp);
     factory.create(mockFirebaseApp);
 
+    verify(mockComponent, times(1)).get(SITE_KEY_1);
     verify(mockProvider, times(1)).initializeRecaptchaClient();
   }
 }
