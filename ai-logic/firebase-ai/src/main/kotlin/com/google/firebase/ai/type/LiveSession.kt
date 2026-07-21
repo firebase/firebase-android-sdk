@@ -61,7 +61,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -762,8 +761,8 @@ internal constructor(
         val audio: InlineData.Internal?,
         val video: InlineData.Internal?,
         val text: String?,
-        @SerialName("activity_start") val activityStart: ActivityStart? = null,
-        @SerialName("activity_end") val activityEnd: ActivityEnd? = null
+        val activityStart: ActivityStart? = null,
+        val activityEnd: ActivityEnd? = null
       )
     }
     fun toInternal() =

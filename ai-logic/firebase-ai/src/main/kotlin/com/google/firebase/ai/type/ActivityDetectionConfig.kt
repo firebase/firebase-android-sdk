@@ -114,10 +114,10 @@ private constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("start_of_speech_sensitivity") val startSensitivity: String? = null,
-    @SerialName("end_of_speech_sensitivity") val endSensitivity: String? = null,
-    @SerialName("prefix_padding_ms") val prefixPaddingMs: Int? = null,
-    @SerialName("silence_duration_ms") val silenceDurationMs: Int? = null,
+    @SerialName("startOfSpeechSensitivity") val startSensitivity: String? = null,
+    @SerialName("endOfSpeechSensitivity") val endSensitivity: String? = null,
+    val prefixPaddingMs: Int? = null,
+    val silenceDurationMs: Int? = null,
     val disabled: Boolean? = null
   )
 

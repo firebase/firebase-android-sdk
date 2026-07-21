@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -50,11 +49,8 @@ internal class LiveClientSetupMessage(
       val systemInstruction: Content.Internal?,
       val inputAudioTranscription: AudioTranscriptionConfig.Internal?,
       val outputAudioTranscription: AudioTranscriptionConfig.Internal?,
-      @SerialName("session_resumption")
       val sessionResumption: SessionResumptionConfig.Internal? = null,
-      @SerialName("context_window_compression")
       val contextWindowCompression: ContextWindowCompressionConfig.Internal? = null,
-      @SerialName("realtime_input_config")
       val realtimeInputConfig: RealtimeInputConfig.Internal? = null,
     )
   }
