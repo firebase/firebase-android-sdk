@@ -107,6 +107,16 @@ public class NetworkClient {
     this.heartBeatControllerProvider = heartBeatControllerProvider;
   }
 
+  @NonNull
+  public String getProjectId() {
+    return projectId;
+  }
+
+  @NonNull
+  public String getAppId() {
+    return appId;
+  }
+
   /**
    * Calls the App Check backend using {@link HttpURLConnection} in order to exchange an attestation
    * token for an {@link AppCheckTokenResponse}.

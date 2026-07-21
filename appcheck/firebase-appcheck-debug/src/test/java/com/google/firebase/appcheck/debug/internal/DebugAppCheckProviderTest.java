@@ -141,8 +141,12 @@ public class DebugAppCheckProviderTest {
             .anyMatch(
                 log ->
                     log.msg.equals(
-                        "Enter this debug secret into the allow list in the Firebase Console for your project: "
-                            + debugSecret));
+                        "Enter this debug secret ("
+                            + debugSecret
+                            + ") into the allow list in the Firebase Console for your project: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
     assertThat(foundLog).isTrue();
   }
 
@@ -158,8 +162,12 @@ public class DebugAppCheckProviderTest {
             .anyMatch(
                 log ->
                     log.msg.equals(
-                        "Enter this debug secret into the allow list in the Firebase Console for your project: "
-                            + DEBUG_SECRET));
+                        "Enter this debug secret ("
+                            + DEBUG_SECRET
+                            + ") into the allow list in the Firebase Console for your project: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
     assertThat(foundLog).isTrue();
   }
 
@@ -222,6 +230,37 @@ public class DebugAppCheckProviderTest {
     assertThat(task.isSuccessful()).isFalse();
     Exception exception = task.getException();
     assertThat(exception).isInstanceOf(IOException.class);
+  }
+
+  @Test
+  public void exchangeDebugToken_onFailure_logsError() throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(new IOException());
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+
+    boolean foundLog =
+        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
+            .anyMatch(
+                log ->
+                    log.msg.equals(
+                        "Failed to exchange debug token ("
+                            + DEBUG_SECRET
+                            + "). If you haven't registered it, "
+                            + "you can do so in the Firebase Console: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
+    assertThat(foundLog).isTrue();
   }
 
   @Test
