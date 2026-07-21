@@ -1,6 +1,6 @@
 # Unreleased
 
-- [fixed] Log debug secret on every DebugAppCheckProvider initialization. (#8413)
+- [fixed] Log debug secret on every DebugAppCheckProvider initialization. (#8454)
 
 # 19.3.0
 
