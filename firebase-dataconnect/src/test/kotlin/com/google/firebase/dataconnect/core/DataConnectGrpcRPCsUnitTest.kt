@@ -931,6 +931,7 @@ class DataConnectGrpcRPCsUnitTest {
       cache = cache,
       parentLogger = mockLogger,
       networkConnectivityRestoredFlow = emptyFlow(),
+      random = Random.Default,
     )
   }
 
