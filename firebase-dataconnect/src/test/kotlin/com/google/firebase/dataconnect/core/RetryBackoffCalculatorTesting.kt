@@ -26,52 +26,53 @@ object RetryBackoffCalculatorTesting {
   val backoffValues: List<Long> =
     listOf(
       1000,
-      1750,
-      3063,
-      5360,
-      9380,
-      16415,
-      28726,
-      50271,
-      87974,
-      153955,
-      269421,
-      471487,
-      600000,
+      1500,
+      2250,
+      3375,
+      5063,
+      7595,
+      11393,
+      17090,
+      25635,
+      38453,
+      57680,
+      60000,
     )
+
+  val minBackoffValue: Long = backoffValues.first().also { check(it == 1000L) }
+
+  val maxBackoffValue: Long = backoffValues.last().also { check(it == 60_000L) }
 
   val minJitterBackoffValues: List<Long> =
     listOf(
       500,
-      875,
-      1532,
-      2680,
-      4690,
-      8208,
-      14363,
-      25136,
-      43987,
-      76978,
-      134711,
-      235744,
-      300000,
+      750,
+      1125,
+      1688,
+      2532,
+      3798,
+      5697,
+      8545,
+      12818,
+      19227,
+      28840,
+      30000,
     )
 
   val maxJitterBackoffValues: List<Long> =
     listOf(
       1500,
-      2625,
-      4595,
-      8040,
-      14070,
-      24623,
-      43089,
-      75407,
-      131961,
-      230933,
-      404132,
-      707231,
-      900000,
+      2250,
+      3375,
+      5063,
+      7595,
+      11393,
+      17090,
+      25635,
+      38453,
+      57680,
+      86520,
+      90000,
     )
 
   data class JitterTestCase(

@@ -56,8 +56,8 @@ internal class RetryBackoffCalculator(private val getRandomJitter: () -> Double)
   private companion object {
 
     const val INITIAL_BACKOFF_MS: Long = 1000L
-    const val MAX_BACKOFF_MS: Long = 600_000L
-    const val MULTIPLIER: Double = 1.75
+    const val MAX_BACKOFF_MS: Long = 60_000L
+    const val MULTIPLIER: Double = 1.5
 
     fun calculateNextBackoffMs(currentBackoffMs: Long): Long =
       (currentBackoffMs * MULTIPLIER).roundToLong().coerceAtMost(MAX_BACKOFF_MS)

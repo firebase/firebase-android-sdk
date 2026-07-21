@@ -18,7 +18,9 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
 import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.jitterTestCase
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxBackoffValue
 import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxJitterBackoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minBackoffValue
 import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minJitterBackoffValues
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import io.kotest.assertions.withClue
@@ -44,7 +46,7 @@ class RetryBackoffCalculatorUnitTest {
   @Test
   fun `next() first call returns initial backoff`() {
     val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
-    retryBackoffCalculator.next() shouldBe 1000L
+    retryBackoffCalculator.next() shouldBe minBackoffValue
   }
 
   @Test
@@ -54,7 +56,7 @@ class RetryBackoffCalculatorUnitTest {
       repeat(nextCallCountBeforeReset) { retryBackoffCalculator.next() }
       retryBackoffCalculator.reset()
 
-      retryBackoffCalculator.next() shouldBe 1000L
+      retryBackoffCalculator.next() shouldBe minBackoffValue
     }
   }
 
@@ -68,7 +70,9 @@ class RetryBackoffCalculatorUnitTest {
   fun `next() never returns greater than the max value`() {
     val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
     repeat(1000) {
-      withClue("iteration=$it") { retryBackoffCalculator.next() shouldBeLessThanOrEqual 600000L }
+      withClue("iteration=$it") {
+        retryBackoffCalculator.next() shouldBeLessThanOrEqual maxBackoffValue
+      }
     }
   }
 
@@ -78,13 +82,15 @@ class RetryBackoffCalculatorUnitTest {
     var lastValue = retryBackoffCalculator.next()
     while (true) {
       val value = retryBackoffCalculator.next()
-      if (value == lastValue || value >= 600000L) {
+      if (value == lastValue || value >= maxBackoffValue) {
         break
       }
       lastValue = value
     }
 
-    repeat(1000) { withClue("iteration=$it") { retryBackoffCalculator.next() shouldBe 600000L } }
+    repeat(1000) {
+      withClue("iteration=$it") { retryBackoffCalculator.next() shouldBe maxBackoffValue }
+    }
   }
 
   @Test
@@ -93,7 +99,7 @@ class RetryBackoffCalculatorUnitTest {
       val retryBackoffCalculator = RetryBackoffCalculator { 0.0 }
       interveningNextCallCounts.forEach { count ->
         if (count > 0) {
-          retryBackoffCalculator.next() shouldBe 1000L
+          retryBackoffCalculator.next() shouldBe minBackoffValue
         }
         repeat(count - 1) { retryBackoffCalculator.next() }
         retryBackoffCalculator.reset()
