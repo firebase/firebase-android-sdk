@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -198,13 +197,13 @@ private constructor(
   @Serializable
   internal data class Internal(
     val temperature: Float?,
-    @SerialName("top_p") val topP: Float?,
-    @SerialName("top_k") val topK: Int?,
-    @SerialName("max_output_tokens") val maxOutputTokens: Int?,
-    @SerialName("presence_penalty") val presencePenalty: Float? = null,
-    @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null,
-    @SerialName("response_modalities") val responseModalities: List<String>? = null
+    val topP: Float?,
+    val topK: Int?,
+    val maxOutputTokens: Int?,
+    val presencePenalty: Float? = null,
+    val frequencyPenalty: Float? = null,
+    val speechConfig: SpeechConfig.Internal? = null,
+    val responseModalities: List<String>? = null
   )
 
   public companion object {

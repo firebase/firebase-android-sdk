@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Various voices supported by the server */
@@ -24,7 +23,7 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 public class Voices private constructor(public val ordinal: Int) {
 
-  @Serializable internal data class Internal(@SerialName("voice_name") val voiceName: String)
+  @Serializable internal data class Internal(val voiceName: String)
 
   @Serializable
   internal enum class InternalEnum {

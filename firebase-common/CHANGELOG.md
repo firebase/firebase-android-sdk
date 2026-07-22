@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Remvode support for reading the `recaptcha_site_key` value from the `google-services.json`
+  file. (#8457)
+
 # 22.1.0
 
 - [feature] Added support for reading the `recaptcha_site_key` value from the `google-services.json`
@@ -47,4 +50,3 @@
 
 The Kotlin extensions library transitively includes the updated `firebase-common` library. The
 Kotlin extensions library has no additional updates
-

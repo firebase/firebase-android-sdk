@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -49,7 +48,6 @@ constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("function_calling_config")
     val functionCallingConfig: FunctionCallingConfig.Internal?,
     val retrievalConfig: RetrievalConfig.Internal?,
   )

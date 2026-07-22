@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -111,10 +110,9 @@ private constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("automatic_activity_detection")
     val automaticActivityDetection: ActivityDetectionConfig.Internal? = null,
-    @SerialName("activity_handling") val activityHandling: String? = null,
-    @SerialName("turn_coverage") val turnCoverage: String? = null
+    val activityHandling: String? = null,
+    val turnCoverage: String? = null
   )
 
   public companion object {
