@@ -373,12 +373,14 @@ class QuerySubscriptionImplUnitTest {
 
       // Specify drop(1) so that we don't close the very last connection as that will shut down
       // the entire connection, confusing the logic below.
+      val droppedClientCollector = clientCollectors[1].first()
       clientCollectors[1].drop(1).forEach { clientCollector ->
         clientCollector.cancelAndIgnoreRemainingEvents()
         val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
         requestId shouldBeIn requestIds
         requestIds.removeAt(requestIds.indexOf(requestId))
       }
+      droppedClientCollector.cancelAndIgnoreRemainingEvents()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
