@@ -79,11 +79,12 @@ package com.google.firebase.ai.ondevice.interop {
   }
 
   public final class GenerateContentRequest {
-    ctor public GenerateContentRequest(com.google.firebase.ai.ondevice.interop.TextPart text, com.google.firebase.ai.ondevice.interop.ImagePart? image = null, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null);
+    ctor public GenerateContentRequest(com.google.firebase.ai.ondevice.interop.TextPart text, com.google.firebase.ai.ondevice.interop.ImagePart? image = null, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null, com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction = null);
     method public Integer? getCandidateCount();
     method public com.google.firebase.ai.ondevice.interop.ImagePart? getImage();
     method public Integer? getMaxOutputTokens();
     method public Integer? getSeed();
+    method public com.google.firebase.ai.ondevice.interop.TextPart? getSystemInstruction();
     method public Float? getTemperature();
     method public com.google.firebase.ai.ondevice.interop.TextPart getText();
     method public Integer? getTopK();
@@ -91,6 +92,7 @@ package com.google.firebase.ai.ondevice.interop {
     property public final com.google.firebase.ai.ondevice.interop.ImagePart? image;
     property public final Integer? maxOutputTokens;
     property public final Integer? seed;
+    property public final com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction;
     property public final Float? temperature;
     property public final com.google.firebase.ai.ondevice.interop.TextPart text;
     property public final Integer? topK;

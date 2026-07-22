@@ -356,14 +356,31 @@ internal constructor(
     @OptIn(PublicPreviewAPI::class)
     internal fun buildOnDeviceModelProvider(
       modelOption: OnDeviceModelOption?
-    ): GenerativeModelProvider =
-      onDeviceFactoryProvider?.let {
+    ): GenerativeModelProvider {
+      // if developer didn't pass a OnDeviceConfig.SystemInstruction, we use GenerativeModel.systemInstruction
+      val effectiveOnDeviceConfig =
+        if (onDeviceConfig.systemInstruction == null && systemInstruction != null) {
+          OnDeviceConfig(
+            mode = onDeviceConfig.mode,
+            maxOutputTokens = onDeviceConfig.maxOutputTokens,
+            temperature = onDeviceConfig.temperature,
+            topK = onDeviceConfig.topK,
+            seed = onDeviceConfig.seed,
+            candidateCount = onDeviceConfig.candidateCount,
+            modelOption = onDeviceConfig.modelOption,
+            systemInstruction = systemInstruction
+          )
+        } else {
+          onDeviceConfig
+        }
+      return onDeviceFactoryProvider?.let {
         OnDeviceGenerativeModelProvider(
           it.newGenerativeModel(modelOption?.toInterop()),
-          onDeviceConfig
+          effectiveOnDeviceConfig
         )
       }
         ?: MissingOnDeviceGenerativeModelProvider()
+    }
 
     @PublicPreviewAPI
     internal fun getModelProvider(): GenerativeModelProvider =

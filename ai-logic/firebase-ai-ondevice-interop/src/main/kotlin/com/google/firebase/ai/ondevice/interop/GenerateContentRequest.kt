@@ -30,6 +30,7 @@ package com.google.firebase.ai.ondevice.interop
  * @property candidateCount The number of candidates to generate.
  * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
  * response.
+ * @property systemInstruction The system instructions for directing model behavior.
  */
 public class GenerateContentRequest(
   public val text: TextPart,
@@ -39,4 +40,5 @@ public class GenerateContentRequest(
   public val seed: Int? = null,
   public val candidateCount: Int? = null,
   public val maxOutputTokens: Int? = null,
+  public val systemInstruction: TextPart? = null,
 ) {}

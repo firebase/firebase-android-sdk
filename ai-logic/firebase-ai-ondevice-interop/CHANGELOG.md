@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for on-device system instructions.
+
 # 16.0.0-beta03
 
 - [feature] Added `modelVersion` property to `GenerateContentResponse` (#8227)

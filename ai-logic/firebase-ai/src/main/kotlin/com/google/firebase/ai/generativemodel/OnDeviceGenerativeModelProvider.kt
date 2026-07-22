@@ -215,6 +215,13 @@ internal class OnDeviceGenerativeModelProvider(
             )
         }
         .firstOrNull()
+    val systemInstructionPart =
+      onDeviceConfig.systemInstruction
+        ?.parts
+        ?.filterIsInstance<TextPart>()
+        ?.joinToString("") { it.text }
+        ?.takeIf { it.isNotEmpty() }
+        ?.let { OnDeviceTextPart(it) }
     return OnDeviceGenerateContentRequest(
       text = OnDeviceTextPart(text),
       image = image?.let { OnDeviceImagePart(it.image) },
@@ -222,7 +229,8 @@ internal class OnDeviceGenerativeModelProvider(
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,
       candidateCount = onDeviceConfig.candidateCount,
-      maxOutputTokens = onDeviceConfig.maxOutputTokens
+      maxOutputTokens = onDeviceConfig.maxOutputTokens,
+      systemInstruction = systemInstructionPart
     )
   }
 

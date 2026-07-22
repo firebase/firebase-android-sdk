@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.PublicPreviewAPI
 
@@ -34,6 +35,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to `1`.
  * @property modelOption Configuration for the on-device model selection and performance.
+ * @property systemInstruction Instructions that direct the model to behave in a certain way.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -45,7 +47,8 @@ constructor(
   public val topK: Int? = null,
   public val seed: Int? = null,
   public val candidateCount: Int = 1,
-  public val modelOption: OnDeviceModelOption? = null
+  public val modelOption: OnDeviceModelOption? = null,
+  public val systemInstruction: Content? = null
 ) {
 
   public companion object {

@@ -31,6 +31,7 @@ import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.ModelPreference
 import com.google.mlkit.genai.prompt.ModelReleaseStage
+import com.google.mlkit.genai.prompt.SystemInstruction
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generationConfig
 import com.google.mlkit.genai.prompt.modelConfig
@@ -74,6 +75,7 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       candidateCount = this@toMlKit.candidateCount
       topK = this@toMlKit.topK
       seed = this@toMlKit.seed
+      this@toMlKit.systemInstruction?.let { systemInstruction = SystemInstruction(it.text) }
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)

@@ -9,6 +9,7 @@
   Note: The default location is now `global` instead of `us-central1` (no other
   functionality has changed). To continue using `us-central1`, specify
   `GenerativeBackend.agentPlatform(location = "us-central1"))`.
+- [feature] Added support for on-device system instructions.
 
 # 17.14.0
 

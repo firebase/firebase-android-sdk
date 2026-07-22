@@ -24,6 +24,7 @@ import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
+import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse as OnDeviceGenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
 import com.google.firebase.ai.toInterop
@@ -37,6 +38,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -153,4 +155,29 @@ internal class OnDeviceGenerativeModelProviderTests {
     interopConfig.modelConfig?.preference shouldBe
       com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
   }
+
+  @Test
+  fun `generateContent passes systemInstruction in OnDeviceConfig to interop request`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      val systemInstruction = Content(parts = listOf(TextPart("system instruction rule")))
+      val configWithSystemInstruction =
+        OnDeviceConfig(
+          mode = InferenceMode.ONLY_ON_DEVICE,
+          temperature = 0.5f,
+          systemInstruction = systemInstruction
+        )
+      val providerWithSystemInstruction =
+        OnDeviceGenerativeModelProvider(onDeviceModel, configWithSystemInstruction)
+
+      val requestSlot = slot<OnDeviceGenerateContentRequest>()
+      coEvery { onDeviceModel.generateContent(capture(requestSlot)) } returns
+        OnDeviceGenerateContentResponse(
+          listOf(OnDeviceCandidate("generated text", OnDeviceFinishReason.STOP))
+        )
+
+      providerWithSystemInstruction.generateContent(prompt)
+
+      requestSlot.captured.systemInstruction?.text shouldBe "system instruction rule"
+    }
 }

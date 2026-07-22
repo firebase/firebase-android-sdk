@@ -101,7 +101,19 @@ internal class ConvertersTest {
     assertThat(mlKitRequest.topK).isEqualTo(3)
     assertThat(mlKitRequest.seed).isEqualTo(0)
     assertThat(mlKitRequest.candidateCount).isEqualTo(1)
-    assertThat(mlKitRequest.maxOutputTokens).isEqualTo(256)
+    assertThat(mlKitRequest.maxOutputTokens).isEqualTo(4096)
+  }
+
+  @Test
+  fun `GenerateContentRequest toMlKit should convert systemInstruction correctly`() {
+    val interopRequest =
+      InteropGenerateContentRequest(
+        text = InteropTextPart("prompt"),
+        systemInstruction = InteropTextPart("system instruction")
+      )
+    val mlKitRequest = interopRequest.toMlKit()
+
+    assertThat(mlKitRequest.systemInstruction?.textString).isEqualTo("system instruction")
   }
 
   @Test

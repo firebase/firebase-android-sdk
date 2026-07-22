@@ -1,6 +1,7 @@
 # Unreleased
 
 - [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
+- [feature] Added support for on-device system instructions.
 
 # 16.0.0-beta03
 
