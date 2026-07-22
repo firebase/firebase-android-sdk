@@ -1,0 +1,21 @@
+{
+    "name": "m184",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}
