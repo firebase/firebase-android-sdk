@@ -1,0 +1,546 @@
+{
+    "changesByLibraryName": {
+        "firebase-common": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "5fb9e2747e8fb3dcce7f636ee7df1889617d168f",
+                "prId": "8429",
+                "author": "Mila",
+                "message": "[Infra] Update test configurations for API level 24 (#8429)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fb9e2747e8fb3dcce7f636ee7df1889617d168f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8429"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prId": "8388",
+                "author": "Rodrigo Lazo",
+                "message": "[Crashlytics] Address missing changelog entries and version bump (#8388)\n\nThe versions have been adjusted to better match the actual changes\nintroduced, plus adding the missing changelog entries.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8388"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prId": "8388",
+                "author": "Rodrigo Lazo",
+                "message": "[Crashlytics] Address missing changelog entries and version bump (#8388)\n\nThe versions have been adjusted to better match the actual changes\nintroduced, plus adding the missing changelog entries.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8388"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prId": "8388",
+                "author": "Rodrigo Lazo",
+                "message": "[Crashlytics] Address missing changelog entries and version bump (#8388)\n\nThe versions have been adjusted to better match the actual changes\nintroduced, plus adding the missing changelog entries.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5769a943903c08f9a13699debe7ec5a17b364b9b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8388"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "73d72331a0146f76ecf7cbbb194b0c77228cf415",
+                "prId": "8461",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): fix test flake due to unconsumed flow events when cancelling flow collection (#8461)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/73d72331a0146f76ecf7cbbb194b0c77228cf415",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8461"
+            },
+            {
+                "commitId": "deb8679249291c1807bc2a46d8329344d6e4134e",
+                "prId": "8460",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): Update exponential backoff parameters to match firestore (#8460)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/deb8679249291c1807bc2a46d8329344d6e4134e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8460"
+            },
+            {
+                "commitId": "c06d32bef1c8a68c39e3fe63e107acc946222691",
+                "prId": "8456",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(feat): add \"jitter\" to exponential backoff logic when reconnecting realtime streaming connections (#8456)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c06d32bef1c8a68c39e3fe63e107acc946222691",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8456"
+            },
+            {
+                "commitId": "66db6dbed86bb16e30208d41daf564b458390990",
+                "prId": "8446",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Exponential backoff in realtime query subscription reconnection now eagerly retries when network status changes (#8446)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/66db6dbed86bb16e30208d41daf564b458390990",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8446"
+            },
+            {
+                "commitId": "62f5437959ad82e33993d96a85a754c73d624dbf",
+                "prId": "8442",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): test_execute.zsh: add support for specifying test name as 2nd command-line argument (#8442)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/62f5437959ad82e33993d96a85a754c73d624dbf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8442"
+            },
+            {
+                "commitId": "b7521944522956636f5a4cfdecb2280710d8e3ef",
+                "prId": "8427",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): RetryBackoffCalculator.kt: add jitter support (not used yet though) (#8427)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b7521944522956636f5a4cfdecb2280710d8e3ef",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8427"
+            },
+            {
+                "commitId": "23b627679a6d509e9d85d38a2c376944755c289d",
+                "prId": "8421",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): add logic to monitor network state changes for future use with exponential backoff logic (#8421)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/23b627679a6d509e9d85d38a2c376944755c289d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8421"
+            },
+            {
+                "commitId": "e345bf877ff71aeead460be90fedb2ad405b73e5",
+                "prId": "8431",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): Reduce flakiness of concurrency test in DataConnectAuthUnitTest.kt by increasing max threshold (#8431)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e345bf877ff71aeead460be90fedb2ad405b73e5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8431"
+            },
+            {
+                "commitId": "8dc2b0da5c92425d8b0c9ed69b94d4d8aaeea2f6",
+                "prId": "8430",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.16 (was 3.4.15) and firebase-tools to 15.24.0 (was 15.23.0) (#8430)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc2b0da5c92425d8b0c9ed69b94d4d8aaeea2f6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8430"
+            },
+            {
+                "commitId": "cbbcbb8d525f1ea42d76f18b8daeb2a699331cca",
+                "prId": "8423",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): Use LongAdder to count concurrent invocations instead of AtomicInteger (#8423)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cbbcbb8d525f1ea42d76f18b8daeb2a699331cca",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8423"
+            },
+            {
+                "commitId": "c9978f8ca68348c589822a58ce9755528a2c1cd8",
+                "prId": "8425",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): readability improvements to DataConnectBidiConnectStream.kt to initialize physicalConnectionFlow and logicalConnectionFlow separately (#8425)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9978f8ca68348c589822a58ce9755528a2c1cd8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8425"
+            },
+            {
+                "commitId": "2ea2b507f8dcf00f3530a617e6fa72656356937f",
+                "prId": "8412",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): fix memory leak in mocked objects and OOM during tests (#8412)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2ea2b507f8dcf00f3530a617e6fa72656356937f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8412"
+            },
+            {
+                "commitId": "ca4409d0d905785b61a567eba98d42421474aaa8",
+                "prId": "8415",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): migrate to SQL_CONNECT_PREVIEW when running the data connect cli (#8415)\n\nNOTE: The environment variable was renamed to SQL_CONNECT_PREVIEW in cl/944678266 (July 2026).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ca4409d0d905785b61a567eba98d42421474aaa8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8415"
+            },
+            {
+                "commitId": "739e19060f761a46bc1bd96b0225bd300df4f7d8",
+                "prId": "8414",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.15 (was 3.4.14) and firebase-tools to 15.23.0 (was 15.22.2) (#8414)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/739e19060f761a46bc1bd96b0225bd300df4f7d8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8414"
+            },
+            {
+                "commitId": "e2aaa50e35ec14970ae49aa0b0d9bce94a3b443d",
+                "prId": "8391",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): Fix thread thrashing by using Dispatchers.IO in tests (#8391)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e2aaa50e35ec14970ae49aa0b0d9bce94a3b443d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8391"
+            },
+            {
+                "commitId": "cd9837558333bad62dc18952f276d15a55d71657",
+                "prId": "8381",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): add exponential backoff in realtime query subscriptions upon disconnecting from the server (#8381)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cd9837558333bad62dc18952f276d15a55d71657",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8381"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "1493baa2798519f45afa2b3a879eb4a8031717d1",
+                "prId": "8364",
+                "author": "Daniel La Rocque",
+                "message": "feat(firestore): support configurable gRPC flow control window size (#8364)\n\nIncreases the default HTTP/2 flow control window size from 64 KB to 256\nKB to speed up large document reads.\n\nBecause a larger window size could cause head-of-line (HoL) blocking on\npoor or unstable internet connections (especially during concurrent\nreads with large documents), this PR also exposes a new configuration\nsetting, `grpcFlowControlWindow`, on `FirebaseFirestoreSettings` and its\nbuilder. This allows developers to customize the flow control window\nsize or revert back to the previous 64KB limit if they observe network\nregressions.\n\n\n[go/firestore-flow-control-api](http://go/firestore-flow-control-api)\n(internal)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1493baa2798519f45afa2b3a879eb4a8031717d1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8364"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "ab395d7fa56cc990c981adc7deef7172a932e336",
+                "prId": "8338",
+                "author": "Eldhose M Babu",
+                "message": "FIS SDK dependency update (#8338)\n\nFIS SDK dependency update\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ab395d7fa56cc990c981adc7deef7172a932e336",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8338"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "ab395d7fa56cc990c981adc7deef7172a932e336",
+                "prId": "8338",
+                "author": "Eldhose M Babu",
+                "message": "FIS SDK dependency update (#8338)\n\nFIS SDK dependency update\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ab395d7fa56cc990c981adc7deef7172a932e336",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8338"
+            }
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "654ef0774d4d272e28157c1b708753b0cedf9096",
+                "prId": "8424",
+                "author": "emilypgoogle",
+                "message": "Deprecate Firebase ML Model Downloader (#8424)\n\nDeprecate the FirebaseMLModelDownloader library within the Firebase\nAndroid SDK, reflecting its scheduled shutdown on June 15, 2027.\n\nAll public API symbols have been marked with `@Deprecated` and a\ncorresponding javadoc description.\nAdded a deprecation notice to the changelog.\nFurther steps to remove the library and prevent release are not in scope\nof initial deprecation.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/654ef0774d4d272e28157c1b708753b0cedf9096",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8424"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "0344328fa58138507bd019d1213f68af460e16c2",
+                "prId": "8459",
+                "author": "Mila",
+                "message": "[AI] Unify the serialization name pattern (#8459)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0344328fa58138507bd019d1213f68af460e16c2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8459"
+            },
+            {
+                "commitId": "66ec5cd566b2a39df670f4dbbf59af425fe83edd",
+                "prId": "8080",
+                "author": "Mila",
+                "message": "[AI] Implement RealtimeInputConfig and Manual Activity Signals for Live API (#8080)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/66ec5cd566b2a39df670f4dbbf59af425fe83edd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8080"
+            },
+            {
+                "commitId": "2484c79d8bfba5a2b8ad74a1a682dbc5f9ffaaf1",
+                "prId": "8247",
+                "author": "Vinay Guthal",
+                "message": "Expose On-Device Model Name in GenerativeModel Extension (#8247)\n\nExposes a new getOnDeviceModelName function in OnDeviceExtension to\nretrieve the name of the on-device AI model. This brings the Firebase\nAndroid SDK closer to feature parity with ML Kit GenAI SDK's model name\nretrieval capabilities (GenerativeModel.getBaseModelName()).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2484c79d8bfba5a2b8ad74a1a682dbc5f9ffaaf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8247"
+            },
+            {
+                "commitId": "092d67d46c14200e14dd45e15302d358e02faffd",
+                "prId": "8437",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Introduce Agent Platform backend and deprecate Vertex AI  (#8437)\n\nAdded support for the Agent Platform backend with a default location of\n\"global\". The existing `vertexAI` methods have been marked as deprecated\nin favor of `agentPlatform`. Updated internal request handling, URI\nconstruction, and service endpoints to integrate the new backend type.\n\nInternal b/535800463\n\n---------\n\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/092d67d46c14200e14dd45e15302d358e02faffd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8437"
+            },
+            {
+                "commitId": "a0f8e99e2076b52e7579a9b8b55049df94e26ce4",
+                "prId": "8408",
+                "author": "Mila",
+                "message": "[Fix] capitalize Grounding with Google Maps / Search (#8408)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a0f8e99e2076b52e7579a9b8b55049df94e26ce4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8408"
+            },
+            {
+                "commitId": "3a7fa2ce595bd09cac590a1b50807f9ed05e7c5e",
+                "prId": "8405",
+                "author": "emilypgoogle",
+                "message": "Update testing to Gemini 3 models (#8405)\n\nUpdates AI Logic testing to use Gemini 3 models. Additionally migrates\nto constants and removes testing against verifying specific model names\nto futureproof for further edits.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3a7fa2ce595bd09cac590a1b50807f9ed05e7c5e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8405"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "2484c79d8bfba5a2b8ad74a1a682dbc5f9ffaaf1",
+                "prId": "8247",
+                "author": "Vinay Guthal",
+                "message": "Expose On-Device Model Name in GenerativeModel Extension (#8247)\n\nExposes a new getOnDeviceModelName function in OnDeviceExtension to\nretrieve the name of the on-device AI model. This brings the Firebase\nAndroid SDK closer to feature parity with ML Kit GenAI SDK's model name\nretrieval capabilities (GenerativeModel.getBaseModelName()).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2484c79d8bfba5a2b8ad74a1a682dbc5f9ffaaf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8247"
+            },
+            {
+                "commitId": "5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prId": "8396",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Enable nested release notes headers (#8396)\n\nSome libraries require their release notes to be nested further than the\nrest. We're adding a mechanism to enable this\nbehaviour (`nestedHeader`), and updated the firebaseLibrary\nconfiguration for `firebase-ai-*` and `firebase-appcheck-*` to set it to\ntrue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8396"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "98a5626f695d04f294c94c53396e6f8eb67adeec",
+                "prId": "8454",
+                "author": "Mila",
+                "message": "[Appcheck] Log debug token on every DebugAppCheckProvider initialization (#8454)\n\nFix issue https://github.com/firebase/firebase-android-sdk/issues/8413",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98a5626f695d04f294c94c53396e6f8eb67adeec",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8454"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prId": "8382",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Update App Check changelogs (#8382)\n\nAdded entries to the CHANGELOG.md files for firebase-appcheck,\nfirebase-appcheck-debug, firebase-appcheck-debug-testing, and\nfirebase-appcheck-playintegrity to maintain SDK version alignment.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8382"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "98a5626f695d04f294c94c53396e6f8eb67adeec",
+                "prId": "8454",
+                "author": "Mila",
+                "message": "[Appcheck] Log debug token on every DebugAppCheckProvider initialization (#8454)\n\nFix issue https://github.com/firebase/firebase-android-sdk/issues/8413",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98a5626f695d04f294c94c53396e6f8eb67adeec",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8454"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prId": "8396",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Enable nested release notes headers (#8396)\n\nSome libraries require their release notes to be nested further than the\nrest. We're adding a mechanism to enable this\nbehaviour (`nestedHeader`), and updated the firebaseLibrary\nconfiguration for `firebase-ai-*` and `firebase-appcheck-*` to set it to\ntrue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8396"
+            },
+            {
+                "commitId": "b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prId": "8382",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Update App Check changelogs (#8382)\n\nAdded entries to the CHANGELOG.md files for firebase-appcheck,\nfirebase-appcheck-debug, firebase-appcheck-debug-testing, and\nfirebase-appcheck-playintegrity to maintain SDK version alignment.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8382"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prId": "8396",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Enable nested release notes headers (#8396)\n\nSome libraries require their release notes to be nested further than the\nrest. We're adding a mechanism to enable this\nbehaviour (`nestedHeader`), and updated the firebaseLibrary\nconfiguration for `firebase-ai-*` and `firebase-appcheck-*` to set it to\ntrue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8396"
+            },
+            {
+                "commitId": "b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prId": "8382",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Update App Check changelogs (#8382)\n\nAdded entries to the CHANGELOG.md files for firebase-appcheck,\nfirebase-appcheck-debug, firebase-appcheck-debug-testing, and\nfirebase-appcheck-playintegrity to maintain SDK version alignment.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8382"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "10a5155f234d11ac1031cc1db276126c5dcde788",
+                "prId": "8398",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Fix capitalization in Play Integrity release notes (#8398)\n\nUpdated the release notes display name to use correct casing for \"Play\nIntegrity\".",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/10a5155f234d11ac1031cc1db276126c5dcde788",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8398"
+            },
+            {
+                "commitId": "5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prId": "8396",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Enable nested release notes headers (#8396)\n\nSome libraries require their release notes to be nested further than the\nrest. We're adding a mechanism to enable this\nbehaviour (`nestedHeader`), and updated the firebaseLibrary\nconfiguration for `firebase-ai-*` and `firebase-appcheck-*` to set it to\ntrue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8396"
+            },
+            {
+                "commitId": "b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prId": "8382",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Update App Check changelogs (#8382)\n\nAdded entries to the CHANGELOG.md files for firebase-appcheck,\nfirebase-appcheck-debug, firebase-appcheck-debug-testing, and\nfirebase-appcheck-playintegrity to maintain SDK version alignment.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1e39a06ff79a73b5e5be2b63092da78efbfd667",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8382"
+            }
+        ],
+        "appcheck/firebase-appcheck-recaptcha": [
+            {
+                "commitId": "5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prId": "8457",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Remove reCAPTCHA site key support  (#8457)\n\nRemoved `getRecaptchaSiteKey` from `FirebaseOptions` and deprecated\n`RecaptchaAppCheckProviderFactory.getInstance()` methods. Site keys must\nnow be provided explicitly via\n`RecaptchaAppCheckProviderFactory.getInstance(String)`.\n\nWhile the API existed, the support from the backend didn't. Because of\nit we are marking the change as non-breaking.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5d2efd147703e9cedce5ce528ce2879afac4eff3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8457"
+            },
+            {
+                "commitId": "010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prId": "8417",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Android Gradle configurations (#8417)\n\nMigrated `adbOptions` to `installation` blocks and moved\n`targetSdkVersion` to the `testOptions` block across various modules.\nAlso updated `subprojects.cfg` to categorize `transport-runtime-testing`\nas a test project.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/010ed35cf9c26818f87b72557d74ae7f5dbfc5c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8417"
+            },
+            {
+                "commitId": "abbc2ceac7b98fce7938b7146f4315f7d39e936e",
+                "prId": "8399",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Update reCAPTCHA capitalization (#8399)\n\nCorrected the capitalization of reCAPTCHA in the release notes\nconfiguration.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/abbc2ceac7b98fce7938b7146f4315f7d39e936e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8399"
+            },
+            {
+                "commitId": "5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prId": "8396",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Enable nested release notes headers (#8396)\n\nSome libraries require their release notes to be nested further than the\nrest. We're adding a mechanism to enable this\nbehaviour (`nestedHeader`), and updated the firebaseLibrary\nconfiguration for `firebase-ai-*` and `firebase-appcheck-*` to set it to\ntrue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5b4c5c8560e7cb8f5c04fbbaab8f6a60fc3036ac",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8396"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-config",
+        ":firebase-datatransport",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-installations-interop",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":protolite-well-known-types",
+        ":ai-logic:firebase-ai-ksp-processor",
+        ":appcheck:firebase-appcheck-interop",
+        ":encoders:firebase-decoders-json",
+        ":encoders:firebase-encoders-json",
+        ":encoders:firebase-encoders-reflective",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
