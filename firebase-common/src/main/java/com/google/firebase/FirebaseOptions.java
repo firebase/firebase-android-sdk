@@ -119,6 +119,11 @@ public final class FirebaseOptions {
       return this;
     }
 
+    /**
+     * @deprecated reCAPTCHA site key should be passed directly to {@link
+     *     com.google.firebase.appcheck.recaptcha.RecaptchaAppCheckProviderFactory#getInstance(String)}.
+     */
+    @Deprecated
     @NonNull
     public Builder setRecaptchaSiteKey(@Nullable String recaptchaSiteKey) {
       this.recaptchaSiteKey = recaptchaSiteKey;
@@ -234,12 +239,6 @@ public final class FirebaseOptions {
   @Nullable
   public String getStorageBucket() {
     return storageBucket;
-  }
-
-  /** The reCAPTCHA site key for you app, for example 6Lcm3XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5mfX */
-  @Nullable
-  public String getRecaptchaSiteKey() {
-    return recaptchaSiteKey;
   }
 
   /** The Google Cloud project ID, for example my-project-1234 */

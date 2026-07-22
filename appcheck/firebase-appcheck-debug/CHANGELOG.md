@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Log debug secret on every DebugAppCheckProvider initialization. (#8454)
+
 # 19.3.0
 
 - [unchanged] Updated to keep [app_check] SDK versions aligned.
