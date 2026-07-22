@@ -45,7 +45,8 @@ import kotlinx.coroutines.flow.flow
  * is called multiple times before any coroutine awaits, only the **most recent** signal value is
  * retained, and all previous values are overwritten and lost. The first subsequent waiter (either
  * via [await] or [signals] collection) will consume this latest value and resume immediately, while
- * any further waiters will suspend.
+ * any further waiters will suspend. The pending signal value can also be discarded without being
+ * consumed by calling [clear].
  *
  * ### Prompt cancellation guarantee
  *
@@ -89,7 +90,7 @@ internal class ConflatedSignal<T : Any> {
 
   /**
    * Whether there is a pending signal from a call to [signal] that has not yet been consumed by a
-   * call to [await] or a collector of [signals].
+   * call to [await], collected by a [signals] collector, or discarded by a call to [clear].
    */
   val hasPendingSignal: Boolean
     get() = signalState.get() != null
@@ -110,9 +111,9 @@ internal class ConflatedSignal<T : Any> {
    * buffered as a pending signal for the next waiter.
    *
    * Because this signal is conflated, multiple sequential calls to [signal] without intervening
-   * consumption (via [await] or [signals]) will overwrite the pending value, retaining only the
-   * **most recent** [value]. Only one waiter will be resumed with this latest value, and all
-   * previously signaled values since the last consumption are lost.
+   * consumption (via [await] or [signals]) or clearance (via [clear]) will overwrite the pending
+   * value, retaining only the **most recent** [value]. Only one waiter will be resumed with this
+   * latest value, and all previously signaled values since the last consumption are lost.
    *
    * This method is non-blocking, thread-safe, and safe to call from any context (including outside
    * of coroutines).
@@ -127,8 +128,8 @@ internal class ConflatedSignal<T : Any> {
   /**
    * Suspends the calling coroutine until a signal value of type [T] is received.
    *
-   * If a signal value has already been emitted and not yet consumed, this method returns
-   * immediately, returning and consuming that value.
+   * If a signal value has already been emitted and not yet consumed (or cleared via [clear]), this
+   * method returns immediately, returning and consuming that value.
    *
    * @return the signal value of type [T] that was emitted.
    *
@@ -157,6 +158,17 @@ internal class ConflatedSignal<T : Any> {
     }
   }
 
+  /**
+   * Clears any pending signal, discarding its value.
+   *
+   * After calling this method, any subsequent call to [await] will suspend until a new signal is
+   * emitted via [signal].
+   */
+  fun clear() {
+    signalState.set(null)
+    channel.tryReceive()
+  }
+
   override fun toString() = "ConflatedSignal(hasPendingSignal=$hasPendingSignal)"
 }
 
@@ -166,4 +178,11 @@ internal class ConflatedSignal<T : Any> {
  */
 internal fun ConflatedSignal<Unit>.signal() {
   signal(Unit)
+}
+
+/** Convenience extension function to signal a [ConflatedSignal] if the given signal is not null. */
+internal fun <T : Any> ConflatedSignal<T>.signalIfNotNull(signal: T?) {
+  if (signal != null) {
+    signal(signal)
+  }
 }

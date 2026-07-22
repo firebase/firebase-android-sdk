@@ -226,16 +226,16 @@ public final class Constants {
     public static final String ANALYTICS_DATA = NOTIFICATION_PREFIX + "analytics_data";
 
     /**
-     * For l10n of text parameters (e.g. title & body) a string resource can be specified instead of
+     * For l10n of text parameters (for example, title & body) a string resource can be specified instead of
      * a raw string. The name of that resource would be passed in the bundle under the key named:
-     * <parameter> + suffix (e.g: _loc_key)
+     * <parameter> + suffix (for example: _loc_key)
      */
     public static final String TEXT_RESOURCE_SUFFIX = "_loc_key";
 
     /**
-     * For l10n of text parameters (e.g. title & body) a string containing the localization
+     * For l10n of text parameters (for example, title & body) a string containing the localization
      * parameters can be specified. This would be present in the bundle under the key named:
-     * <parameter> + suffix (e.g: _loc_args)
+     * <parameter> + suffix (for example: _loc_args)
      */
     public static final String TEXT_ARGS_SUFFIX = "_loc_args";
 

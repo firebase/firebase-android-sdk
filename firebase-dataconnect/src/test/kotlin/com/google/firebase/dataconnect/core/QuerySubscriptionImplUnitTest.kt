@@ -29,6 +29,10 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.jitterTestCase
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxJitterBackoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minJitterBackoffValues
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
@@ -39,6 +43,7 @@ import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamin
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer.Event.StreamRequestReceived
 import com.google.firebase.dataconnect.testutil.LoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.LoggedInMultiTokenAndUidAuthProvider
+import com.google.firebase.dataconnect.testutil.LoggedInMultiTokenInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.NotLoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
@@ -80,6 +85,7 @@ import io.grpc.StatusException
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.asClue
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -113,12 +119,21 @@ import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
@@ -358,12 +373,14 @@ class QuerySubscriptionImplUnitTest {
 
       // Specify drop(1) so that we don't close the very last connection as that will shut down
       // the entire connection, confusing the logic below.
+      val droppedClientCollector = clientCollectors[1].first()
       clientCollectors[1].drop(1).forEach { clientCollector ->
         clientCollector.cancelAndIgnoreRemainingEvents()
         val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
         requestId shouldBeIn requestIds
         requestIds.removeAt(requestIds.indexOf(requestId))
       }
+      droppedClientCollector.cancelAndIgnoreRemainingEvents()
 
       serverCollector.cancelAndIgnoreRemainingEvents()
     }
@@ -1552,6 +1569,340 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
+  fun `new subscription resets backoff and retries immediately`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription1 = querySubscription(dataConnect, operationName = "op1")
+    val subscription2 = querySubscription(dataConnect, operationName = "op2")
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
+
+      // Wait for subscription1 to connect and subscribe
+      val responseSender = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      // Abort the connection to trigger backoff delay
+      DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
+        responseSender.onError(Status.UNAVAILABLE.asException())
+        backoffSignal.await()
+      }
+
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Now, start collecting subscription2.
+      // This should reset the backoff and trigger an immediate retry.
+      val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
+
+      // Wait for the new connection and subscribe request
+      serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      (time2 - time1) shouldBe 0L
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      clientCollector1.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `network connectivity restoration resets retries immediately`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      // Measure the simulated time that the backoff delays for.
+      failConnection()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+      serverCollector.awaitCall()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Verify that the backoff delay was aborted at delayMillis (which is guaranteed to be less
+      // than
+      // the backoff in effect) rather than waiting for the entire backoff.
+      (time2 - time1) shouldBe delayMillis
+    }
+
+  @Test
+  fun `network connectivity restoration resets backoff delay to initial value`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      failConnection()
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+
+      // Cause the retry after the NetworkConnectivityRestored event to fail again.
+      failConnection()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      serverCollector.awaitCall()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Verify that the backoff used in the retry after the NetworkConnectivityRestored event
+      // used the initial backoff, rather than continuing with the backoff it had used above.
+      (time2 - time1) shouldBe firstBackoffWaitTime
+    }
+
+  private data class TestNetworkConnectivityRestorationContext(
+    val failConnection: suspend () -> Unit,
+    val testScheduler: TestCoroutineScheduler,
+    val delayMillis: Long,
+    val emit: suspend (NetworkConnectivityRestored) -> Unit,
+    val serverCollector: ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>,
+    val firstBackoffWaitTime: Long,
+  )
+
+  private fun testNetworkConnectivityRestoration(
+    block: suspend TestNetworkConnectivityRestorationContext.() -> Unit
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    val networkConnectivityRestoredFlow = MutableSharedFlow<NetworkConnectivityRestored>()
+    val dataConnect =
+      dataConnect(server, networkConnectivityRestoredFlow = networkConnectivityRestoredFlow)
+    val subscription = querySubscription(dataConnect)
+
+    backoffValues.forEachIndexed { failCountBeforeRetrying, lastBackoffWaitTime ->
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+        val failConnection: suspend () -> Unit = {
+          val responseSender = serverCollector.awaitResponseSender()
+          DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
+            responseSender.onError(Status.UNAVAILABLE.asException())
+            backoffSignal.await()
+          }
+        }
+
+        repeat(failCountBeforeRetrying) { retryIndex ->
+          failConnection()
+          val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+          serverCollector.awaitCall()
+          val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+          check(time2 - time1 == backoffValues[retryIndex]) {
+            "internal error m6gwemnpw7: something is wrong with the test logic because the " +
+              "expected backoff was different than expected; once this logic is fixed, " +
+              "make sure to also fix the code after failConnection() below; " +
+              "time2=$time2, time1=$time1 time2-time1=${time2 - time1}, retryIndex=$retryIndex, " +
+              "backoffValues[retryIndex]=${backoffValues[retryIndex]}, " +
+              "failCountBeforeRetrying=$failCountBeforeRetrying"
+          }
+        }
+
+        block(
+          TestNetworkConnectivityRestorationContext(
+            failConnection,
+            testScheduler,
+            delayMillis = lastBackoffWaitTime / 3,
+            emit = networkConnectivityRestoredFlow::emit,
+            serverCollector,
+            firstBackoffWaitTime = backoffValues[0]
+          )
+        )
+
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
+    }
+  }
+
+  @Test
+  fun `initial connection failure respects backoff delay`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription = querySubscription(dataConnect)
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+      // Wait for initial connection and subscribe
+      val responseSender = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      // Abort the connection
+      responseSender.onError(Status.UNAVAILABLE.asException())
+
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Wait for the next connection attempt (the retry)
+      serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      (time2 - time1) shouldBe 1000L
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, no jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = ZeroJitterRandom,
+      expectedBackoffs = backoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, min jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MinJitterRandom,
+      expectedBackoffs = minJitterBackoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, max jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MaxJitterRandom,
+      expectedBackoffs = maxJitterBackoffValues,
+    )
+  }
+
+  @Test
+  fun `subsequent connection failures backoff exponentially, varying jitter`() = runTest {
+    checkAll(propTestConfig, Arb.jitterTestCase()) { (jitters, expectedBackoffs) ->
+      testSubsequentConnectionFailuresBackoffExponentially(
+        random = SequenceRandom(jitters.asSequence() + generateSequence { jitters.last() }),
+        expectedBackoffs = expectedBackoffs,
+      )
+    }
+  }
+
+  private suspend fun TestScope.testSubsequentConnectionFailuresBackoffExponentially(
+    random: Random,
+    expectedBackoffs: List<Long>,
+  ) {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server, random = random)
+    val subscription = querySubscription(dataConnect)
+
+    val times = mutableListOf<Long>()
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+      repeat(100) {
+        val responseSender = serverCollector.awaitResponseSender()
+        times.add(@OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime)
+        responseSender.onError(Status.UNAVAILABLE.asException())
+      }
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+
+    val waitTimes = times.zipWithNext { a, b -> b - a }
+    check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
+    val expectedWaitTimes = buildList {
+      addAll(expectedBackoffs)
+      while (size < waitTimes.size) add(last())
+    }
+    waitTimes shouldContainExactly expectedWaitTimes
+  }
+
+  @Test
+  fun `healthy connection clears previous wakeup signals and resets backoff`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect = dataConnect(server)
+    val subscription1 = querySubscription(dataConnect, operationName = "op1")
+    val subscription2 = querySubscription(dataConnect, operationName = "op2")
+    val testData = testDataArb().sample()
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
+
+      // 1st connection
+      val responseSender = serverCollector.awaitResponseSender()
+      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+
+      // Send a message to the client to make the connection healthy
+      responseSender.onNext(requestId, testData)
+      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData
+
+      // Now start subscription2. This will emit a wakeup signal.
+      val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      // Abort the connection
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      responseSender.onError(Status.UNAVAILABLE.asException())
+
+      // Wait for the retry. It should wait for 1000ms.
+      serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      (time2 - time1) shouldBe 1000L
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      clientCollector1.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+    }
+  }
+
+  @Test
+  fun `RETRY_IMMEDIATELY resets the exponential backoff`() = runTest {
+    val server = runningInProcessDataConnectServer()
+    val dataConnect =
+      dataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider =
+          run {
+            val authUid = Arb.dataConnect.authUidString().sample()
+            val tokens =
+              @OptIn(DelicateKotest::class)
+              Arb.dataConnect.authToken().distinct().let { arb -> List(5) { arb.sample() } }
+            val authProvider = LoggedInMultiTokenInternalAuthProvider(tokens.toList(), authUid)
+            ImmediateDeferred(authProvider)
+          }
+      )
+
+    val subscription = querySubscription(dataConnect)
+
+    turbineScope {
+      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+      // 1st connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+      val responseSender1 = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      responseSender1.onError(Status.UNAVAILABLE.asException())
+
+      // 2nd connection: UNAUTHENTICATED -> triggers RETRY_IMMEDIATELY
+      val responseSender2 = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      responseSender2.onError(Status.UNAUTHENTICATED.asException())
+
+      // 3rd connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+      val responseSender3 = serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      val time3 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      responseSender3.onError(Status.UNAVAILABLE.asException())
+
+      // 4th connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+      serverCollector.awaitResponseSender()
+      serverCollector.awaitUntilSubscribeStreamRequest()
+      val time4 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      clientCollector.cancelAndIgnoreRemainingEvents()
+      serverCollector.cancelAndIgnoreRemainingEvents()
+
+      assertSoftly {
+        withClue("time2") { time2 shouldBe time1 + 1000L }
+        withClue("time3") { time3 shouldBe time2 }
+        withClue("time4") { time4 shouldBe time3 + 1000L }
+      }
+    }
+  }
+
+  @Test
   fun `auth token change mid-stream sends update`() = runTest {
     val server = runningInProcessDataConnectServer()
 
@@ -1727,12 +2078,16 @@ class QuerySubscriptionImplUnitTest {
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
   ): FirebaseDataConnectImpl =
     dataConnect(
       server.port,
       idStringGenerator,
       deferredAuthProvider,
       deferredAppCheckProvider,
+      networkConnectivityRestoredFlow,
+      random,
     )
 
   private fun TestScope.dataConnect(
@@ -1742,6 +2097,8 @@ class QuerySubscriptionImplUnitTest {
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
   ): FirebaseDataConnectImpl {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
 
@@ -1768,6 +2125,8 @@ class QuerySubscriptionImplUnitTest {
       creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
       settings = settings,
       idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
+      networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
+      random = random,
     )
   }
 
@@ -1907,3 +2266,32 @@ private val retryableFailureGrpcStatusCodes: List<Status.Code> =
 
 private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: CallerSdkType): String =
   grpcRPCs.grpcMetadata.googApiClientHeaderValue(callerSdkType)
+
+private fun <T> List<T>.secondLast(): T = get(size - 2)
+
+private object ZeroJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.5
+}
+
+private object MinJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.0
+}
+
+private object MaxJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 1.0
+}
+
+private class SequenceRandom(jitters: Sequence<Double>) : Random() {
+
+  private val lock = ReentrantLock()
+  private val iterator = jitters.iterator()
+
+  override fun nextBits(bitCount: Int): Int = 0
+
+  override fun nextDouble(): Double {
+    return lock.withLock { iterator.next() + 0.5 }
+  }
+}

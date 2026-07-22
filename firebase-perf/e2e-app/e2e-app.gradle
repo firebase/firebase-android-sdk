@@ -54,7 +54,7 @@ android {
         applicationId "com.google.firebase.testing.fireperf"
 
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
+        targetSdk project.targetSdkVersion
         versionCode 3
         versionName "3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

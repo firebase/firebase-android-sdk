@@ -63,17 +63,19 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  adbOptions { timeOutInMs = 60000 }
+  installation { timeOutInMs = 60000 }
   namespace = "com.google.firebase.messaging"
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
 
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -102,7 +104,7 @@ dependencies {
   api("com.google.firebase:firebase-encoders-json:18.0.0")
   api("com.google.firebase:firebase-encoders-proto:16.0.0")
   api("com.google.firebase:firebase-iid-interop:17.1.0")
-  api("com.google.firebase:firebase-installations:19.1.0") {
+  api("com.google.firebase:firebase-installations:19.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
   api("com.google.firebase:firebase-installations-interop:17.1.0")
