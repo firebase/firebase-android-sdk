@@ -19,6 +19,8 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalContracts::class)
 suspend inline fun <T : FirebaseDataConnect, R> T.useSuspending(block: suspend (T) -> R): R {
@@ -32,10 +34,10 @@ suspend inline fun <T : FirebaseDataConnect, R> T.useSuspending(block: suspend (
     throw e
   } finally {
     if (exception == null) {
-      suspendingClose()
+      withContext(NonCancellable) { suspendingClose() }
     } else {
       try {
-        suspendingClose()
+        withContext(NonCancellable) { suspendingClose() }
       } catch (e2: Throwable) {
         exception.addSuppressed(e2)
       }
