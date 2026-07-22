@@ -35,11 +35,12 @@ internal class FirebaseDataConnectFactory(
   private val nonBlockingExecutor: Executor,
   private val deferredAuthProvider: Deferred<InternalAuthProvider>,
   private val deferredAppCheckProvider: Deferred<InteropAppCheckTokenProvider>,
+  private val random: Random,
 ) {
 
   // Use the same instance of IdStringGenerator for every FirebaseDataConnect instance so that
   // all instances generate unique IDs.
-  private val idStringGenerator = IdStringGenerator(Random.Default)
+  private val idStringGenerator = IdStringGenerator(random)
 
   private val networkConnectivityRestoredFlow = networkConnectivityRestoredFlow(context)
 
@@ -95,6 +96,7 @@ internal class FirebaseDataConnectFactory(
       settings = settings ?: DataConnectSettings(),
       idStringGenerator = idStringGenerator,
       networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
+      random = random,
     )
 
   fun remove(instance: FirebaseDataConnect) {

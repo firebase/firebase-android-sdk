@@ -77,6 +77,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -101,6 +102,7 @@ internal class DataConnectGrpcRPCs(
   private val cache: DataConnectCache?,
   parentLogger: Logger,
   private val networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
+  private val random: Random,
 ) {
   private val logger =
     Logger("DataConnectGrpcRPCs").apply {
@@ -532,7 +534,8 @@ internal class DataConnectGrpcRPCs(
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }
-      }
+      },
+      random,
     )
   }
 
