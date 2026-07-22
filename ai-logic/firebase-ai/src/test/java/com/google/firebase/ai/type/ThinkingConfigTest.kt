@@ -31,7 +31,7 @@ internal class ThinkingConfigTest {
     val expectedJson =
       """
       {
-          "thinking_budget": 1024
+          "thinkingBudget": 1024
       }
       """
         .trimIndent()

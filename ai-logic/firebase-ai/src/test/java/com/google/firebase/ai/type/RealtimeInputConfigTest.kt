@@ -38,9 +38,9 @@ internal class RealtimeInputConfigTest {
     val expectedJson =
       """
       {
-          "activity_handling": "NO_INTERRUPTION",
-          "turn_coverage": "TURN_INCLUDES_ONLY_ACTIVITY",
-          "automatic_activity_detection": {
+          "activityHandling": "NO_INTERRUPTION",
+          "turnCoverage": "TURN_INCLUDES_ONLY_ACTIVITY",
+          "automaticActivityDetection": {
               "disabled": true
           }
       }
@@ -62,10 +62,10 @@ internal class RealtimeInputConfigTest {
     val expectedJson =
       """
       {
-          "start_of_speech_sensitivity": "START_SENSITIVITY_HIGH",
-          "end_of_speech_sensitivity": "END_SENSITIVITY_LOW",
-          "prefix_padding_ms": 100,
-          "silence_duration_ms": 500
+          "startOfSpeechSensitivity": "START_SENSITIVITY_HIGH",
+          "endOfSpeechSensitivity": "END_SENSITIVITY_LOW",
+          "prefixPaddingMs": 100,
+          "silenceDurationMs": 500
       }
       """
         .trimIndent()
@@ -106,8 +106,8 @@ internal class RealtimeInputConfigTest {
       {
           "setup": {
               "model": "my-model",
-              "realtime_input_config": {
-                  "activity_handling": "NO_INTERRUPTION"
+              "realtimeInputConfig": {
+                  "activityHandling": "NO_INTERRUPTION"
               }
           }
       }
@@ -125,7 +125,7 @@ internal class RealtimeInputConfigTest {
       """
       {
           "realtimeInput": {
-              "activity_start": {}
+              "activityStart": {}
           }
       }
       """
@@ -142,7 +142,7 @@ internal class RealtimeInputConfigTest {
       """
       {
           "realtimeInput": {
-              "activity_end": {}
+              "activityEnd": {}
           }
       }
       """

@@ -268,9 +268,8 @@ internal class RequestFormatTests {
 
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
-    requestBodyAsText shouldContainJsonKey "tool_config.function_calling_config.mode"
-    requestBodyAsText shouldContainJsonKey
-      "tool_config.function_calling_config.allowed_function_names"
+    requestBodyAsText shouldContainJsonKey "toolConfig.functionCallingConfig.mode"
+    requestBodyAsText shouldContainJsonKey "toolConfig.functionCallingConfig.allowedFunctionNames"
   }
 
   @Test
@@ -539,8 +538,8 @@ internal class RequestFormatTests {
 
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
-    requestBodyAsText shouldContainJsonKey "generation_config.image_config.aspect_ratio"
-    requestBodyAsText shouldContainJsonKey "generation_config.image_config.image_size"
+    requestBodyAsText shouldContainJsonKey "generationConfig.imageConfig.aspectRatio"
+    requestBodyAsText shouldContainJsonKey "generationConfig.imageConfig.imageSize"
   }
 }
 

@@ -21,7 +21,6 @@ import android.graphics.BitmapFactory
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
@@ -112,7 +111,7 @@ internal constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("codeExecutionResult") val codeExecutionResult: CodeExecutionResult,
+    val codeExecutionResult: CodeExecutionResult,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null
   ) : InternalPart {
@@ -159,16 +158,12 @@ internal constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("executableCode") val executableCode: ExecutableCode,
+    val executableCode: ExecutableCode,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class ExecutableCode(
-      @SerialName("language") val language: String,
-      val code: String
-    )
+    @Serializable internal data class ExecutableCode(val language: String, val code: String)
   }
 }
 
@@ -275,7 +270,7 @@ internal constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("inlineData") val inlineData: InlineData.Internal,
+    val inlineData: InlineData.Internal,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null
   ) : InternalPart
@@ -477,16 +472,12 @@ internal constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("file_data") val fileData: FileData,
+    val fileData: FileData,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null
   ) : InternalPart {
 
-    @Serializable
-    internal data class FileData(
-      @SerialName("mime_type") val mimeType: String,
-      @SerialName("file_uri") val fileUri: String
-    )
+    @Serializable internal data class FileData(val mimeType: String, val fileUri: String)
   }
 }
 
