@@ -3,7 +3,7 @@
 # it needs to match the protobuf version which grpc has transitive dependency on, which
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
-androidGradlePlugin = "8.6.1"
+androidGradlePlugin = "8.13.2"
 androidx-core = "1.13.1"
 androidx-test-core = "1.5.0"
 androidx-test-junit = "1.1.5"
@@ -40,7 +40,7 @@ hamcrestLibrary = "3.0"
 httpclientAndroid = "4.3.5.1"
 integrity = "1.4.0"
 jacksonCore = "2.13.1"
-jacksonDatabind = "2.18.2"
+jacksonDatabind = "2.21.3"
 javalite = "3.25.5"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981

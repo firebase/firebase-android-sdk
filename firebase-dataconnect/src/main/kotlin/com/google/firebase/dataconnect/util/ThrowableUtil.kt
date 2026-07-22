@@ -127,7 +127,7 @@ internal inline fun <T> throwCombinedException(block: CombineFailureScope.() -> 
  * multiple threads and/or coroutines.
  */
 @JvmInline
-internal value class CombineFailureScope(private val onFailure: (Throwable) -> Unit) {
+internal value class CombineFailureScope(val onFailure: (Throwable) -> Unit) {
 
   /**
    * Executes the given [block] and returns a [Result] representing its outcome.

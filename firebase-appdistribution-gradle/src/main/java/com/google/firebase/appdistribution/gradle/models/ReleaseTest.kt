@@ -59,5 +59,11 @@ data class ReleaseTest(
    * The test case that was used to generate this release test. Format:
    * projects/{project_number}/apps/{app}/testCases/{test_case}`
    */
-  @SerializedName("testCase") val testCase: String? = null
+  @SerializedName("testCase") val testCase: String? = null,
+
+  /**
+   * Optional. Input only. The custom Cloud Storage bucket where test results will be stored.
+   * Format: `projects/{project_number}/buckets/{bucket}`
+   */
+  @SerializedName("resultsBucket") val resultsBucket: String? = null
 )

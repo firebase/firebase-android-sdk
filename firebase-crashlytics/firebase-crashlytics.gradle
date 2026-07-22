@@ -33,15 +33,17 @@ firebaseLibrary {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.crashlytics"
-    compileSdkVersion project.compileSdkVersion
-    testOptions.unitTests.includeAndroidResources = true
+    compileSdkVersion 37
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         versionName version
 
         multiDexEnabled true
@@ -99,7 +101,7 @@ dependencies {
     testImplementation(libs.androidx.test.runner)
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.robolectric)
+    testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation(libs.truth)
     testImplementation(project(":integ-testing"))
 

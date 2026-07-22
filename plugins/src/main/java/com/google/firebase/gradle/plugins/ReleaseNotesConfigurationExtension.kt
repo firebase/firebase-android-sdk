@@ -28,6 +28,8 @@ import org.gradle.api.provider.Property
  *
  * @property enabled Whether to generate release notes for this library. Defaults to true.
  * @property name The variable name mapping for this library, defined on G3.
+ * @property nestedHeader Whether the generated release notes header should be nested deeper.
+ *   Defaults to false.
  * @property versionName The version name mapping for this library, defined on G3.
  * @property artifactName The name of the generation artifact. _Only_ required if your project's
  *   name is different than your generated artifact name. Defaults to the project name.
@@ -36,6 +38,7 @@ import org.gradle.api.provider.Property
 abstract class ReleaseNotesConfigurationExtension {
   abstract val enabled: Property<Boolean>
   abstract val name: Property<String>
+  abstract val nestedHeader: Property<Boolean>
   abstract val versionName: Property<String>
   abstract val artifactName: Property<String>
 }

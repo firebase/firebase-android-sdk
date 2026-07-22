@@ -24,99 +24,227 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Represents an Exception resulting from an operation on a {@link FirebaseModelDownloader}. Error
  * mappings should remain consistent with the original firebase_ml_sdk whenever possible.
+ *
+ * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more info, see
+ *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
  */
+@Deprecated
 public class FirebaseMlException extends FirebaseException {
-  /** The operation was cancelled (typically by the caller). */
-  public static final int CANCELLED = 1;
+  /**
+   * The operation was cancelled (typically by the caller).
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int CANCELLED = 1;
 
-  /** Unknown error or an error from a different error domain. */
-  public static final int UNKNOWN = 2;
+  /**
+   * Unknown error or an error from a different error domain.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int UNKNOWN = 2;
 
   /**
    * Client specified an invalid argument. Note that this differs from <code>FAILED_PRECONDITION
    * </code>. <code>INVALID_ARGUMENT</code> indicates arguments that are problematic regardless of
    * the state of the system (for example, an invalid field name).
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int INVALID_ARGUMENT = 3;
+  @Deprecated public static final int INVALID_ARGUMENT = 3;
 
   /**
    * Deadline expired before operation could complete. For operations that change the state of the
    * system, this error may be returned even if the operation has completed successfully. For
    * example, a successful response from a server could have been delayed long enough for the
    * deadline to expire.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int DEADLINE_EXCEEDED = 4;
+  @Deprecated public static final int DEADLINE_EXCEEDED = 4;
 
-  /** Some requested resource was not found. */
-  public static final int NOT_FOUND = 5;
+  /**
+   * Some requested resource was not found.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int NOT_FOUND = 5;
 
-  /** Some resource that we attempted to create already exists. */
-  public static final int ALREADY_EXISTS = 6;
+  /**
+   * Some resource that we attempted to create already exists.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int ALREADY_EXISTS = 6;
 
-  /** The caller does not have permission to execute the specified operation. */
-  public static final int PERMISSION_DENIED = 7;
+  /**
+   * The caller does not have permission to execute the specified operation.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int PERMISSION_DENIED = 7;
 
   /**
    * Some resource has been exhausted, perhaps a per-user quota, or perhaps the entire file system
    * is out of space.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int RESOURCE_EXHAUSTED = 8;
+  @Deprecated public static final int RESOURCE_EXHAUSTED = 8;
 
   /**
    * Operation was rejected because the system is not in a state required for the operation's
    * execution.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int FAILED_PRECONDITION = 9;
+  @Deprecated public static final int FAILED_PRECONDITION = 9;
 
   /**
    * The operation was aborted, typically due to a concurrency issue like transaction aborts, etc.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int ABORTED = 10;
+  @Deprecated public static final int ABORTED = 10;
 
-  /** Operation was attempted past the valid range. */
-  public static final int OUT_OF_RANGE = 11;
+  /**
+   * Operation was attempted past the valid range.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int OUT_OF_RANGE = 11;
 
-  /** Operation is not implemented or not supported/enabled. */
-  public static final int UNIMPLEMENTED = 12;
+  /**
+   * Operation is not implemented or not supported/enabled.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int UNIMPLEMENTED = 12;
 
   /**
    * Internal errors. Means some invariant expected by underlying system has been broken. If you see
    * one of these errors, something is very broken.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int INTERNAL = 13;
+  @Deprecated public static final int INTERNAL = 13;
 
   /**
    * The service is currently unavailable. This is a most likely a transient condition and may be
    * corrected by retrying with a backoff.
    *
    * <p>In ML Model Downloader, this error is mostly about the models being not available yet.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int UNAVAILABLE = 14;
+  @Deprecated public static final int UNAVAILABLE = 14;
 
-  /** The request does not have valid authentication credentials for the operation. */
-  public static final int UNAUTHENTICATED = 16;
+  /**
+   * The request does not have valid authentication credentials for the operation.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int UNAUTHENTICATED = 16;
 
-  /** There is no network connection. */
-  public static final int NO_NETWORK_CONNECTION = 17;
+  /**
+   * There is no network connection.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int NO_NETWORK_CONNECTION = 17;
 
   // ===============================================================================================
   // Error codes: 100 to 149 reserved for errors during model downloading/loading.
-  /** There is not enough space left on the device. */
-  public static final int NOT_ENOUGH_SPACE = 101;
+  /**
+   * There is not enough space left on the device.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int NOT_ENOUGH_SPACE = 101;
 
-  /** The downloaded model's hash doesn't match the expected value. */
-  public static final int MODEL_HASH_MISMATCH = 102;
+  /**
+   * The downloaded model's hash doesn't match the expected value.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated public static final int MODEL_HASH_MISMATCH = 102;
 
   /**
    * The download URL expired before download could complete. Usually, multiple download attempts
    * will be performed before this is returned.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
-  public static final int DOWNLOAD_URL_EXPIRED = 121;
+  @Deprecated public static final int DOWNLOAD_URL_EXPIRED = 121;
 
   /**
    * The set of Firebase ML status codes. The codes are based on <a
    * href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto">Canonical
    * error codes for Google APIs</a>
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
   @IntDef({
     CANCELLED,
@@ -140,6 +268,7 @@ public class FirebaseMlException extends FirebaseException {
     DOWNLOAD_URL_EXPIRED
   })
   @Retention(RetentionPolicy.CLASS)
+  @Deprecated
   public @interface Code {}
 
   @Code private final int code;
@@ -150,8 +279,16 @@ public class FirebaseMlException extends FirebaseException {
     this.code = code;
   }
 
-  /** Gets the error code for the Firebase ML operation that failed. */
+  /**
+   * Gets the error code for the Firebase ML operation that failed.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
+   *     an alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
   @Code
+  @Deprecated
   public int getCode() {
     return code;
   }

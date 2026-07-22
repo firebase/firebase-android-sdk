@@ -132,7 +132,7 @@ class LicenseResolverPluginTests {
         buildscript {
             repositories {
                 google()
-                jcenter()
+                mavenCentral()
             }
         }
 
@@ -147,7 +147,7 @@ class LicenseResolverPluginTests {
         }
         
         repositories {
-            jcenter()
+            mavenCentral()
             google()
         }
         dependencies {

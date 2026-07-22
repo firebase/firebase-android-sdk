@@ -61,6 +61,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -75,7 +76,9 @@ internal constructor(
   private val firebaseApp: FirebaseApp,
   private val connectionFactory:
     (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? =
-    null
+    null,
+  private val hasFunction: ((FunctionCallPart) -> Boolean)? = null,
+  private val executeFunction: (suspend (FunctionCallPart) -> FunctionResponsePart)? = null
 ) {
   /**
    * Coroutine scope that we batch data on for network related behavior.
@@ -431,6 +434,36 @@ internal constructor(
   }
 
   /**
+   * Manually marks the start of user activity, using the realtime API.
+   *
+   * The start of user activity is effectively the start of a user's turn, but depending on the
+   * configuration defined in [RealtimeInputConfig], it may not be interpreted as an interruption.
+   * An example of the start of user activity could be the user speaking (not silence).
+   *
+   * Should be followed with a call to [sendStopActivityRealtime] after all the data has been sent
+   * for the user's turn.
+   *
+   * Only required when automatic activity detection is disabled via [RealtimeInputConfig].
+   */
+  public suspend fun sendStartActivityRealtime() {
+    sendFrame(BidiGenerateContentRealtimeInputSetup(activityStart = true).toInternal())
+  }
+
+  /**
+   * Manually marks the end of user activity, using the realtime API.
+   *
+   * The end of user activity is effectively the end of a user's turn, and signals that the model
+   * can start sending responses.
+   *
+   * Should follow after a previous call to [sendStartActivityRealtime].
+   *
+   * Only required when automatic activity detection is disabled via [RealtimeInputConfig].
+   */
+  public suspend fun sendStopActivityRealtime() {
+    sendFrame(BidiGenerateContentRealtimeInputSetup(activityEnd = true).toInternal())
+  }
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
@@ -580,6 +613,14 @@ internal constructor(
               // It's fine to suspend here since you can't have a function call running concurrently
               // with an audio response
               sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
+            } else if (
+              hasFunction != null &&
+                executeFunction != null &&
+                it.functionCalls.all { f -> hasFunction.invoke(f) }
+            ) {
+              sendFunctionResponse(
+                it.functionCalls.map { call -> executeFunction.invoke(call) }.toList()
+              )
             } else {
               Log.w(
                 TAG,
@@ -706,8 +747,13 @@ internal constructor(
     val mediaChunks: List<InlineData>? = null,
     val audio: InlineData? = null,
     val video: InlineData? = null,
-    val text: String? = null
+    val text: String? = null,
+    val activityStart: Boolean = false,
+    val activityEnd: Boolean = false
   ) {
+    @Serializable internal class ActivityStart
+    @Serializable internal class ActivityEnd
+
     @Serializable
     internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
       @Serializable
@@ -715,7 +761,9 @@ internal constructor(
         val mediaChunks: List<InlineData.Internal>?,
         val audio: InlineData.Internal?,
         val video: InlineData.Internal?,
-        val text: String?
+        val text: String?,
+        @SerialName("activity_start") val activityStart: ActivityStart? = null,
+        @SerialName("activity_end") val activityEnd: ActivityEnd? = null
       )
     }
     fun toInternal() =
@@ -724,7 +772,9 @@ internal constructor(
           mediaChunks?.map { it.toInternal() },
           audio?.toInternal(),
           video?.toInternal(),
-          text
+          text,
+          if (activityStart) ActivityStart() else null,
+          if (activityEnd) ActivityEnd() else null
         )
       )
   }

@@ -1,5 +1,16 @@
 # Unreleased
 
+- [changed] Increased the default gRPC flow control window size from 64KB to 256KB to speed up large document reads, and added support for configuring this window size via `FirebaseFirestoreSettings.Builder.setGrpcFlowControlWindow()`.
+
+# 26.4.1
+
+- [changed] Added support for caching documents larger than 1MB by reading them in chunks from the local SQLite database.
+- [changed] Prevent OutOfMemory errors in debug logging by truncating large protobuf payloads and strings.
+
+# 26.4.0
+
+- [feature] Added support for `minimum` and `maximum` FieldValue operations.
+
 # 26.3.0
 
 - [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.

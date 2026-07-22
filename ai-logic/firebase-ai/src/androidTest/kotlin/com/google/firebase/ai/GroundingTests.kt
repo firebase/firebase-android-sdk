@@ -62,9 +62,9 @@ class GroundingTests {
   @Test
   fun groundingTests_canSearchWeather(): Unit = runBlocking {
     val model =
-      FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
+      FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI("global"))
         .generativeModel(
-          modelName = "gemini-2.5-flash",
+          modelName = "gemini-3.5-flash",
           tools = listOf(Tool.googleSearch()),
         )
     val response = model.generateContent("What temperature is it today in Cancún?")
@@ -79,9 +79,9 @@ class GroundingTests {
     @JvmStatic
     fun setupModel(config: ToolConfig): GenerativeModel {
       val model =
-        FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
+        FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI("global"))
           .generativeModel(
-            modelName = "gemini-2.5-flash",
+            modelName = "gemini-3.5-flash",
             toolConfig = config,
             tools = listOf(Tool.googleMaps()),
           )

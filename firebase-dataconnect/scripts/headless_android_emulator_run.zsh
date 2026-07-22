@@ -35,6 +35,37 @@ show_help() {
   say "to find the Android emulator binary."
 }
 
+host_cpu_arch() {
+  case "$(uname -m)" in
+    arm64|aarch64) say "arm64-v8a" ;;
+    x86_64|amd64)  say "x86_64" ;;
+    *)             say "unknown" ;;
+  esac
+}
+
+say_sample_create_avd_command() {
+  local -r sdk_package="system-images;android-36;google_apis;$(host_cpu_arch)"
+  local -r avdmanager_cmd="${ANDROID_HOME}/cmdline-tools/latest/bin/avdmanager"
+  local -r avdmanager_args=(
+    "${avdmanager_cmd}"
+    --verbose
+    create
+    avd
+    --device
+    small_phone
+    --name
+    SmallPhoneAPI36
+    --package
+    "${sdk_package}"
+  )
+  say_args "${avdmanager_args[@]}"
+
+  local -r sdkmanager_cmd="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+  local -r sdkmanager_args=("${sdkmanager_cmd}" "${sdk_package}")
+  say "If needed, install the ${sdk_package} package by running:"
+  say_args "${sdkmanager_args[@]}"
+}
+
 # Parse the command-line arguments.
 zparseopts -D -E h=opt_help
 if (( ${#opt_help} )); then
@@ -84,6 +115,8 @@ if (( ! ${+emulator_avd} )) ; then
   typeset -r avds
   if (( ${#avds[@]} == 0 )) ; then
     say_error "no AVDs are configured in the Android emulator." >&2
+    say "To create an AVD, run this command:" >&2
+    say_sample_create_avd_command >&2
     exit 1
   elif (( ${#avds[@]} > 1 )) ; then
     say_error "${#avds[@]} AVDs are configured in the Android emulator." >&2
@@ -103,15 +136,15 @@ typeset -r args=(
   -no-audio
   -no-boot-anim
   -accel on
-  -gpu off
   -no-snapshot-load
   -no-snapshot-save
   -screen touch
   -netfast
   -no-sim
-  -timezone UTC
+  -timezone "Etc/UTC"
   -skip-adb-auth
   -no-metrics
+  -grpc-use-token
   "${emulator_extra_args[@]}"
 )
 

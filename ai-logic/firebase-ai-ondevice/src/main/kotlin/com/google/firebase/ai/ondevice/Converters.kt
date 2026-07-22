@@ -80,8 +80,9 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
   }
 }
 
-internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop():
-  GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() })
+internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop(
+  modelName: String
+): GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() }, modelName)
 
 // ================================================
 // `GenerationConfig` converter extension functions

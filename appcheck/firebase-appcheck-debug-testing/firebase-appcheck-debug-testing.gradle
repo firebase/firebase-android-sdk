@@ -23,18 +23,18 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{app_check}} Debug Testing")
         versionName.set("appcheck-debug-testing")
+        nestedHeader.set(true)
     }
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.appcheck.debug.testing"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled = true
@@ -45,7 +45,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
 }
 
 dependencies {

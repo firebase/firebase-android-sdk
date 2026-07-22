@@ -16,11 +16,10 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
-import com.google.api.client.http.HttpTransport
+import com.google.auth.http.HttpCredentialsAdapter
 
 interface AppDistributionEnvironment {
-  fun getFirebaseCliLoginCredentials(transport: HttpTransport): GoogleCredential?
+  fun getFirebaseCliLoginCredentials(): HttpCredentialsAdapter?
 
   companion object {
     const val ENV_FIREBASE_TOKEN = "FIREBASE_TOKEN"

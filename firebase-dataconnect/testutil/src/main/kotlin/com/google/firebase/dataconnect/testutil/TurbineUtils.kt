@@ -21,8 +21,11 @@ import app.cash.turbine.ReceiveTurbine
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.fail
+import io.kotest.assertions.failure
 import io.kotest.assertions.print.print
 import kotlin.experimental.ExperimentalTypeInference
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * Represents the result of evaluating a predicate on an item emitted from a [ReceiveTurbine].
@@ -78,29 +81,50 @@ suspend inline fun <T, R> ReceiveTurbine<T>.awaitUntilItem(
   onIgnoredItem: (T) -> Unit = {},
   predicate: (T) -> TurbinePredicateResult<R>,
 ): R {
-  var skippedItemCount = 0
+  val skippedItems = mutableListOf<T>()
 
   while (true) {
-    when (val event = awaitEvent()) {
+    val awaitResult = runCatching { awaitEvent() }
+
+    currentCoroutineContext().ensureActive()
+
+    val event =
+      awaitResult.fold(
+        onSuccess = { it },
+        onFailure = { exception ->
+          throw failure(
+            "Turbine awaitEvent() threw exception \"$exception\" " +
+              "after skipping ${skippedItems.size} items " +
+              "that didn't satisfy the given predicate ($predicateDescription); " +
+              "skippedItems=${skippedItems.print().value}",
+            exception
+          )
+        }
+      )
+
+    when (event) {
       Event.Complete ->
         fail(
-          "Flow completed normally after skipping $skippedItemCount items produced " +
+          "Flow completed normally " +
+            "after skipping ${skippedItems.size} items " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
-            "but expected it to produce an item that satisfied the predicate"
+            "but expected it to produce an item that satisfied the predicate; " +
+            "skippedItems=${skippedItems.print().value}",
         )
       is Event.Error ->
         fail(
-          "Flow failed with exception ${event.throwable} after skipping " +
-            "$skippedItemCount items produced " +
+          "Flow failed with exception ${event.throwable} " +
+            "after skipping ${skippedItems.size} items " +
             "that didn't satisfy the given predicate ($predicateDescription) " +
-            "but expected it to produce an item that satisfied the predicate"
+            "but expected it to produce an item that satisfied the predicate; " +
+            "skippedItems=${skippedItems.print().value}",
         )
       is Event.Item ->
         when (val predicateResult = predicate(event.value)) {
           is TurbinePredicateResult.Satisfied -> return predicateResult.mappedValue
           TurbinePredicateResult.Unsatisfied -> {
             onIgnoredItem(event.value)
-            skippedItemCount++
+            skippedItems.add(event.value)
           }
         }
     }
@@ -143,9 +167,13 @@ suspend inline fun <T> ReceiveTurbine<T>.awaitUntilItem(
  * [U].
  */
 suspend inline fun <T, reified U : T> ReceiveTurbine<T>.awaitUntilItemIsInstance(
+  description: String? = null,
   onIgnoredItem: (T) -> Unit = {},
 ): U =
-  awaitUntilItem("is instance of ${U::class.qualifiedName}", onIgnoredItem) {
+  awaitUntilItem(
+    "is instance of ${U::class.qualifiedName} (description=$description)",
+    onIgnoredItem,
+  ) {
     when (it) {
       is U -> TurbinePredicateResult.Satisfied(it)
       else -> TurbinePredicateResult.Unsatisfied
@@ -177,8 +205,24 @@ suspend inline fun <reified T : Throwable> ReceiveTurbine<*>.awaitError(
     }
   }
 
+  val awaitResult = runCatching { awaitEvent() }
+
+  currentCoroutineContext().ensureActive()
+
+  val event =
+    awaitResult.fold(
+      onSuccess = { it },
+      onFailure = { exception ->
+        throw failure(
+          "Turbine awaitEvent() threw exception \"$exception\", " +
+            "but expected it to return Event.Error with a throwable $expectedText",
+          exception
+        )
+      }
+    )
+
   val exception =
-    when (val event = awaitEvent()) {
+    when (event) {
       Event.Complete -> fail("Flow completed normally, but expected it to throw $expectedText")
       is Event.Error -> event.throwable
       is Event.Item ->

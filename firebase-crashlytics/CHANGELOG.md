@@ -1,5 +1,9 @@
 # Unreleased
 
+# 20.1.0
+
+- [feature] Added OOM and Anomaly trigger collection for the ProfilingManager API [#8343]
+
 # 20.0.6
 
 - [fixed] Fixed race condition that caused logs from background threads to not be attached to

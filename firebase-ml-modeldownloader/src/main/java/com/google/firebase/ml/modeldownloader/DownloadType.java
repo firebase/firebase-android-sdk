@@ -14,17 +14,44 @@
 
 package com.google.firebase.ml.modeldownloader;
 
+/**
+ * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more info, see
+ *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+ */
+@Deprecated
 public enum DownloadType {
-  /** Use local model when present, otherwise download and return latest model */
+  /**
+   * Use local model when present, otherwise download and return latest model
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   */
+  @Deprecated
   LOCAL_MODEL,
   /**
    * When local model present, use local model and download latest model in background. Otherwise,
    * download and return latest model.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
+  @Deprecated
   LOCAL_MODEL_UPDATE_IN_BACKGROUND,
   /**
    * Always return latest model, check for latest model and download new model (when needed) before
    * returning.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
+  @Deprecated
   LATEST_MODEL
 }
