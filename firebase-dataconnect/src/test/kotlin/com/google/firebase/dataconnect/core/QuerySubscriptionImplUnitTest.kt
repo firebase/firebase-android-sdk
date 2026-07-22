@@ -1682,6 +1682,7 @@ class QuerySubscriptionImplUnitTest {
           )
 
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.awaitUntilClientClosesConnection()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
       }
