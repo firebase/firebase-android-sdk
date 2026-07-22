@@ -1,5 +1,7 @@
 # Unreleased
 
+- [unchanged] Updated to keep [crashlytics] SDK versions aligned.
+
 # 20.1.0
 
 - [feature] Added OOM and Anomaly trigger collection for the ProfilingManager API [#8343]
