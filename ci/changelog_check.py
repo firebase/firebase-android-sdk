@@ -118,7 +118,7 @@ def get_pr_comments(repo, pr_number, headers):
         req = urllib.request.Request(url, headers=headers)
         try:
             with urllib.request.urlopen(req) as response:
-                page_comments = json.loads(response.read().decode())
+                page_comments = json.loads(response.read().decode('utf-8'))
                 if not page_comments:
                     break
                 comments.extend(page_comments)
