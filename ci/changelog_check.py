@@ -39,7 +39,7 @@ EXCLUDE_DIRECTORIES = [
   'transport/'
 ]
 
-SIGNATURE = "<!-- danger-python-changelog-warning -->"
+SIGNATURE = "<!-- python-changelog-warning -->"
 
 def should_file_be_excluded(file, exclude_paths):
     return any(dir_path in file for dir_path in exclude_paths)
@@ -53,6 +53,61 @@ def has_changes_in(paths, modified_files):
 
 def has_sdk_changes(modified_files):
     return any(not should_file_be_excluded(f, EXCLUDE_DIRECTORIES) for f in modified_files)
+
+def get_modified_files():
+    # If running in GitHub Actions, try to use the GitHub API to avoid shallow clone issues
+    repo = os.environ.get('GITHUB_REPOSITORY')
+    token = os.environ.get('GITHUB_TOKEN')
+    event_path = os.environ.get('GITHUB_EVENT_PATH')
+    if repo and token and event_path:
+        try:
+            with open(event_path, 'r') as f:
+                event_data = json.load(f)
+                pull_request = event_data.get('pull_request')
+                if pull_request:
+                    pr_number = pull_request.get('number')
+                    headers = {
+                        "Authorization": f"token {token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "User-Agent": "Python-urllib"
+                    }
+                    files = []
+                    page = 1
+                    while True:
+                        url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files?per_page=100&page={page}"
+                        req = urllib.request.Request(url, headers=headers)
+                        with urllib.request.urlopen(req) as response:
+                            page_files = json.loads(response.read().decode('utf-8'))
+                            if not page_files:
+                                break
+                            files.extend([f['filename'] for f in page_files])
+                            if len(page_files) < 100:
+                                break
+                            page += 1
+                    return files
+        except Exception as e:
+            print(f"Warning: Failed to fetch modified files via GitHub API: {e}", file=sys.stderr)
+            print("Falling back to git diff...", file=sys.stderr)
+
+    try:
+        print("Attempting fallback to diff against origin/main", file=sys.stderr)
+        # Fallback for local testing or different checkout configurations
+        for base in ['origin/main', 'main']:
+            try:
+                result = subprocess.run(
+                    ['git', 'diff', '--name-only', f'{base}...HEAD'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
+                files = result.stdout.strip().split('\n')
+                return [f for f in files if f]
+            except subprocess.CalledProcessError:
+                continue
+        print("Error: Could not determine modified files via git.", file=sys.stderr)
+        return []
+
 
 def get_modified_files():
     try:
@@ -137,7 +192,7 @@ def post_or_update_comment(repo, pr_number, token, message):
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "Python-urllib"
     }
-    
+
     comments = get_pr_comments(repo, pr_number, headers)
 
     existing_comment = None
@@ -155,7 +210,7 @@ def post_or_update_comment(repo, pr_number, token, message):
         if existing_comment.get('body') == body:
             print(f"Comment {comment_id} is up to date.")
             return
-        
+
         update_url = f"https://api.github.com/repos/{repo}/issues/comments/{comment_id}"
         req = urllib.request.Request(update_url, data=data, headers=headers, method='PATCH')
         action = f"updating existing comment {comment_id}"
@@ -176,7 +231,7 @@ def delete_comment_if_exists(repo, pr_number, token):
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "Python-urllib"
     }
-    
+
     comments = get_pr_comments(repo, pr_number, headers)
 
     for comment in comments:
@@ -224,7 +279,7 @@ def main():
         print(f"WARNING: {warning_message}")
         # Also output as GitHub Actions warning annotation
         print(f"::warning::{warning_message}")
-        
+
         if token and repo and pr_number:
             post_or_update_comment(repo, pr_number, token, warning_message)
         else:
