@@ -7,6 +7,10 @@
   [#8446](https://github.com/firebase/firebase-android-sdk/pull/8446),
   [#8456](https://github.com/firebase/firebase-android-sdk/pull/8456),
   [#8460](https://github.com/firebase/firebase-android-sdk/pull/8460))
+- [changed] Wait for 15 seconds before closing realtime streaming connection
+  with backend after last subscriber unsubscribes (instead of closing the
+  connection immediately).
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.3.2
 
