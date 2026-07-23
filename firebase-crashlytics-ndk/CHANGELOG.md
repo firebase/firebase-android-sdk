@@ -1,7 +1,5 @@
 # Unreleased
 
-- [unchanged] Updated to keep [crashlytics] SDK versions aligned.
-
 # 20.1.0
 
 - [changed] Updated `firebase-crashlytics` dependency to 20.1.0
