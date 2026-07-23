@@ -25,6 +25,7 @@ import androidx.test.filters.LargeTest;
 import com.google.android.gms.tasks.Task;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -131,16 +132,6 @@ public class LargeDocumentTest {
   public void testCacheIntegrityWithMultipleLargeDocuments() {
     FirebaseFirestore db = testFirestore();
 
-    // Copy existing test environment settings but set a normal cache size
-    // to ensure we don't accidentally trigger async GC during the test.
-    FirebaseFirestoreSettings existingSettings = db.getFirestoreSettings();
-    FirebaseFirestoreSettings settings =
-        new FirebaseFirestoreSettings.Builder(existingSettings)
-            .setLocalCacheSettings(
-                PersistentCacheSettings.newBuilder().setSizeBytes(104857600).build()) // 100MB
-            .build();
-    db.setFirestoreSettings(settings);
-
     CollectionReference colRef = db.collection(seedCollection);
     DocumentReference docA = colRef.document("doc_a");
     DocumentReference docB = colRef.document("doc_b");
@@ -156,9 +147,8 @@ public class LargeDocumentTest {
     assertTrue("docA should exist in cache", cacheSnapshotA.exists());
     assertTrue("docB should exist in cache", cacheSnapshotB.exists());
 
-    // Sanity check
-    assertTrue(cacheSnapshotA.getData().size() > 0);
-    assertTrue(cacheSnapshotB.getData().size() > 0);
+    assertEquals(asciiPayload, cacheSnapshotA.getString("chunk"));
+    assertEquals(asciiPayload, cacheSnapshotB.getString("chunk"));
 
     waitFor(db.enableNetwork());
   }
@@ -168,6 +158,8 @@ public class LargeDocumentTest {
     FirebaseFirestore db = testFirestore();
     DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
 
+    String expectedValue = "updated_val_" + System.currentTimeMillis();
+
     // Verify that the initial snapshot of a large document is received successfully
     // without triggering stream cancellation loops.
     CountDownLatch updateLatch = new CountDownLatch(1);
@@ -176,7 +168,7 @@ public class LargeDocumentTest {
             (snapshot, error) -> {
               if (snapshot != null
                   && snapshot.exists()
-                  && snapshot.contains("differential_field")) {
+                  && expectedValue.equals(snapshot.getString("differential_field"))) {
                 updateLatch.countDown();
               }
             });
@@ -187,7 +179,7 @@ public class LargeDocumentTest {
       assertTrue(firstSnapshot.exists());
 
       Map<String, Object> updateData = new HashMap<>();
-      updateData.put("differential_field", "updated_value");
+      updateData.put("differential_field", expectedValue);
       waitFor(docRef.update(updateData));
 
       assertTrue(
@@ -214,8 +206,7 @@ public class LargeDocumentTest {
     } catch (Exception e) {
       assertTrue(e.getCause() instanceof FirebaseFirestoreException);
       FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e.getCause();
-      assertEquals(
-          FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
+      assertEquals(FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
     }
   }
 
@@ -250,17 +241,23 @@ public class LargeDocumentTest {
     FirebaseFirestore db = testFirestore();
     DocumentReference docRef = db.collection(seedCollection).document("doc_15_9MB_unicode");
 
+    long timestamp = System.currentTimeMillis();
     Task<Void> transactionTask =
         db.runTransaction(
             transaction -> {
               DocumentSnapshot snapshot = transaction.get(docRef);
               assertTrue(snapshot.exists());
 
-              transaction.update(docRef, "transaction_timestamp", System.currentTimeMillis());
+              transaction.update(docRef, "transaction_timestamp", timestamp);
               return null;
             });
 
     waitFor(transactionTask);
+
+    DocumentSnapshot updatedSnapshot = waitFor(docRef.get(Source.SERVER));
+    assertTrue(updatedSnapshot.exists());
+    assertEquals(Long.valueOf(timestamp), updatedSnapshot.getLong("transaction_timestamp"));
+    assertEquals(unicodePayload, updatedSnapshot.getString("chunk"));
   }
 
   @Test(timeout = TIMEOUT_MS)
@@ -280,10 +277,20 @@ public class LargeDocumentTest {
     assertEquals(
         "Query should return exactly 2 large documents from cache", 2, cacheSnapshot.size());
 
-    assertEquals(
-        "Cached query payload should exactly match server query payload",
-        serverSnapshot.getDocuments().get(0).getData(),
-        cacheSnapshot.getDocuments().get(0).getData());
+    for (DocumentSnapshot serverDoc : serverSnapshot.getDocuments()) {
+      DocumentSnapshot matchingCacheDoc =
+          cacheSnapshot.getDocuments().stream()
+              .filter(d -> d.getId().equals(serverDoc.getId()))
+              .findFirst()
+              .orElse(null);
+      assertTrue(
+          "Document " + serverDoc.getId() + " should exist in cache snapshot",
+          matchingCacheDoc != null);
+      assertEquals(
+          "Payload for " + serverDoc.getId() + " in cache should match server",
+          serverDoc.getData(),
+          matchingCacheDoc.getData());
+    }
 
     waitFor(db.enableNetwork());
   }
@@ -298,7 +305,11 @@ public class LargeDocumentTest {
 
     waitFor(db.disableNetwork());
 
-    Query query = colRef.orderBy(FieldPath.documentId()).limit(2);
+    Query query =
+        colRef
+            .whereGreaterThanOrEqualTo(FieldPath.documentId(), "doc_a")
+            .orderBy(FieldPath.documentId())
+            .limit(2);
 
     // Execute the query offline
     QuerySnapshot cacheSnapshot = waitFor(query.get(Source.CACHE));
@@ -308,8 +319,11 @@ public class LargeDocumentTest {
         2,
         cacheSnapshot.size());
 
-    assertTrue(
-        "Payload should not be empty", cacheSnapshot.getDocuments().get(0).getData().size() > 0);
+    List<DocumentSnapshot> docs = cacheSnapshot.getDocuments();
+    assertEquals("doc_a", docs.get(0).getId());
+    assertEquals("doc_b", docs.get(1).getId());
+    assertEquals(asciiPayload, docs.get(0).getString("chunk"));
+    assertEquals(asciiPayload, docs.get(1).getString("chunk"));
 
     waitFor(db.enableNetwork());
   }
