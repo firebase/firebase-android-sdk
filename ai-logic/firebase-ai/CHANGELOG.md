@@ -6,9 +6,14 @@
   `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
   AI to Gemini Enterprise Agent Platform. (#8437)
 
-  Note: The default location is now `global` instead of `us-central1` (no other
-  functionality has changed). To continue using `us-central1`, specify
-  `GenerativeBackend.agentPlatform(location = "us-central1"))`.
+  Note: The only difference for `GenerativeBackend.agentPlatform` is the default
+  [location for accessing the model](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  The default location for `GenerativeBackend.agentPlatform` is `global`, whereas
+  the default location for `GenerativeBackend.vertexAI` is `us-central1`. To use
+  `us-central1` with `GenerativeBackend.agentPlatform`, specify
+  `GenerativeBackend.agentPlatform(location = "us-central1")` when
+  initializing the SDK. However, note that most new Gemini models do
+  not support `us-central1`.
 
 # 17.14.0
 
