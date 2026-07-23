@@ -89,24 +89,22 @@ def get_modified_files():
             print(f"Warning: Failed to fetch modified files via GitHub API: {e}", file=sys.stderr)
             print("Falling back to git diff...", file=sys.stderr)
 
-    try:
-        print("Attempting fallback to diff against origin/main", file=sys.stderr)
-        # Fallback for local testing or different checkout configurations
-        for base in ['origin/main', 'main']:
-            try:
-                result = subprocess.run(
-                    ['git', 'diff', '--name-only', f'{base}...HEAD'],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=True
-                )
-                files = result.stdout.strip().split('\n')
-                return [f for f in files if f]
-            except subprocess.CalledProcessError:
-                continue
-        print("Error: Could not determine modified files via git.", file=sys.stderr)
-        return []
+    print("Attempting fallback to diff against origin/main", file=sys.stderr)
+    # Fallback for local testing or different checkout configurations
+    for base in ['origin/main', 'main']:
+        try:
+            result = subprocess.run(
+                ['git', 'diff', '--name-only', f'{base}...HEAD'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+            files = result.stdout.strip().split('\n')
+            return [f for f in files if f]
+        except subprocess.CalledProcessError:
+            continue
+    return []
 
 
 def get_modified_files():
