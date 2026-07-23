@@ -110,6 +110,26 @@ def get_pr_details():
         print(f"Error reading GITHUB_EVENT_PATH: {e}", file=sys.stderr)
         return None, [], ""
 
+def get_pr_comments(repo, pr_number, headers):
+    comments = []
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments?per_page=100&page={page}"
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req) as response:
+                page_comments = json.loads(response.read().decode())
+                if not page_comments:
+                    break
+                comments.extend(page_comments)
+                if len(page_comments) < 100:
+                    break
+                page += 1
+        except Exception as e:
+            print(f"Error fetching comments page {page}: {e}", file=sys.stderr)
+            break
+    return comments
+
 def post_or_update_comment(repo, pr_number, token, message):
     comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
@@ -118,14 +138,7 @@ def post_or_update_comment(repo, pr_number, token, message):
         "User-Agent": "Python-urllib"
     }
     
-    # List comments to find existing one
-    req = urllib.request.Request(comments_url, headers=headers)
-    try:
-        with urllib.request.urlopen(req) as response:
-            comments = json.loads(response.read().decode())
-    except Exception as e:
-        print(f"Error fetching comments: {e}", file=sys.stderr)
-        return
+    comments = get_pr_comments(repo, pr_number, headers)
 
     existing_comment = None
     for comment in comments:
@@ -158,20 +171,13 @@ def post_or_update_comment(repo, pr_number, token, message):
         print(f"Error posting/updating comment: {e}", file=sys.stderr)
 
 def delete_comment_if_exists(repo, pr_number, token):
-    comments_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
         "User-Agent": "Python-urllib"
     }
     
-    req = urllib.request.Request(comments_url, headers=headers)
-    try:
-        with urllib.request.urlopen(req) as response:
-            comments = json.loads(response.read().decode())
-    except Exception as e:
-        print(f"Error fetching comments: {e}", file=sys.stderr)
-        return
+    comments = get_pr_comments(repo, pr_number, headers)
 
     for comment in comments:
         if SIGNATURE in comment.get('body', ''):
