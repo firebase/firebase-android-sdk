@@ -29,6 +29,10 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.backoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.jitterTestCase
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.maxJitterBackoffValues
+import com.google.firebase.dataconnect.core.RetryBackoffCalculatorTesting.minJitterBackoffValues
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
@@ -67,12 +71,11 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.tokenUidPairOrNullIfUidNull
+import com.google.firebase.dataconnect.testutil.useSuspending
 import com.google.firebase.dataconnect.util.IdStringGenerator
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
-import com.google.firebase.dataconnect.util.coroutines.signal
 import com.google.firebase.internal.InternalTokenResult
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamRequest.RequestKindCase
@@ -117,13 +120,21 @@ import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
@@ -161,29 +172,32 @@ class QuerySubscriptionImplUnitTest {
 
   @Test
   fun `collecting flow after DataConnect is closed completes immediately`() = runTest {
-    val subscription = querySubscription()
-    subscription.query.dataConnect.suspendingClose()
-    subscription.flow.test { awaitComplete() }
+    runWithDataConnect { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+      subscription.query.dataConnect.suspendingClose()
+      subscription.flow.test { awaitComplete() }
+    }
   }
 
   @Test
   fun `collecting flow sends init StreamRequest first`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    server.events.test {
-      backgroundScope.launch { subscription.flow.collect() }
+      server.events.test {
+        backgroundScope.launch { subscription.flow.collect() }
 
-      val event: StreamRequestReceived = awaitUntilItemIsInstance()
-      event.streamRequest.let { request ->
-        withClue("request=${request.print().value}") {
-          request.requestId shouldBe "init"
-          request.requestKindCase shouldBe RequestKindCase.REQUESTKIND_NOT_SET
+        val event: StreamRequestReceived = awaitUntilItemIsInstance()
+        event.streamRequest.let { request ->
+          withClue("request=${request.print().value}") {
+            request.requestId shouldBe "init"
+            request.requestKindCase shouldBe RequestKindCase.REQUESTKIND_NOT_SET
+          }
         }
-      }
 
-      cancelAndIgnoreRemainingEvents()
+        cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -192,17 +206,18 @@ class QuerySubscriptionImplUnitTest {
     val server = runningInProcessDataConnectServer()
     val subscribeRequestId = Arb.dataConnect.requestId().sample()
     val idStringGenerator = idStringGeneratorThatGeneratesRequestId(subscribeRequestId)
-    val dataConnect = dataConnect(server, idStringGenerator)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server, idStringGenerator) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    server.events.test {
-      backgroundScope.launch { subscription.flow.collect() }
-      awaitUntilInitStreamRequest()
+      server.events.test {
+        backgroundScope.launch { subscription.flow.collect() }
+        awaitUntilInitStreamRequest()
 
-      val event: StreamRequestReceived = awaitUntilItemIsInstance()
-      event.streamRequest.shouldBeSubscribeRequestFor(subscription.query, subscribeRequestId)
+        val event: StreamRequestReceived = awaitUntilItemIsInstance()
+        event.streamRequest.shouldBeSubscribeRequestFor(subscription.query, subscribeRequestId)
 
-      cancelAndIgnoreRemainingEvents()
+        cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -211,31 +226,32 @@ class QuerySubscriptionImplUnitTest {
     val server = runningInProcessDataConnectServer()
     val subscribeRequestId = Arb.dataConnect.requestId().sample()
     val idStringGenerator = idStringGeneratorThatGeneratesRequestId(subscribeRequestId)
-    val dataConnect = dataConnect(server, idStringGenerator)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server, idStringGenerator) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
 
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilInitStreamRequest()
-      serverCollector.awaitUntilStreamRequestWithRequestId(subscribeRequestId)
+        val responseSender = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilInitStreamRequest()
+        serverCollector.awaitUntilStreamRequestWithRequestId(subscribeRequestId)
 
-      val testDataArb = testDataArb()
-      repeat(5) {
-        val testData = testDataArb.sample()
-        responseSender.onNext(subscribeRequestId, testData)
+        val testDataArb = testDataArb()
+        repeat(5) {
+          val testData = testDataArb.sample()
+          responseSender.onNext(subscribeRequestId, testData)
 
-        val querySubscriptionResult = clientCollector.awaitItem()
-        withClue(querySubscriptionResult.print().value) {
-          val queryResult = querySubscriptionResult.result.shouldBeSuccess()
-          queryResult.data shouldBe testData
+          val querySubscriptionResult = clientCollector.awaitItem()
+          withClue(querySubscriptionResult.print().value) {
+            val queryResult = querySubscriptionResult.result.shouldBeSuccess()
+            queryResult.data shouldBe testData
+          }
         }
-      }
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -246,32 +262,33 @@ class QuerySubscriptionImplUnitTest {
       distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(requestIds.size)
     val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server, idStringGenerator)
-    val subscriptions =
-      subscriptionParameters
-        .map { querySubscription(dataConnect, it.operationName, it.variables) }
-        .shuffled(rs.random)
+    runWithDataConnect(server, idStringGenerator) { dataConnect ->
+      val subscriptions =
+        subscriptionParameters
+          .map { querySubscription(dataConnect, it.operationName, it.variables) }
+          .shuffled(rs.random)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollectors =
+          subscriptions.mapIndexed { index, subscription ->
+            subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+          }
+
+        val connection: ConnectRpcStarted = serverCollector.awaitUntilItemIsInstance()
+        serverCollector.awaitUntilInitStreamRequest()
+        val unacknowledgedRequestIds = requestIds.toMutableSet()
+        while (unacknowledgedRequestIds.isNotEmpty()) {
+          serverCollector.awaitItem().shouldBeInstanceOf<StreamRequestReceived>().let {
+            it.connectionId shouldBe connection.connectionId
+            it.streamRequest.requestId shouldBeIn unacknowledgedRequestIds
+            unacknowledgedRequestIds.remove(it.streamRequest.requestId)
+          }
         }
 
-      val connection: ConnectRpcStarted = serverCollector.awaitUntilItemIsInstance()
-      serverCollector.awaitUntilInitStreamRequest()
-      val unacknowledgedRequestIds = requestIds.toMutableSet()
-      while (unacknowledgedRequestIds.isNotEmpty()) {
-        serverCollector.awaitItem().shouldBeInstanceOf<StreamRequestReceived>().let {
-          it.connectionId shouldBe connection.connectionId
-          it.streamRequest.requestId shouldBeIn unacknowledgedRequestIds
-          unacknowledgedRequestIds.remove(it.streamRequest.requestId)
-        }
+        clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
-
-      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -282,47 +299,49 @@ class QuerySubscriptionImplUnitTest {
     val variables = testVariablesArb().sample()
     val idStringGenerator = idStringGeneratorThatGeneratesRequestIds(requestIds)
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server, idStringGenerator)
-    val subscriptions =
-      List(requestIds.size) { querySubscription(dataConnect, operationName, variables) }
+    runWithDataConnect(server, idStringGenerator) { dataConnect ->
+      val subscriptions =
+        List(requestIds.size) { querySubscription(dataConnect, operationName, variables) }
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector0 =
-        subscriptions[0].flow.testIn(backgroundScope, name = "clientCollector0")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector0 =
+          subscriptions[0].flow.testIn(backgroundScope, name = "clientCollector0")
 
-      val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
-      val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
-      val testData = testDataArb().let { arb -> List(requestIds.size) { arb.sample() } }
-      val respondJob =
-        backgroundScope.launch {
-          val requestId = subscribeRequest.streamRequest.requestId
-          val testDataIterator = testData.iterator()
-          while (true) {
-            responseObserver.onNext(requestId, testDataIterator.next())
-            val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
-            resumeRequest.connectionId shouldBe subscribeRequest.connectionId
-            resumeRequest.streamRequest.requestId shouldBe subscribeRequest.streamRequest.requestId
-            resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+        val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
+        val subscribeRequest = serverCollector.awaitUntilSubscribeStreamRequest()
+        val testData = testDataArb().let { arb -> List(requestIds.size) { arb.sample() } }
+        val respondJob =
+          backgroundScope.launch {
+            val requestId = subscribeRequest.streamRequest.requestId
+            val testDataIterator = testData.iterator()
+            while (true) {
+              responseObserver.onNext(requestId, testDataIterator.next())
+              val resumeRequest = serverCollector.awaitUntilResumeStreamRequest()
+              resumeRequest.connectionId shouldBe subscribeRequest.connectionId
+              resumeRequest.streamRequest.requestId shouldBe
+                subscribeRequest.streamRequest.requestId
+              resumeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.RESUME
+            }
           }
+
+        subscribeRequest.streamRequest.requestId shouldBeIn requestIds
+        subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
+        clientCollector0.awaitItem()
+        val clientCollectors =
+          subscriptions.drop(1).mapIndexed { index, subscription ->
+            if (rs.random.nextBoolean()) yield() // let some of the resume requests coalesce
+            subscription.flow.testIn(backgroundScope, name = "clientCollector${index+1}")
+          }
+        clientCollectors.forEach { clientCollector ->
+          clientCollector.awaitItem().result.shouldBeSuccess().data shouldBeIn testData
         }
 
-      subscribeRequest.streamRequest.requestId shouldBeIn requestIds
-      subscribeRequest.streamRequest.requestKindCase shouldBe RequestKindCase.SUBSCRIBE
-      clientCollector0.awaitItem()
-      val clientCollectors =
-        subscriptions.drop(1).mapIndexed { index, subscription ->
-          if (rs.random.nextBoolean()) yield() // let some of the resume requests coalesce
-          subscription.flow.testIn(backgroundScope, name = "clientCollector${index+1}")
-        }
-      clientCollectors.forEach { clientCollector ->
-        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBeIn testData
+        clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+        respondJob.cancelAndJoin()
+        clientCollector0.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
-
-      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-      respondJob.cancelAndJoin()
-      clientCollector0.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -331,84 +350,91 @@ class QuerySubscriptionImplUnitTest {
     val subscriptionParameters =
       distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(10)
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscriptions =
-      subscriptionParameters.map { querySubscription(dataConnect, it.operationName, it.variables) }
-
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollectors =
-        List(2) {
-          subscriptions
-            .mapIndexed { index, subscription ->
-              subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
-            }
-            .shuffled(rs.random)
-        }
-      val requestIds =
-        MutableList(subscriptions.size) {
-          serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+    runWithDataConnect(server) { dataConnect ->
+      val subscriptions =
+        subscriptionParameters.map {
+          querySubscription(dataConnect, it.operationName, it.variables)
         }
 
-      clientCollectors[0].forEach { clientCollector ->
-        clientCollector.cancelAndIgnoreRemainingEvents()
-      }
-      while (true) {
-        yield()
-        val event = serverCollector.asChannel().tryReceive().getOrNull() ?: break
-        if (event is StreamRequestReceived) {
-          event.streamRequest.requestKindCase shouldNotBe RequestKindCase.CANCEL
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollectors =
+          List(2) {
+            subscriptions
+              .mapIndexed { index, subscription ->
+                subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+              }
+              .shuffled(rs.random)
+          }
+        val requestIds =
+          MutableList(subscriptions.size) {
+            serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+          }
+
+        clientCollectors[0].forEach { clientCollector ->
+          clientCollector.cancelAndIgnoreRemainingEvents()
         }
-      }
+        while (true) {
+          yield()
+          val event = serverCollector.asChannel().tryReceive().getOrNull() ?: break
+          if (event is StreamRequestReceived) {
+            event.streamRequest.requestKindCase shouldNotBe RequestKindCase.CANCEL
+          }
+        }
 
-      // Specify drop(1) so that we don't close the very last connection as that will shut down
-      // the entire connection, confusing the logic below.
-      clientCollectors[1].drop(1).forEach { clientCollector ->
-        clientCollector.cancelAndIgnoreRemainingEvents()
-        val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
-        requestId shouldBeIn requestIds
-        requestIds.removeAt(requestIds.indexOf(requestId))
-      }
+        // Specify drop(1) so that we don't close the very last connection as that will shut down
+        // the entire connection, confusing the logic below.
+        val droppedClientCollector = clientCollectors[1].first()
+        clientCollectors[1].drop(1).forEach { clientCollector ->
+          clientCollector.cancelAndIgnoreRemainingEvents()
+          val requestId = serverCollector.awaitUntilCancelStreamRequest().streamRequest.requestId
+          requestId shouldBeIn requestIds
+          requestIds.removeAt(requestIds.indexOf(requestId))
+        }
+        droppedClientCollector.cancelAndIgnoreRemainingEvents()
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
   fun `connection is closed when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
-      serverCollector.awaitUntilSubscribeStreamRequest()
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      dataConnect.close()
-      serverCollector.awaitUntilClientClosesConnection()
+        dataConnect.close()
+        serverCollector.awaitUntilClientClosesConnection()
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
   fun `flows complete normally when close() is called on dataConnect`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
-      serverCollector.awaitUntilSubscribeStreamRequest()
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      dataConnect.close()
-      clientCollector.awaitComplete()
+        dataConnect.close()
+        clientCollector.awaitComplete()
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -417,99 +443,102 @@ class QuerySubscriptionImplUnitTest {
     val subscriptionParameters =
       distinctOperationNameVariablesPairWithRepeatedComponentsArb().sampleList(10)
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscriptions = buildList {
-      subscriptionParameters.forEach {
-        add(querySubscription(dataConnect, it.operationName, it.variables))
-      }
-      repeat(size / 2) { add(get(it)) } // Add some duplicate subscriptions
-      shuffle(rs.random)
-    }
-    val testData = testDataArb().let { arb -> List(subscriptions.size) { arb.next(rs) } }
-
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollectors =
-        subscriptions.mapIndexed { index, subscription ->
-          subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+    runWithDataConnect(server) { dataConnect ->
+      val subscriptions = buildList {
+        subscriptionParameters.forEach {
+          add(querySubscription(dataConnect, it.operationName, it.variables))
         }
+        repeat(size / 2) { add(get(it)) } // Add some duplicate subscriptions
+        shuffle(rs.random)
+      }
+      val testData = testDataArb().let { arb -> List(subscriptions.size) { arb.next(rs) } }
 
-      val respondJob =
-        backgroundScope.launch {
-          val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
-          val testDataIterator = testData.iterator()
-          while (true) {
-            val streamRequest = serverCollector.awaitUntilStreamRequest().streamRequest
-            if (streamRequest.hasSubscribe() || streamRequest.hasResume()) {
-              responseObserver.onNext(streamRequest.requestId, testDataIterator.next())
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollectors =
+          subscriptions.mapIndexed { index, subscription ->
+            subscription.flow.testIn(backgroundScope, name = "clientCollector$index")
+          }
+
+        val respondJob =
+          backgroundScope.launch {
+            val responseObserver = serverCollector.awaitConnectRpcStarted().responseObserver
+            val testDataIterator = testData.iterator()
+            while (true) {
+              val streamRequest = serverCollector.awaitUntilStreamRequest().streamRequest
+              if (streamRequest.hasSubscribe() || streamRequest.hasResume()) {
+                responseObserver.onNext(streamRequest.requestId, testDataIterator.next())
+              }
             }
           }
-        }
-      clientCollectors.forEach { clientCollector -> clientCollector.awaitItem() }
-      respondJob.cancelAndJoin()
+        clientCollectors.forEach { clientCollector -> clientCollector.awaitItem() }
+        respondJob.cancelAndJoin()
 
-      clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
-      serverCollector.awaitUntilClientClosesConnection()
+        clientCollectors.forEach { it.cancelAndIgnoreRemainingEvents() }
+        serverCollector.awaitUntilClientClosesConnection()
 
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
   fun `connection is re-established after being closed due to unsubscriptions`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      val connection1 = serverCollector.awaitConnectRpcStarted()
-      serverCollector.awaitUntilInitStreamRequest()
-      clientCollector1.cancelAndIgnoreRemainingEvents()
-      serverCollector.awaitUntilClientClosesConnection()
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        val connection1 = serverCollector.awaitConnectRpcStarted()
+        serverCollector.awaitUntilInitStreamRequest()
+        clientCollector1.cancelAndIgnoreRemainingEvents()
+        serverCollector.awaitUntilClientClosesConnection()
 
-      val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
-      val connection2 = serverCollector.awaitConnectRpcStarted()
-      connection2.connectionId shouldNotBe connection1.connectionId
-      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-      val testData = testDataArb().sample()
-      connection2.responseObserver.onNext(requestId, testData)
-      val streamResponse = clientCollector2.awaitItem()
-      streamResponse.result.shouldBeSuccess().data shouldBe testData
+        val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
+        val connection2 = serverCollector.awaitConnectRpcStarted()
+        connection2.connectionId shouldNotBe connection1.connectionId
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        val testData = testDataArb().sample()
+        connection2.responseObserver.onNext(requestId, testData)
+        val streamResponse = clientCollector2.awaitItem()
+        streamResponse.result.shouldBeSuccess().data shouldBe testData
 
-      clientCollector2.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector2.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
   fun `later flow subscriptions do not return data from previous subscribe result`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
-    val testDataArb = testDataArb()
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+      val testDataArb = testDataArb()
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
 
-      val responseSender = serverCollector.awaitResponseSender()
-      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-      val testData1 = testDataArb.sample()
-      responseSender.onNext(requestId, testData1)
-      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
+        val responseSender = serverCollector.awaitResponseSender()
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        val testData1 = testDataArb.sample()
+        responseSender.onNext(requestId, testData1)
+        clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
 
-      val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
-      serverCollector.awaitUntilResumeStreamRequest()
-      val testData2 = testDataArb.sample()
-      responseSender.onNext(requestId, testData2)
-      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
-      clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+        val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
+        serverCollector.awaitUntilResumeStreamRequest()
+        val testData2 = testDataArb.sample()
+        responseSender.onNext(requestId, testData2)
+        clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+        clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
 
-      clientCollector2.cancelAndIgnoreRemainingEvents()
-      clientCollector1.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector2.cancelAndIgnoreRemainingEvents()
+        clientCollector1.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -518,30 +547,31 @@ class QuerySubscriptionImplUnitTest {
     assumeTrue("This behavior should be fixed to ensure read-after-write semantics", false)
 
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
-    val testDataArb = testDataArb()
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+      val testDataArb = testDataArb()
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      val responseSender = serverCollector.awaitResponseSender()
-      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-      val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        val responseSender = serverCollector.awaitResponseSender()
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        val clientCollector2 = subscription.flow.testIn(backgroundScope, name = "clientCollector2")
 
-      val testData1 = testDataArb.sample()
-      responseSender.onNext(requestId, testData1)
-      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
+        val testData1 = testDataArb.sample()
+        responseSender.onNext(requestId, testData1)
+        clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData1
 
-      serverCollector.awaitUntilResumeStreamRequest()
-      val testData2 = testDataArb.sample()
-      responseSender.onNext(requestId, testData2)
-      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
-      clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+        serverCollector.awaitUntilResumeStreamRequest()
+        val testData2 = testDataArb.sample()
+        responseSender.onNext(requestId, testData2)
+        clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData2
+        clientCollector2.awaitItem().result.shouldBeSuccess().data shouldBe testData2
 
-      clientCollector2.cancelAndIgnoreRemainingEvents()
-      clientCollector1.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector2.cancelAndIgnoreRemainingEvents()
+        clientCollector1.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
@@ -577,28 +607,30 @@ class QuerySubscriptionImplUnitTest {
     val server1 = runningInProcessDataConnectServer()
     val server2 = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server2)
-    val dataConnect = dataConnect(server1)
-    val subscription = querySubscription(dataConnect)
-    val testData = testDataArb().sample()
+    runWithDataConnect(server1) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+      val testData = testDataArb().sample()
 
-    turbineScope {
-      val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
-      val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      server1Collector.awaitConnectRpcStarted()
-      server1Collector.awaitUntilSubscribeStreamRequest()
-      server1.close()
-      server2.open(server1.port)
+      turbineScope {
+        val server1Collector = server1.events.testIn(backgroundScope, name = "server1Collector")
+        val server2Collector = server2.events.testIn(backgroundScope, name = "server2Collector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        server1Collector.awaitConnectRpcStarted()
+        server1Collector.awaitUntilSubscribeStreamRequest()
+        server1.close()
+        server2.open(server1.port)
 
-      server2Collector.awaitResponseSender().let { responseSender ->
-        val requestId = server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-        responseSender.onNext(requestId, testData)
-        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+        server2Collector.awaitResponseSender().let { responseSender ->
+          val requestId =
+            server2Collector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+          responseSender.onNext(requestId, testData)
+          clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+        }
+
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        server2Collector.cancelAndIgnoreRemainingEvents()
+        server1Collector.cancelAndIgnoreRemainingEvents()
       }
-
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      server2Collector.cancelAndIgnoreRemainingEvents()
-      server1Collector.cancelAndIgnoreRemainingEvents()
     }
   }
 
@@ -618,12 +650,10 @@ class QuerySubscriptionImplUnitTest {
       val tokenUidPair2 = tokenUidPairOrNullIfUidNull(authToken2, authUid2?.string)
       val authProvider = LoggedInMultiTokenAndUidAuthProvider(listOf(tokenUidPair1, tokenUidPair2))
 
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = ImmediateDeferred(authProvider)
-        )
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = ImmediateDeferred(authProvider)
+      ) { dataConnect ->
         dataConnect.awaitAuthReady()
 
         val subscription = querySubscription(dataConnect)
@@ -649,8 +679,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -673,12 +701,10 @@ class QuerySubscriptionImplUnitTest {
         val authProvider =
           LoggedInMultiTokenAndUidAuthProvider(listOf(tokenUidPair1, tokenUidPair2))
 
-        val dataConnect =
-          dataConnect(
-            serverLocalBindPort = server.port,
-            deferredAuthProvider = ImmediateDeferred(authProvider)
-          )
-        try {
+        runWithDataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = ImmediateDeferred(authProvider)
+        ) { dataConnect ->
           dataConnect.awaitAuthReady()
 
           val subscription = querySubscription(dataConnect)
@@ -706,8 +732,6 @@ class QuerySubscriptionImplUnitTest {
             clientCollector.cancelAndIgnoreRemainingEvents()
             serverCollector.cancelAndIgnoreRemainingEvents()
           }
-        } finally {
-          dataConnect.suspendingClose()
         }
       }
     }
@@ -746,12 +770,10 @@ class QuerySubscriptionImplUnitTest {
         val postReconnectPendingAuthToken =
           SequencedReference(postReconnectSequenceNumber, postReconnectGetAuthTokenResult)
 
-        val dataConnect =
-          dataConnect(
-            serverLocalBindPort = server.port,
-            deferredAuthProvider = ImmediateDeferred(authProvider)
-          )
-        try {
+        runWithDataConnect(
+          serverLocalBindPort = server.port,
+          deferredAuthProvider = ImmediateDeferred(authProvider)
+        ) { dataConnect ->
           dataConnect.awaitAuthReady()
 
           val subscription = querySubscription(dataConnect)
@@ -785,8 +807,6 @@ class QuerySubscriptionImplUnitTest {
             clientCollector.cancelAndIgnoreRemainingEvents()
             serverCollector.cancelAndIgnoreRemainingEvents()
           }
-        } finally {
-          dataConnect.suspendingClose()
         }
       }
     }
@@ -893,14 +913,11 @@ class QuerySubscriptionImplUnitTest {
       Arb.dataConnect.deferredAuthProvider(),
       Arb.dataConnect.deferredAppCheckProvider(),
     ) { callerSdkType, deferredAuthProvider, deferredAppCheckProvider ->
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = deferredAuthProvider,
-          deferredAppCheckProvider = deferredAppCheckProvider,
-        )
-
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+      ) { dataConnect ->
         val subscription =
           queryRef(dataConnect = dataConnect, callerSdkType = callerSdkType).subscribe()
         turbineScope {
@@ -914,8 +931,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -929,14 +944,11 @@ class QuerySubscriptionImplUnitTest {
       Arb.dataConnect.deferredAuthProvider(),
       Arb.dataConnect.deferredAppCheckProvider(),
     ) { (callerSdkType1, callerSdkType2), deferredAuthProvider, deferredAppCheckProvider ->
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = deferredAuthProvider,
-          deferredAppCheckProvider = deferredAppCheckProvider,
-        )
-
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+      ) { dataConnect ->
         val operationName = "opName_${alphabeticStringArb().sample()}"
         val variables = testVariablesArb().sample()
 
@@ -978,8 +990,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector1.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -993,14 +1003,11 @@ class QuerySubscriptionImplUnitTest {
     header: Metadata.Key<String>,
     expectedHeaderValue: String?,
   ) {
-    val dataConnect =
-      dataConnect(
-        serverLocalBindPort = server.port,
-        deferredAuthProvider = deferredAuthProvider,
-        deferredAppCheckProvider = deferredAppCheckProvider,
-      )
-
-    try {
+    runWithDataConnect(
+      serverLocalBindPort = server.port,
+      deferredAuthProvider = deferredAuthProvider,
+      deferredAppCheckProvider = deferredAppCheckProvider,
+    ) { dataConnect ->
       if (awaitAuthReady) {
         dataConnect.awaitAuthReady()
       }
@@ -1019,8 +1026,6 @@ class QuerySubscriptionImplUnitTest {
         clientCollector.cancelAndIgnoreRemainingEvents()
         serverCollector.cancelAndIgnoreRemainingEvents()
       }
-    } finally {
-      dataConnect.suspendingClose()
     }
   }
 
@@ -1360,14 +1365,11 @@ class QuerySubscriptionImplUnitTest {
     val server = runningInProcessDataConnectServer()
     val (token1, token2) = tokens
 
-    val dataConnect =
-      dataConnect(
-        serverLocalBindPort = server.port,
-        deferredAuthProvider = deferredAuthProvider,
-        deferredAppCheckProvider = deferredAppCheckProvider,
-      )
-
-    try {
+    runWithDataConnect(
+      serverLocalBindPort = server.port,
+      deferredAuthProvider = deferredAuthProvider,
+      deferredAppCheckProvider = deferredAppCheckProvider,
+    ) { dataConnect ->
       dataConnect.awaitReady()
 
       val subscription = querySubscription(dataConnect)
@@ -1401,8 +1403,6 @@ class QuerySubscriptionImplUnitTest {
         clientCollector.cancelAndIgnoreRemainingEvents()
         serverCollector.cancelAndIgnoreRemainingEvents()
       }
-    } finally {
-      dataConnect.suspendingClose()
     }
   }
 
@@ -1417,14 +1417,11 @@ class QuerySubscriptionImplUnitTest {
   ) {
     val server = runningInProcessDataConnectServer()
 
-    val dataConnect =
-      dataConnect(
-        serverLocalBindPort = server.port,
-        deferredAuthProvider = deferredAuthProvider,
-        deferredAppCheckProvider = deferredAppCheckProvider,
-      )
-
-    try {
+    runWithDataConnect(
+      serverLocalBindPort = server.port,
+      deferredAuthProvider = deferredAuthProvider,
+      deferredAppCheckProvider = deferredAppCheckProvider,
+    ) { dataConnect ->
       dataConnect.awaitReady()
 
       val subscription = querySubscription(dataConnect)
@@ -1462,8 +1459,6 @@ class QuerySubscriptionImplUnitTest {
         clientCollector.cancelAndIgnoreRemainingEvents()
         serverCollector.cancelAndIgnoreRemainingEvents()
       }
-    } finally {
-      dataConnect.suspendingClose()
     }
   }
 
@@ -1477,14 +1472,11 @@ class QuerySubscriptionImplUnitTest {
     expectedHeaderValue1: String?,
     expectedHeaderValue2: String?,
   ) {
-    val dataConnect =
-      dataConnect(
-        serverLocalBindPort = server.port,
-        deferredAuthProvider = deferredAuthProvider,
-        deferredAppCheckProvider = deferredAppCheckProvider,
-      )
-
-    try {
+    runWithDataConnect(
+      serverLocalBindPort = server.port,
+      deferredAuthProvider = deferredAuthProvider,
+      deferredAppCheckProvider = deferredAppCheckProvider,
+    ) { dataConnect ->
       if (awaitAuthReady) {
         dataConnect.awaitAuthReady()
       }
@@ -1513,8 +1505,6 @@ class QuerySubscriptionImplUnitTest {
         clientCollector.cancelAndIgnoreRemainingEvents()
         serverCollector.cancelAndIgnoreRemainingEvents()
       }
-    } finally {
-      dataConnect.suspendingClose()
     }
   }
 
@@ -1533,230 +1523,364 @@ class QuerySubscriptionImplUnitTest {
     abort: (StreamObserver<StreamResponse>) -> Unit
   ) {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
-    val testData = testDataArb().sample()
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+      val testData = testDataArb().sample()
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
-      serverCollector.awaitResponseSender().let { responseSender ->
-        serverCollector.awaitUntilSubscribeStreamRequest()
-        abort(responseSender)
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+        serverCollector.awaitResponseSender().let { responseSender ->
+          serverCollector.awaitUntilSubscribeStreamRequest()
+          abort(responseSender)
+        }
+
+        serverCollector.awaitResponseSender().let { responseSender ->
+          val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+          responseSender.onNext(requestId, testData)
+          clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
+        }
+
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
-
-      serverCollector.awaitResponseSender().let { responseSender ->
-        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
-        responseSender.onNext(requestId, testData)
-        clientCollector.awaitItem().result.shouldBeSuccess().data shouldBe testData
-      }
-
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
     }
   }
 
   @Test
   fun `new subscription resets backoff and retries immediately`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription1 = querySubscription(dataConnect, operationName = "op1")
-    val subscription2 = querySubscription(dataConnect, operationName = "op2")
+    runWithDataConnect(server) { dataConnect ->
+      val subscription1 = querySubscription(dataConnect, operationName = "op1")
+      val subscription2 = querySubscription(dataConnect, operationName = "op2")
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
 
-      // Wait for subscription1 to connect and subscribe
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
+        // Wait for subscription1 to connect and subscribe
+        val responseSender = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      // Abort the connection to trigger backoff delay
-      val backoffSignal = ConflatedSignal<Unit>()
-      val backoffCallback: (Long) -> Unit = { backoffSignal.signal() }
-      DataConnectBidiConnectStream.setOnRetryBackoffForTesting(backoffCallback)
-      try {
-        responseSender.onError(Status.UNAVAILABLE.asException())
-        backoffSignal.await()
-      } finally {
-        DataConnectBidiConnectStream.unsetOnRetryBackoffForTesting(backoffCallback)
+        // Abort the connection to trigger backoff delay
+        DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
+          responseSender.onError(Status.UNAVAILABLE.asException())
+          backoffSignal.await()
+        }
+
+        val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+        // Now, start collecting subscription2.
+        // This should reset the backoff and trigger an immediate retry.
+        val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
+
+        // Wait for the new connection and subscribe request
+        serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+
+        val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        (time2 - time1) shouldBe 0L
+
+        clientCollector2.cancelAndIgnoreRemainingEvents()
+        clientCollector1.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
+    }
+  }
 
+  @Test
+  fun `network connectivity restoration resets retries immediately`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      // Measure the simulated time that the backoff delays for.
+      failConnection()
       val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-
-      // Now, start collecting subscription2.
-      // This should reset the backoff and trigger an immediate retry.
-      val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
-
-      // Wait for the new connection and subscribe request
-      serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+      serverCollector.awaitCall()
       val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      (time2 - time1) shouldBe 0L
 
-      clientCollector2.cancelAndIgnoreRemainingEvents()
-      clientCollector1.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+      // Verify that the backoff delay was aborted at delayMillis (which is guaranteed to be less
+      // than
+      // the backoff in effect) rather than waiting for the entire backoff.
+      (time2 - time1) shouldBe delayMillis
+    }
+
+  @Test
+  fun `network connectivity restoration resets backoff delay to initial value`() =
+    testNetworkConnectivityRestoration {
+      // Interrupt the exponential backoff with a NetworkConnectivityRestored event.
+      failConnection()
+      delay(delayMillis.milliseconds)
+      emit(NetworkConnectivityRestored)
+
+      // Cause the retry after the NetworkConnectivityRestored event to fail again.
+      failConnection()
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+      serverCollector.awaitCall()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+
+      // Verify that the backoff used in the retry after the NetworkConnectivityRestored event
+      // used the initial backoff, rather than continuing with the backoff it had used above.
+      (time2 - time1) shouldBe firstBackoffWaitTime
+    }
+
+  private data class TestNetworkConnectivityRestorationContext(
+    val failConnection: suspend () -> Unit,
+    val testScheduler: TestCoroutineScheduler,
+    val delayMillis: Long,
+    val emit: suspend (NetworkConnectivityRestored) -> Unit,
+    val serverCollector: ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>,
+    val firstBackoffWaitTime: Long,
+  )
+
+  private fun testNetworkConnectivityRestoration(
+    block: suspend TestNetworkConnectivityRestorationContext.() -> Unit
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    val networkConnectivityRestoredFlow = MutableSharedFlow<NetworkConnectivityRestored>()
+    runWithDataConnect(server, networkConnectivityRestoredFlow = networkConnectivityRestoredFlow) {
+      dataConnect ->
+      val subscription = querySubscription(dataConnect)
+
+      backoffValues.forEachIndexed { failCountBeforeRetrying, lastBackoffWaitTime ->
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+          val failConnection: suspend () -> Unit = {
+            val responseSender = serverCollector.awaitResponseSender()
+            DataConnectBidiConnectStream.signalOnRetryForTesting { backoffSignal ->
+              responseSender.onError(Status.UNAVAILABLE.asException())
+              backoffSignal.await()
+            }
+          }
+
+          repeat(failCountBeforeRetrying) { retryIndex ->
+            failConnection()
+            val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+            serverCollector.awaitCall()
+            val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+            check(time2 - time1 == backoffValues[retryIndex]) {
+              "internal error m6gwemnpw7: something is wrong with the test logic because the " +
+                "expected backoff was different than expected; once this logic is fixed, " +
+                "make sure to also fix the code after failConnection() below; " +
+                "time2=$time2, time1=$time1 time2-time1=${time2 - time1}, retryIndex=$retryIndex, " +
+                "backoffValues[retryIndex]=${backoffValues[retryIndex]}, " +
+                "failCountBeforeRetrying=$failCountBeforeRetrying"
+            }
+          }
+
+          block(
+            TestNetworkConnectivityRestorationContext(
+              failConnection,
+              testScheduler,
+              delayMillis = lastBackoffWaitTime / 3,
+              emit = networkConnectivityRestoredFlow::emit,
+              serverCollector,
+              firstBackoffWaitTime = backoffValues[0]
+            )
+          )
+
+          clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.cancelAndIgnoreRemainingEvents()
+        }
+      }
     }
   }
 
   @Test
   fun `initial connection failure respects backoff delay`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+    runWithDataConnect(server) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
 
-      // Wait for initial connection and subscribe
-      val responseSender = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
+        // Wait for initial connection and subscribe
+        val responseSender = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      // Abort the connection
-      responseSender.onError(Status.UNAVAILABLE.asException())
+        // Abort the connection
+        responseSender.onError(Status.UNAVAILABLE.asException())
 
-      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
 
-      // Wait for the next connection attempt (the retry)
-      serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
+        // Wait for the next connection attempt (the retry)
+        serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      (time2 - time1) shouldBe 1000L
+        val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        (time2 - time1) shouldBe 1000L
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
-  fun `subsequent connection failures backoff exponentially`() = runTest {
-    val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription = querySubscription(dataConnect)
+  fun `subsequent connection failures backoff exponentially, no jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = ZeroJitterRandom,
+      expectedBackoffs = backoffValues,
+    )
+  }
 
-    val times = mutableListOf<Long>()
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+  @Test
+  fun `subsequent connection failures backoff exponentially, min jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MinJitterRandom,
+      expectedBackoffs = minJitterBackoffValues,
+    )
+  }
 
-      repeat(100) {
-        val responseSender = serverCollector.awaitResponseSender()
-        serverCollector.awaitUntilSubscribeStreamRequest()
-        times.add(@OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime)
-        responseSender.onError(Status.UNAVAILABLE.asException())
-      }
+  @Test
+  fun `subsequent connection failures backoff exponentially, max jitter`() = runTest {
+    testSubsequentConnectionFailuresBackoffExponentially(
+      random = MaxJitterRandom,
+      expectedBackoffs = maxJitterBackoffValues,
+    )
+  }
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+  @Test
+  fun `subsequent connection failures backoff exponentially, varying jitter`() = runTest {
+    checkAll(propTestConfig, Arb.jitterTestCase()) { (jitters, expectedBackoffs) ->
+      testSubsequentConnectionFailuresBackoffExponentially(
+        random = SequenceRandom(jitters.asSequence() + generateSequence { jitters.last() }),
+        expectedBackoffs = expectedBackoffs,
+      )
     }
+  }
 
-    val waitTimes = times.zipWithNext { a, b -> b - a }
-    check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
-    val expectedWaitTimes =
-      RetryBackoffCalculator().let { retryBackoffCalculator ->
-        List(waitTimes.size) { retryBackoffCalculator.next() }
+  private suspend fun TestScope.testSubsequentConnectionFailuresBackoffExponentially(
+    random: Random,
+    expectedBackoffs: List<Long>,
+  ) {
+    val server = runningInProcessDataConnectServer()
+    runWithDataConnect(server, random = random) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
+
+      val times = mutableListOf<Long>()
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+
+        repeat(100) {
+          val responseSender = serverCollector.awaitResponseSender()
+          times.add(@OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime)
+          responseSender.onError(Status.UNAVAILABLE.asException())
+        }
+
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
       }
-    waitTimes shouldContainExactly expectedWaitTimes
+
+      val waitTimes = times.zipWithNext { a, b -> b - a }
+      check(waitTimes.size == 99) { "internal error dy3gcskmvt: waitTimes.size=${waitTimes.size}" }
+      val expectedWaitTimes = buildList {
+        addAll(expectedBackoffs)
+        while (size < waitTimes.size) add(last())
+      }
+      waitTimes shouldContainExactly expectedWaitTimes
+    }
   }
 
   @Test
   fun `healthy connection clears previous wakeup signals and resets backoff`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect = dataConnect(server)
-    val subscription1 = querySubscription(dataConnect, operationName = "op1")
-    val subscription2 = querySubscription(dataConnect, operationName = "op2")
-    val testData = testDataArb().sample()
+    runWithDataConnect(server) { dataConnect ->
+      val subscription1 = querySubscription(dataConnect, operationName = "op1")
+      val subscription2 = querySubscription(dataConnect, operationName = "op2")
+      val testData = testDataArb().sample()
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector1 = subscription1.flow.testIn(backgroundScope, name = "clientCollector1")
 
-      // 1st connection
-      val responseSender = serverCollector.awaitResponseSender()
-      val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
+        // 1st connection
+        val responseSender = serverCollector.awaitResponseSender()
+        val requestId = serverCollector.awaitUntilSubscribeStreamRequest().streamRequest.requestId
 
-      // Send a message to the client to make the connection healthy
-      responseSender.onNext(requestId, testData)
-      clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData
+        // Send a message to the client to make the connection healthy
+        responseSender.onNext(requestId, testData)
+        clientCollector1.awaitItem().result.shouldBeSuccess().data shouldBe testData
 
-      // Now start subscription2. This will emit a wakeup signal.
-      val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
-      serverCollector.awaitUntilSubscribeStreamRequest()
+        // Now start subscription2. This will emit a wakeup signal.
+        val clientCollector2 = subscription2.flow.testIn(backgroundScope, name = "clientCollector2")
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      // Abort the connection
-      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      responseSender.onError(Status.UNAVAILABLE.asException())
+        // Abort the connection
+        val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        responseSender.onError(Status.UNAVAILABLE.asException())
 
-      // Wait for the retry. It should wait for 1000ms.
-      serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
+        // Wait for the retry. It should wait for 1000ms.
+        serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
 
-      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      (time2 - time1) shouldBe 1000L
+        val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        (time2 - time1) shouldBe 1000L
 
-      clientCollector2.cancelAndIgnoreRemainingEvents()
-      clientCollector1.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
+        clientCollector2.cancelAndIgnoreRemainingEvents()
+        clientCollector1.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
+      }
     }
   }
 
   @Test
   fun `RETRY_IMMEDIATELY resets the exponential backoff`() = runTest {
     val server = runningInProcessDataConnectServer()
-    val dataConnect =
-      dataConnect(
-        serverLocalBindPort = server.port,
-        deferredAuthProvider =
-          run {
-            val authUid = Arb.dataConnect.authUidString().sample()
-            val tokens =
-              @OptIn(DelicateKotest::class)
-              Arb.dataConnect.authToken().distinct().let { arb -> List(5) { arb.sample() } }
-            val authProvider = LoggedInMultiTokenInternalAuthProvider(tokens.toList(), authUid)
-            ImmediateDeferred(authProvider)
-          }
-      )
+    runWithDataConnect(
+      serverLocalBindPort = server.port,
+      deferredAuthProvider =
+        run {
+          val authUid = Arb.dataConnect.authUidString().sample()
+          val tokens =
+            @OptIn(DelicateKotest::class)
+            Arb.dataConnect.authToken().distinct().let { arb -> List(5) { arb.sample() } }
+          val authProvider = LoggedInMultiTokenInternalAuthProvider(tokens.toList(), authUid)
+          ImmediateDeferred(authProvider)
+        }
+    ) { dataConnect ->
+      val subscription = querySubscription(dataConnect)
 
-    val subscription = querySubscription(dataConnect)
+      turbineScope {
+        val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+        val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
 
-    turbineScope {
-      val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
-      val clientCollector = subscription.flow.testIn(backgroundScope, name = "clientCollector")
+        // 1st connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+        val responseSender1 = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        responseSender1.onError(Status.UNAVAILABLE.asException())
 
-      // 1st connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
-      val responseSender1 = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      val time1 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      responseSender1.onError(Status.UNAVAILABLE.asException())
+        // 2nd connection: UNAUTHENTICATED -> triggers RETRY_IMMEDIATELY
+        val responseSender2 = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        responseSender2.onError(Status.UNAUTHENTICATED.asException())
 
-      // 2nd connection: UNAUTHENTICATED -> triggers RETRY_IMMEDIATELY
-      val responseSender2 = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      val time2 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      responseSender2.onError(Status.UNAUTHENTICATED.asException())
+        // 3rd connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+        val responseSender3 = serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        val time3 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        responseSender3.onError(Status.UNAVAILABLE.asException())
 
-      // 3rd connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
-      val responseSender3 = serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      val time3 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
-      responseSender3.onError(Status.UNAVAILABLE.asException())
+        // 4th connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
+        serverCollector.awaitResponseSender()
+        serverCollector.awaitUntilSubscribeStreamRequest()
+        val time4 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
 
-      // 4th connection: UNAVAILABLE -> triggers RETRY_AFTER_BACKOFF
-      serverCollector.awaitResponseSender()
-      serverCollector.awaitUntilSubscribeStreamRequest()
-      val time4 = @OptIn(ExperimentalCoroutinesApi::class) testScheduler.currentTime
+        clientCollector.cancelAndIgnoreRemainingEvents()
+        serverCollector.cancelAndIgnoreRemainingEvents()
 
-      clientCollector.cancelAndIgnoreRemainingEvents()
-      serverCollector.cancelAndIgnoreRemainingEvents()
-
-      assertSoftly {
-        withClue("time2") { time2 shouldBe time1 + 1000L }
-        withClue("time3") { time3 shouldBe time2 }
-        withClue("time4") { time4 shouldBe time3 + 1000L }
+        assertSoftly {
+          withClue("time2") { time2 shouldBe time1 + 1000L }
+          withClue("time3") { time3 shouldBe time2 }
+          withClue("time4") { time4 shouldBe time3 + 1000L }
+        }
       }
     }
   }
@@ -1777,12 +1901,10 @@ class QuerySubscriptionImplUnitTest {
           listOf(authToken1, authToken2).map { tokenUidPairOrNullIfUidNull(it, authUid.string) }
         )
 
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = ImmediateDeferred(authProvider)
-        )
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = ImmediateDeferred(authProvider)
+      ) { dataConnect ->
         dataConnect.awaitAuthReady()
 
         val subscription = querySubscription(dataConnect)
@@ -1806,8 +1928,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -1828,12 +1948,10 @@ class QuerySubscriptionImplUnitTest {
       val postReconnectPendingAuthToken =
         SequencedReference(Long.MAX_VALUE, postReconnectGetAuthTokenResult)
 
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = ImmediateDeferred(authProvider)
-        )
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = ImmediateDeferred(authProvider)
+      ) { dataConnect ->
         dataConnect.awaitAuthReady()
 
         val subscription = querySubscription(dataConnect)
@@ -1861,8 +1979,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -1884,12 +2000,10 @@ class QuerySubscriptionImplUnitTest {
       val postReconnectPendingAuthToken =
         SequencedReference(staleSequenceNumber, postReconnectGetAuthTokenResult)
 
-      val dataConnect =
-        dataConnect(
-          serverLocalBindPort = server.port,
-          deferredAuthProvider = ImmediateDeferred(authProvider)
-        )
-      try {
+      runWithDataConnect(
+        serverLocalBindPort = server.port,
+        deferredAuthProvider = ImmediateDeferred(authProvider)
+      ) { dataConnect ->
         dataConnect.awaitAuthReady()
 
         val subscription = querySubscription(dataConnect)
@@ -1917,8 +2031,6 @@ class QuerySubscriptionImplUnitTest {
           clientCollector.cancelAndIgnoreRemainingEvents()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
-      } finally {
-        dataConnect.suspendingClose()
       }
     }
   }
@@ -1930,29 +2042,38 @@ class QuerySubscriptionImplUnitTest {
     return server
   }
 
-  private fun TestScope.dataConnect(
+  private suspend fun <T> TestScope.runWithDataConnect(
     server: InProcessDataConnectGrpcStreamingServer,
     idStringGenerator: IdStringGenerator? = null,
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
-  ): FirebaseDataConnectImpl =
-    dataConnect(
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
+    block: suspend (FirebaseDataConnectImpl) -> T,
+  ): T =
+    runWithDataConnect(
       server.port,
       idStringGenerator,
       deferredAuthProvider,
       deferredAppCheckProvider,
+      networkConnectivityRestoredFlow,
+      random,
+      block,
     )
 
-  private fun TestScope.dataConnect(
+  private suspend fun <T> TestScope.runWithDataConnect(
     serverLocalBindPort: Int? = null,
     idStringGenerator: IdStringGenerator? = null,
     deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider> =
       UnavailableDeferred(),
     deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider> =
       UnavailableDeferred(),
-  ): FirebaseDataConnectImpl {
+    networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored> = emptyFlow(),
+    random: Random = ZeroJitterRandom,
+    block: suspend (FirebaseDataConnectImpl) -> T,
+  ): T {
     val executor = StandardTestDispatcher(testScheduler).asExecutor()
 
     val settings: DataConnectSettings =
@@ -1962,23 +2083,28 @@ class QuerySubscriptionImplUnitTest {
         DataConnectSettings("127.0.0.1:$serverLocalBindPort", sslEnabled = false)
       }
 
-    return FirebaseDataConnectImpl(
-      context =
-        mockk(name = "FirebaseDataConnectImpl.context") {
-          every { getSystemService(CONNECTIVITY_SERVICE) } returns
-            mockk<ConnectivityManager>(relaxed = true)
-        },
-      app = firebaseAppFactory.newInstance(),
-      projectId = Arb.dataConnect.projectId().sample(),
-      config = Arb.dataConnect.connectorConfig().sample(),
-      blockingExecutor = executor,
-      nonBlockingExecutor = executor,
-      deferredAuthProvider = deferredAuthProvider,
-      deferredAppCheckProvider = deferredAppCheckProvider,
-      creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
-      settings = settings,
-      idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
-    )
+    val dataConnect =
+      FirebaseDataConnectImpl(
+        context =
+          mockk(name = "FirebaseDataConnectImpl.context") {
+            every { getSystemService(CONNECTIVITY_SERVICE) } returns
+              mockk<ConnectivityManager>(relaxed = true)
+          },
+        app = firebaseAppFactory.newInstance(),
+        projectId = Arb.dataConnect.projectId().sample(),
+        config = Arb.dataConnect.connectorConfig().sample(),
+        blockingExecutor = executor,
+        nonBlockingExecutor = executor,
+        deferredAuthProvider = deferredAuthProvider,
+        deferredAppCheckProvider = deferredAppCheckProvider,
+        creator = mockk(name = "FirebaseDataConnectImpl.creator", relaxed = true),
+        settings = settings,
+        idStringGenerator = idStringGenerator ?: IdStringGenerator(Random.Default),
+        networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
+        random = random,
+      )
+
+    return dataConnect.useSuspending(block)
   }
 
   private fun idStringGeneratorThatGeneratesRequestId(requestId: String): IdStringGenerator =
@@ -2003,20 +2129,20 @@ class QuerySubscriptionImplUnitTest {
     }
 
   private fun TestScope.querySubscription(
-    dataConnect: FirebaseDataConnectImpl? = null,
+    dataConnect: FirebaseDataConnectImpl,
     operationName: String? = null,
     variables: TestVariables? = null,
   ): QuerySubscriptionImpl<TestData, TestVariables> =
     queryRef(dataConnect, operationName, variables).subscribe()
 
   private fun TestScope.queryRef(
-    dataConnect: FirebaseDataConnectImpl? = null,
+    dataConnect: FirebaseDataConnectImpl,
     operationName: String? = null,
     variables: TestVariables? = null,
     callerSdkType: CallerSdkType? = null,
   ): QueryRefImpl<TestData, TestVariables> =
     QueryRefImpl(
-      dataConnect = dataConnect ?: dataConnect(),
+      dataConnect = dataConnect,
       operationName = operationName ?: "opName_${alphabeticStringArb().sample()}",
       variables = variables ?: testVariablesArb().sample(),
       dataDeserializer = serializer<TestData>(),
@@ -2117,3 +2243,32 @@ private val retryableFailureGrpcStatusCodes: List<Status.Code> =
 
 private fun FirebaseDataConnectImpl.googApiClientHeaderValue(callerSdkType: CallerSdkType): String =
   grpcRPCs.grpcMetadata.googApiClientHeaderValue(callerSdkType)
+
+private fun <T> List<T>.secondLast(): T = get(size - 2)
+
+private object ZeroJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.5
+}
+
+private object MinJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 0.0
+}
+
+private object MaxJitterRandom : Random() {
+  override fun nextBits(bitCount: Int): Int = 0
+  override fun nextDouble(): Double = 1.0
+}
+
+private class SequenceRandom(jitters: Sequence<Double>) : Random() {
+
+  private val lock = ReentrantLock()
+  private val iterator = jitters.iterator()
+
+  override fun nextBits(bitCount: Int): Int = 0
+
+  override fun nextDouble(): Double {
+    return lock.withLock { iterator.next() + 0.5 }
+  }
+}

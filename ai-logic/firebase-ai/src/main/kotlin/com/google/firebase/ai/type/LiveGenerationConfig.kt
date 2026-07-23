@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -58,6 +57,8 @@ import kotlinx.serialization.Serializable
  * @property outputAudioTranscription Specifies the configuration for transcribing output audio from
  * the model.
  *
+ * @property realtimeInputConfig Configures realtime input for the session.
+ *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
@@ -76,6 +77,7 @@ private constructor(
   internal val inputAudioTranscription: AudioTranscriptionConfig?,
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
   internal val contextWindowCompression: ContextWindowCompressionConfig?,
+  internal val realtimeInputConfig: RealtimeInputConfig?,
 ) {
 
   /**
@@ -105,6 +107,8 @@ private constructor(
    * @property outputAudioTranscription see [LiveGenerationConfig.outputAudioTranscription]
    *
    * @property contextWindowCompression see [LiveGenerationConfig.contextWindowCompression]
+   *
+   * @property realtimeInputConfig see [LiveGenerationConfig.realtimeInputConfig]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
@@ -118,6 +122,7 @@ private constructor(
     @JvmField public var inputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var contextWindowCompression: ContextWindowCompressionConfig? = null
+    @JvmField public var realtimeInputConfig: RealtimeInputConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -153,6 +158,10 @@ private constructor(
         this.contextWindowCompression = config
       }
 
+    public fun setRealtimeInputConfig(config: RealtimeInputConfig): Builder = apply {
+      this.realtimeInputConfig = config
+    }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(
@@ -167,6 +176,7 @@ private constructor(
         inputAudioTranscription = inputAudioTranscription,
         outputAudioTranscription = outputAudioTranscription,
         contextWindowCompression = contextWindowCompression,
+        realtimeInputConfig = realtimeInputConfig,
       )
   }
 
@@ -187,13 +197,13 @@ private constructor(
   @Serializable
   internal data class Internal(
     val temperature: Float?,
-    @SerialName("top_p") val topP: Float?,
-    @SerialName("top_k") val topK: Int?,
-    @SerialName("max_output_tokens") val maxOutputTokens: Int?,
-    @SerialName("presence_penalty") val presencePenalty: Float? = null,
-    @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null,
-    @SerialName("response_modalities") val responseModalities: List<String>? = null
+    val topP: Float?,
+    val topK: Int?,
+    val maxOutputTokens: Int?,
+    val presencePenalty: Float? = null,
+    val frequencyPenalty: Float? = null,
+    val speechConfig: SpeechConfig.Internal? = null,
+    val responseModalities: List<String>? = null
   )
 
   public companion object {

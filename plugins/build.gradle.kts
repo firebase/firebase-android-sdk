@@ -46,14 +46,14 @@ spotless {
 // https://maven.google.com/web/index.html?q=perf-plugin#com.google.firebase:perf-plugin
 // The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
 // Refer go/fireperf-plugin-test-on-head for more details.
-val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
+val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "2.0.2"
 
 dependencies {
   // Firebase performance plugin, it should be added here because of how gradle dependency
   // resolution works, otherwise it breaks Fireperf Test Apps.
   // See https://github.com/gradle/gradle/issues/12286
   implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
-  implementation(kotlin("gradle-plugin", "1.8.22"))
+  implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
   implementation(libs.org.json)
   implementation(libs.bundles.maven.resolver)
 

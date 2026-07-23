@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,11 +30,15 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.AppCheckToken;
+import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
+import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
 import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.inject.Provider;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import org.json.JSONObject;
@@ -41,6 +46,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -48,6 +54,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLog;
 
 /** Tests for {@link DebugAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
@@ -90,6 +97,8 @@ public class DebugAppCheckProviderTest {
         .thenReturn(ApplicationProvider.getApplicationContext());
     when(mockFirebaseApp.getPersistenceKey()).thenReturn(PERSISTENCE_KEY);
     when(mockFirebaseApp.getOptions()).thenReturn(FIREBASE_OPTIONS);
+    when(mockFirebaseApp.get(FirebaseAppCheck.class))
+        .thenReturn(mock(DefaultFirebaseAppCheck.class, Answers.RETURNS_MOCKS));
 
     storageHelper = new StorageHelper(ApplicationProvider.getApplicationContext(), PERSISTENCE_KEY);
   }
@@ -115,6 +124,51 @@ public class DebugAppCheckProviderTest {
               TestOnlyExecutors.background(),
               TestOnlyExecutors.blocking());
         });
+  }
+
+  @Test
+  public void testPublicConstructor_logsDebugSecret() {
+    ShadowLog.clear();
+    Provider<InternalDebugSecretProvider> debugSecretProvider = () -> null;
+    new DebugAppCheckProvider(
+        mockFirebaseApp, debugSecretProvider, liteExecutor, backgroundExecutor, blockingExecutor);
+
+    String debugSecret = storageHelper.retrieveDebugSecret();
+    assertThat(debugSecret).isNotNull();
+
+    boolean foundLog =
+        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
+            .anyMatch(
+                log ->
+                    log.msg.equals(
+                        "Enter this debug secret ("
+                            + debugSecret
+                            + ") into the allow list in the Firebase Console for your project: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
+    assertThat(foundLog).isTrue();
+  }
+
+  @Test
+  public void testPublicConstructor_customDebugSecretProvider_logsDebugSecret() {
+    ShadowLog.clear();
+    Provider<InternalDebugSecretProvider> debugSecretProvider = () -> () -> DEBUG_SECRET;
+    new DebugAppCheckProvider(
+        mockFirebaseApp, debugSecretProvider, liteExecutor, backgroundExecutor, blockingExecutor);
+
+    boolean foundLog =
+        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
+            .anyMatch(
+                log ->
+                    log.msg.equals(
+                        "Enter this debug secret ("
+                            + DEBUG_SECRET
+                            + ") into the allow list in the Firebase Console for your project: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
+    assertThat(foundLog).isTrue();
   }
 
   @Test
@@ -176,6 +230,37 @@ public class DebugAppCheckProviderTest {
     assertThat(task.isSuccessful()).isFalse();
     Exception exception = task.getException();
     assertThat(exception).isInstanceOf(IOException.class);
+  }
+
+  @Test
+  public void exchangeDebugToken_onFailure_logsError() throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(new IOException());
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+
+    boolean foundLog =
+        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
+            .anyMatch(
+                log ->
+                    log.msg.equals(
+                        "Failed to exchange debug token ("
+                            + DEBUG_SECRET
+                            + "). If you haven't registered it, "
+                            + "you can do so in the Firebase Console: "
+                            + String.format(
+                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                                PROJECT_ID, APP_ID)));
+    assertThat(foundLog).isTrue();
   }
 
   @Test

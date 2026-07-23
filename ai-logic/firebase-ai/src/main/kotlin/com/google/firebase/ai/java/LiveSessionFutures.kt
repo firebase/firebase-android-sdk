@@ -221,6 +221,18 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
 
   /**
+   * Manually marks the start of user activity. Required only when automatic activity detection is
+   * disabled.
+   */
+  public abstract fun sendStartActivityRealtime(): ListenableFuture<Unit>
+
+  /**
+   * Manually marks the end of user activity. Required only when automatic activity detection is
+   * disabled.
+   */
+  public abstract fun sendStopActivityRealtime(): ListenableFuture<Unit>
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
@@ -293,6 +305,12 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun sendTextRealtime(text: String): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.sendTextRealtime(text) }
+
+    override fun sendStartActivityRealtime(): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendStartActivityRealtime() }
+
+    override fun sendStopActivityRealtime(): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendStopActivityRealtime() }
 
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }

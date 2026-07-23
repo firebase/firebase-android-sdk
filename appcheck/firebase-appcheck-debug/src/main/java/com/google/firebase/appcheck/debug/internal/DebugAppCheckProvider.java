@@ -18,6 +18,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -67,6 +68,17 @@ public class DebugAppCheckProvider implements AppCheckProvider {
         debugSecret == null
             ? determineDebugSecret(firebaseApp, backgroundExecutor)
             : Tasks.forResult(debugSecret);
+    this.debugSecretTask.addOnSuccessListener(liteExecutor, this::logDebugSecret);
+  }
+
+  private void logDebugSecret(String secret) {
+    String consoleUrl = getConsoleUrl();
+    String message =
+        "Enter this debug secret ("
+            + secret
+            + ") into the allow list in the Firebase Console for your project: "
+            + consoleUrl;
+    Log.d(TAG, message);
   }
 
   @VisibleForTesting
@@ -98,10 +110,6 @@ public class DebugAppCheckProvider implements AppCheckProvider {
             debugSecret = UUID.randomUUID().toString();
             storageHelper.saveDebugSecret(debugSecret);
           }
-          Log.d(
-              TAG,
-              "Enter this debug secret into the allow list in the Firebase Console for your project: "
-                  + debugSecret);
           taskCompletionSource.setResult(debugSecret);
         });
     return taskCompletionSource.getTask();
@@ -127,16 +135,46 @@ public class DebugAppCheckProvider implements AppCheckProvider {
               ExchangeDebugTokenRequest request =
                   new ExchangeDebugTokenRequest(debugSecret, isLimitedUseToken);
               return Tasks.call(
-                  blockingExecutor,
-                  () ->
-                      networkClient.exchangeAttestationForAppCheckToken(
-                          request.toJsonString().getBytes(UTF_8),
-                          NetworkClient.DEBUG,
-                          retryManager));
+                      blockingExecutor,
+                      () ->
+                          networkClient.exchangeAttestationForAppCheckToken(
+                              request.toJsonString().getBytes(UTF_8),
+                              NetworkClient.DEBUG,
+                              retryManager))
+                  .addOnFailureListener(liteExecutor, e -> logDebugTokenExchangeError(debugSecret));
             })
         .onSuccessTask(
             liteExecutor,
             response ->
                 Tasks.forResult(DefaultAppCheckToken.constructFromAppCheckTokenResponse(response)));
+  }
+
+  private void logDebugTokenExchangeError(String debugSecret) {
+    String consoleUrl = getConsoleUrl();
+    if (consoleUrl != null) {
+      Log.w(
+          TAG,
+          "Failed to exchange debug token ("
+              + debugSecret
+              + "). If you haven't registered it, you can do so in the Firebase Console: "
+              + consoleUrl);
+    }
+  }
+
+  @Nullable
+  private String getConsoleUrl() {
+    String projectId = networkClient.getProjectId();
+    String appId = networkClient.getAppId();
+    if (isNullOrEmpty(projectId) || isNullOrEmpty(appId)) {
+      return null;
+    }
+    return "https://console.firebase.google.com/project/"
+        + projectId
+        + "/appcheck/apps?selectedAppId="
+        + appId;
+  }
+
+  private static boolean isNullOrEmpty(@Nullable String str) {
+    return str == null || str.isEmpty();
   }
 }

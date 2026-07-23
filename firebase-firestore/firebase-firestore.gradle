@@ -59,14 +59,13 @@ protobuf {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.firestore"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
@@ -121,7 +120,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
 
 }
 

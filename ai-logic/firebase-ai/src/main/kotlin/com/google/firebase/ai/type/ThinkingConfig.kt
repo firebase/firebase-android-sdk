@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -107,9 +106,9 @@ private constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("thinking_budget") val thinkingBudget: Int? = null,
+    val thinkingBudget: Int? = null,
     val includeThoughts: Boolean? = null,
-    @SerialName("thinking_level") val thinkingLevel: ThinkingLevel.Internal? = null,
+    val thinkingLevel: ThinkingLevel.Internal? = null,
   )
 }
 
