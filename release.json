@@ -1,0 +1,16 @@
+{
+    "name": "m184",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-ml-modeldownloader",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}
