@@ -244,7 +244,7 @@ def delete_comment_if_exists(repo, pr_number, token):
                     print(f"Deleted existing comment {comment_id}")
             except Exception as e:
                 print(f"Error deleting comment: {e}", file=sys.stderr)
-            break
+
 
 def main():
     modified_files = get_modified_files()
