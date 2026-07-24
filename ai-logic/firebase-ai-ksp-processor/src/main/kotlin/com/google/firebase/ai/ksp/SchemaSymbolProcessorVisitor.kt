@@ -25,12 +25,18 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -54,6 +60,11 @@ internal class SchemaSymbolProcessorVisitor(
     }
     val generatedSchemaFile = generateFileSpec(classDeclaration)
     generatedSchemaFile.writeTo(
+      codeGenerator,
+      Dependencies(true, containingFile),
+    )
+    val companionFile = generateMlKitCompanionFileSpec(classDeclaration)
+    companionFile.writeTo(
       codeGenerator,
       Dependencies(true, containingFile),
     )
@@ -247,5 +258,123 @@ internal class SchemaSymbolProcessorVisitor(
     guideValues.format?.let { builder.addStatement("format = %S,", it) }
     builder.addStatement("nullable = %L)", className.isNullable).unindent()
     return builder.build()
+  }
+
+  private fun isGenerableClass(type: KSType): Boolean {
+    return type.declaration.annotations.any { it.shortName.getShortName() == "Generable" } ||
+      (type.declaration as? KSClassDeclaration)?.modifiers?.contains(Modifier.DATA) == true &&
+        !type.declaration.qualifiedName?.asString()!!.startsWith("kotlin.")
+  }
+
+  private fun isListOfGenerableClass(type: KSType): Boolean {
+    val qualifiedName = type.declaration.qualifiedName?.asString()
+    if (qualifiedName == "kotlin.collections.List" || qualifiedName == "java.util.List") {
+      val argType = type.arguments.firstOrNull()?.type?.resolve()
+      if (argType != null) {
+        return isGenerableClass(argType)
+      }
+    }
+    return false
+  }
+
+  private fun mapToMlKitCompanionType(type: KSType, packageName: String): TypeName {
+    if (isListOfGenerableClass(type)) {
+      val argType = type.arguments.first()!!.type!!.resolve()
+      val argClassName =
+        ClassName(
+          argType.declaration.packageName.asString(),
+          "${argType.declaration.simpleName.asString()}_MlKitCompanion"
+        )
+      return ClassName("kotlin.collections", "List").parameterizedBy(argClassName)
+    } else if (isGenerableClass(type)) {
+      return ClassName(
+        type.declaration.packageName.asString(),
+        "${type.declaration.simpleName.asString()}_MlKitCompanion"
+      )
+    }
+    return type.toTypeName()
+  }
+
+  fun generateMlKitCompanionFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
+    val packageName = classDeclaration.packageName.asString()
+    val companionClassName = "${classDeclaration.simpleName.asString()}_MlKitCompanion"
+    val fileBuilder =
+      FileSpec.builder(packageName, companionClassName).addAnnotation(Generated::class)
+
+    val classBuilder = TypeSpec.classBuilder(companionClassName).addModifiers(KModifier.DATA)
+    val keepAnnotation = AnnotationSpec.builder(ClassName("androidx.annotation", "Keep")).build()
+    classBuilder.addAnnotation(keepAnnotation)
+
+    val generableAnn =
+      classDeclaration.annotations.firstOrNull { it.shortName.getShortName() == "Generable" }
+    val classDesc = getStringFromAnnotation(generableAnn, "description")
+    val mlkitGenerableBuilder =
+      AnnotationSpec.builder(
+        ClassName("com.google.mlkit.genai.structuredoutput.annotations", "Generable")
+      )
+    if (!classDesc.isNullOrEmpty()) {
+      mlkitGenerableBuilder.addMember("description = %S", classDesc)
+    }
+    classBuilder.addAnnotation(mlkitGenerableBuilder.build())
+
+    val primaryConstructor = FunSpec.constructorBuilder()
+    val toSdkBuilder =
+      FunSpec.builder("toSdk")
+        .addAnnotation(keepAnnotation)
+        .returns(ClassName(packageName, classDeclaration.simpleName.asString()))
+    val toSdkArgs = mutableListOf<String>()
+
+    classDeclaration.getAllProperties().forEach { property ->
+      val propName = property.simpleName.asString()
+      val propType = property.type.resolve()
+      val typeName = mapToMlKitCompanionType(propType, packageName)
+
+      val paramBuilder = ParameterSpec.builder(propName, typeName)
+      val propBuilder = PropertySpec.builder(propName, typeName).initializer(propName)
+
+      val guideAnn = property.annotations.firstOrNull { it.shortName.getShortName() == "Guide" }
+      if (guideAnn != null) {
+        val guideValues =
+          getGuideValuesFromAnnotation(guideAnn, getStringFromAnnotation(guideAnn, "description"))
+        val mlkitGuideBuilder =
+          AnnotationSpec.builder(
+            ClassName("com.google.mlkit.genai.structuredoutput.annotations", "Guide")
+          )
+        if (!guideValues.description.isNullOrEmpty())
+          mlkitGuideBuilder.addMember("description = %S", guideValues.description)
+        if (guideValues.minimum != null)
+          mlkitGuideBuilder.addMember("minimum = %L", guideValues.minimum)
+        if (guideValues.maximum != null)
+          mlkitGuideBuilder.addMember("maximum = %L", guideValues.maximum)
+        if (guideValues.minItems != null)
+          mlkitGuideBuilder.addMember("minItems = %L", guideValues.minItems)
+        if (guideValues.maxItems != null)
+          mlkitGuideBuilder.addMember("maxItems = %L", guideValues.maxItems)
+        if (!guideValues.format.isNullOrEmpty())
+          mlkitGuideBuilder.addMember("format = %S", guideValues.format)
+        paramBuilder.addAnnotation(mlkitGuideBuilder.build())
+      }
+
+      primaryConstructor.addParameter(paramBuilder.build())
+      classBuilder.addProperty(propBuilder.build())
+
+      if (isListOfGenerableClass(propType)) {
+        toSdkArgs.add("$propName = this.$propName.map { it.toSdk() }")
+      } else if (isGenerableClass(propType)) {
+        toSdkArgs.add("$propName = this.$propName.toSdk()")
+      } else {
+        toSdkArgs.add("$propName = this.$propName")
+      }
+    }
+
+    classBuilder.primaryConstructor(primaryConstructor.build())
+    toSdkBuilder.addStatement(
+      "return %T(\n  ${toSdkArgs.joinToString(",\n  ")}\n)",
+      ClassName(packageName, classDeclaration.simpleName.asString())
+    )
+    classBuilder.addFunction(toSdkBuilder.build())
+
+    fileBuilder.addType(classBuilder.build())
+    return fileBuilder.build()
   }
 }

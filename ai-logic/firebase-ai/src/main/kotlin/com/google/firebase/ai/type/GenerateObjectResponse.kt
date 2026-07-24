@@ -27,8 +27,23 @@ import kotlinx.serialization.json.Json
 public class GenerateObjectResponse<T : Any>
 internal constructor(
   public val response: GenerateContentResponse,
-  internal val schema: JsonSchema<T>
+  internal val schema: JsonSchema<T>?,
+  internal var instances: MutableList<T?>?
 ) {
+
+  internal constructor(
+    response: GenerateContentResponse,
+    schema: JsonSchema<T>
+  ) : this(response, schema = schema, instances = null)
+
+  internal constructor(
+    response: GenerateContentResponse,
+    instances: List<T>
+  ) : this(
+    response,
+    schema = null,
+    instances = (instances as? MutableList<T?>) ?: instances.toMutableList()
+  )
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this
@@ -40,17 +55,30 @@ internal constructor(
    */
   @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? {
-    val candidate = response.candidates[candidateIndex]
+    // 1. Fast Path / Cache Hit: Return immediately if already resolved or in memory
+    instances?.getOrNull(candidateIndex)?.let {
+      return it
+    }
 
-    val deserializer = schema.getSerializer()
+    // 2. Cache Miss (Cloud response on first access): Deserialize using schema
+    if (schema == null) return null
+    val candidate = response.candidates.getOrNull(candidateIndex) ?: return null
     val text =
       candidate.content.parts
         .filter { !it.isThought }
         .filterIsInstance<TextPart>()
         .joinToString(" ") { it.text }
-    if (text.isEmpty()) {
-      return null
+    if (text.isEmpty()) return null
+
+    val deserialized = Json.decodeFromString(schema.getSerializer(), text) as T?
+
+    // 3. Save to instances list for future accesses (lazy loading) and return
+    if (instances == null) {
+      instances = MutableList(response.candidates.size) { null }
     }
-    return Json.decodeFromString(deserializer, text) as T?
+    if (candidateIndex < (instances?.size ?: 0)) {
+      instances?.set(candidateIndex, deserialized)
+    }
+    return deserialized
   }
 }

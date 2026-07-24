@@ -36,6 +36,7 @@ dependencyResolutionManagement {
     google()
     mavenLocal()
     mavenCentral()
+    maven { url = uri("/Users/milamamat/Downloads/mlkit_genai_structured_output") }
   }
 }
 
