@@ -665,8 +665,10 @@ abstract class PublishingPlugin : Plugin<Project> {
       currentRelease.convention(project.provideProperty("currentRelease"))
       pastRelease.convention(project.provideProperty("pastRelease"))
       printReleaseConfig.convention(project.provideProperty("printOutput"))
-      commitsToIgnoreFile.convention(project.layout.projectDirectory.file("ignoreCommits.txt"))
-
+      project.layout.projectDirectory.file("ignoreCommits.txt").let {
+        if (it.asFile.exists())
+          commitsToIgnoreFile.convention(it)
+      }
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
       releaseReportJsonFile.convention(
         project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE)
