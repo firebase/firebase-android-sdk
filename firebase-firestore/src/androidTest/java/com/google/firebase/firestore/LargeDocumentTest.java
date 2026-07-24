@@ -35,6 +35,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * Tests for handling large documents in Firestore.
+ * <p>
+ * <b>How to run these tests:</b>
+ * <ul>
+ *   <li><b>Command Line:</b> {@code ./gradlew :firebase-firestore:connectedCheck -PrunLargeTests}</li>
+ *   <li><b>Android Studio:</b> Add {@code runLargeTests=true} to your root {@code gradle.properties},
+ *       sync the project, and click the Run button next to the class or test method.
+ *       (Remember to remove it when done to keep local builds fast).</li>
+ * </ul>
+ */
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public class LargeDocumentTest {
@@ -43,7 +54,7 @@ public class LargeDocumentTest {
   private static String unicodePayload;
   private static String asciiPayload;
 
-  // Exteneded timeout because these tests can be slow.
+  // Extended timeout because these tests can be slow.
   private static final int TIMEOUT_MS = 120000;
 
   private static String generateUnicodeString(int targetUtf8Bytes) {
@@ -83,8 +94,10 @@ public class LargeDocumentTest {
 
     Map<String, Object> dataUnicode = new HashMap<>();
     dataUnicode.put("chunk", unicodePayload);
+    dataUnicode.put("tag", "unicode_large_doc");
     Map<String, Object> dataAscii = new HashMap<>();
     dataAscii.put("chunk", asciiPayload);
+    dataAscii.put("tag", "ascii_large_doc");
 
     waitFor(docRef.set(dataUnicode));
     waitFor(docA.set(dataAscii));
@@ -306,10 +319,7 @@ public class LargeDocumentTest {
     waitFor(db.disableNetwork());
 
     Query query =
-        colRef
-            .whereGreaterThanOrEqualTo(FieldPath.documentId(), "doc_a")
-            .orderBy(FieldPath.documentId())
-            .limit(2);
+        colRef.whereEqualTo("tag", "ascii_large_doc").orderBy(FieldPath.documentId()).limit(2);
 
     // Execute the query offline
     QuerySnapshot cacheSnapshot = waitFor(query.get(Source.CACHE));
