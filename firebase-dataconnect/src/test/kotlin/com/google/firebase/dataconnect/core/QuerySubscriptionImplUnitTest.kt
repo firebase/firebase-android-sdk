@@ -2040,11 +2040,11 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `connection is kept alive for exactly 15 seconds after last subscriber unsubscribes`() =
-    testConnectionGracePeriod(Arb.long(0L until 15_000L)) { context ->
+  fun `connection is kept alive for exactly the grace period after last subscriber unsubscribes`() =
+    testConnectionGracePeriod(Arb.long(0L until CONNECTION_GRACE_PERIOD_MS)) { context ->
       context.clientCollector1.cancelAndIgnoreRemainingEvents()
 
-      // Wait a random duration less than 15 seconds
+      // Wait a random duration less than CONNECTION_GRACE_PERIOD_MS
       delay(context.delayMillis.milliseconds)
 
       // Verify that the connection is still open (no close event received on serverCollector)
@@ -2055,15 +2055,15 @@ class QuerySubscriptionImplUnitTest {
       context.serverCollector.awaitUntilClientClosesConnection()
       val time2 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
 
-      (time2 - time1) shouldBe (15_000L - context.delayMillis)
+      (time2 - time1) shouldBe (CONNECTION_GRACE_PERIOD_MS - context.delayMillis)
     }
 
   @Test
-  fun `re-subscribing within 15-second grace period keeps the connection alive and reuses it`() =
-    testConnectionGracePeriod(Arb.long(100L until 15_000L)) { context ->
+  fun `re-subscribing within grace period keeps the connection alive and reuses it`() =
+    testConnectionGracePeriod(Arb.long(100L until CONNECTION_GRACE_PERIOD_MS)) { context ->
       context.clientCollector1.cancelAndIgnoreRemainingEvents()
 
-      // Wait a random duration less than 15 seconds
+      // Wait a random duration less than CONNECTION_GRACE_PERIOD_MS
       delay(context.delayMillis.milliseconds)
 
       // Re-subscribe clientCollector2
@@ -2081,11 +2081,13 @@ class QuerySubscriptionImplUnitTest {
     }
 
   @Test
-  fun `re-subscribing after 15-second grace period establishes a new connection`() =
-    testConnectionGracePeriod(Arb.long(15_000L..100_000L)) { context ->
+  fun `re-subscribing after grace period establishes a new connection`() =
+    testConnectionGracePeriod(
+      Arb.long(CONNECTION_GRACE_PERIOD_MS..(CONNECTION_GRACE_PERIOD_MS * 4))
+    ) { context ->
       context.clientCollector1.cancelAndIgnoreRemainingEvents()
 
-      // Wait a random duration of at least 15 seconds
+      // Wait a random duration of at least CONNECTION_GRACE_PERIOD_MS
       delay(context.delayMillis.milliseconds)
 
       // Verify that the connection is closed
@@ -2395,3 +2397,14 @@ private class SequenceRandom(jitters: Sequence<Double>) : Random() {
     return lock.withLock { iterator.next() + 0.5 }
   }
 }
+
+/**
+ * The amount of time, in milliseconds, that [DataConnectBidiConnectStream] keeps the physical
+ * connection with the backend alive after the last subscriber unsubscribes. By keeping the
+ * connection alive for a short amount of time rather than closing it immediately it improves the
+ * latency and reduces the backend load if a new subscriber were to subscribe within this grace
+ * period. This rapid unsubscription and resubscription could happen, for example, between activity
+ * or fragment transitions in an application where the old activity/fragment unsubscribes in its
+ * onDestory() and the new activity/fragment subscribes in its onCreate().
+ */
+const val CONNECTION_GRACE_PERIOD_MS = 15_000L
