@@ -16,7 +16,6 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -72,7 +71,7 @@ public class WatchStream
    * will be included in the request. Results that affect the query will be streamed back as
    * WatchChange messages that reference the targetID included in query.
    */
-  public void watchQuery(TargetData targetData) {
+  public void watchQuery(RemoteTargetData targetData) {
     hardAssert(isOpen(), "Watching queries requires an open stream");
     ListenRequest.Builder request =
         ListenRequest.newBuilder()
@@ -88,12 +87,12 @@ public class WatchStream
   }
 
   /** Unregisters interest in the results of the query associated with the given target ID. */
-  public void unwatchTarget(int targetId) {
+  public void unwatchTarget(RemoteTargetId targetId) {
     hardAssert(isOpen(), "Unwatching targets requires an open stream");
     ListenRequest request =
         ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
-            .setRemoveTarget(targetId)
+            .setRemoveTarget(targetId.value())
             .build();
 
     writeRequest(request);

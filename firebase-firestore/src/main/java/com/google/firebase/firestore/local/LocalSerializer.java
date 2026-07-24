@@ -206,23 +206,23 @@ public final class LocalSerializer {
 
   com.google.firebase.firestore.proto.Target encodeTargetData(TargetData targetData) {
     hardAssert(
-        QueryPurpose.LISTEN.equals(targetData.getPurpose()),
+        QueryPurpose.LISTEN.equals(targetData.purpose),
         "Only queries with purpose %s may be stored, got %s",
         QueryPurpose.LISTEN,
-        targetData.getPurpose());
+        targetData.purpose);
 
     com.google.firebase.firestore.proto.Target.Builder result =
         com.google.firebase.firestore.proto.Target.newBuilder();
 
     result
-        .setTargetId(targetData.getTargetId())
-        .setLastListenSequenceNumber(targetData.getSequenceNumber())
+        .setTargetId(targetData.targetId)
+        .setLastListenSequenceNumber(targetData.sequenceNumber)
         .setLastLimboFreeSnapshotVersion(
-            rpcSerializer.encodeVersion(targetData.getLastLimboFreeSnapshotVersion()))
-        .setSnapshotVersion(rpcSerializer.encodeVersion(targetData.getSnapshotVersion()))
-        .setResumeToken(targetData.getResumeToken());
+            rpcSerializer.encodeVersion(targetData.lastLimboFreeSnapshotVersion))
+        .setSnapshotVersion(rpcSerializer.encodeVersion(targetData.snapshotVersion))
+        .setResumeToken(targetData.resumeToken);
 
-    TargetOrPipeline target = targetData.getTarget();
+    TargetOrPipeline target = targetData.target;
     if (target.isTarget()) {
       if (target.target().isDocumentQuery()) {
         result.setDocuments(rpcSerializer.encodeDocumentsTarget(target.target()));

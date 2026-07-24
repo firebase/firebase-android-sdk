@@ -917,8 +917,7 @@
   "Newer deleted docs from bundles should delete cached docs": {
     "describeName": "Bundles:",
     "itName": "Newer deleted docs from bundles should delete cached docs",
-    "tags": [
-    ],
+    "tags": [],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": true
@@ -1057,8 +1056,7 @@
   "Newer docs from bundles might lead to limbo doc": {
     "describeName": "Bundles:",
     "itName": "Newer docs from bundles might lead to limbo doc",
-    "tags": [
-    ],
+    "tags": [],
     "config": {
       "numClients": 1,
       "useEagerGCForMemory": false

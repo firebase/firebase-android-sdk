@@ -25,17 +25,17 @@ import java.util.Set;
  * An event from the RemoteStore. It is split into targetChanges (changes to the state or the set of
  * documents in our watched targets) and documentUpdates (changes to the actual documents).
  */
-public final class RemoteEvent {
+public final class RemoteEvent<T> {
   private final SnapshotVersion snapshotVersion;
-  private final Map<Integer, TargetChange> targetChanges;
-  private final Map<Integer, QueryPurpose> targetMismatches;
+  private final Map<T, TargetChange> targetChanges;
+  private final Map<T, QueryPurpose> targetMismatches;
   private final Map<DocumentKey, MutableDocument> documentUpdates;
   private final Set<DocumentKey> resolvedLimboDocuments;
 
   public RemoteEvent(
       SnapshotVersion snapshotVersion,
-      Map<Integer, TargetChange> targetChanges,
-      Map<Integer, QueryPurpose> targetMismatches,
+      Map<T, TargetChange> targetChanges,
+      Map<T, QueryPurpose> targetMismatches,
       Map<DocumentKey, MutableDocument> documentUpdates,
       Set<DocumentKey> resolvedLimboDocuments) {
     this.snapshotVersion = snapshotVersion;
@@ -51,7 +51,7 @@ public final class RemoteEvent {
   }
 
   /** Returns a map from target to changes to the target. */
-  public Map<Integer, TargetChange> getTargetChanges() {
+  public Map<T, TargetChange> getTargetChanges() {
     return targetChanges;
   }
 
@@ -59,7 +59,7 @@ public final class RemoteEvent {
    * Returns a map of targets that is known to be inconsistent, and the purpose for re-listening.
    * Listens for these targets should be re-established without resume tokens.
    */
-  public Map<Integer, QueryPurpose> getTargetMismatches() {
+  public Map<T, QueryPurpose> getTargetMismatches() {
     return targetMismatches;
   }
 
