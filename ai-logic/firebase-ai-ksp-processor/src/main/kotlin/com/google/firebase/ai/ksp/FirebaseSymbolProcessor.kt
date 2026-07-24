@@ -32,8 +32,10 @@ public class FirebaseSymbolProcessor(
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
       .filterIsInstance<KSClassDeclaration>()
-      .map { it to SchemaSymbolProcessorVisitor(logger, codeGenerator) }
-      .forEach { (klass, visitor) -> visitor.visitClassDeclaration(klass, Unit) }
+      .forEach { klass ->
+        SchemaSymbolProcessorVisitor(logger, codeGenerator).visitClassDeclaration(klass, Unit)
+        MlKitClassSymbolProcessorVisitor(logger, codeGenerator).visitClassDeclaration(klass, Unit)
+      }
 
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Tool")

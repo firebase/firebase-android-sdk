@@ -53,6 +53,34 @@ internal class GenerativeModelImpl(
       throw getMappingException(e)
     }
 
+  override suspend fun generateObject(
+    request: GenerateContentRequest,
+    shadowClass: Class<*>
+  ): GenerateContentResponse =
+    try {
+      val mlkitRequest = request.toMlKit()
+      val response: com.google.mlkit.genai.prompt.GenerateContentResponse =
+        try {
+          val method =
+            mlkitModel::class.java.methods.firstOrNull {
+              (it.name == "generateContent" || it.name == "generateObject") &&
+                it.parameterTypes.size == 2 &&
+                it.parameterTypes[1].isAssignableFrom(Class::class.java)
+            }
+          if (method != null) {
+            method.invoke(mlkitModel, mlkitRequest, shadowClass)
+              as com.google.mlkit.genai.prompt.GenerateContentResponse
+          } else {
+            mlkitModel.generateContent(mlkitRequest)
+          }
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+          throw (e.targetException as? GenAiException) ?: e
+        }
+      response.toInterop(mlkitModel.getBaseModelName())
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
   override suspend fun countTokens(request: GenerateContentRequest): CountTokensResponse =
     try {
       val response = mlkitModel.countTokens(request.toMlKit())
