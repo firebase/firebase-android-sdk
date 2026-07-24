@@ -93,9 +93,11 @@ import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -2047,8 +2049,14 @@ class QuerySubscriptionImplUnitTest {
       // Wait a random duration less than CONNECTION_GRACE_PERIOD_MS
       delay(context.delayMillis.milliseconds)
 
-      // Verify that the connection is still open (no close event received on serverCollector)
-      context.serverCollector.asChannel().tryReceive().getOrNull() shouldBe null
+      // Verify that the connection is still open (no close event received on serverCollector).
+      // Based on the timing, we _may_ receive the "cancel" event, which is expected.
+      val event = context.serverCollector.asChannel().tryReceive().getOrNull()
+      if (event != null) {
+        val streamRequest = event.shouldBeInstanceOf<StreamRequestReceived>().streamRequest
+        streamRequest.hasCancel().shouldBeTrue()
+        context.serverCollector.asChannel().tryReceive().getOrNull().shouldBeNull()
+      }
 
       // Measure the remaining time until the client closes the connection
       val time1 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
