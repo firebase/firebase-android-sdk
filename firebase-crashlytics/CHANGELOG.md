@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added toggle for Firebase Crashlytics logging [#2973]
+
 # 20.1.0
 
 - [feature] Added OOM and Anomaly trigger collection for the ProfilingManager API [#8343]
