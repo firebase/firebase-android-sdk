@@ -35,6 +35,8 @@ import org.gradle.api.logging.Logger
 internal object CrashlyticsBuildtools {
   const val BLANK_MAPPING_FILE_ID = Buildtools.DUMMY_MAPPING_ID
 
+  const val USE_R8_MAP_ID = "11111111111111111111111111111111"
+
   private const val BUILDTOOLS_PROPERTY = "com.google.firebase.crashlytics.buildtools"
   private const val DEBUG_LOG_REDIRECT_PROPERTY = "com.google.firebase.crashlytics.logDebug"
   private const val FAKE_OUTPUT_PROPERTY = "com.google.firebase.crashlytics.fakeOutput"
