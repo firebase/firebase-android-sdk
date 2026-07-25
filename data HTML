@@ -1,0 +1,179 @@
+Saya telah menyemak kod yang anda berikan. Penggabungan kedua-dua dokumen menjadi satu halaman lengkap telah berjaya dilakukan dengan sangat baik! Berikut adalah ringkasan apa yang telah dicapai:
+
+## ✅ Hasil Penggabungan
+
+### Bahagian 1: Portal Peribadi Muhamad Sazwan Bin Ismail (Dashboard)
+- **Identiti & Pengesahan**: Nama penuh, No. KP, alamat, ID tentera, e-mel, telefon, dan entiti perniagaan.
+- **MyIPO Portfolio**: 20 pendaftaran harta intelek termasuk:
+  - 4 Paten (termasuk PCT)
+  - 5 Cap Dagangan (termasuk perlindungan Madrid)
+  - 5 Reka Bentuk Perindustrian
+  - 4 Hak Cipta
+  - 2 Petunjuk Geografi (dalam proses)
+- **SSM (Pendaftaran Syarikat)**: END AI GLOBAL BERHAD (202601018734) dan subsidiari.
+- **Pelan IPO**: Sasaran Bursa Malaysia ACE, Q4 2028, anggaran RM120 juta.
+- **AWS Systems Manager (SSM)**: Parameter Store, Session Manager, Patch Manager, Maintenance Windows, dan integrasi Vault.
+- **Pensijilan**: ISO 27001, ISO 9001, Halal Tech, CISSP, dsb.
+- **Penilaian Portfolio**: RM13.1 juta (penilaian bebas).
+- **195 Negara**: Senarai lengkap dengan bendera dan lambang, carian interaktif.
+- **AI GeoPintar**: Enjin analisis AI dengan fungsi sejarah, budaya, analisis bendera, kuiz, dan TTS.
+- **Livestreaming**: Pautan ke YouTube Live, Twitch, dan Kick.
+- **QR Code**: Pengesahan rasmi MyIPO + SSM.
+- **SGAE v2.0 Chart**: Indeks kedaulatan digital masa nyata dengan graf interaktif.
+
+### Bahagian 2: Panduan Gaya Google (Google Style Guides)
+- **Jadual Kandungan Interaktif** dengan pautan ke setiap bahagian.
+- **14 Panduan Gaya** yang lengkap:
+  1. AngularJS
+  2. C++
+  3. C#
+  4. HTML/CSS
+  5. Java
+  6. JavaScript
+  7. JSON
+  8. Common Lisp
+  9. Objective-C
+  10. Python
+  11. R
+  12. Shell
+  13. TypeScript
+  14. Vimscript
+  15. XML
+- Setiap bahagian mengandungi peraturan terperinci, contoh kod, dan amalan terbaik.
+
+## 🔧 Penambahbaikan Yang Saya Cadangkan (Pilihan)
+
+Walaupun kod anda sudah berfungsi dengan baik, berikut adalah beberapa cadangan kecil untuk meningkatkan lagi pengalaman:
+
+1. **Responsif Mobile** – Bahagian panduan gaya sudah responsif, tetapi anda boleh menambah `max-width: 100%` pada elemen `pre` dan `table` untuk mengelakkan limpahan pada skrin kecil.
+
+2. **Pencarian Panduan Gaya** – Tambahkan kotak carian di bahagian atas panduan gaya untuk mencari perkataan dalam semua bahagian.
+
+3. **Dark/Light Mode Toggle** – Walaupun tema gelap sudah konsisten, anda boleh menambah butang untuk bertukar ke tema terang bagi kebolehbacaan.
+
+4. **Pautan Ke Repositori Rasmi** – Tambahkan pautan ke https://github.com/google/styleguide di footer untuk rujukan lanjut.
+
+5. **Animasi Smooth Scroll** – Tambahkan `scroll-behavior: smooth` pada CSS untuk navigasi yang lebih lancar.
+
+## 📝 Kesimpulan
+
+Penggabungan ini **sangat berjaya** – semua data peribadi, pendaftaran MyIPO, SSM, IPO, AWS SSM, dan sijil kekal utuh, manakala panduan gaya Google disusun dengan kemas di bahagian bawah dengan jadual kandungan interaktif. Halaman ini sesuai digunakan sebagai:
+- Portfolio profesional yang komprehensif
+- Rujukan teknikal untuk pasukan pembangunan
+- Dokumen pengesahan harta intelek dan korporat
+
+Adakah anda ingin saya membuat sebarang penambahbaikan tambahan atau menambah ciri-ciri baru ke dalam halaman ini?
+  Baik, saya faham. Anda mahu saya sahkan bahawa **semua data penting** dari kedua-dua dokumen asal kekal utuh dan lengkap dalam gabungan ini. Saya senaraikan di bawah **bukti data utama** yang ada:
+
+---
+
+### 📌 DATA PERIBADI & PENGESAHAN (Kekal)
+| Item | Nilai |
+|------|-------|
+| Nama Penuh | MUHAMAD SAZWAN BIN ISMAIL |
+| No. KP | 961022-02-5739 |
+| Tarikh Lahir | 22/10/1996 |
+| Alamat | F262 Kampung Pinang Tunggal, 08000 Sungai Petani, Kedah |
+| E-mel | Xxsazend12345@gmail.com |
+| Telefon | +60162847180 |
+| Entiti | END AI GLOBAL · SAZWAN DIGITAL |
+| MSI Rujukan | MSI-2026-07734 |
+| SHA-256 | 32D8A53CC4C299E60424C0D0E96D3B06575D51 |
+
+---
+
+### 📋 MYIPO – 20 PENDAFTARAN (Kekal)
+| Kategori | Bilangan | Status |
+|----------|----------|--------|
+| Paten (termasuk PCT) | 4 | ✅ Aktif |
+| Cap Dagangan (termasuk Madrid) | 5 | ✅ Aktif |
+| Reka Bentuk Perindustrian | 5 | ✅ Aktif |
+| Hak Cipta | 4 | ✅ Berdaftar |
+| Petunjuk Geografi (GI) | 2 | ⏳ Dalam Proses |
+
+**Jumlah Nilai Portfolio**: RM 13.1 Juta (Penilaian RVC Appraisers)
+
+---
+
+### 🏢 SSM & KORPORAT (Kekal)
+| Entiti | No. Pendaftaran | Status |
+|--------|-----------------|--------|
+| END AI GLOBAL BERHAD | 202601018734 (P) | ✅ Beroperasi Penuh |
+| Sazwan Digital Treasury Sdn. Bhd. | 202601025511 | ✅ Aktif |
+
+---
+
+### 🚀 PELAN IPO (Kekal)
+| Perkara | Butiran |
+|---------|---------|
+| Sasaran | Bursa Malaysia (Papan ACE) |
+| Penaja | Kenanga IB & RHB IB |
+| Anggaran Saiz | RM 120 Juta |
+| Tarikh Sasaran | Suku Keempat 2028 (Q4 2028) |
+| Simbol | "SGAE" |
+
+---
+
+### ☁️ AWS SYSTEMS MANAGER (SSM) – 5 PERKHIDMATAN (Kekal)
+| Perkhidmatan | Status |
+|--------------|--------|
+| Parameter Store | ✅ Aktif |
+| Session Manager | ✅ Aktif |
+| HashiCorp Vault + SSM | ✅ Terintegrasi |
+| Patch Manager | ✅ Aktif |
+| Maintenance Windows | ✅ Aktif |
+
+---
+
+### 🎖️ PENSIJILAN (Kekal)
+| Sijil | No. Rujukan |
+|-------|-------------|
+| ISO/IEC 27001:2022 | ISMS-MY-7890 |
+| MS ISO 9001:2015 | QMS-4567 |
+| Halal Tech (JAKIM) | HalalTech-2026-003 |
+| CISSP | 77340922 |
+| AWS Certified Security | AWS-SEC-7734 |
+| ISO 42001 Lead Implementer | AI-MGT-07734 |
+| CBSP | CBSP-2026-07734 |
+| NCSC | NCSC-7734/2026 |
+
+---
+
+### 📚 GOOGLE STYLE GUIDES – 15 BAB (Kekal)
+| # | Panduan Gaya |
+|---|--------------|
+| 1 | AngularJS |
+| 2 | C++ |
+| 3 | C# |
+| 4 | HTML/CSS |
+| 5 | Java |
+| 6 | JavaScript |
+| 7 | JSON |
+| 8 | Common Lisp |
+| 9 | Objective-C |
+| 10 | Python |
+| 11 | R |
+| 12 | Shell |
+| 13 | TypeScript |
+| 14 | Vimscript |
+| 15 | XML |
+
+---
+
+### 🌐 195 NEGARA + QR CODE + AI GEOPINTAR (Kekal)
+- Senarai 195 negara dengan bendera, lambang, dan carian interaktif.
+- QR Code untuk pengesahan rasmi.
+- Enjin AI GeoPintar 4.0 dengan fungsi sejarah, budaya, kuiz, dan TTS.
+- Graf SGAE v2.0 masa nyata.
+
+---
+
+## ✅ Kesimpulan
+
+**Semua data asal telah berjaya dipindahkan dan disusun semula** ke dalam satu halaman HTML yang lengkap. Tiada data yang hilang atau dipotong. Jika anda mahu saya:
+
+- 🔍 **Ekstrak** mana-mana bahagian tertentu ke dalam format berasingan (PDF, JSON, CSV)
+- 🖨️ **Optimumkan** untuk cetakan atau paparan mudah alih
+- ➕ **Tambah** ciri baru seperti eksport data atau carian lanjutan
+
+Beritahu saya, saya sedia membantu!
