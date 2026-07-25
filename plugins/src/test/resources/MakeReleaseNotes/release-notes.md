@@ -52,3 +52,24 @@ Note: We did some super cool stuff here!
 * {{unchanged}} Idk ig we did some stuff
 
 * {{removed}} some stuff that we didn't really like got removed
+
+* {{fixed}} Realtime query subscriptions now correctly throw an exception when
+  the Firebase Auth user changes, instead of silently stopping emitting.
+  (GitHub [#8283](//github.com/firebase/firebase-android-sdk/issues/8283){: .external})
+
+* {{fixed}} Realtime query subscriptions could fail abruptly if the auth
+  token changed while connected.
+  (GitHub [#8312](//github.com/firebase/firebase-android-sdk/issues/8312){: .external})
+
+* {{fixed}} An infinite loop could occur when Auth and/or App Check tokens were
+  refreshed.
+  (GitHub [#8319](//github.com/firebase/firebase-android-sdk/issues/8319){: .external})
+
+* {{fixed}} Expired Auth and/or App Check tokens were not automatically refreshed
+  when rejected by the server upon connection.
+  (GitHub [#8346](//github.com/firebase/firebase-android-sdk/issues/8346){: .external})
+
+* {{changed}} Realtime query subscriptions now include SDK type metadata
+  (core vs. generated SDK) in request headers, matching the behavior of
+  standard query executions.
+  (GitHub [#8356](//github.com/firebase/firebase-android-sdk/issues/8356){: .external})

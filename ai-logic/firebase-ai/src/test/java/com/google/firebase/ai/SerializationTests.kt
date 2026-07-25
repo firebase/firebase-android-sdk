@@ -205,10 +205,10 @@ internal class SerializationTests {
         "id": "ImageConfig",
         "type": "object",
         "properties": {
-          "aspect_ratio": {
+          "aspectRatio": {
             "type": "string"
           },
-          "image_size": {
+          "imageSize": {
             "type": "string"
           }
         }
@@ -584,7 +584,7 @@ internal class SerializationTests {
                 "${'$'}ref": "TemplateTool"
               }
             },
-            "tool_config": {
+            "toolConfig": {
               "${'$'}ref": "ToolConfig"
             }
           }

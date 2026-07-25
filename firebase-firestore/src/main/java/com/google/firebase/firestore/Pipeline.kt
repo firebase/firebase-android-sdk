@@ -85,7 +85,7 @@ import com.google.firestore.v1.Value
  * ```
  *
  * **Note on Execution:** The stages are conceptual. The Firestore backend may optimize execution
- * (e.g., reordering or merging stages) as long as the final result remains the same.
+ * (for example, reordering or merging stages) as long as the final result remains the same.
  *
  * **Important Limitations:**
  * - Pipelines operate on a **request/response basis only**.
@@ -590,7 +590,7 @@ internal constructor(
    * - **AggregateFunctions:** One or more accumulation operations to perform within each group.
    * These are defined using [AliasedAggregate] expressions, which are typically created by calling
    * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
-   * (e.g., sum, average, count) based on the documents within its group.
+   * (for example, sum, average, count) based on the documents within its group.
    *
    * Example:
    * ```kotlin
@@ -623,7 +623,7 @@ internal constructor(
    * - **AggregateFunctions:** One or more accumulation operations to perform within each group.
    * These are defined using [AliasedAggregate] expressions, which are typically created by calling
    * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
-   * (e.g., sum, average, count) based on the documents within its group.
+   * (for example, sum, average, count) based on the documents within its group.
    *
    * @param aggregateStage An [AggregateStage] object that specifies the grouping fields (if any)
    * and the aggregation operations to perform.
@@ -1387,7 +1387,7 @@ internal constructor(
   /**
    * Retrieves the field specified by [field].
    *
-   * @param field The field path (e.g. "foo" or "foo.bar") to a specific field.
+   * @param field The field path (for example, "foo" or "foo.bar") to a specific field.
    * @return The data at the specified field location or null if no such field exists.
    */
   fun get(field: String): Any? = get(FieldPath.fromDotSeparatedPath(field))

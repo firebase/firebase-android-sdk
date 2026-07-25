@@ -906,7 +906,7 @@ public class FirebaseFirestore {
    * }</pre>
    *
    * <p><b>Note on Execution:</b> The stages are conceptual. The Firestore backend may
-   * optimize execution (e.g., reordering or merging stages) as long as the
+   * optimize execution (for example, reordering or merging stages) as long as the
    * final result remains the same.
    *
    * <p><b>Important Limitations:</b>

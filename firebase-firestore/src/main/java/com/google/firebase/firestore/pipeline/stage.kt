@@ -499,7 +499,7 @@ internal constructor(
  * - **AggregateFunctions:** One or more accumulation operations to perform within each group. These
  * are defined using [AliasedAggregate] expressions, which are typically created by calling
  * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
- * (e.g., sum, average, count) based on the documents within its group.
+ * (for example, sum, average, count) based on the documents within its group.
  */
 class AggregateStage
 private constructor(

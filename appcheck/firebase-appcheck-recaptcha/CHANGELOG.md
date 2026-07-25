@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Initialization now requires the site key to be passed as a parameter. (#8457)
+
 # 19.1.0
 
 - [changed] Added warning logs when failing to initialize the reCAPTCHA client or

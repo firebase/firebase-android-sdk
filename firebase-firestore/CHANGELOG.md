@@ -1,6 +1,7 @@
 # Unreleased
 
 - [changed] Increased the default gRPC flow control window size from 64KB to 256KB to speed up large document reads, and added support for configuring this window size via `FirebaseFirestoreSettings.Builder.setGrpcFlowControlWindow()`.
+- [changed] Increased the gRPC maximum inbound message size limit to 17MB to support downloading Cloud Firestore documents of up to 16MB.
 
 # 26.4.1
 

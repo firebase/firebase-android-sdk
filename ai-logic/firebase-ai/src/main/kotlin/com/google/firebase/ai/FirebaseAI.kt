@@ -117,7 +117,8 @@ internal constructor(
   ): GenerativeModel {
     val modelUri =
       when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI ->
+        GenerativeBackendEnum.VERTEX_AI,
+        GenerativeBackendEnum.AGENT_PLATFORM ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
           "projects/${firebaseApp.options.projectId}/models/${modelName}"
@@ -213,7 +214,8 @@ internal constructor(
     }
     return LiveGenerativeModel(
       when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI ->
+        GenerativeBackendEnum.VERTEX_AI,
+        GenerativeBackendEnum.AGENT_PLATFORM ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
           "projects/${firebaseApp.options.projectId}/models/${modelName}"
@@ -252,7 +254,8 @@ internal constructor(
   ): ImagenModel {
     val modelUri =
       when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI ->
+        GenerativeBackendEnum.VERTEX_AI,
+        GenerativeBackendEnum.AGENT_PLATFORM ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->
           "projects/${firebaseApp.options.projectId}/models/${modelName}"
@@ -358,7 +361,8 @@ internal constructor(
 
   private fun getTemplateUri(backend: GenerativeBackend): String =
     when (backend.backend) {
-      GenerativeBackendEnum.VERTEX_AI ->
+      GenerativeBackendEnum.VERTEX_AI,
+      GenerativeBackendEnum.AGENT_PLATFORM ->
         "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
       GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
     }

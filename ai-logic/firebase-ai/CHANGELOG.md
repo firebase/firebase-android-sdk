@@ -1,5 +1,20 @@
 # Unreleased
 
+- [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
+- [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
+- [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
+  `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
+  AI to Gemini Enterprise Agent Platform. (#8437)
+
+  Note: The only difference for `GenerativeBackend.agentPlatform` is the default
+  [location for accessing the model](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  The default location for `GenerativeBackend.agentPlatform` is `global`, whereas
+  the default location for `GenerativeBackend.vertexAI` is `us-central1`. To use
+  `us-central1` with `GenerativeBackend.agentPlatform`, specify
+  `GenerativeBackend.agentPlatform(location = "us-central1")` when
+  initializing the SDK. However, note that most new Gemini models do
+  not support `us-central1`.
+
 # 17.14.0
 
 - [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
@@ -190,4 +205,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
