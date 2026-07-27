@@ -23,13 +23,22 @@ import com.google.firebase.components.ComponentRegistrar
 import java.io.File
 
 /** Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp]. */
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 val Firebase.modelDownloader: FirebaseModelDownloader
   get() = FirebaseModelDownloader.getInstance()
 
 /** Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp]. */
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInstance(app)
 
 /** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 fun customModelDownloadConditions(
   init: CustomModelDownloadConditions.Builder.() -> Unit
 ): CustomModelDownloadConditions {
@@ -38,14 +47,29 @@ fun customModelDownloadConditions(
   return builder.build()
 }
 
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 operator fun CustomModel.component1(): File? = file
 
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 operator fun CustomModel.component2() = size
 
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 operator fun CustomModel.component3() = downloadId
 
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 operator fun CustomModel.component4() = modelHash
 
+@Deprecated(
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase as an alternative for hosting custom models. For more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage"
+)
 operator fun CustomModel.component5() = name
 
 /** @suppress */

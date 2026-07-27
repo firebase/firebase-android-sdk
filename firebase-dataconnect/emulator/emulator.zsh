@@ -28,6 +28,7 @@ main() {
   log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
   log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
   log "DATA_CONNECT_PREVIEW=${DATA_CONNECT_PREVIEW}"
+  log "SQL_CONNECT_PREVIEW=${SQL_CONNECT_PREVIEW}"
   run_command firebase --debug emulators:start --only auth,dataconnect
 }
 
@@ -71,7 +72,11 @@ parse_args() {
   fi
 
   export FIREBASE_DATACONNECT_POSTGRESQL_STRING="${postgresql_string}"
+
+  # Set both environment variables to support both old and new emulator versions.
+  # The variable was renamed to SQL_CONNECT_PREVIEW in cl/944678266 (July 2026).
   export DATA_CONNECT_PREVIEW="${preview_flags}"
+  export SQL_CONNECT_PREVIEW="${preview_flags}"
 
   if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
     run_command podman compose down -v

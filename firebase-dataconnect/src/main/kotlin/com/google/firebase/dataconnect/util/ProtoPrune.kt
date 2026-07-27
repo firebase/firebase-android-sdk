@@ -101,7 +101,7 @@ internal object ProtoPrune {
    * given [predicate].
    *
    * This function performs a depth-first traversal of the [Struct]. For each [Struct] and
-   * [ListValue] value encountered that is the value of a field (i.e. not a direct element of a
+   * [ListValue] value encountered that is the value of a field (that is, not a direct element of a
    * [ListValue]), the [predicate] is invoked.
    *
    * If the [predicate] returns `true`:
@@ -144,7 +144,7 @@ internal object ProtoPrune {
    * the given [predicate].
    *
    * This function performs a depth-first traversal of the [ListValue]. For each [Struct] and
-   * [ListValue] value encountered that is the value of a field (i.e. not a direct element of a
+   * [ListValue] value encountered that is the value of a field (that is, not a direct element of a
    * [ListValue]), the [predicate] is invoked.
    *
    * If the [predicate] returns `true`:

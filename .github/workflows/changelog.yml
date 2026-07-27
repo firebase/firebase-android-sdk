@@ -7,6 +7,9 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
     cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   changelog-check:
     runs-on: ubuntu-22.04
@@ -17,6 +20,7 @@ jobs:
       with:
         fetch-depth: 100
         submodules: true
+        persist-credentials: false
     - uses: ruby/setup-ruby@12fd324f1d0b43274fdc8130f6980590a667c455 # v1.312.0
       with:
         ruby-version: '3.4'

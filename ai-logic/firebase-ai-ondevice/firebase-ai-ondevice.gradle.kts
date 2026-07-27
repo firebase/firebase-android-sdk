@@ -29,6 +29,7 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{firebase_ai_logic_ondevice_android}}")
     versionName.set("ai-ondevice")
+    nestedHeader.set(true)
   }
 }
 

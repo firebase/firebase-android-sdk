@@ -43,6 +43,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.throwCombinedException
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
+import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +54,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
@@ -96,6 +98,8 @@ internal class FirebaseDataConnectImpl(
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
   override val idStringGenerator: IdStringGenerator,
+  private val networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
+  private val random: Random,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -309,6 +313,8 @@ internal class FirebaseDataConnectImpl(
         grpcMetadata = grpcMetadata,
         cache = cache,
         parentLogger = logger,
+        networkConnectivityRestoredFlow = networkConnectivityRestoredFlow,
+        random = random,
       )
 
     if (backendInfo.isEmulator) {

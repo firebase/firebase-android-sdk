@@ -40,11 +40,11 @@ internal interface Request
 internal data class GenerateContentRequest(
   val model: String? = null,
   val contents: List<Content.Internal>,
-  @SerialName("safety_settings") val safetySettings: List<SafetySetting.Internal>? = null,
-  @SerialName("generation_config") val generationConfig: GenerationConfig.Internal? = null,
+  val safetySettings: List<SafetySetting.Internal>? = null,
+  val generationConfig: GenerationConfig.Internal? = null,
   val tools: List<Tool.Internal>? = null,
-  @SerialName("tool_config") var toolConfig: ToolConfig.Internal? = null,
-  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
+  var toolConfig: ToolConfig.Internal? = null,
+  val systemInstruction: Content.Internal? = null,
 ) : Request
 
 @Serializable
@@ -52,7 +52,7 @@ internal data class TemplateGenerateContentRequest(
   val inputs: JsonObject,
   val history: List<Content.Internal>?,
   val tools: List<TemplateTool.Internal>? = null,
-  @SerialName("tool_config") val toolConfig: ToolConfig.Internal? = null,
+  val toolConfig: ToolConfig.Internal? = null,
 ) : Request
 
 @Serializable internal data class TemplateGenerateImageRequest(val inputs: JsonObject) : Request
@@ -63,7 +63,7 @@ internal data class CountTokensRequest(
   val model: String? = null,
   val contents: List<Content.Internal>? = null,
   val tools: List<Tool.Internal>? = null,
-  @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
+  val systemInstruction: Content.Internal? = null,
   val generationConfig: GenerationConfig.Internal? = null
 ) : Request {
   companion object {

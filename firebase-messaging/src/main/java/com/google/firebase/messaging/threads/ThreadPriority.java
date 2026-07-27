@@ -45,7 +45,7 @@ public enum ThreadPriority {
 
   /**
    * Better performance at the expense of power and execution of other tasks. If the user will be
-   * waiting for your work to complete (i.e. staring at a spinner), then this is a good choice.
+   * waiting for your work to complete (that is, staring at a spinner), then this is a good choice.
    * Often this is the case for handling client app requests. Otherwise, it's best to use {@link
    * #LOW_POWER}.
    *

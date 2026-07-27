@@ -26,13 +26,12 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  adbOptions { timeOutInMs = 60000 }
+  installation { timeOutInMs = 60000 }
 
   namespace = "com.google.firebase.datatransport"
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
@@ -40,7 +39,10 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
 }
 
 dependencies {

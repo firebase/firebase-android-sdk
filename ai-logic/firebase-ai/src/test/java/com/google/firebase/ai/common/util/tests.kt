@@ -41,6 +41,7 @@ import org.mockito.Mockito
 private val TEST_CLIENT_ID = "genai-android/test"
 private val TEST_APP_ID = "1:android:12345"
 private val TEST_VERSION = 1
+internal const val TEST_MODEL_NAME = "gemini-3.5-flash"
 
 internal fun prepareStreamingResponse(
   response: List<GenerateContentResponse.Internal>
@@ -105,7 +106,7 @@ internal fun commonTest(
   val apiController =
     APIController(
       "super_cool_test_key",
-      "gemini-pro",
+      TEST_MODEL_NAME,
       requestOptions,
       MockEngine {
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))

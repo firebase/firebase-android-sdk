@@ -94,7 +94,11 @@ fun Task.runDataConnectExecutable(
         config.schemaExtensionsOutputEnabled?.let { args("-enable_output_schema_extensions=${it}") }
 
         if (previewFlags.isNotEmpty()) {
-          environment("DATA_CONNECT_PREVIEW", previewFlags.joinToString(","))
+          // Set both environment variables to support both old and new emulator versions.
+          // The variable was renamed to SQL_CONNECT_PREVIEW in cl/944678266 (July 2026).
+          val previewFlagsStr = previewFlags.joinToString(",")
+          environment("DATA_CONNECT_PREVIEW", previewFlagsStr)
+          environment("SQL_CONNECT_PREVIEW", previewFlagsStr)
         }
       }
     }
