@@ -124,39 +124,49 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should include x-goog-request-params`() = runTest {
-    val dataConnectGrpcMetadataArb =
-      Arb.dataConnect.dataConnectGrpcMetadata(
-        connectorLocation = Arb.constant("q8mgtztcz2"),
-      )
-
-    checkAll(
-      propTestConfig,
-      dataConnectGrpcMetadataArb,
-      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
-      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
-      Arb.enum<CallerSdkType>()
-    ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
-      val metadata =
-        dataConnectGrpcMetadata.get(
-          authToken = authToken,
-          appCheckToken = appCheckToken,
-          callerSdkType = callerSdkType,
-        )
-
-      metadata.asClue {
-        it.keys() shouldContain "x-goog-request-params"
-        val metadataKey = Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
-        it.get(metadataKey) shouldBe "location=q8mgtztcz2&frontend=data"
-      }
-    }
-  }
+  fun `should include x-goog-request-params`() =
+    testMetadataIncludesHeader(
+      dataConnectGrpcMetadataArb =
+        Arb.dataConnect.dataConnectGrpcMetadata(
+          connectorLocation = Arb.constant("q8mgtztcz2"),
+        ),
+      headerName = "x-goog-request-params",
+      getExpectedHeaderValue = { "location=q8mgtztcz2&frontend=data" },
+    )
 
   @Test
-  fun `should include x-firebase-gmpid`() = runTest {
-    val dataConnectGrpcMetadataArb =
-      Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant("tvsxjeb745.appId"))
+  fun `should include X-Client-Platform`() =
+    testMetadataIncludesHeader(
+      headerName = "X-Client-Platform",
+      getExpectedHeaderValue = { "android" },
+    )
 
+  @Test
+  fun `should include X-Client-Version`() =
+    testMetadataIncludesHeader(
+      dataConnectGrpcMetadataArb =
+        Arb.dataConnect.dataConnectGrpcMetadata(
+          dataConnectSdkVersion = Arb.constant("v3q46qc2ax"),
+        ),
+      headerName = "X-Client-Version",
+      getExpectedHeaderValue = { "v3q46qc2ax" },
+    )
+
+  @Test
+  fun `should include x-firebase-gmpid`() =
+    testMetadataIncludesHeader(
+      dataConnectGrpcMetadataArb =
+        Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant("tvsxjeb745.appId")),
+      headerName = "x-firebase-gmpid",
+      getExpectedHeaderValue = { "tvsxjeb745.appId" },
+    )
+
+  private fun testMetadataIncludesHeader(
+    dataConnectGrpcMetadataArb: Arb<DataConnectGrpcMetadata> =
+      Arb.dataConnect.dataConnectGrpcMetadata(),
+    headerName: String,
+    getExpectedHeaderValue: (DataConnectGrpcMetadata) -> String,
+  ) = runTest {
     checkAll(
       propTestConfig,
       dataConnectGrpcMetadataArb,
@@ -172,9 +182,9 @@ class DataConnectGrpcMetadataUnitTest {
         )
 
       metadata.asClue {
-        it.keys() shouldContain "x-firebase-gmpid"
-        val metadataKey = Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
-        it.get(metadataKey) shouldBe "tvsxjeb745.appId"
+        it.keys() shouldContain headerName.lowercase()
+        val metadataKey = Metadata.Key.of(headerName, Metadata.ASCII_STRING_MARSHALLER)
+        it.get(metadataKey) shouldBe getExpectedHeaderValue(dataConnectGrpcMetadata)
       }
     }
   }
