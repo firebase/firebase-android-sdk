@@ -185,10 +185,10 @@ internal class DataConnectGrpcMetadata(
       Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     private val clientPlatformHeader: Metadata.Key<String> =
-      Metadata.Key.of("X-Client-Platform", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of("x-client-platform", Metadata.ASCII_STRING_MARSHALLER)
 
     private val clientVersionHeader: Metadata.Key<String> =
-      Metadata.Key.of("X-Client-Version", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
 
     @Suppress("SpellCheckingInspection")
     private val gmpAppIdHeader: Metadata.Key<String> =

@@ -479,10 +479,10 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
 
     val clientPlatformHeader: Metadata.Key<String> =
-      Metadata.Key.of("X-Client-Platform", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of("x-client-platform", Metadata.ASCII_STRING_MARSHALLER)
 
     val clientVersionHeader: Metadata.Key<String> =
-      Metadata.Key.of("X-Client-Version", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
 
     private val gmpAppIdHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
