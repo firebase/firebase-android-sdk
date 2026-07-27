@@ -9,7 +9,7 @@
   [#8460](https://github.com/firebase/firebase-android-sdk/pull/8460))
 - [changed] Add grpc request headers for platform name and sdk version
   to enable metrics collection in cloud monitoring.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486))
 
 # 17.3.2
 
