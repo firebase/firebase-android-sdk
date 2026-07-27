@@ -58,7 +58,6 @@ internal class GenerativeModelImpl(
     schemaClass: kotlin.reflect.KClass<T>
   ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<T> =
     try {
-      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${schemaClass.qualifiedName}")
       val companionClassName = "${schemaClass.java.name}_MlKitCompanion"
       val targetClass =
         try {
