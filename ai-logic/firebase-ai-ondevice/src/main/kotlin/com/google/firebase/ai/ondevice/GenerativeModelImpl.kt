@@ -58,8 +58,6 @@ internal class GenerativeModelImpl(
     schemaClass: kotlin.reflect.KClass<T>
   ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<T> =
     try {
-      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
-      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Calling ML Kit generateTypedContentRequest")
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${schemaClass.qualifiedName}")
       val companionClassName = "${schemaClass.java.name}_MlKitCompanion"
       val targetClass =
@@ -75,15 +73,6 @@ internal class GenerativeModelImpl(
             )
           }
         }
-      android.util.Log.i(
-        "MLKIT_IO",
-        "[SDK_BRIDGE] Resolved ML Kit Class: ${targetClass.qualifiedName}"
-      )
-      android.util.Log.i(
-        "MLKIT_IO",
-        "[SDK_BRIDGE] includeSchemaInPrompt: true (ML Kit manages prompt formatting)"
-      )
-      android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
 
       @Suppress("UNCHECKED_CAST")
       val mlkitRequest =
@@ -97,10 +86,6 @@ internal class GenerativeModelImpl(
       if (mlkitInstances.isEmpty()) {
         throw GenAiException("No response candidate returned by ML Kit", null, 0)
       }
-      android.util.Log.i(
-        "MLKIT_IO",
-        "[SDK_BRIDGE] ML Kit returned structured instances count: ${mlkitInstances.size}"
-      )
 
       @Suppress("UNCHECKED_CAST")
       val sdkInstances =
