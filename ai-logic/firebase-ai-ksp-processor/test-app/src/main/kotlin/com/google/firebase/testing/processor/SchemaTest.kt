@@ -34,6 +34,7 @@ data class RootSchemaTestClass(
   val stringTest: String,
   val objTest: SecondarySchemaTestClass,
   val enumTest: EnumTest,
+  @Guide(enumValues = ["NORTH", "SOUTH", "EAST", "WEST"]) val stringEnumTest: String,
 ) {
   companion object
 }

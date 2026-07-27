@@ -70,7 +70,12 @@ internal constructor(
         .joinToString(" ") { it.text }
     if (text.isEmpty()) return null
 
-    val deserialized = Json.decodeFromString(schema.getSerializer(), text) as T?
+    val deserialized =
+      try {
+        Json.decodeFromString(schema.getSerializer(), text) as T?
+      } catch (e: Exception) {
+        null
+      }
 
     // 3. Save to instances list for future accesses (lazy loading) and return
     if (instances == null) {

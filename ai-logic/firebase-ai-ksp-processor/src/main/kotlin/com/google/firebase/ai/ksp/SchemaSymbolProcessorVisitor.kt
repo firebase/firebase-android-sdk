@@ -153,7 +153,18 @@ internal class SchemaSymbolProcessorVisitor(
         builder.addStatement("JsonSchema.double(").indent()
       }
       "kotlin.String" -> {
-        builder.addStatement("JsonSchema.string(").indent()
+        if (!guideValues.enumValues.isNullOrEmpty()) {
+          builder
+            .addStatement("JsonSchema.enumeration(")
+            .indent()
+            .addStatement("values = listOf(")
+            .indent()
+            .addStatement(guideValues.enumValues.joinToString { "\"$it\"" })
+            .unindent()
+            .addStatement("),")
+        } else {
+          builder.addStatement("JsonSchema.string(").indent()
+        }
       }
       "kotlin.collections.List" -> {
 
@@ -166,7 +177,12 @@ internal class SchemaSymbolProcessorVisitor(
           throw RuntimeException()
         }
         val listParamCodeBlock =
-          generateCodeBlockForSchema(type = listTypeParam.resolve(), parentType = type)
+          generateCodeBlockForSchema(
+            type = listTypeParam.resolve(),
+            parentType = type,
+            guideAnnotation =
+              if (!guideValues.enumValues.isNullOrEmpty()) guideAnnotation else null,
+          )
         builder
           .addStatement("JsonSchema.array(")
           .indent()
@@ -261,9 +277,7 @@ internal class SchemaSymbolProcessorVisitor(
   }
 
   private fun isGenerableClass(type: KSType): Boolean {
-    return type.declaration.annotations.any { it.shortName.getShortName() == "Generable" } ||
-      (type.declaration as? KSClassDeclaration)?.modifiers?.contains(Modifier.DATA) == true &&
-        !type.declaration.qualifiedName?.asString()!!.startsWith("kotlin.")
+    return type.declaration.annotations.any { it.shortName.getShortName() == "Generable" }
   }
 
   private fun isListOfGenerableClass(type: KSType): Boolean {
@@ -352,6 +366,13 @@ internal class SchemaSymbolProcessorVisitor(
           mlkitGuideBuilder.addMember("maxItems = %L", guideValues.maxItems)
         if (!guideValues.format.isNullOrEmpty())
           mlkitGuideBuilder.addMember("format = %S", guideValues.format)
+        if (!guideValues.enumValues.isNullOrEmpty()) {
+          val enumElements = guideValues.enumValues.joinToString { "%S" }
+          mlkitGuideBuilder.addMember(
+            "enumValues = arrayOf($enumElements)",
+            *guideValues.enumValues.toTypedArray()
+          )
+        }
         paramBuilder.addAnnotation(mlkitGuideBuilder.build())
       }
 

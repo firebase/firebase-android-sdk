@@ -135,12 +135,10 @@ internal class OnDeviceGenerativeModelProvider(
   /**
    * Generates a structured object based on the given prompt and schema.
    *
-   * Note: This is currently not supported for on-device models.
-   *
    * @param jsonSchema The schema defining the structure of the output.
    * @param prompt The list of content parts to use as the prompt.
    * @return The generated object response.
-   * @throws FirebaseAIException Always throws as this feature is not supported.
+   * @throws FirebaseAIException If the on-device model is unavailable or if generation fails.
    */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,

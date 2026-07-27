@@ -28,7 +28,7 @@ android {
   compileSdk = 36
   defaultConfig {
     applicationId = "com.google.firebase.testing.processor"
-    minSdk = 23
+    minSdk = 26
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
@@ -41,10 +41,17 @@ android {
   }
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
+}
 
 dependencies {
   implementation(project(":ai-logic:firebase-ai"))
+  implementation(project(":ai-logic:firebase-ai-ondevice"))
+  implementation(libs.genai.prompt)
   ksp(project(":ai-logic:firebase-ai-ksp-processor"))
 
   implementation("com.google.firebase:firebase-common:22.0.0")

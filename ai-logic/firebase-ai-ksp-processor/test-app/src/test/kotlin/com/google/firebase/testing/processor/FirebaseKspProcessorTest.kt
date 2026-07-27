@@ -85,5 +85,11 @@ class FirebaseKspProcessorTest {
       .isEqualTo("class kdoc should be used if property kdocs aren't present")
     assertThat(objSchema.title).isEqualTo("objTest")
     assertThat(objSchema.nullable).isEqualTo(false)
+
+    assertThat(rootSchema.properties?.get("stringEnumTest")).isNotNull()
+    val stringEnumSchema = rootSchema.properties?.get("stringEnumTest")!!
+    assertThat(stringEnumSchema.enum).isEqualTo(listOf("NORTH", "SOUTH", "EAST", "WEST"))
+    assertThat(stringEnumSchema.title).isEqualTo("stringEnumTest")
+    assertThat(stringEnumSchema.nullable).isEqualTo(false)
   }
 }
