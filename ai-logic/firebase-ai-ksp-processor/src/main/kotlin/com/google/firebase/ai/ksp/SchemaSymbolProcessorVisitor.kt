@@ -63,11 +63,6 @@ internal class SchemaSymbolProcessorVisitor(
       codeGenerator,
       Dependencies(true, containingFile),
     )
-    val companionFile = generateMlKitCompanionFileSpec(classDeclaration)
-    companionFile.writeTo(
-      codeGenerator,
-      Dependencies(true, containingFile),
-    )
   }
 
   fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {

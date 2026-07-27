@@ -61,24 +61,6 @@ internal class GenerativeModelImpl(
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] ==========================================")
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Calling ML Kit generateTypedContentRequest")
       android.util.Log.i("MLKIT_IO", "[SDK_BRIDGE] Input SDK Class: ${schemaClass.qualifiedName}")
-      val companionClassName = "${schemaClass.java.name}_MlKitCompanion"
-      val targetClass =
-        try {
-          Class.forName(companionClassName).kotlin
-        } catch (e: Exception) {
-          if (schemaClass.java.name.endsWith("_MlKitCompanion")) {
-            schemaClass
-          } else {
-            throw IllegalArgumentException(
-              "Shadow class $companionClassName not found for structured output. Ensure KSP processor is running and generated the MlKit companion class.",
-              e
-            )
-          }
-        }
-      android.util.Log.i(
-        "MLKIT_IO",
-        "[SDK_BRIDGE] Resolved ML Kit Class: ${targetClass.qualifiedName}"
-      )
       android.util.Log.i(
         "MLKIT_IO",
         "[SDK_BRIDGE] includeSchemaInPrompt: true (ML Kit manages prompt formatting)"
@@ -89,7 +71,7 @@ internal class GenerativeModelImpl(
       val mlkitRequest =
         com.google.mlkit.genai.prompt.generateTypedContentRequest(
           generateContentRequest = request.toMlKit(),
-          outputClass = targetClass as kotlin.reflect.KClass<Any>,
+          outputClass = schemaClass as kotlin.reflect.KClass<Any>,
           includeSchemaInPrompt = true
         )
       val typedResponse = mlkitModel.generateContent(mlkitRequest)
@@ -102,19 +84,15 @@ internal class GenerativeModelImpl(
         "[SDK_BRIDGE] ML Kit returned structured instances count: ${mlkitInstances.size}"
       )
 
-      @Suppress("UNCHECKED_CAST")
-      val sdkInstances =
-        mlkitInstances.map { mlkitInstance ->
-          if (mlkitInstance.javaClass.name.endsWith("_MlKitCompanion")) {
-            val toSdkMethod = mlkitInstance.javaClass.getMethod("toSdk")
-            toSdkMethod.invoke(mlkitInstance) as T
-          } else {
-            mlkitInstance as T
-          }
-        }
+      @Suppress("UNCHECKED_CAST") val sdkInstances = mlkitInstances as List<T>
 
       com.google.firebase.ai.ondevice.interop.GenerateObjectResponse(sdkInstances)
-    } catch (e: GenAiException) {
+    } catch (e: Throwable) {
+      android.util.Log.e(
+        "MLKIT_IO",
+        "[SDK_BRIDGE] generateObject failed with exception: ${e.javaClass.name}: ${e.message}",
+        e
+      )
       throw getMappingException(e)
     }
 
