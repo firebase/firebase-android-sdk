@@ -293,13 +293,14 @@ internal class SchemaSymbolProcessorVisitor(
 
   private fun mapToMlKitCompanionType(type: KSType, packageName: String): TypeName {
     if (isListOfGenerableClass(type)) {
-      val argType = type.arguments.first()!!.type!!.resolve()
-      val argClassName =
-        ClassName(
-          argType.declaration.packageName.asString(),
-          "${argType.declaration.simpleName.asString()}_MlKitCompanion"
-        )
-      return ClassName("kotlin.collections", "List").parameterizedBy(argClassName)
+      type.arguments.firstOrNull()?.type?.resolve()?.let { argType ->
+        val argClassName =
+          ClassName(
+            argType.declaration.packageName.asString(),
+            "${argType.declaration.simpleName.asString()}_MlKitCompanion",
+          )
+        return ClassName("kotlin.collections", "List").parameterizedBy(argClassName)
+      }
     } else if (isGenerableClass(type)) {
       return ClassName(
         type.declaration.packageName.asString(),
@@ -323,9 +324,7 @@ internal class SchemaSymbolProcessorVisitor(
       classDeclaration.annotations.firstOrNull { it.shortName.getShortName() == "Generable" }
     val classDesc = getStringFromAnnotation(generableAnn, "description")
     val mlkitGenerableBuilder =
-      AnnotationSpec.builder(
-        ClassName("com.google.mlkit.genai.schema.annotations", "Generable")
-      )
+      AnnotationSpec.builder(ClassName("com.google.mlkit.genai.schema.annotations", "Generable"))
     if (!classDesc.isNullOrEmpty()) {
       mlkitGenerableBuilder.addMember("description = %S", classDesc)
     }
@@ -351,9 +350,7 @@ internal class SchemaSymbolProcessorVisitor(
         val guideValues =
           getGuideValuesFromAnnotation(guideAnn, getStringFromAnnotation(guideAnn, "description"))
         val mlkitGuideBuilder =
-          AnnotationSpec.builder(
-            ClassName("com.google.mlkit.genai.schema.annotations", "Guide")
-          )
+          AnnotationSpec.builder(ClassName("com.google.mlkit.genai.schema.annotations", "Guide"))
         if (!guideValues.description.isNullOrEmpty())
           mlkitGuideBuilder.addMember("description = %S", guideValues.description)
         if (guideValues.minimum != null)

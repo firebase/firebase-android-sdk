@@ -39,11 +39,7 @@ internal constructor(
   internal constructor(
     response: GenerateContentResponse,
     instances: List<T>
-  ) : this(
-    response,
-    schema = null,
-    instances = (instances as? MutableList<T?>) ?: instances.toMutableList()
-  )
+  ) : this(response, schema = null, instances = ArrayList<T?>(instances))
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this

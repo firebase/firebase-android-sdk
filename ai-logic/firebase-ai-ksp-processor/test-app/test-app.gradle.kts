@@ -51,7 +51,8 @@ kotlin {
 dependencies {
   implementation(project(":ai-logic:firebase-ai"))
   implementation(project(":ai-logic:firebase-ai-ondevice"))
-  implementation(libs.genai.prompt)
+
+  implementation(libs.genai.schema)
   ksp(project(":ai-logic:firebase-ai-ksp-processor"))
 
   implementation("com.google.firebase:firebase-common:22.0.0")

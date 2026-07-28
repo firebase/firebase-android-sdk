@@ -77,13 +77,12 @@ class FirebaseKspProcessorTest {
     assertThat(enumSchema.title).isEqualTo("enumTest")
     assertThat(enumSchema.nullable).isEqualTo(false)
 
-    assertThat(rootSchema.properties?.get("objTest")).isNotNull()
-    val objSchema = rootSchema.properties?.get("objTest")!!
+    assertThat(rootSchema.properties?.get("nestedSchemaTest")).isNotNull()
+    val objSchema = rootSchema.properties?.get("nestedSchemaTest")!!
     assertThat(objSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
     assertThat(objSchema.properties).isNotNull()
-    assertThat(objSchema.description)
-      .isEqualTo("class kdoc should be used if property kdocs aren't present")
-    assertThat(objSchema.title).isEqualTo("objTest")
+    assertThat(objSchema.description).isNull()
+    assertThat(objSchema.title).isEqualTo("nestedSchemaTest")
     assertThat(objSchema.nullable).isEqualTo(false)
 
     assertThat(rootSchema.properties?.get("stringEnumTest")).isNotNull()
