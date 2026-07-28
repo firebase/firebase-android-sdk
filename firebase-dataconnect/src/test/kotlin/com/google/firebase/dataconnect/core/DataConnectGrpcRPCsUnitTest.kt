@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcStreamingServer
 import com.google.firebase.dataconnect.testutil.OperationNameVariablesPair
+import com.google.firebase.dataconnect.testutil.awaitCall
 import com.google.firebase.dataconnect.testutil.awaitUntilInitStreamRequest
 import com.google.firebase.dataconnect.testutil.cleanupsScope
 import com.google.firebase.dataconnect.testutil.loopbackAddressForPort
@@ -60,13 +61,19 @@ import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.ListValue as ListValueProto
 import com.google.protobuf.Struct as StructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
+import google.firebase.dataconnect.proto.ExecuteMutationRequest
+import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamRequest
 import io.grpc.InsecureServerCredentials
+import io.grpc.Metadata
 import io.grpc.Server
+import io.grpc.ServerCall
+import io.grpc.ServerCallHandler
+import io.grpc.ServerInterceptor
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
 import io.kotest.assertions.assertSoftly
@@ -822,6 +829,155 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
+  @Test
+  fun `executeQuery sends x-client-platform header`() =
+    testExecuteQuerySendsHeader(
+      headerName = "x-client-platform",
+      getExpectedHeaderValue = { "android" },
+    )
+
+  @Test
+  fun `executeQuery sends x-client-version header`() =
+    testExecuteQuerySendsHeader(
+      headerName = "x-client-version",
+      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
+    )
+
+  @Test
+  fun `executeMutation sends x-client-platform header`() =
+    testExecuteMutationSendsHeader(
+      headerName = "x-client-platform",
+      getExpectedHeaderValue = { "android" },
+    )
+
+  @Test
+  fun `executeMutation sends x-client-version header`() =
+    testExecuteMutationSendsHeader(
+      headerName = "x-client-version",
+      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
+    )
+
+  @Test
+  fun `connect sends x-client-platform header`() =
+    testConnectSendsHeader(
+      headerName = "x-client-platform",
+      getExpectedHeaderValue = { "android" },
+    )
+
+  @Test
+  fun `connect sends x-client-version header`() =
+    testConnectSendsHeader(
+      headerName = "x-client-version",
+      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
+    )
+
+  private fun testExecuteQuerySendsHeader(
+    headerName: String,
+    getExpectedHeaderValue: (DataConnectGrpcRPCs) -> String,
+  ) = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+    ) { authToken, appCheckToken ->
+      cleanupsScope {
+        val server = startServer()
+        registerCleanup(server)
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = null)
+        registerCleanup(dataConnectGrpcRPCs)
+        val request = operationNameVariablesPairArb.bind()
+
+        dataConnectGrpcRPCs.executeQuery(
+          requestIdArb.bind(),
+          request.operationName,
+          request.variables,
+          callerSdkTypeArb.bind(),
+          FetchPolicy.SERVER_ONLY,
+          authToken,
+          appCheckToken,
+        )
+
+        val headerKey = Metadata.Key.of(headerName, Metadata.ASCII_STRING_MARSHALLER)
+        server.lastReceivedHeaders?.get(headerKey) shouldBe
+          getExpectedHeaderValue(dataConnectGrpcRPCs)
+      }
+    }
+  }
+
+  private fun testExecuteMutationSendsHeader(
+    headerName: String,
+    getExpectedHeaderValue: (DataConnectGrpcRPCs) -> String,
+  ) = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+    ) { authToken, appCheckToken ->
+      cleanupsScope {
+        val server = startServer()
+        registerCleanup(server)
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache = null)
+        registerCleanup(dataConnectGrpcRPCs)
+        val request = operationNameVariablesPairArb.bind()
+
+        dataConnectGrpcRPCs.executeMutation(
+          requestIdArb.bind(),
+          request.operationName,
+          request.variables,
+          callerSdkTypeArb.bind(),
+          authToken,
+          appCheckToken,
+        )
+
+        val headerKey = Metadata.Key.of(headerName, Metadata.ASCII_STRING_MARSHALLER)
+        server.lastReceivedHeaders?.get(headerKey) shouldBe
+          getExpectedHeaderValue(dataConnectGrpcRPCs)
+      }
+    }
+  }
+
+  private fun testConnectSendsHeader(
+    headerName: String,
+    getExpectedHeaderValue: (DataConnectGrpcRPCs) -> String,
+  ) = runTest {
+    checkAll(propTestConfig, cacheArb(testScheduler).orNull(nullProbability = 0.2)) { cache ->
+      cleanupsScope {
+        registerCleanup(cache)
+
+        val server = InProcessDataConnectGrpcStreamingServer()
+        registerCleanup(server)
+        server.open()
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(testScheduler, server, cache)
+        registerCleanup(dataConnectGrpcRPCs)
+        val callerSdkType = Arb.enum<CallerSdkType>().bind()
+
+        server.events.test {
+          val stream = dataConnectGrpcRPCs.connect(randomSource())
+          val subscriptionFlow =
+            stream.subscribe(
+              "req1",
+              "opName",
+              StructProto.getDefaultInstance(),
+              callerSdkType,
+            )
+
+          val backgroundCollectJob =
+            backgroundScope.launch(CallerSdkTypeElement(callerSdkType)) {
+              subscriptionFlow.collect()
+            }
+          registerSuspendingCleanup { backgroundCollectJob.cancelAndJoin() }
+
+          val callEvent = awaitCall()
+          val headerKey = Metadata.Key.of(headerName, Metadata.ASCII_STRING_MARSHALLER)
+          callEvent.headers.get(headerKey) shouldBe getExpectedHeaderValue(dataConnectGrpcRPCs)
+
+          backgroundCollectJob.cancelAndJoin()
+          cancelAndIgnoreRemainingEvents()
+        }
+      }
+    }
+  }
+
   private suspend fun DataConnectGrpcRPCs.connect(rs: RandomSource): DataConnectBidiConnectStream {
     val dataConnectAuth: DataConnectAuth =
       mockk(name = "DataConnectAuth@xjk254qsb3") {
@@ -853,13 +1009,17 @@ class DataConnectGrpcRPCsUnitTest {
 
   private class StartServerResult(
     private val grpcServer: Server,
-    private val connectorServiceImpl: ConnectorServiceImpl
+    private val connectorServiceImpl: ConnectorServiceImpl,
+    private val headerInterceptor: HeaderCapturingServerInterceptor,
   ) : AutoCloseable {
 
     val port = grpcServer.port
 
     val executeQueryInvocationCount: Long
       get() = connectorServiceImpl.executeQueryInvocationCount.sum()
+
+    val lastReceivedHeaders: Metadata?
+      get() = headerInterceptor.lastHeaders.get()
 
     var nextResponse: ExecuteQueryResponse
       get() = connectorServiceImpl.nextResponse.get()
@@ -873,22 +1033,38 @@ class DataConnectGrpcRPCsUnitTest {
     }
   }
 
+  private class HeaderCapturingServerInterceptor : ServerInterceptor {
+    val lastHeaders = AtomicReference<Metadata?>(null)
+
+    override fun <ReqT, RespT> interceptCall(
+      call: ServerCall<ReqT, RespT>,
+      headers: Metadata,
+      next: ServerCallHandler<ReqT, RespT>
+    ): ServerCall.Listener<ReqT> {
+      lastHeaders.set(headers)
+      return next.startCall(call, headers)
+    }
+  }
+
   private fun startServer(): StartServerResult {
     val connectorServiceImpl = ConnectorServiceImpl()
+    val headerInterceptor = HeaderCapturingServerInterceptor()
     val grpcServer =
       OkHttpServerBuilder.forPort(loopbackAddressForPort(0), InsecureServerCredentials.create())
         .addService(connectorServiceImpl)
+        .intercept(headerInterceptor)
         .build()
 
     grpcServer.start()
 
-    return StartServerResult(grpcServer, connectorServiceImpl)
+    return StartServerResult(grpcServer, connectorServiceImpl, headerInterceptor)
   }
 
   private class ConnectorServiceImpl : ConnectorServiceGrpc.ConnectorServiceImplBase() {
 
     val executeQueryInvocationCount = LongAdder()
     val nextResponse = AtomicReference(ExecuteQueryResponse.getDefaultInstance())
+    val nextMutationResponse = AtomicReference(ExecuteMutationResponse.getDefaultInstance())
 
     override fun executeQuery(
       request: ExecuteQueryRequest,
@@ -896,6 +1072,14 @@ class DataConnectGrpcRPCsUnitTest {
     ) {
       executeQueryInvocationCount.add(1)
       responseObserver.onNext(nextResponse.get())
+      responseObserver.onCompleted()
+    }
+
+    override fun executeMutation(
+      request: ExecuteMutationRequest,
+      responseObserver: StreamObserver<ExecuteMutationResponse>,
+    ) {
+      responseObserver.onNext(nextMutationResponse.get())
       responseObserver.onCompleted()
     }
   }
