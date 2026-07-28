@@ -324,7 +324,7 @@ internal class SchemaSymbolProcessorVisitor(
     val classDesc = getStringFromAnnotation(generableAnn, "description")
     val mlkitGenerableBuilder =
       AnnotationSpec.builder(
-        ClassName("com.google.mlkit.genai.structuredoutput.annotations", "Generable")
+        ClassName("com.google.mlkit.genai.schema.annotations", "Generable")
       )
     if (!classDesc.isNullOrEmpty()) {
       mlkitGenerableBuilder.addMember("description = %S", classDesc)
@@ -352,7 +352,7 @@ internal class SchemaSymbolProcessorVisitor(
           getGuideValuesFromAnnotation(guideAnn, getStringFromAnnotation(guideAnn, "description"))
         val mlkitGuideBuilder =
           AnnotationSpec.builder(
-            ClassName("com.google.mlkit.genai.structuredoutput.annotations", "Guide")
+            ClassName("com.google.mlkit.genai.schema.annotations", "Guide")
           )
         if (!guideValues.description.isNullOrEmpty())
           mlkitGuideBuilder.addMember("description = %S", guideValues.description)
