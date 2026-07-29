@@ -1739,26 +1739,61 @@ internal constructor(
 
 internal class AddWindowFieldsStage
 internal constructor(
-  private val window: FinalWindowSpec,
-  private val fields: Map<String, AggregateFunction>,
+  private val window: WindowSpec,
+  private val fields: Map<String, Any>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AddWindowFieldsStage>("add_window_fields", options) {
 
+  fun withFields(field: Any, vararg additionalFields: Any): AddWindowFieldsStage {
+    val newFields = buildFieldsMap(field, *additionalFields)
+    newFields.keys.forEach { alias ->
+      if (fields.containsKey(alias)) {
+        throw IllegalArgumentException("Duplicate alias: '$alias'")
+      }
+    }
+    return AddWindowFieldsStage(window, fields.plus(newFields), options)
+  }
+
   companion object {
     @JvmStatic
+    fun withWindow(window: WindowSpec): AddWindowFieldsStage {
+      return AddWindowFieldsStage(window, emptyMap())
+    }
+
+    @JvmStatic
     fun withFields(
-      window: FinalWindowSpec,
-      field: AliasedAggregate,
-      vararg additionalFields: AliasedAggregate
+      field: AliasedWindowFunction,
+      vararg additionalFields: AliasedWindowFunction
     ): AddWindowFieldsStage {
-      val fields =
-        additionalFields.fold(mapOf(field.alias to field.expr)) { acc, next ->
-          if (acc.containsKey(next.alias)) {
-            throw IllegalArgumentException("Duplicate alias: '${next.alias}'")
-          }
-          acc.plus(next.alias to next.expr)
+      val fields = buildFieldsMap(field, *additionalFields)
+      return AddWindowFieldsStage(WindowSpec(), fields)
+    }
+
+    private fun buildFieldsMap(field: Any, vararg additionalFields: Any): Map<String, Any> {
+      return additionalFields.fold(mapOf(getAlias(field) to getExpr(field))) { acc, next ->
+        val alias = getAlias(next)
+        val expr = getExpr(next)
+        if (acc.containsKey(alias)) {
+          throw IllegalArgumentException("Duplicate alias: '$alias'")
         }
-      return AddWindowFieldsStage(window, fields)
+        acc.plus(alias to expr)
+      }
+    }
+
+    private fun getAlias(obj: Any): String {
+      return when (obj) {
+        is AliasedAggregate -> obj.alias
+        is AliasedWindowFunction -> obj.alias
+        else -> throw IllegalArgumentException("Unsupported field type: $obj")
+      }
+    }
+
+    private fun getExpr(obj: Any): Any {
+      return when (obj) {
+        is AliasedAggregate -> obj.expr
+        is AliasedWindowFunction -> obj.expr
+        else -> throw IllegalArgumentException("Unsupported field type: $obj")
+      }
     }
   }
 
@@ -1771,7 +1806,15 @@ internal constructor(
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
       window.buildInternal(userDataReader),
-      encodeValue(fields.mapValues { entry -> entry.value.toProto(userDataReader) })
+      encodeValue(
+        fields.mapValues { entry ->
+          when (val func = entry.value) {
+            is AggregateFunction -> func.toProto(userDataReader)
+            is WindowFunction -> func.toProto(userDataReader)
+            else -> throw IllegalArgumentException("Unsupported function: $func")
+          }
+        }
+      )
     )
 
   override fun equals(other: Any?): Boolean {

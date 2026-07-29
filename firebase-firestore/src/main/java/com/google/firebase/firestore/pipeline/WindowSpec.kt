@@ -20,118 +20,67 @@ import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 
-/** Represents a finalized window specification that can be serialized. */
-interface FinalWindowSpec {
-  fun buildInternal(userDataReader: UserDataReader): Value
-}
-
-/**
- * Factory for creating window specifications.
- */
-sealed class WindowSpec : FinalWindowSpec {
-  companion object {
-    @JvmField val CURRENT = "current"
-    @JvmField val UNBOUNDED = "unbounded"
-
-    /** Creates a partition/group spec (no sorting or frames supported). */
-    @JvmStatic
-    fun overPartition(vararg groups: Any): GroupWindowSpec =
-      GroupWindowSpec(resolveGroups(groups))
-
-    /** Creates a document-count based window spec (sort and boundaries are required). */
-    @JvmStatic
-    fun overDocuments(sort: Ordering, preceding: Any, following: Any): DocumentWindowSpec =
-      DocumentWindowSpec(listOf(sort), preceding, following)
-
-    /** Creates a document-count based window spec with multiple sorts. */
-    @JvmStatic
-    fun overDocuments(sort: List<Ordering>, preceding: Any, following: Any): DocumentWindowSpec =
-      DocumentWindowSpec(sort, preceding, following)
-
-    /** Creates a range-value based window spec (sort and boundaries are required). */
-    @JvmStatic
-    fun overRange(sort: Ordering, preceding: Any, following: Any): RangeWindowSpec =
-      RangeWindowSpec(sort, preceding, following)
-
-    /** Convenience factory for default range spec (unbounded preceding to current). */
-    @JvmStatic
-    fun overRange(sort: Ordering): RangeWindowSpec =
-      RangeWindowSpec(sort, UNBOUNDED, CURRENT)
-
-    /** Convenience factory for default document-count based spec (unbounded preceding to current). */
-    @JvmStatic
-    fun overDocuments(sort: Ordering): DocumentWindowSpec =
-      DocumentWindowSpec(listOf(sort), UNBOUNDED, CURRENT)
-
-    @JvmStatic
-    fun overDocuments(sort: List<Ordering>): DocumentWindowSpec =
-      DocumentWindowSpec(sort, UNBOUNDED, CURRENT)
-  }
-}
-
-/**
- * Window specification for group/partition aggregations without sorting or frames.
- */
-class GroupWindowSpec internal constructor(
-  val groups: List<Expression>
-) : WindowSpec() {
-
-  /** Specify range-value based window frame on top of this partition. */
-  fun overRange(sort: Ordering, preceding: Any, following: Any): RangeWindowSpec =
-    RangeWindowSpec(sort, preceding, following, groups)
-
-  /** Specify range-value based default window frame on top of this partition. */
-  fun overRange(sort: Ordering): RangeWindowSpec =
-    RangeWindowSpec(sort, UNBOUNDED, CURRENT, groups)
-
-  /** Specify document-count based window frame on top of this partition. */
-  fun overDocuments(sort: Ordering, preceding: Any, following: Any): DocumentWindowSpec =
-    DocumentWindowSpec(listOf(sort), preceding, following, groups)
-
-  /** Specify document-count based window frame with multiple sorts on top of this partition. */
-  fun overDocuments(sort: List<Ordering>, preceding: Any, following: Any): DocumentWindowSpec =
-    DocumentWindowSpec(sort, preceding, following, groups)
-
-  /** Specify document-count based default window frame on top of this partition. */
-  fun overDocuments(sort: Ordering): DocumentWindowSpec =
-    DocumentWindowSpec(listOf(sort), UNBOUNDED, CURRENT, groups)
-
-  /** Specify document-count based default window frame with multiple sorts on top of this partition. */
-  fun overDocuments(sort: List<Ordering>): DocumentWindowSpec =
-    DocumentWindowSpec(sort, UNBOUNDED, CURRENT, groups)
-
-  override fun buildInternal(userDataReader: UserDataReader): Value {
-    val builder = MapValue.newBuilder()
-    if (groups.isNotEmpty()) {
-      val array = ArrayValue.newBuilder()
-        .addAllValues(groups.map { it.toProto(userDataReader) })
-        .build()
-      builder.putFields("group", Value.newBuilder().setArrayValue(array).build())
-    }
-    return Value.newBuilder().setMapValue(builder).build()
-  }
-}
-
-/**
- * Window specification for range-value based window frames.
- */
-class RangeWindowSpec internal constructor(
-  val sort: Ordering,
-  val preceding: Any,
-  val following: Any,
+class WindowSpec internal constructor(
   val groups: List<Expression> = emptyList(),
-  val unit: TimeGranularity? = null
-) : WindowSpec() {
+  val sort: List<Ordering> = emptyList(),
+  internal val documentsFrame: Pair<Any, Any>? = null,
+  internal val rangeFrame: Pair<Any, Any>? = null,
+  val unit: Any? = null
+) {
 
-  /** Specifiy partition group columns. */
-  fun overPartition(vararg groups: Any): RangeWindowSpec =
-    RangeWindowSpec(sort, preceding, following, resolveGroups(groups), unit)
+  /** Specify partition group columns. */
+  @JvmName("withPartitionExpression")
+  fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
+    WindowSpec(resolveGroups(arrayOf(expression, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
 
-  /** Specify range unit (TimeGranularity) for date/time range sorting. */
-  fun withUnits(unit: TimeGranularity): RangeWindowSpec =
-    RangeWindowSpec(sort, preceding, following, groups, unit)
+  @JvmName("withPartitionString")
+  fun partition(fieldName: String, vararg additionalExpressions: Any): WindowSpec =
+    WindowSpec(resolveGroups(arrayOf(fieldName, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
 
-  override fun buildInternal(userDataReader: UserDataReader): Value {
+  /** Specify sort order for this window spec. */
+  @JvmName("withSortOrdering")
+  fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
+    WindowSpec(groups, listOf(order, *additionalOrders), documentsFrame, rangeFrame, unit)
+
+  @JvmName("withSortList")
+  fun sort(orders: List<Ordering>): WindowSpec =
+    WindowSpec(groups, orders, documentsFrame, rangeFrame, unit)
+
+  /** Specify document-count based window frame. */
+  @JvmName("withDocumentsInt")
+  fun documents(preceding: Int, following: Int): WindowSpec =
+    WindowSpec(groups, sort, Pair(preceding, following), null, unit)
+
+  @JvmName("withDocumentsExpr")
+  fun documents(preceding: Expression, following: Expression): WindowSpec =
+    WindowSpec(groups, sort, Pair(preceding, following), null, unit)
+
+  /** Specify range-value based window frame. */
+  @JvmName("withRangeInt")
+  fun range(preceding: Int, following: Int): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  @JvmName("withRangeIntUnitString")
+  fun range(preceding: Int, following: Int, unit: String): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  @JvmName("withRangeIntUnitExpr")
+  fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  @JvmName("withRangeExpr")
+  fun range(preceding: Expression, following: Expression): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  @JvmName("withRangeExprUnitString")
+  fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  @JvmName("withRangeExprUnitExpr")
+  fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
+    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+
+  internal fun buildInternal(userDataReader: UserDataReader): Value {
     val builder = MapValue.newBuilder()
 
     if (groups.isNotEmpty()) {
@@ -141,61 +90,92 @@ class RangeWindowSpec internal constructor(
       builder.putFields("group", Value.newBuilder().setArrayValue(array).build())
     }
 
-    val sortArray = ArrayValue.newBuilder()
-      .addValues(sort.toProto(userDataReader))
-      .build()
-    builder.putFields("sort", Value.newBuilder().setArrayValue(sortArray).build())
+    if (sort.isNotEmpty()) {
+      val sortArray = ArrayValue.newBuilder()
+        .addAllValues(sort.map { it.toProto(userDataReader) })
+        .build()
+      builder.putFields("sort", Value.newBuilder().setArrayValue(sortArray).build())
+    }
 
-    val rangeFrame = MapValue.newBuilder()
-      .putFields("preceding", boundaryToProto(preceding))
-      .putFields("following", boundaryToProto(following))
-      .build()
-    builder.putFields("range", Value.newBuilder().setMapValue(rangeFrame).build())
+    documentsFrame?.let { (preceding, following) ->
+      val docFrame = MapValue.newBuilder()
+        .putFields("preceding", boundaryToProto(preceding, userDataReader))
+        .putFields("following", boundaryToProto(following, userDataReader))
+        .build()
+      builder.putFields("documents", Value.newBuilder().setMapValue(docFrame).build())
+    }
+
+    rangeFrame?.let { (preceding, following) ->
+      val rFrame = MapValue.newBuilder()
+        .putFields("preceding", boundaryToProto(preceding, userDataReader))
+        .putFields("following", boundaryToProto(following, userDataReader))
+        .build()
+      builder.putFields("range", Value.newBuilder().setMapValue(rFrame).build())
+    }
 
     unit?.let {
-      builder.putFields("unit", encodeValue(it.canonicalString))
+      val unitVal = when (it) {
+        is Expression -> it.toProto(userDataReader)
+        is String -> encodeValue(it)
+        else -> throw IllegalArgumentException("Invalid range unit type: $it")
+      }
+      builder.putFields("unit", unitVal)
     }
 
     return Value.newBuilder().setMapValue(builder).build()
   }
-}
 
-/**
- * Window specification for document-count based window frames.
- */
-class DocumentWindowSpec internal constructor(
-  val sort: List<Ordering>,
-  val preceding: Any,
-  val following: Any,
-  val groups: List<Expression> = emptyList()
-) : WindowSpec() {
+  companion object {
+    @JvmField val CURRENT: Int = 0
+    @JvmField val UNBOUNDED: Int = Int.MIN_VALUE
 
-  /** Specifiy partition group columns. */
-  fun overPartition(vararg groups: Any): DocumentWindowSpec =
-    DocumentWindowSpec(sort, preceding, following, resolveGroups(groups))
+    @JvmStatic
+    fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
+      WindowSpec(groups = resolveGroups(arrayOf(expression, *additionalExpressions)))
 
-  override fun buildInternal(userDataReader: UserDataReader): Value {
-    val builder = MapValue.newBuilder()
+    @JvmStatic
+    fun partition(fieldName: String, vararg additionalExpressions: Any): WindowSpec =
+      WindowSpec(groups = resolveGroups(arrayOf(fieldName, *additionalExpressions)))
 
-    if (groups.isNotEmpty()) {
-      val array = ArrayValue.newBuilder()
-        .addAllValues(groups.map { it.toProto(userDataReader) })
-        .build()
-      builder.putFields("group", Value.newBuilder().setArrayValue(array).build())
-    }
+    @JvmStatic
+    fun documents(preceding: Int, following: Int): WindowSpec =
+      WindowSpec(documentsFrame = Pair(preceding, following))
 
-    val sortArray = ArrayValue.newBuilder()
-      .addAllValues(sort.map { it.toProto(userDataReader) })
-      .build()
-    builder.putFields("sort", Value.newBuilder().setArrayValue(sortArray).build())
+    @JvmStatic
+    fun documents(preceding: Expression, following: Expression): WindowSpec =
+      WindowSpec(documentsFrame = Pair(preceding, following))
 
-    val docFrame = MapValue.newBuilder()
-      .putFields("preceding", boundaryToProto(preceding))
-      .putFields("following", boundaryToProto(following))
-      .build()
-    builder.putFields("documents", Value.newBuilder().setMapValue(docFrame).build())
+    @JvmStatic
+    fun range(preceding: Int, following: Int): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following))
 
-    return Value.newBuilder().setMapValue(builder).build()
+    @JvmStatic
+    fun range(preceding: Int, following: Int, unit: String): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Expression, following: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
+      WindowSpec(sort = listOf(order, *additionalOrders))
+
+    @JvmStatic
+    fun sort(orders: List<Ordering>): WindowSpec =
+      WindowSpec(sort = orders)
   }
 }
 
@@ -204,20 +184,42 @@ internal fun resolveGroups(groups: Array<out Any>): List<Expression> {
     when (it) {
       is String -> Expression.field(it)
       is Expression -> it
-      is Selectable -> it.expr
       else -> throw IllegalArgumentException("Invalid partition group type: $it")
     }
   }
 }
 
-internal fun boundaryToProto(boundary: Any): Value {
+internal fun boundaryToProto(boundary: Any, userDataReader: UserDataReader): Value {
   return when (boundary) {
-    is Number -> encodeValue(boundary)
-    is String -> {
-      require(boundary == WindowSpec.CURRENT || boundary == WindowSpec.UNBOUNDED) {
-        "Boundary string must be 'current' or 'unbounded'"
+    is Expression -> boundary.toProto(userDataReader)
+    is Int -> {
+      when (boundary) {
+        WindowSpec.UNBOUNDED, Int.MAX_VALUE -> encodeValue("unbounded")
+        WindowSpec.CURRENT -> encodeValue("current")
+        else -> encodeValue(boundary.toLong())
       }
-      encodeValue(boundary)
+    }
+    is Long -> {
+      when (boundary) {
+        Int.MIN_VALUE.toLong(), Long.MIN_VALUE, Long.MAX_VALUE -> encodeValue("unbounded")
+        0L -> encodeValue("current")
+        else -> encodeValue(boundary)
+      }
+    }
+    is Double -> {
+      if (boundary.isInfinite()) {
+        encodeValue("unbounded")
+      } else {
+        val longVal = boundary.toLong()
+        if (longVal == 0L) encodeValue("current") else encodeValue(longVal)
+      }
+    }
+    is String -> {
+      when (boundary) {
+        "current" -> encodeValue("current")
+        "unbounded" -> encodeValue("unbounded")
+        else -> throw IllegalArgumentException("Invalid boundary string: $boundary")
+      }
     }
     else -> throw IllegalArgumentException("Invalid boundary type: $boundary")
   }

@@ -25,11 +25,12 @@ import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AddWindowFieldsStage
-import com.google.firebase.firestore.pipeline.FinalWindowSpec
+import com.google.firebase.firestore.pipeline.WindowSpec
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateOptions
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AliasedAggregate
+import com.google.firebase.firestore.pipeline.AliasedWindowFunction
 import com.google.firebase.firestore.pipeline.AliasedExpression
 import com.google.firebase.firestore.pipeline.BooleanExpression
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions
@@ -292,10 +293,21 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun addWindowFields(
-    window: FinalWindowSpec,
+    window: WindowSpec,
+    field: AliasedWindowFunction,
+    vararg additionalFields: Any
+  ): Pipeline = append(AddWindowFieldsStage.withWindow(window).withFields(field, *additionalFields))
+
+  fun addWindowFields(
+    window: WindowSpec,
     field: AliasedAggregate,
-    vararg additionalFields: AliasedAggregate
-  ): Pipeline = append(AddWindowFieldsStage.withFields(window, field, *additionalFields))
+    vararg additionalFields: Any
+  ): Pipeline = append(AddWindowFieldsStage.withWindow(window).withFields(field, *additionalFields))
+
+  fun addWindowFields(
+    field: AliasedWindowFunction,
+    vararg additionalFields: AliasedWindowFunction
+  ): Pipeline = append(AddWindowFieldsStage.withFields(field, *additionalFields))
 
 
   /**

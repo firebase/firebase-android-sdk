@@ -116,9 +116,9 @@ class PipelineProtoTest {
         .pipeline()
         .collection("foo")
         .addWindowFields(
-          WindowSpec.overRange(field("date").ascending(), 30, WindowSpec.CURRENT)
-            .overPartition("department")
-            .withUnits(TimeGranularity.DAY),
+          WindowSpec.range(30, WindowSpec.CURRENT, "day")
+            .sort(field("date").ascending())
+            .partition("department"),
           AggregateFunction.rawAggregate("sum", field("sales")).alias("totalSales")
         )
 

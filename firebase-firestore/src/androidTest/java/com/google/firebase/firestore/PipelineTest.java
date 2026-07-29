@@ -106,6 +106,7 @@ import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.WindowSpec;
+import com.google.firebase.firestore.pipeline.WindowFunction;
 import com.google.firebase.firestore.pipeline.TimeGranularity;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.RawStage;
@@ -4309,11 +4310,11 @@ public class PipelineTest {
             .pipeline()
             .collection(salesCol)
             .addWindowFields(
-                WindowSpec.overPartition("product"),
+                WindowSpec.partition("product"),
                 AggregateFunction.average("salesPrice").alias("productAveragePrice"),
                 AggregateFunction.countAll().alias("windowCount")
             )
-            .sortBy(ascending("product"), ascending("salesPrice"))
+            .sort(ascending("product"), ascending("salesPrice"))
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(4);
@@ -4347,10 +4348,10 @@ public class PipelineTest {
             .pipeline()
             .collection(salesCol)
             .addWindowFields(
-                WindowSpec.overDocuments(ascending("salesPrice"), 1, 1).overPartition("product"),
+                WindowSpec.documents(1, 1).sort(ascending("salesPrice")).partition("product"),
                 AggregateFunction.average("salesPrice").alias("movingAverage")
             )
-            .sortBy(ascending("product"), ascending("salesPrice"))
+            .sort(ascending("product"), ascending("salesPrice"))
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(4);
@@ -4378,10 +4379,10 @@ public class PipelineTest {
             .pipeline()
             .collection(salesCol)
             .addWindowFields(
-                WindowSpec.overRange(ascending("salesPrice"), 30, WindowSpec.CURRENT).overPartition("product"),
+                WindowSpec.range(30, WindowSpec.CURRENT).sort(ascending("salesPrice")).partition("product"),
                 AggregateFunction.sum("salesPrice").alias("runningSum")
             )
-            .sortBy(ascending("product"), ascending("salesPrice"))
+            .sort(ascending("product"), ascending("salesPrice"))
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(4);
@@ -4392,6 +4393,332 @@ public class PipelineTest {
     // for phone 30: boundary value range: [0, 30] -> matches 12, 30 -> sum = 42
     assertThat(results.get(0).getData().get("runningSum")).isEqualTo(12L);
     assertThat(results.get(1).getData().get("runningSum")).isEqualTo(42L);
+  }
+
+  @Test
+  public void testWindowFunctionsRank() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60)))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.partition("product").sort(descending("salesPrice")),
+                WindowFunction.rank().alias("topSalesRank")
+            )
+            .sort(ascending("product"), descending("salesPrice"), ascending(field(FieldPath.documentId())))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // phone, salesPrice: 30 -> rank: 1
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(0).getData().get("topSalesRank")).isEqualTo(1L);
+
+    // phone, salesPrice: 12 -> rank: 2
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(1).getData().get("topSalesRank")).isEqualTo(2L);
+
+    // tablet, salesPrice: 60 -> rank: 1
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(2).getData().get("topSalesRank")).isEqualTo(1L);
+
+    // tablet, salesPrice: 60 -> rank: 1
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("topSalesRank")).isEqualTo(1L);
+
+    // tablet, salesPrice: 30 -> rank: 3
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(4).getData().get("topSalesRank")).isEqualTo(3L);
+  }
+
+  @Test
+  public void testWindowFunctionsUnpartitionedMovingAverage() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12), entry("date", new Timestamp(1782907200L, 0)))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30), entry("date", new Timestamp(1782993600L, 0)))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30), entry("date", new Timestamp(1783080000L, 0)))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1783166400L, 0)))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1784116800L, 0))))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.documents(1, 1).sort(ascending("date")),
+                AggregateFunction.average("salesPrice").alias("movingAveragePrice"),
+                AggregateFunction.countAll().alias("windowCount")
+            )
+            .sort(ascending("date"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // 2026-07-01: phone, salesPrice: 12 -> movingAveragePrice: 21.0, windowCount: 2
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("movingAveragePrice")).isEqualTo(21.0);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(2L);
+
+    // 2026-07-02: phone, salesPrice: 30 -> movingAveragePrice: 24.0, windowCount: 3
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("movingAveragePrice")).isEqualTo(24.0);
+    assertThat(results.get(1).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-03: tablet, salesPrice: 30 -> movingAveragePrice: 40.0, windowCount: 3
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("movingAveragePrice")).isEqualTo(40.0);
+    assertThat(results.get(2).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-04: tablet, salesPrice: 60 -> movingAveragePrice: 50.0, windowCount: 3
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("movingAveragePrice")).isEqualTo(50.0);
+    assertThat(results.get(3).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-15: tablet, salesPrice: 60 -> movingAveragePrice: 60.0, windowCount: 2
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(4).getData().get("movingAveragePrice")).isEqualTo(60.0);
+    assertThat(results.get(4).getData().get("windowCount")).isEqualTo(2L);
+  }
+
+  @Test
+  public void testWindowFunctionsUnpartitionedRunningTotal() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12), entry("date", new Timestamp(1782907200L, 0)))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30), entry("date", new Timestamp(1782993600L, 0)))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30), entry("date", new Timestamp(1783080000L, 0)))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1783166400L, 0)))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1784116800L, 0))))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT).sort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("runningTotalRevenue"),
+                AggregateFunction.countAll().alias("windowCount")
+            )
+            .sort(ascending("date"))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // 2026-07-01: phone, salesPrice: 12 -> runningTotalRevenue: 12, windowCount: 1
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("runningTotalRevenue")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(1L);
+
+    // 2026-07-02: phone, salesPrice: 30 -> runningTotalRevenue: 42, windowCount: 2
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("runningTotalRevenue")).isEqualTo(42L);
+    assertThat(results.get(1).getData().get("windowCount")).isEqualTo(2L);
+
+    // 2026-07-03: tablet, salesPrice: 30 -> runningTotalRevenue: 72, windowCount: 3
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("runningTotalRevenue")).isEqualTo(72L);
+    assertThat(results.get(2).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-04: tablet, salesPrice: 60 -> runningTotalRevenue: 132, windowCount: 4
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("runningTotalRevenue")).isEqualTo(132L);
+    assertThat(results.get(3).getData().get("windowCount")).isEqualTo(4L);
+
+    // 2026-07-15: tablet, salesPrice: 60 -> runningTotalRevenue: 192, windowCount: 5
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(4).getData().get("runningTotalRevenue")).isEqualTo(192L);
+    assertThat(results.get(4).getData().get("windowCount")).isEqualTo(5L);
+  }
+
+  @Test
+  public void testWindowFunctionsTimeGranularityRange() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12), entry("date", new Timestamp(1782907200L, 0)))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30), entry("date", new Timestamp(1782993600L, 0)))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30), entry("date", new Timestamp(1783015200L, 0)))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1783166400L, 0)))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1784116800L, 0))))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT, "day").sort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("runningTotalRevenue"),
+                AggregateFunction.countAll().alias("windowCount")
+            )
+            .sort(ascending("date"), ascending(field(FieldPath.documentId())))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // 2026-07-01T12:00:00Z: phone, salesPrice: 12 -> runningTotalRevenue: 12, windowCount: 1
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("runningTotalRevenue")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(1L);
+
+    // 2026-07-02T12:00:00Z: phone, salesPrice: 30 -> runningTotalRevenue: 72, windowCount: 3
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("runningTotalRevenue")).isEqualTo(72L);
+    assertThat(results.get(1).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-02T18:00:00Z: tablet, salesPrice: 30 -> runningTotalRevenue: 72, windowCount: 3
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("runningTotalRevenue")).isEqualTo(72L);
+    assertThat(results.get(2).getData().get("windowCount")).isEqualTo(3L);
+
+    // 2026-07-04T12:00:00Z: tablet, salesPrice: 60 -> runningTotalRevenue: 132, windowCount: 4
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("runningTotalRevenue")).isEqualTo(132L);
+    assertThat(results.get(3).getData().get("windowCount")).isEqualTo(4L);
+
+    // 2026-07-15T12:00:00Z: tablet, salesPrice: 60 -> runningTotalRevenue: 192, windowCount: 5
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(4).getData().get("runningTotalRevenue")).isEqualTo(192L);
+    assertThat(results.get(4).getData().get("windowCount")).isEqualTo(5L);
+  }
+
+  @Test
+  public void testWindowFunctionsPartitionedCurrentRangeSamePriceCount() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12), entry("date", new Timestamp(1782907200L, 0)))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30), entry("date", new Timestamp(1782993600L, 0)))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30), entry("date", new Timestamp(1783015200L, 0)))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1783166400L, 0)))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1784116800L, 0))))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT)
+                    .partition("product")
+                    .sort(ascending("salesPrice")),
+                AggregateFunction.countAll().alias("samePriceSalesCount")
+            )
+            .sort(ascending("product"), ascending("salesPrice"), ascending("date"), ascending(field(FieldPath.documentId())))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // phone, salesPrice: 12 -> samePriceSalesCount: 1
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("samePriceSalesCount")).isEqualTo(1L);
+
+    // phone, salesPrice: 30 -> samePriceSalesCount: 1
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("samePriceSalesCount")).isEqualTo(1L);
+
+    // tablet, salesPrice: 30 -> samePriceSalesCount: 1
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("samePriceSalesCount")).isEqualTo(1L);
+
+    // tablet, salesPrice: 60 -> samePriceSalesCount: 2
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("samePriceSalesCount")).isEqualTo(2L);
+
+    // tablet, salesPrice: 60 -> samePriceSalesCount: 2
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(4).getData().get("samePriceSalesCount")).isEqualTo(2L);
+  }
+
+  @Test
+  public void testWindowFunctionsNegativePrecedingLookAhead() {
+    Map<String, Map<String, Object>> salesDocs =
+        mapOfEntries(
+            entry("sale1", mapOfEntries(entry("product", "phone"), entry("salesPrice", 12), entry("date", new Timestamp(1782907200L, 0)))),
+            entry("sale2", mapOfEntries(entry("product", "phone"), entry("salesPrice", 30), entry("date", new Timestamp(1782993600L, 0)))),
+            entry("sale3", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 30), entry("date", new Timestamp(1783015200L, 0)))),
+            entry("sale4", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1783166400L, 0)))),
+            entry("sale5", mapOfEntries(entry("product", "tablet"), entry("salesPrice", 60), entry("date", new Timestamp(1784116800L, 0))))
+        );
+    CollectionReference salesCol = IntegrationTestUtil.testCollectionWithDocs(salesDocs);
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(salesCol)
+            .addWindowFields(
+                WindowSpec.documents(-1, 2).sort(ascending("date")),
+                AggregateFunction.average("salesPrice").alias("lookAheadAveragePrice"),
+                AggregateFunction.countAll().alias("windowCount")
+            )
+            .sort(ascending("date"), ascending(field(FieldPath.documentId())))
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    // 2026-07-01: phone, salesPrice: 12 -> lookAheadAveragePrice: 30.0, windowCount: 2
+    assertThat(results.get(0).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(0).getData().get("salesPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("lookAheadAveragePrice")).isEqualTo(30.0);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(2L);
+
+    // 2026-07-02T12:00:00Z: phone, salesPrice: 30 -> lookAheadAveragePrice: 45.0, windowCount: 2
+    assertThat(results.get(1).getData().get("product")).isEqualTo("phone");
+    assertThat(results.get(1).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(1).getData().get("lookAheadAveragePrice")).isEqualTo(45.0);
+    assertThat(results.get(1).getData().get("windowCount")).isEqualTo(2L);
+
+    // 2026-07-02T18:00:00Z: tablet, salesPrice: 30 -> lookAheadAveragePrice: 60.0, windowCount: 2
+    assertThat(results.get(2).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(2).getData().get("salesPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("lookAheadAveragePrice")).isEqualTo(60.0);
+    assertThat(results.get(2).getData().get("windowCount")).isEqualTo(2L);
+
+    // 2026-07-04: tablet, salesPrice: 60 -> lookAheadAveragePrice: 60.0, windowCount: 1
+    assertThat(results.get(3).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(3).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(3).getData().get("lookAheadAveragePrice")).isEqualTo(60.0);
+    assertThat(results.get(3).getData().get("windowCount")).isEqualTo(1L);
+
+    // 2026-07-15: tablet, salesPrice: 60 -> lookAheadAveragePrice: null, windowCount: 0
+    assertThat(results.get(4).getData().get("product")).isEqualTo("tablet");
+    assertThat(results.get(4).getData().get("salesPrice")).isEqualTo(60L);
+    assertThat(results.get(4).getData().get("lookAheadAveragePrice")).isNull();
+    assertThat(results.get(4).getData().get("windowCount")).isEqualTo(0L);
   }
 }
 
