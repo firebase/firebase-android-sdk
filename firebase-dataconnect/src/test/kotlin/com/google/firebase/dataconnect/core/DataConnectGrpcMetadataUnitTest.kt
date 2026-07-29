@@ -154,6 +154,18 @@ class DataConnectGrpcMetadataUnitTest {
       getExpectedHeaderValue = { "tvsxjeb745.appId" },
     )
 
+  @Test
+  fun `should include x-firebase-sqlconnect-affinity`() =
+    testMetadataIncludesHeader(
+      dataConnectGrpcMetadataArb =
+        Arb.dataConnect.dataConnectGrpcMetadata(
+          appId = Arb.constant("tvsxjeb745.appId"),
+          connectorLocation = Arb.constant("q8mgtztcz2"),
+        ),
+      headerName = "x-firebase-sqlconnect-affinity",
+      getExpectedHeaderValue = { "tvsxjeb745.appIdq8mgtztcz2" },
+    )
+
   private fun testMetadataIncludesHeader(
     dataConnectGrpcMetadataArb: Arb<DataConnectGrpcMetadata> =
       Arb.dataConnect.dataConnectGrpcMetadata(),

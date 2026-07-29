@@ -84,6 +84,7 @@ internal class DataConnectGrpcMetadata(
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
         it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
         it.put(clientVersionHeader, "android/$dataConnectSdkVersion")
+        it.put(sqlConnectAffinityHeader, "$appId$connectorLocation")
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
@@ -189,6 +190,10 @@ internal class DataConnectGrpcMetadata(
     @Suppress("SpellCheckingInspection")
     private val gmpAppIdHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
+
+    @Suppress("SpellCheckingInspection")
+    private val sqlConnectAffinityHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-sqlconnect-affinity", Metadata.ASCII_STRING_MARSHALLER)
 
     fun forSystemVersions(
       firebaseApp: FirebaseApp,

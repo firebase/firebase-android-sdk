@@ -850,6 +850,27 @@ class DataConnectGrpcRPCsUnitTest {
       getExpectedHeaderValue = { "android/${it.grpcMetadata.dataConnectSdkVersion}" },
     )
 
+  @Test
+  fun `executeQuery sends x-firebase-sqlconnect-affinity header`() =
+    testExecuteQuerySendsHeader(
+      headerName = "x-firebase-sqlconnect-affinity",
+      getExpectedHeaderValue = { "${it.grpcMetadata.appId}${it.grpcMetadata.connectorLocation}" },
+    )
+
+  @Test
+  fun `executeMutation sends x-firebase-sqlconnect-affinity header`() =
+    testExecuteMutationSendsHeader(
+      headerName = "x-firebase-sqlconnect-affinity",
+      getExpectedHeaderValue = { "${it.grpcMetadata.appId}${it.grpcMetadata.connectorLocation}" },
+    )
+
+  @Test
+  fun `connect sends x-firebase-sqlconnect-affinity header`() =
+    testConnectSendsHeader(
+      headerName = "x-firebase-sqlconnect-affinity",
+      getExpectedHeaderValue = { "${it.grpcMetadata.appId}${it.grpcMetadata.connectorLocation}" },
+    )
+
   private fun testExecuteQuerySendsHeader(
     headerName: String,
     getExpectedHeaderValue: (DataConnectGrpcRPCs) -> String,

@@ -329,6 +329,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
           googRequestParamsHeader.name(),
           googApiClientHeader.name(),
           clientVersionHeader.name(),
+          sqlConnectAffinityHeader.name(),
         )
       assertSoftly {
         // Do not verify "x-firebase-auth-token" here since that header is effectively tested by
@@ -338,6 +339,8 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
         metadata.get(googApiClientHeader) shouldBe expectedGoogApiClientHeader(isFromGeneratedSdk)
         metadata.get(gmpAppIdHeader) shouldBe expectedAppId
         metadata.get(clientVersionHeader) shouldBe "android/${BuildConfig.VERSION_NAME}"
+        metadata.get(sqlConnectAffinityHeader) shouldBe
+          "$expectedAppId${dataConnect.config.location}"
       }
     }
   }
@@ -478,6 +481,10 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val clientVersionHeader: Metadata.Key<String> =
       Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
+
+    @Suppress("SpellCheckingInspection")
+    val sqlConnectAffinityHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-sqlconnect-affinity", Metadata.ASCII_STRING_MARSHALLER)
 
     private val gmpAppIdHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
