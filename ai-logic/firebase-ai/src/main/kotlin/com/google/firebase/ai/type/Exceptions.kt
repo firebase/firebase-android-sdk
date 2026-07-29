@@ -178,7 +178,7 @@ internal constructor(
  * The specified Vertex AI location is invalid.
  *
  * For a list of valid locations, see
- * [locations.](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+ * [locations.](https://firebase.google.com/docs/ai-logic/locations?api=vertex#available-locations`)
  */
 public class InvalidLocationException
 internal constructor(location: String, cause: Throwable? = null) :
