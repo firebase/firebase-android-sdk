@@ -52,7 +52,8 @@ private constructor(
   public class TurnCoverage private constructor(internal val value: String) {
     public companion object {
       /**
-       * The model will exclude inactivity (e.g, silence on the audio stream) from the user's input.
+       * The model will exclude inactivity (for example, silence on the audio stream) from the
+       * user's input.
        */
       @JvmField public val ONLY_ACTIVITY: TurnCoverage = TurnCoverage("TURN_INCLUDES_ONLY_ACTIVITY")
 
