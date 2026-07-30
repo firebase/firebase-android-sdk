@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Closed the response stream when deleting an installation to avoid a StrictMode
+  `LeakedClosableViolation`.
+
 # 19.1.2
 
 - [changed] Migrated from SharedPreferences to DataStore (#8355)
