@@ -135,13 +135,6 @@ class DataConnectGrpcMetadataUnitTest {
     )
 
   @Test
-  fun `should include x-client-platform`() =
-    testMetadataIncludesHeader(
-      headerName = "x-client-platform",
-      getExpectedHeaderValue = { "android" },
-    )
-
-  @Test
   fun `should include x-client-version`() =
     testMetadataIncludesHeader(
       dataConnectGrpcMetadataArb =
@@ -149,7 +142,7 @@ class DataConnectGrpcMetadataUnitTest {
           dataConnectSdkVersion = Arb.constant("v3q46qc2ax"),
         ),
       headerName = "x-client-version",
-      getExpectedHeaderValue = { "v3q46qc2ax" },
+      getExpectedHeaderValue = { "android/v3q46qc2ax" },
     )
 
   @Test
