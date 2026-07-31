@@ -118,8 +118,8 @@ class GmsRegistrationClient {
 
   /**
    * Returns FIS auth token and installation ID (FID). This function will call the
-   * firebaseInstallations api in the right order i.e. calls getToken first followed by getId. This
-   * ensures no stale FID is fetched.
+   * firebaseInstallations api in the right order, that is, calls getToken first followed by
+   * getId. This ensures no stale FID is fetched.
    *
    * @return A {@link Task} containing a {@link Pair} where the first element is the FID and the
    *     second element is the FIS token.

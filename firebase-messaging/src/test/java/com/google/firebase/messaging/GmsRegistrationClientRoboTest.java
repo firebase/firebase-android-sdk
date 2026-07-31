@@ -15,6 +15,9 @@ package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -23,6 +26,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.cloudmessaging.CloudMessagingClient;
 import com.google.android.gms.tasks.Task;
@@ -32,13 +36,17 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
@@ -231,6 +239,97 @@ public class GmsRegistrationClientRoboTest {
   }
 
   @Test
+  public void testRegister_v1Flow_getIdFailure() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    // Mock getId to fail
+    Exception exception = new Exception("Simulated FIS ID Failure");
+    when(mockFirebaseInstallationsApi.getId()).thenReturn(Tasks.forException(exception));
+
+    Task<String> task = client.register();
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS ID Failure");
+  }
+
+  @Test
+  public void testRegister_v1Flow_withSupport_fidAlreadyUsed_retriesAndSucceeds() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
+    when(mockCloudMessagingClient.register(Mockito.any()))
+        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error")))
+        .thenReturn(Tasks.forResult(TEST_FID));
+
+    client =
+        new GmsRegistrationClient(
+            firebaseApp,
+            mockFirebaseInstallationsApi,
+            mockGmsRpc,
+            mockCloudMessagingClient,
+            metadata);
+
+    Task<String> task = client.register();
+
+    assertThat(awaitTaskOnBackground(task)).isEqualTo(TEST_FID);
+    verify(mockCloudMessagingClient, times(2)).register(Mockito.any());
+  }
+
+  @Test
+  public void testRegister_v1Flow_withSupport_fidAlreadyUsed_retriesAndFails() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
+    when(mockCloudMessagingClient.register(Mockito.any()))
+        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error 1")))
+        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error 2")));
+
+    client =
+        new GmsRegistrationClient(
+            firebaseApp,
+            mockFirebaseInstallationsApi,
+            mockGmsRpc,
+            mockCloudMessagingClient,
+            metadata);
+
+    Task<String> task = client.register();
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("FID_ALREADY_USED: test error 2");
+    verify(mockCloudMessagingClient, times(2)).register(Mockito.any());
+  }
+
+  @Test
+  public void testRegister_v1Flow_withSupport_otherException_doesNotRetry() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
+    when(mockCloudMessagingClient.register(Mockito.any()))
+        .thenReturn(Tasks.forException(new Exception("Simulated Other Failure")));
+
+    client =
+        new GmsRegistrationClient(
+            firebaseApp,
+            mockFirebaseInstallationsApi,
+            mockGmsRpc,
+            mockCloudMessagingClient,
+            metadata);
+
+    Task<String> task = client.register();
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated Other Failure");
+    verify(mockCloudMessagingClient, times(1)).register(Mockito.any());
+  }
+
+  @Test
   public void testUnregister_v1Flow_withSupport_success() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
@@ -254,5 +353,76 @@ public class GmsRegistrationClientRoboTest {
     ExecutionException e =
         assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
     assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Failure");
+  }
+
+  @Test
+  public void testUnregister_v1Flow_getIdFailure() throws Exception {
+    setV1RegistrationEnabled(true);
+    when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
+
+    // Mock getId to fail
+    Exception exception = new Exception("Simulated FIS ID Failure");
+    when(mockFirebaseInstallationsApi.getId()).thenReturn(Tasks.forException(exception));
+
+    Task<?> task = client.unregister();
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS ID Failure");
+  }
+
+  @Test
+  public void testFetchFidCredentials_success() throws Exception {
+    Method method =
+        GmsRegistrationClient.class.getDeclaredMethod("fetchFidCredentials", ExecutorService.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    Task<Pair<String, String>> task =
+        (Task<Pair<String, String>>) method.invoke(client, FcmExecutors.newNetworkIOExecutor());
+
+    Pair<String, String> result = awaitTaskOnBackground(task);
+    assertThat(result.first).isEqualTo(TEST_FID);
+    assertThat(result.second).isEqualTo(TEST_TOKEN);
+    InOrder inOrder = inOrder(mockFirebaseInstallationsApi);
+    inOrder.verify(mockFirebaseInstallationsApi).getToken(false);
+    inOrder.verify(mockFirebaseInstallationsApi).getId();
+  }
+
+  @Test
+  public void testFetchFidCredentials_getTokenFailure() throws Exception {
+    Exception exception = new Exception("Simulated FIS Token Failure");
+    when(mockFirebaseInstallationsApi.getToken(false)).thenReturn(Tasks.forException(exception));
+
+    Method method =
+        GmsRegistrationClient.class.getDeclaredMethod("fetchFidCredentials", ExecutorService.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    Task<Pair<String, String>> task =
+        (Task<Pair<String, String>>) method.invoke(client, FcmExecutors.newNetworkIOExecutor());
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS Token Failure");
+    verify(mockFirebaseInstallationsApi).getToken(false);
+    verify(mockFirebaseInstallationsApi, never()).getId();
+  }
+
+  @Test
+  public void testFetchFidCredentials_getIdFailure() throws Exception {
+    Exception exception = new Exception("Simulated FIS ID Failure");
+    when(mockFirebaseInstallationsApi.getId()).thenReturn(Tasks.forException(exception));
+
+    Method method =
+        GmsRegistrationClient.class.getDeclaredMethod("fetchFidCredentials", ExecutorService.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    Task<Pair<String, String>> task =
+        (Task<Pair<String, String>>) method.invoke(client, FcmExecutors.newNetworkIOExecutor());
+
+    ExecutionException e =
+        assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
+    assertThat(e.getCause()).hasMessageThat().contains("Simulated FIS ID Failure");
+    verify(mockFirebaseInstallationsApi).getToken(false);
+    verify(mockFirebaseInstallationsApi).getId();
   }
 }
