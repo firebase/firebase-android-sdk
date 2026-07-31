@@ -77,6 +77,7 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
   dataConnectSdkVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   grpcVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   appId: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
+  projectId: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
 ): Arb<DataConnectGrpcMetadata> = arbitrary {
   DataConnectGrpcMetadata(
     connectorLocation = connectorLocation.bind(),
@@ -86,6 +87,7 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
     dataConnectSdkVersion = dataConnectSdkVersion.bind(),
     grpcVersion = grpcVersion.bind(),
     appId = appId.bind(),
+    projectId = projectId.bind(),
     parentLogger = mockk(relaxed = true),
   )
 }

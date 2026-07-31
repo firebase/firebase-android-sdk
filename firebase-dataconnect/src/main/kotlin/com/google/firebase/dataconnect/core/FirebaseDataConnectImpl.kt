@@ -299,6 +299,7 @@ internal class FirebaseDataConnectImpl(
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = app,
+        projectId = projectId,
         connectorLocation = config.location,
         connectorServiceId = config.serviceId,
         parentLogger = logger,
