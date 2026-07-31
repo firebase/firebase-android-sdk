@@ -11,6 +11,9 @@
   to enable metrics collection in cloud monitoring.
   ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486),
   [#8495](https://github.com/firebase/firebase-android-sdk/pull/8495))
+- [changed] Add grpc request header for SQL Connect server affinity, to improve
+  server resource usage efficiency and performance.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 - [changed] Wait for 15 seconds before closing realtime streaming connection
   with backend after last subscriber unsubscribes (instead of closing the
   connection immediately).
