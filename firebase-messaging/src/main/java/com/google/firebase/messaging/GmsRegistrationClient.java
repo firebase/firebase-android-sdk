@@ -17,22 +17,26 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
+import android.util.Pair;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.cloudmessaging.CloudMessaging;
 import com.google.android.gms.cloudmessaging.CloudMessagingClient;
 import com.google.android.gms.cloudmessaging.RegisterRequest;
 import com.google.android.gms.cloudmessaging.UnregisterRequest;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.BuildConfig;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 /** A client for the CloudMessaging API to make FCM registration calls. */
 class GmsRegistrationClient {
+
   static final String MANIFEST_METADATA_FIREBASE_MESSAGING_INSTALLATION_ID_ENABLED =
       "firebase_messaging_installation_id_enabled";
   private static final int GMS_VERSION_Y2026W12 = 261200000;
@@ -65,12 +69,16 @@ class GmsRegistrationClient {
     this.metadata = metadata;
   }
 
-  /** Checks whether the installed gmscore supports v1 registration. */
+  /**
+   * Checks whether the installed gmscore supports v1 registration.
+   */
   private boolean haveV1RegistrationSupport() {
     return metadata.getGmsVersionCode() >= GMS_VERSION_Y2026W12;
   }
 
-  /** Reads the Manifest metadata to check whether FCM V1 registration is enabled or not. */
+  /**
+   * Reads the Manifest metadata to check whether FCM V1 registration is enabled or not.
+   */
   public boolean isV1RegistrationEnabled() {
     Context applicationContext = app.getApplicationContext();
     try {
@@ -94,12 +102,89 @@ class GmsRegistrationClient {
   }
 
   /**
+   * Checks for the presence of "FID_ALREADY_USED:" in the exception message.
+   */
+  private static boolean isFIDAlreadyUsedException(@Nullable Exception e) {
+    return e != null
+        && !TextUtils.isEmpty(e.getMessage())
+        && e.getMessage().contains("FID_ALREADY_USED:");
+  }
+
+  private Exception getException(Task<?> task) {
+    return task.getException() != null
+        ? task.getException()
+        : new ExecutionException(new RuntimeException("Unexpected Error"));
+  }
+
+  /**
+   * Returns FIS auth token and installation ID (FID). This function will call the
+   * firebaseInstallations api in the right order i.e. calls getToken first followed by getId. This
+   * ensures no stale FID is fetched.
+   *
+   * @return A {@link Task} containing a {@link Pair} where the first element is the FID and the
+   *     second element is the FIS token.
+   */
+  @NonNull
+  private Task<Pair<String, String>> fetchFidCredentials(ExecutorService executorService) {
+    return firebaseInstallations
+        .getToken(false)
+        .continueWithTask(
+            executorService,
+            tokenTask -> {
+              if (!tokenTask.isSuccessful()) {
+                return Tasks.forException(getException(tokenTask));
+              }
+              String fisToken = tokenTask.getResult().getToken();
+              return firebaseInstallations
+                  .getId()
+                  .continueWithTask(
+                      executorService,
+                      idTask -> {
+                        if (!idTask.isSuccessful()) {
+                          return Tasks.forException(getException(idTask));
+                        }
+                        String fid = idTask.getResult();
+                        return Tasks.forResult(new Pair<>(fid, fisToken));
+                      });
+            });
+  }
+
+  /**
    * Registers this app to receive push messages.
    *
    * @return The registration token for sending messages to this app instance.
    */
   @NonNull
   public Task<String> register() {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+
+    FcmExecutors.newTaskExecutor()
+        .execute(
+            () -> {
+              try {
+                String regResult = Tasks.await(registerInternal());
+                taskCompletionSource.setResult(regResult);
+              } catch (Exception e) {
+                if (isFIDAlreadyUsedException(e)) {
+                  try {
+                    // Clearing FID cache and try again to use a new FID.
+                    FirebaseInstallations.getInstance().clearFidCache();
+                    String reRegResult = Tasks.await(registerInternal());
+                    taskCompletionSource.setResult(reRegResult);
+                  } catch (Exception ex) {
+                    taskCompletionSource.setException(ex);
+                  }
+                } else {
+                  taskCompletionSource.setException(e);
+                }
+              }
+            });
+
+    return taskCompletionSource.getTask();
+  }
+
+  @NonNull
+  private Task<String> registerInternal() {
     boolean useV1 = isV1RegistrationEnabled();
     if (!useV1 || !haveV1RegistrationSupport()) {
       // Legacy registration flow.
@@ -108,16 +193,18 @@ class GmsRegistrationClient {
 
     // Proceeding with V1 registration.
     ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
-    return firebaseInstallations
-        .getId()
+    return fetchFidCredentials(executorService)
         .continueWithTask(
             executorService,
-            idTask -> {
-              if (!idTask.isSuccessful()) {
-                return Tasks.forException(getException(idTask));
+            fisTask -> {
+              if (!fisTask.isSuccessful()) {
+                return Tasks.forException(getException(fisTask));
               }
-              String installationId = idTask.getResult();
-              return registerOverV1Async(installationId)
+
+              String installationId = fisTask.getResult().first;
+              String fisToken = fisTask.getResult().second;
+
+              return registerOverV1(installationId, fisToken)
                   .continueWith(
                       executorService,
                       registerTask -> {
@@ -140,41 +227,22 @@ class GmsRegistrationClient {
             });
   }
 
-  private Exception getException(Task<?> task) {
-    return task.getException() != null
-        ? task.getException()
-        : new ExecutionException(new RuntimeException("Unexpected Error"));
-  }
-
   @NonNull
-  private Task<String> registerOverV1Async(String installationId) {
-    return firebaseInstallations
-        .getToken(false)
-        .continueWithTask(
-            FcmExecutors.newNetworkIOExecutor(),
-            tokenTask -> {
-              if (!tokenTask.isSuccessful()) {
-                return Tasks.forException(getException(tokenTask));
-              }
-              String installationAuthToken = tokenTask.getResult().getToken();
-              String apiKey = app.getOptions().getApiKey();
-              String gmpAppId = app.getOptions().getApplicationId();
-              String senderId = Metadata.getDefaultSenderId(app);
-              String sdkVersion = BuildConfig.VERSION_NAME;
+  private Task<String> registerOverV1(String installationId, String installationAuthToken) {
+    String apiKey = app.getOptions().getApiKey();
+    String gmpAppId = app.getOptions().getApplicationId();
+    String senderId = Metadata.getDefaultSenderId(app);
+    String sdkVersion = "fcm-" + BuildConfig.VERSION_NAME;
 
-              RegisterRequest request =
-                  new RegisterRequest(
-                      senderId,
-                      gmpAppId,
-                      apiKey,
-                      installationId,
-                      installationAuthToken,
-                      sdkVersion);
-              return client.register(request);
-            });
+    RegisterRequest request =
+        new RegisterRequest(
+            senderId, gmpAppId, apiKey, installationId, installationAuthToken, sdkVersion);
+    return client.register(request);
   }
 
-  /** Unregisters this app from receiving push messages. */
+  /**
+   * Unregisters this app from receiving push messages.
+   */
   @NonNull
   public Task<?> unregister() {
     boolean useV1 = isV1RegistrationEnabled();
@@ -185,46 +253,28 @@ class GmsRegistrationClient {
     }
 
     // Proceeding with V1 un-registration.
-    ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
-    return unregisterOverV1Async()
-        .continueWithTask(
-            executorService,
-            task -> {
-              if (!task.isSuccessful()) {
-                return Tasks.forException(getException(task));
-              }
-              return Tasks.forResult(null);
-            });
+    return unregisterOverV1();
   }
 
-  private Task<Void> unregisterOverV1Async() {
+  private Task<Void> unregisterOverV1() {
     ExecutorService executorService = FcmExecutors.newNetworkIOExecutor();
-    return firebaseInstallations
-        .getId()
+
+    return fetchFidCredentials(executorService)
         .continueWithTask(
             executorService,
-            idTask -> {
-              if (!idTask.isSuccessful()) {
-                return Tasks.forException(getException(idTask));
+            fisTask -> {
+              if (!fisTask.isSuccessful()) {
+                return Tasks.forException(getException(fisTask));
               }
-              String installationId = idTask.getResult();
-              return firebaseInstallations
-                  .getToken(false)
-                  .continueWithTask(
-                      executorService,
-                      tokenTask -> {
-                        if (!tokenTask.isSuccessful()) {
-                          return Tasks.forException(getException(tokenTask));
-                        }
-                        String installationAuthToken = tokenTask.getResult().getToken();
-                        String apiKey = app.getOptions().getApiKey();
-                        String projectId = Metadata.getDefaultSenderId(app);
 
-                        UnregisterRequest request =
-                            new UnregisterRequest(
-                                projectId, apiKey, installationId, installationAuthToken);
-                        return client.unregister(request);
-                      });
+              String installationId = fisTask.getResult().first;
+              String installationAuthToken = fisTask.getResult().second;
+              String apiKey = app.getOptions().getApiKey();
+              String projectId = Metadata.getDefaultSenderId(app);
+
+              UnregisterRequest request =
+                  new UnregisterRequest(projectId, apiKey, installationId, installationAuthToken);
+              return client.unregister(request);
             });
   }
 }
