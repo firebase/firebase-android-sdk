@@ -31,6 +31,7 @@ import io.grpc.Metadata
 
 internal class DataConnectGrpcMetadata(
   val connectorLocation: String,
+  val connectorServiceId: String,
   val kotlinVersion: String,
   val androidVersion: Int,
   val dataConnectSdkVersion: String,
@@ -43,6 +44,7 @@ internal class DataConnectGrpcMetadata(
       debug {
         "created by ${parentLogger.nameWithId} with" +
           " connectorLocation=$connectorLocation" +
+          " connectorServiceId=$connectorServiceId" +
           " kotlinVersion=$kotlinVersion" +
           " androidVersion=$androidVersion" +
           " dataConnectSdkVersion=$dataConnectSdkVersion" +
@@ -84,7 +86,7 @@ internal class DataConnectGrpcMetadata(
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
         it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
         it.put(clientVersionHeader, "android/$dataConnectSdkVersion")
-        it.put(sqlConnectAffinityHeader, "$appId$connectorLocation")
+        it.put(sqlConnectAffinityHeader, "$appId$connectorServiceId")
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
@@ -198,10 +200,12 @@ internal class DataConnectGrpcMetadata(
     fun forSystemVersions(
       firebaseApp: FirebaseApp,
       connectorLocation: String,
+      connectorServiceId: String,
       parentLogger: Logger,
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         connectorLocation = connectorLocation,
+        connectorServiceId = connectorServiceId,
         kotlinVersion = "${KotlinVersion.CURRENT}",
         androidVersion = Build.VERSION.SDK_INT,
         dataConnectSdkVersion = BuildConfig.VERSION_NAME,

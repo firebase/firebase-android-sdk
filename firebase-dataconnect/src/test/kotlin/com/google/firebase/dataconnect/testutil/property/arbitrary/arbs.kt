@@ -71,6 +71,7 @@ import kotlinx.serialization.modules.SerializersModule
 
 internal fun DataConnectArb.dataConnectGrpcMetadata(
   connectorLocation: Arb<String> = connectorLocation(),
+  connectorServiceId: Arb<String> = connectorServiceId(),
   kotlinVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   androidVersion: Arb<Int> = Arb.int(0..100),
   dataConnectSdkVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
@@ -79,6 +80,7 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
 ): Arb<DataConnectGrpcMetadata> = arbitrary {
   DataConnectGrpcMetadata(
     connectorLocation = connectorLocation.bind(),
+    connectorServiceId = connectorServiceId.bind(),
     kotlinVersion = kotlinVersion.bind(),
     androidVersion = androidVersion.bind(),
     dataConnectSdkVersion = dataConnectSdkVersion.bind(),

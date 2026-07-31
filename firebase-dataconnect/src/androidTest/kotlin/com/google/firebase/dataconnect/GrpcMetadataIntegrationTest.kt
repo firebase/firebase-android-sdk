@@ -340,7 +340,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
         metadata.get(gmpAppIdHeader) shouldBe expectedAppId
         metadata.get(clientVersionHeader) shouldBe "android/${BuildConfig.VERSION_NAME}"
         metadata.get(sqlConnectAffinityHeader) shouldBe
-          "$expectedAppId${dataConnect.config.location}"
+          "$expectedAppId${dataConnect.config.serviceId}"
       }
     }
   }

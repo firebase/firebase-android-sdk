@@ -160,7 +160,7 @@ class DataConnectGrpcMetadataUnitTest {
       dataConnectGrpcMetadataArb =
         Arb.dataConnect.dataConnectGrpcMetadata(
           appId = Arb.constant("tvsxjeb745.appId"),
-          connectorLocation = Arb.constant("q8mgtztcz2"),
+          connectorServiceId = Arb.constant("q8mgtztcz2"),
         ),
       headerName = "x-firebase-sqlconnect-affinity",
       getExpectedHeaderValue = { "tvsxjeb745.appIdq8mgtztcz2" },
@@ -371,16 +371,19 @@ class DataConnectGrpcMetadataUnitTest {
   @Test
   fun `forSystemVersions() should return correct values`() = runTest {
     val connectorLocation = Arb.dataConnect.connectorLocation().next()
+    val connectorServiceId = Arb.dataConnect.connectorServiceId().next()
 
     val dataConnectGrpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = firebaseAppFactory.newInstance(),
         connectorLocation = connectorLocation,
+        connectorServiceId = connectorServiceId,
         parentLogger = mockk(relaxed = true),
       )
 
     dataConnectGrpcMetadata.asClue {
       it.connectorLocation shouldBeSameInstanceAs connectorLocation
+      it.connectorServiceId shouldBeSameInstanceAs connectorServiceId
       it.kotlinVersion shouldBe "${KotlinVersion.CURRENT}"
       it.androidVersion shouldBe Build.VERSION.SDK_INT
       it.dataConnectSdkVersion shouldBe BuildConfig.VERSION_NAME
