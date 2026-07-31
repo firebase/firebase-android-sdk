@@ -29,7 +29,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -168,7 +167,7 @@ class GmsRegistrationClient {
                 if (isFIDAlreadyUsedException(e)) {
                   try {
                     // Clearing FID cache and try again to use a new FID.
-                    FirebaseInstallations.getInstance().clearFidCache();
+                    firebaseInstallations.clearFidCache();
                     String reRegResult = Tasks.await(registerInternal());
                     taskCompletionSource.setResult(reRegResult);
                   } catch (Exception ex) {
