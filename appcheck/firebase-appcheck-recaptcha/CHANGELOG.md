@@ -1,5 +1,7 @@
 # Unreleased
 
+# 19.2.0
+
 - [changed] Initialization now requires the site key to be passed as a parameter. (#8457)
 
 # 19.1.0
