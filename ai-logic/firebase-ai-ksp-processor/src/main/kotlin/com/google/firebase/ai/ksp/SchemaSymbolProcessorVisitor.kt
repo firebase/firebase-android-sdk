@@ -71,27 +71,18 @@ internal class SchemaSymbolProcessorVisitor(
   }
 
   fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
+    val className = classDeclaration.toClassName()
+    val simpleNamesJoined = className.simpleNames.joinToString("_")
     return FileSpec.builder(
-        classDeclaration.packageName.asString(),
-        "${classDeclaration.simpleName.asString()}GeneratedSchema",
+        className.packageName,
+        "${simpleNamesJoined}GeneratedSchema",
       )
       .addImport("com.google.firebase.ai.type", "JsonSchema")
       .addFunction(
         FunSpec.builder("firebaseAISchema")
-          .receiver(
-            ClassName(
-              classDeclaration.packageName.asString(),
-              classDeclaration.simpleName.asString() + ".Companion"
-            )
-          )
+          .receiver(className.nestedClass("Companion"))
           .returns(
-            ClassName("com.google.firebase.ai.type", "JsonSchema")
-              .parameterizedBy(
-                ClassName(
-                  classDeclaration.packageName.asString(),
-                  classDeclaration.simpleName.asString()
-                )
-              )
+            ClassName("com.google.firebase.ai.type", "JsonSchema").parameterizedBy(className)
           )
           .addAnnotation(Generated::class)
           .addCode(
@@ -292,17 +283,19 @@ internal class SchemaSymbolProcessorVisitor(
   private fun mapToMlKitCompanionType(type: KSType): TypeName {
     if (isListOfGenerableClass(type)) {
       type.arguments.firstOrNull()?.type?.resolve()?.let { argType ->
+        val ksClass = argType.declaration as KSClassDeclaration
         val argClassName =
           ClassName(
-            argType.declaration.packageName.asString(),
-            "${argType.declaration.simpleName.asString()}_MlKitCompanion",
+            ksClass.packageName.asString(),
+            "${ksClass.toClassName().simpleNames.joinToString("_")}_MlKitCompanion",
           )
         return ClassName("kotlin.collections", "List").parameterizedBy(argClassName)
       }
     } else if (isGenerableClass(type)) {
+      val ksClass = type.declaration as KSClassDeclaration
       return ClassName(
-        type.declaration.packageName.asString(),
-        "${type.declaration.simpleName.asString()}_MlKitCompanion"
+        ksClass.packageName.asString(),
+        "${ksClass.toClassName().simpleNames.joinToString("_")}_MlKitCompanion"
       )
     }
     return type.toTypeName()
@@ -310,7 +303,8 @@ internal class SchemaSymbolProcessorVisitor(
 
   fun generateMlKitCompanionFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
     val packageName = classDeclaration.packageName.asString()
-    val companionClassName = "${classDeclaration.simpleName.asString()}_MlKitCompanion"
+    val simpleNamesJoined = classDeclaration.toClassName().simpleNames.joinToString("_")
+    val companionClassName = "${simpleNamesJoined}_MlKitCompanion"
     val fileBuilder =
       FileSpec.builder(packageName, companionClassName).addAnnotation(Generated::class)
 
@@ -330,9 +324,7 @@ internal class SchemaSymbolProcessorVisitor(
 
     val primaryConstructor = FunSpec.constructorBuilder()
     val toSdkBuilder =
-      FunSpec.builder("toSdk")
-        .addAnnotation(keepAnnotation)
-        .returns(ClassName(packageName, classDeclaration.simpleName.asString()))
+      FunSpec.builder("toSdk").addAnnotation(keepAnnotation).returns(classDeclaration.toClassName())
     val toSdkArgs = mutableListOf<String>()
 
     classDeclaration.getAllProperties().forEach { property ->
@@ -386,7 +378,7 @@ internal class SchemaSymbolProcessorVisitor(
     classBuilder.primaryConstructor(primaryConstructor.build())
     toSdkBuilder.addStatement(
       "return %T(\n  ${toSdkArgs.joinToString(",\n  ")}\n)",
-      ClassName(packageName, classDeclaration.simpleName.asString())
+      classDeclaration.toClassName()
     )
     classBuilder.addFunction(toSdkBuilder.build())
 

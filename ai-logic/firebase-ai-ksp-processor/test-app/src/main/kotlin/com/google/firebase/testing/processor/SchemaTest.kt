@@ -32,10 +32,16 @@ data class RootSchemaTestClass(
   val listTest: List<Int>,
   @Guide(description = "most likely true, very rarely false") val booleanTest: Boolean,
   val stringTest: String,
-  val nestedSchemaTest: SecondarySchemaTestClass,
+  val compositeSchemaTest: SecondarySchemaTestClass,
   val enumTest: EnumTest,
   @Guide(enumValues = ["NORTH", "SOUTH", "EAST", "WEST"]) val stringEnumTest: String,
+  val nestedSchemaTest: NestedSchemaTestClass,
 ) {
+  @Generable
+  data class NestedSchemaTestClass(val deeplyNestedString: String) {
+    companion object
+  }
+
   companion object
 }
 

@@ -31,70 +31,72 @@ class FirebaseKspProcessorTest {
     assertThat(rootSchema.clazz).isEqualTo(RootSchemaTestClass::class)
     assertThat(rootSchema.description).isEqualTo("A test kdoc")
 
-    assertThat(rootSchema.properties?.get("integerTest")).isNotNull()
-    val intSchema = rootSchema.properties?.get("integerTest")!!
-    assertThat(intSchema.title).isEqualTo("integerTest")
-    assertThat(intSchema.nullable).isEqualTo(true)
+    val properties = checkNotNull(rootSchema.properties)
 
-    assertThat(rootSchema.properties?.get("longTest")).isNotNull()
-    val longSchema = rootSchema.properties?.get("longTest")!!
+    val intSchema = checkNotNull(properties["integerTest"])
+    assertThat(intSchema.title).isEqualTo("integerTest")
+    assertThat(intSchema.nullable).isTrue()
+
+    val longSchema = checkNotNull(properties["longTest"])
     assertThat(longSchema.title).isEqualTo("longTest")
     assertThat(longSchema.description).isEqualTo("a test long that takes up multiple lines")
-    assertThat(longSchema.nullable).isEqualTo(false)
+    assertThat(longSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("floatTest")).isNotNull()
-    val floatSchema = rootSchema.properties?.get("floatTest")!!
+    val floatSchema = checkNotNull(properties["floatTest"])
     assertThat(floatSchema.title).isEqualTo("floatTest")
-    assertThat(floatSchema.nullable).isEqualTo(false)
+    assertThat(floatSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("doubleTest")).isNotNull()
-    val doubleSchema = rootSchema.properties?.get("doubleTest")!!
+    val doubleSchema = checkNotNull(properties["doubleTest"])
     assertThat(doubleSchema.title).isEqualTo("doubleTest")
     assertThat(doubleSchema.minimum).isEqualTo(5.0)
-    assertThat(doubleSchema.nullable).isEqualTo(true)
+    assertThat(doubleSchema.nullable).isTrue()
 
-    assertThat(rootSchema.properties?.get("listTest")).isNotNull()
-    val listSchema = rootSchema.properties?.get("listTest")!!
+    val listSchema = checkNotNull(properties["listTest"])
     assertThat(listSchema.title).isEqualTo("listTest")
-    assertThat(listSchema.nullable).isEqualTo(false)
+    assertThat(listSchema.nullable).isFalse()
     assertThat(listSchema.items?.type).isEqualTo("INTEGER")
 
-    assertThat(rootSchema.properties?.get("booleanTest")).isNotNull()
-    val booleanSchema = rootSchema.properties?.get("booleanTest")!!
+    val booleanSchema = checkNotNull(properties["booleanTest"])
     assertThat(booleanSchema.title).isEqualTo("booleanTest")
     assertThat(booleanSchema.description).isEqualTo("most likely true, very rarely false")
-    assertThat(booleanSchema.nullable).isEqualTo(false)
+    assertThat(booleanSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("stringTest")).isNotNull()
-    val stringSchema = rootSchema.properties?.get("stringTest")!!
+    val stringSchema = checkNotNull(properties["stringTest"])
     assertThat(stringSchema.title).isEqualTo("stringTest")
-    assertThat(stringSchema.nullable).isEqualTo(false)
+    assertThat(stringSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("enumTest")).isNotNull()
-    val enumSchema = rootSchema.properties?.get("enumTest")!!
+    val enumSchema = checkNotNull(properties["enumTest"])
     assertThat(enumSchema.clazz).isEqualTo(EnumTest::class)
     assertThat(enumSchema.enum).isEqualTo(listOf("A", "B", "C"))
     assertThat(enumSchema.title).isEqualTo("enumTest")
-    assertThat(enumSchema.nullable).isEqualTo(false)
+    assertThat(enumSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("nestedSchemaTest")).isNotNull()
-    val nestedSchema = rootSchema.properties?.get("nestedSchemaTest")!!
+    val nestedSchema = checkNotNull(properties["compositeSchemaTest"])
     assertThat(nestedSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
     assertThat(nestedSchema.properties).isNotNull()
     assertThat(nestedSchema.description).isNull()
-    assertThat(nestedSchema.title).isEqualTo("nestedSchemaTest")
-    assertThat(nestedSchema.nullable).isEqualTo(false)
+    assertThat(nestedSchema.title).isEqualTo("compositeSchemaTest")
+    assertThat(nestedSchema.nullable).isFalse()
 
-    assertThat(nestedSchema.properties?.get("testString")).isNotNull()
-    val nestedStringSchema = nestedSchema.properties?.get("testString")!!
+    val nestedProperties = checkNotNull(nestedSchema.properties)
+    val nestedStringSchema = checkNotNull(nestedProperties["testString"])
     assertThat(nestedStringSchema.title).isEqualTo("testString")
     assertThat(nestedStringSchema.description).isEqualTo("A nested string")
-    assertThat(nestedStringSchema.nullable).isEqualTo(false)
+    assertThat(nestedStringSchema.nullable).isFalse()
 
-    assertThat(rootSchema.properties?.get("stringEnumTest")).isNotNull()
-    val stringEnumSchema = rootSchema.properties?.get("stringEnumTest")!!
+    val stringEnumSchema = checkNotNull(properties["stringEnumTest"])
     assertThat(stringEnumSchema.enum).isEqualTo(listOf("NORTH", "SOUTH", "EAST", "WEST"))
     assertThat(stringEnumSchema.title).isEqualTo("stringEnumTest")
-    assertThat(stringEnumSchema.nullable).isEqualTo(false)
+    assertThat(stringEnumSchema.nullable).isFalse()
+
+    val lexicallyNestedSchema = checkNotNull(properties["nestedSchemaTest"])
+    assertThat(lexicallyNestedSchema.clazz)
+      .isEqualTo(RootSchemaTestClass.NestedSchemaTestClass::class)
+    assertThat(lexicallyNestedSchema.properties).isNotNull()
+    assertThat(lexicallyNestedSchema.title).isEqualTo("nestedSchemaTest")
+
+    val lexicallyNestedProperties = checkNotNull(lexicallyNestedSchema.properties)
+    val deeplyNestedStringSchema = checkNotNull(lexicallyNestedProperties["deeplyNestedString"])
+    assertThat(deeplyNestedStringSchema.title).isEqualTo("deeplyNestedString")
   }
 }
