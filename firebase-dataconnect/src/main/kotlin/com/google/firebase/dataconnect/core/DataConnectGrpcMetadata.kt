@@ -83,8 +83,7 @@ internal class DataConnectGrpcMetadata(
       Metadata().also {
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
         it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
-        it.put(clientPlatformHeader, "android")
-        it.put(clientVersionHeader, dataConnectSdkVersion)
+        it.put(clientVersionHeader, "android/$dataConnectSdkVersion")
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
@@ -183,9 +182,6 @@ internal class DataConnectGrpcMetadata(
 
     private val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
-
-    private val clientPlatformHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-client-platform", Metadata.ASCII_STRING_MARSHALLER)
 
     private val clientVersionHeader: Metadata.Key<String> =
       Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)

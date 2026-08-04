@@ -830,45 +830,24 @@ class DataConnectGrpcRPCsUnitTest {
   }
 
   @Test
-  fun `executeQuery sends x-client-platform header`() =
-    testExecuteQuerySendsHeader(
-      headerName = "x-client-platform",
-      getExpectedHeaderValue = { "android" },
-    )
-
-  @Test
   fun `executeQuery sends x-client-version header`() =
     testExecuteQuerySendsHeader(
       headerName = "x-client-version",
-      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
-    )
-
-  @Test
-  fun `executeMutation sends x-client-platform header`() =
-    testExecuteMutationSendsHeader(
-      headerName = "x-client-platform",
-      getExpectedHeaderValue = { "android" },
+      getExpectedHeaderValue = { "android/${it.grpcMetadata.dataConnectSdkVersion}" },
     )
 
   @Test
   fun `executeMutation sends x-client-version header`() =
     testExecuteMutationSendsHeader(
       headerName = "x-client-version",
-      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
-    )
-
-  @Test
-  fun `connect sends x-client-platform header`() =
-    testConnectSendsHeader(
-      headerName = "x-client-platform",
-      getExpectedHeaderValue = { "android" },
+      getExpectedHeaderValue = { "android/${it.grpcMetadata.dataConnectSdkVersion}" },
     )
 
   @Test
   fun `connect sends x-client-version header`() =
     testConnectSendsHeader(
       headerName = "x-client-version",
-      getExpectedHeaderValue = { it.grpcMetadata.dataConnectSdkVersion },
+      getExpectedHeaderValue = { "android/${it.grpcMetadata.dataConnectSdkVersion}" },
     )
 
   private fun testExecuteQuerySendsHeader(

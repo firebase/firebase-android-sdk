@@ -328,7 +328,6 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
         .shouldContainAll(
           googRequestParamsHeader.name(),
           googApiClientHeader.name(),
-          clientPlatformHeader.name(),
           clientVersionHeader.name(),
         )
       assertSoftly {
@@ -338,8 +337,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
           "location=${dataConnect.config.location}&frontend=data"
         metadata.get(googApiClientHeader) shouldBe expectedGoogApiClientHeader(isFromGeneratedSdk)
         metadata.get(gmpAppIdHeader) shouldBe expectedAppId
-        metadata.get(clientPlatformHeader) shouldBe "android"
-        metadata.get(clientVersionHeader) shouldBe BuildConfig.VERSION_NAME
+        metadata.get(clientVersionHeader) shouldBe "android/${BuildConfig.VERSION_NAME}"
       }
     }
   }
@@ -477,9 +475,6 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
-
-    val clientPlatformHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-client-platform", Metadata.ASCII_STRING_MARSHALLER)
 
     val clientVersionHeader: Metadata.Key<String> =
       Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
