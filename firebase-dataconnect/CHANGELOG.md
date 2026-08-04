@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.3.3
+
 - [changed] Realtime query subscriptions now retry connecting using an
   exponential backoff strategy.
   ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381),

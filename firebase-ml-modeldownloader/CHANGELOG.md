@@ -1,5 +1,7 @@
 # Unreleased
 
+# 26.1.0
+
 - [deprecated] Firebase ML is deprecated and will be shut down on June 15, 2027.
   To host custom models, you must migrate to another solution. You can use Cloud Storage for Firebase
   as an alternative for hosting custom models. For more info, see
