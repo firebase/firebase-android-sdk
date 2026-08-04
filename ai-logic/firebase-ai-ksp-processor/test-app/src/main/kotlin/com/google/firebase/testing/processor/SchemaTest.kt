@@ -40,7 +40,11 @@ data class RootSchemaTestClass(
 }
 
 @Generable
-data class SecondarySchemaTestClass(val testInt: Int) {
+data class SecondarySchemaTestClass(
+  val testInt: Int,
+  @Guide(description = "A nested string") val testString: String = ""
+) {
+
   companion object
 }
 

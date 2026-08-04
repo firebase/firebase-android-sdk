@@ -154,13 +154,12 @@ internal class SchemaSymbolProcessorVisitor(
       }
       "kotlin.String" -> {
         if (!guideValues.enumValues.isNullOrEmpty()) {
+          val enumElements = guideValues.enumValues.joinToString { "%S" }
           builder
             .addStatement("JsonSchema.enumeration(")
             .indent()
-            .addStatement("values = listOf(")
-            .indent()
-            .addStatement(guideValues.enumValues.joinToString { "\"$it\"" })
-            .unindent()
+            .add("values = listOf(")
+            .addStatement(enumElements, *guideValues.enumValues.toTypedArray())
             .addStatement("),")
         } else {
           builder.addStatement("JsonSchema.string(").indent()
@@ -198,14 +197,13 @@ internal class SchemaSymbolProcessorVisitor(
               .filterIsInstance(KSClassDeclaration::class.java)
               .map { it.simpleName.asString() }
               .toList()
+          val enumElements = enumValues.joinToString { "%S" }
           builder
             .addStatement("JsonSchema.enumeration(")
             .indent()
             .addStatement("clazz = ${qualifiedName.asString()}::class,")
-            .addStatement("values = listOf(")
-            .indent()
-            .addStatement(enumValues.joinToString { "\"$it\"" })
-            .unindent()
+            .add("values = listOf(")
+            .addStatement(enumElements, *enumValues.toTypedArray())
             .addStatement("),")
         } else {
           builder
@@ -291,7 +289,7 @@ internal class SchemaSymbolProcessorVisitor(
     return false
   }
 
-  private fun mapToMlKitCompanionType(type: KSType, packageName: String): TypeName {
+  private fun mapToMlKitCompanionType(type: KSType): TypeName {
     if (isListOfGenerableClass(type)) {
       type.arguments.firstOrNull()?.type?.resolve()?.let { argType ->
         val argClassName =
@@ -340,7 +338,7 @@ internal class SchemaSymbolProcessorVisitor(
     classDeclaration.getAllProperties().forEach { property ->
       val propName = property.simpleName.asString()
       val propType = property.type.resolve()
-      val typeName = mapToMlKitCompanionType(propType, packageName)
+      val typeName = mapToMlKitCompanionType(propType)
 
       val paramBuilder = ParameterSpec.builder(propName, typeName)
       val propBuilder = PropertySpec.builder(propName, typeName).initializer(propName)

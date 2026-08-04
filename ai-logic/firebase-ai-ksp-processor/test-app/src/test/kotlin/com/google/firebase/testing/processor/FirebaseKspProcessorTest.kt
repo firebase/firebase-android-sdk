@@ -78,12 +78,18 @@ class FirebaseKspProcessorTest {
     assertThat(enumSchema.nullable).isEqualTo(false)
 
     assertThat(rootSchema.properties?.get("nestedSchemaTest")).isNotNull()
-    val objSchema = rootSchema.properties?.get("nestedSchemaTest")!!
-    assertThat(objSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
-    assertThat(objSchema.properties).isNotNull()
-    assertThat(objSchema.description).isNull()
-    assertThat(objSchema.title).isEqualTo("nestedSchemaTest")
-    assertThat(objSchema.nullable).isEqualTo(false)
+    val nestedSchema = rootSchema.properties?.get("nestedSchemaTest")!!
+    assertThat(nestedSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
+    assertThat(nestedSchema.properties).isNotNull()
+    assertThat(nestedSchema.description).isNull()
+    assertThat(nestedSchema.title).isEqualTo("nestedSchemaTest")
+    assertThat(nestedSchema.nullable).isEqualTo(false)
+
+    assertThat(nestedSchema.properties?.get("testString")).isNotNull()
+    val nestedStringSchema = nestedSchema.properties?.get("testString")!!
+    assertThat(nestedStringSchema.title).isEqualTo("testString")
+    assertThat(nestedStringSchema.description).isEqualTo("A nested string")
+    assertThat(nestedStringSchema.nullable).isEqualTo(false)
 
     assertThat(rootSchema.properties?.get("stringEnumTest")).isNotNull()
     val stringEnumSchema = rootSchema.properties?.get("stringEnumTest")!!
