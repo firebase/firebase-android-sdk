@@ -1,6 +1,7 @@
 # Unreleased
 
 - [feature] Added support for on-device structured output generation using `generateObject` (#8395)
+
 # 17.15.0
 
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
