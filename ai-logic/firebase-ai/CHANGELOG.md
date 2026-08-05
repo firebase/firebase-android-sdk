@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Replaced the `"function"` conversational role with `"user"` for function response content.
+- [changed] Replaced the `"function"` conversational role with `"user"` for function response content. (#8508)
 
 # 17.15.0
 
