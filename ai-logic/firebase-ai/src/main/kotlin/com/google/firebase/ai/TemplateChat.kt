@@ -114,7 +114,7 @@ internal constructor(
     }
     val functionResponses = response.functionCalls.map { model.executeFunction(it) }
     return sendMessageWithFunctionHandling(
-      tempHistory + response.candidates.first().content + Content("function", functionResponses)
+      tempHistory + response.candidates.first().content + Content("user", functionResponses)
     )
   }
 
@@ -127,8 +127,7 @@ internal constructor(
       response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
     if (functionCallParts.isNotEmpty()) {
       if (functionCallParts.all { model.hasFunction(it) }) {
-        val functionResponses =
-          Content("function", functionCallParts.map { model.executeFunction(it) })
+        val functionResponses = Content("user", functionCallParts.map { model.executeFunction(it) })
         tempHistory.add(Content("model", functionCallParts))
         tempHistory.add(functionResponses)
         model
@@ -149,8 +148,8 @@ internal constructor(
   }
 
   private fun Content.assertComesFromUser() {
-    if (role !in listOf("user", "function")) {
-      throw InvalidStateException("Chat prompts should come from the 'user' or 'function' role.")
+    if (role != "user") {
+      throw InvalidStateException("Chat prompts should come from the 'user' role.")
     }
   }
 

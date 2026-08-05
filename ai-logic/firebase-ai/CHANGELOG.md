@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Replaced the `"function"` conversational role with `"user"` for function response content.
+
 # 17.15.0
 
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
