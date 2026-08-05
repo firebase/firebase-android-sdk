@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.15.0
+
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
 - [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
 - [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
@@ -205,3 +207,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

@@ -31,11 +31,13 @@ import io.grpc.Metadata
 
 internal class DataConnectGrpcMetadata(
   val connectorLocation: String,
+  val connectorServiceId: String,
   val kotlinVersion: String,
   val androidVersion: Int,
   val dataConnectSdkVersion: String,
   val grpcVersion: String,
   val appId: String,
+  val projectId: String,
   val parentLogger: Logger,
 ) {
   private val logger =
@@ -43,11 +45,13 @@ internal class DataConnectGrpcMetadata(
       debug {
         "created by ${parentLogger.nameWithId} with" +
           " connectorLocation=$connectorLocation" +
+          " connectorServiceId=$connectorServiceId" +
           " kotlinVersion=$kotlinVersion" +
           " androidVersion=$androidVersion" +
           " dataConnectSdkVersion=$dataConnectSdkVersion" +
           " grpcVersion=$grpcVersion" +
-          " appId=$appId"
+          " appId=$appId" +
+          " projectId=$projectId"
       }
     }
   val instanceId: String
@@ -83,8 +87,8 @@ internal class DataConnectGrpcMetadata(
       Metadata().also {
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
         it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
-        it.put(clientPlatformHeader, "android")
-        it.put(clientVersionHeader, dataConnectSdkVersion)
+        it.put(clientVersionHeader, "android/$dataConnectSdkVersion")
+        it.put(sqlConnectAffinityHeader, "$projectId$connectorServiceId")
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
@@ -184,9 +188,6 @@ internal class DataConnectGrpcMetadata(
     private val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
-    private val clientPlatformHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-client-platform", Metadata.ASCII_STRING_MARSHALLER)
-
     private val clientVersionHeader: Metadata.Key<String> =
       Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
 
@@ -194,18 +195,26 @@ internal class DataConnectGrpcMetadata(
     private val gmpAppIdHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
 
+    @Suppress("SpellCheckingInspection")
+    private val sqlConnectAffinityHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-sqlconnect-affinity", Metadata.ASCII_STRING_MARSHALLER)
+
     fun forSystemVersions(
       firebaseApp: FirebaseApp,
+      projectId: String,
       connectorLocation: String,
+      connectorServiceId: String,
       parentLogger: Logger,
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         connectorLocation = connectorLocation,
+        connectorServiceId = connectorServiceId,
         kotlinVersion = "${KotlinVersion.CURRENT}",
         androidVersion = Build.VERSION.SDK_INT,
         dataConnectSdkVersion = BuildConfig.VERSION_NAME,
         grpcVersion = "", // no way to get the grpc version at runtime,
         appId = firebaseApp.options.applicationId,
+        projectId = projectId,
         parentLogger = parentLogger,
       )
   }

@@ -135,13 +135,6 @@ class DataConnectGrpcMetadataUnitTest {
     )
 
   @Test
-  fun `should include x-client-platform`() =
-    testMetadataIncludesHeader(
-      headerName = "x-client-platform",
-      getExpectedHeaderValue = { "android" },
-    )
-
-  @Test
   fun `should include x-client-version`() =
     testMetadataIncludesHeader(
       dataConnectGrpcMetadataArb =
@@ -149,7 +142,7 @@ class DataConnectGrpcMetadataUnitTest {
           dataConnectSdkVersion = Arb.constant("v3q46qc2ax"),
         ),
       headerName = "x-client-version",
-      getExpectedHeaderValue = { "v3q46qc2ax" },
+      getExpectedHeaderValue = { "android/v3q46qc2ax" },
     )
 
   @Test
@@ -159,6 +152,18 @@ class DataConnectGrpcMetadataUnitTest {
         Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant("tvsxjeb745.appId")),
       headerName = "x-firebase-gmpid",
       getExpectedHeaderValue = { "tvsxjeb745.appId" },
+    )
+
+  @Test
+  fun `should include x-firebase-sqlconnect-affinity`() =
+    testMetadataIncludesHeader(
+      dataConnectGrpcMetadataArb =
+        Arb.dataConnect.dataConnectGrpcMetadata(
+          projectId = Arb.constant("tvsxjeb745.projectId"),
+          connectorServiceId = Arb.constant("q8mgtztcz2"),
+        ),
+      headerName = "x-firebase-sqlconnect-affinity",
+      getExpectedHeaderValue = { "tvsxjeb745.projectIdq8mgtztcz2" },
     )
 
   private fun testMetadataIncludesHeader(
@@ -366,16 +371,22 @@ class DataConnectGrpcMetadataUnitTest {
   @Test
   fun `forSystemVersions() should return correct values`() = runTest {
     val connectorLocation = Arb.dataConnect.connectorLocation().next()
+    val connectorServiceId = Arb.dataConnect.connectorServiceId().next()
+    val projectId = Arb.dataConnect.projectId().next()
 
     val dataConnectGrpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = firebaseAppFactory.newInstance(),
+        projectId = projectId,
         connectorLocation = connectorLocation,
+        connectorServiceId = connectorServiceId,
         parentLogger = mockk(relaxed = true),
       )
 
     dataConnectGrpcMetadata.asClue {
       it.connectorLocation shouldBeSameInstanceAs connectorLocation
+      it.connectorServiceId shouldBeSameInstanceAs connectorServiceId
+      it.projectId shouldBeSameInstanceAs projectId
       it.kotlinVersion shouldBe "${KotlinVersion.CURRENT}"
       it.androidVersion shouldBe Build.VERSION.SDK_INT
       it.dataConnectSdkVersion shouldBe BuildConfig.VERSION_NAME

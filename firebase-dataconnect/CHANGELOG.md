@@ -1,5 +1,19 @@
 # Unreleased
 
+- [changed] Add grpc request header for platform name and sdk version
+  to enable metrics collection in cloud monitoring.
+  ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486),
+  [#8495](https://github.com/firebase/firebase-android-sdk/pull/8495))
+- [changed] Add grpc request header for SQL Connect server affinity, to improve
+  server resource usage efficiency and performance.
+  ([#8499](https://github.com/firebase/firebase-android-sdk/pull/8499))
+- [changed] Wait for 15 seconds before closing realtime streaming connection
+  with backend after last subscriber unsubscribes (instead of closing the
+  connection immediately).
+  ([#8481](https://github.com/firebase/firebase-android-sdk/pull/8481))
+
+# 17.3.3
+
 - [changed] Realtime query subscriptions now retry connecting using an
   exponential backoff strategy.
   ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381),
@@ -7,13 +21,6 @@
   [#8446](https://github.com/firebase/firebase-android-sdk/pull/8446),
   [#8456](https://github.com/firebase/firebase-android-sdk/pull/8456),
   [#8460](https://github.com/firebase/firebase-android-sdk/pull/8460))
-- [changed] Add grpc request headers for platform name and sdk version
-  to enable metrics collection in cloud monitoring.
-  ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486))
-- [changed] Wait for 15 seconds before closing realtime streaming connection
-  with backend after last subscriber unsubscribes (instead of closing the
-  connection immediately).
-  ([#8481](https://github.com/firebase/firebase-android-sdk/pull/8481))
 
 # 17.3.2
 
