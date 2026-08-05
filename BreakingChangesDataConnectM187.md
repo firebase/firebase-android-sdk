@@ -1,12 +1,18 @@
-# Breaking Changes for Data Connect SDK in M184 Release
+# Breaking Changes for Data Connect SDK in M187 Release
 
 This document keeps track of planned breaking changes to the Data Connect Android SDK planned for
-the M184 release in July 2026.
+the M187 release in September 2026.
 
-* Breaking Releaes Name: M184
-* Code Freeze: Tue Jul 21, 2026
-* Release: Tue Jul 28, 2026
+* Breaking Releaes Name: M187
+* Breaking PRs Earliest Merge Date: Tue Sept 01, 2026 (day after the M186 code freeze)
+* Code Freeze: Mon Sept 21, 2026
+* Release: Wed Sept 30, 2026
 * Release Details: [go/firebase-sdk-dates](http://go/firebase-sdk-dates)
+* Breaking Changes: [go/firebase-m187-android](http://go/firebase-m187-android)
+
+## Remove references to Build.VERSION_CODES.M
+
+Remove any code that conditionally was run in minSdk=24, as minSdk will be bumped to 24.
 
 ## Graduate `@ExperimentalFirebaseDataConnect` APIs
 
