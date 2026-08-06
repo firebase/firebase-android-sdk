@@ -6,13 +6,13 @@ services:
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - dataconnect_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       start_period: 10s
-      interval: 1s
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -20,19 +20,20 @@ services:
     # https://hub.docker.com/layers/dpage/pgadmin4/9.13.0/images/sha256-30caa6f4dac04d25eaa99a920c3095eea5f1d96d919a93994182e57442b4900a
     image: docker.io/dpage/pgadmin4@sha256:d243a4bcc02d2ee6b447c601692813531d2d0fbca18b583d9f7f9658da835d81
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@google.com}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-hyh5tttjj5}
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     volumes:
       - ./servers.json:/pgadmin4/servers.json:ro
       - dataconnect_pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://localhost"]
-      start_period: 30s
-      interval: 1s
+      test: ["CMD-SHELL", "wget --spider -q http://localhost/misc/ping || exit 1"]
+      start_period: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
 
