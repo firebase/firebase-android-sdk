@@ -17,6 +17,7 @@
 package com.google.firebase.ai
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
@@ -237,7 +238,12 @@ public class Chat(
   }
 
   private fun Content.assertComesFromUser() {
-    if (role != "user") {
+    if (role == "function") {
+      Log.w(
+        "Chat",
+        "The 'function' role is deprecated and will be removed in a future release. Please use the 'user' role instead."
+      )
+    } else if (role != "user") {
       throw InvalidStateException("Chat prompts should come from the 'user' role.")
     }
   }
