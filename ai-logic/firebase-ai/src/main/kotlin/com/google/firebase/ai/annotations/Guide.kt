@@ -25,6 +25,7 @@ package com.google.firebase.ai.annotations
  * @property minItems the minimum number of items in a list
  * @property maxItems the maximum number of items in a list
  * @property format the format that a field must conform to
+ * @property enumValues the enum values which the field may contain
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
@@ -35,4 +36,5 @@ public annotation class Guide(
   public val minItems: Int = -1,
   public val maxItems: Int = -1,
   public val format: String = "",
+  public val enumValues: Array<String> = [],
 )
