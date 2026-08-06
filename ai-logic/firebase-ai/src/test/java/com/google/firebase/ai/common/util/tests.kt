@@ -35,6 +35,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import org.mockito.Mockito
 
@@ -119,3 +121,19 @@ internal fun commonTest(
     )
   CommonTestScope(channel, apiController).block()
 }
+
+/**
+ * Runs the given [block] using [runBlocking] on the current thread for side effect.
+ *
+ * Using this function is like [runBlocking] with default context (which runs the given block on the
+ * calling thread) but forces the return type to be `Unit`, which is helpful when implementing
+ * suspending tests as expression functions:
+ * ```
+ * @Test
+ * fun myTest() = doBlocking {...}
+ * ```
+ */
+internal fun doBlocking(block: suspend CoroutineScope.() -> Unit) {
+  runBlocking(block = block)
+}
+
