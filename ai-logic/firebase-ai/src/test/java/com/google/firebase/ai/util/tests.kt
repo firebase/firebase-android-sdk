@@ -22,7 +22,6 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.GenerativeModel
-import com.google.firebase.ai.ImagenModel
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.util.TEST_MODEL_NAME
 import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
@@ -72,7 +71,6 @@ internal suspend fun ByteChannel.send(bytes: ByteArray) {
  */
 internal data class CommonTestScope(
   val model: GenerativeModel,
-  val imagenModel: ImagenModel,
 )
 
 internal data class ResponseInfo(
@@ -147,8 +145,7 @@ internal fun commonTest(
       requestOptions = RequestOptions(),
       tools = tools
     )
-  val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
-  CommonTestScope(model, imagenModel).block()
+  CommonTestScope(model).block()
 }
 
 /**
@@ -223,8 +220,7 @@ internal fun commonMultiTurnTest(
       requestOptions = requestOptions,
       tools = tools
     )
-  val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
-  CommonTestScope(model, imagenModel).block()
+  CommonTestScope(model).block()
 }
 
 /**

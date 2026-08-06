@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Removed deprecated Imagen APIs.
+
 # 17.15.0
 
 - [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
