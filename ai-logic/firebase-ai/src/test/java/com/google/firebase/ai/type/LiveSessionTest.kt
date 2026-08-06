@@ -23,9 +23,10 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.mockk.coEvery
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.runs
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,7 +36,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.coroutines.EmptyCoroutineContext
 
 @RunWith(RobolectricTestRunner::class)
 @OptIn(PublicPreviewAPI::class)
@@ -53,11 +53,12 @@ class LiveSessionTest {
     every { mockSession.incoming } returns incomingChannel
     every { mockSession.closeReason } returns closeReasonDeferred
 
-    val liveSession = LiveSession(
-      session = mockSession,
-      blockingDispatcher = Dispatchers.Unconfined,
-      firebaseApp = mockFirebaseApp
-    )
+    val liveSession =
+      LiveSession(
+        session = mockSession,
+        blockingDispatcher = Dispatchers.Unconfined,
+        firebaseApp = mockFirebaseApp
+      )
 
     liveSession.isClosed() shouldBe false
   }
@@ -79,10 +80,11 @@ class LiveSessionTest {
       coEvery { mockSession.flush() } just runs
 
       // Mock send member function to delegate to outgoingChannel
-      coEvery { mockSession.send(any()) } coAnswers {
-        val frame = firstArg<Frame>()
-        outgoingChannel.send(frame)
-      }
+      coEvery { mockSession.send(any()) } coAnswers
+        {
+          val frame = firstArg<Frame>()
+          outgoingChannel.send(frame)
+        }
 
       // Simulate Ktor behavior: sending close frame completes closeReason and cancels job
       val monitorJob = launch {
@@ -95,11 +97,12 @@ class LiveSessionTest {
         }
       }
 
-      val liveSession = LiveSession(
-        session = mockSession,
-        blockingDispatcher = Dispatchers.Unconfined,
-        firebaseApp = mockFirebaseApp
-      )
+      val liveSession =
+        LiveSession(
+          session = mockSession,
+          blockingDispatcher = Dispatchers.Unconfined,
+          firebaseApp = mockFirebaseApp
+        )
 
       liveSession.close()
       monitorJob.join()
@@ -121,11 +124,12 @@ class LiveSessionTest {
       every { mockSession.incoming } returns incomingChannel
       every { mockSession.closeReason } returns closeReasonDeferred
 
-      val liveSession = LiveSession(
-        session = mockSession,
-        blockingDispatcher = Dispatchers.Unconfined,
-        firebaseApp = mockFirebaseApp
-      )
+      val liveSession =
+        LiveSession(
+          session = mockSession,
+          blockingDispatcher = Dispatchers.Unconfined,
+          firebaseApp = mockFirebaseApp
+        )
 
       // Add some unconsumed frames to incoming channel
       incomingChannel.send(Frame.Text("hello"))
