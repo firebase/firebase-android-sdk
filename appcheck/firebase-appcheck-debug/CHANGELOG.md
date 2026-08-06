@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Updated App Check debug token log message to include Firebase CLI commands and Firebase Console registration links. (#8503)
+
 # 19.4.0
 
 - [fixed] Log debug secret on every DebugAppCheckProvider initialization. (#8454)
