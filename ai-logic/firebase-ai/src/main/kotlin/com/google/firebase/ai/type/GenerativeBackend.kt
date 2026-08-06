@@ -49,7 +49,7 @@ internal constructor(internal val location: String, internal val backend: Genera
     }
 
     /**
-     * References the Gemini Enterprise Agent Platform backend.
+     * References the Agent Platform Gemini API.
      *
      * @param location passes a valid cloud server location, defaults to "global"
      */

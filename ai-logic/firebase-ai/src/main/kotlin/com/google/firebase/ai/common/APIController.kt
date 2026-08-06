@@ -466,7 +466,7 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (response.status == HttpStatusCode.NotFound && response.contentType() == htmlContentType)
     throw ServerException(
       """URL not found. Please verify the location used to create the `FirebaseAI` object
-          | See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions
+          | See https://firebase.google.com/docs/ai-logic/locations?api=vertex#available-locations
           | for the list of available locations. Raw response: ${response.bodyAsText()}"""
         .trimMargin()
     )

@@ -1,5 +1,7 @@
 # Unreleased
 
+# 16.0.0-beta04
+
 - [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
 
 # 16.0.0-beta03
