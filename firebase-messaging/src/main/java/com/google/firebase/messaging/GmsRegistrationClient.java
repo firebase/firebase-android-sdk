@@ -13,10 +13,13 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
+import static com.google.firebase.messaging.FirebaseMessaging.TAG;
+
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,6 +42,7 @@ class GmsRegistrationClient {
   static final String MANIFEST_METADATA_FIREBASE_MESSAGING_INSTALLATION_ID_ENABLED =
       "firebase_messaging_installation_id_enabled";
   private static final int GMS_VERSION_Y2026W12 = 261200000;
+  private static final String FCM_SDK_VERSION_PREFIX = "fcm-";
   private final CloudMessagingClient client;
   private final FirebaseApp app;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -103,13 +107,13 @@ class GmsRegistrationClient {
   /**
    * Checks for the presence of "FID_ALREADY_USED:" in the exception message.
    */
-  private static boolean isFIDAlreadyUsedException(@Nullable Exception e) {
+  private static boolean isFidAlreadyUsedException(@Nullable Exception e) {
     return e != null
         && !TextUtils.isEmpty(e.getMessage())
         && e.getMessage().contains("FID_ALREADY_USED:");
   }
 
-  private Exception getException(Task<?> task) {
+  private Exception getOrCreateException(Task<?> task) {
     return task.getException() != null
         ? task.getException()
         : new ExecutionException(new RuntimeException("Unexpected Error"));
@@ -131,7 +135,7 @@ class GmsRegistrationClient {
             executorService,
             tokenTask -> {
               if (!tokenTask.isSuccessful()) {
-                return Tasks.forException(getException(tokenTask));
+                return Tasks.forException(getOrCreateException(tokenTask));
               }
               String fisToken = tokenTask.getResult().getToken();
               return firebaseInstallations
@@ -140,7 +144,7 @@ class GmsRegistrationClient {
                       executorService,
                       idTask -> {
                         if (!idTask.isSuccessful()) {
-                          return Tasks.forException(getException(idTask));
+                          return Tasks.forException(getOrCreateException(idTask));
                         }
                         String fid = idTask.getResult();
                         return Tasks.forResult(new Pair<>(fid, fisToken));
@@ -164,13 +168,16 @@ class GmsRegistrationClient {
                 String regResult = Tasks.await(registerInternal());
                 taskCompletionSource.setResult(regResult);
               } catch (Exception e) {
-                if (isFIDAlreadyUsedException(e)) {
+                if (isFidAlreadyUsedException(e)) {
+                  Log.w(TAG, "FID_ALREADY_USED Detected. Retrying with FID cache clearing!");
                   try {
                     // Clearing FID cache and try again to use a new FID.
                     firebaseInstallations.clearFidCache();
                     String reRegResult = Tasks.await(registerInternal());
                     taskCompletionSource.setResult(reRegResult);
                   } catch (Exception ex) {
+                    // `ex` should not be FID_ALREADY_USED exception again, so we do not check and
+                    // retry on this.
                     taskCompletionSource.setException(ex);
                   }
                 } else {
@@ -197,7 +204,7 @@ class GmsRegistrationClient {
             executorService,
             fisTask -> {
               if (!fisTask.isSuccessful()) {
-                return Tasks.forException(getException(fisTask));
+                return Tasks.forException(getOrCreateException(fisTask));
               }
 
               String installationId = fisTask.getResult().first;
@@ -231,7 +238,7 @@ class GmsRegistrationClient {
     String apiKey = app.getOptions().getApiKey();
     String gmpAppId = app.getOptions().getApplicationId();
     String senderId = Metadata.getDefaultSenderId(app);
-    String sdkVersion = "fcm-" + BuildConfig.VERSION_NAME;
+    String sdkVersion = FCM_SDK_VERSION_PREFIX + BuildConfig.VERSION_NAME;
 
     RegisterRequest request =
         new RegisterRequest(
@@ -263,7 +270,7 @@ class GmsRegistrationClient {
             executorService,
             fisTask -> {
               if (!fisTask.isSuccessful()) {
-                return Tasks.forException(getException(fisTask));
+                return Tasks.forException(getOrCreateException(fisTask));
               }
 
               String installationId = fisTask.getResult().first;
