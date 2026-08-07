@@ -29,7 +29,6 @@ import com.google.android.gms.cloudmessaging.CloudMessagingClient;
 import com.google.android.gms.cloudmessaging.RegisterRequest;
 import com.google.android.gms.cloudmessaging.UnregisterRequest;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -159,34 +158,26 @@ class GmsRegistrationClient {
    */
   @NonNull
   public Task<String> register() {
-    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-
-    FcmExecutors.newTaskExecutor()
-        .execute(
-            () -> {
-              try {
-                String regResult = Tasks.await(registerInternal());
-                taskCompletionSource.setResult(regResult);
-              } catch (Exception e) {
-                if (isFidAlreadyUsedException(e)) {
-                  Log.w(TAG, "FID_ALREADY_USED Detected. Retrying with FID cache clearing!");
-                  try {
-                    // Clearing FID cache and try again to use a new FID.
-                    firebaseInstallations.clearFidCache();
-                    String reRegResult = Tasks.await(registerInternal());
-                    taskCompletionSource.setResult(reRegResult);
-                  } catch (Exception ex) {
-                    // `ex` should not be FID_ALREADY_USED exception again, so we do not check and
-                    // retry on this.
-                    taskCompletionSource.setException(ex);
-                  }
-                } else {
-                  taskCompletionSource.setException(e);
-                }
+    return registerInternal()
+        .continueWithTask(
+            FcmExecutors.newTaskExecutor(),
+            task -> {
+              if (task.isSuccessful()) {
+                // Task succeeded; proceed normally.
+                return task;
               }
-            });
 
-    return taskCompletionSource.getTask();
+              Exception e = task.getException();
+              if (isFidAlreadyUsedException(e)) {
+                Log.w(TAG, "FID_ALREADY_USED Detected. Retrying with FID cache clearing!");
+                firebaseInstallations.clearFidCache();
+                // Try exactly once more clearing FID cache so that it will use a new FID.
+                return registerInternal();
+              }
+
+              // Task failed with a different exception, let it propagate naturally
+              return task;
+            });
   }
 
   @NonNull
