@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import android.util.Log
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
