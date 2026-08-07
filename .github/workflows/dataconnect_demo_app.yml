@@ -63,7 +63,7 @@ jobs:
       - name: Create Cache Key Files
         run: |
           echo "gmagjr2b9d" >github_actions_demo_test_cache_key.txt
-          echo "${{ env.FDC_FIREBASE_TOOLS_VERSION }}" >github_actions_demo_assemble_firebase_tools_version.txt
+          echo "$FDC_FIREBASE_TOOLS_VERSION" >github_actions_demo_assemble_firebase_tools_version.txt
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
@@ -84,15 +84,15 @@ jobs:
         if: steps.package_json_lock.outputs.cache-hit != 'true'
         run: |
           set -v
-          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
-          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          mkdir -p "$FDC_FIREBASE_TOOLS_DIR"
+          cd "$FDC_FIREBASE_TOOLS_DIR"
           echo '{}' > package.json
-          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@"$FDC_FIREBASE_TOOLS_VERSION"
 
       - name: install firebase-tools from package-lock.json
         if: steps.package_json_lock.outputs.cache-hit == 'true'
         run: |
-          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd "$FDC_FIREBASE_TOOLS_DIR"
           npm ci --fund=false --audit=false
 
       - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
@@ -125,27 +125,39 @@ jobs:
           run_cmd javac -version
           run_cmd which node
           run_cmd node --version
-          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd "$FDC_FIREBASE_COMMAND" --version
           run_cmd firebase-dataconnect/demo/gradlew --version
 
       - name: gradle assemble test
+        env:
+          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
+          GRADLE_FLAGS=""
+          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
+            GRADLE_FLAGS="--info"
+          fi
           firebase-dataconnect/demo/gradlew \
           --project-dir firebase-dataconnect/demo \
-          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          $GRADLE_FLAGS \
           --profile \
           --warning-mode all \
-          -PdataConnect.demo.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
+          -PdataConnect.demo.firebaseCommand="$FDC_FIREBASE_COMMAND" \
           assemble test
 
       - name: gradle dokkaGeneratePublicationHtml
+        env:
+          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
+          GRADLE_FLAGS=""
+          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
+            GRADLE_FLAGS="--info"
+          fi
           firebase-dataconnect/demo/gradlew \
           --warning-mode all \
           --project-dir firebase-dataconnect/demo \
-          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          $GRADLE_FLAGS \
           dokkaGeneratePublicationHtml
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -207,13 +219,19 @@ jobs:
           firebase-dataconnect/demo/gradlew --version
 
       - name: gradle spotlessCheck
+        env:
+          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
+          GRADLE_FLAGS=""
+          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
+            GRADLE_FLAGS="--info"
+          fi
           firebase-dataconnect/demo/gradlew \
           --warning-mode all \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
-          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          $GRADLE_FLAGS \
           spotlessCheck
 
   # The "send-notifications" job adds a comment to GitHub Issue
@@ -243,15 +261,20 @@ jobs:
             .github/
 
       - name: gh auth login
-        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | gh auth login --with-token
 
       - name: Create Job Results File
         id: create-job-results-file
+        env:
+          RESULT_TEST: ${{ needs.test.result }}
+          RESULT_SPOTLESS: ${{ needs.spotlessCheck.result }}
         run: |
           set -xveuo pipefail
-          cat >'${{ runner.temp }}/job_results.txt' <<EOF
-          test:${{ needs.test.result }}
-          spotlessCheck:${{ needs.spotlessCheck.result }}
+          cat >"$RUNNER_TEMP/job_results.txt" <<EOF
+          test:$RESULT_TEST
+          spotlessCheck:$RESULT_SPOTLESS
           EOF
 
       - uses: ./.github/actions/dataconnect-send-notifications

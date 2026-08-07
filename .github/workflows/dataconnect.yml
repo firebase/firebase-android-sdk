@@ -96,10 +96,10 @@ jobs:
         run: |
           set -euo pipefail
           set -v
-          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
-          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          mkdir -p "$FDC_FIREBASE_TOOLS_DIR"
+          cd "$FDC_FIREBASE_TOOLS_DIR"
           echo '{}' > package.json
-          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@"$FDC_FIREBASE_TOOLS_VERSION"
 
       - name: Restore Gradle Cache
         uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
@@ -134,10 +134,12 @@ jobs:
           run_cmd jq --version
           run_cmd which docker
           run_cmd docker --version
-          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd "$FDC_FIREBASE_COMMAND" --version
           run_cmd ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
+        env:
+          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -euo pipefail
           set -v
@@ -147,10 +149,15 @@ jobs:
           echo >> gradle.properties
           echo "org.gradle.configureondemand=true" >> gradle.properties
 
+          GRADLE_FLAGS=""
+          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
+            GRADLE_FLAGS="--info"
+          fi
+
           ./gradlew \
             --profile \
             --warning-mode all \
-            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            $GRADLE_FLAGS \
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle Cache
@@ -253,7 +260,7 @@ jobs:
 
           export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres@127.0.0.1:5432?sslmode=disable'
           cd firebase-dataconnect/emulator
-          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
+          "$FDC_FIREBASE_COMMAND" emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
       - name: Start Logcat Capture
         continue-on-error: true
@@ -295,6 +302,8 @@ jobs:
 
       - name: Verify "Gradle connectedCheck" Step Was Successful
         if: steps.connectedCheck.outcome != 'success'
+        env:
+          CONNECTED_CHECK_OUTCOME: ${{ steps.connectedCheck.outcome }}
         run: |
           set -euo pipefail
 
@@ -306,7 +315,7 @@ jobs:
             echo
           fi
 
-          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
+          echo "Failing because the outcome of the \"Gradle connectedCheck\" step (\"$CONNECTED_CHECK_OUTCOME\") was not successful"
           exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
@@ -337,7 +346,7 @@ jobs:
       - name: zshellcheck setup
         run: |
           set -xveuo pipefail
-          cd '${{ runner.temp }}'
+          cd "$RUNNER_TEMP"
           mkdir zshellcheck
           cd zshellcheck
           curl -fsSL -o zshellcheck.tar.gz https://github.com/afadesigns/zshellcheck/releases/download/v1.0.17/zshellcheck_Linux_x86_64.tar.gz
@@ -345,7 +354,7 @@ jobs:
       - name: zshellcheck
         run: |
           set -xveuo pipefail
-          find . -name '*.zsh' -exec '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff '{}' +
+          find . -name '*.zsh' -exec "$RUNNER_TEMP/zshellcheck/zshellcheck" -severity style -no-color -no-banner -diff '{}' +
 
   python-ci-unit-tests:
     continue-on-error: false
@@ -447,19 +456,29 @@ jobs:
             .github/
 
       - name: gh auth login
-        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | gh auth login --with-token
 
       - name: Create Job Results File
+        env:
+          RESULT_INTEGRATION_TEST: ${{ needs.integration-test.result }}
+          RESULT_ACTIONLINT: ${{ needs.actionlint-dataconnect-yml.result }}
+          RESULT_ZSHELLCHECK: ${{ needs.zshellcheck.result }}
+          RESULT_PYTHON_UNIT: ${{ needs.python-ci-unit-tests.result }}
+          RESULT_PYTHON_LINT: ${{ needs.python-ci-lint.result }}
+          RESULT_PYTHON_FORMAT: ${{ needs.python-ci-format.result }}
+          RESULT_PYTHON_TYPE: ${{ needs.python-ci-type-check.result }}
         run: |
           set -xveuo pipefail
-          cat >'${{ runner.temp }}/job_results.txt' <<EOF
-          integration-test:${{ needs.integration-test.result }}
-          actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
-          zshellcheck:${{ needs.zshellcheck.result }}
-          python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
-          python-ci-lint:${{ needs.python-ci-lint.result }}
-          python-ci-format:${{ needs.python-ci-format.result }}
-          python-ci-type-check:${{ needs.python-ci-type-check.result }}
+          cat >"$RUNNER_TEMP/job_results.txt" <<EOF
+          integration-test:$RESULT_INTEGRATION_TEST
+          actionlint-dataconnect-yml:$RESULT_ACTIONLINT
+          zshellcheck:$RESULT_ZSHELLCHECK
+          python-ci-unit-tests:$RESULT_PYTHON_UNIT
+          python-ci-lint:$RESULT_PYTHON_LINT
+          python-ci-format:$RESULT_PYTHON_FORMAT
+          python-ci-type-check:$RESULT_PYTHON_TYPE
           EOF
 
       - uses: ./.github/actions/dataconnect-send-notifications
