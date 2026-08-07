@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for on-device structured output generation using `generateObject` (#8395)
 - [changed] Replaced the `"function"` conversational role with `"user"` for function response content. (#8508)
 
 # 17.15.0

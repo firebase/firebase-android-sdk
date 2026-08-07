@@ -41,10 +41,19 @@ android {
   }
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    // Skip Kotlin metadata version check to prevent build failures when there is a mismatch
+    // between the Kotlin compiler version and the KSP plugin version.
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
+}
 
 dependencies {
   implementation(project(":ai-logic:firebase-ai"))
+
+  implementation(libs.genai.schema)
   ksp(project(":ai-logic:firebase-ai-ksp-processor"))
 
   implementation("com.google.firebase:firebase-common:22.0.0")

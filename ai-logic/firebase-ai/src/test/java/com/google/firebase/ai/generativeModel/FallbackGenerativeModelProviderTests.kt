@@ -255,6 +255,42 @@ internal class FallbackGenerativeModelProviderTests {
   }
 
   @Test
+  fun `generateObject uses default model when successful`() = runBlocking {
+    val schema: JsonSchema<Any> = mockk()
+    val expectedResponse: GenerateObjectResponse<Any> = mockk()
+    coEvery { defaultModel.generateObject(schema, prompt) } returns expectedResponse
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateObject(schema, prompt)
+
+      response shouldBe expectedResponse
+      coVerify(exactly = 0) {
+        fallbackModel.generateObject(any<JsonSchema<Any>>(), any<List<Content>>())
+      }
+    }
+  }
+
+  @Test
+  fun `generateObject falls back when precondition fails`() = runBlocking {
+    val schema: JsonSchema<Any> = mockk()
+    val expectedResponse: GenerateObjectResponse<Any> = mockk()
+    coEvery { fallbackModel.generateObject(schema, prompt) } returns expectedResponse
+
+    val provider =
+      FallbackGenerativeModelProvider(defaultModel, fallbackModel, precondition = { false })
+    shouldNotThrowAnyUnit {
+      val response = provider.generateObject(schema, prompt)
+
+      response shouldBe expectedResponse
+      coVerify(exactly = 0) {
+        defaultModel.generateObject(any<JsonSchema<Any>>(), any<List<Content>>())
+      }
+      coVerify { fallbackModel.generateObject(schema, prompt) }
+    }
+  }
+
+  @Test
   fun `generateObject falls back when default model throws FirebaseAIException`() = runBlocking {
     val schema: JsonSchema<Any> = mockk()
     val expectedResponse: GenerateObjectResponse<Any> = mockk()
@@ -269,6 +305,22 @@ internal class FallbackGenerativeModelProviderTests {
 
       response shouldBe expectedResponse
       coVerify { fallbackModel.generateObject(schema, prompt) }
+    }
+  }
+
+  @Test
+  fun `generateObject rethrows CancellationException and does not fall back`() = runBlocking {
+    val schema: JsonSchema<Any> = mockk()
+    val exception = kotlinx.coroutines.CancellationException("cancelled")
+    coEvery { defaultModel.generateObject(schema, prompt) } throws exception
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+
+    shouldThrow<kotlinx.coroutines.CancellationException> {
+      provider.generateObject(schema, prompt)
+    }
+    coVerify(exactly = 0) {
+      fallbackModel.generateObject(any<JsonSchema<Any>>(), any<List<Content>>())
     }
   }
 
