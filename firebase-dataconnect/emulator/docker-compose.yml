@@ -1,18 +1,17 @@
 services:
   postgres:
     # https://hub.docker.com/layers/library/postgres/15/images/sha256-087b60e4987f313e00220957009a1ad57c76b26ed6d6919e5d9b047d5048a757
-    # Keep this image in sync with .github/workflows/dataconnect.yml
     image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - dataconnect_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       start_period: 10s
-      interval: 1s
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -23,16 +22,17 @@ services:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@google.com}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-hyh5tttjj5}
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     volumes:
       - ./servers.json:/pgadmin4/servers.json:ro
       - dataconnect_pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://localhost"]
-      start_period: 30s
-      interval: 1s
+      test: ["CMD-SHELL", "wget --spider -q http://localhost/misc/ping || exit 1"]
+      start_period: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
 
