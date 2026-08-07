@@ -27,19 +27,9 @@ import kotlinx.serialization.json.Json
 public class GenerateObjectResponse<T : Any>
 internal constructor(
   public val response: GenerateContentResponse,
-  internal val schema: JsonSchema<T>?,
-  internal var instances: MutableList<T?>?
+  internal val schema: JsonSchema<T>? = null,
+  internal var instances: MutableList<T?>? = null
 ) {
-
-  internal constructor(
-    response: GenerateContentResponse,
-    schema: JsonSchema<T>
-  ) : this(response, schema = schema, instances = null)
-
-  internal constructor(
-    response: GenerateContentResponse,
-    instances: List<T>
-  ) : this(response, schema = null, instances = ArrayList<T?>(instances))
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this

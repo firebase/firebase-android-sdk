@@ -17,6 +17,8 @@
 package com.google.firebase.ai.ksp
 
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.ksp.toClassName
 
 // This regex extracts everything in the kdocs until it hits either the end of the kdocs, or
 // the first @<tag> like @property or @see, extracting the main body text of the kdoc
@@ -137,4 +139,9 @@ internal fun extractPropertyKdocs(kdoc: String): Map<String, String> {
     .findAll(kdoc)
     .map { it.groups[1]!!.value to it.groups[2]!!.value.replace("\n", "").trim() }
     .toMap()
+}
+
+internal fun KSClassDeclaration.getMlKitCompanionClassName(): String {
+  val simpleNamesJoined = toClassName().simpleNames.joinToString("$")
+  return "${simpleNamesJoined}_MlKitCompanion"
 }

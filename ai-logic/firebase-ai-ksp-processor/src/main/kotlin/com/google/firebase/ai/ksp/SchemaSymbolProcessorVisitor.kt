@@ -287,24 +287,20 @@ internal class SchemaSymbolProcessorVisitor(
         val argClassName =
           ClassName(
             ksClass.packageName.asString(),
-            "${ksClass.toClassName().simpleNames.joinToString("_")}_MlKitCompanion",
+            ksClass.getMlKitCompanionClassName(),
           )
         return ClassName("kotlin.collections", "List").parameterizedBy(argClassName)
       }
     } else if (isGenerableClass(type)) {
       val ksClass = type.declaration as KSClassDeclaration
-      return ClassName(
-        ksClass.packageName.asString(),
-        "${ksClass.toClassName().simpleNames.joinToString("_")}_MlKitCompanion"
-      )
+      return ClassName(ksClass.packageName.asString(), ksClass.getMlKitCompanionClassName())
     }
     return type.toTypeName()
   }
 
   fun generateMlKitCompanionFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
     val packageName = classDeclaration.packageName.asString()
-    val simpleNamesJoined = classDeclaration.toClassName().simpleNames.joinToString("_")
-    val companionClassName = "${simpleNamesJoined}_MlKitCompanion"
+    val companionClassName = classDeclaration.getMlKitCompanionClassName()
     val fileBuilder =
       FileSpec.builder(packageName, companionClassName).addAnnotation(Generated::class)
 

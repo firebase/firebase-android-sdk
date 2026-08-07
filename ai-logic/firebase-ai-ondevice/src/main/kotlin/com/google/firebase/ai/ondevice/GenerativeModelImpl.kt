@@ -58,16 +58,7 @@ internal class GenerativeModelImpl(
     schemaClass: kotlin.reflect.KClass<T>
   ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<T> =
     try {
-      val javaName = schemaClass.java.name
-      val lastDot = javaName.lastIndexOf('.')
-      val packageName = if (lastDot != -1) javaName.substring(0, lastDot) else ""
-      val simpleNames = if (lastDot != -1) javaName.substring(lastDot + 1) else javaName
-      val companionClassName =
-        if (packageName.isNotEmpty()) {
-          "$packageName.${simpleNames.replace('$', '_')}_MlKitCompanion"
-        } else {
-          "${simpleNames.replace('$', '_')}_MlKitCompanion"
-        }
+      val companionClassName = "${schemaClass.java.name}_MlKitCompanion"
       val targetClass =
         try {
           Class.forName(companionClassName).kotlin
