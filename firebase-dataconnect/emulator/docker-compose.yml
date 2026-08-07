@@ -1,38 +1,38 @@
 services:
   postgres:
-    # https://hub.docker.com/layers/library/postgres/15/images/sha256-087b60e4987f313e00220957009a1ad57c76b26ed6d6919e5d9b047d5048a757
-    # Keep this image in sync with .github/workflows/dataconnect.yml
-    image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
+    # https://hub.docker.com/layers/library/postgres/18.4/images/sha256-42efb85711da35711de35b9a4e4c918f94751656e64c199a638f90d5b8085a8d
+    image: docker.io/library/postgres@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - dataconnect_pgdata:/var/lib/postgresql/data
+      - dataconnect_pgdata:/var/lib/postgresql/18/docker
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       start_period: 10s
-      interval: 1s
+      interval: 5s
       timeout: 5s
       retries: 5
 
   pgadmin:
-    # https://hub.docker.com/layers/dpage/pgadmin4/9.13.0/images/sha256-30caa6f4dac04d25eaa99a920c3095eea5f1d96d919a93994182e57442b4900a
-    image: docker.io/dpage/pgadmin4@sha256:d243a4bcc02d2ee6b447c601692813531d2d0fbca18b583d9f7f9658da835d81
+    # https://hub.docker.com/layers/dpage/pgadmin4/9.17/images/sha256-8cfafd474324cb038b92277ff4f8b01d9576440702fce03eb5ba845fa1405960
+    image: docker.io/dpage/pgadmin4@sha256:2f4ce946ddf8360680d7eff4eaba1d91859eb6b4003e6623bad5c63a322c2f4d
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@google.com}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-hyh5tttjj5}
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     volumes:
       - ./servers.json:/pgadmin4/servers.json:ro
       - dataconnect_pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider http://localhost"]
-      start_period: 30s
-      interval: 1s
+      test: ["CMD-SHELL", "wget --spider -q http://localhost/misc/ping || exit 1"]
+      start_period: 15s
+      interval: 5s
       timeout: 5s
       retries: 5
 
