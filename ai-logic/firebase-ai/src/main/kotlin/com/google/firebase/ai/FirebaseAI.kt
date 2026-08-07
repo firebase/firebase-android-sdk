@@ -127,7 +127,7 @@ internal constructor(
       Log.w(
         TAG,
         """Unsupported Gemini model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      https://firebase.google.com/docs/ai-logic/models for a list supported Gemini model names.
       """
           .trimIndent(),
       )
@@ -207,7 +207,7 @@ internal constructor(
       Log.w(
         TAG,
         """Unsupported Gemini model "$modelName"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      https://firebase.google.com/docs/ai-logic/models for a list supported Gemini model names.
       """
           .trimIndent(),
       )
@@ -264,7 +264,7 @@ internal constructor(
       Log.w(
         TAG,
         """Unsupported Imagen model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
+      https://firebase.google.com/docs/ai-logic/models for a list supported Imagen model names.
       """
           .trimIndent(),
       )
