@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       nodeVersion:
+        type: string
       firebaseToolsVersion:
+        type: string
       javaVersion:
+        type: string
       gradleInfoLog:
         type: boolean
       pythonVersion:
+        type: string
   pull_request:
     paths:
       - firebase-dataconnect/demo/**

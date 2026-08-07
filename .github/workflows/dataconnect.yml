@@ -4,12 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       javaVersion:
+        type: string
       androidEmulatorApiLevel:
+        type: string
       nodeJsVersion:
+        type: string
       firebaseToolsVersion:
+        type: string
       gradleInfoLog:
         type: boolean
       pythonVersion:
+        type: string
   pull_request:
     paths:
       - .github/actions/dataconnect-send-notifications
