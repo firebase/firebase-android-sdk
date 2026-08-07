@@ -455,11 +455,6 @@ jobs:
             firebase-dataconnect/ci/
             .github/
 
-      - name: gh auth login
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo "$GITHUB_TOKEN" | gh auth login --with-token
-
       - name: Create Job Results File
         env:
           RESULT_INTEGRATION_TEST: ${{ needs.integration-test.result }}
@@ -486,3 +481,5 @@ jobs:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
           github-issue-for-scheduled-runs: "6857"
           job-results-file: ${{ runner.temp }}/job_results.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
