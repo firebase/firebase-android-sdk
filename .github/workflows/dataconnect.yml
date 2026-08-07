@@ -102,7 +102,7 @@ jobs:
           npm install --fund=false --audit=false --save --save-exact firebase-tools@"$FDC_FIREBASE_TOOLS_VERSION"
 
       - name: Restore Gradle Cache
-        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name != 'schedule'
         with:
           path: |
@@ -161,7 +161,7 @@ jobs:
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle Cache
-        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name == 'schedule'
         with:
           path: |
@@ -178,7 +178,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Restore AVD Cache
-        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name != 'schedule'
         id: restore-avd-cache
         with:
@@ -201,7 +201,7 @@ jobs:
           script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
 
       - name: Save AVD Cache
-        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name == 'schedule'
         with:
           path: |

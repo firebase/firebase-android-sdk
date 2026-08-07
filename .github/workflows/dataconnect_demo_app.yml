@@ -75,7 +75,7 @@ jobs:
 
       - name: cache package-lock.json
         id: package_json_lock
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.FDC_FIREBASE_TOOLS_DIR }}/package*.json
           key: firebase_tools_package_json-${{ env.FDC_FIREBASE_TOOLS_VERSION }}
