@@ -271,7 +271,15 @@ internal class SchemaSymbolProcessorVisitor(
 
   private fun isListOfGenerableClass(type: KSType): Boolean {
     val qualifiedName = type.declaration.qualifiedName?.asString()
-    if (qualifiedName == "kotlin.collections.List" || qualifiedName == "java.util.List") {
+    val validListTypes =
+      setOf(
+        "kotlin.collections.List",
+        "java.util.List",
+        "kotlin.collections.MutableList",
+        "java.util.ArrayList",
+        "kotlin.collections.ArrayList"
+      )
+    if (qualifiedName in validListTypes) {
       val argType = type.arguments.firstOrNull()?.type?.resolve()
       if (argType != null) {
         return isGenerableClass(argType)
@@ -363,7 +371,16 @@ internal class SchemaSymbolProcessorVisitor(
       classBuilder.addProperty(propBuilder.build())
 
       if (isListOfGenerableClass(propType)) {
-        toSdkArgs.add("$propName = this.$propName.map { it.toSdk() }")
+        val qualifiedName = propType.declaration.qualifiedName?.asString()
+        if (qualifiedName == "kotlin.collections.MutableList") {
+          toSdkArgs.add("$propName = this.$propName.map { it.toSdk() }.toMutableList()")
+        } else if (
+          qualifiedName == "java.util.ArrayList" || qualifiedName == "kotlin.collections.ArrayList"
+        ) {
+          toSdkArgs.add("$propName = ArrayList(this.$propName.map { it.toSdk() })")
+        } else {
+          toSdkArgs.add("$propName = this.$propName.map { it.toSdk() }")
+        }
       } else if (isGenerableClass(propType)) {
         toSdkArgs.add("$propName = this.$propName.toSdk()")
       } else {
