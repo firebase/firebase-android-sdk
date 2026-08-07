@@ -163,7 +163,7 @@ internal class OnDeviceGenerativeModelProvider(
     @Suppress("UNCHECKED_CAST")
     GenerateObjectResponse(
       GenerateContentResponse(candidates, InferenceSource.ON_DEVICE, null, null, "ondevice"),
-      instances = interopResponse.instances as List<T>
+      instances = ArrayList(interopResponse.instances as List<T?>)
     )
   }
 
