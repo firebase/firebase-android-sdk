@@ -30,6 +30,7 @@ env:
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+  FDC_GRADLE_INFO_FLAG: ${{ (inputs.gradleInfoLog && '--info') || '' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -129,35 +130,23 @@ jobs:
           run_cmd firebase-dataconnect/demo/gradlew --version
 
       - name: gradle assemble test
-        env:
-          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
-          GRADLE_FLAGS=""
-          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
-            GRADLE_FLAGS="--info"
-          fi
           firebase-dataconnect/demo/gradlew \
           --project-dir firebase-dataconnect/demo \
-          $GRADLE_FLAGS \
+          ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} \
           --profile \
           --warning-mode all \
           -PdataConnect.demo.firebaseCommand="$FDC_FIREBASE_COMMAND" \
           assemble test
 
       - name: gradle dokkaGeneratePublicationHtml
-        env:
-          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
-          GRADLE_FLAGS=""
-          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
-            GRADLE_FLAGS="--info"
-          fi
           firebase-dataconnect/demo/gradlew \
           --warning-mode all \
           --project-dir firebase-dataconnect/demo \
-          $GRADLE_FLAGS \
+          ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} \
           dokkaGeneratePublicationHtml
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -219,19 +208,13 @@ jobs:
           firebase-dataconnect/demo/gradlew --version
 
       - name: gradle spotlessCheck
-        env:
-          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -x
-          GRADLE_FLAGS=""
-          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
-            GRADLE_FLAGS="--info"
-          fi
           firebase-dataconnect/demo/gradlew \
           --warning-mode all \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
-          $GRADLE_FLAGS \
+          ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} \
           spotlessCheck
 
   # The "send-notifications" job adds a comment to GitHub Issue

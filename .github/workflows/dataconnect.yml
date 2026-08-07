@@ -44,6 +44,7 @@ env:
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+  FDC_GRADLE_INFO_FLAG: ${{ (inputs.gradleInfoLog && '--info') || '' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -138,8 +139,6 @@ jobs:
           run_cmd ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
-        env:
-          GRADLE_INFO_LOG: ${{ inputs.gradleInfoLog }}
         run: |
           set -euo pipefail
           set -v
@@ -149,15 +148,10 @@ jobs:
           echo >> gradle.properties
           echo "org.gradle.configureondemand=true" >> gradle.properties
 
-          GRADLE_FLAGS=""
-          if [[ "$GRADLE_INFO_LOG" == "true" ]]; then
-            GRADLE_FLAGS="--info"
-          fi
-
           ./gradlew \
             --profile \
             --warning-mode all \
-            $GRADLE_FLAGS \
+            ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle Cache
@@ -282,7 +276,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+            set -eux && ./gradlew --warning-mode all ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload Log Files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
