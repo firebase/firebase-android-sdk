@@ -4,12 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       javaVersion:
+        type: string
       androidEmulatorApiLevel:
+        type: string
       nodeJsVersion:
+        type: string
       firebaseToolsVersion:
+        type: string
       gradleInfoLog:
         type: boolean
       pythonVersion:
+        type: string
   pull_request:
     paths:
       - .github/actions/dataconnect-send-notifications
@@ -39,10 +44,14 @@ env:
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+  FDC_GRADLE_INFO_FLAG: ${{ (inputs.gradleInfoLog && '--info') || '' }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   integration-test:
@@ -52,6 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
 
       - name: Initialize FDC_FIREBASE_TOOLS_VERSION environment variable
@@ -87,13 +97,13 @@ jobs:
         run: |
           set -euo pipefail
           set -v
-          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
-          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          mkdir -p "$FDC_FIREBASE_TOOLS_DIR"
+          cd "$FDC_FIREBASE_TOOLS_DIR"
           echo '{}' > package.json
-          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@"$FDC_FIREBASE_TOOLS_VERSION"
 
       - name: Restore Gradle Cache
-        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name != 'schedule'
         with:
           path: |
@@ -125,7 +135,7 @@ jobs:
           run_cmd jq --version
           run_cmd which docker
           run_cmd docker --version
-          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd "$FDC_FIREBASE_COMMAND" --version
           run_cmd ./gradlew --version
 
       - name: Gradle assembleDebugAndroidTest
@@ -141,11 +151,11 @@ jobs:
           ./gradlew \
             --profile \
             --warning-mode all \
-            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} \
             :firebase-dataconnect:assembleDebugAndroidTest
 
       - name: Save Gradle Cache
-        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name == 'schedule'
         with:
           path: |
@@ -162,7 +172,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Restore AVD Cache
-        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name != 'schedule'
         id: restore-avd-cache
         with:
@@ -185,7 +195,7 @@ jobs:
           script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
 
       - name: Save AVD Cache
-        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # 5.0.4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: github.event_name == 'schedule'
         with:
           path: |
@@ -244,7 +254,7 @@ jobs:
 
           export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres@127.0.0.1:5432?sslmode=disable'
           cd firebase-dataconnect/emulator
-          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
+          "$FDC_FIREBASE_COMMAND" emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
       - name: Start Logcat Capture
         continue-on-error: true
@@ -266,7 +276,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+            set -eux && ./gradlew --warning-mode all ${FDC_GRADLE_INFO_FLAG:+"$FDC_GRADLE_INFO_FLAG"} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
 
       - name: Upload Log Files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -286,6 +296,8 @@ jobs:
 
       - name: Verify "Gradle connectedCheck" Step Was Successful
         if: steps.connectedCheck.outcome != 'success'
+        env:
+          CONNECTED_CHECK_OUTCOME: ${{ steps.connectedCheck.outcome }}
         run: |
           set -euo pipefail
 
@@ -297,7 +309,7 @@ jobs:
             echo
           fi
 
-          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
+          echo "Failing because the outcome of the \"Gradle connectedCheck\" step (\"$CONNECTED_CHECK_OUTCOME\") was not successful"
           exit 1
 
   # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
@@ -309,6 +321,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: '.github/'
       - uses: docker://index.docker.io/rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 # ratchet:docker://rhysd/actionlint:1.7.7
@@ -321,12 +334,13 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/'
       - name: zshellcheck setup
         run: |
           set -xveuo pipefail
-          cd '${{ runner.temp }}'
+          cd "$RUNNER_TEMP"
           mkdir zshellcheck
           cd zshellcheck
           curl -fsSL -o zshellcheck.tar.gz https://github.com/afadesigns/zshellcheck/releases/download/v1.0.17/zshellcheck_Linux_x86_64.tar.gz
@@ -334,7 +348,7 @@ jobs:
       - name: zshellcheck
         run: |
           set -xveuo pipefail
-          find . -name '*.zsh' -exec '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff '{}' +
+          find . -name '*.zsh' -exec "$RUNNER_TEMP/zshellcheck/zshellcheck" -severity style -no-color -no-banner -diff '{}' +
 
   python-ci-unit-tests:
     continue-on-error: false
@@ -342,6 +356,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -358,6 +373,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -374,6 +390,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -390,6 +407,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -425,25 +443,31 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          persist-credentials: false
           show-progress: false
           sparse-checkout: |
             firebase-dataconnect/ci/
             .github/
 
-      - name: gh auth login
-        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
-
       - name: Create Job Results File
+        env:
+          RESULT_INTEGRATION_TEST: ${{ needs.integration-test.result }}
+          RESULT_ACTIONLINT: ${{ needs.actionlint-dataconnect-yml.result }}
+          RESULT_ZSHELLCHECK: ${{ needs.zshellcheck.result }}
+          RESULT_PYTHON_UNIT: ${{ needs.python-ci-unit-tests.result }}
+          RESULT_PYTHON_LINT: ${{ needs.python-ci-lint.result }}
+          RESULT_PYTHON_FORMAT: ${{ needs.python-ci-format.result }}
+          RESULT_PYTHON_TYPE: ${{ needs.python-ci-type-check.result }}
         run: |
           set -xveuo pipefail
-          cat >'${{ runner.temp }}/job_results.txt' <<EOF
-          integration-test:${{ needs.integration-test.result }}
-          actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
-          zshellcheck:${{ needs.zshellcheck.result }}
-          python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
-          python-ci-lint:${{ needs.python-ci-lint.result }}
-          python-ci-format:${{ needs.python-ci-format.result }}
-          python-ci-type-check:${{ needs.python-ci-type-check.result }}
+          cat >"$RUNNER_TEMP/job_results.txt" <<EOF
+          integration-test:$RESULT_INTEGRATION_TEST
+          actionlint-dataconnect-yml:$RESULT_ACTIONLINT
+          zshellcheck:$RESULT_ZSHELLCHECK
+          python-ci-unit-tests:$RESULT_PYTHON_UNIT
+          python-ci-lint:$RESULT_PYTHON_LINT
+          python-ci-format:$RESULT_PYTHON_FORMAT
+          python-ci-type-check:$RESULT_PYTHON_TYPE
           EOF
 
       - uses: ./.github/actions/dataconnect-send-notifications
@@ -451,3 +475,5 @@ jobs:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
           github-issue-for-scheduled-runs: "6857"
           job-results-file: ${{ runner.temp }}/job_results.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
