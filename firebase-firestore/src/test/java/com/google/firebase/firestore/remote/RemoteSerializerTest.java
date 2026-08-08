@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.model.Values.refValue;
 import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
+import static com.google.firebase.firestore.testutil.TestUtil.asRemoteTargetIdList;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -50,7 +51,6 @@ import com.google.firebase.firestore.core.NotInFilter;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -517,35 +517,38 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesListenRequestLabels() {
     Query query = query("collection/key");
-    TargetData targetData =
-        new TargetData(
-            new TargetOrPipeline.TargetWrapper(query.toTarget()), 2, 3, QueryPurpose.LISTEN);
+    RemoteTargetData targetData =
+        new RemoteTargetData(
+            new TargetOrPipeline.TargetWrapper(query.toTarget()),
+            RemoteTargetId.from(2),
+            3,
+            QueryPurpose.LISTEN);
 
     Map<String, String> result = serializer.encodeListenRequestLabels(targetData);
     assertNull(result);
 
     targetData =
-        new TargetData(
+        new RemoteTargetData(
             new TargetOrPipeline.TargetWrapper(query.toTarget()),
-            2,
+            RemoteTargetId.from(2),
             3,
             QueryPurpose.LIMBO_RESOLUTION);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "limbo-document"), result);
 
     targetData =
-        new TargetData(
+        new RemoteTargetData(
             new TargetOrPipeline.TargetWrapper(query.toTarget()),
-            2,
+            RemoteTargetId.from(2),
             3,
             QueryPurpose.EXISTENCE_FILTER_MISMATCH);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch"), result);
 
     targetData =
-        new TargetData(
+        new RemoteTargetData(
             new TargetOrPipeline.TargetWrapper(query.toTarget()),
-            2,
+            RemoteTargetId.from(2),
             3,
             QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM);
     result = serializer.encodeListenRequestLabels(targetData);
@@ -557,8 +560,11 @@ public final class RemoteSerializerTest {
     Query q = Query.atPath(ResourcePath.fromString("docs/1"));
     Target actual =
         serializer.encodeTarget(
-            new TargetData(
-                new TargetOrPipeline.TargetWrapper(q.toTarget()), 1, 2, QueryPurpose.LISTEN));
+            new RemoteTargetData(
+                new TargetOrPipeline.TargetWrapper(q.toTarget()),
+                RemoteTargetId.from(1),
+                2,
+                QueryPurpose.LISTEN));
 
     DocumentsTarget.Builder docs =
         DocumentsTarget.newBuilder().addDocuments("projects/p/databases/d/documents/docs/1");
@@ -1141,10 +1147,10 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesResumeTokens() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    TargetData targetData =
-        new TargetData(
+    RemoteTargetData targetData =
+        new RemoteTargetData(
                 new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
-                1,
+                RemoteTargetId.from(1),
                 2,
                 QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE);
@@ -1174,10 +1180,10 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesReadTime() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    TargetData targetData =
-        new TargetData(
+    RemoteTargetData targetData =
+        new RemoteTargetData(
                 new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
-                1,
+                RemoteTargetId.from(1),
                 2,
                 QueryPurpose.LISTEN)
             .withResumeToken(ByteString.EMPTY, version(4000000));
@@ -1207,10 +1213,10 @@ public final class RemoteSerializerTest {
   @Test
   public void encodesExpectedCountWhenResumeTokenIsPresent() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    TargetData targetData =
-        new TargetData(
+    RemoteTargetData targetData =
+        new RemoteTargetData(
                 new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
-                1,
+                RemoteTargetId.from(1),
                 2,
                 QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE)
@@ -1242,10 +1248,10 @@ public final class RemoteSerializerTest {
   @Test
   public void encodesExpectedCountWhenReadTimeIsPresent() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    TargetData targetData =
-        new TargetData(
+    RemoteTargetData targetData =
+        new RemoteTargetData(
                 new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
-                1,
+                RemoteTargetId.from(1),
                 2,
                 QueryPurpose.LISTEN)
             .withResumeToken(ByteString.EMPTY, version(4000000))
@@ -1277,10 +1283,10 @@ public final class RemoteSerializerTest {
   @Test
   public void shouldIgnoreExpectedCountWithoutResumeTokenOrReadTime() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
-    TargetData targetData =
-        new TargetData(
+    RemoteTargetData targetData =
+        new RemoteTargetData(
                 new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
-                1,
+                RemoteTargetId.from(1),
                 2,
                 QueryPurpose.LISTEN)
             .withExpectedCount(42);
@@ -1311,17 +1317,18 @@ public final class RemoteSerializerTest {
    * Wraps the given query in TargetData. This is useful because the APIs we're testing accept
    * TargetData, but for the most part we're just testing variations on Query.
    */
-  private static TargetData wrapTargetData(Query query) {
-    return new TargetData(
+  private static RemoteTargetData wrapTargetData(Query query) {
+    return new RemoteTargetData(
         new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
-        1,
+        RemoteTargetId.from(1),
         2,
         QueryPurpose.LISTEN);
   }
 
   @Test
   public void testConvertsTargetChangeWithAdded() {
-    WatchTargetChange expected = new WatchTargetChange(WatchTargetChangeType.Added, asList(1, 4));
+    WatchTargetChange expected =
+        new WatchTargetChange(WatchTargetChangeType.Added, asRemoteTargetIdList(1, 4));
     WatchTargetChange actual =
         (WatchTargetChange)
             serializer.decodeWatchChange(
@@ -1340,7 +1347,7 @@ public final class RemoteSerializerTest {
     WatchTargetChange expected =
         new WatchTargetChange(
             WatchTargetChangeType.Removed,
-            asList(1, 4),
+            asRemoteTargetIdList(1, 4),
             ByteString.copyFrom(new byte[] {0, 1, 2}),
             Status.PERMISSION_DENIED);
     WatchTargetChange actual =
@@ -1361,7 +1368,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testConvertsTargetChangeWithNoChange() {
     WatchTargetChange expected =
-        new WatchTargetChange(WatchTargetChangeType.NoChange, asList(1, 4));
+        new WatchTargetChange(WatchTargetChangeType.NoChange, asRemoteTargetIdList(1, 4));
     WatchTargetChange actual =
         (WatchTargetChange)
             serializer.decodeWatchChange(
@@ -1379,7 +1386,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithTargetIds() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(1, 2), asList(), key("coll/1"), doc("coll/1", 5, map("foo", "bar")));
+            asRemoteTargetIdList(1, 2),
+            asRemoteTargetIdList(),
+            key("coll/1"),
+            doc("coll/1", 5, map("foo", "bar")));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1404,7 +1414,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithRemovedTargetIds() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(2), asList(1), key("coll/1"), doc("coll/1", 5, map("foo", "bar")));
+            asRemoteTargetIdList(2),
+            asRemoteTargetIdList(1),
+            key("coll/1"),
+            doc("coll/1", 5, map("foo", "bar")));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1429,7 +1442,10 @@ public final class RemoteSerializerTest {
   public void testConvertsDocumentChangeWithDeletions() {
     WatchChange.DocumentChange expected =
         new WatchChange.DocumentChange(
-            asList(), asList(1, 2), key("coll/1"), deletedDoc("coll/1", 5));
+            asRemoteTargetIdList(),
+            asRemoteTargetIdList(1, 2),
+            key("coll/1"),
+            deletedDoc("coll/1", 5));
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
@@ -1449,7 +1465,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testConvertsDocumentChangeWithRemoves() {
     WatchChange.DocumentChange expected =
-        new WatchChange.DocumentChange(asList(), asList(1, 2), key("coll/1"), null);
+        new WatchChange.DocumentChange(asList(), asRemoteTargetIdList(1, 2), key("coll/1"), null);
     WatchChange.DocumentChange actual =
         (WatchChange.DocumentChange)
             serializer.decodeWatchChange(
