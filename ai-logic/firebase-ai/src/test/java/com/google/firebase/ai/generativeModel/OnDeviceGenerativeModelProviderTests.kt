@@ -35,6 +35,7 @@ import com.google.firebase.ai.type.TextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
@@ -108,12 +109,32 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateObject always throws FirebaseAIException`(): Unit = runBlocking {
-    val schema = mockk<JsonSchema<Any>>()
+  fun `generateObject throws FirebaseAIException when shadow class is missing`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      val schema = mockk<JsonSchema<Any>>()
+      every { schema.clazz } returns Any::class
 
-    val exception = shouldThrow<FirebaseAIException> { provider.generateObject(schema, prompt) }
-    exception.cause!!::class shouldBe IllegalArgumentException::class
-  }
+      val exception = shouldThrow<FirebaseAIException> { provider.generateObject(schema, prompt) }
+      exception.cause!!::class shouldBe IllegalArgumentException::class
+    }
+
+  @Test
+  fun `generateObject routes to onDeviceModel with shadow class when successful`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      val schema = mockk<JsonSchema<TestObject>>()
+      every { schema.clazz } returns TestObject::class
+      val onDeviceResponse =
+        OnDeviceGenerateContentResponse(listOf(OnDeviceCandidate("{}", OnDeviceFinishReason.STOP)))
+      coEvery { onDeviceModel.generateObject(any(), TestObjectMlKit::class.java) } returns
+        onDeviceResponse
+
+      val response = provider.generateObject(schema, prompt)
+
+      response.response.inferenceSource shouldBe InferenceSource.ON_DEVICE
+      coVerify { onDeviceModel.generateObject(any(), TestObjectMlKit::class.java) }
+    }
 
   @Test
   fun `generateContent throws when prompt is empty`(): Unit = runBlocking {
@@ -154,3 +175,7 @@ internal class OnDeviceGenerativeModelProviderTests {
       com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
   }
 }
+
+public class TestObject
+
+public class TestObjectMlKit
