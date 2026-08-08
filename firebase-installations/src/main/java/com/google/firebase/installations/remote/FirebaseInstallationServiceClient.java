@@ -326,6 +326,7 @@ public class FirebaseInstallationServiceClient {
         int httpResponseCode = httpURLConnection.getResponseCode();
 
         if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
+          closeResponseStream(httpURLConnection, httpResponseCode);
           return;
         }
 
@@ -451,6 +452,23 @@ public class FirebaseInstallationServiceClient {
 
   private static boolean isSuccessfulResponseCode(int responseCode) {
     return responseCode >= 200 && responseCode < 300;
+  }
+
+  // Close the response stream so decoders backing it (for example, the gzip Inflater on Android's
+  // HttpURLConnection) are released eagerly. disconnect() alone does not reliably release them,
+  // which triggers StrictMode LeakedClosableViolation when the finalizer runs.
+  private static void closeResponseStream(HttpURLConnection conn, int httpResponseCode) {
+    try {
+      InputStream stream =
+          isSuccessfulResponseCode(httpResponseCode)
+              ? conn.getInputStream()
+              : conn.getErrorStream();
+      if (stream != null) {
+        stream.close();
+      }
+    } catch (IOException ignored) {
+
+    }
   }
 
   private static void logBadConfigError() {
