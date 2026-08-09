@@ -207,7 +207,7 @@ jobs:
         working-directory: firebase-dataconnect/emulator
         run: |
           set -xveuo pipefail
-          docker compose up -d --quiet-pull
+          docker compose up -d --quiet-pull postgres
 
       - name: Wait for Postgres Server to be Ready
         working-directory: firebase-dataconnect/emulator
