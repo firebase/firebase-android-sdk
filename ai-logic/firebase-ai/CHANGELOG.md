@@ -1,6 +1,8 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Removed deprecated Imagen methods and types due to Imagen models being shut down in August 2026. As a replacement, you can [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
+- [changed] Replaced the `"function"` conversational role with `"user"` for function response content. (#8508)
+
 
 # 17.15.0
 

@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] FCM registration error due to FID_ALREADY_USED (#8507)
+
 # 25.1.1
 
 - [changed] Fixed re-registration invocation with FID change (#8338)
