@@ -41,6 +41,7 @@ import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -803,6 +804,7 @@ public class FirebaseMessaging {
   /**
    * Returns the cached token, if valid. Otherwise makes a request to the server to get a new token.
    */
+  @CanIgnoreReturnValue
   String blockingRegister(boolean shouldInvokeCallback) throws IOException {
     Store.Token cachedToken = getTokenWithoutTriggeringSync();
     if (!tokenNeedsRefresh(cachedToken)) {
