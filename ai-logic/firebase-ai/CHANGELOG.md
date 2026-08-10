@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] Adjusts `LiveSession.isClosed` to better reflect underlying connection closure state and not consume frames (#8511)
 - [changed] Replaced the `"function"` conversational role with `"user"` for function response content. (#8508)
 
 # 17.15.0
