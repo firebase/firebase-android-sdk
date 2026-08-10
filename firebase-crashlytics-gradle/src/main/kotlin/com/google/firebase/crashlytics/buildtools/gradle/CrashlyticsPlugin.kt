@@ -27,6 +27,7 @@ import com.google.firebase.crashlytics.buildtools.gradle.tasks.GenerateSymbolFil
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.InjectBuildIdsTask
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.InjectMappingFileIdTask
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.InjectVersionControlInfoTask
+import com.google.firebase.crashlytics.buildtools.gradle.tasks.UploadMappingFileForR8MapIdTask
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.UploadMappingFileTask
 import com.google.firebase.crashlytics.buildtools.gradle.tasks.UploadSymbolFileTask
 import org.gradle.api.GradleException
@@ -106,6 +107,11 @@ class CrashlyticsPlugin : Plugin<Project> {
     project: Project,
     androidComponents: ApplicationAndroidComponentsExtension,
   ) {
+    // AGP 8.12 and above embed a stable, content-derived `r8-map-id` (R8's `r8_map_id`/`pg_map_id`)
+    // in the obfuscated output. On those versions we read that id from the mapping file and upload
+    // with it, keeping the release build cache valid across rebuilds (#6770).
+    val useR8MapId = androidComponents.pluginVersion >= AndroidPluginVersion(8, 12)
+
     androidComponents.onVariants { variant ->
       val crashlyticsExtension: CrashlyticsVariantExtension =
         variant.getExtension(CrashlyticsVariantExtension::class.java)
@@ -113,11 +119,23 @@ class CrashlyticsPlugin : Plugin<Project> {
 
       InjectVersionControlInfoTask.register(project, variant)
 
-      val injectMappingFileIdTask: TaskProvider<InjectMappingFileIdTask> =
-        InjectMappingFileIdTask.register(project, variant, crashlyticsExtension)
+      val mappingFileUploadEnabled =
+        crashlyticsExtension.mappingFileUploadEnabled.getOrElse(variant.isMinifyEnabled)
 
-      if (crashlyticsExtension.mappingFileUploadEnabled.getOrElse(variant.isMinifyEnabled)) {
-        UploadMappingFileTask.register(project, variant, injectMappingFileIdTask)
+      if (useR8MapId) {
+        // AGP 8.12+: inject a fixed sentinel id (blank when nothing is uploaded) so the SDK signals
+        // r8-map-id mode, and derive the real id from R8's mapping file at upload time.
+        InjectMappingFileIdTask.registerForR8MapId(project, variant, mappingFileUploadEnabled)
+        if (mappingFileUploadEnabled) {
+          UploadMappingFileForR8MapIdTask.register(project, variant)
+        }
+      } else {
+        val injectMappingFileIdTask: TaskProvider<InjectMappingFileIdTask> =
+          InjectMappingFileIdTask.register(project, variant, crashlyticsExtension)
+
+        if (mappingFileUploadEnabled) {
+          UploadMappingFileTask.register(project, variant, injectMappingFileIdTask)
+        }
       }
 
       if (crashlyticsExtension.nativeSymbolUploadEnabled.getOrElse(false)) {

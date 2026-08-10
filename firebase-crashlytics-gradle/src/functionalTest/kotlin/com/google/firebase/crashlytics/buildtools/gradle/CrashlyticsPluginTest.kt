@@ -107,9 +107,16 @@ class CrashlyticsPluginTest {
         "--configuration-cache"
       )
 
+    // AGP 8.12+ injects the constant USE_R8_MAP_ID sentinel (the real id comes from R8's
+    // r8-map-id); earlier versions inject a generated id ("test1234" in pretend mode).
+    val (major, minor) = agpVersion.split(".").map(String::toInt)
+    val expectedId =
+      if (major > 8 || (major == 8 && minor >= 12)) "11111111111111111111111111111111"
+      else "test1234"
+
     assertThat(result.output)
       .contains(
-        "injectMappingFileIdIntoResource - com_google_firebase_crashlytics_mappingfileid.xml test1234"
+        "injectMappingFileIdIntoResource - com_google_firebase_crashlytics_mappingfileid.xml $expectedId"
       )
     assertThat(result.task(":injectCrashlyticsMappingFileIdRelease")?.outcome)
       .isEqualTo(TaskOutcome.SUCCESS)

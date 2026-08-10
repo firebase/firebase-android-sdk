@@ -30,18 +30,35 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.register
 
-/** Inject mapping file id task. */
+/**
+ * Injects a mapping file id into the app's Android resources, read by the Crashlytics SDK at
+ * runtime for deobfuscation. The id source is chosen by the AGP version when the task is
+ * registered:
+ * - **AGP 8.12+** ([registerForR8MapId]): a fixed value — the [CrashlyticsBuildtools.USE_R8_MAP_ID]
+ * that signals the SDK to use R8's `r8-map-id`, or [CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID]
+ * when no mapping is uploaded. Being constant, the resource is byte-identical across rebuilds and
+ * does not invalidate the release build cache (#6770).
+ * - **AGP < 8.12** ([register]): a blank id when no mapping is uploaded, otherwise a fresh random
+ * id generated on every build.
+ */
 @CacheableTask
 abstract class InjectMappingFileIdTask : DefaultTask() {
-  @get:Internal abstract val useBlankMappingFileId: Property<Boolean>
-  @get:OutputFile abstract val mappingFileIdFile: RegularFileProperty
+  /** Fixed id to inject. When unset, a fresh random id is generated on every run. */
+  @get:[Input Optional]
+  abstract val mappingFileId: Property<String>
+
+  /** Optional id text file; written for consumers that read the id from disk (the upload task). */
+  @get:[OutputFile Optional]
+  abstract val mappingFileIdFile: RegularFileProperty
+
   @get:OutputDirectory abstract val resourceDir: DirectoryProperty
 
   init {
@@ -52,55 +69,71 @@ abstract class InjectMappingFileIdTask : DefaultTask() {
 
   @TaskAction
   fun injectMappingFileId() {
-    val mappingFileId =
-      if (useBlankMappingFileId.get()) {
-        CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
-      } else {
-        CrashlyticsBuildtools.generateMappingFileId()
-      }
-    mappingFileIdFile.get().asFile.writeText(mappingFileId)
-
+    val id = mappingFileId.orNull ?: CrashlyticsBuildtools.generateMappingFileId()
+    if (mappingFileIdFile.isPresent) {
+      mappingFileIdFile.get().asFile.writeText(id)
+    }
     CrashlyticsBuildtools.injectMappingFileIdIntoResource(
       resourceFile = File(resourceDir.get().asFile, "values/$MAPPING_FILE_ID_RESOURCE_FILENAME"),
-      mappingFileId,
+      id,
     )
   }
 
-  /**
-   * Check if a mapping file id file already exists, and that the mapping file id is blank - meaning
-   * no obfuscation is enabled. The Crashlytics SDK always needs a mapping file id.
-   */
-  private fun blankMappingFileIdExists(): Boolean {
-    val file: File = mappingFileIdFile.get().asFile
-    return file.exists() && file.readText() == CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
-  }
-
   internal companion object {
+    /**
+     * Registers the task for AGP < 8.12: a blank id when no mapping is uploaded, otherwise a fresh
+     * random id on every build.
+     */
     @Suppress("UnstableApiUsage") // isMinifyEnabled
     fun register(
       project: Project,
       variant: ApplicationVariant,
       crashlyticsExtension: CrashlyticsVariantExtension,
-    ): TaskProvider<InjectMappingFileIdTask> {
-      val injectMappingFileIdTaskProvider =
-        project.tasks.register<InjectMappingFileIdTask>(
-          "injectCrashlyticsMappingFileId${variant.name.capitalized()}"
-        ) {
-          this.useBlankMappingFileId.set(
-            !crashlyticsExtension.mappingFileUploadEnabled.getOrElse(variant.isMinifyEnabled)
-          )
-          this.mappingFileIdFile.set(buildFile(project, variant, "mappingFileId.txt"))
-
-          outputs.upToDateWhen { useBlankMappingFileId.get() && blankMappingFileIdExists() }
+    ): TaskProvider<InjectMappingFileIdTask> =
+      registerTask(project, variant) {
+        if (!crashlyticsExtension.mappingFileUploadEnabled.getOrElse(variant.isMinifyEnabled)) {
+          this.mappingFileId.set(CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID)
         }
+        this.mappingFileIdFile.set(buildFile(project, variant, "mappingFileId.txt"))
+        // A fixed id (blank) stays up to date; an unset id regenerates on every build.
+        outputs.upToDateWhen { mappingFileId.isPresent }
+      }
+
+    /**
+     * Registers the task for AGP 8.12+: the constant r8-map-id sentinel, or a blank id when no
+     * mapping is uploaded.
+     */
+    fun registerForR8MapId(
+      project: Project,
+      variant: ApplicationVariant,
+      mappingFileUploadEnabled: Boolean,
+    ): TaskProvider<InjectMappingFileIdTask> =
+      registerTask(project, variant) {
+        this.mappingFileId.set(
+          if (mappingFileUploadEnabled) CrashlyticsBuildtools.USE_R8_MAP_ID
+          else CrashlyticsBuildtools.BLANK_MAPPING_FILE_ID
+        )
+      }
+
+    @Suppress("UnstableApiUsage")
+    private fun registerTask(
+      project: Project,
+      variant: ApplicationVariant,
+      configure: InjectMappingFileIdTask.() -> Unit,
+    ): TaskProvider<InjectMappingFileIdTask> {
+      val provider =
+        project.tasks.register<InjectMappingFileIdTask>(
+          "injectCrashlyticsMappingFileId${variant.name.capitalized()}",
+          configure,
+        )
 
       // It is not possible to disable Android resources in the AGP app plugin.
       variant.sources.res?.addGeneratedSourceDirectory(
-        injectMappingFileIdTaskProvider,
-        InjectMappingFileIdTask::resourceDir,
+        provider,
+        InjectMappingFileIdTask::resourceDir
       )
 
-      return injectMappingFileIdTaskProvider
+      return provider
     }
   }
 }
