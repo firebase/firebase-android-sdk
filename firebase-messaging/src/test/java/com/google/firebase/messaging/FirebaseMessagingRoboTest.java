@@ -1199,6 +1199,7 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
+  @SuppressWarnings("GuardedBy") // Required while importing to G3
   public void testAutoInitEnabled_v1Flow_triggersRegistration() throws Exception {
     resetForTokenTests();
     editManifestApplicationMetadata()
@@ -1239,6 +1240,7 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
+  @SuppressWarnings("GuardedBy") // Required while importing to G3
   public void testAutoInitDisabled_v1Flow_doesNotTriggerRegistration() throws Exception {
     resetForTokenTests();
     editManifestApplicationMetadata()
