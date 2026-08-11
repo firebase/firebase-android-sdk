@@ -4290,4 +4290,57 @@ public class PipelineTest {
     }
     return Collections.unmodifiableMap(res);
   }
+
+  @Test
+  public void testDeleteStage() {
+    CollectionReference collection = testCollection();
+    Pipeline.Snapshot snapshot =
+        waitFor(collection.toPipeline().where(equal(field("__name__"), constant("book1"))).delete().execute());
+    assertThat(snapshot).isNotNull();
+  }
+
+  @Test
+  public void testUpdateStage() {
+    CollectionReference collection = testCollection();
+    Pipeline.Snapshot snapshot =
+        waitFor(
+            collection
+                .toPipeline()
+                .where(equal(field("__name__"), constant("book1")))
+                .update(constant("Updated").as("status"))
+                .execute());
+    assertThat(snapshot).isNotNull();
+  }
+
+  @Test
+  public void testInsertStage() {
+    CollectionReference collection = testCollection();
+    Map<String, Object> data = new HashMap<>();
+    data.put("title", "New Book");
+    Pipeline.Snapshot snapshot =
+        waitFor(
+            db.pipeline()
+                .literals(data)
+                .insert(collection.getPath(), constant("newBook_insert_1"))
+                .execute());
+    assertThat(snapshot).isNotNull();
+  }
+
+  @Test
+  public void testUpsertStage() {
+    CollectionReference collection = testCollection();
+    Map<String, Object> data = new HashMap<>();
+    data.put("title", "Upsert Book");
+    data.put("count", 1);
+    Pipeline.Snapshot snapshot =
+        waitFor(
+            db.pipeline()
+                .literals(data)
+                .upsert(
+                    add(field("count"), constant(1)).as("count"),
+                    collection.getPath(),
+                    constant("upsertBook_1"))
+                .execute(new Pipeline.ExecuteOptions().withAtomic(true)));
+    assertThat(snapshot).isNotNull();
+  }
 }
