@@ -1,5 +1,6 @@
 # Unreleased
 
+- [fixed] Fixed the cross-database document reference warning log naming the referenced document rather than the document containing the reference.
 - [changed] Added support for caching documents larger than 1MB by reading them in chunks from the local SQLite database.
 - [changed] Prevent OutOfMemory errors in debug logging by truncating large protobuf payloads and strings.
 
