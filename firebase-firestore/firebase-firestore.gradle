@@ -120,6 +120,11 @@ android {
         lintConfig file("lint.xml")
         ignoreTestFixturesSources true
     }
+    packagingOptions {
+        resources {
+            excludes += "**/*.proto"
+        }
+    }
     testOptions.unitTests.includeAndroidResources = true
 
 }
@@ -168,7 +173,6 @@ dependencies {
     testFixturesImplementation libs.junit
     testFixturesImplementation libs.mockito.core
     testFixturesImplementation libs.jackson.databind
-    testFixturesImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testFixturesImplementation libs.grpc.protobuf.lite
     testFixturesCompileOnly libs.protobuf.java
     testFixturesCompileOnly libs.javax.annotation.jsr250
