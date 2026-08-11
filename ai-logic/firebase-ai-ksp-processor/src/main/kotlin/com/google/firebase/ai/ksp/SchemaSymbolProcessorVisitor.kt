@@ -68,6 +68,11 @@ internal class SchemaSymbolProcessorVisitor(
       codeGenerator,
       Dependencies(true, containingFile),
     )
+    val providerFile = generateMlKitProviderFileSpec(classDeclaration)
+    providerFile.writeTo(
+      codeGenerator,
+      Dependencies(true, containingFile),
+    )
   }
 
   fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
@@ -394,6 +399,150 @@ internal class SchemaSymbolProcessorVisitor(
       classDeclaration.toClassName()
     )
     classBuilder.addFunction(toSdkBuilder.build())
+
+    fileBuilder.addType(classBuilder.build())
+    return fileBuilder.build()
+  }
+
+  private fun isListOfBasicType(type: KSType): Boolean {
+    val qualifiedName = type.declaration.qualifiedName?.asString()
+    return qualifiedName in
+      listOf(
+        "kotlin.collections.List",
+        "java.util.List",
+        "kotlin.collections.MutableList",
+        "java.util.ArrayList"
+      )
+  }
+
+  fun generateMlKitProviderFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
+    val packageName = classDeclaration.packageName.asString()
+    val companionClassName = classDeclaration.getMlKitCompanionClassName()
+    val providerClassName = "${companionClassName}Provider"
+    val companionClass = ClassName(packageName, companionClassName)
+
+    val fileBuilder =
+      FileSpec.builder(packageName, providerClassName).addAnnotation(Generated::class)
+
+    val classBuilder =
+      TypeSpec.classBuilder(providerClassName)
+        .addSuperinterface(ClassName("com.google.mlkit.genai.schema.guided", "GenerableProvider"))
+    val keepAnnotation = AnnotationSpec.builder(ClassName("androidx.annotation", "Keep")).build()
+    classBuilder.addAnnotation(keepAnnotation)
+
+    val targetClassProp =
+      PropertySpec.builder(
+          "targetClass",
+          ClassName("kotlin.reflect", "KClass")
+            .parameterizedBy(com.squareup.kotlinpoet.WildcardTypeName.producerOf(Any::class))
+        )
+        .addModifiers(KModifier.OVERRIDE)
+        .getter(FunSpec.getterBuilder().addStatement("return %T::class", companionClass).build())
+        .build()
+    classBuilder.addProperty(targetClassProp)
+
+    val generableAnn =
+      classDeclaration.annotations.firstOrNull { it.shortName.getShortName() == "Generable" }
+    val classDesc = getStringFromAnnotation(generableAnn, "description") ?: ""
+
+    val getGenerableDetailFun =
+      FunSpec.builder("getGenerableDetail")
+        .addModifiers(KModifier.OVERRIDE)
+        .returns(
+          ClassName("com.google.mlkit.genai.schema.guided", "GenerableDetail")
+            .parameterizedBy(com.squareup.kotlinpoet.WildcardTypeName.producerOf(Any::class))
+        )
+
+    val guideDetailListCode = CodeBlock.builder()
+    guideDetailListCode.addStatement("val guideDetails = listOf(")
+    guideDetailListCode.indent()
+
+    classDeclaration.getAllProperties().forEach { property ->
+      val propName = property.simpleName.asString()
+      val propType = property.type.resolve()
+      val isList = isListOfGenerableClass(propType) || isListOfBasicType(propType)
+      val nullable = propType.isMarkedNullable
+
+      val typeClass: TypeName =
+        if (isList) {
+          ClassName("kotlin.collections", "List")
+        } else if (isGenerableClass(propType)) {
+          val ksClass = propType.declaration as KSClassDeclaration
+          ClassName(ksClass.packageName.asString(), ksClass.getMlKitCompanionClassName())
+        } else {
+          propType.toClassName().copy(nullable = false)
+        }
+
+      val listItemTypeClass: TypeName? =
+        if (isList) {
+          val argType = propType.arguments.firstOrNull()?.type?.resolve()
+          if (argType != null) {
+            if (isGenerableClass(argType)) {
+              val ksClass = argType.declaration as KSClassDeclaration
+              ClassName(ksClass.packageName.asString(), ksClass.getMlKitCompanionClassName())
+            } else {
+              argType.toClassName().copy(nullable = false)
+            }
+          } else null
+        } else null
+
+      val guideAnn = property.annotations.firstOrNull { it.shortName.getShortName() == "Guide" }
+      val guideValues =
+        if (guideAnn != null) {
+          getGuideValuesFromAnnotation(guideAnn, getStringFromAnnotation(guideAnn, "description"))
+        } else {
+          GuideValues(null, null, null, null, null, null)
+        }
+
+      val enumValuesCode =
+        if (!guideValues.enumValues.isNullOrEmpty()) {
+          val elements = guideValues.enumValues.joinToString { "%S" }
+          CodeBlock.of("arrayOf($elements)", *guideValues.enumValues.toTypedArray())
+        } else {
+          CodeBlock.of("null")
+        }
+
+      guideDetailListCode.addStatement(
+        "%T(\n" +
+          "  name = %S,\n" +
+          "  type = %T::class,\n" +
+          "  nullable = %L,\n" +
+          "  description = %L,\n" +
+          "  maxItems = %L,\n" +
+          "  minItems = %L,\n" +
+          "  maximum = %L,\n" +
+          "  minimum = %L,\n" +
+          "  enumValues = %L,\n" +
+          "  isList = %L,\n" +
+          "  listItemType = %L\n" +
+          "),",
+        ClassName("com.google.mlkit.genai.schema.guided", "GenerableDetail", "GuideDetail"),
+        propName,
+        typeClass,
+        nullable,
+        if (guideValues.description != null) CodeBlock.of("%S", guideValues.description)
+        else CodeBlock.of("null"),
+        if (guideValues.maxItems != null) guideValues.maxItems else "null",
+        if (guideValues.minItems != null) guideValues.minItems else "null",
+        if (guideValues.maximum != null) guideValues.maximum else "null",
+        if (guideValues.minimum != null) guideValues.minimum else "null",
+        enumValuesCode,
+        isList,
+        if (listItemTypeClass != null) CodeBlock.of("%T::class", listItemTypeClass)
+        else CodeBlock.of("null")
+      )
+    }
+
+    guideDetailListCode.unindent()
+    guideDetailListCode.addStatement(")")
+    guideDetailListCode.addStatement(
+      "return %T(\n  description = %S,\n  guideDetails = guideDetails\n)",
+      ClassName("com.google.mlkit.genai.schema.guided", "GenerableDetail"),
+      classDesc
+    )
+
+    getGenerableDetailFun.addCode(guideDetailListCode.build())
+    classBuilder.addFunction(getGenerableDetailFun.build())
 
     fileBuilder.addType(classBuilder.build())
     return fileBuilder.build()
