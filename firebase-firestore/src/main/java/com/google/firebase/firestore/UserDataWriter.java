@@ -152,7 +152,7 @@ public class UserDataWriter {
       // TODO: Somehow support foreign references.
       Logger.warn(
           "DocumentSnapshot",
-          "Document %s contains a document reference within a different database "
+          "Document reference to %s is for a different database "
               + "(%s/%s) which is not supported. It will be treated as a reference in "
               + "the current database (%s/%s) instead.",
           key.getPath(),

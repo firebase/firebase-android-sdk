@@ -212,6 +212,18 @@ public class UserDataWriterTest {
   }
 
   @Test
+  public void testConvertsResourceNameFromDifferentDatabase() {
+    Value value =
+        Value.newBuilder()
+            .setReferenceValue("projects/other-project/databases/other-db/documents/foo/bar")
+            .build();
+    Object convertedValue = convertValue(value);
+    assertTrue(convertedValue instanceof DocumentReference);
+    DocumentReference docRef = (DocumentReference) convertedValue;
+    assertEquals(DocumentKey.fromPathString("foo/bar"), TestAccessHelper.referenceKey(docRef));
+  }
+
+  @Test
   public void testConvertsGeoPointValue() {
     List<GeoPoint> testCases = asList(new GeoPoint(1.24, 4.56), new GeoPoint(-20, 100));
     for (GeoPoint p : testCases) {
