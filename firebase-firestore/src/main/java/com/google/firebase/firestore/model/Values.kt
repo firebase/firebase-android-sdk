@@ -689,7 +689,7 @@ object Values {
   /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
   @JvmStatic
   fun isNumber(value: Value?): Boolean {
-    return isInteger(value) || isDouble(value)
+    return isInteger(value) || isDouble(value) || isInt32Value(value) || isDecimal128Value(value)
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
