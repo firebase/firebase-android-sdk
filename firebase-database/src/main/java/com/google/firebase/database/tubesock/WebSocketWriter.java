@@ -19,7 +19,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 class WebSocketWriter {
 
   private BlockingQueue<ByteBuffer> pendingBuffers;
-  private final Random random = new Random();
+  private final SecureRandom random = new SecureRandom();
   private volatile boolean stop = false;
   private boolean closeSent = false;
   private WebSocket websocket;
