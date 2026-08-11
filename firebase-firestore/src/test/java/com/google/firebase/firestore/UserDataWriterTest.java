@@ -229,8 +229,8 @@ public class UserDataWriterTest {
     boolean found = false;
     for (ShadowLog.LogItem log : logs) {
       if (log.msg.contains(
-          "Document reference to foo/bar is for a different database (other-project/other-db)"
-              + " which is not supported. It will be treated as a reference in the current"
+          "A document reference to foo/bar refers to a different database (other-project/other-db)"
+              + ", which is not supported. It will be treated as a reference in the current"
               + " database (projectId/(default)) instead.")) {
         found = true;
         break;
