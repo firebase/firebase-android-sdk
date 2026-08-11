@@ -44,7 +44,8 @@ import javax.annotation.processing.Generated
 
 internal class SchemaSymbolProcessorVisitor(
   private val logger: KSPLogger,
-  private val codeGenerator: CodeGenerator
+  private val codeGenerator: CodeGenerator,
+  private val generateMlKitArtifacts: Boolean = false,
 ) : KSVisitorVoid() {
   private val numberTypes = setOf("kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float")
 
@@ -63,16 +64,18 @@ internal class SchemaSymbolProcessorVisitor(
       codeGenerator,
       Dependencies(true, containingFile),
     )
-    val companionFile = generateMlKitCompanionFileSpec(classDeclaration)
-    companionFile.writeTo(
-      codeGenerator,
-      Dependencies(true, containingFile),
-    )
-    val providerFile = generateMlKitProviderFileSpec(classDeclaration)
-    providerFile.writeTo(
-      codeGenerator,
-      Dependencies(true, containingFile),
-    )
+    if (generateMlKitArtifacts) {
+      val companionFile = generateMlKitCompanionFileSpec(classDeclaration)
+      companionFile.writeTo(
+        codeGenerator,
+        Dependencies(true, containingFile),
+      )
+      val providerFile = generateMlKitProviderFileSpec(classDeclaration)
+      providerFile.writeTo(
+        codeGenerator,
+        Dependencies(true, containingFile),
+      )
+    }
   }
 
   fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {

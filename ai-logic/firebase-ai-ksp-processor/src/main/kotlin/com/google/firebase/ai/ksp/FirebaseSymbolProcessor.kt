@@ -36,19 +36,31 @@ public class FirebaseSymbolProcessor(
         .toList()
 
     if (generableClasses.isNotEmpty()) {
-      val visitor = SchemaSymbolProcessorVisitor(logger, codeGenerator)
+      val hasMlKitOnClasspath =
+        resolver.getClassDeclarationByName(
+          resolver.getKSNameFromString("com.google.mlkit.genai.schema.guided.GenerableProvider")
+        ) != null
+
+      val visitor =
+        SchemaSymbolProcessorVisitor(
+          logger,
+          codeGenerator,
+          generateMlKitArtifacts = hasMlKitOnClasspath,
+        )
       val providerClassNames = mutableListOf<String>()
       val originatingFiles = mutableListOf<com.google.devtools.ksp.symbol.KSFile>()
 
       generableClasses.forEach { klass ->
         visitor.visitClassDeclaration(klass, Unit)
-        providerClassNames.add(
-          "${klass.packageName.asString()}.${klass.getMlKitCompanionClassName()}Provider"
-        )
-        klass.containingFile?.let { originatingFiles.add(it) }
+        if (hasMlKitOnClasspath) {
+          providerClassNames.add(
+            "${klass.packageName.asString()}.${klass.getMlKitCompanionClassName()}Provider"
+          )
+          klass.containingFile?.let { originatingFiles.add(it) }
+        }
       }
 
-      if (providerClassNames.isNotEmpty() && originatingFiles.isNotEmpty()) {
+      if (hasMlKitOnClasspath && providerClassNames.isNotEmpty() && originatingFiles.isNotEmpty()) {
         val serviceFile =
           codeGenerator.createNewFile(
             com.google.devtools.ksp.processing.Dependencies(true, *originatingFiles.toTypedArray()),
