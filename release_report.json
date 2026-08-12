@@ -1,0 +1,378 @@
+{
+    "changesByLibraryName": {
+        "firebase-common": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "87ace8120b592d043fbe14b1988e45b086b1314b",
+                "prId": "8520",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): docker-compose.yml: add postgrest and swagger-ui (#8520)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87ace8120b592d043fbe14b1988e45b086b1314b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8520"
+            },
+            {
+                "commitId": "10e00db36fc51f9038443d5c04d2cef7e7a89a4e",
+                "prId": "8516",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.17 (was 3.4.16) and firebase-tools to 15.26.0 (was 15.25.1) (#8516)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/10e00db36fc51f9038443d5c04d2cef7e7a89a4e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8516"
+            },
+            {
+                "commitId": "943217a7b8f319c89a3704233022b185c025cfb5",
+                "prId": "8514",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): upgrade postgresql server used in CI from to 18.4 (#8514)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/943217a7b8f319c89a3704233022b185c025cfb5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8514"
+            },
+            {
+                "commitId": "94574b3fd60adac96977346551ae7a0a11c853ea",
+                "prId": "8513",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): various improvements to docker-compose.yml for running postgres (#8513)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/94574b3fd60adac96977346551ae7a0a11c853ea",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8513"
+            },
+            {
+                "commitId": "4f740d0e72abb7f68fc3d120613bdabc4c1f265b",
+                "prId": "8504",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix CHANGELOG entries incorrectly moved to 17.3.3 header by PR #8502 (m184 mergeback) (#8504)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4f740d0e72abb7f68fc3d120613bdabc4c1f265b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8504"
+            },
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            },
+            {
+                "commitId": "a149d4d201799a1fd8dfe5032a5176a9a3adeacb",
+                "prId": "8499",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): add \"X-Firebase-Sqlconnect-Affinity\" header for GSLB soft stickiness (#8499)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a149d4d201799a1fd8dfe5032a5176a9a3adeacb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8499"
+            },
+            {
+                "commitId": "259787ce9673e8edaef73ba7d8784db75771f0f3",
+                "prId": "8498",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade firebase-tools to 15.25.1 (was 15.24.0) (#8498)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/259787ce9673e8edaef73ba7d8784db75771f0f3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8498"
+            },
+            {
+                "commitId": "7bc5991db7e8a3b789e8bc9968418e4afea99179",
+                "prId": "8495",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): merge \"X-Client-Platform\" header into \"X-Client-Version\" (#8495)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bc5991db7e8a3b789e8bc9968418e4afea99179",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8495"
+            },
+            {
+                "commitId": "1103e8961ef6994bf7be931396558239c9cd77a2",
+                "prId": "8481",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Add 15 second grace before disconnecting a streaming connection with the backend (#8481)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1103e8961ef6994bf7be931396558239c9cd77a2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8481"
+            },
+            {
+                "commitId": "cf716e09f38c1a7b0e4db386994fdad1cff4bf5d",
+                "prId": "8486",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): add \"X-Client-Platform\" and \"X-Client-Version\" headers (#8486)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cf716e09f38c1a7b0e4db386994fdad1cff4bf5d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8486"
+            },
+            {
+                "commitId": "8482c84b8340b94dec8aa33e37301a8a1e7cbd5e",
+                "prId": "8472",
+                "author": "Denver Coneybeare",
+                "message": "Upgrade distributionUrl to gradle 8.14.5 in all gradle-wrapper.properties files, match the main build (#8472)\n\nThe main build has been using gradle 8.14.5 since #8315 (~ 1 month ago),\nbut some other gradle-wrapper.properties still had older versions, like\n8.4, 8.5, and 8.13. This was noticed by the non-stopping failure of the\n\"health-metrics/apk-size\" build, which exhibited this error:\n\n```\n[I] fireci.gradle: Build file '/home/runner/work/firebase-android-sdk/firebase-android-sdk/health-metrics/apk-size/app/build.gradle' line: 15\n[I] fireci.gradle:\n[I] fireci.gradle: * What went wrong:\n[I] fireci.gradle: A problem occurred evaluating project ':app'.\n[I] fireci.gradle: > Failed to apply plugin 'com.android.internal.version-check'.\n[I] fireci.gradle:    > Minimum supported Gradle version is 8.13. Current version is 8.4.\n[I] fireci.gradle:      Try updating the 'distributionUrl' property in /home/runner/work/firebase-android-sdk/firebase-android-sdk/health-metrics/apk-size/gradle/wrapper/gradle-wrapper.properties to 'gradle-8.13-bin.zip'.\n```\n\nExample of this error:\nhttps://github.com/firebase/firebase-android-sdk/actions/runs/29970061255/job/89089948326",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8482c84b8340b94dec8aa33e37301a8a1e7cbd5e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8472"
+            },
+            {
+                "commitId": "70e6717d606adcb57ce4ddad1b79808a6bae9579",
+                "prId": "8471",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QuerySubscriptionImplUnitTest.kt: fix spurious failures in testNetworkConnectivityRestoration()  (#8471)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/70e6717d606adcb57ce4ddad1b79808a6bae9579",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8471"
+            },
+            {
+                "commitId": "00a1bef1ad9f641d5205eee91676bb56a65e089a",
+                "prId": "8465",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): ensure FirebaseDataConnect instances are closed unconditionally in tests using the new useSuspending() extension function (#8465)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/00a1bef1ad9f641d5205eee91676bb56a65e089a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8465"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            },
+            {
+                "commitId": "a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prId": "8492",
+                "author": "Mila",
+                "message": "[Release] update version to correct number (#8492)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8492"
+            },
+            {
+                "commitId": "1b63d4a69eed2774ec33dd962c81ee9119ad44ab",
+                "prId": "8367",
+                "author": "Daniel La Rocque",
+                "message": "test(firestore): add integration tests for large documents (#8367)\n\nAdd integration tests for 16MB documents. Tests reads, writes, snapshot\nreads from server and the cache.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1b63d4a69eed2774ec33dd962c81ee9119ad44ab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8367"
+            },
+            {
+                "commitId": "bb270a6c39a9f9146950f55d7f111e6d75ad151f",
+                "prId": "8363",
+                "author": "Daniel La Rocque",
+                "message": "feat(firestore): support retrieving documents up to 16MB over gRPC (#8363)\n\nIncreases the gRPC max inbound message size to 17MB, to support 16MB\ndocuments.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bb270a6c39a9f9146950f55d7f111e6d75ad151f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8363"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "41b9fd58bc229119e9ae1ef1b75dc484f11d6d6f",
+                "prId": "8523",
+                "author": "Eldhose M Babu",
+                "message": "FCM Copybara import fix. (#8523)\n\nFCM Copybara import fix.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/41b9fd58bc229119e9ae1ef1b75dc484f11d6d6f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8523"
+            },
+            {
+                "commitId": "f550f17d6ec062f85bc2593e2c4fed7371ac1d6e",
+                "prId": "8521",
+                "author": "Eldhose M Babu",
+                "message": "Tap issue fixes while importing to G3  (#8521)\n\nTap issue fixes while importing to G3",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f550f17d6ec062f85bc2593e2c4fed7371ac1d6e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8521"
+            },
+            {
+                "commitId": "90869aa13bcd4c118a286701373962afdd0fa299",
+                "prId": "8507",
+                "author": "Eldhose M Babu",
+                "message": "Handle FID_ALREADY_USED Error from FCM Backend (#8507)\n\nHandle FID_ALREADY_USED Error from FCM Backend.\n\n- When this error is detected, we will clear the FIS cache and re-try\nFCM registration with new FID.\n- Changed the order in which FID and FIS_Token is fetched. Now we will\nfetch FIS_Token first and then FID since fetching FIS_Token will\ninvalidate any stale FIDs.\n- Corrected the FCM SDK version sent in registration request.\n- Added unit tests for the changes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/90869aa13bcd4c118a286701373962afdd0fa299",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8507"
+            }
+        ],
+        "firebase-messaging-directboot": [],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            },
+            {
+                "commitId": "a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prId": "8492",
+                "author": "Mila",
+                "message": "[Release] update version to correct number (#8492)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8492"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "c62af76eb8e05191535d64329e16129be4a566ff",
+                "prId": "8395",
+                "author": "Mila",
+                "message": "[AI] support on-device structured output (#8395)\n\nThis PR introduces Structured Output support on device, allowing\ndevelopers to generate strongly-typed objects using ML Kit's backend. It\ndefines the public API (GenerateObjectResponse and generateObject()),\nhandles the necessary Kotlin Symbol Processing (KSP) logic for schema\ntranslation.\n\n**How to use On-Device Structured Output**\n1. Define a data class annotated with @Generable (and @Guide). Note: You\nmust provide an empty companion object so the KSP processor can generate\nthe necessary schema extensions.\n2. Call generateObject \n\n```\nimport com.google.firebase.ai.annotations.Generable\n@Generable\ndata class Recipe(\n    val recipeName: String,\n    @Guide(description = \"A list of ingredients\", minItems = 2)\n    val ingredients: List<String>,\n    @Guide(description = \"Preparation time in minutes\", minimum = 1.0)\n    val prepTimeMinutes: Int\n) {\n    companion object\n}\n\nval schema = Recipe.firebaseAISchema()\nval prompt = \"Give me a recipe for chocolate chip cookies\"\n\nval response = model.generateObject(schema, prompt)\nval recipe: Recipe? = response.getObject()\nrecipe?.let {\n    println(\"Recipe: ${it.recipeName}\")\n    println(\"Ingredients: ${it.ingredients.joinToString()}\")\n    println(\"Prep time: ${it.prepTimeMinutes} mins\")\n}\n```\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8395"
+            },
+            {
+                "commitId": "ddd73a0af2a03c48db318ea6007740bca88e5be2",
+                "prId": "8512",
+                "author": "Rosário P. Fernandes",
+                "message": "refactor(ai-logic): remove deprecated Imagen APIs (#8512)\n\nRemoves the Imagen APIs that we previously deprecated in #7988 and #8085\n\n---------\n\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddd73a0af2a03c48db318ea6007740bca88e5be2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8512"
+            },
+            {
+                "commitId": "87b1e88faa80864690518eeca663396feee8cf0b",
+                "prId": "8518",
+                "author": "Mila",
+                "message": "[AI] update AI logic docs URLs (#8518)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87b1e88faa80864690518eeca663396feee8cf0b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8518"
+            },
+            {
+                "commitId": "53d5c8b72ce3b19b836fcbff9203c99e6ee608ff",
+                "prId": "8511",
+                "author": "emilypgoogle",
+                "message": "Adjust LiveSession.isClosed to handle closure more correctly (#8511)\n\nAdjusts `isClosed` to\n* return true when the connection has been closed, even if frames\nhaven't been consumed yet\n* not consume and discard frames to check if the connection is closed\nlike before\n* better represent what it means to be \"closed\"\n\nAdded testing for this new behavior with mocked connections.\n\nAdditionally, moved the contents of the removed `kotlin.kt` file to\n`tests.kt` because of class name collision that only appeared after\nadding testing. It shouldn't have been named `kotlin.kt` in that package\nto begin with.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/53d5c8b72ce3b19b836fcbff9203c99e6ee608ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8511"
+            },
+            {
+                "commitId": "cb1f82d1585bc0719933fa2b1d4824a172093edc",
+                "prId": "8508",
+                "author": "Mila",
+                "message": "[AI] correct FunctionResponsePart role to \"user\" (#8508)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cb1f82d1585bc0719933fa2b1d4824a172093edc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8508"
+            },
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            },
+            {
+                "commitId": "a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prId": "8492",
+                "author": "Mila",
+                "message": "[Release] update version to correct number (#8492)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8492"
+            },
+            {
+                "commitId": "668b0ca5e097ea1b99e204774a9fb860dc44bbe2",
+                "prId": "8466",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update location docs and notes for Firebase AI (#8466)\n\nUpdate documentation URLs in APIController and Exceptions to point to\nthe latest Firebase location guides. Refine the CHANGELOG notes\nregarding default locations for GenerativeBackend backends and update\nthe doc comment for agentPlatform.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/668b0ca5e097ea1b99e204774a9fb860dc44bbe2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8466"
+            }
+        ],
+        "ai-logic/firebase-ai-ksp-processor": [
+            {
+                "commitId": "c62af76eb8e05191535d64329e16129be4a566ff",
+                "prId": "8395",
+                "author": "Mila",
+                "message": "[AI] support on-device structured output (#8395)\n\nThis PR introduces Structured Output support on device, allowing\ndevelopers to generate strongly-typed objects using ML Kit's backend. It\ndefines the public API (GenerateObjectResponse and generateObject()),\nhandles the necessary Kotlin Symbol Processing (KSP) logic for schema\ntranslation.\n\n**How to use On-Device Structured Output**\n1. Define a data class annotated with @Generable (and @Guide). Note: You\nmust provide an empty companion object so the KSP processor can generate\nthe necessary schema extensions.\n2. Call generateObject \n\n```\nimport com.google.firebase.ai.annotations.Generable\n@Generable\ndata class Recipe(\n    val recipeName: String,\n    @Guide(description = \"A list of ingredients\", minItems = 2)\n    val ingredients: List<String>,\n    @Guide(description = \"Preparation time in minutes\", minimum = 1.0)\n    val prepTimeMinutes: Int\n) {\n    companion object\n}\n\nval schema = Recipe.firebaseAISchema()\nval prompt = \"Give me a recipe for chocolate chip cookies\"\n\nval response = model.generateObject(schema, prompt)\nval recipe: Recipe? = response.getObject()\nrecipe?.let {\n    println(\"Recipe: ${it.recipeName}\")\n    println(\"Ingredients: ${it.ingredients.joinToString()}\")\n    println(\"Prep time: ${it.prepTimeMinutes} mins\")\n}\n```\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8395"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "c62af76eb8e05191535d64329e16129be4a566ff",
+                "prId": "8395",
+                "author": "Mila",
+                "message": "[AI] support on-device structured output (#8395)\n\nThis PR introduces Structured Output support on device, allowing\ndevelopers to generate strongly-typed objects using ML Kit's backend. It\ndefines the public API (GenerateObjectResponse and generateObject()),\nhandles the necessary Kotlin Symbol Processing (KSP) logic for schema\ntranslation.\n\n**How to use On-Device Structured Output**\n1. Define a data class annotated with @Generable (and @Guide). Note: You\nmust provide an empty companion object so the KSP processor can generate\nthe necessary schema extensions.\n2. Call generateObject \n\n```\nimport com.google.firebase.ai.annotations.Generable\n@Generable\ndata class Recipe(\n    val recipeName: String,\n    @Guide(description = \"A list of ingredients\", minItems = 2)\n    val ingredients: List<String>,\n    @Guide(description = \"Preparation time in minutes\", minimum = 1.0)\n    val prepTimeMinutes: Int\n) {\n    companion object\n}\n\nval schema = Recipe.firebaseAISchema()\nval prompt = \"Give me a recipe for chocolate chip cookies\"\n\nval response = model.generateObject(schema, prompt)\nval recipe: Recipe? = response.getObject()\nrecipe?.let {\n    println(\"Recipe: ${it.recipeName}\")\n    println(\"Ingredients: ${it.ingredients.joinToString()}\")\n    println(\"Prep time: ${it.prepTimeMinutes} mins\")\n}\n```\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8395"
+            },
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "c62af76eb8e05191535d64329e16129be4a566ff",
+                "prId": "8395",
+                "author": "Mila",
+                "message": "[AI] support on-device structured output (#8395)\n\nThis PR introduces Structured Output support on device, allowing\ndevelopers to generate strongly-typed objects using ML Kit's backend. It\ndefines the public API (GenerateObjectResponse and generateObject()),\nhandles the necessary Kotlin Symbol Processing (KSP) logic for schema\ntranslation.\n\n**How to use On-Device Structured Output**\n1. Define a data class annotated with @Generable (and @Guide). Note: You\nmust provide an empty companion object so the KSP processor can generate\nthe necessary schema extensions.\n2. Call generateObject \n\n```\nimport com.google.firebase.ai.annotations.Generable\n@Generable\ndata class Recipe(\n    val recipeName: String,\n    @Guide(description = \"A list of ingredients\", minItems = 2)\n    val ingredients: List<String>,\n    @Guide(description = \"Preparation time in minutes\", minimum = 1.0)\n    val prepTimeMinutes: Int\n) {\n    companion object\n}\n\nval schema = Recipe.firebaseAISchema()\nval prompt = \"Give me a recipe for chocolate chip cookies\"\n\nval response = model.generateObject(schema, prompt)\nval recipe: Recipe? = response.getObject()\nrecipe?.let {\n    println(\"Recipe: ${it.recipeName}\")\n    println(\"Ingredients: ${it.ingredients.joinToString()}\")\n    println(\"Prep time: ${it.prepTimeMinutes} mins\")\n}\n```\n\n---------\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8395"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            },
+            {
+                "commitId": "e2488ea79987b03721935064d33f99886d475820",
+                "prId": "8463",
+                "author": "Mila",
+                "message": "[Infra] Update changelogs (#8463)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e2488ea79987b03721935064d33f99886d475820",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8463"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "285a0488fa6de3dc0163f09b265ad9f611891f61",
+                "prId": "8503",
+                "author": "Austin Benoit",
+                "message": "chore(app_check): Update the app check debug token message (#8503)\n\nUpdate the Message that a users receives when they are working with the\nApp check debug provider",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/285a0488fa6de3dc0163f09b265ad9f611891f61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8503"
+            },
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ],
+        "appcheck/firebase-appcheck-recaptcha": [
+            {
+                "commitId": "4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prId": "8502",
+                "author": "Google Open Source Bot",
+                "message": "m184 mergeback (#8502)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8502"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": []
+}

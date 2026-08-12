@@ -1,0 +1,20 @@
+{
+    "name": "m185",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ksp-processor",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}
