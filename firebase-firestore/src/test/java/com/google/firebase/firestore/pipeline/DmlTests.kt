@@ -71,6 +71,21 @@ internal class DmlTests {
   }
 
   @Test
+  fun `insert stage without documentIdExpr generates insert proto with only collection option`() {
+    val pipeline =
+      db.pipeline()
+        .literals(mapOf("title" to "New Book"))
+        .insert("books")
+    val proto = pipeline.toPipelineProto(db.userDataReader)
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
   fun `upsert stage generates upsert proto with transforms and options`() {
     val pipeline =
       db.pipeline()

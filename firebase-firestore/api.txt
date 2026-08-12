@@ -441,7 +441,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.Field vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, com.google.firebase.firestore.pipeline.Expression vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure, com.google.firebase.firestore.pipeline.FindNearestOptions options);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
-    method public com.google.firebase.firestore.Pipeline insert(String collectionPath, com.google.firebase.firestore.pipeline.Expression documentIdExpr);
+    method public com.google.firebase.firestore.Pipeline insert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpr);
     method public com.google.firebase.firestore.Pipeline limit(int limit);
     method public com.google.firebase.firestore.Pipeline offset(int offset);
     method public com.google.firebase.firestore.Pipeline rawStage(com.google.firebase.firestore.pipeline.RawStage rawStage);

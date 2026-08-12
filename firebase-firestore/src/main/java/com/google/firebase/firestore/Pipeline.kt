@@ -1127,7 +1127,7 @@ internal constructor(
 
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
-  fun insert(collectionPath: String, documentIdExpr: Expression): Pipeline =
+  fun insert(collectionPath: String, documentIdExpr: Expression? = null): Pipeline =
     append(InsertStage(collectionPath, documentIdExpr))
 
   fun upsert(
