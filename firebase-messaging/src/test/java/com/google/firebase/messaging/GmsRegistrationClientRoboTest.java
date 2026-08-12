@@ -290,6 +290,7 @@ public class GmsRegistrationClientRoboTest {
   }
 
   @Test
+  @SuppressWarnings("DoNotMock") // Required while importing to G3
   public void testRegister_v1Flow_withSupport_fidAlreadyUsed_retriesAndFails() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
@@ -329,6 +330,7 @@ public class GmsRegistrationClientRoboTest {
   }
 
   @Test
+  @SuppressWarnings("DoNotMock") // Required while importing to G3
   public void testRegister_v1Flow_withSupport_otherException_doesNotRetry() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
