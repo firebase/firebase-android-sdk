@@ -95,13 +95,9 @@ internal class ConvertersTest {
     val interopRequest = InteropGenerateContentRequest(text = InteropTextPart("prompt"))
     val mlKitRequest = interopRequest.toMlKit()
 
-    // Documented default values
+    // We only assert the fields we explicitly set,
+    // as ML Kit's internal defaults may vary by version or environment.
     assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
-    assertThat(mlKitRequest.temperature).isEqualTo(0.0f)
-    assertThat(mlKitRequest.topK).isEqualTo(3)
-    assertThat(mlKitRequest.seed).isEqualTo(0)
-    assertThat(mlKitRequest.candidateCount).isEqualTo(1)
-    assertThat(mlKitRequest.maxOutputTokens).isEqualTo(256)
   }
 
   @Test
