@@ -132,7 +132,10 @@ android {
             excludes += "**/*.proto"
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
 
 }
 
