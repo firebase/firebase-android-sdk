@@ -131,22 +131,47 @@ internal class OnDeviceGenerativeModelProvider(
   }
 
   /**
-   * Generates a structured object based on the given prompt and schema.
-   *
-   * Note: This is currently not supported for on-device models.
+   * Generates a structured object based on the given prompt and schema by rerouting to the
+   * on-device model.
    *
    * @param jsonSchema The schema defining the structure of the output.
    * @param prompt The list of content parts to use as the prompt.
    * @return The generated object response.
-   * @throws FirebaseAIException Always throws as this feature is not supported.
+   * @throws FirebaseAIException If the on-device model is unavailable, if generation fails, or if
+   * the shadow class cannot be found.
    */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
-    )
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+
+    val originalClass = jsonSchema.clazz.java
+    val shadowClassName = "${originalClass.name}MlKit"
+    val shadowClass =
+      try {
+        Class.forName(shadowClassName)
+      } catch (e: ClassNotFoundException) {
+        throw FirebaseAIException.from(
+          IllegalArgumentException(
+            "Shadow class $shadowClassName not found for structured output. Ensure KSP processor is running and generated the MlKit companion class.",
+            e
+          )
+        )
+      }
+
+    val response = onDeviceModel.generateObject(request, shadowClass)
+    val contentResponse =
+      GenerateContentResponse(
+        response.candidates.map { Candidate.fromInterop(it) },
+        InferenceSource.ON_DEVICE,
+        null,
+        null,
+        response.modelVersion
+      )
+    GenerateObjectResponse(contentResponse, jsonSchema)
   }
 
   /**
