@@ -93,6 +93,39 @@ internal class GenerativeModelImpl(
     return mlkitModel.download().map { it.toInterop() }
   }
 
+  @Suppress("UNCHECKED_CAST", "EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_IS_NOT_ENABLED")
+  override suspend fun <T : Any> generateObject(
+    request: GenerateContentRequest,
+    schema: com.google.firebase.ai.ondevice.interop.SchemaObject<T>
+  ): com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop<T> =
+    try {
+      val mlKitRequest =
+        com.google.mlkit.genai.prompt.generateTypedContentRequest(
+          generateContentRequest = request.toMlKit(),
+          outputClass = schema.clazz,
+          includeSchemaInPrompt = true
+        )
+      val response = mlkitModel.generateContent(mlKitRequest)
+      val decoded = response.candidates.firstOrNull()?.response as T?
+      val textBlock = decoded?.toString() ?: ""
+      val candidate =
+        com.google.firebase.ai.ondevice.interop.Candidate(
+          textBlock,
+          com.google.firebase.ai.ondevice.interop.FinishReason.STOP
+        )
+      val contentResponse =
+        com.google.firebase.ai.ondevice.interop.GenerateContentResponse(
+          listOf(candidate),
+          mlkitModel.getBaseModelName()
+        )
+      com.google.firebase.ai.ondevice.interop.GenerateObjectResponseInterop(
+        contentResponse,
+        decoded
+      )
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
   /**
    * Throws the [FirebaseAIOnDeviceException] subclass that maps to the input exception.
    *
