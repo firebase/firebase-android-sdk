@@ -17,7 +17,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -40,13 +39,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
@@ -255,47 +254,70 @@ public class GmsRegistrationClientRoboTest {
   }
 
   @Test
-  @SuppressWarnings("DoNotMock") // Required while importing to G3
   public void testRegister_v1Flow_withSupport_fidAlreadyUsed_retriesAndSucceeds() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
 
-    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
-    when(mockCloudMessagingClient.register(Mockito.any()))
-        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error")))
-        .thenReturn(Tasks.forResult(TEST_FID));
+    AtomicInteger callCount = new AtomicInteger(0);
+    CloudMessagingClient fakeCloudMessagingClient =
+        (CloudMessagingClient)
+            Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class<?>[] {CloudMessagingClient.class},
+                (proxy, method, args) -> {
+                  if (method.getName().equals("register")
+                      || method.getName().equals("registerApp")) {
+                    if (callCount.getAndIncrement() == 0) {
+                      return Tasks.forException(new Exception("FID_ALREADY_USED: test error"));
+                    }
+                    return Tasks.forResult(TEST_FID);
+                  }
+                  return Tasks.forResult(null);
+                });
 
     client =
         new GmsRegistrationClient(
             firebaseApp,
             mockFirebaseInstallationsApi,
             mockGmsRpc,
-            mockCloudMessagingClient,
+            fakeCloudMessagingClient,
             metadata);
 
     Task<String> task = client.register();
 
     assertThat(awaitTaskOnBackground(task)).isEqualTo(TEST_FID);
-    verify(mockCloudMessagingClient, times(2)).register(Mockito.any());
+    assertThat(callCount.get()).isEqualTo(2);
   }
 
   @Test
-  @SuppressWarnings("DoNotMock") // Required while importing to G3
   public void testRegister_v1Flow_withSupport_fidAlreadyUsed_retriesAndFails() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
 
-    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
-    when(mockCloudMessagingClient.register(Mockito.any()))
-        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error 1")))
-        .thenReturn(Tasks.forException(new Exception("FID_ALREADY_USED: test error 2")));
+    AtomicInteger callCount = new AtomicInteger(0);
+    CloudMessagingClient fakeCloudMessagingClient =
+        (CloudMessagingClient)
+            Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class<?>[] {CloudMessagingClient.class},
+                (proxy, method, args) -> {
+                  if (method.getName().equals("register")
+                      || method.getName().equals("registerApp")) {
+                    int count = callCount.getAndIncrement();
+                    if (count == 0) {
+                      return Tasks.forException(new Exception("FID_ALREADY_USED: test error 1"));
+                    }
+                    return Tasks.forException(new Exception("FID_ALREADY_USED: test error 2"));
+                  }
+                  return Tasks.forResult(null);
+                });
 
     client =
         new GmsRegistrationClient(
             firebaseApp,
             mockFirebaseInstallationsApi,
             mockGmsRpc,
-            mockCloudMessagingClient,
+            fakeCloudMessagingClient,
             metadata);
 
     Task<String> task = client.register();
@@ -303,25 +325,35 @@ public class GmsRegistrationClientRoboTest {
     ExecutionException e =
         assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
     assertThat(e.getCause()).hasMessageThat().contains("FID_ALREADY_USED: test error 2");
-    verify(mockCloudMessagingClient, times(2)).register(Mockito.any());
+    assertThat(callCount.get()).isEqualTo(2);
   }
 
   @Test
-  @SuppressWarnings("DoNotMock") // Required while importing to G3
   public void testRegister_v1Flow_withSupport_otherException_doesNotRetry() throws Exception {
     setV1RegistrationEnabled(true);
     when(metadata.getGmsVersionCode()).thenReturn(261200000); // support V1
 
-    CloudMessagingClient mockCloudMessagingClient = Mockito.mock(CloudMessagingClient.class);
-    when(mockCloudMessagingClient.register(Mockito.any()))
-        .thenReturn(Tasks.forException(new Exception("Simulated Other Failure")));
+    AtomicInteger callCount = new AtomicInteger(0);
+    CloudMessagingClient fakeCloudMessagingClient =
+        (CloudMessagingClient)
+            Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class<?>[] {CloudMessagingClient.class},
+                (proxy, method, args) -> {
+                  if (method.getName().equals("register")
+                      || method.getName().equals("registerApp")) {
+                    callCount.incrementAndGet();
+                    return Tasks.forException(new Exception("Simulated Other Failure"));
+                  }
+                  return Tasks.forResult(null);
+                });
 
     client =
         new GmsRegistrationClient(
             firebaseApp,
             mockFirebaseInstallationsApi,
             mockGmsRpc,
-            mockCloudMessagingClient,
+            fakeCloudMessagingClient,
             metadata);
 
     Task<String> task = client.register();
@@ -329,7 +361,7 @@ public class GmsRegistrationClientRoboTest {
     ExecutionException e =
         assertThrows(ExecutionException.class, () -> awaitTaskOnBackground(task));
     assertThat(e.getCause()).hasMessageThat().contains("Simulated Other Failure");
-    verify(mockCloudMessagingClient, times(1)).register(Mockito.any());
+    assertThat(callCount.get()).isEqualTo(1);
   }
 
   @Test

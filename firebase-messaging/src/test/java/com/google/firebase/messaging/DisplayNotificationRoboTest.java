@@ -154,7 +154,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertNull(shadowOf(n).getContentTitle());
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
     assertEquals(getAppIcon(), n.icon);
   }
@@ -169,7 +169,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertNull(shadowOf(n).getContentTitle());
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
     assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
@@ -771,7 +771,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertNull(shadowOf(n).getContentTitle());
   }
 
   /**
@@ -789,7 +789,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertNull(shadowOf(n).getContentTitle());
   }
 
   /** Test that a notification with a bad body resource name is still displayed. */
@@ -820,7 +820,7 @@ public class DisplayNotificationRoboTest {
         .isTrue();
 
     Notification n = getSingleNotification();
-    assertThat(n.largeIcon.sameAs(bitmap)).isTrue();
+    assertThat(shadowOf(n.getLargeIcon()).getBitmap().sameAs(bitmap)).isTrue();
     assertThat(shadowOf(n).getBigPicture().sameAs(bitmap)).isTrue();
   }
 
