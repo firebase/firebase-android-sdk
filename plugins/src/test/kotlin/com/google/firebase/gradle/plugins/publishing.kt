@@ -112,7 +112,7 @@ data class Pom(
           "groupId" -> groupId = child.textContent.trim()
           "artifactId" -> artifactId = child.textContent.trim()
           "version" -> version = child.textContent.trim()
-          "packaging" -> type = Type.valueOf(child.textContent.trim().toUpperCase())
+          "packaging" -> type = Type.valueOf(child.textContent.trim().uppercase())
           "licenses" -> license = parseLicense(child.getElementsByTagName("license"))
           "dependencies" -> deps = parseDeps(child.getElementsByTagName("dependency"))
         }
@@ -163,7 +163,7 @@ data class Pom(
           "groupId" -> groupId = child.textContent.trim()
           "artifactId" -> artifactId = child.textContent.trim()
           "version" -> version = child.textContent.trim()
-          "type" -> type = Type.valueOf(child.textContent.trim().toUpperCase())
+          "type" -> type = Type.valueOf(child.textContent.trim().uppercase())
           "scope" -> scope = child.textContent.trim()
         }
       }
@@ -203,7 +203,7 @@ data class Pom(
  *
  * Uses the [LibraryType.format] to make the conversion.
  */
-fun LibraryType.toArtifactType() = Type.valueOf(format.toUpperCase())
+fun LibraryType.toArtifactType() = Type.valueOf(format.uppercase())
 
 /**
  * Converts a [Project] to an [Artifact].

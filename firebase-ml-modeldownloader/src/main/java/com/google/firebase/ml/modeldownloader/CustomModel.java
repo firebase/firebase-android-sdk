@@ -29,7 +29,13 @@ import java.io.File;
  * Stores information about custom models that are being downloaded or are already downloaded on a
  * device. In the case where an update is available, after the updated model file is fully
  * downloaded, the original model file will be removed once it is safe to do so.
+ *
+ * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more info, see
+ *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
  */
+@Deprecated
 public class CustomModel {
   private final ModelFileDownloadService fileDownloadService;
   private final String name;
@@ -105,8 +111,13 @@ public class CustomModel {
    * Retrieves the model name and identifier.
    *
    * @return The name of the model.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
   @NonNull
+  @Deprecated
   public String getName() {
     return name;
   }
@@ -118,8 +129,13 @@ public class CustomModel {
    * @return The local file associated with the model. If the original file download is still in
    *     progress, returns <code>null</code>. If a file update is in progress, returns the last
    *     fully downloaded model.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
   @Nullable
+  @Deprecated
   public File getFile() {
     return getFile(fileDownloadService);
   }
@@ -166,7 +182,12 @@ public class CustomModel {
    * will be the size of the current model, not the new model currently being downloaded.
    *
    * @return The local model size.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
+  @Deprecated
   public long getSize() {
     return fileSize;
   }
@@ -175,8 +196,13 @@ public class CustomModel {
    * Retrieves the model hash.
    *
    * @return The model hash
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
   @NonNull
+  @Deprecated
   public String getModelHash() {
     return modelHash;
   }
@@ -187,7 +213,12 @@ public class CustomModel {
    * be used to populate a progress bar, monitor when an updated model is available, etc.
    *
    * @return The download ID (if download in progress), otherwise returns 0.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more info, see
+   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
    */
+  @Deprecated
   public long getDownloadId() {
     return downloadId;
   }

@@ -192,8 +192,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      * indentation to ensure the link appears on a new line.
      */
     private fun getLinkPrefix(linkPrefixRegex: Regex, text: String): String {
-      val linkPrefixMatch = linkPrefixRegex.find(text) ?: return text
-      return if (linkPrefixMatch.firstCapturedValue.isNotBlank()) "\n  " else ""
+      val linkPrefixMatch = linkPrefixRegex.find(text) ?: return ""
+      return if (linkPrefixMatch.firstCapturedValue.isNotBlank()) "\n  " else "  "
     }
 
     /**
@@ -256,7 +256,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private val LINK_REGEX =
       Regex(
-        "\\s*(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
+        "\\s*(?:\\()?(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?(?:\\))?",
         RegexOption.MULTILINE,
       )
 

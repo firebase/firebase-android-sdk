@@ -22,14 +22,25 @@ import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import java.io.File
 
+internal const val DEPRECATION_MESSAGE =
+  "Firebase ML is deprecated and will be shut down on June 15, 2027. To " +
+    "host custom models, you must migrate to another solution. You can " +
+    "use Cloud Storage for Firebase as an alternative for hosting custom " +
+    "models. For more information about migration options, see the " +
+    "notification banner in the " +
+    "[Firebase ML documentation](https://firebase.google.com/docs/ml)."
+
 /** Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp]. */
+@Deprecated(DEPRECATION_MESSAGE)
 val Firebase.modelDownloader: FirebaseModelDownloader
   get() = FirebaseModelDownloader.getInstance()
 
 /** Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp]. */
+@Deprecated(DEPRECATION_MESSAGE)
 fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInstance(app)
 
 /** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
+@Deprecated(DEPRECATION_MESSAGE)
 fun customModelDownloadConditions(
   init: CustomModelDownloadConditions.Builder.() -> Unit
 ): CustomModelDownloadConditions {
@@ -38,15 +49,15 @@ fun customModelDownloadConditions(
   return builder.build()
 }
 
-operator fun CustomModel.component1(): File? = file
+@Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component1(): File? = file
 
-operator fun CustomModel.component2() = size
+@Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component2() = size
 
-operator fun CustomModel.component3() = downloadId
+@Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component3() = downloadId
 
-operator fun CustomModel.component4() = modelHash
+@Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component4() = modelHash
 
-operator fun CustomModel.component5() = name
+@Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component5() = name
 
 /** @suppress */
 class FirebaseMlModelDownloaderKtxRegistrar : ComponentRegistrar {

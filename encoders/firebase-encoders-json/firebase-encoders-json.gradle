@@ -31,7 +31,6 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +40,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions {
+        targetSdk project.targetSdkVersion
         unitTests {
             includeAndroidResources = true
         }

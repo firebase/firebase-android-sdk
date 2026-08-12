@@ -31,7 +31,7 @@ internal class GenerationConfigTest {
     val expectedJson =
       """
       {
-        "speech_config": {
+        "speechConfig": {
           "voiceConfig": {
             "prebuiltVoiceConfig": {
               "voiceName": "Charon"
@@ -54,7 +54,7 @@ internal class GenerationConfigTest {
     val expectedJson =
       """
       {
-        "speech_config": {
+        "speechConfig": {
           "languageCode": "en-US",
           "voiceConfig": {
             "prebuiltVoiceConfig": {
@@ -88,7 +88,7 @@ internal class GenerationConfigTest {
     val expectedJson =
       """
       {
-        "speech_config": {
+        "speechConfig": {
           "multiSpeakerVoiceConfig": {
             "speakerVoiceConfigs": [
               {

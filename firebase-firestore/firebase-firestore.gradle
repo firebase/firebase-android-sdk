@@ -59,19 +59,26 @@ protobuf {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.firestore"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
+
+        // By default, exclude large tests because they are slow.
+        // Run with `./gradlew :firebase-firestore:connectedCheck -PrunLargeTests` to run ONLY large tests.
+        if (project.hasProperty('runLargeTests')) {
+            testInstrumentationRunnerArguments annotation: 'androidx.test.filters.LargeTest'
+        } else {
+            testInstrumentationRunnerArguments notAnnotation: 'androidx.test.filters.LargeTest'
+        }
 
         // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
         def targetBackend = findProperty("targetBackend") ?: "emulator"
@@ -113,7 +120,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
 
 }
 
