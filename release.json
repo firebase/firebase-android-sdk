@@ -1,12 +1,10 @@
 {
     "name": "m185",
     "libraries": [
-        ":firebase-common",
         ":firebase-dataconnect",
         ":firebase-firestore",
         ":firebase-messaging",
         ":firebase-messaging-directboot",
-        ":firebase-ml-modeldownloader",
         ":ai-logic:firebase-ai",
         ":ai-logic:firebase-ai-ksp-processor",
         ":ai-logic:firebase-ai-ondevice",

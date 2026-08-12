@@ -1,9 +1,4 @@
 # Release Report
-## firebase-common
-
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
 ## firebase-dataconnect
 
 * dataconnect(test): docker-compose.yml: add postgrest and swagger-ui (#8520)
@@ -20,9 +15,6 @@
 
 * dataconnect: fix CHANGELOG entries incorrectly moved to 17.3.3 header by PR #8502 (m184 mergeback) (#8504)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8504) [commit](https://github.com/firebase/firebase-android-sdk/commit/4f740d0e72abb7f68fc3d120613bdabc4c1f265b)  [Denver Coneybeare]
-
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
 
 * dataconnect(change): add "X-Firebase-Sqlconnect-Affinity" header for GSLB soft stickiness (#8499)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8499) [commit](https://github.com/firebase/firebase-android-sdk/commit/a149d4d201799a1fd8dfe5032a5176a9a3adeacb)  [Denver Coneybeare]
@@ -50,9 +42,6 @@
 
 ## firebase-firestore
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
 * [Release] update version to correct number (#8492)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8492) [commit](https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f)  [Mila]
 
@@ -76,14 +65,6 @@
 ## firebase-messaging-directboot
 
 
-## firebase-ml-modeldownloader
-
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
-* [Release] update version to correct number (#8492)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8492) [commit](https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f)  [Mila]
-
 ## ai-logic/firebase-ai
 
 * [AI] support on-device structured output (#8395)
@@ -101,9 +82,6 @@
 * [AI] correct FunctionResponsePart role to "user" (#8508)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8508) [commit](https://github.com/firebase/firebase-android-sdk/commit/cb1f82d1585bc0719933fa2b1d4824a172093edc)  [Mila]
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
 * [Release] update version to correct number (#8492)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8492) [commit](https://github.com/firebase/firebase-android-sdk/commit/a0b95c2f761025613ab73cfe089c06dccde6670f)  [Mila]
 
@@ -120,18 +98,12 @@
 * [AI] support on-device structured output (#8395)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8395) [commit](https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff)  [Mila]
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
 ## ai-logic/firebase-ai-ondevice-interop
 
 * [AI] support on-device structured output (#8395)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8395) [commit](https://github.com/firebase/firebase-android-sdk/commit/c62af76eb8e05191535d64329e16129be4a566ff)  [Mila]
 
 ## appcheck/firebase-appcheck
-
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
 
 * [Infra] Update changelogs (#8463)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8463) [commit](https://github.com/firebase/firebase-android-sdk/commit/e2488ea79987b03721935064d33f99886d475820)  [Mila]
@@ -141,23 +113,15 @@
 * chore(app_check): Update the app check debug token message (#8503)
   [pr](https://github.com/firebase/firebase-android-sdk/pull/8503) [commit](https://github.com/firebase/firebase-android-sdk/commit/285a0488fa6de3dc0163f09b265ad9f611891f61)  [Austin Benoit]
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
-
 ## appcheck/firebase-appcheck-debug-testing
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
 
 ## appcheck/firebase-appcheck-playintegrity
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
 
 ## appcheck/firebase-appcheck-recaptcha
 
-* m184 mergeback (#8502)
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/8502) [commit](https://github.com/firebase/firebase-android-sdk/commit/4c212cd250d043a2d6f8ca4e237f3e30b26fe8d9)  [Google Open Source Bot]
 
 
 ## SDKs with changes, but no changelogs
+:firebase-ml-modeldownloader
