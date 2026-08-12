@@ -24,8 +24,6 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
-import com.google.firebase.ai.type.ImagenGenerationConfig
-import com.google.firebase.ai.type.ImagenSafetySettings
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
@@ -127,7 +125,7 @@ internal constructor(
       Log.w(
         TAG,
         """Unsupported Gemini model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      https://firebase.google.com/docs/ai-logic/models for a list supported Gemini model names.
       """
           .trimIndent(),
       )
@@ -207,7 +205,7 @@ internal constructor(
       Log.w(
         TAG,
         """Unsupported Gemini model "$modelName"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Gemini model names.
+      https://firebase.google.com/docs/ai-logic/models for a list supported Gemini model names.
       """
           .trimIndent(),
       )
@@ -232,76 +230,6 @@ internal constructor(
       internalAuthProvider.get(),
       backend,
       useLimitedUseAppCheckTokens,
-    )
-  }
-
-  /**
-   * Instantiates a new [ImagenModel] given the provided parameters.
-   *
-   * @param modelName The name of the model to use. See the documentation for a list of
-   * [supported models](https://firebase.google.com/docs/ai-logic/models).
-   * @param generationConfig The configuration parameters to use for image generation.
-   * @param safetySettings The safety bounds the model will abide by during image generation.
-   * @param requestOptions Configuration options for sending requests to the backend.
-   * @return The initialized [ImagenModel] instance.
-   */
-  @JvmOverloads
-  public fun imagenModel(
-    modelName: String,
-    generationConfig: ImagenGenerationConfig? = null,
-    safetySettings: ImagenSafetySettings? = null,
-    requestOptions: RequestOptions = RequestOptions(),
-  ): ImagenModel {
-    val modelUri =
-      when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI,
-        GenerativeBackendEnum.AGENT_PLATFORM ->
-          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
-        GenerativeBackendEnum.GOOGLE_AI ->
-          "projects/${firebaseApp.options.projectId}/models/${modelName}"
-      }
-    if (!modelName.startsWith(IMAGEN_MODEL_NAME_PREFIX)) {
-      Log.w(
-        TAG,
-        """Unsupported Imagen model "${modelName}"; see
-      https://firebase.google.com/docs/vertex-ai/models for a list supported Imagen model names.
-      """
-          .trimIndent(),
-      )
-    }
-    return ImagenModel(
-      modelUri,
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      useLimitedUseAppCheckTokens,
-      generationConfig,
-      safetySettings,
-      requestOptions,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
-  }
-
-  /**
-   * Instantiates a new [TemplateImagenModel] given the provided parameters.
-   *
-   * @param requestOptions Configuration options for sending requests to the backend.
-   * @return The initialized [TemplateImagenModel] instance.
-   */
-  @JvmOverloads
-  @PublicPreviewAPI
-  public fun templateImagenModel(
-    requestOptions: RequestOptions = RequestOptions(),
-  ): TemplateImagenModel {
-    val templateUri = getTemplateUri(backend)
-    return TemplateImagenModel(
-      templateUri,
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      useLimitedUseAppCheckTokens,
-      requestOptions,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
     )
   }
 
@@ -353,8 +281,6 @@ internal constructor(
       getInstance(app, GenerativeBackend.googleAI())
 
     private const val GEMINI_MODEL_NAME_PREFIX = "gemini-"
-
-    private const val IMAGEN_MODEL_NAME_PREFIX = "imagen-"
 
     private val TAG = FirebaseAI::class.java.simpleName
   }
