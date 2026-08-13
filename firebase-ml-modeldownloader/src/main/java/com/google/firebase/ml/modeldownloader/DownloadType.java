@@ -16,7 +16,8 @@ package com.google.firebase.ml.modeldownloader;
 
 /**
  * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
- *     models, you must migrate to another solution. For more information about migration options, see the
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more information about migration options, see the
  *     notification banner in the
  *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
@@ -26,7 +27,8 @@ public enum DownloadType {
    * Use local model when present, otherwise download and return latest model
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -37,7 +39,8 @@ public enum DownloadType {
    * download and return latest model.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -48,7 +51,8 @@ public enum DownloadType {
    * returning.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */

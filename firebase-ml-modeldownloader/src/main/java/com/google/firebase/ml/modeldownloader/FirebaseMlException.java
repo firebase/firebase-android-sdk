@@ -26,7 +26,8 @@ import java.lang.annotation.RetentionPolicy;
  * mappings should remain consistent with the original firebase_ml_sdk whenever possible.
  *
  * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
- *     models, you must migrate to another solution. For more information about migration options, see the
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more information about migration options, see the
  *     notification banner in the
  *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
@@ -36,7 +37,8 @@ public class FirebaseMlException extends FirebaseException {
    * The operation was cancelled (typically by the caller).
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -46,7 +48,8 @@ public class FirebaseMlException extends FirebaseException {
    * Unknown error or an error from a different error domain.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -58,7 +61,8 @@ public class FirebaseMlException extends FirebaseException {
    * the state of the system (for example, an invalid field name).
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -71,7 +75,8 @@ public class FirebaseMlException extends FirebaseException {
    * deadline to expire.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -81,7 +86,8 @@ public class FirebaseMlException extends FirebaseException {
    * Some requested resource was not found.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -91,7 +97,8 @@ public class FirebaseMlException extends FirebaseException {
    * Some resource that we attempted to create already exists.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -101,7 +108,8 @@ public class FirebaseMlException extends FirebaseException {
    * The caller does not have permission to execute the specified operation.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -112,7 +120,8 @@ public class FirebaseMlException extends FirebaseException {
    * is out of space.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -123,7 +132,8 @@ public class FirebaseMlException extends FirebaseException {
    * execution.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -133,7 +143,8 @@ public class FirebaseMlException extends FirebaseException {
    * The operation was aborted, typically due to a concurrency issue like transaction aborts, etc.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -143,7 +154,8 @@ public class FirebaseMlException extends FirebaseException {
    * Operation was attempted past the valid range.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -153,7 +165,8 @@ public class FirebaseMlException extends FirebaseException {
    * Operation is not implemented or not supported/enabled.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -164,7 +177,8 @@ public class FirebaseMlException extends FirebaseException {
    * one of these errors, something is very broken.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -177,7 +191,8 @@ public class FirebaseMlException extends FirebaseException {
    * <p>In ML Model Downloader, this error is mostly about the models being not available yet.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -187,7 +202,8 @@ public class FirebaseMlException extends FirebaseException {
    * The request does not have valid authentication credentials for the operation.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -197,7 +213,8 @@ public class FirebaseMlException extends FirebaseException {
    * There is no network connection.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -209,7 +226,8 @@ public class FirebaseMlException extends FirebaseException {
    * There is not enough space left on the device.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -219,7 +237,8 @@ public class FirebaseMlException extends FirebaseException {
    * The downloaded model's hash doesn't match the expected value.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -230,7 +249,8 @@ public class FirebaseMlException extends FirebaseException {
    * will be performed before this is returned.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -242,7 +262,8 @@ public class FirebaseMlException extends FirebaseException {
    * error codes for Google APIs</a>
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
@@ -283,7 +304,8 @@ public class FirebaseMlException extends FirebaseException {
    * Gets the error code for the Firebase ML operation that failed.
    *
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
    *     notification banner in the
    *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
