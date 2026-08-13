@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
@@ -106,11 +107,14 @@ class TopicSubscriptionClient {
     connection.setDoOutput(false);
 
     int responseCode;
+    String responseMessage;
     try {
       responseCode = connection.getResponseCode();
+      responseMessage = connection.getResponseMessage();
     } catch (IOException e) {
       throw new IOException(ERROR_SERVICE_NOT_AVAILABLE, e);
     } finally {
+      closeQuietly(connection);
       connection.disconnect();
     }
 
@@ -121,13 +125,32 @@ class TopicSubscriptionClient {
       }
     } else if (responseCode == 404 || responseCode == 403) {
       if (isDebugLogEnabled()) {
-        Log.d(TAG, "Topic " + operation + " failed: " + connection.getResponseMessage());
+        Log.d(TAG, "Topic " + operation + " failed: " + responseMessage);
       }
-      throw new IOException("Topic " + operation + " failed: " + connection.getResponseMessage());
+      throw new IOException("Topic " + operation + " failed: " + responseMessage);
     } else if (responseCode >= 500) {
       throw new IOException(ERROR_INTERNAL_SERVER_ERROR);
     } else {
       throw new IOException("Topic " + operation + " failed with status: " + responseCode);
+    }
+  }
+
+  private static void closeQuietly(HttpURLConnection connection) {
+    try {
+      InputStream inputStream = connection.getInputStream();
+      if (inputStream != null) {
+        inputStream.close();
+      }
+    } catch (IOException ignored) {
+      // getInputStream() throws IOException for HTTP error status codes (for example, 4xx or 5xx)
+    }
+    try {
+      InputStream errorStream = connection.getErrorStream();
+      if (errorStream != null) {
+        errorStream.close();
+      }
+    } catch (IOException ignored) {
+      // Ignore exception while closing error stream
     }
   }
 

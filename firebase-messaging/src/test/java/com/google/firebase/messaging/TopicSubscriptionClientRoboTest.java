@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +30,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
@@ -158,6 +160,32 @@ public class TopicSubscriptionClientRoboTest {
             IOException.class, () -> runOnBackground(() -> client.unsubscribe(TEST_TOPIC)));
     assertThat(exception.getMessage())
         .isEqualTo(TopicSubscriptionClient.ERROR_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  public void testSubscribe_success_closesInputStreamAndDisconnects() throws Exception {
+    InputStream mockInputStream = mock(InputStream.class);
+    when(mockConnection.getResponseCode()).thenReturn(200);
+    when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+
+    runOnBackground(() -> client.subscribe(TEST_TOPIC));
+
+    verify(mockInputStream).close();
+    verify(mockConnection).disconnect();
+  }
+
+  @Test
+  public void testSubscribe_failure404_closesErrorStreamAndDisconnects() throws Exception {
+    InputStream mockErrorStream = mock(InputStream.class);
+    when(mockConnection.getResponseCode()).thenReturn(404);
+    when(mockConnection.getResponseMessage()).thenReturn("Not Found");
+    when(mockConnection.getInputStream()).thenThrow(new IOException("Error"));
+    when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+
+    assertThrows(IOException.class, () -> runOnBackground(() -> client.subscribe(TEST_TOPIC)));
+
+    verify(mockErrorStream).close();
+    verify(mockConnection).disconnect();
   }
 
   private void runOnBackground(ThrowingRunnable runnable) throws Exception {
