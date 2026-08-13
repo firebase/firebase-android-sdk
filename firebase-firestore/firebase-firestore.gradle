@@ -98,27 +98,39 @@ android {
         }
     }
 
+    testFixtures {
+        enable = true
+    }
+
     sourceSets {
         main {
             proto {
                 srcDir 'src/proto'
             }
         }
-        test {
+        testFixtures {
             java {
                 srcDir 'src/testUtil/java'
-                srcDir 'src/roboUtil/java'
             }
         }
-        androidTest {
+        test {
             java {
-                srcDir 'src/testUtil/java'
+                srcDir 'src/roboUtil/java'
             }
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        lintConfig file("lint.xml")
+        ignoreTestFixturesSources true
+    }
+    packagingOptions {
+        resources {
+            excludes += "**/*.proto"
+        }
     }
     testOptions {
         targetSdk project.targetSdkVersion
@@ -165,6 +177,15 @@ dependencies {
     annotationProcessor libs.autovalue
 
     androidTestAnnotationProcessor libs.autovalue
+
+    testFixturesImplementation libs.androidx.annotation
+    testFixturesImplementation libs.truth
+    testFixturesImplementation libs.junit
+    testFixturesImplementation libs.mockito.core
+    testFixturesImplementation libs.jackson.databind
+    testFixturesImplementation libs.grpc.protobuf.lite
+    testFixturesCompileOnly libs.protobuf.java
+    testFixturesCompileOnly libs.javax.annotation.jsr250
 
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')
