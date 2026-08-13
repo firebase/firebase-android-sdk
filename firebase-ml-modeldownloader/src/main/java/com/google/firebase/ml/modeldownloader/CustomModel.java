@@ -32,8 +32,9 @@ import java.io.File;
  *
  * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
  *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
- *     alternative for hosting custom models. For more info, see
- *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+ *     alternative for hosting custom models. For more information about migration options, see the
+ *     notification banner in the
+ *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
 @Deprecated
 public class CustomModel {
@@ -113,8 +114,9 @@ public class CustomModel {
    * @return The name of the model.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -131,8 +133,9 @@ public class CustomModel {
    *     fully downloaded model.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Nullable
   @Deprecated
@@ -184,8 +187,9 @@ public class CustomModel {
    * @return The local model size.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Deprecated
   public long getSize() {
@@ -198,8 +202,9 @@ public class CustomModel {
    * @return The model hash
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -215,8 +220,9 @@ public class CustomModel {
    * @return The download ID (if download in progress), otherwise returns 0.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Deprecated
   public long getDownloadId() {

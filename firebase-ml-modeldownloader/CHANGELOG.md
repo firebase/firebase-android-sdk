@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Updated the Firebase ML deprecation message to link to the Firebase ML documentation for migration options.
+
 # 26.1.0
 
 - [deprecated] Firebase ML is deprecated and will be shut down on June 15, 2027.
