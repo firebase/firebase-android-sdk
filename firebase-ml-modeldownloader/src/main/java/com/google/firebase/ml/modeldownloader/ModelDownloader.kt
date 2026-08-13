@@ -24,10 +24,8 @@ import java.io.File
 
 internal const val DEPRECATION_MESSAGE =
   "Firebase ML is deprecated and will be shut down on June 15, 2027. To " +
-    "host custom models, you must migrate to another solution. You can " +
-    "use Cloud Storage for Firebase as an alternative for hosting custom " +
-    "models. For more information about migration options, see the " +
-    "notification banner in the " +
+    "host custom models, you must migrate to another solution. For more " +
+    "information about migration options, see the notification banner in the " +
     "[Firebase ML documentation](https://firebase.google.com/docs/ml)."
 
 /** Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp]. */

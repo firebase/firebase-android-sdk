@@ -43,9 +43,9 @@ import javax.inject.Inject;
  * Firebase Model Downloader.
  *
  * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
- *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
- *     alternative for hosting custom models. For more info, see
- *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+ *     models, you must migrate to another solution. For more information about migration options, see the
+ *     notification banner in the
+ *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
 @Deprecated
 public class FirebaseModelDownloader {
@@ -91,9 +91,9 @@ public class FirebaseModelDownloader {
    *
    * @return A {@link FirebaseModelDownloader} instance
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -108,9 +108,9 @@ public class FirebaseModelDownloader {
    * @param app A custom {@link FirebaseApp}
    * @return A {@link FirebaseModelDownloader} instance
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -152,9 +152,9 @@ public class FirebaseModelDownloader {
    * @param conditions {@link CustomModelDownloadConditions} to be used during file download.
    * @return Custom model
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -458,9 +458,9 @@ public class FirebaseModelDownloader {
    *
    * @return The set of all models that are downloaded to this device.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -479,9 +479,9 @@ public class FirebaseModelDownloader {
    *
    * @param modelName Name of the model.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -519,9 +519,9 @@ public class FirebaseModelDownloader {
    * @param enabled Turns the logging state on or off. To revert to using the Firebase-wide data
    *     collection switch, set this value to <code>null</code>.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Deprecated
   public void setModelDownloaderCollectionEnabled(@Nullable Boolean enabled) {
@@ -543,9 +543,9 @@ public class FirebaseModelDownloader {
    * @param getModelTask The most recent getModel task associated with the model name.
    * @return Download ID associated with Android <code>DownloadManager</code>.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
-   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as
-   *     an alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     models, you must migrate to another solution. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
