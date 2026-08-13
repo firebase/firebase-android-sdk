@@ -1,10 +1,10 @@
 # Unreleased
 
-- [changed] Add grpc request header for platform name and sdk version
-  to enable metrics collection in cloud monitoring.
+- [changed] Add gRPC request header for platform name and SDK version
+  to enable metrics collection in Cloud Monitoring.
   ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486),
   [#8495](https://github.com/firebase/firebase-android-sdk/pull/8495))
-- [changed] Add grpc request header for SQL Connect server affinity, to improve
+- [changed] Add gRPC request header for SQL Connect server affinity, to improve
   server resource usage efficiency and performance.
   ([#8499](https://github.com/firebase/firebase-android-sdk/pull/8499))
 - [changed] Wait for 15 seconds before closing realtime streaming connection
