@@ -3,8 +3,7 @@
 - [feature] Added support for on-device structured output generation using `generateObject` (#8395)
 - [changed] **Breaking Change**: Removed deprecated Imagen methods and types due
   to Imagen models being shut down in August 2026. As a replacement, you can
-  
-- [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
+  [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
 - [changed] Adjusted `LiveSession.isClosed` to better reflect underlying
   connection closure state and not consume frames (#8511)
 - [changed] Replaced the `"function"` conversational role with `"user"` for 
