@@ -1,6 +1,7 @@
 # Unreleased
 
-- [changed] Updated App Check debug token log message to include Firebase CLI commands and Firebase Console registration links. (#8503)
+- [changed] Updated [app_check] debug token log message to include Firebase CLI
+  commands and Firebase Console registration links. (#8503)
 
 # 19.4.0
 

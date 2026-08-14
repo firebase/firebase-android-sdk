@@ -1,5 +1,7 @@
 # Unreleased
 
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
 # 25.1.1
 
 - [changed] Fixed re-registration invocation with FID change (#8338)
