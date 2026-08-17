@@ -6,7 +6,8 @@
 
 # 3.0.6
 
-- [fixed] Lazy loading kotlinx.coroutines in FirebaseSessionsDependencies.kt to fix (#7882)
+- [fixed] Lazy loading kotlinx.coroutines in FirebaseSessionsDependencies.kt to
+  fix (#7882)
 
 # 3.0.5
 
@@ -14,7 +15,8 @@
 
 # 3.0.4
 
-- [fixed] Fixed a bug when the app foregrounds before Sessions has initialized (#7519)
+- [fixed] Fixed a bug when the app foregrounds before Sessions has initialized
+  (#7519)
 - [changed] Restore SessionLifecycleService as no-op
 
 # 3.0.3
@@ -27,16 +29,19 @@
 
 # 3.0.1
 
-- [fixed] Bumped DataStore dependency to include the mitigation for `CorruptionException` released
-  in version `1.1.5`. See Jetpacks' DataStore
-  [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
+- [fixed] Bumped DataStore dependency to include the mitigation for
+  `CorruptionException` released in version `1.1.5`. See Jetpacks' DataStore
+  [release
+  notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
 
 # 3.0.0
 
-- [changed] Added internal api for Crashlytics to notify Sessions of crash events
+- [changed] Added internal api for Crashlytics to notify Sessions of crash
+  events
 - [changed] Use multi-process DataStore instead of Preferences DataStore
 - [changed] Update the heuristic to detect cold app starts
-- [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
+higher.
 
 # 2.1.1
 
@@ -68,10 +73,12 @@
 
 # 2.0.4
 
-- [fixed] Handled datastore writes when device has full internal memory more gracefully. (GitHub
+- [fixed] Handled datastore writes when device has full internal memory more
+  gracefully. (GitHub
   [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
-- [fixed] Safely unbind malfunctioning session lifecycle service to release service connections.
-  (GitHub [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
+- [fixed] Safely unbind malfunctioning session lifecycle service to release
+  service connections. (GitHub
+  [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
 
 # 1.2.3
 
@@ -88,7 +95,8 @@
 
 # 1.0.2
 
-- [fixed] Made Sessions more resilient to the FirebaseApp instance being deleted.
+- [fixed] Made Sessions more resilient to the FirebaseApp instance being
+  deleted.
 
 # 1.0.1
 
@@ -99,4 +107,3 @@
 # 1.0.0
 
 - [feature] Initial Firebase sessions library.
-

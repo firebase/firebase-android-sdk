@@ -25,4 +25,3 @@ Kotlin extensions library has no additional updates.
 # 3.2.0
 
 - [feature] Added support for product id.
-

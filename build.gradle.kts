@@ -64,13 +64,62 @@ fun Project.applySpotless() {
     }
     flexmark {
       target("src/**/*.md", "*.md", "docs/**/*.md")
-      targetExclude("**/third_party/**", "src/test/resources/**", "release_report.md")
+      targetExclude(
+        "**/third_party/**",
+        "src/test/resources/**",
+        "release_report.md",
+        "**/CHANGELOG.md",
+        "CHANGELOG.md"
+      )
       flexmark("0.64.8")
     }
   }
 }
 
 applySpotless()
+
+val formatChangelogs by
+  tasks.registering {
+    doLast {
+      fileTree(projectDir) {
+          include("**/CHANGELOG.md")
+          exclude("**/third_party/**", "**/test/resources/**", "build/**", "*-gradle/**")
+        }
+        .forEach { file ->
+          val content = file.readText()
+          val formatted = com.google.firebase.gradle.plugins.ChangelogFormatter.format(content)
+          if (content != formatted) {
+            file.writeText(formatted)
+          }
+        }
+    }
+  }
+
+tasks.named("spotlessApply") { dependsOn(formatChangelogs) }
+
+val checkChangelogs by
+  tasks.registering {
+    doLast {
+      var failed = false
+      fileTree(projectDir) {
+          include("**/CHANGELOG.md")
+          exclude("**/third_party/**", "**/test/resources/**", "build/**", "*-gradle/**")
+        }
+        .forEach { file ->
+          val content = file.readText()
+          val formatted = com.google.firebase.gradle.plugins.ChangelogFormatter.format(content)
+          if (content != formatted) {
+            println(
+              "${file.absolutePath} is not formatted properly. Run ./gradlew formatChangelogs"
+            )
+            failed = true
+          }
+        }
+      if (failed) throw GradleException("Changelogs formatting check failed")
+    }
+  }
+
+tasks.named("spotlessCheck") { dependsOn(checkChangelogs) }
 
 configure(subprojects) { applySpotless() }
 
