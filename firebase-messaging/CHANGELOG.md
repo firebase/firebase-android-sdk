@@ -24,11 +24,11 @@
 # 25.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 24.1.2
 
@@ -94,8 +94,8 @@ Kotlin extensions library has no additional updates.
 # 24.0.0
 
 - [changed] Switched Firelog to use the new TransportBackend.
-- [changed] Log analytics for notifications displayed by Google Play services
-  on behalf of the app.
+- [changed] Log analytics for notifications displayed by Google Play services on
+  behalf of the app.
 
 ## Kotlin
 
@@ -113,16 +113,16 @@ Kotlin extensions library has no additional updates.
 
 # 23.4.0
 
-- [changed] Called messageHandled() after a message has been handled to
-  indicate that the message has been handled successfully.
+- [changed] Called messageHandled() after a message has been handled to indicate
+  that the message has been handled successfully.
 - [changed] Added an internal identifier to Firelog logging for compliance.
 
 # 23.3.1
 
 - [changed] Added metadata to FirebaseInstanceIdReceiver to signal that it
   finishes background broadcasts after the message has been handled.
-- [changed] Specified notification's dismiss intent target via action instead
-  of component name.
+- [changed] Specified notification's dismiss intent target via action instead of
+  component name.
 
 ## Kotlin
 
@@ -134,15 +134,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-messaging-ktx` to
   `com.google.firebase:firebase-messaging` under the
-  `com.google.firebase.messaging` package. For details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.messaging` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-messaging-ktx`
   have been added to `com.google.firebase:firebase-messaging` under the
   `com.google.firebase.messaging` package, and all the Kotlin extensions (KTX)
   APIs in `com.google.firebase:firebase-messaging-ktx` are now deprecated. As
-  early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -170,8 +169,7 @@ Kotlin extensions library has no additional updates.
 # 23.1.2
 
 - [fixed] Fixed a breakage related to Jetpack core library related to an
-  [upstream
-  update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893).
+  [upstream update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893).
 - [changed] Updated JavaLite, protoc, protobuf-java-util to 3.21.11.
 
 ## Kotlin
@@ -198,18 +196,17 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-messaging` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-messaging-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-messaging-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 23.0.8
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -230,8 +227,7 @@ Kotlin extensions library has no additional updates.
 
 - [changed] Added the `POST_NOTIFICATIONS` permission to enable posting
   notifications when targeting SDK level 33. See [messaging] guidance on how to
-  [request runtime notification permission on Android
-  13+](/docs/cloud-messaging/android/client#request-permission13)
+  [request runtime notification permission on Android 13+](/docs/cloud-messaging/android/client#request-permission13)
 - [fixed] Added an annotation to an internal class to fix a missing class
   warning.
 
@@ -242,11 +238,10 @@ Kotlin extensions library has no additional updates.
 
 # 23.0.5
 
-- [fixed] Fixed a dependency on the `firebase-datatransport` layer. ([GitHub
-  #3716](https://github.com/firebase/firebase-android-sdk/issues/3716){:
-  .external})
-- [fixed] Upgraded logging priority for message delivery events to avoid
-  dropped logs.
+- [fixed] Fixed a dependency on the `firebase-datatransport` layer.
+  ([GitHub #3716](https://github.com/firebase/firebase-android-sdk/issues/3716){: .external})
+- [fixed] Upgraded logging priority for message delivery events to avoid dropped
+  logs.
 
 ## Kotlin
 
@@ -288,8 +283,8 @@ Kotlin extensions library has no additional updates.
   opened after `onActivityCreated` to avoid a race condition when unparceling
   the extras Bundle.
 - [fixed] Switched to stopping an image download by canceling a `Future` to
-  interrupt the download thread. This change avoids errors that can occur in
-  the image downloading library when trying to close the stream on a different
+  interrupt the download thread. This change avoids errors that can occur in the
+  image downloading library when trying to close the stream on a different
   thread than the one that started the download.
 - [fixed] Fixed reference documentation for
   [`RemoteMessage.getMessageId()`](/docs/reference/android/com/google/firebase/messaging/RemoteMessage#public-string-getmessageid)
@@ -302,16 +297,17 @@ Kotlin extensions library has no additional updates.
 
 # 23.0.0
 
-- [changed] Due to its [dependency on Google Play
-  services](/docs/android/android-play-services), this SDK now requires devices
-  and emulators to target API level 19 (KitKat) or higher and to use Android
+- [changed] Due to its
+  [dependency on Google Play services](/docs/android/android-play-services),
+  this SDK now requires devices and emulators to target API level 19 (KitKat) or
+  higher and to use Android
   4.4 or higher.
 - [feature] Added methods for determining and controlling whether Google Play
   services is set as the app’s notification delegate. By default, FCM will now
   set Google Play services as the app’s notification delegate so that it is
-  allowed to display notifications for the app. This could be used in the
-  future to show an app’s notifications without needing to start the app, which
-  may improve message reliability and timeliness.
+  allowed to display notifications for the app. This could be used in the future
+  to show an app’s notifications without needing to start the app, which may
+  improve message reliability and timeliness.
 
 ## Kotlin
 
@@ -325,11 +321,11 @@ Kotlin extensions library has no additional updates.
   deprecated Firebase Instance ID API to manage registration tokens.**<br>We
   strongly recommend [migrating to [messaging]'s token
   APIs](/docs/projects/manage-installations#fid-iid). If you're unable to
-  migrate to the replacement APIs, add a direct dependency on the
-  `firebase-iid` library to your `build.gradle` file.
-- [feature] Changed to open an `Activity` directly when a notification is
-  tapped instead of passing it through `FirebaseMessagingService`. This change
-  is to comply with Android 12 notification trampoline restrictions.
+  migrate to the replacement APIs, add a direct dependency on the `firebase-iid`
+  library to your `build.gradle` file.
+- [feature] Changed to open an `Activity` directly when a notification is tapped
+  instead of passing it through `FirebaseMessagingService`. This change is to
+  comply with Android 12 notification trampoline restrictions.
 - [feature] Internal changes to use proto instead of JSON for logging.
 - [changed] Internal changes to support dynamic feature modules.
 - [changed] Internal infrastructure improvements.
@@ -389,17 +385,16 @@ Kotlin extensions library has no additional updates.
 
 ## Kotlin
 
-- [feature] The [messaging_longer] Android library with Kotlin extensions is
-  now available. The Kotlin extensions library transitively includes the base
-  `firebase-messaging` library. To learn more, visit the [[messaging_longer]
-  KTX
+- [feature] The [messaging_longer] Android library with Kotlin extensions is now
+  available. The Kotlin extensions library transitively includes the base
+  `firebase-messaging` library. To learn more, visit the [[messaging_longer] KTX
   documentation](/docs/reference/kotlin/com/google/firebase/messaging/ktx/package-summary).
 
 # 20.2.4
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more information, refer to the [Firebase Installations v16.3.3
-  release notes](/support/release-notes/android#installations_v16-3-3).
+  releases. For more information, refer to the
+  [Firebase Installations v16.3.3 release notes](/support/release-notes/android#installations_v16-3-3).
 
 # 20.2.3
 
@@ -417,8 +412,8 @@ released on July 08, 2020 (see [v20.2.3](/support/release-notes/android#messagin
 # 20.2.1
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more information, refer to the [Firebase Instance ID v20.2.1
-  release notes](/support/release-notes/android#iid_v20-2-1).
+  releases. For more information, refer to the
+  [Firebase Instance ID v20.2.1 release notes](/support/release-notes/android#iid_v20-2-1).
 
 # 20.2.0
 
@@ -430,8 +425,8 @@ released on July 08, 2020 (see [v20.2.3](/support/release-notes/android#messagin
 # 20.1.7
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases (for more information, refer to the [Firebase Instance ID v20.1.7
-  release notes](/support/release-notes/android#iid_v20-1-7)).
+  releases (for more information, refer to the
+  [Firebase Instance ID v20.1.7 release notes](/support/release-notes/android#iid_v20-1-7)).
 
 # 20.1.6
 
@@ -469,9 +464,8 @@ resources which can negatively impact the performance of a user's device. To avo
 impacts in the [v20.1.1 release notes](/support/release-notes/android#messaging_v20-1-1).**
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases (for more information, refer to the bug fix in the [Firebase
-  Instance ID v20.1.1 release
-  notes](/support/release-notes/android#iid_v20-1-1)).
+  releases (for more information, refer to the bug fix in the
+  [Firebase Instance ID v20.1.1 release notes](/support/release-notes/android#iid_v20-1-1)).
 
 # 20.1.1
 
@@ -488,18 +482,19 @@ and should not be used. A fix for these issues was released on
   sure that push notifications still work as expected. Also, be aware of the
   following:
   - The [messaging] registration tokens of installed instances of your apps
-might change once after updating dependencies to their latest versions. To
-learn if your apps are affected, review the <a
-href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
-class="external">[firebase_installations] documentation</a>. Also, make sure to
-<a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor
-[messaging] registration token generation</a> using the
-<code>#onNewToken</code> implementation.
+    might change once after updating dependencies to their latest versions. To
+    learn if your apps are affected, review the <a
+    href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
+    class="external">[firebase_installations] documentation</a>. Also, make sure
+    to <a
+    href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor
+    [messaging] registration token generation</a> using the
+    <code>#onNewToken</code> implementation.
 
   - Apps that use the Firebase auto-initialization process and the Gradle
-plugin to convert `google-services.json` into resources are unaffected.
-However, apps that create their own `FirebaseOptions` instances must provide a
-valid API key, Firebase project ID, and application ID.
+    plugin to convert `google-services.json` into resources are unaffected.
+    However, apps that create their own `FirebaseOptions` instances must provide
+    a valid API key, Firebase project ID, and application ID.
 
 # 20.1.0
 
@@ -509,8 +504,8 @@ valid API key, Firebase project ID, and application ID.
   [`deliveryMetricsExportToBigQueryEnabled()`](</docs/reference/android/com/google/firebase/messaging/FirebaseMessaging.html#deliveryMetricsExportToBigQueryEnabled()>)
   to control and query if messsage delivery metrics are exported to BigQuery.
 - [changed] Changed to catch and log NullPointerException when trying to close
-  the image download stream. This NPE can happen if the image download takes
-  too long and times out.
+  the image download stream. This NPE can happen if the image download takes too
+  long and times out.
 
 # 20.0.1
 
@@ -531,8 +526,8 @@ valid API key, Firebase project ID, and application ID.
 
 - [fixed] Fixed an issue where `FirebaseMessagingService.onNewToken` would be
   invoked for tokens created for non-default FirebaseApp instances.
-- [fixed] SDK now only retries topic subscriptions and token registration on
-  the following errors: "ERROR_SERVICE_NOT_AVAILABLE" and
+- [fixed] SDK now only retries topic subscriptions and token registration on the
+  following errors: "ERROR_SERVICE_NOT_AVAILABLE" and
   "ERROR_INTERNAL_SERVER_ERROR".
 
 # 18.0.0
@@ -541,8 +536,8 @@ valid API key, Firebase project ID, and application ID.
 
 # 17.6.0
 
-- [feature] Added functionality to automatically download and show an image in
-  a notification message. Retrieve the image URL set in the message with the
+- [feature] Added functionality to automatically download and show an image in a
+  notification message. Retrieve the image URL set in the message with the
   `getImageUrl` method in
   [`RemoteMessage.Notification`](/docs/reference/android/com/google/firebase/messaging/RemoteMessage.Notification).
 

@@ -7,11 +7,11 @@
 # 22.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 21.0.0
 
@@ -38,15 +38,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-database-ktx` to
   `com.google.firebase:firebase-database` under the
-  `com.google.firebase.database` package. For details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.database` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-database-ktx`
   have been added to `com.google.firebase:firebase-database` under the
   `com.google.firebase.database` package, and all the Kotlin extensions (KTX)
   APIs in `com.google.firebase:firebase-database-ktx` are now deprecated. As
-  early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -93,11 +92,10 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-database` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-database-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-database-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 - [feature] Added
@@ -108,10 +106,10 @@ Kotlin extensions library has the following additional updates:
 
 # 20.0.6
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
-- [fixed] Fixed issue where `Query.get()` was propagating events to listeners
-  on unrelated queries.
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
+- [fixed] Fixed issue where `Query.get()` was propagating events to listeners on
+  unrelated queries.
 
 ## Kotlin
 
@@ -143,8 +141,8 @@ Kotlin extensions library has no additional updates.
 
 # 20.0.3
 
-- [fixed] Fixed a crash that prevented the SDK from connecting to the backend
-  if a credential refresh was unsuccesful.
+- [fixed] Fixed a crash that prevented the SDK from connecting to the backend if
+  a credential refresh was unsuccesful.
 
 ## Kotlin
 

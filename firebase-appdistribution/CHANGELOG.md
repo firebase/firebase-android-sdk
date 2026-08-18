@@ -20,7 +20,7 @@
 # 16.0.0-beta16
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 
 # 16.0.0-beta15
 
@@ -49,8 +49,8 @@ higher.
 
 # 16.0.0-beta08
 
-- [fixed] Fixed an issue where a crash happened whenever a feedback
-  notification was shown on devices running Android 4.4 and lower.
+- [fixed] Fixed an issue where a crash happened whenever a feedback notification
+  was shown on devices running Android 4.4 and lower.
 
 # 16.0.0-beta07
 
@@ -60,8 +60,7 @@ higher.
 # 16.0.0-beta06
 
 - [feature] Added support for in-app tester feedback. To learn more, see
-  [Collect feedback from
-  testers](/docs/app-distribution/collect-feedback-from-testers).
+  [Collect feedback from testers](/docs/app-distribution/collect-feedback-from-testers).
 - [fixed] Fixed a bug where only the last listener added to an `UpdateTask`
   using `addOnProgressListener()` would receive updates.
 
@@ -74,18 +73,16 @@ higher.
 
 - [feature] The [appdistro] SDK has been split into two libraries:
   - `firebase-appdistribution-api` - The API-only library<br> This new API-only
-library is functional only when the full [appdistro] SDK implementation
-(`firebase-appdistribution`) is present. `firebase-appdistribution-api` can be
-included in all [build
-variants](https://developer.android.com/studio/build/build-variants){:
-.external}.
+    library is functional only when the full [appdistro] SDK implementation
+    (`firebase-appdistribution`) is present. `firebase-appdistribution-api` can
+    be included in all
+    [build variants](https://developer.android.com/studio/build/build-variants){: .external}.
 
   - `firebase-appdistribution` - The full SDK implementation<br> This full SDK
-implementation is optional and should only be included in pre-release builds.
-
-Visit the documentation to learn how to [add these
-SDKs](/docs/app-distribution/set-up-alerts?platform=android#add-appdistro) to
-your Android app.
+    implementation is optional and should only be included in pre-release
+    builds. Visit the documentation to learn how to
+    [add these SDKs](/docs/app-distribution/set-up-alerts?platform=android#add-appdistro)
+    to your Android app.
 
 ## Kotlin
 
@@ -95,8 +92,8 @@ your Android app.
 
 # 16.0.0-beta02
 
-- [fixed] Fixed a bug that prevented testers from signing in when the app had
-  an underscore in the package name.
+- [fixed] Fixed a bug that prevented testers from signing in when the app had an
+  underscore in the package name.
 - [fixed] Fixed a UI bug where the APK download notification displayed the
   incorrect error message.
 - [changed] Internal improvements to tests.
@@ -109,8 +106,8 @@ The Kotlin extensions library has no additional updates.
 # 16.0.0-beta01
 
 - [feature] The [appdistro] Android SDK is now available in beta. You can use
-  this SDK to notify testers in-app when a new test build is available. To
-  learn more, visit the [[appdistro] reference
+  this SDK to notify testers in-app when a new test build is available. To learn
+  more, visit the [[appdistro] reference
   documentation](/docs/reference/android/com/google/firebase/appdistribution/package-summary).
 
 ## Kotlin

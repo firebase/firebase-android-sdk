@@ -19,7 +19,7 @@
 # 25.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 
 # 24.1.2
 
@@ -73,8 +73,8 @@ higher.
 
 # 23.0.8
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 # 23.0.7
 
@@ -157,14 +157,14 @@ higher.
 # 20.2.4
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more information, refer to the [Firebase Installations v16.3.3
-  release notes](/support/release-notes/android#installations_v16-3-3).
+  releases. For more information, refer to the
+  [Firebase Installations v16.3.3 release notes](/support/release-notes/android#installations_v16-3-3).
 
 # 20.2.3
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more details, see the [`firebase-messaging` v20.2.3 release
-  note](/support/release-notes/android#messaging_v20-2-3).
+  releases. For more details, see the
+  [`firebase-messaging` v20.2.3 release note](/support/release-notes/android#messaging_v20-2-3).
 
 # 20.2.2
 
@@ -179,13 +179,12 @@ issue was released on July 08, 2020 (see
 # 20.2.1
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more information, refer to the [Firebase Instance ID v20.2.1
-  release notes](/support/release-notes/android#iid_v20-2-1).
+  releases. For more information, refer to the
+  [Firebase Instance ID v20.2.1 release notes](/support/release-notes/android#iid_v20-2-1).
 
 # 20.2.0
 
 - [feature] The Firebase Cloud Messaging Direct Boot SDK is now available and
-  supports receiving FCM messages in Direct Boot mode. See [Receive FCM
-  messages in direct boot
-  mode](/docs/cloud-messaging/android/receive#receive_fcm_messages_in_direct_boot_mode)
+  supports receiving FCM messages in Direct Boot mode. See
+  [Receive FCM messages in direct boot mode](/docs/cloud-messaging/android/receive#receive_fcm_messages_in_direct_boot_mode)
   for more information.

@@ -16,13 +16,13 @@
 
 - [fixed] Fixed issue preventing limited use tokens from being correctly
   generated. (#8204)
-- [changed] Added new `getLimitedUseToken` to `AppCheckProvider` interface,
-  that default to calling `getToken`. (#8204)
+- [changed] Added new `getLimitedUseToken` to `AppCheckProvider` interface, that
+  default to calling `getToken`. (#8204)
 
 # 19.0.2
 
-- [fixed] Fixed a bug causing custom `AppCheckProvider` returning errors
-  without a message to throw an exception.
+- [fixed] Fixed a bug causing custom `AppCheckProvider` returning errors without
+  a message to throw an exception.
   [#7624](//github.com/firebase/firebase-android-sdk/pull/7624)
 
 # 19.0.1
@@ -32,18 +32,17 @@
 # 19.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 18.0.0
 
 - [changed] Bump internal dependencies
 - [changed] Internal support for `SafetyNet` has been dropped, as the
-  [SafetyNet Attestation API has been
-  deprecated.](https://developer.android.com/privacy-and-security/safetynet/deprecation-timeline#safetynet_attestation_deprecation_timeline)
+  [SafetyNet Attestation API has been deprecated.](https://developer.android.com/privacy-and-security/safetynet/deprecation-timeline#safetynet_attestation_deprecation_timeline)
 
 ## Kotlin
 
@@ -75,15 +74,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-appcheck-ktx` to
   `com.google.firebase:firebase-appcheck` under the
-  `com.google.firebase.appcheck` package. For details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.appcheck` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-appcheck-ktx`
   have been added to `com.google.firebase:firebase-appcheck` under the
   `com.google.firebase.appcheck` package, and all the Kotlin extensions (KTX)
   APIs in `com.google.firebase:firebase-appcheck-ktx` are now deprecated. As
-  early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -118,11 +116,12 @@ Kotlin extensions library has no additional updates.
 # 16.1.1
 
 - [changed] Migrated [app_check] SDKs to use standard Firebase executors.
-  (GitHub [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){:
-  .external} and
+  (GitHub
+  [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){: .external}
+  and
   [#4449](//github.com/firebase/firebase-android-sdk/issues/4449){: .external})
-- [changed] Moved Task continuations off the main thread. (GitHub
-  [#4453](//github.com/firebase/firebase-android-sdk/issues/4453){: .external})
+- [changed] Moved Task continuations off the main thread.
+  (GitHub [#4453](//github.com/firebase/firebase-android-sdk/issues/4453){: .external})
 
 ## Kotlin
 
@@ -139,24 +138,23 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-appcheck` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-appcheck-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-appcheck-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 16.0.1
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 # 16.0.0
 
 - [changed] [app_check] has exited beta and is now generally available for use.
-- [feature] Added support for [Play
-  Integrity](https://developer.android.com/google/play/integrity) as an
+- [feature] Added support for
+  [Play Integrity](https://developer.android.com/google/play/integrity) as an
   attestation provider.
 
 # 16.0.0-beta06

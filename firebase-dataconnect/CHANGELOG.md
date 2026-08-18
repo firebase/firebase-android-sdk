@@ -24,8 +24,8 @@
 
 # 17.3.2
 
-- [fixed] Realtime query subscriptions now correctly throw an exception when
-  the Firebase Auth user changes, instead of silently stopping emitting.
+- [fixed] Realtime query subscriptions now correctly throw an exception when the
+  Firebase Auth user changes, instead of silently stopping emitting.
   ([#8283](https://github.com/firebase/firebase-android-sdk/pull/8283))
 - [fixed] Realtime query subscriptions could fail abruptly if the auth token
   changed while connected.
@@ -36,15 +36,15 @@
 - [fixed] Expired Auth and/or App Check tokens were not automatically refreshed
   when rejected by the server upon connection.
   ([#8346](https://github.com/firebase/firebase-android-sdk/pull/8346))
-- [changed] Realtime query subscriptions now include SDK type metadata (core
-  vs. generated SDK) in request headers, matching the behavior of standard
-  query executions.
+- [changed] Realtime query subscriptions now include SDK type metadata (core vs.
+  generated SDK) in request headers, matching the behavior of standard query
+  executions.
   ([#8356](https://github.com/firebase/firebase-android-sdk/pull/8356))
 
 # 17.3.1
 
-- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected,
-  if local caching is not enabled, instead of behaving like SERVER_ONLY.
+- [fixed] Queries executed with FetchPolicy.CACHE_ONLY now fail, as expected, if
+  local caching is not enabled, instead of behaving like SERVER_ONLY.
   ([#8214](https://github.com/firebase/firebase-android-sdk/pull/8214))
 - [changed] Realtime query results now update the local cache as query results
   are received.
@@ -57,8 +57,8 @@
 
 # 17.3.0
 
-- [feature] `QuerySubscription.flow` gains [realtime
-  updates](https://firebase.google.com/docs/sql-connect/realtime).
+- [feature] `QuerySubscription.flow` gains
+  [realtime updates](https://firebase.google.com/docs/sql-connect/realtime).
   ([#8186](https://github.com/firebase/firebase-android-sdk/pull/8186))
 - [changed] Internal fix of wasteful computation only meant for debug logging.
   ([#8126](https://github.com/firebase/firebase-android-sdk/pull/8126))
@@ -81,8 +81,8 @@
 - [changed] Ensure exceptions are not silently ignored when closing
   `FirebaseDataConnect` instances.
   ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
-- [changed] Internal change to use `SecureRandom` when generating operation
-  IDs. ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
+- [changed] Internal change to use `SecureRandom` when generating operation IDs.
+  ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
 - [changed] Internal refactor to use immutable byte arrays.
   ([#7957](https://github.com/firebase/firebase-android-sdk/pull/7957))
 
@@ -97,7 +97,7 @@
   [#7887](https://github.com/firebase/firebase-android-sdk/pull/7887))
 - [fixed] Fix UnsupportedOperationException when serializing lists of
   *nullable* AnyValue.
-([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
+    ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
 
 # 17.1.4
 
@@ -127,9 +127,9 @@
 
 - [fixed] Addressed minor reference documentation issues (#7399)
 - [changed] Added classes `EnumValue` and `EnumValueSerializer`. These classes
-  are identical to those produced by the Data Connect code generator; however,
-  a future version of the code generator will start using these classes from
-  the SDK rather than generating them.
+  are identical to those produced by the Data Connect code generator; however, a
+  future version of the code generator will start using these classes from the
+  SDK rather than generating them.
   ([#7153](https://github.com/firebase/firebase-android-sdk/pull/7153))
 
 # 17.0.1
@@ -143,7 +143,7 @@
 # 17.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [changed] Removed superfluous and noisy debug logging of operation variables.
 
 # 16.0.3
@@ -166,8 +166,8 @@ higher.
 
 - [changed] DataConnectOperationException added, enabling support for partial
   errors; that is, any data that was received and/or was able to be decoded is
-  now available via the "response" property of the exception thrown when a
-  query or mutation is executed.
+  now available via the "response" property of the exception thrown when a query
+  or mutation is executed.
   ([#6794](https://github.com/firebase/firebase-android-sdk/pull/6794))
 
 # 16.0.0-beta05
@@ -196,11 +196,11 @@ higher.
   withVariablesSerializer(), and withDataDeserializer().
   ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
 - [feature] GeneratedConnector, GeneratedQuery, and GeneratedMutation now must
-  implement equals() to be a _logical_ comparsion, rather than just checking
-  for _referencial_ equality using the `===` operator.
+  implement equals() to be a _logical_ comparsion, rather than just checking for
+  _referencial_ equality using the `===` operator.
   ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-- [feature] ExperimentalFirebaseDataConnect annotation added, and some APIs
-  have been annotated with it, requiring applications that make use of these
+- [feature] ExperimentalFirebaseDataConnect annotation added, and some APIs have
+  been annotated with it, requiring applications that make use of these
   experimental APIs to opt-in using
   `@OptIn(ExperimentalFirebaseDataConnect::class)` to suppress warnings or
   errors related to using these experimental APIs.
@@ -211,16 +211,15 @@ higher.
   ([#6434](https://github.com/firebase/firebase-android-sdk/pull/6434))
 - [changed] `DateSerializer` removed, as it is superceded by
   `LocalDateSerializer`. As of Data Connect emulator version 1.7.0, the
-  generated Kotlin code uses `com.google.firebase.dataconnect.LocalDate`
-  instead of `java.util.Date`. Therefore, this version of the SDK must be
-  paired with code generated by version 1.7.0 (or later) of the Data Connect
-  emulator.
+  generated Kotlin code uses `com.google.firebase.dataconnect.LocalDate` instead
+  of `java.util.Date`. Therefore, this version of the SDK must be paired with
+  code generated by version 1.7.0 (or later) of the Data Connect emulator.
   ([#6513](https://github.com/firebase/firebase-android-sdk/pull/6513))
 - [feature] JavaTimeLocalDateSerializer and KotlinxDatetimeLocalDateSerializer
-  added, to enable using the standard "local date" classes
-  `java.time.LocalDate` and/or `kotlinx.datetime.LocalDate` instead of the
-  bespoke `com.google.firebase.dataconnect.LocalDate` class for `Date` GraphQL
-  fields and variables.
+  added, to enable using the standard "local date" classes `java.time.LocalDate`
+  and/or `kotlinx.datetime.LocalDate` instead of the bespoke
+  `com.google.firebase.dataconnect.LocalDate` class for `Date` GraphQL fields
+  and variables.
   ([#6519](https://github.com/firebase/firebase-android-sdk/pull/6519))
 
 # 16.0.0-beta02

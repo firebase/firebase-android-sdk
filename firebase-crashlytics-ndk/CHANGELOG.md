@@ -32,7 +32,7 @@
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 
 # 19.4.4
 
@@ -142,8 +142,8 @@ higher.
 # 18.3.2
 
 - [fixed] Fixed an
-  [issue](https://github.com/firebase/firebase-android-sdk/issues/4313){:
-  .external} preventing native crashes from being reported for Android API 29+.
+  [issue](https://github.com/firebase/firebase-android-sdk/issues/4313){: .external}
+  preventing native crashes from being reported for Android API 29+.
 
 # 18.3.1
 
@@ -163,8 +163,8 @@ version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 
 # 18.2.13
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 # 18.2.12
 
@@ -220,12 +220,12 @@ version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 
 # 18.2.1
 
-- [fixed] Improved support for NDK crash reporting when using [Play Feature
-  Delivery](/docs/android/learn-more#dynamic-feature-modules). Previously,
-  `firebase-crashlytics-ndk` needed to be a dependency of the app module to
-  consistently report native crashes for all supported Android versions.
-  [crashlytics] will now report native crashes when used as a dependency of a
-  feature module.
+- [fixed] Improved support for NDK crash reporting when using
+  [Play Feature Delivery](/docs/android/learn-more#dynamic-feature-modules).
+  Previously, `firebase-crashlytics-ndk` needed to be a dependency of the app
+  module to consistently report native crashes for all supported Android
+  versions. [crashlytics] will now report native crashes when used as a
+  dependency of a feature module.
 - [changed] Updated `firebase-crashlytics` dependency to v18.2.1.
 
 # 18.2.0
@@ -268,8 +268,8 @@ the [crashlytics] NDK SDK and above.
 - [fixed] Upgraded underlying native crash reporting library to
   [Crashpad](//crashpad.chromium.org){: .external}. This addresses emerging
   issues with capturing certain types of native crashes on Android 10+ using
-  [Breakpad](//chromium.googlesource.com/breakpad){: .external}. ([Github Issue
-  #1678](//github.com/firebase/firebase-android-sdk/issues/1678){: .external})
+  [Breakpad](//chromium.googlesource.com/breakpad){: .external}.
+  ([Github Issue #1678](//github.com/firebase/firebase-android-sdk/issues/1678){: .external})
 
 # 17.2.2
 
@@ -278,8 +278,7 @@ the [crashlytics] NDK SDK and above.
 # 17.2.1
 
 - [fixed] Fixed signal handler to properly release storage on app exit.
-  ([Github Issue
-  #1749](https://github.com/firebase/firebase-android-sdk/issues/1749))
+  ([Github Issue #1749](https://github.com/firebase/firebase-android-sdk/issues/1749))
 - [changed] Updated `firebase-crashlytics` dependency to v17.2.1.
 
 # 17.1.1

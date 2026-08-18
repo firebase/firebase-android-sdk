@@ -15,11 +15,11 @@
 # 22.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 21.0.2
 
@@ -42,9 +42,9 @@ The Kotlin extensions library has no additional updates.
 
 # 21.0.0
 
-- [fixed] Fixed bad token exception while showing FIAM (GitHub
-  [#5567](//github.com/firebase/firebase-android-sdk/issues/5567)) (GitHub
-  [#5780](//github.com/firebase/firebase-android-sdk/issues/5780))
+- [fixed] Fixed bad token exception while showing FIAM
+  (GitHub [#5567](//github.com/firebase/firebase-android-sdk/issues/5567))
+  (GitHub [#5780](//github.com/firebase/firebase-android-sdk/issues/5780))
 
 ## Kotlin
 
@@ -66,16 +66,16 @@ The Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-inappmessaging-ktx` to
   `com.google.firebase:firebase-inappmessaging` under the
-  `com.google.firebase.inappmessaging` package. For details, see the [FAQ about
-  this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.inappmessaging` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from
   `com.google.firebase:firebase-inappmessaging-ktx` have been added to
   `com.google.firebase:firebase-inappmessaging` under the
   `com.google.firebase.inappmessaging` package, and all the Kotlin extensions
   (KTX) APIs in `com.google.firebase:firebase-inappmessaging-ktx` are now
   deprecated. As early as April 2024, we'll no longer release KTX modules. For
-  details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -107,8 +107,8 @@ The Kotlin extensions library has no additional updates.
 
 # 20.3.2
 
-- [fixed] Fixed nullpointer crash when using experiments (GitHub
-  [#4716](//github.com/firebase/firebase-android-sdk/issues/4716){: .external})
+- [fixed] Fixed nullpointer crash when using experiments
+  (GitHub [#4716](//github.com/firebase/firebase-android-sdk/issues/4716){: .external})
 
 ## Kotlin
 
@@ -117,8 +117,8 @@ The Kotlin extensions library has no additional updates.
 
 # 20.3.1
 
-- [fixed] Fixed nullpointer crash ([GitHub Issue
-  #4214](//github.com/firebase/firebase-android-sdk/issues/4214))
+- [fixed] Fixed nullpointer crash
+  ([GitHub Issue #4214](//github.com/firebase/firebase-android-sdk/issues/4214))
 - [changed] Updated gRPC to 1.52.1, and updated JavaLite, protoc,
   protobuf-java-util to 3.21.11.
 
@@ -131,10 +131,9 @@ The Kotlin extensions library has no additional updates.
 
 - [changed] Migrated [inappmessaging] to use standard Firebase executors.
 - [changed] Moved Task continuations off the main thread.
-- [feature] Added a new API for [removing a dismiss
-  listener](</docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)>).
-  (GitHub [#4492](//github.com/firebase/firebase-android-sdk/issues/4492){:
-  .external})
+- [feature] Added a new API for
+  [removing a dismiss listener](</docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)>).
+  (GitHub [#4492](//github.com/firebase/firebase-android-sdk/issues/4492){: .external})
 
 ## Kotlin
 
@@ -150,18 +149,17 @@ The Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-inappmessaging` library.
 The Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-inappmessaging-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-inappmessaging-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 20.1.3
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -220,8 +218,8 @@ The Kotlin extensions library has no additional updates.
 
 # 19.1.4
 
-- [fixed] Fixed in-app message button click not working in Android 11 because
-  of package visibility changes.
+- [fixed] Fixed in-app message button click not working in Android 11 because of
+  package visibility changes.
 
 ## Kotlin
 
@@ -272,15 +270,14 @@ The Kotlin extensions library has no additional updates.
 
 # 19.0.7
 
-- [fixed] Improved handling of activity transitions. (GitHub [Issue
-  #1410](//github.com/firebase/firebase-android-sdk/issues/1410) and [Issue
-  #1092](//github.com/firebase/firebase-android-sdk/issues/1092))
+- [fixed] Improved handling of activity transitions. (GitHub
+  [Issue #1410](//github.com/firebase/firebase-android-sdk/issues/1410) and
+  [Issue #1092](//github.com/firebase/firebase-android-sdk/issues/1092))
 - [changed] Migrated to use the [firebase_installations] service _directly_
-  instead of using an indirect dependency via the Firebase Instance ID SDK.
-
-{% include
-"docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
-%}
+  instead of using an indirect dependency via the Firebase Instance ID SDK. {%
+  include
+  "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
+  %}
 
 ## Kotlin
 
@@ -290,8 +287,8 @@ The Kotlin extensions library has no additional updates.
 # 19.0.6
 
 - [fixed] Fixed issue causing apps to become unresponsive in limited network
-  conditions. [GitHub Issue
-  #1430](//github.com/firebase/firebase-android-sdk/issues/1430)
+  conditions.
+  [GitHub Issue #1430](//github.com/firebase/firebase-android-sdk/issues/1430)
 
 ## Kotlin
 
@@ -367,15 +364,15 @@ The Kotlin extensions library has no additional updates.
 - [fixed] Fixed [firestore] and [inappmessaging] compatibility on Android API
   level 19 (KitKat). The underlying issue was that [firestore] and
   [cloud_functions] couldn't agree on which ciphers to use; this update fixes
-  this issue by overriding the set of ciphers that they use. Refer to [GitHub
-  issue 244](https://github.com/firebase/firebase-android-sdk/issues/244) for
-  more information.
+  this issue by overriding the set of ciphers that they use. Refer to
+  [GitHub issue 244](https://github.com/firebase/firebase-android-sdk/issues/244)
+  for more information.
 
 # 17.1.0
 
 - [feature] Adds functionality to programmatically register listeners for
-  updates on in-app engagement (for example, impression, click, display
-  errors). See
+  updates on in-app engagement (for example, impression, click, display errors).
+  See
   [`FirebaseInAppMessaging.addClickListener()`](</docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging.addClickListener()>)
   for more details.
 
@@ -396,6 +393,6 @@ The Kotlin extensions library has no additional updates.
 
 # 17.0.0
 
-- [feature] The initial public beta release of the Firebase In-App Messaging
-  SDK for Android is now available. To learn more, see the [Firebase In-App
-  Messaging documentation](/docs/in-app-messaging).
+- [feature] The initial public beta release of the Firebase In-App Messaging SDK
+  for Android is now available. To learn more, see the
+  [Firebase In-App Messaging documentation](/docs/in-app-messaging).

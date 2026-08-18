@@ -37,11 +37,11 @@
 # 22.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 21.0.5
 
@@ -120,17 +120,15 @@ Kotlin extensions library has no additional updates.
 # 20.5.0
 
 - [changed] Added Kotlin extensions (KTX) APIs from
-  `com.google.firebase:firebase-perf-ktx` to
-  `com.google.firebase:firebase-perf` under the `com.google.firebase.perf`
-  package. For details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase:firebase-perf-ktx` to `com.google.firebase:firebase-perf`
+  under the `com.google.firebase.perf` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-perf-ktx` have
   been added to `com.google.firebase:firebase-perf` under the
   `com.google.firebase.perf` package, and all the Kotlin extensions (KTX) APIs
   in `com.google.firebase:firebase-perf-ktx` are now deprecated. As early as
-  April 2024, we'll no longer release KTX modules. For details, see the [FAQ
-  about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 # 20.4.1
 
@@ -188,32 +186,31 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-performance` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Added a [`trace(String, Trace.() ->
-  T)`](</docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary#trace(kotlin.String,kotlin.Function1)>)
+- [feature] Added a
+  [`trace(String, Trace.() -> T)`](</docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary#trace(kotlin.String,kotlin.Function1)>)
   extension function to create a custom trace with the specified name.
 
 # 20.2.0
 
-- [unchanged] Updated to accommodate the release of the updated [perfmon]
-  Kotlin extensions library.
+- [unchanged] Updated to accommodate the release of the updated [perfmon] Kotlin
+  extensions library.
 
 ## Kotlin
 
 The Kotlin extensions library transitively includes the updated `firebase-performance` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-performance-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-performance-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 20.1.1
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -223,9 +220,9 @@ Kotlin extensions library has no additional updates.
 # 20.1.0
 
 - [feature] Added support for out-of-the-box measurement of screen performance
-  metrics for [Fragments](//developer.android.com/guide/fragments){:
-  .external}. For more details, visit [Learn about screen rendering performance
-  data](/docs/perf-mon/screen-traces?platform=android).
+  metrics for [Fragments](//developer.android.com/guide/fragments){: .external}.
+  For more details, visit
+  [Learn about screen rendering performance data](/docs/perf-mon/screen-traces?platform=android).
 - [fixed] Fixed a bug where screen traces were not capturing frame metrics for
   multi-Activity apps.
 - [fixed] Excluded custom attributes that have key/value lengths of 0.
@@ -288,10 +285,10 @@ Kotlin extensions library has no additional updates.
 # 20.0.2
 
 - [fixed] Fixed inaccurate calculation of screen activity metrics for
-  multi-activity apps. (#2672) Note: You may see some changes in data for
-  frozen frames and slow rendering metrics.
-- [fixed] Fixed issue where screen traces were not being tracked for Android
-  API levels 23 and below.
+  multi-activity apps. (#2672) Note: You may see some changes in data for frozen
+  frames and slow rendering metrics.
+- [fixed] Fixed issue where screen traces were not being tracked for Android API
+  levels 23 and below.
 
 ## Kotlin
 
@@ -313,8 +310,8 @@ Kotlin extensions library has no additional updates.
 
 - [feature] Introduce Dagger as a dependency injection framework for some parts
   of the code.
-- [changed] Improved the code organization of the SDK (package restructure,
-  code conventions, remove unncessary annotations).
+- [changed] Improved the code organization of the SDK (package restructure, code
+  conventions, remove unncessary annotations).
 - [changed] Improve the launch time of the SDK.
 
 ## Kotlin
@@ -324,9 +321,8 @@ Kotlin extensions library has no additional updates.
 
 # 19.1.1
 
-- [feature] The [firebase_perfmon] SDK is now [open
-  sourced](//github.com/firebase/firebase-android-sdk/tree/master/firebase-perf){:
-  .external}.
+- [feature] The [firebase_perfmon] SDK is now
+  [open sourced](//github.com/firebase/firebase-android-sdk/tree/master/firebase-perf){: .external}.
 - [fixed] Fixed issue on the console logger to avoid throwing
   `UnknownFormatConversionException`.
 
@@ -361,8 +357,8 @@ Kotlin extensions library has no additional updates.
 Note: We recommend using [perfmon] Gradle plugin v1.3.4+ with this version of the [perfmon] SDK and
 above.
 
-- [changed] Integrated with the `firebase-datatransport` library for
-  performance log dispatch mechanism.
+- [changed] Integrated with the `firebase-datatransport` library for performance
+  log dispatch mechanism.
 - [fixed] Synchronized the access to fix a race condition that was causing a
   `NullPointerException` when making network requests. (#2096)
 
@@ -377,48 +373,45 @@ Kotlin extensions library has no additional updates.
   thread contention issue. (#1810)
 - [changed] Updated the protocol buffer dependency to the `protobuf-javalite`
   artifact to allow for backward compatibility.
-- [changed] Removed Guava dependency from the SDK to avoid symbol collision
-  with any other SDKs.
+- [changed] Removed Guava dependency from the SDK to avoid symbol collision with
+  any other SDKs.
 - [changed] Removed proguarding for SDK; logcat messages will show original
   class paths for debugging.
 - [changed] Improved build configurations and dependencies to reduce SDK size.
 
 ## Kotlin
 
-- [feature] The [firebase_perfmon] Android library with Kotlin extensions is
-  now available. The Kotlin extensions library transitively includes the base
+- [feature] The [firebase_perfmon] Android library with Kotlin extensions is now
+  available. The Kotlin extensions library transitively includes the base
   `firebase-performance` library. To learn more, visit the [[perfmon] KTX
   documentation](/docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary).
 
 # 19.0.8
 
-- [changed] Updated the [logging
-  message](/docs/perf-mon/get-started-android#view-log-messages) for
+- [changed] Updated the
+  [logging message](/docs/perf-mon/get-started-android#view-log-messages) for
   performance events.
 - [fixed] Silenced [firebase_remote_config] logging triggered by
   [firebase_perfmon]. (#403)
-- [fixed] Removed unnecessary logging. [perfmon] now only logs debug
-  information if the `firebase_performance_logcat_enabled` setting is `true` in
+- [fixed] Removed unnecessary logging. [perfmon] now only logs debug information
+  if the `firebase_performance_logcat_enabled` setting is `true` in
   `AndroidManifest.xml`. Visit the documentation for details about explicitly
-  [enabling debug
-  logging](/docs/perf-mon/get-started-android#view-log-messages).
+  [enabling debug logging](/docs/perf-mon/get-started-android#view-log-messages).
 - [changed] Migrated to use the [firebase_installations] service _directly_
-  instead of using an indirect dependency via the Firebase Instance ID SDK.
-
-{% include
-"docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
-%}
+  instead of using an indirect dependency via the Firebase Instance ID SDK. {%
+  include
+  "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
+  %}
 
 # 19.0.7
 
 - [changed] Updated dependency on the Firebase Instance ID library to v20.1.5,
   which is a step towards a direct dependency on the [firebase_installations]
-  service in a future release.
-
-This update to `firebase-iid` v20.1.5 fixed the following GitHub issues:
-[#1454](//github.com/firebase/firebase-android-sdk/issues/1454),
-[#1397](//github.com/firebase/firebase-android-sdk/issues/1397), and
-[#1339](//github.com/firebase/firebase-android-sdk/issues/1339).
+  service in a future release. This update to `firebase-iid` v20.1.5 fixed the
+  following GitHub issues:
+  [#1454](//github.com/firebase/firebase-android-sdk/issues/1454),
+  [#1397](//github.com/firebase/firebase-android-sdk/issues/1397), and
+  [#1339](//github.com/firebase/firebase-android-sdk/issues/1339).
 
 # 19.0.6
 
@@ -457,8 +450,8 @@ This update to `firebase-iid` v20.1.5 fixed the following GitHub issues:
 
 # 18.0.1
 
-- [fixed] Fixed an `IllegalStateException` that was thrown when an activity
-  with hardware acceleration disabled was stopped.
+- [fixed] Fixed an `IllegalStateException` that was thrown when an activity with
+  hardware acceleration disabled was stopped.
 
 # 17.0.2
 

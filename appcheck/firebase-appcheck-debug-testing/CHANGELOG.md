@@ -55,8 +55,8 @@
 # 16.1.1
 
 - [changed] Integrated the [app_check] Debug Testing SDK with Firebase
-  components. (GitHub
-  [#4436](//github.com/firebase/firebase-android-sdk/issues/4436){: .external})
+  components.
+  (GitHub [#4436](//github.com/firebase/firebase-android-sdk/issues/4436){: .external})
 
 # 16.1.0
 
@@ -65,8 +65,8 @@
 
 # 16.0.1
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 # 16.0.0
 
@@ -102,5 +102,5 @@
 
 # 16.0.0-beta01
 
-- [feature] Initial beta release of the [app_check] Debug Testing SDK with
-  abuse reduction features.
+- [feature] Initial beta release of the [app_check] Debug Testing SDK with abuse
+  reduction features.

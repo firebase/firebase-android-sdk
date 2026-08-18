@@ -19,11 +19,11 @@
 # 19.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 18.0.0
 
@@ -39,16 +39,16 @@ The Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-installations-ktx` to
   `com.google.firebase:firebase-installations` under the
-  `com.google.firebase.installations` package. For details, see the [FAQ about
-  this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.installations` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from
   `com.google.firebase:firebase-installations-ktx` have been added to
   `com.google.firebase:firebase-installations` under the
   `com.google.firebase.installations` package, and all the Kotlin extensions
   (KTX) APIs in `com.google.firebase:firebase-installations-ktx` are now
   deprecated. As early as April 2024, we'll no longer release KTX modules. For
-  details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -67,5 +67,5 @@ The Kotlin extensions library has no additional updates.
 # 17.1.0
 
 - [changed] Internal changes to ensure functionality alignment with other SDK
-  releases. For more details, refer to the [Firebase Instance ID v21.1.0
-  release notes](/support/release-notes/android#iid_v21-1-0).
+  releases. For more details, refer to the
+  [Firebase Instance ID v21.1.0 release notes](/support/release-notes/android#iid_v21-1-0).

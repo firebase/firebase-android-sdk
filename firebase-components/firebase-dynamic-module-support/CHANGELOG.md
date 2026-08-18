@@ -3,7 +3,7 @@
 # 16.0.0-beta04
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 
 # 16.0.0-beta03
 

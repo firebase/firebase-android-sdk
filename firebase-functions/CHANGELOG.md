@@ -19,11 +19,11 @@
 # 22.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 21.2.1
 
@@ -79,15 +79,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-functions-ktx` to
   `com.google.firebase:firebase-functions` under the
-  `com.google.firebase.functions` package. For details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.functions` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-functions-ktx`
   have been added to `com.google.firebase:firebase-functions` under the
   `com.google.firebase.functions` package, and all the Kotlin extensions (KTX)
   APIs in `com.google.firebase:firebase-functions-ktx` are now deprecated. As
-  early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -143,18 +142,17 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-functions` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-functions-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-functions-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 20.1.1
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -244,10 +242,10 @@ Kotlin extensions library has no additional updates.
 
 ## Kotlin
 
-- [feature] The beta release of a [functions_client] Android library with
-  Kotlin extensions is now available. The Kotlin extensions library
-  transitively includes the base `firebase-functions` library. To learn more,
-  visit the [[cloud_functions] KTX
+- [feature] The beta release of a [functions_client] Android library with Kotlin
+  extensions is now available. The Kotlin extensions library transitively
+  includes the base `firebase-functions` library. To learn more, visit the
+  [[cloud_functions] KTX
   documentation](/docs/reference/kotlin/com/google/firebase/functions/ktx/package-summary).
 
 # 19.0.0
@@ -259,8 +257,8 @@ Kotlin extensions library has no additional updates.
 
 - [feature] Added
   [`getTimeout`](/docs/reference/android/com/google/firebase/functions/HttpsCallableReference)
-  method to get the timeout for a callable. For more details, refer to [GitHub
-  PR #574](//github.com/firebase/firebase-android-sdk/pull/574).
+  method to get the timeout for a callable. For more details, refer to
+  [GitHub PR #574](//github.com/firebase/firebase-android-sdk/pull/574).
 
 # 17.0.0
 
@@ -282,5 +280,5 @@ Kotlin extensions library has no additional updates.
 - [feature] `FirebaseFunctions.getInstance()` now allows passing in an optional
   region to override the default "us-central1".
 - [feature] New `useFunctionsEmulator` method allows testing against a local
-  instance of the [Cloud Functions
-  Emulator](https://firebase.google.com/docs/functions/local-emulator).
+  instance of the
+  [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).

@@ -7,8 +7,9 @@
 
 - [deprecated] Firebase ML is deprecated and will be shut down on June 15,
   2027. To host custom models, you must migrate to another solution. You can
-use Cloud Storage for Firebase as an alternative for hosting custom models. For
-more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage.
+    use Cloud Storage for Firebase as an alternative for hosting custom models.
+    For more info, see
+    https://firebase.google.com/docs/ml/migrate-to-cloud-storage.
 
 # 26.0.2
 
@@ -21,11 +22,11 @@ more info, see https://firebase.google.com/docs/ml/migrate-to-cloud-storage.
 # 26.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 25.0.1
 
@@ -81,18 +82,16 @@ library. The Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-ml-modeldownloader-ktx` to
   `com.google.firebase:firebase-ml-modeldownloader` under the
-  `com.google.firebase.ml.modeldownloader` package. For details, see the [FAQ
-  about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.ml.modeldownloader` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from
   `com.google.firebase:firebase-ml-modeldownloader-ktx` have been added to
   `com.google.firebase:firebase-ml-modeldownloader` under the
   `com.google.firebase.ml.modeldownloader` package, and all the Kotlin
-  extensions (KTX) APIs in
-  `com.google.firebase:firebase-ml-modeldownloader-ktx` are now deprecated. As
-  early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  extensions (KTX) APIs in `com.google.firebase:firebase-ml-modeldownloader-ktx`
+  are now deprecated. As early as April 2024, we'll no longer release KTX
+  modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -135,18 +134,17 @@ library. The Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-ml-modeldownloader`
 library. The Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-ml-modeldownloader-ktx` as a transitive dependency,
-  which exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-ml-modeldownloader-ktx` as a transitive dependency, which exposes
+  the `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 24.0.5
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -179,8 +177,8 @@ library. The Kotlin extensions library has no additional updates.
 
 # 24.0.2
 
-- [fixed] Fixed an issue where `FirebaseModelDownloader.getInstance` would
-  crash when using non-default FirebaseApp instances. (#3321)
+- [fixed] Fixed an issue where `FirebaseModelDownloader.getInstance` would crash
+  when using non-default FirebaseApp instances. (#3321)
 - [changed] Updated to the latest version of the `firebase-datatransport`
   library.
 
@@ -211,8 +209,8 @@ library. The Kotlin extensions library has no additional updates.
 
 - [feature] The beta release of a [firebase_ml] Android library with Kotlin
   extensions is now available. The Kotlin extensions library transitively
-  includes the base `firebase-ml-model-downloader` library. To learn more,
-  visit the [[firebase_ml] KTX
+  includes the base `firebase-ml-model-downloader` library. To learn more, visit
+  the [[firebase_ml] KTX
   documentation](/docs/reference/android/com/google/firebase/ml/modeldownloader/package-summary).
 
 # 23.0.0

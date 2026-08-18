@@ -31,8 +31,7 @@
 
 - [fixed] Bumped DataStore dependency to include the mitigation for
   `CorruptionException` released in version `1.1.5`. See Jetpacks' DataStore
-  [release
-  notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
+  [release notes](https://developer.android.com/jetpack/androidx/releases/datastore#1.1.5).
 
 # 3.0.0
 
@@ -41,7 +40,7 @@
 - [changed] Use multi-process DataStore instead of Preferences DataStore
 - [changed] Update the heuristic to detect cold app starts
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 
 # 2.1.1
 
@@ -74,11 +73,11 @@ higher.
 # 2.0.4
 
 - [fixed] Handled datastore writes when device has full internal memory more
-  gracefully. (GitHub
-  [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
+  gracefully.
+  (GitHub [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
 - [fixed] Safely unbind malfunctioning session lifecycle service to release
-  service connections. (GitHub
-  [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
+  service connections.
+  (GitHub [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
 
 # 1.2.3
 

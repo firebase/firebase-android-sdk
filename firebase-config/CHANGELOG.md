@@ -13,16 +13,16 @@
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
-- [changed] This update introduces improvements to how the SDK handles
-  real-time requests when a Firebase project has exceeded its available quota
-  for real-time services. Released in anticipation of future quota enforcement,
-  this change is designed to fetch the latest template even when the quota is
+  higher.
+- [changed] This update introduces improvements to how the SDK handles real-time
+  requests when a Firebase project has exceeded its available quota for
+  real-time services. Released in anticipation of future quota enforcement, this
+  change is designed to fetch the latest template even when the quota is
   exhausted.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 22.1.2
 
@@ -48,8 +48,8 @@ Kotlin extensions library has no additional updates.
 # 22.1.0
 
 - [feature] Added support for custom signal targeting in Remote Config. Use
-  `setCustomSignals` API for setting custom signals and use them to build
-  custom targeting conditions in Remote Config.
+  `setCustomSignals` API for setting custom signals and use them to build custom
+  targeting conditions in Remote Config.
 
 ## Kotlin
 
@@ -77,14 +77,14 @@ Kotlin extensions library has no additional updates.
 
 # 21.6.3
 
-- [fixed] Fixed a bug that could cause a crash if the app was backgrounded
-  while it was listening for real-time Remote Config updates. For more
-  information, see #5751
+- [fixed] Fixed a bug that could cause a crash if the app was backgrounded while
+  it was listening for real-time Remote Config updates. For more information,
+  see #5751
 
 # 21.6.2
 
-- [fixed] Fixed an issue that could cause [remote_config] personalizations to
-  be logged early in specific cases.
+- [fixed] Fixed an issue that could cause [remote_config] personalizations to be
+  logged early in specific cases.
 - [fixed] Fixed an issue where the connection to the real-time Remote Config
   backend could remain open in the background.
 
@@ -112,15 +112,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-config-ktx` to
   `com.google.firebase:firebase-config` under the
-  `com.google.firebase.remoteconfig` package. For details, see the [FAQ about
-  this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.remoteconfig` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-config-ktx` have
   been added to `com.google.firebase:firebase-config` under the
   `com.google.firebase.remoteconfig` package, and all the Kotlin extensions
-  (KTX) APIs in `com.google.firebase:firebase-config-ktx` are now deprecated.
-  As early as April 2024, we'll no longer release KTX modules. For details, see
-  the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  (KTX) APIs in `com.google.firebase:firebase-config-ktx` are now deprecated. As
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -180,18 +179,17 @@ Kotlin extensions library has no additional updates.
 The Kotlin extensions library transitively includes the updated `firebase-config` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-config-ktx` as a transitive dependency, which exposes
-  the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-config-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 21.1.2
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -340,11 +338,10 @@ Kotlin extensions library has no additional updates.
 # 19.2.0
 
 - [changed] Migrated to use the [firebase_installations] service _directly_
-  instead of using an indirect dependency via the Firebase Instance ID SDK.
-
-{% include
-"docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
-%}
+  instead of using an indirect dependency via the Firebase Instance ID SDK. {%
+  include
+  "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
+  %}
 - [changed] Updated the protocol buffer dependency to the newer
   `protobuf-javalite` artifact. The new artifact is incompatible with the old
   one, so this library needed to be upgraded to avoid conflicts. No developer
@@ -415,9 +412,9 @@ Kotlin extensions library has no additional updates.
 
 # 19.0.4
 
-- [fixed] Resolved [known
-  issue](//github.com/firebase/firebase-android-sdk/issues/973) where network
-  calls may fail on devices using API 19 and earlier.
+- [fixed] Resolved
+  [known issue](//github.com/firebase/firebase-android-sdk/issues/973) where
+  network calls may fail on devices using API 19 and earlier.
 
 ## Kotlin
 
@@ -426,9 +423,9 @@ Kotlin extensions library has no additional updates.
 
 # 19.0.3
 
-- [fixed] Resolved [known
-  issue](https://github.com/firebase/firebase-android-sdk/issues/787) where the
-  [firebase_remote_config] SDK threw an error when Android
+- [fixed] Resolved
+  [known issue](https://github.com/firebase/firebase-android-sdk/issues/787)
+  where the [firebase_remote_config] SDK threw an error when Android
   [StrictMode](https://developer.android.com/reference/android/os/StrictMode)
   was turned on.
 - [fixed] Resolved issue where setting Byte Arrays via
@@ -458,8 +455,8 @@ Kotlin extensions library has no additional updates.
 
 # 19.0.1
 
-- [fixed] Resolved known issue where certain unicode characters were not
-  encoded correctly. The issue was introduced in v19.0.0.
+- [fixed] Resolved known issue where certain unicode characters were not encoded
+  correctly. The issue was introduced in v19.0.0.
 
 # 19.0.0
 

@@ -35,13 +35,13 @@
 # 20.0.0
 
 - [changed] **Breaking Change**: Removed deprecated public constructor
-`KeyValueBuilder(crashlytics: FirebaseCrashlytics)`
+  `KeyValueBuilder(crashlytics: FirebaseCrashlytics)`
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or
-higher.
+  higher.
 - [removed] **Breaking Change**: Stopped releasing the deprecated Kotlin
-extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
-use the KTX APIs from the main module. For details, see the [FAQ about this
-initiative](https://firebase.google.com/docs/android/kotlin-migration).
+  extensions (KTX) module and removed it from the Firebase Android BoM. Instead,
+  use the KTX APIs from the main module. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
 # 19.4.4
 
@@ -69,9 +69,9 @@ Kotlin extensions library has no additional updates.
   some devices [#6720]
 - [changed] Updated `firebase-sessions` dependency to v2.1.0
   - [changed] Add warning for known issue
-[b/328687152](https://issuetracker.google.com/328687152) [#6755]
+    [b/328687152](https://issuetracker.google.com/328687152) [#6755]
   - [changed] Updated datastore dependency to v1.1.3 to fix
-[CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
+    [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8) [#6688]
 
 ## Kotlin
 
@@ -130,13 +130,11 @@ Kotlin extensions library has no additional updates.
 # 19.1.0
 
 - [feature] Added the `isCrashlyticsCollectionEnabled` API to check if
-  Crashlytics collection is enabled. (GitHub
-  [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){:
-  .external})
+  Crashlytics collection is enabled.
+  (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
 - [fixed] Ensure that on-demand fatal events are never processed on the main
-  thread. (GitHub
-  [#4345](https://github.com/firebase/firebase-android-sdk/issues/4345){:
-  .external})
+  thread.
+  (GitHub [#4345](https://github.com/firebase/firebase-android-sdk/issues/4345){: .external})
 - [changed] Internal changes to the way session IDs are generated.
 
 ## Kotlin
@@ -175,8 +173,8 @@ Kotlin extensions library has no additional updates.
 # 19.0.0
 
 - [fixed] Force validation or rotation of FIDs.
-- [fixed] Added keep rule for shrinkage of Crashlytics build resources in
-  strict mode.
+- [fixed] Added keep rule for shrinkage of Crashlytics build resources in strict
+  mode.
 
 ## Kotlin
 
@@ -213,15 +211,15 @@ Kotlin extensions library has no additional updates.
 # 18.6.0
 
 - [changed] Include more details about app processes in reports.
-- [feature] Updated `firebase-sessions` dependency for more accurate sessions
-  on multi-process apps.
+- [feature] Updated `firebase-sessions` dependency for more accurate sessions on
+  multi-process apps.
 - [changed] Added support for [crashlytics] to report information from
   [remote_config].
 
 # 18.5.1
 
-- [fixed] Internal improvement to fix compatibility with Flutter and Unity
-  SDKs. Github [#10759](https://github.com/firebase/flutterfire/issues/10759)
+- [fixed] Internal improvement to fix compatibility with Flutter and Unity SDKs.
+  Github [#10759](https://github.com/firebase/flutterfire/issues/10759)
 
 ## Kotlin
 
@@ -233,15 +231,14 @@ Kotlin extensions library has no additional updates.
 - [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-crashlytics-ktx` to
   `com.google.firebase:firebase-crashlytics` under the
-  `com.google.firebase.crashlytics` package. For details, see the [FAQ about
-  this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.crashlytics` package. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 - [deprecated] All the APIs from `com.google.firebase:firebase-crashlytics-ktx`
   have been added to `com.google.firebase:firebase-crashlytics` under the
-  `com.google.firebase.crashlytics` package, and all the Kotlin extensions
-  (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now
-  deprecated. As early as April 2024, we'll no longer release KTX modules. For
-  details, see the [FAQ about this
-  initiative](https://firebase.google.com/docs/android/kotlin-migration)
+  `com.google.firebase.crashlytics` package, and all the Kotlin extensions (KTX)
+  APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As
+  early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 ## Kotlin
 
@@ -295,16 +292,13 @@ Kotlin extensions library has no additional updates.
 
 # 18.3.6
 
-- [feature] Added support for upcoming [crashlytics] features to report
-  GWP-ASan crashes on supported API levels. (GitHub
-  [#4721](https://github.com/firebase/firebase-android-sdk/pull/4721){:
-  .external})
-- [changed] Improved crash reporting reliability for crashes that occur early
-  in the app's lifecycle. (GitHub
-  [#4608](https://github.com/firebase/firebase-android-sdk/pull/4608){:
-  .external},
-  [#4786](https://github.com/firebase/firebase-android-sdk/pull/4786){:
-  .external})
+- [feature] Added support for upcoming [crashlytics] features to report GWP-ASan
+  crashes on supported API levels.
+  (GitHub [#4721](https://github.com/firebase/firebase-android-sdk/pull/4721){: .external})
+- [changed] Improved crash reporting reliability for crashes that occur early in
+  the app's lifecycle. (GitHub
+  [#4608](https://github.com/firebase/firebase-android-sdk/pull/4608){: .external},
+  [#4786](https://github.com/firebase/firebase-android-sdk/pull/4786){: .external})
 
 ## Kotlin
 
@@ -331,8 +325,8 @@ Kotlin extensions library has no additional updates.
   latest version (v18.3.5+) which contains a fix.
 </aside>
 
-- [changed] Improved crash reporting reliability for crashes that occur early
-  in the app's lifecycle.
+- [changed] Improved crash reporting reliability for crashes that occur early in
+  the app's lifecycle.
 - [changed] Added improved support for capturing `BuildId`s for native ANRs on
   older Android versions.
 
@@ -364,8 +358,8 @@ Kotlin extensions library has no additional updates.
 # 18.3.1
 
 - [fixed] Fixed an
-  [issue](https://github.com/firebase/firebase-android-sdk/issues/4223){:
-  .external} in v18.3.0 that caused a `NoClassDefFoundError` in specific cases.
+  [issue](https://github.com/firebase/firebase-android-sdk/issues/4223){: .external}
+  in v18.3.0 that caused a `NoClassDefFoundError` in specific cases.
 
 ## Kotlin
 
@@ -387,18 +381,17 @@ latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 The Kotlin extensions library transitively includes the updated `firebase-crashlytics` library. The
 Kotlin extensions library has the following additional updates:
 
-- [feature] Firebase now supports Kotlin coroutines. With this release, we
-  added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
-  .external} to `firebase-crashlytics-ktx` as a transitive dependency, which
-  exposes the `Task<T>.await()` suspend function to convert a
+- [feature] Firebase now supports Kotlin coroutines. With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-crashlytics-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
 # 18.2.13
 
-- [changed] Updated dependency of `play-services-basement` to its latest
-  version (v18.1.0).
+- [changed] Updated dependency of `play-services-basement` to its latest version
+  (v18.1.0).
 
 ## Kotlin
 
@@ -463,8 +456,8 @@ Kotlin extensions library has no additional updates.
 
 # 18.2.7
 
-- [changed] Improved runtime efficiency of the [`setCustomKey`
-  functions](/docs/crashlytics/customize-crash-reports?platform=android#add-keys),
+- [changed] Improved runtime efficiency of the
+  [`setCustomKey` functions](/docs/crashlytics/customize-crash-reports?platform=android#add-keys),
   significantly reducing the number of `Task` objects and disk writes when keys
   are updated frequently. (#3254)
 - [fixed] Fixed a StrictMode `DiskReadViolation`. (#3265)
@@ -486,9 +479,9 @@ Kotlin extensions library has no additional updates.
 
 # 18.2.5
 
-- [fixed] Fixed a bug that prevented some [crashlytics] session files from
-  being removed after the session ended. All session-specific files are now
-  properly cleaned up.
+- [fixed] Fixed a bug that prevented some [crashlytics] session files from being
+  removed after the session ended. All session-specific files are now properly
+  cleaned up.
 - [changed] Internal improvements to [crashlytics] file management, to ensure
   consistent creation and removal of intermediate [crashlytics] files.
 
@@ -562,10 +555,10 @@ Kotlin extensions library has no additional updates.
 
 - [changed] Removed call to
   [`FirebaseInstallations#getId()`](</docs/reference/android/com/google/firebase/installations/FirebaseInstallations#getId()>)
-  when [automatic data
-  collection](/docs/crashlytics/customize-crash-reports?platform=android#enable-reporting)
-  is disabled for [crashlytics]. [crashlytics] no longer makes any network
-  calls when reporting is disabled.
+  when
+  [automatic data collection](/docs/crashlytics/customize-crash-reports?platform=android#enable-reporting)
+  is disabled for [crashlytics]. [crashlytics] no longer makes any network calls
+  when reporting is disabled.
 - [changed] Internal changes to support dynamic feature modules.
 
 ## Kotlin
@@ -591,8 +584,8 @@ Kotlin extensions library has no additional updates.
 
 - [feature] Added the
   [`setCustomKeys`](/docs/reference/android/com/google/firebase/crashlytics/CustomKeysAndValues)
-  API to allow bulk logging of custom keys and values. ([Github PR
-  #2443](//github.com/firebase/firebase-android-sdk/pull/2443){: .external})
+  API to allow bulk logging of custom keys and values.
+  ([Github PR #2443](//github.com/firebase/firebase-android-sdk/pull/2443){: .external})
 
 ## Kotlin
 
@@ -613,9 +606,9 @@ Kotlin extensions library has no additional updates.
 
 - [changed] Clarified debug logs for crash reports enqueued to be sent via the
   `firebase-datatransport` library.
-- [fixed] Addressed an issue which could cause a `RejectedExecutionException`
-  in rare cases. ([Github Issue
-  #2013](//github.com/firebase/firebase-android-sdk/issues/2013){: .external})
+- [fixed] Addressed an issue which could cause a `RejectedExecutionException` in
+  rare cases.
+  ([Github Issue #2013](//github.com/firebase/firebase-android-sdk/issues/2013){: .external})
 
 ## Kotlin
 
@@ -625,8 +618,8 @@ Kotlin extensions library has no additional updates.
 # 17.2.2
 
 - [fixed] Fixed crash that can occur when using a built-in resource as the app
-  launcher icon. ([Github Issue
-  #1935](//github.com/firebase/firebase-android-sdk/issues/1935){: .external})
+  launcher icon.
+  ([Github Issue #1935](//github.com/firebase/firebase-android-sdk/issues/1935){: .external})
 - [fixed] Fixed a bug preventing crash reports from being sent in some cases
   when an app is using [crashlytics] on multiple processes.
 
@@ -638,19 +631,17 @@ Kotlin extensions library has no additional updates.
 # 17.2.1
 
 - [fixed] Improved handling of asynchronous tasks that need to wait for
-  completion on the main thread. ([Github PR
-  #1739](//github.com/firebase/firebase-android-sdk/pull/1739){: .external})
+  completion on the main thread.
+  ([Github PR #1739](//github.com/firebase/firebase-android-sdk/pull/1739){: .external})
 - [changed] Added an overload to the `setCrashlyticsCollectionEnabled` API to
-  allow for passing `null` to clear any previously set value. ([Github PR
-  #1434](//github.com/firebase/firebase-android-sdk/pull/1434){: .external})
+  allow for passing `null` to clear any previously set value.
+  ([Github PR #1434](//github.com/firebase/firebase-android-sdk/pull/1434){: .external})
 - [changed] Migrated to use the [firebase_installations] service _directly_
   instead of using an indirect dependency via the Firebase Instance ID SDK.
-  ([Github PR #1760](//github.com/firebase/firebase-android-sdk/pull/1760){:
-  .external})
-
-{% include
-"docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
-%}
+  ([Github PR #1760](//github.com/firebase/firebase-android-sdk/pull/1760){: .external})
+  {% include
+  "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html"
+  %}
 
 ## Kotlin
 
@@ -660,10 +651,10 @@ Kotlin extensions library has no additional updates.
 # 17.1.1
 
 - [changed] To improve the reliability of submitting crash uploads on poor
-  networks, changed the Transport SDK to retry connection errors ([Github Issue
-  #1705](//github.com/firebase/firebase-android-sdk/issues/1705){: .external})
-  and increased the number of retries before deleting events ([Github Issue
-  #1708](//github.com/firebase/firebase-android-sdk/issues/1708){: .external}).
+  networks, changed the Transport SDK to retry connection errors
+  ([Github Issue #1705](//github.com/firebase/firebase-android-sdk/issues/1705){: .external})
+  and increased the number of retries before deleting events
+  ([Github Issue #1708](//github.com/firebase/firebase-android-sdk/issues/1708){: .external}).
 
 ## Kotlin
 
@@ -672,27 +663,24 @@ Kotlin extensions library has no additional updates.
 
 # 17.1.0
 
-- [fixed] Updated [crashlytics] integration with [firebase_analytics] to
-  include native crashes in crash-free users counts.
+- [fixed] Updated [crashlytics] integration with [firebase_analytics] to include
+  native crashes in crash-free users counts.
 - [fixed] Removed a harmless, yet unexpected `FileNotFoundException` log output
-  that printed when an optional file is unavailable. ([Github Issue
-  #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614){:
-  .external})
+  that printed when an optional file is unavailable.
+  ([Github Issue #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614){: .external})
 
 ## Kotlin
 
-- [feature] The [firebase_crashlytics] Android library with Kotlin extensions
-  is now available. The Kotlin extensions library transitively includes the
-  base `firebase-crashlytics` library. To learn more, visit the [[crashlytics]
-  KTX
+- [feature] The [firebase_crashlytics] Android library with Kotlin extensions is
+  now available. The Kotlin extensions library transitively includes the base
+  `firebase-crashlytics` library. To learn more, visit the [[crashlytics] KTX
   documentation](/docs/reference/kotlin/com/google/firebase/crashlytics/ktx/package-summary).
 
 # 17.0.1
 
 - [fixed] Fixed an issue causing a `SQLiteException` when changing versions of
-  [crashlytics]. ([Github Issue
-  #1531](https://github.com/firebase/firebase-android-sdk/issues/1531){:
-  .external})
+  [crashlytics].
+  ([Github Issue #1531](https://github.com/firebase/firebase-android-sdk/issues/1531){: .external})
 - [fixed] Improved reliability of sending reports at crash time on Android API
   level 28+.
 
@@ -726,9 +714,9 @@ Kotlin extensions library has no additional updates.
 - [changed] Updated [crashlytics] backend API calls in preparation for Fabric
   sunset.
 - [changed] Upgraded [firebase_analytics] integration to improve crash-free
-  users accuracy. For improved performance, we recommend that you upgrade to
-  the latest version of the Firebase SDK for [firebase_analytics] with this
-  version of [firebase_crashlytics].
+  users accuracy. For improved performance, we recommend that you upgrade to the
+  latest version of the Firebase SDK for [firebase_analytics] with this version
+  of [firebase_crashlytics].
 
 # 17.0.0-beta01
 
