@@ -59,7 +59,8 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
-    codegen { connectors = listOf("demo", "keywords") }
+    codegen { connectors = listOf("demo", "keywords", "batch") }
+    previewFlags = listOf("kotlin_data_types")
   }
 }
 

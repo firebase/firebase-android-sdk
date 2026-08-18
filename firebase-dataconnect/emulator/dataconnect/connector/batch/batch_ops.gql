@@ -1,0 +1,103 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# --- Single _Data Inserts ---
+
+mutation InsertBatchProduct($data: BatchProduct_Data! @allow(fields: "name price")) @auth(level: PUBLIC) {
+  key: batchProduct_insert(data: $data)
+}
+
+mutation InsertBatchProductWithId($data: BatchProduct_Data! @allow(fields: "id name price")) @auth(level: PUBLIC) {
+  key: batchProduct_insert(data: $data)
+}
+
+mutation InsertBatchOrder($data: BatchOrder_Data! @allow(fields: "customerName totalAmount")) @auth(level: PUBLIC) {
+  key: batchOrder_insert(data: $data)
+}
+
+mutation InsertBatchOrderWithId($data: BatchOrder_Data! @allow(fields: "id customerName totalAmount")) @auth(level: PUBLIC) {
+  key: batchOrder_insert(data: $data)
+}
+
+# --- Batch [Type_Data!] insertMany ---
+
+mutation InsertBatchProducts($data: [BatchProduct_Data!]! @allow(fields: "name price", maxCount: 20)) @auth(level: PUBLIC) {
+  keys: batchProduct_insertMany(data: $data)
+}
+
+mutation InsertBatchProductsWithIds($data: [BatchProduct_Data!]! @allow(fields: "id name price", maxCount: 20)) @auth(level: PUBLIC) {
+  keys: batchProduct_insertMany(data: $data)
+}
+
+mutation InsertBatchOrders($data: [BatchOrder_Data!]! @allow(fields: "customerName totalAmount", maxCount: 20)) @auth(level: PUBLIC) {
+  keys: batchOrder_insertMany(data: $data)
+}
+
+mutation InsertBatchOrdersWithIds($data: [BatchOrder_Data!]! @allow(fields: "id customerName totalAmount", maxCount: 20)) @auth(level: PUBLIC) {
+  keys: batchOrder_insertMany(data: $data)
+}
+
+# --- Nested Relations (1:Many) ---
+
+mutation InsertBatchOrderWithItems($data: BatchOrder_Data! @allow(fields: "id customerName totalAmount batchOrderItems_on_batchOrder { id itemDescription quantity price }")) @auth(level: PUBLIC) {
+  key: batchOrder_insert(data: $data)
+}
+
+mutation InsertBatchOrdersWithItems($data: [BatchOrder_Data!]! @allow(fields: "id customerName totalAmount batchOrderItems_on_batchOrder { id itemDescription quantity price }", maxCount: 10)) @auth(level: PUBLIC) {
+  keys: batchOrder_insertMany(data: $data)
+}
+
+# --- Upsert Operations ---
+
+mutation UpsertBatchProduct($data: BatchProduct_Data! @allow(fields: "id name price")) @auth(level: PUBLIC) {
+  key: batchProduct_upsert(data: $data)
+}
+
+mutation UpsertBatchProducts($data: [BatchProduct_Data!]! @allow(fields: "id name price", maxCount: 20)) @auth(level: PUBLIC) {
+  keys: batchProduct_upsertMany(data: $data)
+}
+
+# --- Update Operations ---
+
+mutation UpdateBatchProduct($id: UUID!, $data: BatchProduct_Data! @allow(fields: "name price")) @auth(level: PUBLIC) {
+  batchProduct_update(id: $id, data: $data)
+}
+
+mutation UpdateBatchOrder($key: BatchOrder_Key!, $data: BatchOrder_Data! @allow(fields: "customerName totalAmount")) @auth(level: PUBLIC) {
+  batchOrder_update(key: $key, data: $data)
+}
+
+# --- Queries to Verify State ---
+
+query GetBatchProduct($key: BatchProduct_Key!) @auth(level: PUBLIC) {
+  batchProduct(key: $key) {
+    id
+    name
+    price
+  }
+}
+
+query GetBatchOrder($key: BatchOrder_Key!) @auth(level: PUBLIC) {
+  batchOrder(key: $key) {
+    id
+    customerName
+    totalAmount
+    items: batchOrderItems_on_batchOrder {
+      id
+      itemDescription
+      quantity
+      price
+    }
+  }
+}

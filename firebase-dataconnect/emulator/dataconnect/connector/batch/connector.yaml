@@ -1,0 +1,6 @@
+connectorId: batch
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/batch
+    package: com.google.firebase.dataconnect.connectors.batch

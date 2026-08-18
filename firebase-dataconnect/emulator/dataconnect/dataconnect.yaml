@@ -16,4 +16,5 @@ connectorDirs: [
   "./connector/realtime",
   "./connector/person",
   "./connector/posts",
+  "./connector/batch",
 ]

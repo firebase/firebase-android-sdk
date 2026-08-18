@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.LoggedInInternalAuthProvider
 import com.google.firebase.dataconnect.testutil.LoggedInMultiTokenInternalAuthProvider
@@ -329,6 +330,57 @@ object DataConnectArb {
     max: com.google.protobuf.Duration? = null,
   ): Arb<com.google.protobuf.Duration> =
     Arb.proto.duration(min = min, max = max).map { it.duration }
+
+  fun <T> optionalVariable(
+    arb: Arb<T>,
+    undefinedProbability: Double,
+  ): Arb<OptionalVariable<T>> {
+    require(undefinedProbability in 0.0..1.0) {
+      "invalid undefinedProbability: ${undefinedProbability.print().value}"
+    }
+
+    return arbitrary { rs ->
+      if (rs.random.nextDouble() <= undefinedProbability) {
+        OptionalVariable.Undefined
+      } else {
+        OptionalVariable.Value(arb.bind())
+      }
+    }
+  }
+
+  fun <T : Any> nullableOptionalVariable(
+    arb: Arb<T>,
+    undefinedProbability: Double,
+    nullableProbability: Double,
+  ): Arb<OptionalVariable<T?>> {
+    require(undefinedProbability in 0.0..1.0) {
+      "invalid undefinedProbability: ${undefinedProbability.print().value}"
+    }
+    require(nullableProbability in 0.0..1.0) {
+      "invalid nullableProbability: ${nullableProbability.print().value}"
+    }
+    val probabilitiesSum = undefinedProbability + nullableProbability
+    require(probabilitiesSum <= 1.0) {
+      "invalid undefinedProbability/nullableProbability pair: " +
+        "their sum must be less than or equal to 1.0, " +
+        "but their sum is ${(probabilitiesSum).print().value}, "
+      "which is ${(probabilitiesSum - 1.0).print().value} " +
+        "greater than 1.0; " +
+        "undefinedProbability=${undefinedProbability.print().value}, " +
+        "nullableProbability=${nullableProbability.print().value}"
+    }
+
+    return arbitrary { rs ->
+      val discriminator = rs.random.nextDouble()
+      if (discriminator <= undefinedProbability) {
+        OptionalVariable.Undefined
+      } else if (discriminator <= probabilitiesSum) {
+        OptionalVariable.Value(null)
+      } else {
+        OptionalVariable.Value(arb.bind())
+      }
+    }
+  }
 }
 
 private class DataConnectPathArb(
