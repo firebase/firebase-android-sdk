@@ -1737,10 +1737,8 @@ internal constructor(
   }
 }
 
-internal class DeleteStage
-internal constructor(
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<DeleteStage>("delete", options) {
+internal class DeleteStage internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<DeleteStage>("delete", options) {
   override fun self(options: InternalOptions) = DeleteStage(options)
   override fun canonicalId(): String = "delete()"
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
@@ -1789,11 +1787,19 @@ internal constructor(
   internal val collectionPath: String?,
   internal val documentIdExpr: Expression?,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<InsertStage>("insert", buildOptions(collectionPath, documentIdExpr, options)) {
+) : Stage<InsertStage>("insert", buildOptions(collectionPath, options)) {
 
   override fun self(options: InternalOptions) = InsertStage(collectionPath, documentIdExpr, options)
   override fun canonicalId(): String = "insert($collectionPath)"
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options
+    if (documentIdExpr != null) {
+      completeOptions = completeOptions.with("document_id", documentIdExpr.toProto(userDataReader))
+    }
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1813,16 +1819,12 @@ internal constructor(
   companion object {
     private fun buildOptions(
       collectionPath: String?,
-      documentIdExpr: Expression?,
       baseOptions: InternalOptions
     ): InternalOptions {
       var opts = baseOptions
       if (collectionPath != null) {
         val path = if (collectionPath.startsWith("/")) collectionPath else "/$collectionPath"
         opts = opts.with("collection", Value.newBuilder().setReferenceValue(path).build())
-      }
-      if (documentIdExpr != null) {
-        opts = opts.with("document_id", documentIdExpr.toProto())
       }
       return opts
     }
@@ -1832,10 +1834,10 @@ internal constructor(
 internal class UpsertStage
 internal constructor(
   private val fields: Array<out Selectable>,
-  internal val collectionPath: String?,
-  internal val documentIdExpr: Expression?,
+  internal val collectionPath: String? = null,
+  internal val documentIdExpr: Expression? = null,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<UpsertStage>("upsert", buildOptions(collectionPath, documentIdExpr, options)) {
+) : Stage<UpsertStage>("upsert", buildOptions(collectionPath, options)) {
 
   override fun self(options: InternalOptions) =
     UpsertStage(fields, collectionPath, documentIdExpr, options)
@@ -1847,6 +1849,14 @@ internal constructor(
     } else {
       emptySequence()
     }
+  }
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options
+    if (documentIdExpr != null) {
+      completeOptions = completeOptions.with("document_id", documentIdExpr.toProto(userDataReader))
+    }
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
   }
 
   override fun equals(other: Any?): Boolean {
@@ -1869,16 +1879,12 @@ internal constructor(
   companion object {
     private fun buildOptions(
       collectionPath: String?,
-      documentIdExpr: Expression?,
       baseOptions: InternalOptions
     ): InternalOptions {
       var opts = baseOptions
       if (collectionPath != null) {
         val path = if (collectionPath.startsWith("/")) collectionPath else "/$collectionPath"
         opts = opts.with("collection", Value.newBuilder().setReferenceValue(path).build())
-      }
-      if (documentIdExpr != null) {
-        opts = opts.with("document_id", documentIdExpr.toProto())
       }
       return opts
     }
@@ -1902,9 +1908,12 @@ internal constructor(
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
     for ((key, value) in map) {
       when (value) {
-        is Expression -> mapValue.putFields(key, value.toProto())
-        is Map<*, *> -> @Suppress("UNCHECKED_CAST") mapValue.putFields(key, encodeLiteralMap(value as Map<String, Any?>, userDataReader))
-        else -> mapValue.putFields(key, Values.encodeValue(value))
+        null -> mapValue.putFields(key, Values.NULL_VALUE)
+        is Expression -> mapValue.putFields(key, value.toProto(userDataReader))
+        is Map<*, *> ->
+          @Suppress("UNCHECKED_CAST")
+          mapValue.putFields(key, encodeLiteralMap(value as Map<String, Any?>, userDataReader))
+        else -> mapValue.putFields(key, userDataReader.parseQueryValue(value))
       }
     }
     return Value.newBuilder().setMapValue(mapValue).build()
