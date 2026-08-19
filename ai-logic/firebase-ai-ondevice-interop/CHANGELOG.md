@@ -1,6 +1,7 @@
 # Unreleased
 
-- [feature] Added support for on-device structured output generation using `generateObject` (#8395)
+- [feature] Added support for on-device structured output generation using
+  `generateObject` (#8395)
 
 # 16.0.0-beta03
 
@@ -13,4 +14,3 @@
 # 16.0.0-beta01
 
 - [feature] Initial release.
-
