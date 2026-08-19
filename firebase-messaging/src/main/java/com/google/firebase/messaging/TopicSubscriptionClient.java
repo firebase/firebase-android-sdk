@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /** A client for complying with the FCM topic subscription and unsubscription.
- *
  * @hide
  * */
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
