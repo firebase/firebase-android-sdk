@@ -257,8 +257,6 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
           ArtifactTutorialMapping("Firebase Functions", "functions-dependency"),
         "com.google.firebase:firebase-inappmessaging-display" to
           ArtifactTutorialMapping("FIAM Display", "fiamd-dependency"),
-        "com.google.firebase:firebase-ml-vision" to
-          ArtifactTutorialMapping("Firebase MLKit Vision", "ml-vision-dependency"),
         "androidx.credentials:credentials" to
           ArtifactTutorialMapping("Auth Google Sign In", "auth-google-signin-first-dependency"),
         "androidx.credentials:credentials-play-services-auth" to
