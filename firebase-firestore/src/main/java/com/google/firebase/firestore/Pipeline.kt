@@ -1127,8 +1127,11 @@ internal constructor(
 
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
+  @JvmOverloads
   fun insert(collectionPath: String, documentIdExpr: Expression? = null): Pipeline =
     append(InsertStage(collectionPath, documentIdExpr))
+
+  fun upsert(vararg transforms: Selectable): Pipeline = append(UpsertStage(transforms))
 
   fun upsert(
     vararg transforms: Selectable,
@@ -1140,9 +1143,7 @@ internal constructor(
 /** Start of a Firestore Pipeline */
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
 
-  /**
-   * Set the pipeline's source to literal document maps.
-   */
+  /** Set the pipeline's source to literal document maps. */
   fun literals(vararg data: Map<String, Any?>): Pipeline = literals(data.toList())
 
   fun literals(data: List<Map<String, Any?>>): Pipeline =
@@ -1275,6 +1276,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [documents] provided targets a different
    * project or database than the pipeline.
    */
+  @JvmName("documents")
+  fun documents(documents: List<DocumentReference>): Pipeline = documents(*documents.toTypedArray())
+
   fun documents(vararg documents: DocumentReference): Pipeline {
     val databaseId = firestore.databaseId
     for (document in documents) {
@@ -1290,6 +1294,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       DocumentsSource(documents.map { ResourcePath.fromString(it.path) }.toTypedArray())
     )
   }
+
+  @JvmName("documentsByPath")
+  fun documents(documents: List<String>): Pipeline = documents(*documents.toTypedArray())
 
   companion object {
     /**

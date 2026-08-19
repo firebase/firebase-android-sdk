@@ -8215,6 +8215,8 @@ abstract class Expression internal constructor() {
    */
   open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
+  open fun `as`(alias: String): AliasedExpression = alias(alias)
+
   /**
    * Creates an expression that returns the document ID from this path expression.
    *

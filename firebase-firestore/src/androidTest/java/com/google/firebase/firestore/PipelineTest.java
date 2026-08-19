@@ -4295,7 +4295,12 @@ public class PipelineTest {
   public void testDeleteStage() {
     CollectionReference collection = testCollection();
     Pipeline.Snapshot snapshot =
-        waitFor(collection.toPipeline().where(equal(field("__name__"), constant("book1"))).delete().execute());
+        waitFor(
+            collection
+                .toPipeline()
+                .where(equal(field("__name__"), constant("book1")))
+                .delete()
+                .execute());
     assertThat(snapshot).isNotNull();
   }
 
