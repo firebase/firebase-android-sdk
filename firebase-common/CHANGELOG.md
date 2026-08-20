@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Internal adjustments
+
 # 22.2.0
 
 - [changed] Remvode support for reading the `recaptcha_site_key` value from the `google-services.json`
