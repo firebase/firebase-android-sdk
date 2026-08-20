@@ -18,7 +18,7 @@ import android.annotation.TargetApi;
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import com.google.android.gms.common.internal.Objects;
+import java.util.Objects;
 
 /**
  * Conditions to allow download of custom models.
@@ -188,6 +188,6 @@ public class CustomModelDownloadConditions {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(isChargingRequired, isWifiRequired, isDeviceIdleRequired);
+    return Objects.hash(isChargingRequired, isWifiRequired, isDeviceIdleRequired);
   }
 }

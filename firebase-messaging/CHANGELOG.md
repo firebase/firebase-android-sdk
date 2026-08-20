@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Internal adjustments
+
 # 25.1.2
 
 - [fixed] FCM registration error due to FID_ALREADY_USED (#8507)
