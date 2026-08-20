@@ -252,6 +252,16 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun send(content: Content): ListenableFuture<Unit>
 
   /**
+   * Sends [data][Content] to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
+   */
+  public abstract fun send(content: Content, turnComplete: Boolean): ListenableFuture<Unit>
+
+  /**
    * Sends text to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
@@ -293,6 +303,9 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun send(content: Content) =
       SuspendToFutureAdapter.launchFuture { session.send(content) }
+
+    override fun send(content: Content, turnComplete: Boolean) =
+      SuspendToFutureAdapter.launchFuture { session.send(content, turnComplete) }
 
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
