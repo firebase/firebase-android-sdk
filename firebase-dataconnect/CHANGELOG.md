@@ -1,7 +1,9 @@
 # Unreleased
 
-- [changed] Add grpc request header for platform name and sdk version
-  to enable metrics collection in cloud monitoring.
+# 17.4.0
+
+- [changed] Add gRPC request header for platform name and SDK version
+  to enable metrics collection in Cloud Monitoring.
   ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486),
   [#8495](https://github.com/firebase/firebase-android-sdk/pull/8495))
 - [changed] Add grpc request header for SQL Connect server affinity, to improve
