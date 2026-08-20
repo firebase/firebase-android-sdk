@@ -26,6 +26,10 @@ class SettingsJsonConstants {
   static final String ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_KEY =
       "on_demand_backoff_step_duration_seconds";
 
+  static final String PROFILING_KEY = "profiling";
+
+  static final boolean PROFILING_HEAP_DUMP_COLLECTION_ENABLED_DEFAULT = false;
+
   // Top-level Defaults
   static final int SETTINGS_VERSION_DEFAULT = 0;
 
@@ -41,6 +45,8 @@ class SettingsJsonConstants {
 
   // App JSON Keys
   static final String APP_STATUS_KEY = "status";
+
+  static final String PROFILING_HEAP_DUMP_COLLECTION_ENABLED_KEY = "heap_dump_collection_enabled";
 
   // Settings JSON Keys
   static final String SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_KEY = "max_custom_exception_events";
