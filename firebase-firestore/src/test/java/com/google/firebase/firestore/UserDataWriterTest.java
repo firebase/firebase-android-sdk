@@ -43,6 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
@@ -209,6 +210,33 @@ public class UserDataWriterTest {
           TestAccessHelper.referenceKey(docRef), DocumentKey.fromName(value.getReferenceValue()));
       assertEquals(id, DatabaseId.fromName(value.getReferenceValue()));
     }
+  }
+
+  @Test
+  public void testConvertsResourceNameFromDifferentDatabase() {
+    ShadowLog.clear();
+    Value value =
+        Value.newBuilder()
+            .setReferenceValue("projects/other-project/databases/other-db/documents/foo/bar")
+            .build();
+    Object convertedValue = convertValue(value);
+    assertTrue(convertedValue instanceof DocumentReference);
+    DocumentReference docRef = (DocumentReference) convertedValue;
+    assertEquals(DocumentKey.fromPathString("foo/bar"), TestAccessHelper.referenceKey(docRef));
+
+    List<ShadowLog.LogItem> logs = ShadowLog.getLogsForTag("Firestore");
+    assertThat(logs).isNotEmpty();
+    boolean found = false;
+    for (ShadowLog.LogItem log : logs) {
+      if (log.msg.contains(
+          "A document reference to foo/bar refers to a different database (other-project/other-db)"
+              + ", which is not supported. It will be treated as a reference in the current"
+              + " database (projectId/(default)) instead.")) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue("Expected warning log not found in " + logs, found);
   }
 
   @Test

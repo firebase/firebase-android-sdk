@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed the cross-database document reference warning log naming the referenced document rather than the document containing the reference.
+
 # 26.5.0
 
 - [changed] Increased the default gRPC flow control window size from 64KB to 256KB to speed up large document reads, and added support for configuring this window size via `FirebaseFirestoreSettings.Builder.setGrpcFlowControlWindow()`.
