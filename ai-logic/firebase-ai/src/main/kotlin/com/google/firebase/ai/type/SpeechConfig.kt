@@ -21,9 +21,8 @@ import kotlinx.serialization.Serializable
 /**
  * Configures a speaker with a unique name/identifier and a specific voice.
  *
- * Find the list of supported voices for
- * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
- * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
+ * See the documentation for the
+ * [list of supported voices](https://firebase.google.com/docs/ai-logic/generate-speech?api=dev#response-voices)
  *
  * @property speaker The unique name/identifier of the speaker.
  * @property voice The specific [Voice] assigned to this speaker.
