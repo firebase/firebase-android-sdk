@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a file descriptor leak when reading the native crash trace from
+  `ApplicationExitInfo`, which could trigger a StrictMode `CloseGuard` violation on the app start
+  following a native crash. (#8510)
+
 # 20.1.0
 
 - [changed] Updated `firebase-crashlytics` dependency to 20.1.0
