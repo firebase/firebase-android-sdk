@@ -16,6 +16,7 @@ package com.google.firebase.messaging;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -185,6 +187,75 @@ public class TopicSubscriptionClientRoboTest {
 
     assertThat(errorStream.isClosed()).isTrue();
     verify(mockConnection).disconnect();
+  }
+
+  @Test
+  public void testSubscribe_percentCharactersInTopic_arePathEncodedOnce() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+    String topic = "email.example.name%2Bafterplus%40example.com";
+
+    runOnBackground(() -> client.subscribe(topic));
+
+    assertThat(capturedRequestUrl().getPath())
+        .isEqualTo(
+            topicSubscriptionPath("email.example.name%252Bafterplus%2540example.com", "subscribe"));
+  }
+
+  @Test
+  public void testSubscribe_documentedTopicCharset_encodesOnlyPercent() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+    String topic = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~%";
+
+    runOnBackground(() -> client.subscribe(topic));
+
+    String path = capturedRequestUrl().getPath();
+    assertThat(path)
+        .isEqualTo(
+            topicSubscriptionPath(
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~%25",
+                "subscribe"));
+    assertThat(path).contains("-_.~%25");
+    assertThat(path).doesNotContain("%2D");
+    assertThat(path).doesNotContain("%5F");
+    assertThat(path).doesNotContain("%2E");
+    assertThat(path).doesNotContain("%7E");
+  }
+
+  @Test
+  public void testUnsubscribe_usesSameTopicEncodingAsSubscribe() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+    String topic = "email.example.name%2Bafterplus%40example.com";
+    String encodedTopic = "email.example.name%252Bafterplus%2540example.com";
+
+    runOnBackground(() -> client.subscribe(topic));
+    String subscribePath = capturedRequestUrl().getPath();
+    clearInvocations(client);
+    runOnBackground(() -> client.unsubscribe(topic));
+    String unsubscribePath = capturedRequestUrl().getPath();
+
+    assertThat(subscribePath).isEqualTo(topicSubscriptionPath(encodedTopic, "subscribe"));
+    assertThat(unsubscribePath).isEqualTo(topicSubscriptionPath(encodedTopic, "unsubscribe"));
+    assertThat(subscribePath).endsWith(":subscribe");
+    assertThat(unsubscribePath).endsWith(":unsubscribe");
+    assertThat(subscribePath).doesNotContain("%3Asubscribe");
+    assertThat(unsubscribePath).doesNotContain("%3Aunsubscribe");
+  }
+
+  private URL capturedRequestUrl() throws IOException {
+    ArgumentCaptor<URL> urlCaptor = ArgumentCaptor.forClass(URL.class);
+    verify(client).createConnection(urlCaptor.capture());
+    return urlCaptor.getValue();
+  }
+
+  private static String topicSubscriptionPath(String encodedTopic, String operation) {
+    return "/v1/projects/"
+        + TEST_PROJECT_ID
+        + "/registrations/"
+        + TEST_FID
+        + "/topicSubscriptions/"
+        + encodedTopic
+        + ":"
+        + operation;
   }
 
   private static class CloseTrackingInputStream extends ByteArrayInputStream {
