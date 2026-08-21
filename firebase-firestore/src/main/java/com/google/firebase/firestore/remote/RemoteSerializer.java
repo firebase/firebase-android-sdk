@@ -32,7 +32,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -500,8 +499,8 @@ public final class RemoteSerializer {
   // Queries
 
   @Nullable
-  public Map<String, String> encodeListenRequestLabels(TargetData targetData) {
-    @Nullable String value = encodeLabel(targetData.getPurpose());
+  public Map<String, String> encodeListenRequestLabels(RemoteTargetData targetData) {
+    @Nullable String value = encodeLabel(targetData.purpose);
     if (value == null) {
       return null;
     }
@@ -527,9 +526,9 @@ public final class RemoteSerializer {
     }
   }
 
-  public com.google.firestore.v1.Target encodeTarget(TargetData targetData) {
+  public com.google.firestore.v1.Target encodeTarget(RemoteTargetData targetData) {
     com.google.firestore.v1.Target.Builder builder = com.google.firestore.v1.Target.newBuilder();
-    TargetOrPipeline target = targetData.getTarget();
+    TargetOrPipeline target = targetData.target;
 
     if (target.isPipeline()) {
       PipelineQueryTarget.Builder pipelineBuilder = PipelineQueryTarget.newBuilder();
@@ -544,21 +543,21 @@ public final class RemoteSerializer {
       builder.setQuery(encodeQueryTarget(target.target()));
     }
 
-    builder.setTargetId(targetData.getTargetId());
+    builder.setTargetId(targetData.targetId.value());
 
-    if (targetData.getResumeToken().isEmpty()
-        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+    if (targetData.resumeToken.isEmpty()
+        && targetData.snapshotVersion.compareTo(SnapshotVersion.NONE) > 0) {
       // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
       // tests depend on this behaviour though (leaving min() out of serialization).
-      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+      builder.setReadTime(encodeTimestamp(targetData.snapshotVersion.getTimestamp()));
     } else {
-      builder.setResumeToken(targetData.getResumeToken());
+      builder.setResumeToken(targetData.resumeToken);
     }
 
-    if (targetData.getExpectedCount() != null
-        && (!targetData.getResumeToken().isEmpty()
-            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
-      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
+    if (targetData.expectedCount != null
+        && (!targetData.resumeToken.isEmpty()
+            || targetData.snapshotVersion.compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.expectedCount));
     }
 
     return builder.build();
@@ -1146,7 +1145,10 @@ public final class RemoteSerializer {
         }
         watchChange =
             new WatchTargetChange(
-                changeType, targetChange.getTargetIdsList(), targetChange.getResumeToken(), cause);
+                changeType,
+                RemoteTargetId.from(targetChange.getTargetIdsList()),
+                targetChange.getResumeToken(),
+                cause);
         break;
       case DOCUMENT_CHANGE:
         DocumentChange docChange = protoChange.getDocumentChange();
@@ -1158,7 +1160,12 @@ public final class RemoteSerializer {
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = ObjectValue.fromMap(docChange.getDocument().getFieldsMap());
         MutableDocument document = MutableDocument.newFoundDocument(key, version, data);
-        watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
+        watchChange =
+            new WatchChange.DocumentChange(
+                RemoteTargetId.from(added),
+                RemoteTargetId.from(removed),
+                document.getKey(),
+                document);
         break;
       case DOCUMENT_DELETE:
         DocumentDelete docDelete = protoChange.getDocumentDelete();
@@ -1168,19 +1175,22 @@ public final class RemoteSerializer {
         version = decodeVersion(docDelete.getReadTime());
         MutableDocument doc = MutableDocument.newNoDocument(key, version);
         watchChange =
-            new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
+            new WatchChange.DocumentChange(
+                Collections.emptyList(), RemoteTargetId.from(removed), doc.getKey(), doc);
         break;
       case DOCUMENT_REMOVE:
         DocumentRemove docRemove = protoChange.getDocumentRemove();
         removed = docRemove.getRemovedTargetIdsList();
         key = decodeKey(docRemove.getDocument());
-        watchChange = new WatchChange.DocumentChange(Collections.emptyList(), removed, key, null);
+        watchChange =
+            new WatchChange.DocumentChange(
+                Collections.emptyList(), RemoteTargetId.from(removed), key, null);
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
         ExistenceFilter filter =
             new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
-        int targetId = protoFilter.getTargetId();
+        RemoteTargetId targetId = RemoteTargetId.from(protoFilter.getTargetId());
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;
       case RESPONSETYPE_NOT_SET:

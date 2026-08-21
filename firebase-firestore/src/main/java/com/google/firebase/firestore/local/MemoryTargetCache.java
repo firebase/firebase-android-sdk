@@ -87,13 +87,13 @@ final class MemoryTargetCache implements TargetCache {
 
   @Override
   public void addTargetData(TargetData targetData) {
-    targets.put(targetData.getTarget(), targetData);
-    int targetId = targetData.getTargetId();
+    targets.put(targetData.target, targetData);
+    int targetId = targetData.targetId;
     if (targetId > highestTargetId) {
       highestTargetId = targetId;
     }
-    if (targetData.getSequenceNumber() > highestSequenceNumber) {
-      highestSequenceNumber = targetData.getSequenceNumber();
+    if (targetData.sequenceNumber > highestSequenceNumber) {
+      highestSequenceNumber = targetData.sequenceNumber;
     }
   }
 
@@ -105,8 +105,8 @@ final class MemoryTargetCache implements TargetCache {
 
   @Override
   public void removeTargetData(TargetData targetData) {
-    targets.remove(targetData.getTarget());
-    references.removeReferencesForId(targetData.getTargetId());
+    targets.remove(targetData.target);
+    references.removeReferencesForId(targetData.targetId);
   }
 
   /**
@@ -120,8 +120,8 @@ final class MemoryTargetCache implements TargetCache {
     for (Iterator<Map.Entry<TargetOrPipeline, TargetData>> it = targets.entrySet().iterator();
         it.hasNext(); ) {
       Map.Entry<TargetOrPipeline, TargetData> entry = it.next();
-      int targetId = entry.getValue().getTargetId();
-      long sequenceNumber = entry.getValue().getSequenceNumber();
+      int targetId = entry.getValue().targetId;
+      long sequenceNumber = entry.getValue().sequenceNumber;
       if (sequenceNumber <= upperBound && activeTargetIds.get(targetId) == null) {
         it.remove();
         removeMatchingKeysForTargetId(targetId);
