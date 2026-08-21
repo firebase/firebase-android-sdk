@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Topic subscribe and unsubscribe failed with HTTP 400 when the topic name contained
+  percent characters.
 - [changed] Internal adjustments
 
 # 25.1.2
