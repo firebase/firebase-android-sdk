@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] Internal adjustments
 - [changed] Updated the Firebase ML deprecation message to link to the Firebase ML documentation for migration options.
 
 # 26.1.0
