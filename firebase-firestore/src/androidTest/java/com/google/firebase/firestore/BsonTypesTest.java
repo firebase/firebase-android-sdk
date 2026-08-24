@@ -790,4 +790,48 @@ public class BsonTypesTest {
     assertEquals(
         getSnapshot.getDocuments().get(1).getRegexValue("key"), new RegexValue("^bar", "i"));
   }
+
+  @Test
+  public void numericIncrementWithBsonTypes() throws Exception {
+    DocumentReference docRef = testCollection().document();
+
+    waitFor(docRef.set(map("val", new Decimal128Value("10.5"))));
+    waitFor(docRef.update("val", FieldValue.increment(5.0)));
+    DocumentSnapshot actual = waitFor(docRef.get());
+    assertEquals(new Decimal128Value("15.5"), actual.get("val"));
+
+    waitFor(docRef.set(map("val", new Int32Value(10))));
+    waitFor(docRef.update("val", FieldValue.increment(5L)));
+    actual = waitFor(docRef.get());
+    assertEquals(15L, actual.get("val"));
+  }
+
+  @Test
+  public void numericMinimumAndMaximumWithBsonTypes() throws Exception {
+    DocumentReference docRef = testCollection().document();
+
+    // Minimum: Base wins
+    waitFor(docRef.set(map("val", new Decimal128Value("10.5"))));
+    waitFor(docRef.update("val", FieldValue.minimum(20.0)));
+    DocumentSnapshot actual = waitFor(docRef.get());
+    assertEquals(new Decimal128Value("10.5"), actual.get("val"));
+
+    // Minimum: Operand wins
+    waitFor(docRef.set(map("val", new Decimal128Value("10.5"))));
+    waitFor(docRef.update("val", FieldValue.minimum(5.0)));
+    actual = waitFor(docRef.get());
+    assertEquals(5.0, actual.get("val"));
+
+    // Maximum: Base wins
+    waitFor(docRef.set(map("val", new Int32Value(10))));
+    waitFor(docRef.update("val", FieldValue.maximum(5L)));
+    actual = waitFor(docRef.get());
+    assertEquals(new Int32Value(10), actual.get("val"));
+
+    // Maximum: Operand wins
+    waitFor(docRef.set(map("val", new Int32Value(10))));
+    waitFor(docRef.update("val", FieldValue.maximum(20L)));
+    actual = waitFor(docRef.get());
+    assertEquals(20L, actual.get("val"));
+  }
 }
