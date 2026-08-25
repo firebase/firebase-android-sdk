@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API.
+
 # 17.16.0
 
 - [feature] Added support for on-device structured output generation using `generateObject` (#8395)
