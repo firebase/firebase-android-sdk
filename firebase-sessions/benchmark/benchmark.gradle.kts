@@ -24,13 +24,14 @@ plugins {
 android {
   val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.benchmark.sessions"
   compileSdk = compileSdkVersion
 
   defaultConfig {
     targetSdk = targetSdkVersion
-    minSdk = 23
+    minSdk = minSdkVersion
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

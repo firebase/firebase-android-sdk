@@ -25,7 +25,6 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 23)
 public class OnSwipeListenerTest {
   private OnSwipeUpListener onSwipeListener;
   private boolean sweptUp;
