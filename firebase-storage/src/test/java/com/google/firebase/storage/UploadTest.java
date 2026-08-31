@@ -20,7 +20,6 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -62,7 +61,7 @@ import org.robolectric.shadows.ShadowNetworkInfo;
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.M)
+@Config(sdk = Config.OLDEST_SDK)
 public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";
