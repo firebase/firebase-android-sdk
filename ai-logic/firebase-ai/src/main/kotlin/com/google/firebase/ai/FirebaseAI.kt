@@ -211,7 +211,6 @@ internal constructor(
     }
     return LiveGenerativeModel(
       when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI,
         GenerativeBackendEnum.AGENT_PLATFORM ->
           "projects/${firebaseApp.options.projectId}/locations/${backend.location}/publishers/google/models/${modelName}"
         GenerativeBackendEnum.GOOGLE_AI ->

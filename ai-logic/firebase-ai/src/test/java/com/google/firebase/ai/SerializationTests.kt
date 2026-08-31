@@ -53,9 +53,6 @@ internal class SerializationTests {
           "totalTokens": {
             "type": "integer"
           },
-          "totalBillableCharacters": {
-            "type": "integer"
-          },
           "promptTokensDetails": {
             "type": "array",
             "items": {
