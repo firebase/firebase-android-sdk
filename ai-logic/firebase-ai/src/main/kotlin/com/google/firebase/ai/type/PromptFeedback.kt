@@ -28,7 +28,8 @@ import kotlinx.serialization.Serializable
  * @param safetyRatings A list of relevant [SafetyRating].
  * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
-public class PromptFeedback(
+public class PromptFeedback
+internal constructor(
   public val blockReason: BlockReason?,
   public val safetyRatings: List<SafetyRating>,
   public val blockReasonMessage: String?

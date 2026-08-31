@@ -38,18 +38,6 @@ internal constructor(
   public val modelVersion: String?
 ) {
 
-  // To maintain backwards compatibility with possible outside usage, we maintain a public
-  // constructor without the `InferenceSource`. Devs shouldn't be instantiating this class as it's
-  // for consumption only.
-  // Since any use previous to adding this parameter was for cloud inference, the source has been
-  // hard-coded to `IN_CLOUD`
-  @OptIn(PublicPreviewAPI::class)
-  public constructor(
-    candidates: List<Candidate>,
-    promptFeedback: PromptFeedback?,
-    usageMetadata: UsageMetadata?,
-  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata, null)
-
   /**
    * Convenience field representing all the text parts in the response as a single string.
    *

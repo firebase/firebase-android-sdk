@@ -14,27 +14,22 @@ package com.google.firebase.ai {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class DownloadStatus {
-    ctor public DownloadStatus();
   }
 
   public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.DownloadStatus {
-    ctor public DownloadStatus.DownloadCompleted();
   }
 
   public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.DownloadStatus {
-    ctor public DownloadStatus.DownloadFailed(com.google.firebase.ai.type.FirebaseAIException exception);
     method public com.google.firebase.ai.type.FirebaseAIException getException();
     property public final com.google.firebase.ai.type.FirebaseAIException exception;
   }
 
   public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.DownloadStatus {
-    ctor public DownloadStatus.DownloadInProgress(long totalBytesDownloaded);
     method public long getTotalBytesDownloaded();
     property public final long totalBytesDownloaded;
   }
 
   public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.DownloadStatus {
-    ctor public DownloadStatus.DownloadStarted(long bytesToDownload);
     method public long getBytesToDownload();
     property public final long bytesToDownload;
   }
@@ -100,7 +95,6 @@ package com.google.firebase.ai {
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public com.google.firebase.ai.OnDeviceExtension? getOnDeviceExtension();
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
-    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public final com.google.firebase.ai.OnDeviceExtension? onDeviceExtension;
   }
 
@@ -273,10 +267,10 @@ package com.google.firebase.ai.java {
     method public static final com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content, boolean turnComplete);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendAudioRealtime(com.google.firebase.ai.type.InlineData audio);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
-    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendStartActivityRealtime();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendStopActivityRealtime();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendTextRealtime(String text);
@@ -464,7 +458,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
-    ctor @Deprecated public CodeExecutionResultPart(String outcome, String output);
     method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.CodeExecutionResultPart createWithThinking(String outcome, String output, boolean isThought, String? thoughtSignature);
     method public boolean executionSucceeded();
     method public String getOutcome();
@@ -537,20 +530,15 @@ package com.google.firebase.ai.type {
   }
 
   public final class CountTokensResponse {
-    ctor public CountTokensResponse(int totalTokens, @Deprecated Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
-    method public operator Integer? component2();
-    method public operator java.util.List<com.google.firebase.ai.type.ModalityTokenCount>? component3();
+    method public operator java.util.List<com.google.firebase.ai.type.ModalityTokenCount> component2();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
-    method @Deprecated public Integer? getTotalBillableCharacters();
     method public int getTotalTokens();
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
-    property @Deprecated public final Integer? totalBillableCharacters;
     property public final int totalTokens;
   }
 
   public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
-    ctor @Deprecated public ExecutableCodePart(String language, String code);
     method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ExecutableCodePart createWithThinking(String language, String code, boolean isThought, String? thoughtSignature);
     method public String getCode();
     method public String getLanguage();
@@ -701,7 +689,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerateContentResponse {
-    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata);
     method public java.util.List<com.google.firebase.ai.type.Candidate> getCandidates();
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     method public com.google.firebase.ai.InferenceSource getInferenceSource();
@@ -781,8 +768,6 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform();
     method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
     method public static com.google.firebase.ai.type.GenerativeBackend googleAI();
-    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend vertexAI();
-    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
     field public static final com.google.firebase.ai.type.GenerativeBackend.Companion Companion;
   }
 
@@ -790,8 +775,6 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend agentPlatform();
     method public com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
     method public com.google.firebase.ai.type.GenerativeBackend googleAI();
-    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend vertexAI();
-    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
   public final class GoogleMaps {
@@ -799,7 +782,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class GoogleMapsGroundingChunk {
-    ctor public GoogleMapsGroundingChunk(String? uri, String? title, String? placeId);
     method public String? getPlaceId();
     method public String? getTitle();
     method public String? getUri();
@@ -812,18 +794,7 @@ package com.google.firebase.ai.type {
     ctor public GoogleSearch();
   }
 
-  @Deprecated public final class GroundingAttribution {
-    ctor @Deprecated public GroundingAttribution(com.google.firebase.ai.type.Segment segment, Float? confidenceScore);
-    method @Deprecated public Float? getConfidenceScore();
-    method @Deprecated public com.google.firebase.ai.type.Segment getSegment();
-    property @Deprecated public final Float? confidenceScore;
-    property @Deprecated public final com.google.firebase.ai.type.Segment segment;
-  }
-
   public final class GroundingChunk {
-    ctor public GroundingChunk();
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null);
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null, com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps = null);
     method public com.google.firebase.ai.type.GoogleMapsGroundingChunk? getMaps();
     method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
     property public final com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps;
@@ -831,14 +802,11 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingMetadata {
-    ctor public GroundingMetadata(java.util.List<java.lang.String> webSearchQueries, com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint, java.util.List<java.lang.String> retrievalQueries, @Deprecated java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution, java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks, java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports);
-    method @Deprecated public java.util.List<com.google.firebase.ai.type.GroundingAttribution> getGroundingAttribution();
     method public java.util.List<com.google.firebase.ai.type.GroundingChunk> getGroundingChunks();
     method public java.util.List<com.google.firebase.ai.type.GroundingSupport> getGroundingSupports();
     method public java.util.List<java.lang.String> getRetrievalQueries();
     method public com.google.firebase.ai.type.SearchEntryPoint? getSearchEntryPoint();
     method public java.util.List<java.lang.String> getWebSearchQueries();
-    property @Deprecated public final java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution;
     property public final java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks;
     property public final java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports;
     property public final java.util.List<java.lang.String> retrievalQueries;
@@ -847,7 +815,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingSupport {
-    ctor public GroundingSupport(com.google.firebase.ai.type.Segment segment, java.util.List<java.lang.Integer> groundingChunkIndices);
     method public java.util.List<java.lang.Integer> getGroundingChunkIndices();
     method public com.google.firebase.ai.type.Segment getSegment();
     property public final java.util.List<java.lang.Integer> groundingChunkIndices;
@@ -1253,7 +1220,6 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor @Deprecated public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete, com.google.firebase.ai.type.Transcription? inputTranscription, com.google.firebase.ai.type.Transcription? outputTranscription);
     method public com.google.firebase.ai.type.Content? getContent();
     method public boolean getGenerationComplete();
     method public com.google.firebase.ai.type.Transcription? getInputTranscription();
@@ -1269,7 +1235,6 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerGoAway implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerGoAway(kotlin.time.Duration? timeLeft);
     method public kotlin.time.Duration? getTimeLeft();
     property public final kotlin.time.Duration? timeLeft;
   }
@@ -1278,17 +1243,14 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerSetupComplete implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerSetupComplete();
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerToolCall implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerToolCall(java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls);
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerToolCallCancellation implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerToolCallCancellation(java.util.List<java.lang.String> functionIds);
     method public java.util.List<java.lang.String> getFunctionIds();
     property public final java.util.List<java.lang.String> functionIds;
   }
@@ -1309,7 +1271,6 @@ package com.google.firebase.ai.type {
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
     method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendStartActivityRealtime(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendStopActivityRealtime(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -1324,21 +1285,12 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSessionResumptionUpdate implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveSessionResumptionUpdate(String? newHandle = null, Boolean? resumable = null, Integer? lastConsumedClientMessageIndex = null);
     method public Integer? getLastConsumedClientMessageIndex();
     method public String? getNewHandle();
     method public Boolean? getResumable();
     property public final Integer? lastConsumedClientMessageIndex;
     property public final String? newHandle;
     property public final Boolean? resumable;
-  }
-
-  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
-    ctor @Deprecated public MediaData(byte[] data, String mimeType);
-    method @Deprecated public byte[] getData();
-    method @Deprecated public String getMimeType();
-    property @Deprecated public final byte[] data;
-    property @Deprecated public final String mimeType;
   }
 
   public final class ModalityTokenCount {
@@ -1378,7 +1330,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class PromptFeedback {
-    ctor public PromptFeedback(com.google.firebase.ai.type.BlockReason? blockReason, java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings, String? blockReasonMessage);
     method public com.google.firebase.ai.type.BlockReason? getBlockReason();
     method public String? getBlockReasonMessage();
     method public java.util.List<com.google.firebase.ai.type.SafetyRating> getSafetyRatings();
@@ -1636,7 +1587,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class SearchEntryPoint {
-    ctor public SearchEntryPoint(String renderedContent, String? sdkBlob);
     method public String getRenderedContent();
     method public String? getSdkBlob();
     property public final String renderedContent;
@@ -1644,7 +1594,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class Segment {
-    ctor public Segment(int startIndex, int endIndex, int partIndex, String text);
     method public int getEndIndex();
     method public int getPartIndex();
     method public int getStartIndex();
@@ -1874,7 +1823,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class UsageMetadata {
-    ctor @Deprecated public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCacheTokensDetails();
     method public int getCachedContentTokenCount();
     method public Integer? getCandidatesTokenCount();
@@ -1903,23 +1851,7 @@ package com.google.firebase.ai.type {
     property public final String voiceName;
   }
 
-  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class Voices {
-    method @Deprecated public int getOrdinal();
-    property @Deprecated public final int ordinal;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices AOEDE;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices CHARON;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices.Companion Companion;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices FENRIR;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices KORE;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices PUCK;
-    field @Deprecated public static final com.google.firebase.ai.type.Voices UNSPECIFIED;
-  }
-
-  @Deprecated public static final class Voices.Companion {
-  }
-
   public final class WebGroundingChunk {
-    ctor public WebGroundingChunk(String? uri, String? title, String? domain);
     method public String? getDomain();
     method public String? getTitle();
     method public String? getUri();

@@ -22,7 +22,6 @@ import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GoogleSearch
-import com.google.firebase.ai.type.GroundingAttribution
 import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
@@ -228,7 +227,6 @@ internal class SerializationTests {
         "webSearchQueries": { "type": "array", "items": { "type": "string" } },
         "searchEntryPoint": { "${'$'}ref": "SearchEntryPoint" },
         "retrievalQueries": { "type": "array", "items": { "type": "string" } },
-        "groundingAttribution": { "type": "array", "items": { "${'$'}ref": "GroundingAttribution" } },
         "groundingChunks": { "type": "array", "items": { "${'$'}ref": "GroundingChunk" } },
         "groundingSupports": { "type": "array", "items": { "${'$'}ref": "GroundingSupport" } }
       }
@@ -382,28 +380,6 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(UrlMetadata.Internal.serializer().descriptor)
-    expectedJsonAsString shouldEqualJson actualJson.toString()
-  }
-
-  @Test
-  fun `test GroundingAttribution serialization as Json`() {
-    val expectedJsonAsString =
-      """
-      {
-        "id": "GroundingAttribution",
-        "type": "object",
-        "properties": {
-          "segment": {
-            "${'$'}ref": "Segment"
-          },
-          "confidenceScore": {
-            "type": "number"
-          }
-        }
-      }
-      """
-        .trimIndent()
-    val actualJson = descriptorToJson(GroundingAttribution.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 

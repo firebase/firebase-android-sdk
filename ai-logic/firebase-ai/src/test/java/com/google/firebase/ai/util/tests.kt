@@ -108,7 +108,7 @@ internal typealias CommonTest = suspend CommonTestScope.() -> Unit
 internal fun commonTest(
   status: HttpStatusCode = HttpStatusCode.OK,
   requestOptions: RequestOptions = RequestOptions(),
-  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  backend: GenerativeBackend = GenerativeBackend.agentPlatform(),
   tools: List<Tool> = emptyList(),
   requestHandler: (HttpRequestData) -> Unit = {},
   block: CommonTest,
@@ -175,7 +175,7 @@ internal fun commonTest(
 internal fun commonMultiTurnTest(
   responses: List<ResponseInfo>,
   requestOptions: RequestOptions = RequestOptions(),
-  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  backend: GenerativeBackend = GenerativeBackend.agentPlatform(),
   tools: List<Tool> = emptyList(),
   requestHandler: (HttpRequestData) -> Unit = {},
   responseLoader: suspend (String, ByteChannel) -> Unit,
@@ -236,7 +236,7 @@ internal fun commonMultiTurnTest(
  */
 internal fun goldenStreamingFile(
   responses: List<ResponseInfo>,
-  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  backend: GenerativeBackend = GenerativeBackend.agentPlatform(),
   tools: List<Tool> = emptyList(),
   requestHandler: (HttpRequestData) -> Unit,
   block: CommonTest,
@@ -366,7 +366,7 @@ internal fun goldenDevAPIStreamingFile(
  */
 internal fun goldenUnaryFile(
   responses: List<ResponseInfo>,
-  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  backend: GenerativeBackend = GenerativeBackend.agentPlatform(),
   tools: List<Tool> = emptyList(),
   block: CommonTest,
 ) = doBlocking {
@@ -397,7 +397,7 @@ internal fun goldenUnaryFile(
 internal fun goldenVertexUnaryFiles(
   responses: List<ResponseInfo>,
   requestOptions: RequestOptions,
-  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  backend: GenerativeBackend = GenerativeBackend.agentPlatform(),
   tools: List<Tool> = emptyList(),
   block: CommonTest,
 ) = doBlocking {
