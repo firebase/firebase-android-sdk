@@ -257,11 +257,15 @@ public class CrashpadController {
         .build();
   }
 
+  @VisibleForTesting
   @RequiresApi(api = Build.VERSION_CODES.S)
-  private static String getTraceFileFromApplicationExitInfo(
-      ApplicationExitInfo applicationExitInfo) {
-    try {
-      return convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+  static String getTraceFileFromApplicationExitInfo(ApplicationExitInfo applicationExitInfo) {
+    // The stream returned by getTraceInputStream() wraps a ParcelFileDescriptor that is only
+    // released when the stream is closed. Leaving it open leaks the file descriptor until the
+    // finalizer runs, which StrictMode's detectLeakedClosableObjects() reports as a CloseGuard
+    // violation. try-with-resources is null safe, so a missing trace still returns null.
+    try (InputStream traceInputStream = applicationExitInfo.getTraceInputStream()) {
+      return convertInputStreamToString(traceInputStream);
     } catch (IOException e) {
       Logger.getLogger().w("Failed to get input stream from ApplicationExitInfo");
     }
