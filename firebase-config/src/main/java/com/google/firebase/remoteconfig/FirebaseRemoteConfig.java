@@ -18,6 +18,7 @@ import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
 import com.google.android.gms.tasks.Task;
@@ -35,6 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
+import com.google.firebase.remoteconfig.internal.DefaultsJsonParser;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.ArrayList;
@@ -537,6 +539,18 @@ public class FirebaseRemoteConfig {
   public Task<Void> setDefaultsAsync(@XmlRes int resourceId) {
     Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
     return setDefaultsWithStringsMapAsync(xmlDefaults);
+  }
+
+  /**
+   * Sets default configs using a JSON resource.
+   *
+   * @param resourceId Id for the JSON resource, which should be in your application's {@code
+   *     res/raw} folder.
+   */
+  @NonNull
+  public Task<Void> setDefaultsAsyncJson(@RawRes int resourceId) {
+    Map<String, String> jsonDefaults = DefaultsJsonParser.getDefaultsFromJson(context, resourceId);
+    return setDefaultsWithStringsMapAsync(jsonDefaults);
   }
 
   /**
