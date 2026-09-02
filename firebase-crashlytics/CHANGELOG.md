@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Added consumer ProGuard rules to prevent R8 missing-class warnings for
+  `ProfilingManager` and `ProfilingTrigger` on older compileSdk versions
+
 # 20.1.0
 
 - [feature] Added OOM and Anomaly trigger collection for the ProfilingManager API [#8343]
