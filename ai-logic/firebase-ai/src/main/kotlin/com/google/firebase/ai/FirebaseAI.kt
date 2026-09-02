@@ -37,6 +37,7 @@ import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.platforminfo.UserAgentPublisher
 import kotlin.coroutines.CoroutineContext
 
 /** Entry point for all _Firebase AI_ functionality. */
@@ -48,6 +49,7 @@ internal constructor(
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
   private val onDeviceFactoryProvider: Provider<FirebaseAIOnDeviceGenerativeModelFactory>,
+  private val userAgentPublisher: Provider<UserAgentPublisher>,
   private val useLimitedUseAppCheckTokens: Boolean
 ) {
 
@@ -148,6 +150,10 @@ internal constructor(
         this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
         this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
         this.appCheckTokenProvider = appCheckProvider.get()
+        val userAgent = userAgentPublisher.get()?.userAgent ?: ""
+        if (userAgent.isNotEmpty()) {
+          this.apiClient = "${this.apiClient} $userAgent"
+        }
       }
       .build()
   }
@@ -166,6 +172,10 @@ internal constructor(
     toolConfig: TemplateToolConfig? = null,
   ): TemplateGenerativeModel {
     val templateUri = getTemplateUri(backend)
+    val baseApiClient = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
+    val userAgent = userAgentPublisher.get()?.userAgent ?: ""
+    val apiClient = if (userAgent.isNotEmpty()) "$baseApiClient $userAgent" else baseApiClient
+
     return TemplateGenerativeModel(
       templateUri,
       firebaseApp.options.apiKey,
@@ -176,6 +186,7 @@ internal constructor(
       toolConfig,
       appCheckProvider.get(),
       internalAuthProvider.get(),
+      apiClient
     )
   }
 
@@ -210,6 +221,10 @@ internal constructor(
           .trimIndent(),
       )
     }
+    val baseApiClient = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
+    val userAgent = userAgentPublisher.get()?.userAgent ?: ""
+    val apiClient = if (userAgent.isNotEmpty()) "$baseApiClient $userAgent" else baseApiClient
+
     return LiveGenerativeModel(
       when (backend.backend) {
         GenerativeBackendEnum.VERTEX_AI,
@@ -230,6 +245,7 @@ internal constructor(
       internalAuthProvider.get(),
       backend,
       useLimitedUseAppCheckTokens,
+      apiClient
     )
   }
 
