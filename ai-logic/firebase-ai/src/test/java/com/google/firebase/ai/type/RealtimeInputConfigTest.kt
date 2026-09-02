@@ -118,8 +118,8 @@ internal class RealtimeInputConfigTest {
   }
 
   @Test
-  fun `BidiGenerateContentRealtimeInputSetup with activityStart serializes correctly`() {
-    val setup = LiveSession.BidiGenerateContentRealtimeInputSetup(activityStart = true)
+  fun `LiveRealtimeInput with activityStart serializes correctly`() {
+    val setup = LiveSession.LiveRealtimeInput(activityStart = true)
 
     val expectedJson =
       """
@@ -135,8 +135,8 @@ internal class RealtimeInputConfigTest {
   }
 
   @Test
-  fun `BidiGenerateContentRealtimeInputSetup with activityEnd serializes correctly`() {
-    val setup = LiveSession.BidiGenerateContentRealtimeInputSetup(activityEnd = true)
+  fun `LiveRealtimeInput with activityEnd serializes correctly`() {
+    val setup = LiveSession.LiveRealtimeInput(activityEnd = true)
 
     val expectedJson =
       """

@@ -214,9 +214,8 @@ internal constructor(
       .map { it.validate() }
       .catch { throw FirebaseAIException.from(it) }
 
-  private fun getBidiEndpoint(location: String): String =
+  private fun getLiveEndpoint(location: String): String =
     when (backend?.backend) {
-      GenerativeBackendEnum.VERTEX_AI,
       GenerativeBackendEnum.AGENT_PLATFORM,
       null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
@@ -230,7 +229,7 @@ internal constructor(
     // the same timeout-protected path as HTTP methods, then set them synchronously inside the
     // lambda.
     val extraHeaders = extractHeaders(headerProvider)
-    return client.webSocketSession(getBidiEndpoint(location)) {
+    return client.webSocketSession(getLiveEndpoint(location)) {
       applyCommonHeaders()
       for ((tag, value) in extraHeaders) {
         header(tag, value)
