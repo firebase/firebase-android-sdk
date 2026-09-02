@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Enabled the Relocation Read-Only (RELRO) flag across Crashlytics NDK shared libraries,
+  making relocation sections read-only after loading to mitigate security exploits (#8566)
+
 # 20.1.0
 
 - [changed] Updated `firebase-crashlytics` dependency to 20.1.0
