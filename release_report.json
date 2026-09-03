@@ -1,0 +1,146 @@
+{
+    "changesByLibraryName": {
+        "firebase-common": [
+            {
+                "commitId": "3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prId": "8551",
+                "author": "emilypgoogle",
+                "message": "Removed usage of deprecated GMS Objects class (#8551)\n\nThe GMS Objects class is no longer recommended for usage and we are\ngetting downstream edits to source because of it. Fixes the problem at\nthe sources and moves to `java.util.Objects` for relevant calls.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8551"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "fc5a2bee3a2f81f2f35652867628a3f4913e915d",
+                "prId": "8567",
+                "author": "Matthew Robertson",
+                "message": "Added consumer rules to prevent R8 missing-class warnings (#8567)\n\nAdded consumer ProGuard rules to prevent R8 missing-class warnings for\n`ProfilingManager` and `ProfilingTrigger` on older compileSdk versions",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fc5a2bee3a2f81f2f35652867628a3f4913e915d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8567"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "6fa91c3a60303ba1c485c82a6af89d269395307a",
+                "prId": "8566",
+                "author": "Matthew Robertson",
+                "message": "Remove norelro linker flag to enable RELRO (#8566)\n\nRemoved the `norelro` linker flag to enable Relocation Read-Only (RELRO)\nacross Crashlytics NDK binaries, making relocation sections read-only\nafter loading to mitigate security exploits\n\nVerified by running `llvm-readelf -l \"$f\" | grep GNU_RELRO` for each\nbinary, see https://paste.googleplex.com/5633939205652480\n\nThis increases each file size by only 120–200 bytes per binary\n\nTested manually on a physical device",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6fa91c3a60303ba1c485c82a6af89d269395307a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8566"
+            }
+        ],
+        "firebase-sessions": [],
+        "firebase-database": [
+            {
+                "commitId": "3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prId": "8551",
+                "author": "emilypgoogle",
+                "message": "Removed usage of deprecated GMS Objects class (#8551)\n\nThe GMS Objects class is no longer recommended for usage and we are\ngetting downstream edits to source because of it. Fixes the problem at\nthe sources and moves to `java.util.Objects` for relevant calls.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8551"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prId": "8551",
+                "author": "emilypgoogle",
+                "message": "Removed usage of deprecated GMS Objects class (#8551)\n\nThe GMS Objects class is no longer recommended for usage and we are\ngetting downstream edits to source because of it. Fixes the problem at\nthe sources and moves to `java.util.Objects` for relevant calls.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8551"
+            },
+            {
+                "commitId": "e85c3696de3c7acd691019d21e5d55c6e6e27ba7",
+                "prId": "8538",
+                "author": "Eldhose M Babu",
+                "message": "Updating Github code to make it compatible for Google 3 importing. (#8538)\n\nUpdating Github code to make it compatible for Google 3 importing.\n\n- Updated TopicSubscriptionClient to expose HttpConnectionFactory for\nHermetic tests in G3\n- Updated TopicSubscriptionClientTests to avoid mocking on InputStream\nsince its not supported inside G3\n- Updated DisplayNotificationTests SDK version.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e85c3696de3c7acd691019d21e5d55c6e6e27ba7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8538"
+            },
+            {
+                "commitId": "86bfe747c513c45acdf42df424e00f33d9562dfa",
+                "prId": "8535",
+                "author": "Mila",
+                "message": "[FCM] update testing code (#8535)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/86bfe747c513c45acdf42df424e00f33d9562dfa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8535"
+            },
+            {
+                "commitId": "a09975045bfe46ace4ae44ca80886da667635acb",
+                "prId": "8534",
+                "author": "Eldhose M Babu",
+                "message": "Fixing: StrictMode LeakedClosableViolation in TopicSubscriptionClient (#8534)\n\nFixing: StrictMode LeakedClosableViolation in TopicSubscriptionClient\n\nhttps://github.com/firebase/firebase-android-sdk/issues/8496",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a09975045bfe46ace4ae44ca80886da667635acb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8534"
+            },
+            {
+                "commitId": "bbc6f4f1ad8c37f0c40b112dce9054055deb1d1f",
+                "prId": "8530",
+                "author": "Eldhose M Babu",
+                "message": "Removing DoNotMock supression and Legacy mode (#8530)\n\nRemoving DoNotMock supression and Legacy mode",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bbc6f4f1ad8c37f0c40b112dce9054055deb1d1f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8530"
+            }
+        ],
+        "firebase-messaging-directboot": [],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prId": "8551",
+                "author": "emilypgoogle",
+                "message": "Removed usage of deprecated GMS Objects class (#8551)\n\nThe GMS Objects class is no longer recommended for usage and we are\ngetting downstream edits to source because of it. Fixes the problem at\nthe sources and moves to `java.util.Objects` for relevant calls.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8551"
+            },
+            {
+                "commitId": "71c01bbcbd888ac9a3ebad06cb0cf2053f71f7bf",
+                "prId": "8533",
+                "author": "Mila",
+                "message": "Update the deprecation message (#8533)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/71c01bbcbd888ac9a3ebad06cb0cf2053f71f7bf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8533"
+            }
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prId": "8551",
+                "author": "emilypgoogle",
+                "message": "Removed usage of deprecated GMS Objects class (#8551)\n\nThe GMS Objects class is no longer recommended for usage and we are\ngetting downstream edits to source because of it. Fixes the problem at\nthe sources and moves to `java.util.Objects` for relevant calls.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3875e1c20d214e0b8ac427efa7a6ffd2f5f51219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8551"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "381e6d7dd8375392d1e7fb18372b607244e61b00",
+                "prId": "8562",
+                "author": "Mila",
+                "message": "[AI] Update speaker voice config error test message (#8562)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/381e6d7dd8375392d1e7fb18372b607244e61b00",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8562"
+            },
+            {
+                "commitId": "9902c7fce5b8c0f9e9b020c0d0307f4b4582259e",
+                "prId": "8550",
+                "author": "emilypgoogle",
+                "message": "Add missing turnComplete field for LiveSessionFutures (#8550)\n\nThese fields were missing from the Kotlin API for a while but we never\nadded them to Java when we introduced them.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9902c7fce5b8c0f9e9b020c0d0307f4b4582259e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8550"
+            },
+            {
+                "commitId": "6fca47199af233c8172c607a37387ca2348b4661",
+                "prId": "8547",
+                "author": "Mila",
+                "message": "[AI] update Voice documentation (#8547)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6fca47199af233c8172c607a37387ca2348b4661",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8547"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-dataconnect",
+        ":firebase-firestore"
+    ]
+}
