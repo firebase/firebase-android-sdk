@@ -150,11 +150,9 @@ internal constructor(
         this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
         this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
         this.appCheckTokenProvider = appCheckProvider.get()
-        val customUserAgents = userAgentPublisher.get()?.userAgent ?: ""
-        val adkUserAgent =
-          customUserAgents.split(' ').firstOrNull { it.startsWith("google-adk/") } ?: ""
-        if (adkUserAgent.isNotEmpty()) {
-          this.apiClient = "${this.apiClient} $adkUserAgent"
+        val userAgent = userAgentPublisher.get()?.userAgent ?: ""
+        if (userAgent.isNotEmpty()) {
+          this.apiClient = "${this.apiClient} $userAgent"
         }
       }
       .build()
@@ -175,10 +173,8 @@ internal constructor(
   ): TemplateGenerativeModel {
     val templateUri = getTemplateUri(backend)
     val baseApiClient = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
-    val customUserAgents = userAgentPublisher.get()?.userAgent ?: ""
-    val adkUserAgent =
-      customUserAgents.split(' ').firstOrNull { it.startsWith("google-adk/") } ?: ""
-    val apiClient = if (adkUserAgent.isNotEmpty()) "$baseApiClient $adkUserAgent" else baseApiClient
+    val userAgent = userAgentPublisher.get()?.userAgent ?: ""
+    val apiClient = if (userAgent.isNotEmpty()) "$baseApiClient $userAgent" else baseApiClient
 
     return TemplateGenerativeModel(
       templateUri,
