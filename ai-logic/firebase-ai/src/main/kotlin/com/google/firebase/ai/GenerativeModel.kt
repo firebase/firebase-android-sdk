@@ -328,6 +328,14 @@ internal constructor(
      * @return A [GenerativeModelProvider] that uses the cloud backend.
      */
     internal fun buildCloudModelProvider(isHybrid: Boolean = false): GenerativeModelProvider {
+      var finalApiClient = apiClient
+      if (!requestOptions.customApiClientHeader.isNullOrEmpty()) {
+        finalApiClient = "$finalApiClient ${requestOptions.customApiClientHeader}"
+      }
+      if (isHybrid) {
+        finalApiClient = "$finalApiClient hybrid"
+      }
+
       return CloudGenerativeModelProvider(
         modelName = modelName,
         generationConfig = generationConfig,
@@ -341,7 +349,7 @@ internal constructor(
             apiKey,
             modelName,
             requestOptions,
-            if (isHybrid) "${apiClient} hybrid" else apiClient,
+            finalApiClient,
             firebaseApp,
             AppCheckHeaderProvider(
               TAG,

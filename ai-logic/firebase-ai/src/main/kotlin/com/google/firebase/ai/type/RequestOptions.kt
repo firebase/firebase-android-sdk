@@ -27,7 +27,8 @@ internal constructor(
   internal val timeout: Duration,
   internal val endpoint: String = "https://firebasevertexai.googleapis.com",
   internal val apiVersion: String = "v1beta",
-  internal val autoFunctionCallingTurnLimit: Int
+  internal val autoFunctionCallingTurnLimit: Int,
+  internal val customApiClientHeader: String? = null
 ) {
 
   /**
@@ -39,9 +40,11 @@ internal constructor(
   @JvmOverloads
   public constructor(
     timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
-    autoFunctionCallingTurnLimit: Int = 10
+    autoFunctionCallingTurnLimit: Int = 10,
+    customApiClientHeader: String? = null
   ) : this(
     timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
-    autoFunctionCallingTurnLimit = autoFunctionCallingTurnLimit
+    autoFunctionCallingTurnLimit = autoFunctionCallingTurnLimit,
+    customApiClientHeader = customApiClientHeader
   )
 }
