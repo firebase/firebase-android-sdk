@@ -148,9 +148,8 @@ internal constructor(
         this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
         this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
         this.appCheckTokenProvider = appCheckProvider.get()
-        if (!requestOptions.customApiClientHeader.isNullOrEmpty()) {
-          this.apiClient = "${this.apiClient} ${requestOptions.customApiClientHeader}"
-        }
+
+
       }
       .build()
   }
