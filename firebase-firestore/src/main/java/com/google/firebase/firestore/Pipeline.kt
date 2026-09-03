@@ -36,6 +36,7 @@ import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.DatabaseSource
 import com.google.firebase.firestore.pipeline.DefineStage
+import com.google.firebase.firestore.pipeline.DeleteStage
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expression
@@ -44,8 +45,10 @@ import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestOptions
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpression
+import com.google.firebase.firestore.pipeline.InsertStage
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
+import com.google.firebase.firestore.pipeline.LiteralsSource
 import com.google.firebase.firestore.pipeline.OffsetStage
 import com.google.firebase.firestore.pipeline.Ordering
 import com.google.firebase.firestore.pipeline.RawStage
@@ -61,6 +64,8 @@ import com.google.firebase.firestore.pipeline.SubcollectionSource
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
+import com.google.firebase.firestore.pipeline.UpdateStage
+import com.google.firebase.firestore.pipeline.UpsertStage
 import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.pipeline.evaluation.notImplemented
 import com.google.firebase.firestore.remote.RemoteSerializer
@@ -68,6 +73,7 @@ import com.google.firebase.firestore.util.Logger
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
+import com.google.firestore.v1.TransactionOptions
 import com.google.firestore.v1.Value
 
 /**
@@ -112,6 +118,8 @@ internal constructor(
     }
 
     fun withIndexMode(indexMode: IndexMode): ExecuteOptions = with("index_mode", indexMode.value)
+
+    fun withAtomic(atomic: Boolean): ExecuteOptions = with("atomic", atomic)
   }
 
   /**
@@ -176,6 +184,13 @@ internal constructor(
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
     builder.structuredPipeline = toStructuredPipelineProto(options, firestore.userDataReader)
+    if (options != null && options.hasAtomic()) {
+      builder.newTransaction =
+        TransactionOptions.newBuilder()
+          .setReadWrite(TransactionOptions.ReadWrite.getDefaultInstance())
+          .build()
+      builder.autoCommitTransaction = true
+    }
     return builder.build()
   }
 
@@ -1107,10 +1122,32 @@ internal constructor(
    * @return A new `Pipeline` object with this stage appended to the stage list.
    */
   @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
+
+  fun delete(): Pipeline = append(DeleteStage())
+
+  fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
+
+  @JvmOverloads
+  fun insert(collectionPath: String, documentIdExpr: Expression? = null): Pipeline =
+    append(InsertStage(collectionPath, documentIdExpr))
+
+  fun upsert(vararg transforms: Selectable): Pipeline = append(UpsertStage(transforms))
+
+  fun upsert(
+    vararg transforms: Selectable,
+    collectionPath: String? = null,
+    documentIdExpr: Expression? = null
+  ): Pipeline = append(UpsertStage(transforms, collectionPath, documentIdExpr))
 }
 
 /** Start of a Firestore Pipeline */
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
+
+  /** Set the pipeline's source to literal document maps. */
+  fun literals(vararg data: Map<String, Any?>): Pipeline = literals(data.toList())
+
+  fun literals(data: List<Map<String, Any?>>): Pipeline =
+    Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data)))
 
   /**
    * Convert the given Query into an equivalent Pipeline.
@@ -1239,6 +1276,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [documents] provided targets a different
    * project or database than the pipeline.
    */
+  @JvmName("documents")
+  fun documents(documents: List<DocumentReference>): Pipeline = documents(*documents.toTypedArray())
+
   fun documents(vararg documents: DocumentReference): Pipeline {
     val databaseId = firestore.databaseId
     for (document in documents) {
@@ -1254,6 +1294,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       DocumentsSource(documents.map { ResourcePath.fromString(it.path) }.toTypedArray())
     )
   }
+
+  @JvmName("documentsByPath")
+  fun documents(documents: List<String>): Pipeline = documents(*documents.toTypedArray())
 
   companion object {
     /**
