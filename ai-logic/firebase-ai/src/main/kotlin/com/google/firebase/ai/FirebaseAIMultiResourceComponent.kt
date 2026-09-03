@@ -24,7 +24,6 @@ import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
-import com.google.firebase.platforminfo.UserAgentPublisher
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -37,8 +36,7 @@ internal class FirebaseAIMultiResourceComponent(
   @Blocking val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
-  private val onDeviceFactoryProvider: Provider<FirebaseAIOnDeviceGenerativeModelFactory>,
-  private val userAgentPublisher: Provider<UserAgentPublisher>
+  private val onDeviceFactoryProvider: Provider<FirebaseAIOnDeviceGenerativeModelFactory>
 ) {
 
   @GuardedBy("this") private val instances: MutableMap<InstanceKey, FirebaseAI> = mutableMapOf()
@@ -53,7 +51,6 @@ internal class FirebaseAIMultiResourceComponent(
           appCheckProvider,
           internalAuthProvider,
           onDeviceFactoryProvider,
-          userAgentPublisher,
           key.useLimitedUseAppCheckTokens
         )
       }

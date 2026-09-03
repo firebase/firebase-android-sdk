@@ -28,7 +28,6 @@ import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import com.google.firebase.platforminfo.UserAgentPublisher
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -47,15 +46,13 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
         .add(Dependency.optionalProvider(ondeviceInterop))
-        .add(Dependency.optionalProvider(userAgentPublisher))
         .factory { container ->
           FirebaseAIMultiResourceComponent(
             container[firebaseApp],
             container.get(blockingDispatcher),
             container.getProvider(appCheckInterop),
             container.getProvider(internalAuthProvider),
-            container.getProvider(ondeviceInterop),
-            container.getProvider(userAgentPublisher)
+            container.getProvider(ondeviceInterop)
           )
         }
         .build(),
@@ -69,7 +66,6 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
     private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)
     private val internalAuthProvider = unqualified(InternalAuthProvider::class.java)
     private val ondeviceInterop = unqualified(FirebaseAIOnDeviceGenerativeModelFactory::class.java)
-    private val userAgentPublisher = unqualified(UserAgentPublisher::class.java)
     private val blockingDispatcher =
       Qualified.qualified(Blocking::class.java, CoroutineDispatcher::class.java)
   }
