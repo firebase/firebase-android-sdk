@@ -35,7 +35,7 @@ extra["targetSdkVersion"] = 34
 
 extra["compileSdkVersion"] = 34
 
-extra["minSdkVersion"] = 23
+extra["minSdkVersion"] = 24
 
 firebaseContinuousIntegration {
   ignorePaths =

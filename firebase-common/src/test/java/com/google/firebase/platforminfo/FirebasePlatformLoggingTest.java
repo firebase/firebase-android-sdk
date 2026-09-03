@@ -87,22 +87,6 @@ public class FirebasePlatformLoggingTest {
   }
 
   @Test
-  @Config(sdk = Config.OLDEST_SDK)
-  public void test_auto_atNotHighEnoughApiLevel() {
-    ShadowPackageManager shadowPackageManager =
-        shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-    shadowPackageManager.setSystemFeature(PackageManager.FEATURE_AUTOMOTIVE, true);
-    withApp(
-        "myApp",
-        OPTIONS,
-        app -> {
-          UserAgentPublisher ua = app.get(UserAgentPublisher.class);
-
-          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-installer/($|\\s)"));
-        });
-  }
-
-  @Test
   @Config(sdk = Build.VERSION_CODES.O)
   public void test_embedded_atHighEnoughApiLevel() {
     ShadowPackageManager shadowPackageManager =
@@ -119,7 +103,7 @@ public class FirebasePlatformLoggingTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.M)
+  @Config(sdk = Build.VERSION_CODES.N)
   public void test_embedded_atNotHighEnoughApiLevel() {
     ShadowPackageManager shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
