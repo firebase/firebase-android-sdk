@@ -148,8 +148,6 @@ internal constructor(
         this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
         this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
         this.appCheckTokenProvider = appCheckProvider.get()
-
-
       }
       .build()
   }
