@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.settings;
 
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
+import com.google.firebase.crashlytics.internal.settings.Settings.Profiling;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -55,6 +56,11 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
 
     long expiresAtMillis = getExpiresAtFrom(currentTimeProvider, cacheDuration, json);
 
+    Profiling profiling =
+        json.has(SettingsJsonConstants.PROFILING_KEY)
+            ? buildProfilingDataFrom(json.getJSONObject(SettingsJsonConstants.PROFILING_KEY))
+            : buildProfilingDataFrom(new JSONObject());
+
     return new Settings(
         expiresAtMillis,
         sessionData,
@@ -63,7 +69,8 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         cacheDuration,
         onDemandUploadRatePerMinute,
         onDemandBackoffBase,
-        onDemandBackoffStepDurationSeconds);
+        onDemandBackoffStepDurationSeconds,
+        profiling);
   }
 
   private static Settings.FeatureFlagData buildFeatureFlagDataFrom(JSONObject json) {
@@ -94,6 +101,14 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         SettingsJsonConstants.SETTINGS_MAX_COMPLETE_SESSIONS_COUNT_DEFAULT;
 
     return new Settings.SessionData(maxCustomExceptionEvents, maxCompleteSessionsCount);
+  }
+
+  private static Settings.Profiling buildProfilingDataFrom(JSONObject json) {
+    boolean heapDumpCollectionEnabled =
+        json.optBoolean(
+            SettingsJsonConstants.PROFILING_HEAP_DUMP_COLLECTION_ENABLED_KEY,
+            SettingsJsonConstants.PROFILING_HEAP_DUMP_COLLECTION_ENABLED_DEFAULT);
+    return new Profiling(heapDumpCollectionEnabled);
   }
 
   private static long getExpiresAtFrom(

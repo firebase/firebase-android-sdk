@@ -49,6 +49,16 @@ public class Settings {
   public final double onDemandBackoffBase;
   public final int onDemandBackoffStepDurationSeconds;
 
+  public static class Profiling {
+    public final boolean heapDumpCollectionEnabled;
+
+    public Profiling(boolean heapDumpCollectionEnabled) {
+      this.heapDumpCollectionEnabled = heapDumpCollectionEnabled;
+    }
+  }
+
+  public final Profiling profiling;
+
   public Settings(
       long expiresAtMillis,
       SessionData sessionData,
@@ -58,6 +68,28 @@ public class Settings {
       double onDemandUploadRatePerMinute,
       double onDemandBackoffBase,
       int onDemandBackoffStepDurationSeconds) {
+    this(
+        expiresAtMillis,
+        sessionData,
+        featureFlagData,
+        settingsVersion,
+        cacheDuration,
+        onDemandUploadRatePerMinute,
+        onDemandBackoffBase,
+        onDemandBackoffStepDurationSeconds,
+        new Profiling(false));
+  }
+
+  public Settings(
+      long expiresAtMillis,
+      SessionData sessionData,
+      FeatureFlagData featureFlagData,
+      int settingsVersion,
+      int cacheDuration,
+      double onDemandUploadRatePerMinute,
+      double onDemandBackoffBase,
+      int onDemandBackoffStepDurationSeconds,
+      Profiling profiling) {
     this.expiresAtMillis = expiresAtMillis;
     this.sessionData = sessionData;
     this.featureFlagData = featureFlagData;
@@ -66,6 +98,7 @@ public class Settings {
     this.onDemandUploadRatePerMinute = onDemandUploadRatePerMinute;
     this.onDemandBackoffBase = onDemandBackoffBase;
     this.onDemandBackoffStepDurationSeconds = onDemandBackoffStepDurationSeconds;
+    this.profiling = profiling;
   }
 
   public boolean isExpired(long currentTimeMillis) {
