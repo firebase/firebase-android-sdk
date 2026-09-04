@@ -37,7 +37,7 @@ import kotlinx.serialization.serializerOrNull
  *
  * * **On-device (hybrid) inference:** Requires using the `@Generable` annotation on a `data class`. Manual
  * schemas and direct `enum class` annotations are not supported.
- * * **Cloud-Only:** Supports both `@Generable` annotations and manual schemas.
+ * * **Cloud-based inference:** Supports both `@Generable` annotations and manual schemas.
  */
 public class JsonSchema<T : Any>
 internal constructor(
