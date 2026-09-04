@@ -45,7 +45,7 @@ public abstract class Getter {
   /**
    * Getter's underlying Java type.
    *
-   * <p>The type is fully resolved with respect to generics, i.e. {@code Optional<MyType<String>>},
+   * <p>The type is fully resolved with respect to generics, for example, {@code Optional<MyType<String>>},
    * not {@code Optional<T>}.
    */
   public TypeMirror getUnderlyingType() {

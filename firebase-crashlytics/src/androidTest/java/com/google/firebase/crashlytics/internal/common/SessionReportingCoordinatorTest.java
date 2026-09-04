@@ -31,6 +31,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.ApplicationExitInfo;
+import android.os.Parcel;
+import android.system.OsConstants;
+import androidx.test.filters.SdkSuppress;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -610,6 +614,66 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.removeAllReports();
 
     verify(reportPersistence).deleteAllReports();
+  }
+
+  @Test
+  public void testIsOom_skipsAllIrrelevantAppExitInfos() {
+    ApplicationExitInfo nonOom1 = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
+    ApplicationExitInfo nonOom2 = makeApplicationExitInfo(ApplicationExitInfo.REASON_CRASH, 0, 0);
+    ApplicationExitInfo nonOom3 =
+        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, 0);
+
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3));
+
+    assertFalse(isOom);
+  }
+
+  @Test
+  public void testIsOom_returnsTrueOnReasonSignaled() {
+    ApplicationExitInfo oom =
+        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, OsConstants.SIGKILL);
+    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
+
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
+
+    assertTrue(isOom);
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testIsOom_returnTrueOnReasonLowMemory() {
+    ApplicationExitInfo oom =
+        makeApplicationExitInfo(
+            ApplicationExitInfo.REASON_LOW_MEMORY, /* SUBREASON_OOM_KILL= */ 30, 0);
+    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
+
+    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
+
+    assertTrue(isOom);
+  }
+
+  private ApplicationExitInfo makeApplicationExitInfo(int reason, int subreason, int status) {
+    Parcel dest = Parcel.obtain();
+
+    dest.writeInt(1);
+    dest.writeInt(1);
+    dest.writeInt(1);
+    dest.writeInt(1);
+    dest.writeString("process");
+    dest.writeString("com.test");
+    dest.writeInt(1);
+    dest.writeInt(reason);
+    dest.writeInt(subreason);
+    dest.writeInt(status);
+    dest.writeInt(1);
+    dest.writeLong(1L);
+    dest.writeLong(1L);
+    dest.writeLong(1L);
+    dest.writeString("");
+    dest.writeByteArray(new byte[] {});
+    dest.setDataPosition(0);
+
+    return ApplicationExitInfo.CREATOR.createFromParcel(dest);
   }
 
   private void addCustomKeysToUserMetadata(Map<String, String> customKeys) throws Exception {

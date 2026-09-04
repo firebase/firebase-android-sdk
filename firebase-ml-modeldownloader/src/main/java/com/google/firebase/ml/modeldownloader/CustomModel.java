@@ -18,18 +18,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Stores information about custom models that are being downloaded or are already downloaded on a
  * device. In the case where an update is available, after the updated model file is fully
  * downloaded, the original model file will be removed once it is safe to do so.
+ *
+ * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more information about migration options, see the
+ *     notification banner in the
+ *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
+@Deprecated
 public class CustomModel {
   private final ModelFileDownloadService fileDownloadService;
   private final String name;
@@ -105,8 +112,14 @@ public class CustomModel {
    * Retrieves the model name and identifier.
    *
    * @return The name of the model.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
+  @Deprecated
   public String getName() {
     return name;
   }
@@ -118,8 +131,14 @@ public class CustomModel {
    * @return The local file associated with the model. If the original file download is still in
    *     progress, returns <code>null</code>. If a file update is in progress, returns the last
    *     fully downloaded model.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Nullable
+  @Deprecated
   public File getFile() {
     return getFile(fileDownloadService);
   }
@@ -166,7 +185,13 @@ public class CustomModel {
    * will be the size of the current model, not the new model currently being downloaded.
    *
    * @return The local model size.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
+  @Deprecated
   public long getSize() {
     return fileSize;
   }
@@ -175,8 +200,14 @@ public class CustomModel {
    * Retrieves the model hash.
    *
    * @return The model hash
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
+  @Deprecated
   public String getModelHash() {
     return modelHash;
   }
@@ -187,7 +218,13 @@ public class CustomModel {
    * be used to populate a progress bar, monitor when an updated model is available, etc.
    *
    * @return The download ID (if download in progress), otherwise returns 0.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
+  @Deprecated
   public long getDownloadId() {
     return downloadId;
   }
@@ -195,8 +232,8 @@ public class CustomModel {
   @NonNull
   @Override
   public String toString() {
-    Objects.ToStringHelper stringHelper =
-        Objects.toStringHelper(this)
+    com.google.android.gms.common.internal.Objects.ToStringHelper stringHelper =
+        com.google.android.gms.common.internal.Objects.toStringHelper(this)
             .add("name", name)
             .add("modelHash", modelHash)
             .add("fileSize", fileSize);
@@ -229,18 +266,18 @@ public class CustomModel {
 
     CustomModel other = (CustomModel) o;
 
-    return Objects.equal(name, other.name)
-        && Objects.equal(modelHash, other.modelHash)
-        && Objects.equal(fileSize, other.fileSize)
-        && Objects.equal(localFilePath, other.localFilePath)
-        && Objects.equal(downloadId, other.downloadId)
-        && Objects.equal(downloadUrl, other.downloadUrl)
-        && Objects.equal(downloadUrlExpiry, other.downloadUrlExpiry);
+    return Objects.equals(name, other.name)
+        && Objects.equals(modelHash, other.modelHash)
+        && Objects.equals(fileSize, other.fileSize)
+        && Objects.equals(localFilePath, other.localFilePath)
+        && Objects.equals(downloadId, other.downloadId)
+        && Objects.equals(downloadUrl, other.downloadUrl)
+        && Objects.equals(downloadUrlExpiry, other.downloadUrlExpiry);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
+    return Objects.hash(
         name, modelHash, fileSize, localFilePath, downloadId, downloadUrl, downloadUrlExpiry);
   }
 

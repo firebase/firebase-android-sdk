@@ -22,7 +22,7 @@ import com.google.firebase.database.snapshot.Node;
 /**
  * A cache node only stores complete children. Additionally it holds a flag whether the node can be
  * considered fully initialized in the sense that we know at one point in time this represented a
- * valid state of the world, e.g. initialized with data from the server, or a complete overwrite by
+ * valid state of the world, for example, initialized with data from the server, or a complete overwrite by
  * the client. The filtered flag also tracks whether a node potentially had children removed due to
  * a filter.
  */

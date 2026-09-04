@@ -50,7 +50,7 @@ import java.util.Set;
  *
  * <p>It's responsible for: - Maintaining the set of 1 or more views necessary at this location (a
  * SyncPoint with 0 views should be removed). - Proxying user / server operations to the views as
- * appropriate (i.e. applyServerOverwrite, applyUserOverwrite, etc.)
+ * appropriate (that is, applyServerOverwrite, applyUserOverwrite, etc.)
  */
 public class SyncPoint {
 

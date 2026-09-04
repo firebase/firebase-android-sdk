@@ -37,7 +37,7 @@ public interface TokenProvider {
   /** */
   public interface TokenChangeListener {
     /**
-     * Called whenever an event happens that will affect the current auth token (e.g. user logging
+     * Called whenever an event happens that will affect the current auth token (for example, user logging
      * in or out). Use {@link #getToken(boolean, GetTokenCompletionListener)} method to get the
      * updated token.
      */

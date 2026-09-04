@@ -219,7 +219,7 @@ public class FirebaseDatabase {
 
   /**
    * The Firebase Database client automatically queues writes and sends them to the server at the
-   * earliest opportunity, depending on network connectivity. In some cases (e.g. offline usage)
+   * earliest opportunity, depending on network connectivity. In some cases (for example, offline usage)
    * there may be a large number of writes waiting to be sent. Calling this method will purge all
    * outstanding writes so they are abandoned.
    *

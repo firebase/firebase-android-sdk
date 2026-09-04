@@ -17,6 +17,8 @@
 package com.google.firebase.ai.ksp
 
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.squareup.kotlinpoet.ksp.toClassName
 
 // This regex extracts everything in the kdocs until it hits either the end of the kdocs, or
 // the first @<tag> like @property or @see, extracting the main body text of the kdoc
@@ -32,7 +34,8 @@ internal data class GuideValues(
   val minItems: Int?,
   val maxItems: Int?,
   val format: String?,
-  val description: String?
+  val description: String?,
+  val enumValues: List<String>? = null,
 )
 
 internal fun getGuideValuesFromAnnotation(
@@ -45,7 +48,8 @@ internal fun getGuideValuesFromAnnotation(
     minItems = getIntFromAnnotation(guideAnnotation, "minItems"),
     maxItems = getIntFromAnnotation(guideAnnotation, "maxItems"),
     format = getStringFromAnnotation(guideAnnotation, "format"),
-    description = description
+    description = description,
+    enumValues = getStringListFromAnnotation(guideAnnotation, "enumValues"),
   )
 
 internal fun getDescriptionFromAnnotations(
@@ -103,6 +107,27 @@ internal fun getStringFromAnnotation(
   return guidePropertyStringValue
 }
 
+internal fun getStringListFromAnnotation(
+  guideAnnotation: KSAnnotation?,
+  listName: String,
+): List<String>? {
+  val rawValue =
+    guideAnnotation
+      ?.arguments
+      ?.firstOrNull { it.name?.getShortName()?.equals(listName) == true }
+      ?.value
+  val list =
+    when (rawValue) {
+      is List<*> -> rawValue.mapNotNull { it as? String }
+      is Array<*> -> rawValue.mapNotNull { it as? String }
+      else -> null
+    }
+  if (list.isNullOrEmpty()) {
+    return null
+  }
+  return list
+}
+
 internal fun extractBaseKdoc(kdoc: String): String? {
   return baseKdocRegex.matchEntire(kdoc)?.groups?.get(1)?.value?.trim().let {
     if (it.isNullOrEmpty()) null else it
@@ -114,4 +139,9 @@ internal fun extractPropertyKdocs(kdoc: String): Map<String, String> {
     .findAll(kdoc)
     .map { it.groups[1]!!.value to it.groups[2]!!.value.replace("\n", "").trim() }
     .toMap()
+}
+
+internal fun KSClassDeclaration.getMlKitCompanionClassName(): String {
+  val simpleNamesJoined = toClassName().simpleNames.joinToString("$")
+  return "${simpleNamesJoined}_MlKitCompanion"
 }

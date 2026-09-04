@@ -17,7 +17,6 @@
 package com.google.firebase.ai
 
 import com.google.firebase.ai.common.TemplateGenerateContentRequest
-import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.common.util.descriptorToJson
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
@@ -28,7 +27,6 @@ import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ImageConfig
-import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.LiveServerGoAway
 import com.google.firebase.ai.type.ModalityTokenCount
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -205,10 +203,10 @@ internal class SerializationTests {
         "id": "ImageConfig",
         "type": "object",
         "properties": {
-          "aspect_ratio": {
+          "aspectRatio": {
             "type": "string"
           },
-          "image_size": {
+          "imageSize": {
             "type": "string"
           }
         }
@@ -485,43 +483,6 @@ internal class SerializationTests {
   }
 
   @Test
-  fun `test ReferenceImage serialization as Json`() {
-    val expectedJsonAsString =
-      """
-     {
-       "id": "ImagenReferenceImage",
-       "type": "object",
-        "properties": {
-            "referenceType": {
-                "type": "string"
-            },
-            "referenceImage": {
-                "${'$'}ref": "ImagenInlineImage"
-            },
-            "referenceId": {
-                "type": "integer"
-            },
-            "subjectImageConfig": {
-                "${'$'}ref": "ImagenSubjectConfig"
-            },
-            "maskImageConfig": {
-                "${'$'}ref": "ImagenMaskConfig"
-            },
-            "styleImageConfig": {
-                "${'$'}ref": "ImagenStyleConfig"
-            },
-            "controlConfig": {
-                "${'$'}ref": "ImagenControlConfig"
-            }
-        }
-    }
-      """
-        .trimIndent()
-    val actualJson = descriptorToJson(ImagenReferenceImage.Internal.serializer().descriptor)
-    expectedJsonAsString shouldEqualJson actualJson.toString()
-  }
-
-  @Test
   fun `test Tool serialization as Json`() {
     val expectedJsonAsString =
       """
@@ -584,7 +545,7 @@ internal class SerializationTests {
                 "${'$'}ref": "TemplateTool"
               }
             },
-            "tool_config": {
+            "toolConfig": {
               "${'$'}ref": "ToolConfig"
             }
           }
@@ -592,28 +553,6 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(TemplateGenerateContentRequest.serializer().descriptor)
-    expectedJsonAsString shouldEqualJson actualJson.toString()
-  }
-
-  @Test
-  fun `test template imagen request serialization as Json`() {
-    val expectedJsonAsString =
-      """
-        {
-          "id": "TemplateGenerateImageRequest",
-          "type": "object",
-          "properties": {
-            "inputs": {
-              "type": "object",
-              "additionalProperties": {
-                "${"$"}ref": "JsonElement"
-              }
-            }
-          }
-        }
-      """
-        .trimIndent()
-    val actualJson = descriptorToJson(TemplateGenerateImageRequest.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
@@ -664,5 +603,57 @@ internal class SerializationTests {
         .trimIndent()
     val actualJson = descriptorToJson(LiveServerGoAway.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `TextPart constructors set isThought and thoughtSignature correctly`() {
+    val textPartSecondary = com.google.firebase.ai.type.TextPart("hello")
+    org.junit.Assert.assertEquals(false, textPartSecondary.isThought)
+    org.junit.Assert.assertEquals(null, textPartSecondary.thoughtSignature)
+
+    val textPartPrimary =
+      com.google.firebase.ai.type.TextPart.createWithThinking("hello", true, "signature-xyz")
+    org.junit.Assert.assertEquals(true, textPartPrimary.isThought)
+    org.junit.Assert.assertEquals("signature-xyz", textPartPrimary.thoughtSignature)
+  }
+
+  @Test
+  fun `FunctionCallPart constructors set isThought and thoughtSignature correctly`() {
+    val functionCallSecondary = com.google.firebase.ai.type.FunctionCallPart("func", emptyMap())
+    org.junit.Assert.assertEquals(false, functionCallSecondary.isThought)
+    org.junit.Assert.assertEquals(null, functionCallSecondary.thoughtSignature)
+
+    val functionCallPrimary =
+      com.google.firebase.ai.type.FunctionCallPart.createWithThinking(
+        "func",
+        emptyMap(),
+        "id-123",
+        true,
+        "signature-xyz"
+      )
+    org.junit.Assert.assertEquals(true, functionCallPrimary.isThought)
+    org.junit.Assert.assertEquals("signature-xyz", functionCallPrimary.thoughtSignature)
+  }
+
+  @Test
+  fun `FileDataPart constructors set isThought and thoughtSignature correctly`() {
+    val fileDataPartSecondary =
+      com.google.firebase.ai.type.FileDataPart("gs://bucket/file.jpg", "image/jpeg")
+    org.junit.Assert.assertEquals("gs://bucket/file.jpg", fileDataPartSecondary.uri)
+    org.junit.Assert.assertEquals("image/jpeg", fileDataPartSecondary.mimeType)
+    org.junit.Assert.assertEquals(false, fileDataPartSecondary.isThought)
+    org.junit.Assert.assertEquals(null, fileDataPartSecondary.thoughtSignature)
+
+    val fileDataPartPrimary =
+      com.google.firebase.ai.type.FileDataPart.createWithThinking(
+        "gs://bucket/file.jpg",
+        "image/jpeg",
+        true,
+        "signature-xyz"
+      )
+    org.junit.Assert.assertEquals("gs://bucket/file.jpg", fileDataPartPrimary.uri)
+    org.junit.Assert.assertEquals("image/jpeg", fileDataPartPrimary.mimeType)
+    org.junit.Assert.assertEquals(true, fileDataPartPrimary.isThought)
+    org.junit.Assert.assertEquals("signature-xyz", fileDataPartPrimary.thoughtSignature)
   }
 }

@@ -728,11 +728,17 @@ public abstract class CrashlyticsReport {
           @Nullable
           public abstract ApplicationExitInfo getAppExitInfo();
 
+          @Nullable
+          public abstract ProfilingManagerInfo getProfilingManagerInfo();
+
           @NonNull
           public abstract Signal getSignal();
 
           @NonNull
           public abstract List<BinaryImage> getBinaries();
+
+          @NonNull
+          public abstract Builder toBuilder();
 
           @AutoValue
           public abstract static class Thread {
@@ -963,6 +969,9 @@ public abstract class CrashlyticsReport {
 
             @NonNull
             public abstract Builder setAppExitInfo(@NonNull ApplicationExitInfo value);
+
+            @NonNull
+            public abstract Builder setProfilingManagerInfo(@NonNull ProfilingManagerInfo value);
 
             @NonNull
             public abstract Builder setSignal(@NonNull Signal value);
@@ -1337,6 +1346,46 @@ public abstract class CrashlyticsReport {
 
         @NonNull
         public abstract BuildIdMappingForArch build();
+      }
+    }
+  }
+
+  @AutoValue
+  public abstract static class ProfilingManagerInfo {
+    @NonNull
+    public static ProfilingManagerInfo.Builder builder() {
+      return new AutoValue_CrashlyticsReport_ProfilingManagerInfo.Builder();
+    }
+
+    @NonNull
+    public abstract ProfilingTrigger getProfilingTrigger();
+
+    @AutoValue.Builder
+    public abstract static class Builder {
+      @NonNull
+      public abstract Builder setProfilingTrigger(@NonNull ProfilingTrigger trigger);
+
+      @NonNull
+      public abstract ProfilingManagerInfo build();
+    }
+
+    @AutoValue
+    public abstract static class ProfilingTrigger {
+      @NonNull
+      public static ProfilingTrigger.Builder builder() {
+        return new AutoValue_CrashlyticsReport_ProfilingManagerInfo_ProfilingTrigger.Builder();
+      }
+
+      @NonNull
+      public abstract int getTrigger();
+
+      @AutoValue.Builder
+      public abstract static class Builder {
+        @NonNull
+        public abstract ProfilingTrigger.Builder setTrigger(@NonNull int value);
+
+        @NonNull
+        public abstract ProfilingTrigger build();
       }
     }
   }

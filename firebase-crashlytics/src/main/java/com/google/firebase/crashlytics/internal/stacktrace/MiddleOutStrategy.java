@@ -17,7 +17,7 @@ package com.google.firebase.crashlytics.internal.stacktrace;
 /**
  * Strategy for trimming a given stack trace by removing the middle portion.
  *
- * <p>The most important details in a stack are the beginning and end - i.e. the point at which it
+ * <p>The most important details in a stack are the beginning and end - that is, the point at which it
  * was generated and where it originated. This strategy takes advantage of this notion and always
  * generates a trimmed stack of a given size by removing the middle of the stack, returning a
  * trimmed stack with half of the trimmed size from the beginning of the input stack, and half from

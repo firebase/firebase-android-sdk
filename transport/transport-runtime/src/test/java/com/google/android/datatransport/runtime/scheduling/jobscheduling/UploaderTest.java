@@ -14,7 +14,6 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import static android.os.Build.VERSION_CODES.M;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -54,7 +53,7 @@ import org.mockito.AdditionalAnswers;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@Config(sdk = {M})
+@Config(sdk = Config.OLDEST_SDK)
 @RunWith(RobolectricTestRunner.class)
 public class UploaderTest {
   private static final SynchronizationGuard guard =

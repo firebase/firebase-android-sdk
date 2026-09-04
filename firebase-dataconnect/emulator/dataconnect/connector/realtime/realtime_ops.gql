@@ -27,3 +27,11 @@ mutation RealtimeString_Delete($key: RealtimeString_Key!) @auth(level: PUBLIC) {
 query RealtimeString_GetByKey($key: RealtimeString_Key!) @auth(level: PUBLIC) {
   item: realtimeString(key: $key) { name }
 }
+
+mutation RealtimeString_Insert_Auth($name: String!) @auth(level: USER_ANON) {
+  key: realtimeString_insert(data: {name: $name})
+}
+
+query RealtimeString_GetByKey_Auth($key: RealtimeString_Key!) @auth(level: USER_ANON) {
+  item: realtimeString(key: $key) { name }
+}

@@ -148,7 +148,7 @@ public class DatabaseReference extends Query {
    *
    * <br>
    * <br>
-   * Generic collections of objects that satisfy the above constraints are also permitted, i.e.
+   * Generic collections of objects that satisfy the above constraints are also permitted, that is,
    * <code>Map&lt;String, MyPOJO&gt;</code>, as well as null values.
    *
    * @param value The value to set at this location or null to delete the existing data
@@ -187,7 +187,7 @@ public class DatabaseReference extends Query {
    *
    * <br>
    * <br>
-   * Generic collections of objects that satisfy the above constraints are also permitted, i.e.
+   * Generic collections of objects that satisfy the above constraints are also permitted, that is,
    * <code>Map&lt;String, MyPOJO&gt;</code>, as well as null values.
    *
    * @param value The value to set at this location or null to delete the existing data
@@ -227,7 +227,7 @@ public class DatabaseReference extends Query {
    *
    * <br>
    * <br>
-   * Generic collections of objects that satisfy the above constraints are also permitted, i.e.
+   * Generic collections of objects that satisfy the above constraints are also permitted, that is,
    * <code>Map&lt;String, MyPOJO&gt;</code>, as well as null values.
    *
    * @param value The value to set at this location or null to delete the existing data
@@ -264,7 +264,7 @@ public class DatabaseReference extends Query {
    *
    * <br>
    * <br>
-   * Generic collections of objects that satisfy the above constraints are also permitted, i.e.
+   * Generic collections of objects that satisfy the above constraints are also permitted, that is,
    * <code>Map&lt;String, MyPOJO&gt;</code>, as well as null values.
    *
    * @param value The value to set at this location or null to delete the existing data

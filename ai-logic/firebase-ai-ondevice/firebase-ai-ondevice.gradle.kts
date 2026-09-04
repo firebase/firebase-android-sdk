@@ -29,6 +29,7 @@ firebaseLibrary {
   releaseNotes {
     name.set("{{firebase_ai_logic_ondevice_android}}")
     versionName.set("ai-ondevice")
+    nestedHeader.set(true)
   }
 }
 
@@ -62,13 +63,17 @@ android {
 }
 
 kotlin {
-  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
   explicitApi()
 }
 
 dependencies {
   implementation(libs.genai.prompt)
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta03")
+  api(libs.genai.schema)
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta05")
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

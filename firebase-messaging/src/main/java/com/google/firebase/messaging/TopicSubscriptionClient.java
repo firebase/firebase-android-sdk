@@ -17,6 +17,8 @@ import static com.google.firebase.messaging.Constants.TAG;
 
 import android.os.Build;
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.gms.tasks.Task;
@@ -24,14 +26,18 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/** A client for complying with the FCM topic subscription and unsubscription. */
-class TopicSubscriptionClient {
+/** A client for complying with the FCM topic subscription and unsubscription.
+ * @hide
+ * */
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+public class TopicSubscriptionClient {
 
   static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
   static final String ERROR_SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
@@ -41,6 +47,23 @@ class TopicSubscriptionClient {
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final FirebaseApp firebaseApp;
   private final FirebaseMessaging firebaseMessaging;
+
+  @VisibleForTesting
+  public interface HttpConnectionFactory {
+    @NonNull
+    HttpURLConnection createConnection(@NonNull URL url) throws IOException;
+  }
+
+  private static HttpConnectionFactory connectionFactory =
+      url -> (HttpURLConnection) url.openConnection();
+
+  /**
+   * This method will be used inside G3 for Hermetic tests.
+   */
+  @VisibleForTesting
+  public static void setConnectionFactoryForTesting(@Nullable HttpConnectionFactory factory) {
+    connectionFactory = factory != null ? factory : url -> (HttpURLConnection) url.openConnection();
+  }
 
   TopicSubscriptionClient(
       FirebaseApp firebaseApp,
@@ -106,11 +129,14 @@ class TopicSubscriptionClient {
     connection.setDoOutput(false);
 
     int responseCode;
+    String responseMessage;
     try {
       responseCode = connection.getResponseCode();
+      responseMessage = connection.getResponseMessage();
     } catch (IOException e) {
       throw new IOException(ERROR_SERVICE_NOT_AVAILABLE, e);
     } finally {
+      closeQuietly(connection);
       connection.disconnect();
     }
 
@@ -121,9 +147,9 @@ class TopicSubscriptionClient {
       }
     } else if (responseCode == 404 || responseCode == 403) {
       if (isDebugLogEnabled()) {
-        Log.d(TAG, "Topic " + operation + " failed: " + connection.getResponseMessage());
+        Log.d(TAG, "Topic " + operation + " failed: " + responseMessage);
       }
-      throw new IOException("Topic " + operation + " failed: " + connection.getResponseMessage());
+      throw new IOException("Topic " + operation + " failed: " + responseMessage);
     } else if (responseCode >= 500) {
       throw new IOException(ERROR_INTERNAL_SERVER_ERROR);
     } else {
@@ -131,9 +157,29 @@ class TopicSubscriptionClient {
     }
   }
 
+  private static void closeQuietly(HttpURLConnection connection) {
+    try {
+      InputStream inputStream = connection.getInputStream();
+      if (inputStream != null) {
+        inputStream.close();
+      }
+    } catch (IOException ignored) {
+      // getInputStream() throws IOException for HTTP error status codes (for example, 4xx or 5xx)
+    }
+    try {
+      InputStream errorStream = connection.getErrorStream();
+      if (errorStream != null) {
+        errorStream.close();
+      }
+    } catch (IOException ignored) {
+      // Ignore exception while closing error stream
+    }
+  }
+
+  @NonNull
   @VisibleForTesting
-  protected HttpURLConnection createConnection(URL url) throws IOException {
-    return (HttpURLConnection) url.openConnection();
+  protected HttpURLConnection createConnection(@NonNull URL url) throws IOException {
+    return connectionFactory.createConnection(url);
   }
 
   /** Awaits an RPC task, rethrowing any IOExceptions or RuntimeExceptions. */

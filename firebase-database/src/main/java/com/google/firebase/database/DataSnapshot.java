@@ -35,7 +35,7 @@ import java.util.Iterator;
  * <br>
  * They are efficiently-generated immutable copies of the data at a Firebase Database location. They
  * can't be modified and will never change. To modify data at a location, use a <br>
- * {@link DatabaseReference} reference (e.g. with {@link DatabaseReference#setValue(Object)}).
+ * {@link DatabaseReference} reference (for example, with {@link DatabaseReference#setValue(Object)}).
  */
 public class DataSnapshot {
 
@@ -53,7 +53,7 @@ public class DataSnapshot {
 
   /**
    * Get a DataSnapshot for the location at the specified relative path. The relative path can
-   * either be a simple child key (e.g. 'fred') or a deeper slash-separated path (e.g.
+   * either be a simple child key (for example, 'fred') or a deeper slash-separated path (for example,
    * 'fred/name/first'). If the child location has no data, an empty DataSnapshot is returned.
    *
    * @param path A relative path to the location of child data

@@ -83,7 +83,7 @@ android {
 
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
-        targetSdkVersion project.targetSdkVersion
+        targetSdk project.targetSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

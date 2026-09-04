@@ -79,7 +79,7 @@ public @interface Code {
   /**
    * Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
    * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the system
-   * (e.g., an invalid field name).
+   * (for example, an invalid field name).
    */
   int INVALID_ARGUMENT = 3;
 

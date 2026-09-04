@@ -32,7 +32,6 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -42,6 +41,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions {
+        targetSdk project.targetSdkVersion
         unitTests {
             includeAndroidResources = true
         }
@@ -59,6 +59,7 @@ dependencies {
     api(libs.firebase.components)
     api("com.google.firebase:firebase-installations-interop:17.3.0")
 
+    implementation(libs.androidx.datastore.preferences)
     implementation libs.kotlin.stdlib
 
     compileOnly libs.autovalue.annotations

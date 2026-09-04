@@ -31,10 +31,13 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -106,7 +109,7 @@ data class CommitDiff(
 
   override fun toString(): String =
     """
-      |* ${message.split("\n").first()}   
+      |* ${message.split("\n").first()}
       |  [pr]($prLink) [commit]($commitLink)  [$author]
 
     """
@@ -124,7 +127,10 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:Optional @get:Input abstract val printReleaseConfig: Property<String>
 
-  @get:Optional @get:InputFiles abstract val commitsToIgnoreFile: RegularFileProperty
+  @get:Optional
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val commitsToIgnoreFile: RegularFileProperty
 
   @get:Internal
   val commitsToIgnore: List<ObjectId>
@@ -147,22 +153,24 @@ abstract class ReleaseGenerator : DefaultTask() {
         it.plugins.hasPlugin("firebase-library") || it.plugins.hasPlugin("firebase-java-library")
       }
 
-    val repo = Git.open(rootDir)
-    val headRef = repo.repository.resolve(Constants.HEAD)
-    val branchRef = getObjectRefForBranchName(repo, pastRelease.get())
+    val releaseReport =
+      Git.open(rootDir).use { repo ->
+        val headRef = repo.repository.resolve(Constants.HEAD)
+        val branchRef = getObjectRefForBranchName(repo, pastRelease.get())
 
-    val libsToRelease = getChangedChangelogs(repo, branchRef, headRef, availableModules)
-    val changedLibsWithNoChangelog =
-      getChangedLibraries(repo, branchRef, headRef, availableModules) subtract
-        libsToRelease.map { it.path }.toSet()
+        val libsToRelease = getChangedChangelogs(repo, branchRef, headRef, availableModules)
+        val changedLibsWithNoChangelog =
+          getChangedLibraries(repo, branchRef, headRef, availableModules) subtract
+            libsToRelease.map { it.path }.toSet()
 
-    val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
+        val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
+        val releaseConfig = ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path })
+        releaseConfig.toFile(releaseConfigFile.get().asFile)
 
-    val releaseConfig = ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path })
-    releaseConfig.toFile(releaseConfigFile.get().asFile)
+        ReleaseReport(changes, changedLibsWithNoChangelog)
+      }
 
-    val releaseReport = ReleaseReport(changes, changedLibsWithNoChangelog)
-    if (printReleaseConfig.orNull.toBoolean()) {
+    if (printReleaseConfig.orNull != null) {
       project.logger.info(releaseReport.toString())
     }
     releaseReportJsonFile.get().asFile.let { releaseReport.toFile(it) }
@@ -177,16 +185,14 @@ abstract class ReleaseGenerator : DefaultTask() {
     changedLibraries
       .map { getRelativeDir(it) }
       .associateWith { getDirChanges(repo, branchRef, headRef, it) }
-      .toMap()
 
   @Throws(GitAPIException::class)
-  private fun getObjectRefForBranchName(repo: Git, branchName: String) =
-    repo
-      .branchList()
-      .setListMode(ListBranchCommand.ListMode.REMOTE)
-      .call()
-      .firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }
-      ?.objectId ?: throw RuntimeException("Could not find branch named $branchName")
+  private fun getObjectRefForBranchName(repo: Git, branchName: String): ObjectId {
+    val branches = repo.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call()
+    return branches.firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }?.objectId
+      ?: branches.firstOrNull { it.name == "refs/remotes/origin/$branchName" }?.objectId
+      ?: throw RuntimeException("Could not find branch named releases/$branchName nor $branchName")
+  }
 
   private fun getChangedLibraries(
     repo: Git,

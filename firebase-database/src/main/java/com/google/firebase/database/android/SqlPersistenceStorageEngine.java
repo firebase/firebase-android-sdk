@@ -79,7 +79,7 @@ import java.util.Set;
  * data exists, whether it's complete, and what serverCache data can be pruned.
  *
  * <p>- trackedKeys: Keys in tracked queries. For each query in trackedQueries that is filtered
- * (i.e. not a loadsAllData() query), we'll track which keys are in the query. This allows us to
+ * (that is, not a loadsAllData() query), we'll track which keys are in the query. This allows us to
  * re-load only the keys of interest when restoring the query, as well as prune data for keys that
  * aren't tracked by any query.
  *
@@ -98,7 +98,7 @@ import java.util.Set;
  * multi-part/split writes starting with 0, NULL if not split + type: 'o' for overwrite and 'm' for
  * merge - serverCache + path: path for this node as string + value: serialized node as JSON (utf-8)
  * bytes - trackedQueries + id: unique id across restarts + path: Path of query. + query: A
- * serialization of the query parameters. + lastUse: When this query was last used (e.g. there was
+ * serialization of the query parameters. + lastUse: When this query was last used (for example, there was
  * an active listener). + complete: Whether serverCache contains complete data for the query. +
  * active: Whether we have an active listener for the query. - trackedKeys + id: id of the
  * trackedQuery for which this is a tracked key. + key: The tracked key belonging to the

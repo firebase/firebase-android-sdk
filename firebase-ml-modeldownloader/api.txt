@@ -1,79 +1,79 @@
 // Signature format: 3.0
 package com.google.firebase.ml.modeldownloader {
 
-  public class CustomModel {
-    method public long getDownloadId();
-    method public java.io.File? getFile();
-    method public String getModelHash();
-    method public String getName();
-    method public long getSize();
+  @Deprecated public class CustomModel {
+    method @Deprecated public long getDownloadId();
+    method @Deprecated public java.io.File? getFile();
+    method @Deprecated public String getModelHash();
+    method @Deprecated public String getName();
+    method @Deprecated public long getSize();
   }
 
-  public class CustomModelDownloadConditions {
-    method public boolean isChargingRequired();
-    method public boolean isDeviceIdleRequired();
-    method public boolean isWifiRequired();
+  @Deprecated public class CustomModelDownloadConditions {
+    method @Deprecated public boolean isChargingRequired();
+    method @Deprecated public boolean isDeviceIdleRequired();
+    method @Deprecated public boolean isWifiRequired();
   }
 
-  public static class CustomModelDownloadConditions.Builder {
-    ctor public CustomModelDownloadConditions.Builder();
-    method public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions build();
-    method @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireCharging();
-    method @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireDeviceIdle();
-    method public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireWifi();
+  @Deprecated public static class CustomModelDownloadConditions.Builder {
+    ctor @Deprecated public CustomModelDownloadConditions.Builder();
+    method @Deprecated public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions build();
+    method @Deprecated @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireCharging();
+    method @Deprecated @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireDeviceIdle();
+    method @Deprecated public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireWifi();
   }
 
-  public enum DownloadType {
-    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LATEST_MODEL;
-    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL;
-    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL_UPDATE_IN_BACKGROUND;
+  @Deprecated public enum DownloadType {
+    enum_constant @Deprecated public static final com.google.firebase.ml.modeldownloader.DownloadType LATEST_MODEL;
+    enum_constant @Deprecated public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL;
+    enum_constant @Deprecated public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL_UPDATE_IN_BACKGROUND;
   }
 
-  public class FirebaseMlException extends com.google.firebase.FirebaseException {
-    method @com.google.firebase.ml.modeldownloader.FirebaseMlException.Code public int getCode();
-    field public static final int ABORTED = 10; // 0xa
-    field public static final int ALREADY_EXISTS = 6; // 0x6
-    field public static final int CANCELLED = 1; // 0x1
-    field public static final int DEADLINE_EXCEEDED = 4; // 0x4
-    field public static final int DOWNLOAD_URL_EXPIRED = 121; // 0x79
-    field public static final int FAILED_PRECONDITION = 9; // 0x9
-    field public static final int INTERNAL = 13; // 0xd
-    field public static final int INVALID_ARGUMENT = 3; // 0x3
-    field public static final int MODEL_HASH_MISMATCH = 102; // 0x66
-    field public static final int NOT_ENOUGH_SPACE = 101; // 0x65
-    field public static final int NOT_FOUND = 5; // 0x5
-    field public static final int NO_NETWORK_CONNECTION = 17; // 0x11
-    field public static final int OUT_OF_RANGE = 11; // 0xb
-    field public static final int PERMISSION_DENIED = 7; // 0x7
-    field public static final int RESOURCE_EXHAUSTED = 8; // 0x8
-    field public static final int UNAUTHENTICATED = 16; // 0x10
-    field public static final int UNAVAILABLE = 14; // 0xe
-    field public static final int UNIMPLEMENTED = 12; // 0xc
-    field public static final int UNKNOWN = 2; // 0x2
+  @Deprecated public class FirebaseMlException extends com.google.firebase.FirebaseException {
+    method @Deprecated @com.google.firebase.ml.modeldownloader.FirebaseMlException.Code public int getCode();
+    field @Deprecated public static final int ABORTED = 10; // 0xa
+    field @Deprecated public static final int ALREADY_EXISTS = 6; // 0x6
+    field @Deprecated public static final int CANCELLED = 1; // 0x1
+    field @Deprecated public static final int DEADLINE_EXCEEDED = 4; // 0x4
+    field @Deprecated public static final int DOWNLOAD_URL_EXPIRED = 121; // 0x79
+    field @Deprecated public static final int FAILED_PRECONDITION = 9; // 0x9
+    field @Deprecated public static final int INTERNAL = 13; // 0xd
+    field @Deprecated public static final int INVALID_ARGUMENT = 3; // 0x3
+    field @Deprecated public static final int MODEL_HASH_MISMATCH = 102; // 0x66
+    field @Deprecated public static final int NOT_ENOUGH_SPACE = 101; // 0x65
+    field @Deprecated public static final int NOT_FOUND = 5; // 0x5
+    field @Deprecated public static final int NO_NETWORK_CONNECTION = 17; // 0x11
+    field @Deprecated public static final int OUT_OF_RANGE = 11; // 0xb
+    field @Deprecated public static final int PERMISSION_DENIED = 7; // 0x7
+    field @Deprecated public static final int RESOURCE_EXHAUSTED = 8; // 0x8
+    field @Deprecated public static final int UNAUTHENTICATED = 16; // 0x10
+    field @Deprecated public static final int UNAVAILABLE = 14; // 0xe
+    field @Deprecated public static final int UNIMPLEMENTED = 12; // 0xc
+    field @Deprecated public static final int UNKNOWN = 2; // 0x2
   }
 
-  @IntDef({com.google.firebase.ml.modeldownloader.FirebaseMlException.CANCELLED, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNKNOWN, com.google.firebase.ml.modeldownloader.FirebaseMlException.INVALID_ARGUMENT, com.google.firebase.ml.modeldownloader.FirebaseMlException.DEADLINE_EXCEEDED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_FOUND, com.google.firebase.ml.modeldownloader.FirebaseMlException.ALREADY_EXISTS, com.google.firebase.ml.modeldownloader.FirebaseMlException.PERMISSION_DENIED, com.google.firebase.ml.modeldownloader.FirebaseMlException.RESOURCE_EXHAUSTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.FAILED_PRECONDITION, com.google.firebase.ml.modeldownloader.FirebaseMlException.ABORTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.OUT_OF_RANGE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNIMPLEMENTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.INTERNAL, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAVAILABLE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAUTHENTICATED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NO_NETWORK_CONNECTION, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_ENOUGH_SPACE, com.google.firebase.ml.modeldownloader.FirebaseMlException.MODEL_HASH_MISMATCH, com.google.firebase.ml.modeldownloader.FirebaseMlException.DOWNLOAD_URL_EXPIRED}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface FirebaseMlException.Code {
+  @Deprecated @IntDef({com.google.firebase.ml.modeldownloader.FirebaseMlException.CANCELLED, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNKNOWN, com.google.firebase.ml.modeldownloader.FirebaseMlException.INVALID_ARGUMENT, com.google.firebase.ml.modeldownloader.FirebaseMlException.DEADLINE_EXCEEDED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_FOUND, com.google.firebase.ml.modeldownloader.FirebaseMlException.ALREADY_EXISTS, com.google.firebase.ml.modeldownloader.FirebaseMlException.PERMISSION_DENIED, com.google.firebase.ml.modeldownloader.FirebaseMlException.RESOURCE_EXHAUSTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.FAILED_PRECONDITION, com.google.firebase.ml.modeldownloader.FirebaseMlException.ABORTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.OUT_OF_RANGE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNIMPLEMENTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.INTERNAL, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAVAILABLE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAUTHENTICATED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NO_NETWORK_CONNECTION, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_ENOUGH_SPACE, com.google.firebase.ml.modeldownloader.FirebaseMlException.MODEL_HASH_MISMATCH, com.google.firebase.ml.modeldownloader.FirebaseMlException.DOWNLOAD_URL_EXPIRED}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface FirebaseMlException.Code {
   }
 
-  public class FirebaseModelDownloader {
-    method public com.google.android.gms.tasks.Task<java.lang.Void!> deleteDownloadedModel(String);
-    method public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance();
-    method public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance(com.google.firebase.FirebaseApp);
-    method public com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel!> getModel(String, com.google.firebase.ml.modeldownloader.DownloadType, com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions?);
-    method public com.google.android.gms.tasks.Task<java.lang.Long!> getModelDownloadId(String, com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel!>?);
-    method public com.google.android.gms.tasks.Task<java.util.Set<com.google.firebase.ml.modeldownloader.CustomModel!>!> listDownloadedModels();
-    method public void setModelDownloaderCollectionEnabled(Boolean?);
+  @Deprecated public class FirebaseModelDownloader {
+    method @Deprecated public com.google.android.gms.tasks.Task<java.lang.Void!> deleteDownloadedModel(String);
+    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance();
+    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance(com.google.firebase.FirebaseApp);
+    method @Deprecated public com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel!> getModel(String, com.google.firebase.ml.modeldownloader.DownloadType, com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions?);
+    method @Deprecated public com.google.android.gms.tasks.Task<java.lang.Long!> getModelDownloadId(String, com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel!>?);
+    method @Deprecated public com.google.android.gms.tasks.Task<java.util.Set<com.google.firebase.ml.modeldownloader.CustomModel!>!> listDownloadedModels();
+    method @Deprecated public void setModelDownloaderCollectionEnabled(Boolean?);
   }
 
   public final class ModelDownloaderKt {
-    method public static operator java.io.File? component1(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator long component2(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator long component3(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator String component4(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator String component5(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions customModelDownloadConditions(kotlin.jvm.functions.Function1<? super com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder,kotlin.Unit> init);
-    method public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getModelDownloader(com.google.firebase.Firebase);
-    method public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader modelDownloader(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app);
+    method @Deprecated public static operator java.io.File? component1(com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated public static operator long component2(com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated public static operator long component3(com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated public static operator String component4(com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated public static operator String component5(com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated public static com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions customModelDownloadConditions(kotlin.jvm.functions.Function1<? super com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder,kotlin.Unit> init);
+    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getModelDownloader(com.google.firebase.Firebase);
+    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader modelDownloader(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app);
   }
 
 }

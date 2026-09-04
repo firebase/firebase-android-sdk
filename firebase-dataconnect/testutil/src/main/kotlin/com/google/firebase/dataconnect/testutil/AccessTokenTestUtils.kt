@@ -116,9 +116,15 @@ object NotLoggedInInternalAuthProvider : BaseInternalAuthProvider() {
 class LoggedInInternalAuthProvider(val token: String, uid: String) : BaseInternalAuthProvider() {
 
   private val _uid = uid
+  private val lock = ReentrantLock()
+  private val _getTokenCalls = mutableListOf<GetTokenCall>()
+  val getTokenCalls: List<GetTokenCall>
+    get() = lock.withLock { _getTokenCalls.toList() }
 
-  override fun getAccessTokenImpl(forceRefresh: Boolean) =
-    authTokenResultFor(token = token, uid = uid)
+  override fun getAccessTokenImpl(forceRefresh: Boolean): com.google.firebase.auth.GetTokenResult {
+    lock.withLock { _getTokenCalls.add(GetTokenCall(forceRefresh)) }
+    return authTokenResultFor(token = token, uid = uid)
+  }
 
   override fun getUid() = _uid
 
@@ -131,17 +137,20 @@ class LoggedInMultiTokenInternalAuthProvider(tokens: List<String>, uid: String) 
   val tokens = tokens.toList()
   private val lock = ReentrantLock()
   private val iterator = this.tokens.iterator()
-
   private val _uid = uid
+  private val _getTokenCalls = mutableListOf<GetTokenCall>()
+  val getTokenCalls: List<GetTokenCall>
+    get() = lock.withLock { _getTokenCalls.toList() }
 
-  override fun getAccessTokenImpl(forceRefresh: Boolean) =
-    authTokenResultFor(token = nextToken(), uid = uid)
-
-  private fun nextToken(): String =
-    lock.withLock {
-      check(iterator.hasNext()) { "internal error p37nr2p9dk: no more Auth tokens to produce" }
-      iterator.next()
-    }
+  override fun getAccessTokenImpl(forceRefresh: Boolean): com.google.firebase.auth.GetTokenResult {
+    val token =
+      lock.withLock {
+        _getTokenCalls.add(GetTokenCall(forceRefresh))
+        check(iterator.hasNext()) { "internal error p37nr2p9dk: no more Auth tokens to produce" }
+        iterator.next()
+      }
+    return authTokenResultFor(token = token, uid = _uid)
+  }
 
   override fun getUid() = _uid
 
@@ -219,15 +228,24 @@ abstract class BaseInteropAppCheckTokenProvider : InteropAppCheckTokenProvider {
 
 class TestInteropAppCheckTokenProvider(val token: String) : BaseInteropAppCheckTokenProvider() {
 
-  override fun getToken(forceRefresh: Boolean) =
-    Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
-      TestAppCheckTokenResultImpl(token)
-    )
+  private val lock = ReentrantLock()
+  private val _getTokenCalls = mutableListOf<GetTokenCall>()
+  val getTokenCalls: List<GetTokenCall>
+    get() = lock.withLock { _getTokenCalls.toList() }
+
+  override fun getToken(
+    forceRefresh: Boolean
+  ): Task<com.google.firebase.appcheck.AppCheckTokenResult> {
+    lock.withLock { _getTokenCalls.add(GetTokenCall(forceRefresh)) }
+    return Tasks.forResult(TestAppCheckTokenResultImpl(token))
+  }
 
   override fun getLimitedUseToken() = TODO("not implemented")
 
   override fun toString() = "TestInteropAppCheckTokenProvider(token=$token)"
 }
+
+data class GetTokenCall(val forceRefresh: Boolean)
 
 class TestMultiTokenInteropAppCheckTokenProvider(tokens: List<String>) :
   BaseInteropAppCheckTokenProvider() {
@@ -235,17 +253,23 @@ class TestMultiTokenInteropAppCheckTokenProvider(tokens: List<String>) :
   val tokens = tokens.toList()
   private val lock = ReentrantLock()
   private val iterator = this.tokens.iterator()
+  private val _getTokenCalls = mutableListOf<GetTokenCall>()
+  val getTokenCalls: List<GetTokenCall>
+    get() = lock.withLock { _getTokenCalls.toList() }
 
-  override fun getToken(forceRefresh: Boolean) =
-    Tasks.forResult<com.google.firebase.appcheck.AppCheckTokenResult>(
-      TestAppCheckTokenResultImpl(nextToken())
-    )
-
-  private fun nextToken(): String =
-    lock.withLock {
-      check(iterator.hasNext()) { "internal error jkgvfsmktg: no more App Check tokens to produce" }
-      iterator.next()
-    }
+  override fun getToken(
+    forceRefresh: Boolean
+  ): Task<com.google.firebase.appcheck.AppCheckTokenResult> {
+    val token =
+      lock.withLock {
+        _getTokenCalls.add(GetTokenCall(forceRefresh))
+        check(iterator.hasNext()) {
+          "internal error jkgvfsmktg: no more App Check tokens to produce"
+        }
+        iterator.next()
+      }
+    return Tasks.forResult(TestAppCheckTokenResultImpl(token))
+  }
 
   override fun getLimitedUseToken() = TODO("not implemented")
 

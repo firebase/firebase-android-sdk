@@ -70,7 +70,7 @@ class QueueFile implements Closeable {
    * The underlying file. Uses a ring buffer to store entries. Designed so that a modification isn't
    * committed or visible until we write the header. The header is much smaller than a segment. So
    * long as the underlying file system supports atomic segment writes, changes to the queue are
-   * atomic. Storing the file length ensures we can recover from a failed expansion (i.e. if setting
+   * atomic. Storing the file length ensures we can recover from a failed expansion (that is, if setting
    * the file length succeeds but the process dies before the data can be copied).
    *
    * <p>

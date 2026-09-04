@@ -20,7 +20,7 @@ import javax.lang.model.element.AnnotationValue;
 /** Represents an annotation property/method with its value as explicitly set in source. */
 @AutoValue
 public abstract class AnnotationProperty {
-  /** Name of the property, e.g. \"value\". */
+  /** Name of the property, for example \"value\". */
   public abstract String name();
 
   /** Value of the property. */

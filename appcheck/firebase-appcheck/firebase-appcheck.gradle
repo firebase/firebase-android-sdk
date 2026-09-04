@@ -28,14 +28,13 @@ firebaseLibrary {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.appcheck"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         multiDexEnabled = true
         versionName version
@@ -45,7 +44,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
 }
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }

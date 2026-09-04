@@ -53,9 +53,9 @@ fun containWithNonAbuttingText(s: String, ignoreCase: Boolean = false): Matcher<
     val fullPattern = "(^|\\W)${Pattern.quote(s)}($|\\W)"
     val expr =
       if (ignoreCase) {
-        Pattern.compile(fullPattern)
-      } else {
         Pattern.compile(fullPattern, Pattern.CASE_INSENSITIVE)
+      } else {
+        Pattern.compile(fullPattern)
       }
 
     MatcherResult(
@@ -83,7 +83,7 @@ infix fun String?.shouldContainWithNonAbuttingText(s: String): String? {
 
 /** Same as [shouldContainWithNonAbuttingText] but ignoring case. */
 infix fun String?.shouldContainWithNonAbuttingTextIgnoringCase(s: String): String? {
-  this should containWithNonAbuttingText(s, ignoreCase = false)
+  this should containWithNonAbuttingText(s, ignoreCase = true)
   return this
 }
 

@@ -228,7 +228,7 @@ public class IdManager implements InstallIdProvider {
 
   /**
    * @return {@link String} identifying the display version of the Android OS that the device is
-   *     running, e.g. "4.2.2". Any forward slashes in the system returned value will be removed.
+   *     running, for example "4.2.2". Any forward slashes in the system returned value will be removed.
    */
   public String getOsDisplayVersionString() {
     return removeForwardSlashesIn(Build.VERSION.RELEASE);
@@ -236,7 +236,7 @@ public class IdManager implements InstallIdProvider {
 
   /**
    * @return {@link String} identifying the build version of the Android OS that the device is
-   *     running, e.g. "573038". Any forward slashes in the system returned value will be removed.
+   *     running, for example "573038". Any forward slashes in the system returned value will be removed.
    */
   public String getOsBuildVersionString() {
     return removeForwardSlashesIn(Build.VERSION.INCREMENTAL);

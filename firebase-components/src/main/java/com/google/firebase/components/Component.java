@@ -65,7 +65,7 @@ public final class Component<T> {
      * Value components provide scalar values to the {@link ComponentRuntime}.
      *
      * <p>Such components can be requested by dependents via {@link ComponentContainer#get(Class)}
-     * or {@link ComponentContainer#getProvider(Class)}. e.g. {@code FirebaseInstanceId}.
+     * or {@link ComponentContainer#getProvider(Class)}. For example, {@code FirebaseInstanceId}.
      */
     int VALUE = 0;
 

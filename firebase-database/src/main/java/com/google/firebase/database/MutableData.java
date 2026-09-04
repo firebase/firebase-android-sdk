@@ -288,7 +288,7 @@ public class MutableData {
    *
    * <br>
    * <br>
-   * Generic collections of objects that satisfy the above constraints are also permitted, i.e.
+   * Generic collections of objects that satisfy the above constraints are also permitted, that is,
    * <code>Map&lt;String, MyPOJO&gt;</code>, as well as null values.
    *
    * <p>Note that this overrides the priority, which must be set separately.

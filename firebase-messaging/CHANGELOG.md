@@ -1,5 +1,16 @@
 # Unreleased
 
+- [changed] Internal adjustments
+
+# 25.1.2
+
+- [fixed] FCM registration error due to FID_ALREADY_USED (#8507)
+- [fixed] StrictMode LeakedClosableViolation in TopicSubscriptionClient (#8534)
+
+# 25.1.1
+
+- [changed] Fixed re-registration invocation with FID change (#8338)
+
 # 25.1.0
 
 - [feature] Added support for FCM registration using Firebase Installation ID (#8087)

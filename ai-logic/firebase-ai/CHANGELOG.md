@@ -1,5 +1,40 @@
 # Unreleased
 
+- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API.
+
+# 17.16.0
+
+- [feature] Added support for on-device structured output generation using `generateObject` (#8395)
+- [changed] **Breaking Change**: Removed deprecated Imagen methods and types due
+  to Imagen models being shut down in August 2026. As a replacement, you can
+  [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
+- [changed] Adjusted `LiveSession.isClosed` to better reflect underlying
+  connection closure state and not consume frames (#8511)
+- [changed] Replaced the `"function"` conversational role with `"user"` for
+  function response content. (#8508)
+
+# 17.15.0
+
+- [feature] Added support for `RealtimeInputConfig` and `ActivityDetectionConfig` to configure voice activity detection in Live API. Added `sendStartActivityRealtime` and `sendStopActivityRealtime` to `LiveSession` for manual activity control. (#8080)
+- [feature] Added `getOnDeviceModelName` to `GenerativeModel` (#8247)
+- [changed] Deprecated `GenerativeBackend.vertexAI` in favor of
+  `GenerativeBackend.agentPlatform` to reflect the renaming of Vertex
+  AI to Gemini Enterprise Agent Platform. (#8437)
+
+  Note: The only difference for `GenerativeBackend.agentPlatform` is the default
+  [location for accessing the model](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  The default location for `GenerativeBackend.agentPlatform` is `global`, whereas
+  the default location for `GenerativeBackend.vertexAI` is `us-central1`. To use
+  `us-central1` with `GenerativeBackend.agentPlatform`, specify
+  `GenerativeBackend.agentPlatform(location = "us-central1")` when
+  initializing the SDK. However, note that most new Gemini models do
+  not support `us-central1`.
+
+# 17.14.0
+
+- [feature] Added static factory methods `createWithThinking` for `Part` implementations to expose `thoughtSignature` and `isThought` properties. (#8352)
+- [feature] Added automatic function calling support for `LiveGenerativeModel`. (#8223)
+
 # 17.13.0
 
 - [feature] Expanded `SpeechConfig` to support `MultiSpeakerVoiceConfig` and `LanguageCode`.

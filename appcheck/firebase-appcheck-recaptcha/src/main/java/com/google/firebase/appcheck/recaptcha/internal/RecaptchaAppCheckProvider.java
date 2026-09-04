@@ -114,6 +114,11 @@ public class RecaptchaAppCheckProvider implements AppCheckProvider {
 
   private Task<AppCheckToken> getToken(boolean isLimitedUseToken) {
     return getRecaptchaAttestation()
+        .addOnFailureListener(
+            liteExecutor,
+            e -> {
+              Log.w(TAG, "Failed to obtain reCAPTCHA client", e);
+            })
         .onSuccessTask(
             liteExecutor,
             recaptchaToken -> {
@@ -126,6 +131,11 @@ public class RecaptchaAppCheckProvider implements AppCheckProvider {
                           request.toJsonString().getBytes(StandardCharsets.UTF_8),
                           NetworkClient.RECAPTCHA,
                           retryManager));
+            })
+        .addOnFailureListener(
+            liteExecutor,
+            e -> {
+              Log.w(TAG, "Failed to exchange attestation for token", e);
             })
         .onSuccessTask(
             liteExecutor,

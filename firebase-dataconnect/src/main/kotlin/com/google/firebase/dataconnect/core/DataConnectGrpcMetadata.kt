@@ -31,11 +31,13 @@ import io.grpc.Metadata
 
 internal class DataConnectGrpcMetadata(
   val connectorLocation: String,
+  val connectorServiceId: String,
   val kotlinVersion: String,
   val androidVersion: Int,
   val dataConnectSdkVersion: String,
   val grpcVersion: String,
   val appId: String,
+  val projectId: String,
   val parentLogger: Logger,
 ) {
   private val logger =
@@ -43,11 +45,13 @@ internal class DataConnectGrpcMetadata(
       debug {
         "created by ${parentLogger.nameWithId} with" +
           " connectorLocation=$connectorLocation" +
+          " connectorServiceId=$connectorServiceId" +
           " kotlinVersion=$kotlinVersion" +
           " androidVersion=$androidVersion" +
           " dataConnectSdkVersion=$dataConnectSdkVersion" +
           " grpcVersion=$grpcVersion" +
-          " appId=$appId"
+          " appId=$appId" +
+          " projectId=$projectId"
       }
     }
   val instanceId: String
@@ -55,7 +59,7 @@ internal class DataConnectGrpcMetadata(
 
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
-  private fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
+  fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
     val components = buildList {
       add("gl-kotlin/$kotlinVersion")
       add("gl-android/$androidVersion")
@@ -83,6 +87,8 @@ internal class DataConnectGrpcMetadata(
       Metadata().also {
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
         it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
+        it.put(clientVersionHeader, "android/$dataConnectSdkVersion")
+        it.put(sqlConnectAffinityHeader, "$projectId$connectorServiceId")
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
@@ -166,8 +172,10 @@ internal class DataConnectGrpcMetadata(
       }
     }
 
+    const val FIREBASE_AUTH_TOKEN_HEADER = "x-firebase-auth-token"
+
     private val firebaseAuthTokenHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(FIREBASE_AUTH_TOKEN_HEADER, Metadata.ASCII_STRING_MARSHALLER)
 
     private val firebaseAppCheckTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
@@ -175,25 +183,38 @@ internal class DataConnectGrpcMetadata(
     private val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
 
+    const val GOOG_API_CLIENT_HEADER = "x-goog-api-client"
+
     private val googApiClientHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+      Metadata.Key.of(GOOG_API_CLIENT_HEADER, Metadata.ASCII_STRING_MARSHALLER)
+
+    private val clientVersionHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-client-version", Metadata.ASCII_STRING_MARSHALLER)
 
     @Suppress("SpellCheckingInspection")
     private val gmpAppIdHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
 
+    @Suppress("SpellCheckingInspection")
+    private val sqlConnectAffinityHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-sqlconnect-affinity", Metadata.ASCII_STRING_MARSHALLER)
+
     fun forSystemVersions(
       firebaseApp: FirebaseApp,
+      projectId: String,
       connectorLocation: String,
+      connectorServiceId: String,
       parentLogger: Logger,
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         connectorLocation = connectorLocation,
+        connectorServiceId = connectorServiceId,
         kotlinVersion = "${KotlinVersion.CURRENT}",
         androidVersion = Build.VERSION.SDK_INT,
         dataConnectSdkVersion = BuildConfig.VERSION_NAME,
         grpcVersion = "", // no way to get the grpc version at runtime,
         appId = firebaseApp.options.applicationId,
+        projectId = projectId,
         parentLogger = parentLogger,
       )
   }

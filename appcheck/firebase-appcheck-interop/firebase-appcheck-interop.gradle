@@ -24,14 +24,13 @@ firebaseLibrary {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.appcheck.interop"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -41,7 +40,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    testOptions.unitTests.includeAndroidResources = false
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = false
+    }
 }
 
 dependencies {

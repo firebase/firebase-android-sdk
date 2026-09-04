@@ -53,7 +53,7 @@ import java.util.Queue;
  *   <li>1. Incoming message, comes through FirebaseInstanceIdReceiver which is exported but
  *       protected by a permission. It calls {@link #startMessagingService}, which places the intent
  *       on a queue and starts the service.
- *   <li>2. PendingIntents (e.g. for Notifications click or dismissal). Same flow as 1 via
+ *   <li>2. PendingIntents (for example, for Notifications click or dismissal). Same flow as 1 via
  *       FirebaseInstanceIdReceiver.
  *   <li>3. Starting the service through some internal event. Here we don't need to go through the
  *       receiver, as the app will be running the whole time.

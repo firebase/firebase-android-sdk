@@ -17,6 +17,7 @@
 package com.google.firebase.ai
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
@@ -87,7 +88,7 @@ public class Chat(
           break
         }
         val functionResponsePart = functionCallParts.map { model.executeFunction(it) }
-        tempHistory.add(Content("function", functionResponsePart))
+        tempHistory.add(Content("user", functionResponsePart))
       }
       history.addAll(tempHistory)
       return response
@@ -220,8 +221,7 @@ public class Chat(
         if (model.requestOptions.autoFunctionCallingTurnLimit < ++turns) {
           throw RequestTimeoutException("Request took too many turns", history = tempHistory)
         }
-        val functionResponses =
-          Content("function", functionCallParts.map { model.executeFunction(it) })
+        val functionResponses = Content("user", functionCallParts.map { model.executeFunction(it) })
         tempHistory.add(Content("model", functionCallParts))
         tempHistory.add(functionResponses)
         model
@@ -238,8 +238,13 @@ public class Chat(
   }
 
   private fun Content.assertComesFromUser() {
-    if (role !in listOf("user", "function")) {
-      throw InvalidStateException("Chat prompts should come from the 'user' or 'function' role.")
+    if (role == "function") {
+      Log.w(
+        "Chat",
+        "The 'function' role is deprecated and will be removed in a future release. Please use the 'user' role instead."
+      )
+    } else if (role != "user") {
+      throw InvalidStateException("Chat prompts should come from the 'user' role.")
     }
   }
 

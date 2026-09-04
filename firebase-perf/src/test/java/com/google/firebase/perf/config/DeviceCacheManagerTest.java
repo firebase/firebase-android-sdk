@@ -15,8 +15,12 @@
 package com.google.firebase.perf.config;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -38,6 +42,27 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   public void setUp() {
     fakeScheduledExecutorService = new FakeScheduledExecutorService();
     deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
+  }
+
+  @Test
+  public void setContext_warmsUpSharedPreferencesOnExecutor() {
+    SharedPreferences spyPrefs =
+        spy(appContext.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE));
+    Context warmUpContext =
+        new ContextWrapper(appContext) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            return spyPrefs;
+          }
+        };
+
+    deviceCacheManager.setContext(warmUpContext);
+
+    verify(spyPrefs, never()).contains("");
+
+    fakeScheduledExecutorService.runAll();
+
+    verify(spyPrefs).contains("");
   }
 
   @Test

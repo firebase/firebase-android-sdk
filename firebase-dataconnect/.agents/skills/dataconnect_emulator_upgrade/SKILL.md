@@ -16,7 +16,7 @@ Follow these steps sequentially:
    Copy `./gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json` to `./gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.old.json`.
 
 2. **Update Emulator Versions JSON:**
-   Run the update script to update the versions JSON file `DataConnectExecutableVersions.json`. Use a shell command to execute: `./scripts/update_versions_json.sh`
+   Run the update script to update the versions JSON file `DataConnectExecutableVersions.json`. Use a shell command to execute: `./scripts/update_versions_json.zsh`
 
 3. **Determine Changed Default Emulator Version:**
    Determine if the `defaultVersion` in `DataConnectExecutableVersions.json` changed.

@@ -18,7 +18,6 @@ package com.google.firebase.ai
 
 import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.BlockReason
-import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.ContentModality
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FunctionCallPart
@@ -624,34 +623,6 @@ internal class VertexAIUnarySnapshotTests {
   fun `countTokens fails with model not found`() =
     goldenVertexUnaryFile("unary-failure-model-not-found.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.countTokens("prompt") } }
-    }
-
-  @Test
-  fun `generateImages should throw when all images filtered`() =
-    goldenVertexUnaryFile("unary-failure-generate-images-all-filtered.json") {
-      withTimeout(testTimeout) {
-        shouldThrow<ContentBlockedException> { imagenModel.generateImages("prompt") }
-      }
-    }
-
-  @Test
-  fun `generateImages should throw when prompt blocked`() =
-    goldenVertexUnaryFile(
-      "unary-failure-generate-images-prompt-blocked.json",
-      HttpStatusCode.BadRequest,
-    ) {
-      withTimeout(testTimeout) {
-        shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
-      }
-    }
-
-  @Test
-  fun `generateImages should contain safety data`() =
-    goldenVertexUnaryFile("unary-success-generate-images-safety_info.json") {
-      withTimeout(testTimeout) {
-        val response = imagenModel.generateImages("prompt")
-        // There is no public API, but if it parses then success
-      }
     }
 
   @Test

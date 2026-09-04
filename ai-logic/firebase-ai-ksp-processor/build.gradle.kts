@@ -27,7 +27,10 @@ dependencies {
 
 firebaseLibrary {
   publishJavadoc = false
-  releaseNotes { enabled.set(false) }
+  releaseNotes {
+    enabled.set(false)
+    nestedHeader.set(true)
+  }
 }
 
 tasks.test { useJUnitPlatform() }

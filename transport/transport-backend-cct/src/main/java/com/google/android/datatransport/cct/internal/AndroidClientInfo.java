@@ -25,7 +25,7 @@ public abstract class AndroidClientInfo {
   public abstract Integer getSdkVersion();
 
   /**
-   * Textual description of the client platform. e.g., "Nexus 4". This comes from
+   * Textual description of the client platform. For example, "Nexus 4". This comes from
    * android.os.Build.MODEL.
    */
   @Nullable
@@ -33,20 +33,20 @@ public abstract class AndroidClientInfo {
 
   /**
    * The name of the hardware (from the kernel command line or /proc). This comes from
-   * android.os.Build.Hardware. e.g., "mako".
+   * android.os.Build.Hardware. For example, "mako".
    */
   @Nullable
   public abstract String getHardware();
 
-  /** The name of the industrial design. e.g., "mako". This comes from android.os.Build.Device. */
+  /** The name of the industrial design. For example, "mako". This comes from android.os.Build.Device. */
   @Nullable
   public abstract String getDevice();
 
-  /** The name of the overall product. e.g., "occam". This comes from android.os.Build.Product. */
+  /** The name of the overall product. For example, "occam". This comes from android.os.Build.Product. */
   @Nullable
   public abstract String getProduct();
 
-  /** This comes from android.os.Build.ID. e.g., something like "JRN54F". */
+  /** This comes from android.os.Build.ID. For example, something like "JRN54F". */
   @Nullable
   public abstract String getOsBuild();
 
@@ -59,13 +59,13 @@ public abstract class AndroidClientInfo {
   public abstract String getFingerprint();
 
   /**
-   * The chosen locale from the client. e.g., "en_US", "ko_KR", "en_GB". NB: Often set as just
-   * locale-derived language; e.g., "en", "ko".
+   * The chosen locale from the client. For example, "en_US", "ko_KR", "en_GB". NB: Often set as just
+   * locale-derived language; for example, "en", "ko".
    */
   @Nullable
   public abstract String getLocale();
 
-  /** Locale-derived country, chosen by the user; e.g., "US", "KR", "JP". */
+  /** Locale-derived country, chosen by the user; for example, "US", "KR", "JP". */
   @Nullable
   public abstract String getCountry();
 

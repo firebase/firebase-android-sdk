@@ -326,7 +326,7 @@ public class UserMetadata {
      * so, it sets the marker bit to false, so the serialized data is guaranteed to contain all
      * updates until the next time the marker is flipped to true.
      *
-     * <p>If there's nothing to serialize (i.e., the marker bit is false), this method does nothing.
+     * <p>If there's nothing to serialize (that is, the marker bit is false), this method does nothing.
      */
     private void serializeIfMarked() {
       Map<String, String> keyData = null;

@@ -17,7 +17,7 @@ plugins {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
@@ -25,7 +25,7 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
+        targetSdk project.targetSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

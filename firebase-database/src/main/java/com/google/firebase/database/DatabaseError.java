@@ -216,7 +216,7 @@ public class DatabaseError {
     return message;
   }
 
-  /** @return Human-readable details on the error and additional information, e.g. links to docs; */
+  /** @return Human-readable details on the error and additional information, for example, links to docs; */
   @NonNull
   public String getDetails() {
     return details;

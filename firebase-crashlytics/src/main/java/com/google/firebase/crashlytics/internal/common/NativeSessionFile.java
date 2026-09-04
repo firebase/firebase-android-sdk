@@ -25,7 +25,7 @@ import java.io.InputStream;
  */
 interface NativeSessionFile {
 
-  /** Shortname of the file sent to the reports endpoint, e.g., "logs" */
+  /** Shortname of the file sent to the reports endpoint, for example, "logs" */
   @NonNull
   String getReportsEndpointFilename();
 

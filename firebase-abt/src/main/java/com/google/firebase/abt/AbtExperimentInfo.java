@@ -149,7 +149,7 @@ public class AbtExperimentInfo {
    *
    * @param experimentInfoMap A {@link Map} that contains all the keys specified in {@link
    *     #ALL_REQUIRED_KEYS}. The values of each key must be convertible to the appropriate type,
-   *     e.g., the value for {@link #EXPERIMENT_START_TIME_KEY} must be an ISO 8601 Date string.
+   *     for example, the value for {@link #EXPERIMENT_START_TIME_KEY} must be an ISO 8601 Date string.
    * @return An {@link AbtExperimentInfo} with the values of the experiment in {@code
    *     experimentInfoMap}.
    * @throws AbtException If one of the keys is missing, or any of the values cannot be converted to
