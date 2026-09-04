@@ -35,7 +35,7 @@ import kotlinx.serialization.serializerOrNull
  *
  * **Note for Structured Output:**
  *
- * * **On-Device (Hybrid):** Requires using the `@Generable` annotation on a `data class`. Manual
+ * * **On-device (hybrid) inference:** Requires using the `@Generable` annotation on a `data class`. Manual
  * schemas and direct `enum class` annotations are not supported.
  * * **Cloud-Only:** Supports both `@Generable` annotations and manual schemas.
  */
