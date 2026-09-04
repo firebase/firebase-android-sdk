@@ -545,18 +545,11 @@ public final class UserDataReader {
   }
 
   private Value parseInteger32Value(Int32Value int32) {
-    MapValue.Builder mapBuilder = MapValue.newBuilder();
-    mapBuilder.putFields(
-        Values.RESERVED_INT32_KEY, Value.newBuilder().setIntegerValue(int32.value).build());
-    return Value.newBuilder().setMapValue(mapBuilder).build();
+    return Values.getInt32(int32.value);
   }
 
   private Value parseDecimal128Value(Decimal128Value decimal128) {
-    MapValue.Builder mapBuilder = MapValue.newBuilder();
-    mapBuilder.putFields(
-        Values.RESERVED_DECIMAL128_KEY,
-        Value.newBuilder().setStringValue(decimal128.stringValue).build());
-    return Value.newBuilder().setMapValue(mapBuilder).build();
+    return Values.getDecimal128(decimal128.stringValue);
   }
 
   private Value parseTimestamp(Timestamp timestamp) {

@@ -147,4 +147,51 @@ public class FieldValueTest {
 
     assertNotEquals(minKey.hashCode(), maxKey.hashCode());
   }
+
+  @Test
+  public void testNumericTransformsEquals() {
+    FieldValue incInt = FieldValue.increment(5L);
+    FieldValue incIntDup = FieldValue.increment(5L);
+    FieldValue incDouble = FieldValue.increment(5.0);
+    FieldValue incDoubleDup = FieldValue.increment(5.0);
+
+    assertEquals(incInt, incIntDup);
+    assertEquals(incDouble, incDoubleDup);
+
+    assertEquals(incInt.hashCode(), incIntDup.hashCode());
+    assertEquals(incDouble.hashCode(), incDoubleDup.hashCode());
+
+    assertNotEquals(incInt, incDouble);
+
+    FieldValue minInt = FieldValue.minimum(5L);
+    FieldValue minIntDup = FieldValue.minimum(5L);
+    FieldValue minDouble = FieldValue.minimum(5.0);
+    FieldValue minDoubleDup = FieldValue.minimum(5.0);
+
+    assertEquals(minInt, minIntDup);
+    assertEquals(minDouble, minDoubleDup);
+
+    assertEquals(minInt.hashCode(), minIntDup.hashCode());
+    assertEquals(minDouble.hashCode(), minDoubleDup.hashCode());
+
+    assertNotEquals(minInt, minDouble);
+
+    FieldValue maxInt = FieldValue.maximum(5L);
+    FieldValue maxIntDup = FieldValue.maximum(5L);
+    FieldValue maxDouble = FieldValue.maximum(5.0);
+    FieldValue maxDoubleDup = FieldValue.maximum(5.0);
+
+    assertEquals(maxInt, maxIntDup);
+    assertEquals(maxDouble, maxDoubleDup);
+
+    assertEquals(maxInt.hashCode(), maxIntDup.hashCode());
+    assertEquals(maxDouble.hashCode(), maxDoubleDup.hashCode());
+
+    assertNotEquals(maxInt, maxDouble);
+
+    // Transforms of different kinds are not equal
+    assertNotEquals(incInt, minInt);
+    assertNotEquals(incInt, maxInt);
+    assertNotEquals(minInt, maxInt);
+  }
 }

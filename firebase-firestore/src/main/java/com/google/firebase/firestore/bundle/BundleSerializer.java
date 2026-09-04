@@ -268,7 +268,7 @@ public class BundleSerializer {
             fieldPath, filterOperator, decodeValue(fieldFilter.getJSONObject("value"))));
   }
 
-  private Value decodeValue(JSONObject value) throws JSONException {
+  public Value decodeValue(JSONObject value) throws JSONException {
     Value.Builder builder = Value.newBuilder();
 
     if (value.has("nullValue")) {

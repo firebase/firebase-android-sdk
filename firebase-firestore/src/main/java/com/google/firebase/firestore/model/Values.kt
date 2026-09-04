@@ -16,8 +16,10 @@ package com.google.firebase.firestore.model
 import com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCompareDoubleWithLong
 import com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCompareDoubles
 import com.google.firebase.firestore.Blob
+import com.google.firebase.firestore.Decimal128Value
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Int32Value
 import com.google.firebase.firestore.Quadruple
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.util.Assert
@@ -686,10 +688,13 @@ object Values {
     return value != null && value.hasDoubleValue()
   }
 
-  /** Returns true if `value` is either a INTEGER_VALUE or a DOUBLE_VALUE. */
+  /**
+   * Returns true if `value` is either a INTEGER_VALUE, DOUBLE_VALUE, or BSON `Int32Value` or BSON
+   * `Decimal128Value`.
+   */
   @JvmStatic
   fun isNumber(value: Value?): Boolean {
-    return isInteger(value) || isDouble(value)
+    return isInteger(value) || isDouble(value) || isInt32Value(value) || isDecimal128Value(value)
   }
 
   /** Returns true if `value` is an ARRAY_VALUE. */
@@ -905,6 +910,62 @@ object Values {
 
   @JvmStatic fun encodeValue(vector: VectorValue): Value = encodeVectorValue(vector.toArray())
 
+  @JvmStatic fun encodeValue(value: Int32Value): Value = getInt32(value.value)
+
+  @JvmStatic fun encodeValue(value: Decimal128Value): Value = getDecimal128(value.stringValue)
+
+  @JvmStatic
+  fun getInt32(value: Int): Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(RESERVED_INT32_KEY, Value.newBuilder().setIntegerValue(value.toLong()).build())
+      )
+      .build()
+
+  @JvmStatic
+  fun getDecimal128(value: String): Value =
+    Value.newBuilder()
+      .setMapValue(
+        MapValue.newBuilder()
+          .putFields(RESERVED_DECIMAL128_KEY, Value.newBuilder().setStringValue(value).build())
+      )
+      .build()
+
+  @JvmStatic
+  fun getDouble(value: Value): Double {
+    if (isDouble(value)) {
+      return value.doubleValue
+    }
+    if (isInteger(value)) {
+      return value.integerValue.toDouble()
+    }
+    if (isInt32Value(value)) {
+      return value.mapValue.fieldsMap[RESERVED_INT32_KEY]!!.integerValue.toDouble()
+    }
+    if (isDecimal128Value(value)) {
+      return value.mapValue.fieldsMap[RESERVED_DECIMAL128_KEY]!!.stringValue.toDouble()
+    }
+    throw IllegalArgumentException("getDouble was called with a non-numeric argument: $value")
+  }
+
+  @JvmStatic
+  fun getLong(value: Value): Long {
+    if (isInteger(value)) {
+      return value.integerValue
+    }
+    if (isInt32Value(value)) {
+      return value.mapValue.fieldsMap[RESERVED_INT32_KEY]!!.integerValue
+    }
+    if (isDouble(value)) {
+      return value.doubleValue.toLong()
+    }
+    if (isDecimal128Value(value)) {
+      return value.mapValue.fieldsMap[RESERVED_DECIMAL128_KEY]!!.stringValue.toDouble().toLong()
+    }
+    throw IllegalArgumentException("getLong was called with a non-numeric argument: $value")
+  }
+
   @JvmStatic
   fun encodeVectorValue(vector: DoubleArray): Value {
     val listBuilder = ArrayValue.newBuilder()
@@ -940,6 +1001,8 @@ object Values {
       is GeoPoint -> encodeValue(value)
       is Blob -> encodeValue(value)
       is VectorValue -> encodeValue(value)
+      is Int32Value -> encodeValue(value)
+      is Decimal128Value -> encodeValue(value)
       else -> throw IllegalArgumentException("Unexpected type: $value")
     }
 
