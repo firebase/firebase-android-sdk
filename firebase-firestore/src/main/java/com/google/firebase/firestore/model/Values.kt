@@ -1201,6 +1201,9 @@ object Values {
       return 0
     }
     val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    if (bytes.isEmpty) {
+      return -1
+    }
     return bytes.byteAt(0).toInt() and 0xFF
   }
 
@@ -1209,6 +1212,9 @@ object Values {
       return value.bytesValue
     }
     val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    if (bytes.isEmpty) {
+      return ByteString.EMPTY
+    }
     return bytes.substring(1)
   }
 }

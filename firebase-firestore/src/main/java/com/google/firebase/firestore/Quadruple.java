@@ -116,15 +116,15 @@ public final class Quadruple implements Comparable<Quadruple> {
     if (isNaN()) {
       return HASH_NAN;
     } else {
-      int hashCode = Boolean.hashCode(negative);
-      hashCode = hashCode * 31 + Integer.hashCode(biasedExponent);
-      hashCode = hashCode * 31 + Long.hashCode(mantHi);
-      hashCode = hashCode * 31 + Long.hashCode(mantLo);
+      int hashCode = negative ? 1231 : 1237;
+      hashCode = hashCode * 31 + biasedExponent;
+      hashCode = hashCode * 31 + (int) (mantHi ^ (mantHi >>> 32));
+      hashCode = hashCode * 31 + (int) (mantLo ^ (mantLo >>> 32));
       return hashCode;
     }
   }
 
-  private static final int HASH_NAN = 31 * 31 * Integer.hashCode((int) EXPONENT_OF_INFINITY);
+  private static final int HASH_NAN = 31 * 31 * (int) EXPONENT_OF_INFINITY;
 
   // Compare two quadruples, with -0 < 0, and all NaNs equal and larger than all numbers.
   @Override
@@ -150,21 +150,23 @@ public final class Quadruple implements Comparable<Quadruple> {
       lessThan = -1;
       greaterThan = 1;
     }
-    int expCompare = Integer.compareUnsigned(biasedExponent, other.biasedExponent);
+    int expCompare =
+        Integer.compare(
+            biasedExponent + Integer.MIN_VALUE, other.biasedExponent + Integer.MIN_VALUE);
     if (expCompare < 0) {
       return lessThan;
     }
     if (expCompare > 0) {
       return greaterThan;
     }
-    int mantHiCompare = Long.compareUnsigned(mantHi, other.mantHi);
+    int mantHiCompare = Long.compare(mantHi + Long.MIN_VALUE, other.mantHi + Long.MIN_VALUE);
     if (mantHiCompare < 0) {
       return lessThan;
     }
     if (mantHiCompare > 0) {
       return greaterThan;
     }
-    int mantLoCompare = Long.compareUnsigned(mantLo, other.mantLo);
+    int mantLoCompare = Long.compare(mantLo + Long.MIN_VALUE, other.mantLo + Long.MIN_VALUE);
     if (mantLoCompare < 0) {
       return lessThan;
     }

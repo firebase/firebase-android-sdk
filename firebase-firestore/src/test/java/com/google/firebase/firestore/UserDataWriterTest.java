@@ -25,6 +25,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -255,6 +256,19 @@ public class UserDataWriterTest {
       Object convertedValue = convertValue(value);
       assertEquals(p, convertedValue);
     }
+  }
+
+  @Test
+  public void testConvertBsonBinaryEmptyBytesThrows() {
+    Value emptyBinary =
+        Value.newBuilder()
+            .setMapValue(
+                com.google.firestore.v1.MapValue.newBuilder()
+                    .putFields(
+                        Values.RESERVED_BSON_BINARY_KEY,
+                        Value.newBuilder().setBytesValue(ByteString.EMPTY).build()))
+            .build();
+    assertThrows(IllegalArgumentException.class, () -> convertValue(emptyBinary));
   }
 
   @Test

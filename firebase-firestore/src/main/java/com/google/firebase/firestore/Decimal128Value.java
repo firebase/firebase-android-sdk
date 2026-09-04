@@ -23,6 +23,7 @@ public final class Decimal128Value {
   final Quadruple value;
 
   public Decimal128Value(@NonNull String val) {
+    java.util.Objects.requireNonNull(val, "Provided decimal string must not be null.");
     this.stringValue = val;
     this.value = Quadruple.fromString(val);
   }

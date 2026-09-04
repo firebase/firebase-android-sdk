@@ -258,6 +258,9 @@ public class ValuesTest {
         // latin small letter e with acute accent + latin small letter a
         .addEqualityGroup(wrap("\u00e9a"))
 
+        // empty bson binary
+        .addEqualityGroup(wrap(emptyBsonBinary()))
+
         // blobs
         .addEqualityGroup(
             wrap(blob()),
@@ -723,6 +726,9 @@ public class ValuesTest {
       }
       ByteString bytes =
           value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+      if (bytes.isEmpty()) {
+        return -1;
+      }
       return bytes.byteAt(0) & 0xFF;
     }
 
@@ -732,6 +738,9 @@ public class ValuesTest {
       }
       ByteString bytes =
           value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+      if (bytes.isEmpty()) {
+        return ByteString.EMPTY;
+      }
       return bytes.substring(1);
     }
   }
@@ -755,5 +764,34 @@ public class ValuesTest {
                     Values.RESERVED_BSON_BINARY_KEY,
                     Value.newBuilder().setBytesValue(ByteString.copyFrom(encodedBytes)).build()))
         .build();
+  }
+
+  private static Value emptyBsonBinary() {
+    return Value.newBuilder()
+        .setMapValue(
+            com.google.firestore.v1.MapValue.newBuilder()
+                .putFields(
+                    Values.RESERVED_BSON_BINARY_KEY,
+                    Value.newBuilder().setBytesValue(ByteString.EMPTY).build()))
+        .build();
+  }
+
+  @Test
+  public void testEmptyBsonBinaryEqualsAndCompare() {
+    Value empty1 = emptyBsonBinary();
+    Value empty2 = emptyBsonBinary();
+    Value nonEmptySubtype0 = manualBsonBinary(0, new byte[] {});
+    Value nonEmptySubtype1 = manualBsonBinary(1, new byte[] {});
+
+    assertTrue(Values.equals(empty1, empty2));
+    assertEquals(0, Values.compare(empty1, empty2));
+
+    assertFalse(Values.equals(empty1, nonEmptySubtype0));
+    assertFalse(Values.equals(empty1, nonEmptySubtype1));
+
+    assertTrue(Values.compare(empty1, nonEmptySubtype0) < 0);
+    assertTrue(Values.compare(nonEmptySubtype0, empty1) > 0);
+    assertTrue(Values.compare(empty1, nonEmptySubtype1) < 0);
+    assertTrue(Values.compare(nonEmptySubtype1, empty1) > 0);
   }
 }

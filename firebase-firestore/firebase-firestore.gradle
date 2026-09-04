@@ -132,7 +132,6 @@ android {
             excludes += "**/*.proto"
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
     testOptions {
         targetSdk project.targetSdkVersion
         unitTests.includeAndroidResources = true
@@ -187,11 +186,7 @@ dependencies {
     testFixturesImplementation libs.grpc.protobuf.lite
     testFixturesCompileOnly libs.protobuf.java
     testFixturesCompileOnly libs.javax.annotation.jsr250
-<<<<<<< HEAD
-||||||| 87a563c09
-=======
 
->>>>>>> main
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')
     testProtobuf(libs.proto.google.common.protos)

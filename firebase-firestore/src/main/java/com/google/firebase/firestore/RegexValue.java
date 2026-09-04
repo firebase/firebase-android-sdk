@@ -22,6 +22,8 @@ public final class RegexValue {
   public final String options;
 
   public RegexValue(@NonNull String pattern, @NonNull String options) {
+    java.util.Objects.requireNonNull(pattern, "Provided pattern must not be null.");
+    java.util.Objects.requireNonNull(options, "Provided options must not be null.");
     this.pattern = pattern;
     this.options = options;
   }

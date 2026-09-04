@@ -160,6 +160,9 @@ public class UserDataWriter {
 
   Blob convertBsonBinary(Map<String, Value> mapValue) {
     ByteString bytes = mapValue.get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
+    if (bytes.isEmpty()) {
+      throw new IllegalArgumentException("Invalid BSON binary: empty bytes");
+    }
     // Note: A byte is interpreted as a signed 8-bit value. Since values larger than 127 have a
     // leading '1' bit, simply casting them to integer results in sign-extension and lead to a
     // negative integer value. For example, the byte `0x80` casted to `int` results in `-128`,

@@ -239,6 +239,17 @@ public class BsonTypesTest {
   }
 
   @Test
+  public void testDecimal128ValueNullThrows() {
+    assertThrows(NullPointerException.class, () -> new Decimal128Value(null));
+  }
+
+  @Test
+  public void testRegexValueNullThrows() {
+    assertThrows(NullPointerException.class, () -> new RegexValue(null, "i"));
+    assertThrows(NullPointerException.class, () -> new RegexValue("pattern", null));
+  }
+
+  @Test
   public void testBsonBinaryDataValuesAndEquality() {
     Blob b1 = Blob.createBsonBinary(127, new byte[] {1, 2, 3});
     Blob b2 = Blob.createBsonBinary(127, new byte[] {1, 2, 3});
