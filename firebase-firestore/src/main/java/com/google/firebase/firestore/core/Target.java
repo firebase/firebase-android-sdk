@@ -16,8 +16,8 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS;
 import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
-import static com.google.firebase.firestore.model.Values.MAX_VALUE;
-import static com.google.firebase.firestore.model.Values.MIN_VALUE;
+import static com.google.firebase.firestore.model.Values.INTERNAL_MAX_VALUE;
+import static com.google.firebase.firestore.model.Values.INTERNAL_MIN_VALUE;
 import static com.google.firebase.firestore.model.Values.lowerBoundCompare;
 import static com.google.firebase.firestore.model.Values.upperBoundCompare;
 
@@ -184,7 +184,7 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}. Returns {@link Values#MIN_VALUE} if no lower bound exists.
+   * defined by {@code fieldIndex}. Returns {@link Values#INTERNAL_MIN_VALUE} if no lower bound exists.
    */
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
@@ -206,7 +206,7 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}. Returns {@link Values#MAX_VALUE} if no upper bound exists.
+   * index defined by {@code fieldIndex}. Returns {@link Values#INTERNAL_MAX_VALUE} if no upper bound exists.
    */
   public Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
@@ -235,12 +235,12 @@ public final class Target {
    */
   private Pair<Value, Boolean> getAscendingBound(
       FieldIndex.Segment segment, @Nullable Bound bound) {
-    Value segmentValue = MIN_VALUE;
+    Value segmentValue = INTERNAL_MIN_VALUE;
     boolean segmentInclusive = true;
 
     // Process all filters to find a value for the current field segment
     for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-      Value filterValue = MIN_VALUE;
+      Value filterValue = INTERNAL_MIN_VALUE;
       boolean filterInclusive = true;
 
       switch (fieldFilter.getOperator()) {
@@ -259,7 +259,7 @@ public final class Target {
           break;
         case NOT_EQUAL:
         case NOT_IN:
-          filterValue = Values.MIN_VALUE;
+          filterValue = Values.MIN_KEY_VALUE;
           break;
         default:
           // Remaining filters cannot be used as bound.
@@ -300,12 +300,12 @@ public final class Target {
    */
   private Pair<Value, Boolean> getDescendingBound(
       FieldIndex.Segment segment, @Nullable Bound bound) {
-    Value segmentValue = MAX_VALUE;
+    Value segmentValue = INTERNAL_MAX_VALUE;
     boolean segmentInclusive = true;
 
     // Process all filters to find a value for the current field segment
     for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-      Value filterValue = MAX_VALUE;
+      Value filterValue = INTERNAL_MAX_VALUE;
       boolean filterInclusive = true;
 
       switch (fieldFilter.getOperator()) {
@@ -325,7 +325,7 @@ public final class Target {
           break;
         case NOT_EQUAL:
         case NOT_IN:
-          filterValue = Values.MAX_VALUE;
+          filterValue = Values.MAX_KEY_VALUE;
           break;
         default:
           // Remaining filters cannot be used as bound.
