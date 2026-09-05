@@ -15,6 +15,7 @@ package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.Constants.TAG;
 
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -114,7 +115,7 @@ public class TopicSubscriptionClient {
                 + "/registrations/"
                 + fid
                 + "/topicSubscriptions/"
-                + topic
+                + Uri.encode(topic)
                 + ":"
                 + operation);
 
