@@ -1128,16 +1128,16 @@ internal constructor(
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
   @JvmOverloads
-  fun insert(collectionPath: String, documentIdExpr: Expression? = null): Pipeline =
-    append(InsertStage(collectionPath, documentIdExpr))
+  fun insert(collectionPath: String, documentIdExpression: Expression? = null): Pipeline =
+    append(InsertStage(collectionPath, documentIdExpression))
 
   fun upsert(vararg transforms: Selectable): Pipeline = append(UpsertStage(transforms))
 
   fun upsert(
     vararg transforms: Selectable,
     collectionPath: String? = null,
-    documentIdExpr: Expression? = null
-  ): Pipeline = append(UpsertStage(transforms, collectionPath, documentIdExpr))
+    documentIdExpression: Expression? = null
+  ): Pipeline = append(UpsertStage(transforms, collectionPath, documentIdExpression))
 }
 
 /** Start of a Firestore Pipeline */

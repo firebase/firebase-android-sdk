@@ -67,7 +67,7 @@ internal class DmlTests {
   }
 
   @Test
-  fun `insert stage without documentIdExpr generates insert proto with only collection option`() {
+  fun `insert stage without documentIdExpression generates insert proto with only collection option`() {
     val pipeline = db.pipeline().literals(mapOf("title" to "New Book")).insert("books")
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
@@ -87,7 +87,7 @@ internal class DmlTests {
         .upsert(
           add(field("count"), constant(1)).`as`("count"),
           collectionPath = "books",
-          documentIdExpr = constant("book1")
+          documentIdExpression = constant("book1")
         )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
