@@ -1785,18 +1785,20 @@ internal constructor(
 internal class InsertStage
 internal constructor(
   internal val collectionPath: String?,
-  internal val documentIdExpr: Expression?,
+  internal val documentIdExpression: Expression?,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<InsertStage>("insert", buildOptions(collectionPath, options)) {
 
-  override fun self(options: InternalOptions) = InsertStage(collectionPath, documentIdExpr, options)
+  override fun self(options: InternalOptions) =
+    InsertStage(collectionPath, documentIdExpression, options)
   override fun canonicalId(): String = "insert($collectionPath)"
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
 
   override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     var completeOptions = options
-    if (documentIdExpr != null) {
-      completeOptions = completeOptions.with("document_id", documentIdExpr.toProto(userDataReader))
+    if (documentIdExpression != null) {
+      completeOptions =
+        completeOptions.with("document_id", documentIdExpression.toProto(userDataReader))
     }
     return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
   }
@@ -1805,13 +1807,13 @@ internal constructor(
     if (this === other) return true
     if (other !is InsertStage) return false
     if (collectionPath != other.collectionPath) return false
-    if (documentIdExpr != other.documentIdExpr) return false
+    if (documentIdExpression != other.documentIdExpression) return false
     return options == other.options
   }
 
   override fun hashCode(): Int {
     var result = collectionPath?.hashCode() ?: 0
-    result = 31 * result + (documentIdExpr?.hashCode() ?: 0)
+    result = 31 * result + (documentIdExpression?.hashCode() ?: 0)
     result = 31 * result + options.hashCode()
     return result
   }
@@ -1835,12 +1837,12 @@ internal class UpsertStage
 internal constructor(
   private val fields: Array<out Selectable>,
   internal val collectionPath: String? = null,
-  internal val documentIdExpr: Expression? = null,
+  internal val documentIdExpression: Expression? = null,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<UpsertStage>("upsert", buildOptions(collectionPath, options)) {
 
   override fun self(options: InternalOptions) =
-    UpsertStage(fields, collectionPath, documentIdExpr, options)
+    UpsertStage(fields, collectionPath, documentIdExpression, options)
   override fun canonicalId(): String = "upsert($collectionPath)"
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {
@@ -1853,8 +1855,9 @@ internal constructor(
 
   override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     var completeOptions = options
-    if (documentIdExpr != null) {
-      completeOptions = completeOptions.with("document_id", documentIdExpr.toProto(userDataReader))
+    if (documentIdExpression != null) {
+      completeOptions =
+        completeOptions.with("document_id", documentIdExpression.toProto(userDataReader))
     }
     return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
   }
@@ -1864,14 +1867,14 @@ internal constructor(
     if (other !is UpsertStage) return false
     if (!fields.contentEquals(other.fields)) return false
     if (collectionPath != other.collectionPath) return false
-    if (documentIdExpr != other.documentIdExpr) return false
+    if (documentIdExpression != other.documentIdExpression) return false
     return options == other.options
   }
 
   override fun hashCode(): Int {
     var result = fields.contentHashCode()
     result = 31 * result + (collectionPath?.hashCode() ?: 0)
-    result = 31 * result + (documentIdExpr?.hashCode() ?: 0)
+    result = 31 * result + (documentIdExpression?.hashCode() ?: 0)
     result = 31 * result + options.hashCode()
     return result
   }
