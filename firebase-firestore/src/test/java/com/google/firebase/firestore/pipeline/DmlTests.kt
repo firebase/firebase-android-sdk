@@ -85,9 +85,86 @@ internal class DmlTests {
         .pipeline()
         .literals(mapOf("title" to "Upserted Book", "count" to 1))
         .upsert(
-          add(field("count"), constant(1)).`as`("count"),
           collectionPath = "books",
-          documentIdExpression = constant("book1")
+          documentIdExpression = constant("book1"),
+          additionalFields = arrayOf(add(field("count"), constant(1)).`as`("count"))
+        )
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("upsert")
+    assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+  }
+
+  @Test
+  fun `in-place upsert with varargs generates upsert proto without options`() {
+    val pipeline =
+      db.pipeline().collection("books").upsert(add(field("count"), constant(1)).`as`("count"))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("upsert")
+    assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.optionsCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `in-place upsert with list generates upsert proto without options`() {
+    val pipeline =
+      db
+        .pipeline()
+        .collection("books")
+        .upsert(listOf(add(field("count"), constant(1)).`as`("count")))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("upsert")
+    assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.optionsCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `target-collection upsert with collectionPath only generates upsert proto`() {
+    val pipeline = db.pipeline().collection("books").upsert("books_backup")
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("upsert")
+    assertThat(stage.argsCount).isEqualTo(0)
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books_backup")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
+  fun `target-collection upsert with collectionPath and documentIdExpression generates upsert proto`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("title" to "Upserted Book")).upsert("books", constant("book1"))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    assertThat(proto.stagesCount).isEqualTo(2)
+
+    val stage = proto.getStages(1)
+    assertThat(stage.name).isEqualTo("upsert")
+    assertThat(stage.argsCount).isEqualTo(0)
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+  }
+
+  @Test
+  fun `target-collection upsert with collectionPath, documentIdExpression, and additionalFields list generates upsert proto`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(mapOf("title" to "Upserted Book", "count" to 1))
+        .upsert(
+          collectionPath = "books",
+          documentIdExpression = constant("book1"),
+          additionalFields = listOf(add(field("count"), constant(1)).`as`("count"))
         )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)

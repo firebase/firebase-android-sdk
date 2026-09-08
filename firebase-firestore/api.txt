@@ -463,7 +463,12 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.UnnestStage unnestStage);
     method public com.google.firebase.firestore.Pipeline unnest(String arrayField, String alias);
     method public com.google.firebase.firestore.Pipeline update(com.google.firebase.firestore.pipeline.Selectable... fields);
-    method public com.google.firebase.firestore.Pipeline upsert(com.google.firebase.firestore.pipeline.Selectable[] transforms, String? collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression);
+    method public com.google.firebase.firestore.Pipeline upsert(com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public com.google.firebase.firestore.Pipeline upsert(java.util.List<? extends com.google.firebase.firestore.pipeline.Selectable> additionalFields);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression, com.google.firebase.firestore.pipeline.Selectable[] additionalFields);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression, java.util.List<? extends com.google.firebase.firestore.pipeline.Selectable> additionalFields);
     method public com.google.firebase.firestore.Pipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
   }
 
