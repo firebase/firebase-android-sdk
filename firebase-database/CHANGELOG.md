@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Removed usage of deprecated GMS Objects class (#8551)
+- [changed] Internal improvements for legacy infrastructure (#8551)
 
 # 22.0.1
 
