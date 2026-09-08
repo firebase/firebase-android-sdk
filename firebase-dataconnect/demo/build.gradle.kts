@@ -70,11 +70,15 @@ dokka {
 // optional components of the build (for example, spotless code formatting).
 
 android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.dataconnect.minimaldemo"
-  compileSdk = 36
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 24
-    targetSdk = 36
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
   }
