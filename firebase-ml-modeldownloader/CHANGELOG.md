@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Internal adjustments
+- [changed] Removed usage of deprecated GMS Objects class (#8551)
 - [changed] Updated the Firebase ML deprecation message to link to the Firebase ML documentation for migration options.
 
 # 26.1.0

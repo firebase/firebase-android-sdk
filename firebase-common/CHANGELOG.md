@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Internal adjustments
+- [changed] Removed usage of deprecated GMS Objects class (#8551)
 
 # 22.2.0
 
