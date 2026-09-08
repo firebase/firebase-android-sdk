@@ -1835,11 +1835,21 @@ internal constructor(
 
 internal class UpsertStage
 internal constructor(
-  private val fields: Array<out Selectable>,
+  private val fields: Array<out Selectable> = emptyArray(),
   internal val collectionPath: String? = null,
   internal val documentIdExpression: Expression? = null,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<UpsertStage>("upsert", buildOptions(collectionPath, options)) {
+
+  internal val additionalFields: Array<out Selectable>
+    get() = fields
+
+  internal constructor(
+    collectionPath: String?,
+    documentIdExpression: Expression? = null,
+    additionalFields: Array<out Selectable> = emptyArray(),
+    options: InternalOptions = InternalOptions.EMPTY
+  ) : this(additionalFields, collectionPath, documentIdExpression, options)
 
   override fun self(options: InternalOptions) =
     UpsertStage(fields, collectionPath, documentIdExpression, options)
