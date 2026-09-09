@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API.
+- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
 
 # 17.16.0
 
