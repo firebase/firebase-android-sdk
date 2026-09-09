@@ -103,10 +103,11 @@ public class FirebasePlatformLoggingTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.N)
+  @Config(sdk = Build.OLDEST_SDK)
   public void test_embedded_atNotHighEnoughApiLevel() {
     ShadowPackageManager shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
+    // Feature added in API Level 26. Test can be removed when minSDK reaches it.
     shadowPackageManager.setSystemFeature(PackageManager.FEATURE_EMBEDDED, true);
     withApp(
         "myApp",

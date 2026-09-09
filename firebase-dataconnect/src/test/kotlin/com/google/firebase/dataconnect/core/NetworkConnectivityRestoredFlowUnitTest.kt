@@ -131,7 +131,6 @@ class NetworkConnectivityRestoredFlowUnitTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.N])
   fun `networkConnectivityRestoredFlow() collection registers and unregisters callback`() =
     runTest {
       val connectivityManager: ConnectivityManager = mockk(relaxed = true)
@@ -154,7 +153,6 @@ class NetworkConnectivityRestoredFlowUnitTest {
     }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.N])
   fun `networkConnectivityRestoredFlow() collection unregisters callback on exception`() =
     `networkConnectivityRestoredFlow() collection unregisters callback on exception` { callback ->
       every { registerDefaultNetworkCallback(any<NetworkCallback>()) } answers
@@ -193,7 +191,6 @@ class NetworkConnectivityRestoredFlowUnitTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.N])
   fun `networkConnectivityRestoredFlow() sequential collection registers and unregisters callback`() =
     `networkConnectivityRestoredFlow() sequential collection registers and unregisters callback` {
       _,
@@ -233,7 +230,6 @@ class NetworkConnectivityRestoredFlowUnitTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.N])
   fun `networkConnectivityRestoredFlow() parallel collection registers and unregisters callback`() =
     `networkConnectivityRestoredFlow() parallel collection registers and unregisters callback` {
       onRegisterCallback ->
@@ -292,7 +288,6 @@ class NetworkConnectivityRestoredFlowUnitTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.N])
   fun `networkConnectivityRestoredFlow() emits expected events API 24`() =
     testNetworkCallbackSequences(includeBlockedStatusChanged = false, api24CaptureCallback)
 
