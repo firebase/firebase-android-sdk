@@ -1,0 +1,15 @@
+{
+    "name": "m186",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-database",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-storage",
+        ":ai-logic:firebase-ai"
+    ]
+}
