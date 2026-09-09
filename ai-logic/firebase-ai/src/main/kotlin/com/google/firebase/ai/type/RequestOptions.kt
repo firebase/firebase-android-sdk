@@ -41,10 +41,9 @@ internal constructor(
   public constructor(
     timeoutInMillis: Long = 180.seconds.inWholeMilliseconds,
     autoFunctionCallingTurnLimit: Int = 10,
-    customApiClientHeader: String? = null
   ) : this(
     timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS),
     autoFunctionCallingTurnLimit = autoFunctionCallingTurnLimit,
-    customApiClientHeader = customApiClientHeader
+    customApiClientHeader = null
   )
 }
