@@ -287,14 +287,19 @@ class NetworkConnectivityRestoredFlowUnitTest {
     }
   }
 
+  // TODO: Remove this test method once minSdkVersion>=29 (Build.VERSION_CODES.Q).
   @Test
-  fun `networkConnectivityRestoredFlow() emits expected events API 24`() =
-    testNetworkCallbackSequences(includeBlockedStatusChanged = false, api24CaptureCallback)
+  @Config(sdk = [Config.OLDEST_SDK])
+  fun `networkConnectivityRestoredFlow() emits expected events API less than 29`() =
+    testNetworkCallbackSequences(includeBlockedStatusChanged = false, captureCallback)
 
+  // TODO: Remove superfluous logic from this test method once minSdkVersion>=29.
+  // Namely, remove the `@Config` annotation and all traces of the `includeBlockedStatusChanged`
+  // parameter, since its value will unconditionally be `true`.
   @Test
   @Config(sdk = [Build.VERSION_CODES.Q])
   fun `networkConnectivityRestoredFlow() emits expected events API 29`() =
-    testNetworkCallbackSequences(includeBlockedStatusChanged = true, api29CaptureCallback)
+    testNetworkCallbackSequences(includeBlockedStatusChanged = true, captureCallback)
 
   private fun testNetworkCallbackSequences(
     // Specify includeBlockedStatusChanged=true if, and only if, the API level of the test
@@ -574,12 +579,8 @@ private fun networkCallbackSequenceArb(
   }
 }
 
-private val api24CaptureCallback:
+private val captureCallback:
   MockKVerificationScope.(ConnectivityManager, CapturingSlot<NetworkCallback>) -> Unit =
   { connectivityManager, slot ->
     connectivityManager.registerDefaultNetworkCallback(capture(slot))
   }
-
-// API 29 uses the same API as 24; however, create a distinct variable for it to avoid confusion
-// at the usage sites.
-private val api29CaptureCallback = api24CaptureCallback
