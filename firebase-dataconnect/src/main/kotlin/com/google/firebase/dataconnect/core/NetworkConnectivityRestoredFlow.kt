@@ -20,9 +20,7 @@ import android.content.Context.CONNECTIVITY_SERVICE
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
 import android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
-import android.net.NetworkRequest
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.google.firebase.dataconnect.util.coroutines.ConflatedSignal
@@ -55,26 +53,7 @@ internal data object NetworkConnectivityRestored
  * @return A cold [Flow] emitting [NetworkConnectivityRestored] on network state transitions that
  * suggest that network connectivity is now (or continues to be) available.
  */
-internal fun networkConnectivityRestoredFlow(context: Context): Flow<NetworkConnectivityRestored> {
-  return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-    networkConnectivityRestoredFlowAPI24(context)
-  } else {
-    networkConnectivityRestoredFlowAPI23(context)
-  }
-}
-
-private fun networkConnectivityRestoredFlowAPI23(
-  context: Context
-): Flow<NetworkConnectivityRestored> =
-  networkConnectivityRestoredFlow(context) {
-    val request = NetworkRequest.Builder().addCapability(NET_CAPABILITY_INTERNET).build()
-    registerNetworkCallback(request, it)
-  }
-
-@RequiresApi(Build.VERSION_CODES.N)
-private fun networkConnectivityRestoredFlowAPI24(
-  context: Context
-): Flow<NetworkConnectivityRestored> =
+internal fun networkConnectivityRestoredFlow(context: Context): Flow<NetworkConnectivityRestored> =
   networkConnectivityRestoredFlow(context) { registerDefaultNetworkCallback(it) }
 
 private fun networkConnectivityRestoredFlow(

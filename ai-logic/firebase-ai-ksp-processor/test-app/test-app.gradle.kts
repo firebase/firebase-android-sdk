@@ -24,11 +24,13 @@ plugins {
 }
 
 android {
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.testing.processor"
   compileSdk = 36
   defaultConfig {
     applicationId = "com.google.firebase.testing.processor"
-    minSdk = 23
+    minSdk = minSdkVersion
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
