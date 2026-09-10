@@ -73,7 +73,14 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     // OnDrawListeners cannot be removed within onDraw, so we remove it with a
     // GlobalLayoutListener
     view.getViewTreeObserver()
-        .addOnGlobalLayoutListener(() -> view.getViewTreeObserver().removeOnDrawListener(this));
+        .addOnGlobalLayoutListener(
+            new ViewTreeObserver.OnGlobalLayoutListener() {
+              @Override
+              public void onGlobalLayout() {
+                view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                view.getViewTreeObserver().removeOnDrawListener(FirstDrawDoneListener.this);
+              }
+            });
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
