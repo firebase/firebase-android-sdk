@@ -61,13 +61,13 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
       kotlinOptions.jvmTarget = "1.8"
-      kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_0.version
+      kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_1.version
     }
 
     project.afterEvaluate {
       val kotlinExtension = project.extensions.findByType(KotlinProjectExtension::class.java)
       if (kotlinExtension != null) {
-        kotlinExtension.coreLibrariesVersion = "2.0.21"
+        kotlinExtension.coreLibrariesVersion = "2.1.21"
       }
     }
 
