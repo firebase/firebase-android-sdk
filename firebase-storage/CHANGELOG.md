@@ -1,5 +1,7 @@
 # Unreleased
 
+# 22.0.2
+
 - [changed] Internal improvements for legacy infrastructure (#8551)
 
 # 22.0.1
@@ -188,8 +190,7 @@ Kotlin extensions library has no additional updates.
 
 # 19.0.1
 
-- [fixed]
-  [`StorageReference.listAll()`](</docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll()>)
+- [fixed] [`StorageReference.listAll()`](</docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll()>)
   now propagates the error messages if the List operation was denied by a Security Rule.
 
 # 19.0.0
