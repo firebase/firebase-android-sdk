@@ -103,7 +103,7 @@ public class FirebasePlatformLoggingTest {
   }
 
   @Test
-  @Config(sdk = Build.OLDEST_SDK)
+  @Config(sdk = Config.OLDEST_SDK)
   public void test_embedded_atNotHighEnoughApiLevel() {
     ShadowPackageManager shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
