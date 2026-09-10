@@ -14,9 +14,11 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import static com.google.firebase.firestore.model.Values.isDecimal128Value;
 import static com.google.firebase.firestore.model.Values.isDouble;
+import static com.google.firebase.firestore.model.Values.isInt32Value;
 import static com.google.firebase.firestore.model.Values.isInteger;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
@@ -44,21 +46,66 @@ public class NumericIncrementTransformOperation extends NumericTransformOperatio
   public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
     Value baseValue = computeBaseValue(previousValue);
 
-    // Return an integer value only if the previous value and the operand is an integer.
-    if (isInteger(baseValue) && isInteger(operand)) {
+    // If either is Decimal128, approximate sum as double and return Decimal128 Value.
+    if (isDecimal128Value(baseValue) || isDecimal128Value(operand)) {
+      double baseDouble = Values.getDouble(baseValue);
+      double operandDouble = operandAsDouble();
+      double sum = baseDouble + operandDouble;
+      return decimal128Value(sum);
+    }
+
+    // If baseValue is Int32Value:
+    if (isInt32Value(baseValue)) {
+      int baseInt =
+          (int)
+              baseValue.getMapValue().getFieldsOrThrow(Values.RESERVED_INT32_KEY).getIntegerValue();
+      if (isDouble(operand)) {
+        double sum = baseInt + operand.getDoubleValue();
+        return Value.newBuilder().setDoubleValue(sum).build();
+      } else if (isInteger(operand)) {
+        long sum = safeIncrement(baseInt, operand.getIntegerValue());
+        return Value.newBuilder().setIntegerValue(sum).build();
+      } else if (isInt32Value(operand)) {
+        int operandInt =
+            (int)
+                operand.getMapValue().getFieldsOrThrow(Values.RESERVED_INT32_KEY).getIntegerValue();
+        int sum = safeIncrementInt32(baseInt, operandInt);
+        return Values.getInt32(sum);
+      } else {
+        throw fail("Unexpected operand type: " + operand);
+      }
+    }
+
+    // Return an integer value if baseValue is integer and operand is integer or Int32Value.
+    if (isInteger(baseValue) && (isInteger(operand) || isInt32Value(operand))) {
       long sum = safeIncrement(baseValue.getIntegerValue(), operandAsLong());
       return Value.newBuilder().setIntegerValue(sum).build();
     } else if (isInteger(baseValue)) {
       double sum = baseValue.getIntegerValue() + operandAsDouble();
       return Value.newBuilder().setDoubleValue(sum).build();
     } else {
-      hardAssert(
-          isDouble(baseValue),
-          "Expected NumberValue to be of type DoubleValue, but was ",
-          previousValue.getClass().getCanonicalName());
       double sum = baseValue.getDoubleValue() + operandAsDouble();
       return Value.newBuilder().setDoubleValue(sum).build();
     }
+  }
+
+  private static Value decimal128Value(double sum) {
+    if (Double.isNaN(sum)) {
+      return Values.getDecimal128("NaN");
+    }
+    if (sum == Double.POSITIVE_INFINITY) {
+      return Values.getDecimal128("Infinity");
+    }
+    if (sum == Double.NEGATIVE_INFINITY) {
+      return Values.getDecimal128("-Infinity");
+    }
+    if (Double.doubleToRawLongBits(sum) == Double.doubleToRawLongBits(-0.0)) {
+      return Values.getDecimal128("-0");
+    }
+    if ((long) sum == sum) {
+      return Values.getDecimal128(String.valueOf((long) sum));
+    }
+    return Values.getDecimal128(Double.toString(sum));
   }
 
   /**
@@ -77,6 +124,21 @@ public class NumericIncrementTransformOperation extends NumericTransformOperatio
       return Long.MIN_VALUE;
     } else {
       return Long.MAX_VALUE;
+    }
+  }
+
+  private int safeIncrementInt32(int x, int y) {
+    int r = x + y;
+
+    // Overflow if both arguments have the opposite sign of the result
+    if (((x ^ r) & (y ^ r)) >= 0) {
+      return r;
+    }
+
+    if (r >= 0) {
+      return Integer.MIN_VALUE;
+    } else {
+      return Integer.MAX_VALUE;
     }
   }
 }

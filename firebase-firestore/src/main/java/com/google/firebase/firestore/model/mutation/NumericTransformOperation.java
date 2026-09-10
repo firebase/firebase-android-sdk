@@ -14,9 +14,6 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.model.Values.isDouble;
-import static com.google.firebase.firestore.model.Values.isInteger;
-import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -31,7 +28,7 @@ public abstract class NumericTransformOperation implements TransformOperation {
   protected final Value operand;
 
   public NumericTransformOperation(Value operand) {
-    hardAssert(Values.isNumber(operand), "NumericTransformOperation expects a NumberValue operand");
+    hardAssert(Values.isNumber(operand), "NumericTransformOperation expects a numeric operand");
     this.operand = operand;
   }
 
@@ -53,27 +50,11 @@ public abstract class NumericTransformOperation implements TransformOperation {
   }
 
   protected double operandAsDouble() {
-    if (isDouble(operand)) {
-      return operand.getDoubleValue();
-    } else if (isInteger(operand)) {
-      return operand.getIntegerValue();
-    } else {
-      throw fail(
-          "Expected 'operand' to be of Number type, but was "
-              + operand.getClass().getCanonicalName());
-    }
+    return Values.getDouble(operand);
   }
 
   protected long operandAsLong() {
-    if (isDouble(operand)) {
-      return (long) operand.getDoubleValue();
-    } else if (isInteger(operand)) {
-      return operand.getIntegerValue();
-    } else {
-      throw fail(
-          "Expected 'operand' to be of Number type, but was "
-              + operand.getClass().getCanonicalName());
-    }
+    return Values.getLong(operand);
   }
 
   @Override

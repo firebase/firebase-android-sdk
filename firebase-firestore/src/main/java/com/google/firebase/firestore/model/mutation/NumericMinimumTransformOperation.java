@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.model.Values.isInteger;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Values;
@@ -34,31 +32,17 @@ public class NumericMinimumTransformOperation extends NumericTransformOperation 
     if (!Values.isNumber(previousValue)) {
       return operand;
     }
-
-    // Return an integer value only if the previous value and the operand is an integer.
-    if (isInteger(previousValue) && isInteger(operand)) {
-      long min = Math.min(previousValue.getIntegerValue(), operandAsLong());
-      return Value.newBuilder().setIntegerValue(min).build();
-    } else {
-      double prevDouble =
-          isInteger(previousValue)
-              ? previousValue.getIntegerValue()
-              : previousValue.getDoubleValue();
-      double operDouble = operandAsDouble();
-
-      if (Double.isNaN(prevDouble)) {
-        return previousValue;
-      }
-      if (Double.isNaN(operDouble)) {
-        return operand;
-      }
-
-      if (prevDouble == operDouble) {
-        return previousValue;
-      }
-
-      boolean choosePrevious = prevDouble < operDouble;
-      return choosePrevious ? previousValue : operand;
+    if (isNan(previousValue)) {
+      return previousValue;
     }
+    if (isNan(operand)) {
+      return operand;
+    }
+
+    return Values.compare(operand, previousValue) < 0 ? operand : previousValue;
+  }
+
+  private static boolean isNan(@Nullable Value value) {
+    return Values.isNanValue(value) || Values.isDecimal128Nan(value);
   }
 }
