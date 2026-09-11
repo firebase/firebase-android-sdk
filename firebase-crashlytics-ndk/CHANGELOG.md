@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.1.1
+
 - [changed] Enabled the Relocation Read-Only (RELRO) flag across Crashlytics NDK shared libraries,
   making relocation sections read-only after loading to mitigate security exploits (#8566)
 
