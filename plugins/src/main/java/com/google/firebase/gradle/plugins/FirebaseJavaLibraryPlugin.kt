@@ -26,6 +26,8 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
@@ -54,6 +56,11 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
+      kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_1.version
+    }
+
+    project.plugins.withId("org.jetbrains.kotlin.jvm") {
+      project.extensions.findByType(KotlinProjectExtension::class.java)?.coreLibrariesVersion = "2.1.21"
     }
   }
 

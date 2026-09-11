@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
-  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
+  id("com.google.devtools.ksp") version "2.3.6"
 }
 
 android {
