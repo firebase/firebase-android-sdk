@@ -32,13 +32,13 @@ public class AIModels {
     public var app: FirebaseApp? = null
 
     public val vertexAIFlashModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.5-flash")
+      getGenerativeModel(GenerativeBackend.agentPlatform("global"), "gemini-3.5-flash")
     }
     public val vertexAIFlashLiteModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.1-flash-lite")
+      getGenerativeModel(GenerativeBackend.agentPlatform("global"), "gemini-3.1-flash-lite")
     }
     public val vertexAI3_5FlashModel: GenerativeModel by lazy {
-      getGenerativeModel(GenerativeBackend.vertexAI("global"), "gemini-3.5-flash")
+      getGenerativeModel(GenerativeBackend.agentPlatform("global"), "gemini-3.5-flash")
     }
     public val googleAIFlashModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.1-flash-lite")
@@ -50,7 +50,7 @@ public class AIModels {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.5-flash")
     }
     public val vertexAITemplateModel: TemplateGenerativeModel by lazy {
-      FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI()).templateGenerativeModel()
+      FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform()).templateGenerativeModel()
     }
     public val googleAITemplateModel: TemplateGenerativeModel by lazy {
       FirebaseAI.getInstance(app(), GenerativeBackend.googleAI()).templateGenerativeModel()
@@ -82,7 +82,7 @@ public class AIModels {
       config: GenerationConfig? = null
     ): List<GenerativeModel> {
       return listOf(
-        getGenerativeModel(GenerativeBackend.vertexAI("global"), modelName, config),
+        getGenerativeModel(GenerativeBackend.agentPlatform("global"), modelName, config),
         getGenerativeModel(GenerativeBackend.googleAI(), modelName, config),
       )
     }
@@ -122,7 +122,7 @@ public class AIModels {
       modelName: String? = null,
       config: LiveGenerationConfig? = null
     ): LiveGenerativeModel {
-      return FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
+      return FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform())
         .liveModel(
           modelName = modelName ?: "gemini-live-2.5-flash-native-audio",
           generationConfig = config,

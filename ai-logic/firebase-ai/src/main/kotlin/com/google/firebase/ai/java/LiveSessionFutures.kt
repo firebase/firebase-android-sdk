@@ -27,7 +27,6 @@ import com.google.firebase.ai.type.InlineData
 import com.google.firebase.ai.type.LiveAudioConversationConfig
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
-import com.google.firebase.ai.type.MediaData
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SessionAlreadyReceivingException
 import com.google.firebase.ai.type.Transcription
@@ -233,16 +232,6 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendStopActivityRealtime(): ListenableFuture<Unit>
 
   /**
-   * Streams client data to the model.
-   *
-   * Calling this after [startAudioConversation] will play the response audio immediately.
-   *
-   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
-   */
-  @Deprecated("Use `sendAudioRealtime`, `sendVideoRealtime`, or `sendTextRealtime` instead")
-  public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
-
-  /**
    * Sends [data][Content] to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
@@ -324,9 +313,6 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun sendStopActivityRealtime(): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.sendStopActivityRealtime() }
-
-    override fun sendMediaStream(mediaChunks: List<MediaData>) =
-      SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation(

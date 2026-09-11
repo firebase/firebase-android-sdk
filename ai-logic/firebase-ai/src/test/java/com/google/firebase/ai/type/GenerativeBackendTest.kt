@@ -45,14 +45,6 @@ internal class GenerativeBackendTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
-  fun `vertexAI default location`() {
-    val backend = GenerativeBackend.vertexAI()
-    backend.location shouldBe "us-central1"
-    backend.backend shouldBe GenerativeBackendEnum.VERTEX_AI
-  }
-
-  @Test
   fun `googleAI properties`() {
     val backend = GenerativeBackend.googleAI()
     backend.location shouldBe ""
@@ -60,18 +52,15 @@ internal class GenerativeBackendTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun `GenerativeBackend equality and hashcode`() {
     val agentPlatformGlobal1 = GenerativeBackend.agentPlatform("global")
     val agentPlatformGlobal2 = GenerativeBackend.agentPlatform("global")
     val agentPlatformUsCentral = GenerativeBackend.agentPlatform("us-central1")
-    val vertexGlobal = GenerativeBackend.vertexAI("global")
 
     agentPlatformGlobal1 shouldBe agentPlatformGlobal2
     agentPlatformGlobal1.hashCode() shouldBe agentPlatformGlobal2.hashCode()
 
     agentPlatformGlobal1 shouldNotBe agentPlatformUsCentral
-    agentPlatformGlobal1 shouldNotBe vertexGlobal
     agentPlatformGlobal1 shouldNotBe GenerativeBackend.googleAI()
   }
 }

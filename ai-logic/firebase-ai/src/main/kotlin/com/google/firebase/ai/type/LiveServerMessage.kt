@@ -48,8 +48,7 @@ import kotlinx.serialization.json.jsonObject
  */
 @PublicPreviewAPI
 public class LiveServerContent
-@Deprecated("This class should not be constructed, only received from the Server")
-public constructor(
+internal constructor(
   /**
    * The content that the model has generated as part of the current conversation with the user.
    *
@@ -131,7 +130,7 @@ public constructor(
 
 /** The model is ready to receive client messages. */
 @PublicPreviewAPI
-public class LiveServerSetupComplete : LiveServerMessage {
+public class LiveServerSetupComplete internal constructor() : LiveServerMessage {
   @Serializable
   internal data class Internal(val setupComplete: JsonObject) : InternalLiveServerMessage {
     override fun toPublic() = LiveServerSetupComplete()
@@ -156,8 +155,8 @@ public class LiveServerUnknownMessage private constructor() : LiveServerMessage 
  * @property functionCalls A list of [FunctionCallPart] to run and return responses for.
  */
 @PublicPreviewAPI
-public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>) :
-  LiveServerMessage {
+public class LiveServerToolCall
+internal constructor(public val functionCalls: List<FunctionCallPart>) : LiveServerMessage {
   @Serializable
   internal data class Internal(
     val functionCalls: List<FunctionCallPart.Internal.FunctionCall> = emptyList()
@@ -186,8 +185,8 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
  * [LiveServerToolCall], where only the provided `id`s should be cancelled.
  */
 @PublicPreviewAPI
-public class LiveServerToolCallCancellation(public val functionIds: List<String>) :
-  LiveServerMessage {
+public class LiveServerToolCallCancellation
+internal constructor(public val functionIds: List<String>) : LiveServerMessage {
   @Serializable internal data class Internal(val functionIds: List<String> = emptyList())
   @Serializable
   internal data class InternalWrapper(val toolCallCancellation: Internal) :
@@ -208,7 +207,8 @@ public class LiveServerToolCallCancellation(public val functionIds: List<String>
  * @property timeLeft The time remaining before the connection terminates.
  */
 @PublicPreviewAPI
-public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessage {
+public class LiveServerGoAway internal constructor(public val timeLeft: Duration?) :
+  LiveServerMessage {
   @Serializable internal data class Internal(val timeLeft: String? = null)
 
   @Serializable
@@ -235,7 +235,8 @@ public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessag
  * the state represented by this update.
  */
 @PublicPreviewAPI
-public class LiveSessionResumptionUpdate(
+public class LiveSessionResumptionUpdate
+internal constructor(
   public val newHandle: String? = null,
   public val resumable: Boolean? = null,
   public val lastConsumedClientMessageIndex: Int? = null

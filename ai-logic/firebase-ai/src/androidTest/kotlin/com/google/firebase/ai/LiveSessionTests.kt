@@ -268,6 +268,7 @@ class LiveSessionTests {
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
+    var handle: String? = null
     var gotTurnComplete = false
     withTimeout(30.seconds) {
       session
@@ -275,17 +276,19 @@ class LiveSessionTests {
         .takeWhile {
           if (it is LiveSessionResumptionUpdate) {
             lastResumptionUpdate = it
+            if (it.newHandle != null) {
+              handle = it.newHandle
+            }
           }
           if (it is LiveServerContent && it.turnComplete) {
             gotTurnComplete = true
           }
           // Stop when we've seen a turn complete and we have a new handle
-          !(gotTurnComplete && lastResumptionUpdate?.newHandle != null)
+          !(gotTurnComplete && handle != null)
         }
         .collect {}
     }
     lastResumptionUpdate shouldNotBe null
-    val handle = lastResumptionUpdate?.newHandle
     handle.shouldNotBeNull()
     session.resumeSession(SessionResumptionConfig(handle))
     session.send("What is my favorite color?")

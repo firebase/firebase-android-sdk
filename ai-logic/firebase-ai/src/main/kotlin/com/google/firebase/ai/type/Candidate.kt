@@ -414,12 +414,11 @@ public class FinishReason private constructor(public val name: String, public va
  * @property groundingSupports The list of [GroundingSupport] objects. Each object details how
  * specific segments of the model's response are supported by the `groundingChunks`.
  */
-public class GroundingMetadata(
+public class GroundingMetadata
+internal constructor(
   public val webSearchQueries: List<String>,
   public val searchEntryPoint: SearchEntryPoint?,
   public val retrievalQueries: List<String>,
-  @Deprecated("Use groundingChunks instead")
-  public val groundingAttribution: List<GroundingAttribution>,
   public val groundingChunks: List<GroundingChunk>,
   public val groundingSupports: List<GroundingSupport>,
 ) {
@@ -428,8 +427,6 @@ public class GroundingMetadata(
     val webSearchQueries: List<String>?,
     val searchEntryPoint: SearchEntryPoint.Internal?,
     val retrievalQueries: List<String>?,
-    @Deprecated("Use groundingChunks instead")
-    val groundingAttribution: List<GroundingAttribution.Internal>?,
     val groundingChunks: List<GroundingChunk.Internal>?,
     val groundingSupports: List<GroundingSupport.Internal>?,
   ) {
@@ -438,7 +435,6 @@ public class GroundingMetadata(
         webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
         retrievalQueries = retrievalQueries.orEmpty(),
-        groundingAttribution = groundingAttribution?.map { it.toPublic(content) }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
         groundingSupports =
           groundingSupports?.map { it.toPublic(content) }.orEmpty().filterNotNull()
@@ -453,7 +449,8 @@ public class GroundingMetadata(
  * rendering, it's recommended to display this content within a `WebView`.
  * @property sdkBlob A blob of data for the client SDK to render the search entry point.
  */
-public class SearchEntryPoint(
+public class SearchEntryPoint
+internal constructor(
   public val renderedContent: String,
   public val sdkBlob: String?,
 ) {
@@ -480,8 +477,7 @@ public class SearchEntryPoint(
  * @property maps Contains details if the grounding chunk is from a Google Maps source.
  */
 public class GroundingChunk
-@JvmOverloads
-constructor(
+internal constructor(
   public val web: WebGroundingChunk? = null,
   public val maps: GoogleMapsGroundingChunk? = null,
 ) {
@@ -503,7 +499,8 @@ constructor(
  * @property placeId This Place's resource name, in `places/{place_id}` format. This can be used to
  * look up the place using the Google Maps API.
  */
-public class GoogleMapsGroundingChunk(
+public class GoogleMapsGroundingChunk
+internal constructor(
   public val uri: String?,
   public val title: String?,
   public val placeId: String?,
@@ -522,7 +519,8 @@ public class GoogleMapsGroundingChunk(
  * @property domain The domain of the original URI from which the content was retrieved. This is
  * only populated when using the Vertex AI Gemini API.
  */
-public class WebGroundingChunk(
+public class WebGroundingChunk
+internal constructor(
   public val uri: String?,
   public val title: String?,
   public val domain: String?
@@ -545,7 +543,8 @@ public class WebGroundingChunk(
  * `[1, 3, 4]` means that `groundingChunks[1]`, `groundingChunks[3]`, `groundingChunks[4]` are the
  * retrieved content supporting this part of the response.
  */
-public class GroundingSupport(
+public class GroundingSupport
+internal constructor(
   public val segment: Segment,
   public val groundingChunkIndices: List<Int>,
 ) {
@@ -566,22 +565,6 @@ public class GroundingSupport(
   }
 }
 
-@Deprecated("Use GroundingChunk instead")
-public class GroundingAttribution(
-  public val segment: Segment,
-  public val confidenceScore: Float?,
-) {
-  @Deprecated("Use GroundingChunk instead")
-  @Serializable
-  internal data class Internal(
-    val segment: Segment.Internal,
-    val confidenceScore: Float?,
-  ) {
-    internal fun toPublic(content: Content) =
-      GroundingAttribution(segment = segment.toPublic(content), confidenceScore = confidenceScore)
-  }
-}
-
 /**
  * Represents a specific segment within a [Content] object, often used to pinpoint the exact
  * location of text or data that grounding information refers to.
@@ -596,7 +579,8 @@ public class GroundingAttribution(
  * included in the segment.
  * @property text The text corresponding to the segment from the response.
  */
-public class Segment(
+public class Segment
+internal constructor(
   public val startIndex: Int,
   public val endIndex: Int,
   public val partIndex: Int,

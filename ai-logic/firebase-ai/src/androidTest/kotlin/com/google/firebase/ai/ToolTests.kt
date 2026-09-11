@@ -300,7 +300,7 @@ class ToolTests {
     @JvmStatic
     fun setupModel(vararg functions: FunctionDeclaration): GenerativeModel {
       val model =
-        FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI("global"))
+        FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform("global"))
           .generativeModel(
             modelName = "gemini-3.5-flash",
             toolConfig =
