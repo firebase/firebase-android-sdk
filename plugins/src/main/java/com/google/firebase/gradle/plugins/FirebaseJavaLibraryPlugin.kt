@@ -59,11 +59,8 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_1.version
     }
 
-    project.afterEvaluate {
-      val kotlinExtension = project.extensions.findByType(KotlinProjectExtension::class.java)
-      if (kotlinExtension != null) {
-        kotlinExtension.coreLibrariesVersion = "2.1.21"
-      }
+    project.plugins.withId("org.jetbrains.kotlin.jvm") {
+      project.extensions.findByType(KotlinProjectExtension::class.java)?.coreLibrariesVersion = "2.1.21"
     }
   }
 
