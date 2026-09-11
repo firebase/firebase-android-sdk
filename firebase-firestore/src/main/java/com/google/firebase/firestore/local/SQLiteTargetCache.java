@@ -95,9 +95,9 @@ final class SQLiteTargetCache implements TargetCache {
   }
 
   private void saveTargetData(TargetData targetData) {
-    int targetId = targetData.getTargetId();
-    String canonicalId = targetData.getTarget().canonicalId();
-    Timestamp version = targetData.getSnapshotVersion().getTimestamp();
+    int targetId = targetData.targetId;
+    String canonicalId = targetData.target.canonicalId();
+    Timestamp version = targetData.snapshotVersion.getTimestamp();
 
     com.google.firebase.firestore.proto.Target targetProto =
         localSerializer.encodeTargetData(targetData);
@@ -116,21 +116,21 @@ final class SQLiteTargetCache implements TargetCache {
         canonicalId,
         version.getSeconds(),
         version.getNanoseconds(),
-        targetData.getResumeToken().toByteArray(),
-        targetData.getSequenceNumber(),
+        targetData.resumeToken.toByteArray(),
+        targetData.sequenceNumber,
         targetProto.toByteArray());
   }
 
   private boolean updateMetadata(TargetData targetData) {
     boolean wasUpdated = false;
 
-    if (targetData.getTargetId() > highestTargetId) {
-      highestTargetId = targetData.getTargetId();
+    if (targetData.targetId > highestTargetId) {
+      highestTargetId = targetData.targetId;
       wasUpdated = true;
     }
 
-    if (targetData.getSequenceNumber() > lastListenSequenceNumber) {
-      lastListenSequenceNumber = targetData.getSequenceNumber();
+    if (targetData.sequenceNumber > lastListenSequenceNumber) {
+      lastListenSequenceNumber = targetData.sequenceNumber;
       wasUpdated = true;
     }
 
@@ -176,7 +176,7 @@ final class SQLiteTargetCache implements TargetCache {
 
   @Override
   public void removeTargetData(TargetData targetData) {
-    int targetId = targetData.getTargetId();
+    int targetId = targetData.targetId;
     removeTarget(targetId);
     writeMetadata();
   }
@@ -222,7 +222,7 @@ final class SQLiteTargetCache implements TargetCache {
 
               // After finding a potential match, check that the query is actually equal to the
               // requested query.
-              if (target.equals(found.getTarget())) {
+              if (target.equals(found.target)) {
                 result.targetData = found;
               }
             });

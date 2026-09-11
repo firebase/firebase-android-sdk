@@ -17,7 +17,6 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -44,7 +43,7 @@ public class MockDatastore extends Datastore {
     private boolean open;
 
     /** Tracks the currently active watch targets as sent over the watch stream. */
-    private final Map<Integer, TargetData> activeTargets = new HashMap<>();
+    private final Map<RemoteTargetId, RemoteTargetData> activeTargets = new HashMap<>();
 
     MockWatchStream(AsyncQueue workerQueue, WatchStream.Callback listener) {
       super(/* channel= */ null, workerQueue, serializer, listener);
@@ -75,31 +74,31 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    public void watchQuery(TargetData targetData) {
-      String resumeToken = Util.toDebugString(targetData.getResumeToken());
+    public void watchQuery(RemoteTargetData targetData) {
+      String resumeToken = Util.toDebugString(targetData.resumeToken);
       SpecTestCase.log(
           "      watchQuery("
-              + targetData.getTarget()
+              + targetData.target
               + ", "
-              + targetData.getTargetId()
+              + targetData.targetId
               + ", "
               + resumeToken
               + ")");
       // Snapshot version is ignored on the wire
-      TargetData sentTargetData =
-          targetData.withResumeToken(targetData.getResumeToken(), SnapshotVersion.NONE);
+      RemoteTargetData sentTargetData =
+          targetData.withResumeToken(targetData.resumeToken, SnapshotVersion.NONE);
 
-      if (targetData.getExpectedCount() != null) {
-        sentTargetData = sentTargetData.withExpectedCount(targetData.getExpectedCount());
+      if (targetData.expectedCount != null) {
+        sentTargetData = sentTargetData.withExpectedCount(targetData.expectedCount);
       }
 
       watchStreamRequestCount += 1;
-      this.activeTargets.put(targetData.getTargetId(), sentTargetData);
+      this.activeTargets.put(targetData.targetId, sentTargetData);
     }
 
     @Override
-    public void unwatchTarget(int targetId) {
-      SpecTestCase.log("      unwatchTarget(" + targetId + ")");
+    public void unwatchTarget(RemoteTargetId targetId) {
+      SpecTestCase.log("      unwatchTarget(" + targetId.value() + ")");
       this.activeTargets.remove(targetId);
     }
 
@@ -114,14 +113,17 @@ public class MockDatastore extends Datastore {
       if (change instanceof WatchTargetChange) {
         WatchTargetChange targetChange = (WatchTargetChange) change;
         if (targetChange.getCause() != null && !targetChange.getCause().isOk()) {
-          for (Integer targetId : targetChange.getTargetIds()) {
+          for (RemoteTargetId targetId : targetChange.getTargetIds()) {
             if (!activeTargets.containsKey(targetId)) {
               // Technically removing an unknown target is valid (e.g. it could race with a
               // server-side removal), but we want to pay extra careful attention in tests
               // that we only remove targets we listened too.
-              throw new IllegalStateException("Removing a non-active target");
+              if (!allowUnlistedTargetRemoval) {
+                throw new IllegalStateException("Removing a non-active target");
+              }
+            } else {
+              activeTargets.remove(targetId);
             }
-            activeTargets.remove(targetId);
           }
         }
         if (!targetChange.getTargetIds().isEmpty()) {
@@ -209,6 +211,8 @@ public class MockDatastore extends Datastore {
     }
   }
 
+  public boolean allowUnlistedTargetRemoval = false;
+
   private MockWatchStream watchStream;
   private MockWriteStream writeStream;
   private int writeStreamRequestCount;
@@ -272,7 +276,7 @@ public class MockDatastore extends Datastore {
   }
 
   /** Returns the map of active targets on the watch stream, keyed by target ID. */
-  public Map<Integer, TargetData> activeTargets() {
+  public Map<RemoteTargetId, RemoteTargetData> activeTargets() {
     // Make a defensive copy as the watch stream continues to modify the Map of active targets.
     return new HashMap<>(watchStream.activeTargets);
   }

@@ -59,7 +59,7 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   @Override
   public void removeTarget(TargetData targetData) {
     MemoryTargetCache targetCache = persistence.getTargetCache();
-    for (DocumentKey key : targetCache.getMatchingKeysForTargetId(targetData.getTargetId())) {
+    for (DocumentKey key : targetCache.getMatchingKeysForTargetId(targetData.targetId)) {
       orphanedDocuments.add(key);
     }
     targetCache.removeTargetData(targetData);

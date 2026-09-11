@@ -290,7 +290,7 @@ public abstract class LruGarbageCollectorTestCase {
         "query with a mutation",
         () -> {
           TargetData targetData = addNextQueryInTransaction();
-          addDocumentToTarget(docInQuery, targetData.getTargetId());
+          addDocumentToTarget(docInQuery, targetData.targetId);
         });
     // This should catch the remaining 8 documents, plus the first two queries we added.
     assertEquals(3 + initialSequenceNumber, garbageCollector.getNthSequenceNumber(10));
@@ -302,7 +302,7 @@ public abstract class LruGarbageCollectorTestCase {
     for (int i = 0; i < 100; i++) {
       TargetData targetData = addNextQuery();
       // Mark odd queries as live so we can test filtering out live queries.
-      int targetId = targetData.getTargetId();
+      int targetId = targetData.targetId;
       if (targetId % 2 == 1) {
         activeTargetIds.put(targetId, targetData);
       }
@@ -318,8 +318,8 @@ public abstract class LruGarbageCollectorTestCase {
         () ->
             targetCache.forEachTarget(
                 (TargetData targetData) -> {
-                  boolean isOdd = targetData.getTargetId() % 2 == 1;
-                  boolean isOver20 = targetData.getTargetId() > 20;
+                  boolean isOdd = targetData.targetId % 2 == 1;
+                  boolean isOver20 = targetData.targetId > 20;
                   assertTrue(isOdd || isOver20);
                 }));
   }
@@ -339,11 +339,11 @@ public abstract class LruGarbageCollectorTestCase {
           // Add two documents to first target, queue a mutation on the second document
           TargetData targetData = addNextQueryInTransaction();
           MutableDocument doc1 = cacheADocumentInTransaction();
-          addDocumentToTarget(doc1.getKey(), targetData.getTargetId());
+          addDocumentToTarget(doc1.getKey(), targetData.targetId);
           expectedRetained.add(doc1.getKey());
 
           MutableDocument doc2 = cacheADocumentInTransaction();
-          addDocumentToTarget(doc2.getKey(), targetData.getTargetId());
+          addDocumentToTarget(doc2.getKey(), targetData.targetId);
           expectedRetained.add(doc2.getKey());
           mutations.add(mutation(doc2.getKey()));
         });
@@ -354,7 +354,7 @@ public abstract class LruGarbageCollectorTestCase {
         () -> {
           TargetData targetData = addNextQueryInTransaction();
           MutableDocument doc3 = cacheADocumentInTransaction();
-          addDocumentToTarget(doc3.getKey(), targetData.getTargetId());
+          addDocumentToTarget(doc3.getKey(), targetData.targetId);
           expectedRetained.add(doc3.getKey());
         });
 
@@ -517,7 +517,7 @@ public abstract class LruGarbageCollectorTestCase {
               for (int i = 0; i < 5; i++) {
                 MutableDocument doc = cacheADocumentInTransaction();
                 expectedRetained.add(doc.getKey());
-                addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+                addDocumentToTarget(doc.getKey(), targetData.targetId);
               }
               return targetData;
             });
@@ -537,7 +537,7 @@ public abstract class LruGarbageCollectorTestCase {
               // expect them to be removed.
               for (int i = 0; i < 2; i++) {
                 MutableDocument doc = cacheADocumentInTransaction();
-                addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+                addDocumentToTarget(doc.getKey(), targetData.targetId);
                 expectedRemoved.add(doc.getKey());
                 middleDocsToRemove.add(doc.getKey());
               }
@@ -546,13 +546,13 @@ public abstract class LruGarbageCollectorTestCase {
               for (int i = 2; i < 4; i++) {
                 MutableDocument doc = cacheADocumentInTransaction();
                 expectedRetained.add(doc.getKey());
-                addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+                addDocumentToTarget(doc.getKey(), targetData.targetId);
               }
               // This doc stays in this target, but gets updated.
               {
                 MutableDocument doc = cacheADocumentInTransaction();
                 expectedRetained.add(doc.getKey());
-                addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+                addDocumentToTarget(doc.getKey(), targetData.targetId);
                 middleDocToUpdateHolder[0] = doc.getKey();
               }
               return targetData;
@@ -573,13 +573,13 @@ public abstract class LruGarbageCollectorTestCase {
           for (int i = 0; i < 3; i++) {
             MutableDocument doc = cacheADocumentInTransaction();
             expectedRemoved.add(doc.getKey());
-            addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+            addDocumentToTarget(doc.getKey(), targetData.targetId);
           }
           // docs to add to the oldest target in addition to this target. They will be retained
           for (int i = 3; i < 5; i++) {
             MutableDocument doc = cacheADocumentInTransaction();
             expectedRetained.add(doc.getKey());
-            addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+            addDocumentToTarget(doc.getKey(), targetData.targetId);
             newestDocsToAddToOldest.add(doc.getKey());
           }
         });
@@ -594,7 +594,7 @@ public abstract class LruGarbageCollectorTestCase {
           MutableDocument doc1 = cacheADocumentInTransaction();
           markDocumentEligibleForGcInTransaction(doc1.getKey());
           updateTargetInTransaction(oldestTarget);
-          addDocumentToTarget(doc1.getKey(), oldestTarget.getTargetId());
+          addDocumentToTarget(doc1.getKey(), oldestTarget.targetId);
           // doc1 should be retained by being added to oldestTarget
           expectedRetained.add(doc1.getKey());
 
@@ -610,7 +610,7 @@ public abstract class LruGarbageCollectorTestCase {
         () -> {
           updateTargetInTransaction(middleTarget);
           for (DocumentKey key : middleDocsToRemove) {
-            removeDocumentFromTarget(key, middleTarget.getTargetId());
+            removeDocumentFromTarget(key, middleTarget.targetId);
           }
         });
 
@@ -623,7 +623,7 @@ public abstract class LruGarbageCollectorTestCase {
             () -> {
               updateTargetInTransaction(oldestTarget);
               for (DocumentKey key : newestDocsToAddToOldest) {
-                addDocumentToTarget(key, oldestTarget.getTargetId());
+                addDocumentToTarget(key, oldestTarget.targetId);
               }
               return persistence.getReferenceDelegate().getCurrentSequenceNumber();
             });
@@ -657,7 +657,7 @@ public abstract class LruGarbageCollectorTestCase {
 
     // Finally, do the garbage collection, up to but not including the removal of middleTarget
     SparseArray<TargetData> activeTargetIds = new SparseArray<>();
-    activeTargetIds.put(oldestTarget.getTargetId(), oldestTarget);
+    activeTargetIds.put(oldestTarget.targetId, oldestTarget);
     int targetsRemoved = garbageCollector.removeTargets(upperBound, activeTargetIds);
     // Expect to remove newest target
     assertEquals(1, targetsRemoved);
@@ -761,7 +761,7 @@ public abstract class LruGarbageCollectorTestCase {
             TargetData targetData = addNextQueryInTransaction();
             for (int j = 0; j < 10; j++) {
               MutableDocument doc = cacheADocumentInTransaction();
-              addDocumentToTarget(doc.getKey(), targetData.getTargetId());
+              addDocumentToTarget(doc.getKey(), targetData.targetId);
             }
           });
     }

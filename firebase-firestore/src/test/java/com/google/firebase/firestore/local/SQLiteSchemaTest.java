@@ -578,10 +578,10 @@ public class SQLiteSchemaTest {
                 Target targetProto = Target.parseFrom(targetProtoBytes);
                 TargetData targetData = serializer.decodeTargetData(targetProto);
                 String expectedCanonicalId =
-                    targetData.getTarget().isTarget()
-                        ? targetData.getTarget().target().getCanonicalId()
+                    targetData.target.isTarget()
+                        ? targetData.target.target().getCanonicalId()
                         : targetData
-                            .getTarget()
+                            .target
                             .pipeline$com_google_firebase_firebase_firestore()
                             .canonicalId$com_google_firebase_firebase_firestore()
                             .toString();
