@@ -1,5 +1,7 @@
 # Unreleased
 
+# 26.1.1
+
 - [changed] Internal improvements for legacy infrastructure (#8551)
 - [changed] Updated the Firebase ML deprecation message to link to the Firebase ML documentation for migration options.
 
