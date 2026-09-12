@@ -38,7 +38,8 @@ android {
   compileSdk = compileSdkVersion
 
   defaultConfig {
-    applicationId = "com.google.firebase.testing.sessions"
+    //applicationId = "com.google.firebase.testing.sessions"
+    applicationId = "com.kman.profilingmanagertestbed"
     applicationIdSuffix = "" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
@@ -54,6 +55,13 @@ android {
       "SHOULD_CRASH_APP",
       project.hasProperty("triggerCrashes").toString(),
     )
+  }
+
+  externalNativeBuild {
+    cmake {
+      path = file("src/main/cpp/CMakeLists.txt")
+      version = "3.22.1"
+    }
   }
 
   buildTypes {

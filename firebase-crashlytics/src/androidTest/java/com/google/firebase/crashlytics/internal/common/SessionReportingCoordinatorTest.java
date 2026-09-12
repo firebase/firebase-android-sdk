@@ -32,9 +32,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.ApplicationExitInfo;
+import android.content.Context;
 import android.os.Parcel;
 import android.system.OsConstants;
 import androidx.test.filters.SdkSuppress;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -50,6 +52,7 @@ import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPer
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -652,7 +655,65 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     assertTrue(isOom);
   }
 
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testIsMemoryLimiterKill() {
+    ApplicationExitInfo mlk =
+        makeApplicationExitInfo(ApplicationExitInfo.REASON_OTHER, 0, 0, "MemoryLimiter:AnonSwap");
+
+    boolean isMlk = reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(mlk));
+
+    assertTrue(isMlk);
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testWasHeapDumpGeneratedViaFile_returnsTrueForCorrectSessionTime()
+      throws IOException {
+    Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+    File profilingDir = new File(context.getFilesDir(), "profiling");
+    assertTrue(profilingDir.mkdir());
+
+    File heapDump =
+        new File(context.getFilesDir(), "profiling/com.google.firebase.crashlytics.test.hprof");
+    assertTrue(heapDump.createNewFile());
+
+    long sessionTime = heapDump.lastModified();
+
+    boolean generated =
+        SessionReportingCoordinator.wasHeapDumpGeneratedViaFile(context.getFilesDir(), sessionTime);
+
+    assertTrue(generated);
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testWasHeapDumpGeneratedViaFile_returnsFalseForIncorrectSessionTime()
+      throws IOException {
+    Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+    File profilingDir = new File(context.getFilesDir(), "profiling");
+    assertTrue(profilingDir.mkdir());
+
+    File heapDump =
+        new File(context.getFilesDir(), "profiling/com.google.firebase.crashlytics.test.hprof");
+    assertTrue(heapDump.createNewFile());
+
+    long sessionTime = heapDump.lastModified() + 100;
+
+    boolean generated =
+        SessionReportingCoordinator.wasHeapDumpGeneratedViaFile(context.getFilesDir(), sessionTime);
+
+    assertFalse(generated);
+  }
+
   private ApplicationExitInfo makeApplicationExitInfo(int reason, int subreason, int status) {
+    return makeApplicationExitInfo(reason, subreason, status, "");
+  }
+
+  private ApplicationExitInfo makeApplicationExitInfo(
+      int reason, int subreason, int status, String description) {
     Parcel dest = Parcel.obtain();
 
     dest.writeInt(1);
@@ -669,7 +730,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     dest.writeLong(1L);
     dest.writeLong(1L);
     dest.writeLong(1L);
-    dest.writeString("");
+    dest.writeString(description);
     dest.writeByteArray(new byte[] {});
     dest.setDataPosition(0);
 
