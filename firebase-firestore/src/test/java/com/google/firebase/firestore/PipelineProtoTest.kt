@@ -53,6 +53,8 @@ class PipelineProtoTest {
     val request = pipeline.toExecutePipelineRequest(null)
 
     assertThat(request.database).isEqualTo("projects/new-project/databases/(default)")
+    assertThat(request.hasNewTransaction()).isFalse()
+    assertThat(request.autoCommitTransaction).isFalse()
 
     val structuredPipeline = request.structuredPipeline
     val protoPipeline = structuredPipeline.pipeline

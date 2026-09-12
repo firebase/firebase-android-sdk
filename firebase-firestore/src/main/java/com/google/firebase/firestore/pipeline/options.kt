@@ -64,6 +64,10 @@ internal constructor(private val options: ImmutableMap<String, Value>) {
     }
   }
 
+  internal fun hasAtomic(): Boolean {
+    return options.containsKey("atomic") && options["atomic"]?.booleanValue == true
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is InternalOptions) return false
