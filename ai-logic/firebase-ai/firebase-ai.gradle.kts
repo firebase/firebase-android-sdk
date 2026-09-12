@@ -127,3 +127,5 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
+
+tasks.named("kotlindoc") { dependsOn(":ai-logic:firebase-ai-ondevice:kotlindoc") }
