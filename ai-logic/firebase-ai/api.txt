@@ -273,6 +273,7 @@ package com.google.firebase.ai.java {
     method public static final com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content, boolean turnComplete);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendAudioRealtime(com.google.firebase.ai.type.InlineData audio);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
@@ -1439,6 +1440,7 @@ package com.google.firebase.ai.type {
     ctor public RequestOptions();
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10);
+    ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10, String? customApiClientHeader = null);
   }
 
   public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseAIException {
