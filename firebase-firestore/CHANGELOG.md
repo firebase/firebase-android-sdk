@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+
 # 26.6.0
 
 - [feature] Implemented support for retrieving documents up to 16MB over gRPC (#8363)
