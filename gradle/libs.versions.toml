@@ -75,7 +75,7 @@ spotless = "7.0.4"
 symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
 truth = "1.4.5"
-truthProtoExtension = "1.0"
+truthProtoExtension = "1.4.5"
 wiremockStandalone = "3.13.2"
 
 [libraries]
