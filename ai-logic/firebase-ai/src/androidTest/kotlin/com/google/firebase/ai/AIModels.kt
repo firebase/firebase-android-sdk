@@ -49,7 +49,7 @@ public class AIModels {
     public val googleAI3_5FlashModel: GenerativeModel by lazy {
       getGenerativeModel(GenerativeBackend.googleAI(), "gemini-3.5-flash")
     }
-    public val vertexAITemplateModel: TemplateGenerativeModel by lazy {
+    public val agentPlatformTemplateModel: TemplateGenerativeModel by lazy {
       FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform()).templateGenerativeModel()
     }
     public val googleAITemplateModel: TemplateGenerativeModel by lazy {
@@ -88,7 +88,7 @@ public class AIModels {
     }
 
     public fun getTemplateModels(): List<TemplateGenerativeModel> {
-      return listOf(vertexAITemplateModel, googleAITemplateModel)
+      return listOf(agentPlatformTemplateModel, googleAITemplateModel)
     }
 
     public fun app(): FirebaseApp {

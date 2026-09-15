@@ -17,6 +17,7 @@ package com.google.firebase.ai {
   }
 
   public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.DownloadStatus {
+    field public static final com.google.firebase.ai.DownloadStatus.DownloadCompleted INSTANCE;
   }
 
   public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.DownloadStatus {

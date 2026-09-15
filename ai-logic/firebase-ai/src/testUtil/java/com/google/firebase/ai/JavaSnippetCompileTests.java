@@ -57,7 +57,7 @@ public class JavaSnippetCompileTests {
   public void template_chat() {
     // ...
 
-    // Initialize the Vertex AI Gemini API backend service.
+    // Initialize the Agent Platform backend service.
     TemplateGenerativeModel templateModel =
         FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
     // Initialize TemplateChat with history and inputs
@@ -89,7 +89,7 @@ public class JavaSnippetCompileTests {
   public void template_functionCallingSchemaInTemplate(String userMessage) {
     // ...
 
-    // Initialize the Vertex AI Gemini API backend service.
+    // Initialize the Agent Platform backend service.
     // Create a `TemplateGenerativeModel` instance.
     TemplateGenerativeModel model =
         FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();

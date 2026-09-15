@@ -1,6 +1,7 @@
 # Unreleased
 
 - [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API.
+- [changed] Defined `DownloadStatus.DownloadCompleted` as an object instead of a class.
 
 # 17.16.0
 

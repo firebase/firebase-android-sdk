@@ -210,10 +210,7 @@ public abstract class DownloadStatus internal constructor() {
   }
 
   /** Represents when a download has successfully completed. */
-  public class DownloadCompleted internal constructor() : DownloadStatus() {
-    override fun equals(other: Any?): Boolean = other is DownloadCompleted
-    override fun hashCode(): Int = javaClass.hashCode()
-  }
+  public object DownloadCompleted : DownloadStatus()
 
   internal companion object {
     internal fun fromInterop(
@@ -225,7 +222,7 @@ public abstract class DownloadStatus internal constructor() {
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadInProgress ->
           DownloadInProgress(status.totalBytesDownloaded)
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadCompleted ->
-          DownloadCompleted()
+          DownloadCompleted
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadFailed ->
           DownloadFailed(FirebaseAIException.from(status.exception))
         else ->
