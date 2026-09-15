@@ -130,10 +130,10 @@ internal constructor(
 
 /** The model is ready to receive client messages. */
 @PublicPreviewAPI
-public class LiveServerSetupComplete internal constructor() : LiveServerMessage {
+public object LiveServerSetupComplete : LiveServerMessage {
   @Serializable
   internal data class Internal(val setupComplete: JsonObject) : InternalLiveServerMessage {
-    override fun toPublic() = LiveServerSetupComplete()
+    override fun toPublic() = LiveServerSetupComplete
   }
 }
 
