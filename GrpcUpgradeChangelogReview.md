@@ -6,14 +6,14 @@ Branch `GrpcUpgrade` @ `854af86b5`, forked from `main` @ `64737ca0d`.
 
 Only 6 files change. All dependency changes flow through `gradle/libs.versions.toml`:
 
-| Catalog key | Before | After |
-|---|---|---|
-| `grpc` | 1.62.2 | **1.84.0** |
-| `grpcKotlin` | 1.4.1 | **1.5.0** |
-| `javalite` / `protobufjavautil` / `protoc` | 3.25.5 | **4.36.1** |
-| `protoGoogleCommonProtos` | 1.18.0 | **2.75.0** |
-| `truthProtoExtension` | 1.0 | **1.4.5** (test-only) |
-| `protobufGradlePlugin` | 0.9.6 | 0.9.6 (bumped then reverted) |
+|                Catalog key                 | Before |            After             |
+|--------------------------------------------|--------|------------------------------|
+| `grpc`                                     | 1.62.2 | **1.84.0**                   |
+| `grpcKotlin`                               | 1.4.1  | **1.5.0**                    |
+| `javalite` / `protobufjavautil` / `protoc` | 3.25.5 | **4.36.1**                   |
+| `protoGoogleCommonProtos`                  | 1.18.0 | **2.75.0**                   |
+| `truthProtoExtension`                      | 1.0    | **1.4.5** (test-only)        |
+| `protobufGradlePlugin`                     | 0.9.6  | 0.9.6 (bumped then reverted) |
 
 Plus three non-catalog changes:
 - [firebase-perf.gradle](file:///usr/local/google/home/dconeybe/work/android/main/firebase-perf/firebase-perf.gradle) — removed `api project(":protolite-well-known-types")`
@@ -22,14 +22,14 @@ Plus three non-catalog changes:
 
 ## Verdict per changelog
 
-| Module | Original entry | Verdict |
-|---|---|---|
-| `firebase-appdistribution-gradle` | "Updated gRPC dependencies to 1.84.0" | ❌ **Factually wrong** |
-| `firebase-dataconnect` | gRPC 1.84.0 + protobuf 4.36.1 | ⚠️ Incomplete |
-| `firebase-firestore` | gRPC 1.84.0 + protobuf 4.36.1 | ⚠️ Correct but thin |
-| `firebase-inappmessaging` | gRPC 1.84.0 + protobuf 4.36.1 | ⚠️ Correct but thin |
-| `firebase-perf` | protobuf 4.36.1 | ⚠️ Incomplete — missed a removal |
-| `protolite-well-known-types` | protobuf 4.36.1 + common protos 2.75.0 | ⚠️ Incomplete |
+|              Module               |             Original entry             |             Verdict              |
+|-----------------------------------|----------------------------------------|----------------------------------|
+| `firebase-appdistribution-gradle` | "Updated gRPC dependencies to 1.84.0"  | ❌ **Factually wrong**            |
+| `firebase-dataconnect`            | gRPC 1.84.0 + protobuf 4.36.1          | ⚠️ Incomplete                    |
+| `firebase-firestore`              | gRPC 1.84.0 + protobuf 4.36.1          | ⚠️ Correct but thin              |
+| `firebase-inappmessaging`         | gRPC 1.84.0 + protobuf 4.36.1          | ⚠️ Correct but thin              |
+| `firebase-perf`                   | protobuf 4.36.1                        | ⚠️ Incomplete — missed a removal |
+| `protolite-well-known-types`      | protobuf 4.36.1 + common protos 2.75.0 | ⚠️ Incomplete                    |
 
 ---
 
@@ -77,14 +77,14 @@ So "Updated Protocol Buffers to 4.36.1" is true, but only *because* `protolite-w
 
 Also unmentioned: gRPC 1.62.2 → 1.84.0 drags along several transitive bumps.
 
-| Transitive dep | 1.62.2 | 1.84.0 |
-|---|---|---|
-| `com.google.guava:guava` | 32.1.3-android | **33.6.0-android** |
-| `com.google.code.gson:gson` | 2.10.1 | **2.14.0** |
-| `io.perfmark:perfmark-api` | 0.26.0 | 0.27.0 |
-| `error_prone_annotations` | 2.23.0 | 2.50.0 |
-| `animal-sniffer-annotations` | 1.23 | 1.27 |
-| `com.squareup.okio:okio` | 3.4.0 | 3.4.0 (unchanged) |
+|        Transitive dep        |     1.62.2     |       1.84.0       |
+|------------------------------|----------------|--------------------|
+| `com.google.guava:guava`     | 32.1.3-android | **33.6.0-android** |
+| `com.google.code.gson:gson`  | 2.10.1         | **2.14.0**         |
+| `io.perfmark:perfmark-api`   | 0.26.0         | 0.27.0             |
+| `error_prone_annotations`    | 2.23.0         | 2.50.0             |
+| `animal-sniffer-annotations` | 1.23           | 1.27               |
+| `com.squareup.okio:okio`     | 3.4.0          | 3.4.0 (unchanged)  |
 
 Guava and Gson are the two that realistically cause app-side conflicts.
 
@@ -123,3 +123,4 @@ Verified these consume changed catalog entries but ship nothing new:
 - `encoders/firebase-encoders-proto`, `encoders/protoc-gen-firebase-encoders` — `truth-proto-extension` / `protobuf-java-util` changes are `testImplementation` only.
 - `firebase-abt` (`grpc-testing`), `firebase-crashlytics` / `firebase-crashlytics-ndk` (`protobuf-java`) — test/androidTest only.
 - `firebase-dataconnect:testutil` — not published.
+
