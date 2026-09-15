@@ -25,9 +25,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.internal.Logger
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.trace
 import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
@@ -39,6 +41,8 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.concurrent.thread
+import kotlin.jvm.java
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
@@ -62,6 +66,7 @@ class FirstFragment : Fragment() {
     return binding.root
   }
 
+  @RequiresApi(Build.VERSION_CODES.O_MR1)
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
@@ -72,6 +77,42 @@ class FirstFragment : Fragment() {
     binding.buttonAnr.setOnClickListener {
       while (true) {
         Thread.sleep(1_000)
+      }
+    }
+    val pinnedMemory = mutableListOf<ByteArray>()
+    binding.buttonOom.setOnClickListener {
+      Logger.getLogger().i("OOM clicked")
+
+      thread(name = "lmk-filler-thread") {
+        val runtime = Runtime.getRuntime()
+        val maxHeap = runtime.maxMemory()
+
+        Logger.getLogger().i("Max Java Heap: ${maxHeap / (1024 * 1024)} MB")
+
+        while (true) {
+          val usedHeap = runtime.totalMemory() - runtime.freeMemory()
+          val usage = 1
+
+          if (usedHeap >= maxHeap * usage) {
+            break
+          }
+
+          val chunk = ByteArray(2 * 1024 * 1024)
+
+          for (i in chunk.indices step 4096) {
+            chunk[i] = (i and 0xFF).toByte()
+          }
+
+          pinnedMemory.add(chunk)
+        }
+      }
+    }
+    binding.buttonMlk.setOnClickListener {
+      thread {
+        Logger.getLogger().i("Waiting 5 seconds....")
+        Thread.sleep(5000)
+
+        createNativeLeak()
       }
     }
     binding.createTrace.setOnClickListener {
@@ -146,7 +187,13 @@ class FirstFragment : Fragment() {
     _binding = null
   }
 
+  private external fun createNativeLeak()
+
   companion object {
+    init {
+      System.loadLibrary("native-lib")
+    }
+
     fun getDateText(): String =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
