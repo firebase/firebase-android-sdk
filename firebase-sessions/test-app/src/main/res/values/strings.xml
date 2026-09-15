@@ -34,4 +34,12 @@
   <string name="kill_processes_button_text">Kill Background Processes</string>
   <string name="no_session_text">No Session Set</string>
   <string name="session_id_label">Session Id: </string>
+  <!-- Google-Services Plugin Resources-->
+  <string name="firebase_database_url" translatable="false">https://project-12345.firebaseio.com</string>
+  <string name="gcm_defaultSenderId" translatable="false">1234567</string>
+  <string name="google_api_key" translatable="false">RaNdoMLett3r5aNdNuMb3rS</string>
+  <string name="google_app_id" translatable="false">1:1234567:android:12345ffff54321</string>
+  <string name="google_crash_reporting_api_key" translatable="false">RaNdoMLett3r5aNdNuMb3rS</string>
+  <string name="google_storage_bucket" translatable="false">project-12345.firebasestorage.app</string>
+  <string name="project_id" translatable="false">project-12345</string>
 </resources>
