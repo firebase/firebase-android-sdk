@@ -678,7 +678,7 @@ class QuerySubscriptionImplUnitTest {
           val exception = clientCollector.awaitError()
           exception.shouldBeInstanceOf<AuthUserChangedException>()
           exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-          exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
+          exception.message shouldContainWithNonAbuttingText "sn36arqzt2"
           exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
           exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
@@ -731,7 +731,7 @@ class QuerySubscriptionImplUnitTest {
             // The flow should throw AuthUserChangedException and terminate
             exception.shouldBeInstanceOf<AuthUserChangedException>()
             exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-            exception.message shouldContainWithNonAbuttingText "ytd7yf2geh"
+            exception.message shouldContainWithNonAbuttingText "b5aqrgbvyd"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
@@ -806,7 +806,7 @@ class QuerySubscriptionImplUnitTest {
             // The flow should throw AuthUserChangedException and terminate
             exception.shouldBeInstanceOf<AuthUserChangedException>()
             exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-            exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
+            exception.message shouldContainWithNonAbuttingText "sn36arqzt2"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
