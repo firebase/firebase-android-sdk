@@ -89,9 +89,9 @@ public abstract class TargetCacheTestCase {
             new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
                 query("rooms").toTarget()));
     assertNotNull(result);
-    assertEquals(targetData.getTarget(), result.getTarget());
-    assertEquals(targetData.getTargetId(), result.getTargetId());
-    assertEquals(targetData.getResumeToken(), result.getResumeToken());
+    assertEquals(targetData.target, result.target);
+    assertEquals(targetData.targetId, result.targetId);
+    assertEquals(targetData.resumeToken, result.resumeToken);
   }
 
   @Test
@@ -161,11 +161,11 @@ public abstract class TargetCacheTestCase {
                 query("rooms").toTarget()));
 
     // There's no assertArrayNotEquals
-    assertThat(targetData2.getResumeToken(), not(equalTo(targetData1.getResumeToken())));
-    assertNotEquals(targetData1.getSnapshotVersion(), targetData2.getSnapshotVersion());
+    assertThat(targetData2.resumeToken, not(equalTo(targetData1.resumeToken)));
+    assertNotEquals(targetData1.snapshotVersion, targetData2.snapshotVersion);
     assertNotNull(result);
-    assertEquals(targetData2.getResumeToken(), result.getResumeToken());
-    assertEquals(targetData2.getSnapshotVersion(), result.getSnapshotVersion());
+    assertEquals(targetData2.resumeToken, result.resumeToken);
+    assertEquals(targetData2.snapshotVersion, result.snapshotVersion);
   }
 
   @Test
@@ -199,8 +199,8 @@ public abstract class TargetCacheTestCase {
 
     DocumentKey key1 = key("rooms/foo");
     DocumentKey key2 = key("rooms/bar");
-    addMatchingKey(key1, rooms.getTargetId());
-    addMatchingKey(key2, rooms.getTargetId());
+    addMatchingKey(key1, rooms.targetId);
+    addMatchingKey(key2, rooms.targetId);
 
     assertTrue(targetCache.containsKey(key1));
     assertTrue(targetCache.containsKey(key2));

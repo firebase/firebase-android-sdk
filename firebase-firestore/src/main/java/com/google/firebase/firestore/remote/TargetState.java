@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
@@ -25,6 +26,12 @@ import java.util.Map;
 
 /** Tracks the internal state of a Watch target. */
 final class TargetState {
+  private final RemoteTargetId targetId;
+
+  TargetState(RemoteTargetId targetId) {
+    this.targetId = targetId;
+  }
+
   /**
    * The number of outstanding responses (adds or removes) that we are waiting on. We only consider
    * targets active that have no outstanding responses.
@@ -136,6 +143,10 @@ final class TargetState {
 
   void recordTargetResponse() {
     --outstandingResponses;
+    hardAssert(
+        outstandingResponses >= 0,
+        "outstandingResponses is less than 0. This indicates that the SDK received more target acks from the server than expected. The SDK should not continue to operate. targetId: %s",
+        targetId);
   }
 
   void markCurrent() {
