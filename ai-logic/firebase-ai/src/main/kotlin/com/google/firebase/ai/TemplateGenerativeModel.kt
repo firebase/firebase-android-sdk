@@ -71,14 +71,15 @@ internal constructor(
     tools: List<TemplateTool>? = null,
     toolConfig: TemplateToolConfig? = null,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-    internalAuthProvider: InternalAuthProvider? = null
+    internalAuthProvider: InternalAuthProvider? = null,
+    apiClient: String = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
   ) : this(
     templateUri,
     APIController(
       apiKey,
       "",
       requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
+      apiClient,
       firebaseApp,
       AppCheckHeaderProvider(
         TAG,
