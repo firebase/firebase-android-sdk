@@ -1,5 +1,11 @@
 # Unreleased
 
+- [changed] Updated gRPC to 1.84.0 (was 1.62.2), gRPC Kotlin to 1.5.0 (was 1.4.1), and
+  Protocol Buffers to 4.36.1 (was 3.25.5). This also pulls in updated transitive dependencies,
+  most notably Guava 33.6.0-android (was 32.1.3-android), Gson 2.14.0 (was 2.10.1), the Kotlin
+  standard library 2.2.20 (was 2.1.21), and Kotlin coroutines 1.10.2 (was 1.9.0).
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+
 # 17.4.0
 
 - [changed] Add gRPC request header for platform name and SDK version

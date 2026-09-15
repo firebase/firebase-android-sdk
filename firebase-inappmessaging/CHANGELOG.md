@@ -1,5 +1,10 @@
 # Unreleased
 
+- [changed] Updated gRPC to 1.84.0 (was 1.62.2) and Protocol Buffers to 4.36.1 (was 3.25.5),
+  the latter transitively via `protolite-well-known-types`. This also pulls in updated gRPC
+  transitive dependencies, most notably Guava 33.6.0-android (was 32.1.3-android) and Gson
+  2.14.0 (was 2.10.1). (#8580)
+
 # 22.0.3
 
 - [changed] Bumped internal dependencies.
