@@ -1,5 +1,10 @@
 # Unreleased
 
+- [changed] Applied `@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)`
+  to interfaces such as `FirebaseDataConnect` and `OperationRef`, to explicitly
+  prevent implementing or inheriting from these interfaces.
+  ([#8603](https://github.com/firebase/firebase-android-sdk/pull/8603))
+
 # 17.4.0
 
 - [changed] Add gRPC request header for platform name and SDK version
