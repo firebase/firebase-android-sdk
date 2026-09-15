@@ -1,6 +1,8 @@
 # Unreleased
 
-- [added] Added `AuthUserChangedException` to enable reliably detecting when a realtime streaming connection fails due to a change in the Firebase Auth user.
+- [feature] `AuthUserChangedException` added to enable reliably detecting when a
+  realtime streaming connection fails due to a change in the Firebase Auth user.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.4.0
 
