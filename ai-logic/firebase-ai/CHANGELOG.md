@@ -1,7 +1,12 @@
 # Unreleased
 
-- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API.
-- [changed] Defined `DownloadStatus.DownloadCompleted` as an object instead of a class.
+- [changed] Remove deprecated classes and apis. (#8563)
+- [changed] Restrict constructors on output/status types to internal. (#8563)
+- [changed] Remove vertex aI and use agent platform instead. (#8563)
+
+# 17.17.0
+
+- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
 
 # 17.16.0
 

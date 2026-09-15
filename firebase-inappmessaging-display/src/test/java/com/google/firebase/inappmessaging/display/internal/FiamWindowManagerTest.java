@@ -42,7 +42,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 23, qualifiers = "port")
+@Config(qualifiers = "port")
 public class FiamWindowManagerTest {
   private static final Context appContext = ApplicationProvider.getApplicationContext();
   private static final int WINDOW_GRAVITY = Gravity.CENTER;
