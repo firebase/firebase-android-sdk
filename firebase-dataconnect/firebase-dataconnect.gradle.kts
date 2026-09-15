@@ -106,7 +106,7 @@ protobuf {
 dependencies {
   api(libs.firebase.common)
 
-  implementation(project(":firebase-annotations"))
+  api(project(":firebase-annotations"))
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation(libs.firebase.components)
