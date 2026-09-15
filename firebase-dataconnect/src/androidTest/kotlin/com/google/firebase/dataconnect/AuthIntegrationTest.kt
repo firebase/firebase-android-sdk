@@ -21,7 +21,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer

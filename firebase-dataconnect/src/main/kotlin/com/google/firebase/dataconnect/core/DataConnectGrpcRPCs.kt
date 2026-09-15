@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.CachedDataNotFoundException
-import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -930,8 +930,6 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
 
   return ::getEntityIdForPathFunction
 }
-
-
 
 private fun isUnauthenticatedFailure(e: Throwable): Boolean =
   when (e) {

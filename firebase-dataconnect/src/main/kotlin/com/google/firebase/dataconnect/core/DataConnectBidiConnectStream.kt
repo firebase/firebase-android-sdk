@@ -16,6 +16,7 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
