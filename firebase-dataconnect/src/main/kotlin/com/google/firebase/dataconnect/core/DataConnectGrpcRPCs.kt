@@ -445,7 +445,8 @@ internal class DataConnectGrpcRPCs(
       val uidFromToken = token.ref?.authUid
       if (uidFromToken != authUid) {
         throw AuthUserChangedException(
-          "Firebase user changed from uid=${authUid?.string} to uid=${uidFromToken?.string} [ytd7yf2geh]"
+          "Firebase user changed from uid=${authUid?.string} " +
+            "to uid=${uidFromToken?.string} [b5aqrgbvyd]"
         )
       }
 

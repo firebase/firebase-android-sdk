@@ -774,7 +774,8 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
       throw AuthUserChangedException(
-        "Firebase user changed from uid=${currentAuthUid?.string} to uid=${newAuthUid?.string} [cgvra2bwg3]"
+        "Firebase user changed from uid=${currentAuthUid?.string} " +
+          "to uid=${newAuthUid?.string} [sn36arqzt2]"
       )
     }
 
