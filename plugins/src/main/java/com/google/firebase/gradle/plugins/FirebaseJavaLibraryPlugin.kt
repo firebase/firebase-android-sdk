@@ -60,7 +60,8 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     }
 
     project.plugins.withId("org.jetbrains.kotlin.jvm") {
-      project.extensions.findByType(KotlinProjectExtension::class.java)?.coreLibrariesVersion = "2.1.21"
+      project.extensions.findByType(KotlinProjectExtension::class.java)?.coreLibrariesVersion =
+        "2.1.21"
     }
   }
 
