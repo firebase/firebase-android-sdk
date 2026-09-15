@@ -444,7 +444,9 @@ internal class DataConnectGrpcRPCs(
 
       val uidFromToken = token.ref?.authUid
       if (uidFromToken != authUid) {
-        throw FirebaseUserChangedException("ytd7yf2geh", authUid, uidFromToken)
+        throw AuthUserChangedException(
+          "Firebase user changed from uid=${authUid?.string} to uid=${uidFromToken?.string} [ytd7yf2geh]"
+        )
       }
 
       return token
@@ -511,7 +513,7 @@ internal class DataConnectGrpcRPCs(
       )
 
     val shouldRetry: suspend (Throwable) -> RetryStrategy = { exception ->
-      if (exception is FirebaseUserChangedException) {
+      if (exception is AuthUserChangedException) {
         throw exception
       } else if (isUnauthenticatedFailure(exception)) {
         if (tokenManager.forceRefresh()) {
@@ -929,15 +931,7 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
   return ::getEntityIdForPathFunction
 }
 
-internal class FirebaseUserChangedException(
-  errorCode: String,
-  currentAuthUid: AuthUid?,
-  newAuthUid: AuthUid?,
-) :
-  DataConnectException(
-    "Firebase user changed from uid=${currentAuthUid?.string} " +
-      "to uid=${newAuthUid?.string} [$errorCode]"
-  )
+
 
 private fun isUnauthenticatedFailure(e: Throwable): Boolean =
   when (e) {
