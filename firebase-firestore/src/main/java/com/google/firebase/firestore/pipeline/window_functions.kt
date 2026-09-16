@@ -25,7 +25,9 @@ internal constructor(internal val alias: String, internal val expr: WindowFuncti
 class WindowFunction
 private constructor(
   private val name: String,
-  private val params: Array<out Expression> = emptyArray()
+  private val params: Array<out Expression> = emptyArray(),
+  private val options: InternalOptions = InternalOptions.EMPTY,
+  internal val window: WindowSpec? = null
 ) {
   companion object {
     /**
@@ -42,9 +44,34 @@ private constructor(
      * Creates a window function that assigns the row number to each row based on the sort order.
      */
     @JvmStatic fun rowNumber() = WindowFunction("row_number")
+
+    /**
+     * Lifts an [AggregateFunction] into a window function, preserving its name, arguments and
+     * options.
+     */
+    internal fun fromAggregate(aggregate: AggregateFunction, window: WindowSpec?) =
+      WindowFunction(aggregate.name, aggregate.params, aggregate.options, window)
   }
 
   fun alias(alias: String) = AliasedWindowFunction(alias, this)
+
+  /**
+   * Evaluates this function over an explicit window frame.
+   *
+   * The returned function carries its own framing, overriding the window declared on the enclosing
+   * `addWindowFields` stage. Passing `null` (or omitting the argument) clears any frame already
+   * attached, so the function falls back to the stage's window.
+   *
+   * @param window The window specification to evaluate this function over.
+   * @return A new [WindowFunction] with the given framing.
+   */
+  @JvmOverloads
+  fun over(window: WindowSpec? = null) = WindowFunction(name, params, options, window)
+
+  internal fun canonicalId(): String {
+    val base = "$name(${params.joinToString(",") { it.canonicalId() }})"
+    return if (window == null) base else "over($base,${window.canonicalId()})"
+  }
 
   internal fun toProto(userDataReader: UserDataReader): Value {
     val builder = ProtoFunction.newBuilder()
@@ -52,6 +79,23 @@ private constructor(
     for (param in params) {
       builder.addArgs(param.toProto(userDataReader))
     }
-    return Value.newBuilder().setFunctionValue(builder).build()
+    options.forEach(builder::putOptions)
+    val functionValue = Value.newBuilder().setFunctionValue(builder).build()
+
+    // An accumulator-level frame is encoded as an enclosing `over(fn, windowSpec)` call. Without
+    // one, the function is emitted bare and inherits the stage's window.
+    val frame = window ?: return functionValue
+
+    val over =
+      ProtoFunction.newBuilder()
+        .setName("over")
+        .addArgs(functionValue)
+        .addArgs(frame.buildInternal(userDataReader))
+    return Value.newBuilder().setFunctionValue(over).build()
   }
+
+  override fun equals(other: Any?): Boolean =
+    this === other || (other is WindowFunction && canonicalId() == other.canonicalId())
+
+  override fun hashCode(): Int = canonicalId().hashCode()
 }

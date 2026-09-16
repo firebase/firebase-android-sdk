@@ -159,5 +159,66 @@ class PipelineProtoTest {
     assertThat(totalSalesFunc.name).isEqualTo("sum")
     assertThat(totalSalesFunc.getArgs(0).fieldReferenceValue).isEqualTo("sales")
   }
+
+  @Test
+  fun testAccumulatorLevelOverIsWrappedInOverFunction() {
+    val databaseId = DatabaseId.forDatabase("new-project", "(default)")
+    val firestore = FirebaseFirestoreIntegrationTestFactory(databaseId).firestore
+
+    val pipeline =
+      firestore
+        .pipeline()
+        .collection("foo")
+        .addWindowFields(
+          WindowSpec.partition("department"),
+          AggregateFunction.rawAggregate("sum", field("sales"))
+            .over(WindowSpec.documents(1, 1).sort(field("date").ascending()))
+            .alias("rollingSales")
+        )
+
+    val windowStage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    val rolling = windowStage.argsList[1].mapValue.fieldsMap["rollingSales"]!!.functionValue
+
+    // The accumulator is wrapped: over(sum(sales), <windowSpec>).
+    assertThat(rolling.name).isEqualTo("over")
+    assertThat(rolling.argsCount).isEqualTo(2)
+
+    val inner = rolling.getArgs(0).functionValue
+    assertThat(inner.name).isEqualTo("sum")
+    assertThat(inner.getArgs(0).fieldReferenceValue).isEqualTo("sales")
+
+    // The second argument is the accumulator's own frame, not the stage's.
+    val innerWindow = rolling.getArgs(1).mapValue.fieldsMap
+    assertThat(innerWindow).doesNotContainKey("partition")
+    val documents = innerWindow["documents"]!!.mapValue.fieldsMap
+    assertThat(documents["preceding"]!!.integerValue).isEqualTo(1L)
+    assertThat(documents["following"]!!.integerValue).isEqualTo(1L)
+
+    // The stage-level spec still carries the partition.
+    val stageWindow = windowStage.argsList[0].mapValue.fieldsMap
+    assertThat(stageWindow["partition"]!!.arrayValue.getValues(0).fieldReferenceValue)
+      .isEqualTo("department")
+  }
+
+  @Test
+  fun testWindowlessAggregateUsesGlobalWindow() {
+    val databaseId = DatabaseId.forDatabase("new-project", "(default)")
+    val firestore = FirebaseFirestoreIntegrationTestFactory(databaseId).firestore
+
+    val pipeline =
+      firestore
+        .pipeline()
+        .collection("foo")
+        .addWindowFields(AggregateFunction.rawAggregate("sum", field("sales")).alias("total"))
+
+    val windowStage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(windowStage.name).isEqualTo("add_window_fields")
+
+    // A global window encodes as an empty spec: no partition, no sort, no frame.
+    assertThat(windowStage.argsList[0].mapValue.fieldsMap).isEmpty()
+
+    val total = windowStage.argsList[1].mapValue.fieldsMap["total"]!!.functionValue
+    assertThat(total.name).isEqualTo("sum")
+  }
 }
 

@@ -1800,7 +1800,21 @@ internal constructor(
   override fun self(options: InternalOptions) = AddWindowFieldsStage(window, fields, options)
 
   override fun canonicalId(): String {
-    TODO("Not yet implemented")
+    // Sorted by alias: `fields` is an order-insensitive Map for equality purposes, so the
+    // canonical form must not depend on insertion order.
+    val fieldsId =
+      fields.entries
+        .sortedBy { it.key }
+        .joinToString(",") { (alias, func) ->
+          val funcId =
+            when (func) {
+              is AggregateFunction -> func.canonicalId()
+              is WindowFunction -> func.canonicalId()
+              else -> throw IllegalArgumentException("Unsupported function: $func")
+            }
+          "$alias=$funcId"
+        }
+    return "$name(${window.canonicalId()},$fieldsId)"
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =

@@ -182,6 +182,39 @@ class WindowSpec internal constructor(
     return Value.newBuilder().setMapValue(frame).build()
   }
 
+  /**
+   * A stable, structural string identity for this spec, used for stage canonicalization.
+   *
+   * Only non-empty components are emitted so that, for example, an unsorted global window and an
+   * explicitly empty one produce the same id.
+   */
+  internal fun canonicalId(): String {
+    val parts = mutableListOf<String>()
+    if (partition.isNotEmpty()) {
+      parts.add("partition(${partition.joinToString(",") { it.canonicalId() }})")
+    }
+    if (sort.isNotEmpty()) {
+      parts.add("sort(${sort.joinToString(",") { it.canonicalId() }})")
+    }
+    documentsFrame?.let { (preceding, following) ->
+      parts.add("documents(${boundaryCanonicalId(preceding)},${boundaryCanonicalId(following)})")
+    }
+    rangeFrame?.let { (preceding, following) ->
+      parts.add("range(${boundaryCanonicalId(preceding)},${boundaryCanonicalId(following)})")
+    }
+    unit?.let { parts.add("unit(${boundaryCanonicalId(it)})") }
+    return "window(${parts.joinToString("|")})"
+  }
+
+  // Equality is defined via `canonicalId` rather than field-by-field. Frame bounds are typed `Any`
+  // and may hold boxed primitives, strings or expressions, so comparing the canonical form keeps
+  // equality consistent with what is actually sent on the wire.
+  override fun equals(other: Any?): Boolean =
+    this === other || (other is WindowSpec && canonicalId() == other.canonicalId())
+
+  override fun hashCode(): Int = canonicalId().hashCode()
+
+
   companion object {
     /**
      * Sentinel marking the current row as a frame boundary. Encoded as the string `"current"`.
@@ -281,6 +314,14 @@ internal fun resolveGroups(groups: Array<out Any>): List<Expression> {
     }
   }
 }
+
+/** Renders a frame boundary (or time unit) as a stable string for canonicalization. */
+internal fun boundaryCanonicalId(boundary: Any): String =
+  when (boundary) {
+    is Expression -> boundary.canonicalId()
+    else -> boundary.toString()
+  }
+
 
 /**
  * Encodes a frame boundary.
