@@ -55,7 +55,7 @@ class TestListenersInteropAppCheckTokenProvider implements InteropAppCheckTokenP
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getLimitedUseToken() {
-    return null;
+    return Tasks.forResult(null);
   }
 
   @Override
