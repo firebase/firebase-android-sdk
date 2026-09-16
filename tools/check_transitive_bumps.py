@@ -293,7 +293,9 @@ def is_higher_version(v_actual, v_declared):
         return a[1] > d[1]
       return a > d
 
-  return len(p_act) > len(p_dec)
+  if len(p_act) > len(p_dec):
+    return p_act[len(p_dec)][0] != 1
+  return len(p_dec) > len(p_act) and p_dec[len(p_act)][0] == 1
 
 
 def get_git_root():
