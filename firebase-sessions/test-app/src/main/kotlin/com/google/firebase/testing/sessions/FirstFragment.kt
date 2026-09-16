@@ -66,7 +66,6 @@ class FirstFragment : Fragment() {
     return binding.root
   }
 
-  @RequiresApi(Build.VERSION_CODES.O_MR1)
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
