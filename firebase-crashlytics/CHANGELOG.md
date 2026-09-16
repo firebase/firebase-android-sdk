@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
+  collection is enabled
+
 # 20.1.1
 
 - [fixed] Added consumer ProGuard rules to prevent R8 missing-class warnings for
