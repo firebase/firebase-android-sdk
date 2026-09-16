@@ -1,6 +1,9 @@
 // Signature format: 3.0
 package com.google.firebase.annotations {
 
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING, message="This declaration is \"experimental\": its signature and/or semantics " + "may change in backwards-incompatible ways at any time without notice, " + "up to and including complete removal. " + "If you have a use case that relies on this declaration please open a " + "\"feature request\" issue at https://github.com/firebase/firebase-android-sdk " + "requesting this declaration\'s promotion from \"experimental\" to \"fully-supported\".") @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFirebaseApi {
+  }
+
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface PreviewApi {
   }
 
