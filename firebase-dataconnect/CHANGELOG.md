@@ -1,7 +1,7 @@
 # Unreleased
 
 - [changed] Cleaned up overloads in QueryRef and DataConnectSettings.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8605](https://github.com/firebase/firebase-android-sdk/pull/8605))
 
 # 17.4.0
 
