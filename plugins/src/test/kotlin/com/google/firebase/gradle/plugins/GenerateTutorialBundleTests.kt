@@ -70,7 +70,7 @@ class GenerateTutorialBundleTests : FunSpec() {
       """
         <!DOCTYPE root [
           <!-- Common Firebase dependencies -->
-          <!-- Google Services Plugin -->
+          <!-- Google services Gradle plugin -->
           <!ENTITY google-services-plugin-class "com.google.gms:google-services:1.2.3">
           <!ENTITY google-services-plugin "com.google.gms.google-services">
           <!ENTITY gradle-plugin-class "com.android.tools.build:gradle:8.1.0">
@@ -146,7 +146,7 @@ class GenerateTutorialBundleTests : FunSpec() {
       """
       <!DOCTYPE root [
         <!-- Common Firebase dependencies -->
-        <!-- Google Services Plugin -->
+        <!-- Google services Gradle plugin -->
         <!ENTITY google-services-plugin-class "com.google.gms:google-services:3.2.1">
         <!ENTITY google-services-plugin "com.google.gms.google-services">
         <!ENTITY gradle-plugin-class "com.android.tools.build:gradle:8.1.0">
@@ -196,7 +196,7 @@ class GenerateTutorialBundleTests : FunSpec() {
       """
       <!DOCTYPE root [
         <!-- Common Firebase dependencies -->
-        <!-- Google Services Plugin -->
+        <!-- Google services Gradle plugin -->
         <!ENTITY google-services-plugin-class "com.google.gms:google-services:1.2.3">
         <!ENTITY google-services-plugin "com.google.gms.google-services">
         <!ENTITY gradle-plugin-class "com.android.tools.build:gradle:8.1.0">

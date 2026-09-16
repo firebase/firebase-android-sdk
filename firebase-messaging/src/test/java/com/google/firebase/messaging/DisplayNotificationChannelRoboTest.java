@@ -72,7 +72,7 @@ public final class DisplayNotificationChannelRoboTest {
   }
 
   @Test
-  @Config(minSdk = 23, maxSdk = 25) // getActiveNotifications() not available <23
+  @Config(minSdk = Config.OLDEST_SDK, maxSdk = 25) // getActiveNotifications() not available <23
   public void channelIgnored_belowApi26TargetSdk25() throws Exception {
     setTargetSdkVersion(25);
     createDisplayNotification(context, createNotificationMessage(), executor).handleNotification();
@@ -83,7 +83,7 @@ public final class DisplayNotificationChannelRoboTest {
   }
 
   @Test
-  @Config(minSdk = 23, maxSdk = 25) // getActiveNotifications() not available <23
+  @Config(minSdk = Config.OLDEST_SDK, maxSdk = 25) // getActiveNotifications() not available <23
   public void channelIgnored_belowApi26TargetSdk26() throws Exception {
     setTargetSdkVersion(26);
     createDisplayNotification(context, createNotificationMessage(), executor).handleNotification();

@@ -294,7 +294,10 @@ internal constructor(
   }
 
   /** Indicates whether the underlying websocket connection is active. */
-  public fun isClosed(): Boolean = !(session.isActive && !session.incoming.tryReceive().isClosed)
+  public fun isClosed(): Boolean {
+    val currentSession = session
+    return !currentSession.isActive || currentSession.closeReason.isCompleted
+  }
 
   /** Indicates whether an audio conversation is being used for this session object. */
   public fun isAudioConversationActive(): Boolean = (audioHelper != null)

@@ -21,7 +21,6 @@ import static org.junit.Assert.fail;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.net.Uri;
-import android.os.Build;
 import android.os.Looper;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -48,7 +47,7 @@ import org.robolectric.annotation.Config;
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.M)
+@Config(sdk = Config.OLDEST_SDK)
 public class DownloadTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);

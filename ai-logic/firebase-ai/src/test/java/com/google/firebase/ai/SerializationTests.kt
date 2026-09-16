@@ -17,7 +17,6 @@
 package com.google.firebase.ai
 
 import com.google.firebase.ai.common.TemplateGenerateContentRequest
-import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.common.util.descriptorToJson
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
@@ -28,7 +27,6 @@ import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ImageConfig
-import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.LiveServerGoAway
 import com.google.firebase.ai.type.ModalityTokenCount
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -485,43 +483,6 @@ internal class SerializationTests {
   }
 
   @Test
-  fun `test ReferenceImage serialization as Json`() {
-    val expectedJsonAsString =
-      """
-     {
-       "id": "ImagenReferenceImage",
-       "type": "object",
-        "properties": {
-            "referenceType": {
-                "type": "string"
-            },
-            "referenceImage": {
-                "${'$'}ref": "ImagenInlineImage"
-            },
-            "referenceId": {
-                "type": "integer"
-            },
-            "subjectImageConfig": {
-                "${'$'}ref": "ImagenSubjectConfig"
-            },
-            "maskImageConfig": {
-                "${'$'}ref": "ImagenMaskConfig"
-            },
-            "styleImageConfig": {
-                "${'$'}ref": "ImagenStyleConfig"
-            },
-            "controlConfig": {
-                "${'$'}ref": "ImagenControlConfig"
-            }
-        }
-    }
-      """
-        .trimIndent()
-    val actualJson = descriptorToJson(ImagenReferenceImage.Internal.serializer().descriptor)
-    expectedJsonAsString shouldEqualJson actualJson.toString()
-  }
-
-  @Test
   fun `test Tool serialization as Json`() {
     val expectedJsonAsString =
       """
@@ -592,28 +553,6 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(TemplateGenerateContentRequest.serializer().descriptor)
-    expectedJsonAsString shouldEqualJson actualJson.toString()
-  }
-
-  @Test
-  fun `test template imagen request serialization as Json`() {
-    val expectedJsonAsString =
-      """
-        {
-          "id": "TemplateGenerateImageRequest",
-          "type": "object",
-          "properties": {
-            "inputs": {
-              "type": "object",
-              "additionalProperties": {
-                "${"$"}ref": "JsonElement"
-              }
-            }
-          }
-        }
-      """
-        .trimIndent()
-    val actualJson = descriptorToJson(TemplateGenerateImageRequest.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.firebase.ai.type
 
-import kotlinx.serialization.Serializable
+package com.google.firebase.ai.ondevice.interop
 
-internal class ImagenStyleConfig(val description: String?) {
-
-  fun toInternal(): Internal {
-    return Internal(description)
-  }
-
-  @Serializable internal data class Internal(val styleDescription: String?)
+/**
+ * Represents a structured object generation response from the on-device model interop layer.
+ *
+ * @property instances The list of generated object instances across all candidates returned
+ * directly by the model engine.
+ */
+public class GenerateObjectResponse<T>(public val instances: List<T>) {
+  public constructor(instance: T) : this(listOf(instance))
 }

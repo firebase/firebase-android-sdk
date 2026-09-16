@@ -21,9 +21,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Objects;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 final class TopicOperation {
@@ -116,7 +116,7 @@ final class TopicOperation {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(operation, topic);
+    return Objects.hash(operation, topic);
   }
 
   @StringDef({TopicOperations.OPERATION_SUBSCRIBE, TopicOperations.OPERATION_UNSUBSCRIBE})

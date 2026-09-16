@@ -227,7 +227,7 @@ internal constructor(
   /**
    * @param inlineData the binary data as a [ByteArray]
    * @param mimeType an IANA standard MIME type. For supported values, see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    */
   public constructor(
     inlineData: ByteArray,
@@ -237,7 +237,7 @@ internal constructor(
   /**
    * @param inlineData the binary data as a [ByteArray]
    * @param mimeType an IANA standard MIME type. For supported values, see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    * @param displayName the name of the file, including the extension
    */
   public constructor(
@@ -447,7 +447,7 @@ internal constructor(
    * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
    * `"gs://bucket-name/path/image.jpg"`
    * @param mimeType an IANA standard MIME type. For supported MIME type values see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 

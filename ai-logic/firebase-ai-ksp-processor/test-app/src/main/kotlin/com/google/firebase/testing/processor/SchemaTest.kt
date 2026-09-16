@@ -32,14 +32,27 @@ data class RootSchemaTestClass(
   val listTest: List<Int>,
   @Guide(description = "most likely true, very rarely false") val booleanTest: Boolean,
   val stringTest: String,
-  val objTest: SecondarySchemaTestClass,
+  val compositeSchemaTest: SecondarySchemaTestClass,
   val enumTest: EnumTest,
+  @Guide(enumValues = ["NORTH", "SOUTH", "EAST", "WEST"]) val stringEnumTest: String,
+  val nestedSchemaTest: NestedSchemaTestClass,
 ) {
+  @Generable
+  data class NestedSchemaTestClass(val deeplyNestedString: String) {
+    companion object
+  }
+
   companion object
 }
 
-/** class kdoc should be used if property kdocs aren't present */
-data class SecondarySchemaTestClass(val testInt: Int)
+@Generable
+data class SecondarySchemaTestClass(
+  val testInt: Int,
+  @Guide(description = "A nested string") val testString: String = ""
+) {
+
+  companion object
+}
 
 enum class EnumTest {
   A,

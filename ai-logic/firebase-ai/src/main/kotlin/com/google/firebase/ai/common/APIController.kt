@@ -33,7 +33,6 @@ import com.google.firebase.ai.type.GRpcErrorResponse
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
-import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.InvalidAPIKeyException
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -215,37 +214,6 @@ internal constructor(
       .map { it.validate() }
       .catch { throw FirebaseAIException.from(it) }
 
-  suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
-    try {
-      client
-        .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
-          applyCommonConfiguration(request)
-          applyHeaderProvider()
-        }
-        .also { validateResponse(it) }
-        .body<ImagenGenerationResponse.Internal>()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-
-  suspend fun templateGenerateImage(
-    templateId: String,
-    request: TemplateGenerateImageRequest
-  ): ImagenGenerationResponse.Internal =
-    try {
-      client
-        .post(
-          "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templatePredict"
-        ) {
-          applyCommonConfiguration(request)
-          applyHeaderProvider()
-        }
-        .also { validateResponse(it) }
-        .body<ImagenGenerationResponse.Internal>()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-
   private fun getBidiEndpoint(location: String): String =
     when (backend?.backend) {
       GenerativeBackendEnum.VERTEX_AI,
@@ -310,9 +278,7 @@ internal constructor(
     when (request) {
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
-      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
       is TemplateGenerateContentRequest -> setBody<TemplateGenerateContentRequest>(request)
-      is TemplateGenerateImageRequest -> setBody<TemplateGenerateImageRequest>(request)
     }
     applyCommonHeaders()
   }

@@ -105,6 +105,13 @@ package com.google.firebase.ai.ondevice.interop {
     property public final String? modelVersion;
   }
 
+  public final class GenerateObjectResponse<T> {
+    ctor public GenerateObjectResponse(java.util.List<? extends T> instances);
+    ctor public GenerateObjectResponse(T instance);
+    method public java.util.List<T> getInstances();
+    property public final java.util.List<T> instances;
+  }
+
   public final class GenerationConfig {
     ctor public GenerationConfig(com.google.firebase.ai.ondevice.interop.ModelConfig modelConfig);
     method public com.google.firebase.ai.ondevice.interop.ModelConfig getModelConfig();
@@ -117,6 +124,7 @@ package com.google.firebase.ai.ondevice.interop {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.interop.DownloadStatusInterop> download();
     method public suspend Object? generateContent(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.interop.GenerateContentResponse> generateContentStream(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request);
+    method public suspend <T> Object? generateObject(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.reflect.KClass<T> schemaClass, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<T>>);
     method public suspend Object? getBaseModelName(kotlin.coroutines.Continuation<? super java.lang.String>);
     method public suspend Object? getTokenLimit(kotlin.coroutines.Continuation<? super java.lang.Integer>);
     method public suspend Object? isAvailable(kotlin.coroutines.Continuation<? super java.lang.Boolean>);

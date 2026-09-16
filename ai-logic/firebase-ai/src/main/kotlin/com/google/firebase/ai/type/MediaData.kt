@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
  *
  * @param data Byte array representing the data to be sent.
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
- * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+ * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
  */
 @PublicPreviewAPI
 @Deprecated("Use `InlineData` instead", ReplaceWith("InlineData"))

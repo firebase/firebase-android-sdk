@@ -22,7 +22,7 @@ plugins {
   alias(libs.plugins.protobuf) apply false
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
-  id("org.jetbrains.kotlin.android") version "2.1.21" apply false
+  id("org.jetbrains.kotlin.android") version "2.3.21" apply false
   id("PublishingPlugin")
   id("test-report")
   id("firebase-ci")
@@ -35,7 +35,7 @@ extra["targetSdkVersion"] = 34
 
 extra["compileSdkVersion"] = 34
 
-extra["minSdkVersion"] = 23
+extra["minSdkVersion"] = 24
 
 firebaseContinuousIntegration {
   ignorePaths =

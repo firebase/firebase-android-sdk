@@ -40,7 +40,7 @@ import kotlinx.serialization.Serializable
  * ```
  *
  * See the
- * [Use the Gemini API for function calling](https://firebase.google.com/docs/vertex-ai/function-calling?platform=android)
+ * [Use the Gemini API for function calling](https://firebase.google.com/docs/ai-logic/function-calling?platform=android)
  * guide for more information on function calling.
  *
  * @param name The name of the function.

@@ -1,6 +1,13 @@
 # Unreleased
 
+# 25.1.3
+
+- [changed] Internal improvements for legacy infrastructure (#8551)
+
+# 25.1.2
+
 - [fixed] FCM registration error due to FID_ALREADY_USED (#8507)
+- [fixed] StrictMode LeakedClosableViolation in TopicSubscriptionClient (#8534)
 
 # 25.1.1
 
