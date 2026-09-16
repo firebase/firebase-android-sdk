@@ -101,8 +101,7 @@ package com.google.firebase.dataconnect {
   }
 
   public final class DataConnectSettings {
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
+    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings = null);
     method public com.google.firebase.dataconnect.CacheSettings? getCacheSettings();
     method public String getHost();
     method public boolean getSslEnabled();
@@ -112,8 +111,7 @@ package com.google.firebase.dataconnect {
   }
 
   public final class DataConnectSettingsKt {
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled);
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
+    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings = cacheSettings);
   }
 
   public enum DataSource {
@@ -306,8 +304,8 @@ package com.google.firebase.dataconnect {
 
   public interface QueryRef<Data, Variables> extends com.google.firebase.dataconnect.OperationRef<Data,Variables> {
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public com.google.firebase.dataconnect.QueryRef<Data,Variables> copy(String operationName, Variables variables, kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType callerSdkType, kotlinx.serialization.modules.SerializersModule? dataSerializersModule, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
-    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
-    method public suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
+    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy = com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
+    method public default suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public com.google.firebase.dataconnect.QuerySubscription<Data,Variables> subscribe();
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewData> com.google.firebase.dataconnect.QueryRef<NewData,Variables> withDataDeserializer(kotlinx.serialization.DeserializationStrategy<? extends NewData> dataDeserializer, kotlinx.serialization.modules.SerializersModule? dataSerializersModule);
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewVariables> com.google.firebase.dataconnect.QueryRef<Data,NewVariables> withVariablesSerializer(NewVariables variables, kotlinx.serialization.SerializationStrategy<? super NewVariables> variablesSerializer, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
