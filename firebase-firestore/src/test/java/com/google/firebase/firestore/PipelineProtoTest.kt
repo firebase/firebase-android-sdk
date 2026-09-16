@@ -20,7 +20,6 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.pipeline.WindowSpec
-import com.google.firebase.firestore.pipeline.TimeGranularity
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,9 +134,9 @@ class PipelineProtoTest {
     // Arg 0: WindowSpec
     val windowSpec = args[0].mapValue.fieldsMap
     
-    // Check group
-    val groupArray = windowSpec["group"]!!.arrayValue
-    assertThat(groupArray.getValues(0).fieldReferenceValue).isEqualTo("department")
+    // Check partition
+    val partitionArray = windowSpec["partition"]!!.arrayValue
+    assertThat(partitionArray.getValues(0).fieldReferenceValue).isEqualTo("department")
 
     // Check sort
     val sortArray = windowSpec["sort"]!!.arrayValue
@@ -150,8 +149,9 @@ class PipelineProtoTest {
     assertThat(rangeMap["preceding"]!!.integerValue).isEqualTo(30L)
     assertThat(rangeMap["following"]!!.stringValue).isEqualTo("current")
 
-    // Check unit
-    assertThat(windowSpec["unit"]!!.stringValue).isEqualTo("day")
+    // Check unit. It is nested *inside* the range frame, matching the JS SDK wire format.
+    assertThat(rangeMap["unit"]!!.stringValue).isEqualTo("day")
+    assertThat(windowSpec).doesNotContainKey("unit")
 
     // Arg 1: Accumulators
     val fieldsMap = args[1].mapValue.fieldsMap

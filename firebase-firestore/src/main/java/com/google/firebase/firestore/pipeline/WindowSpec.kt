@@ -21,12 +21,18 @@ import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 
 class WindowSpec internal constructor(
-  val groups: List<Expression> = emptyList(),
+  val partition: List<Expression> = emptyList(),
   val sort: List<Ordering> = emptyList(),
   internal val documentsFrame: Pair<Any, Any>? = null,
   internal val rangeFrame: Pair<Any, Any>? = null,
   val unit: Any? = null
 ) {
+
+  /**
+   * Creates an empty window spec: a single global partition covering the entire result set, with
+   * no sort and no explicit frame.
+   */
+  constructor() : this(emptyList(), emptyList(), null, null, null)
 
   /** Specify partition group columns. */
   @JvmName("withPartitionExpression")
@@ -40,54 +46,101 @@ class WindowSpec internal constructor(
   /** Specify sort order for this window spec. */
   @JvmName("withSortOrdering")
   fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
-    WindowSpec(groups, listOf(order, *additionalOrders), documentsFrame, rangeFrame, unit)
+    WindowSpec(partition, listOf(order, *additionalOrders), documentsFrame, rangeFrame, unit)
 
   @JvmName("withSortList")
   fun sort(orders: List<Ordering>): WindowSpec =
-    WindowSpec(groups, orders, documentsFrame, rangeFrame, unit)
+    WindowSpec(partition, orders, documentsFrame, rangeFrame, unit)
+
+  // Note: frame setters intentionally preserve any previously-set frame of the other kind rather
+  // than clearing it. Specifying both `documents` and `range` is invalid, but the JS SDK encodes
+  // both and lets the backend reject it; Android matches that so the error surfaces identically.
 
   /** Specify document-count based window frame. */
   @JvmName("withDocumentsInt")
   fun documents(preceding: Int, following: Int): WindowSpec =
-    WindowSpec(groups, sort, Pair(preceding, following), null, unit)
+    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
 
   @JvmName("withDocumentsExpr")
   fun documents(preceding: Expression, following: Expression): WindowSpec =
-    WindowSpec(groups, sort, Pair(preceding, following), null, unit)
+    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+
+  /**
+   * Specify a document-count frame with bounds of mixed or heterogeneous types, e.g.
+   * `(Int, Expression)` or `(String, String)`. Invalid combinations are encoded and rejected by
+   * the backend.
+   */
+  @JvmName("withDocumentsAny")
+  fun documents(preceding: Any, following: Any): WindowSpec =
+    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
 
   /** Specify range-value based window frame. */
   @JvmName("withRangeInt")
   fun range(preceding: Int, following: Int): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   @JvmName("withRangeIntUnitString")
   fun range(preceding: Int, following: Int, unit: String): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   @JvmName("withRangeIntUnitExpr")
   fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  /**
+   * Specify a numeric range frame with fractional bounds.
+   *
+   * Only meaningful for value-based (non-time) range frames, e.g. when sorting by a price or
+   * score. The backend rejects fractional offsets for time-based range frames.
+   */
+  @JvmName("withRangeDouble")
+  fun range(preceding: Double, following: Double): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeDoubleUnitString")
+  fun range(preceding: Double, following: Double, unit: String): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeDoubleUnitExpr")
+  fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  /**
+   * Specify a range frame with bounds of mixed or heterogeneous types, e.g. `(Int, Expression)` or
+   * `(String, String)`. Invalid combinations are encoded and rejected by the backend.
+   */
+  @JvmName("withRangeAny")
+  fun range(preceding: Any, following: Any): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeAnyUnitString")
+  fun range(preceding: Any, following: Any, unit: String): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeAnyUnitExpr")
+  fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   @JvmName("withRangeExpr")
   fun range(preceding: Expression, following: Expression): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   @JvmName("withRangeExprUnitString")
   fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   @JvmName("withRangeExprUnitExpr")
   fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
-    WindowSpec(groups, sort, null, Pair(preceding, following), unit)
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   internal fun buildInternal(userDataReader: UserDataReader): Value {
     val builder = MapValue.newBuilder()
 
-    if (groups.isNotEmpty()) {
+    if (partition.isNotEmpty()) {
       val array = ArrayValue.newBuilder()
-        .addAllValues(groups.map { it.toProto(userDataReader) })
+        .addAllValues(partition.map { it.toProto(userDataReader) })
         .build()
-      builder.putFields("group", Value.newBuilder().setArrayValue(array).build())
+      builder.putFields("partition", Value.newBuilder().setArrayValue(array).build())
     }
 
     if (sort.isNotEmpty()) {
@@ -98,20 +151,24 @@ class WindowSpec internal constructor(
     }
 
     documentsFrame?.let { (preceding, following) ->
-      val docFrame = MapValue.newBuilder()
-        .putFields("preceding", boundaryToProto(preceding, userDataReader))
-        .putFields("following", boundaryToProto(following, userDataReader))
-        .build()
-      builder.putFields("documents", Value.newBuilder().setMapValue(docFrame).build())
+      builder.putFields("documents", frameToProto(preceding, following, userDataReader))
     }
 
     rangeFrame?.let { (preceding, following) ->
-      val rFrame = MapValue.newBuilder()
-        .putFields("preceding", boundaryToProto(preceding, userDataReader))
-        .putFields("following", boundaryToProto(following, userDataReader))
-        .build()
-      builder.putFields("range", Value.newBuilder().setMapValue(rFrame).build())
+      builder.putFields("range", frameToProto(preceding, following, userDataReader))
     }
+
+    return Value.newBuilder().setMapValue(builder).build()
+  }
+
+  /**
+   * Builds a frame `MapValue`. The `unit` is nested *inside* the frame, alongside `preceding` and
+   * `following`, matching the JS SDK wire format.
+   */
+  private fun frameToProto(preceding: Any, following: Any, userDataReader: UserDataReader): Value {
+    val frame = MapValue.newBuilder()
+      .putFields("preceding", boundaryToProto(preceding, userDataReader))
+      .putFields("following", boundaryToProto(following, userDataReader))
 
     unit?.let {
       val unitVal = when (it) {
@@ -119,23 +176,31 @@ class WindowSpec internal constructor(
         is String -> encodeValue(it)
         else -> throw IllegalArgumentException("Invalid range unit type: $it")
       }
-      builder.putFields("unit", unitVal)
+      frame.putFields("unit", unitVal)
     }
 
-    return Value.newBuilder().setMapValue(builder).build()
+    return Value.newBuilder().setMapValue(frame).build()
   }
 
   companion object {
-    @JvmField val CURRENT: Int = 0
+    /**
+     * Sentinel marking the current row as a frame boundary. Encoded as the string `"current"`.
+     *
+     * Deliberately *not* `0`: a numeric offset of `0` is distinct from `"current"` in a range
+     * frame, where `0` includes all tied peer rows while `"current"` counts only the current row.
+     */
+    @JvmField val CURRENT: Int = Int.MAX_VALUE
+
+    /** Sentinel marking an unbounded frame boundary. Encoded as the string `"unbounded"`. */
     @JvmField val UNBOUNDED: Int = Int.MIN_VALUE
 
     @JvmStatic
     fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
-      WindowSpec(groups = resolveGroups(arrayOf(expression, *additionalExpressions)))
+      WindowSpec(partition = resolveGroups(arrayOf(expression, *additionalExpressions)))
 
     @JvmStatic
     fun partition(fieldName: String, vararg additionalExpressions: Any): WindowSpec =
-      WindowSpec(groups = resolveGroups(arrayOf(fieldName, *additionalExpressions)))
+      WindowSpec(partition = resolveGroups(arrayOf(fieldName, *additionalExpressions)))
 
     @JvmStatic
     fun documents(preceding: Int, following: Int): WindowSpec =
@@ -143,6 +208,10 @@ class WindowSpec internal constructor(
 
     @JvmStatic
     fun documents(preceding: Expression, following: Expression): WindowSpec =
+      WindowSpec(documentsFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun documents(preceding: Any, following: Any): WindowSpec =
       WindowSpec(documentsFrame = Pair(preceding, following))
 
     @JvmStatic
@@ -155,6 +224,30 @@ class WindowSpec internal constructor(
 
     @JvmStatic
     fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Double, following: Double): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun range(preceding: Double, following: Double, unit: String): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Any, following: Any): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun range(preceding: Any, following: Any, unit: String): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
       WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
 
     @JvmStatic
@@ -189,20 +282,30 @@ internal fun resolveGroups(groups: Array<out Any>): List<Expression> {
   }
 }
 
+/**
+ * Encodes a frame boundary.
+ *
+ * Only the [WindowSpec.CURRENT] / [WindowSpec.UNBOUNDED] sentinels (and the equivalent
+ * `"current"` / `"unbounded"` strings) encode as strings. Every other numeric value encodes as a
+ * number, so `0` and `0.0` round-trip as real offsets rather than being coerced to `"current"`.
+ *
+ * Unrecognized strings are passed through and left for the backend to reject, matching the JS SDK,
+ * which performs no client-side validation of boundary strings.
+ */
 internal fun boundaryToProto(boundary: Any, userDataReader: UserDataReader): Value {
   return when (boundary) {
     is Expression -> boundary.toProto(userDataReader)
     is Int -> {
       when (boundary) {
-        WindowSpec.UNBOUNDED, Int.MAX_VALUE -> encodeValue("unbounded")
+        WindowSpec.UNBOUNDED -> encodeValue("unbounded")
         WindowSpec.CURRENT -> encodeValue("current")
         else -> encodeValue(boundary.toLong())
       }
     }
     is Long -> {
       when (boundary) {
-        Int.MIN_VALUE.toLong(), Long.MIN_VALUE, Long.MAX_VALUE -> encodeValue("unbounded")
-        0L -> encodeValue("current")
+        WindowSpec.UNBOUNDED.toLong() -> encodeValue("unbounded")
+        WindowSpec.CURRENT.toLong() -> encodeValue("current")
         else -> encodeValue(boundary)
       }
     }
@@ -210,17 +313,10 @@ internal fun boundaryToProto(boundary: Any, userDataReader: UserDataReader): Val
       if (boundary.isInfinite()) {
         encodeValue("unbounded")
       } else {
-        val longVal = boundary.toLong()
-        if (longVal == 0L) encodeValue("current") else encodeValue(longVal)
+        encodeValue(boundary)
       }
     }
-    is String -> {
-      when (boundary) {
-        "current" -> encodeValue("current")
-        "unbounded" -> encodeValue("unbounded")
-        else -> throw IllegalArgumentException("Invalid boundary string: $boundary")
-      }
-    }
+    is String -> encodeValue(boundary)
     else -> throw IllegalArgumentException("Invalid boundary type: $boundary")
   }
 }

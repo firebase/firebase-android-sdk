@@ -107,7 +107,6 @@ import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.WindowSpec;
 import com.google.firebase.firestore.pipeline.WindowFunction;
-import com.google.firebase.firestore.pipeline.TimeGranularity;
 import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
