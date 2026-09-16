@@ -1,7 +1,7 @@
 # Unreleased
 
-- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
-  collection is enabled
+- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump 
+  collection is enabled [#8549]
 
 # 20.1.1
 
