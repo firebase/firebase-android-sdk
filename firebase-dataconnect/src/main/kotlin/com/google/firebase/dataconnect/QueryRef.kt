@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -33,6 +34,7 @@ import kotlinx.serialization.modules.SerializersModule
  * The [QueryRef] interface is _not_ stable for inheritance in third-party libraries, as new methods
  * might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
 
   /**
@@ -127,6 +129,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
  * The [QueryResult] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: QueryRef<Data, Variables>
 
