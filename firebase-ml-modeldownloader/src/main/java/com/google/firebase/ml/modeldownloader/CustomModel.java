@@ -18,12 +18,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Stores information about custom models that are being downloaded or are already downloaded on a
@@ -232,8 +232,8 @@ public class CustomModel {
   @NonNull
   @Override
   public String toString() {
-    Objects.ToStringHelper stringHelper =
-        Objects.toStringHelper(this)
+    com.google.android.gms.common.internal.Objects.ToStringHelper stringHelper =
+        com.google.android.gms.common.internal.Objects.toStringHelper(this)
             .add("name", name)
             .add("modelHash", modelHash)
             .add("fileSize", fileSize);
@@ -266,18 +266,18 @@ public class CustomModel {
 
     CustomModel other = (CustomModel) o;
 
-    return Objects.equal(name, other.name)
-        && Objects.equal(modelHash, other.modelHash)
-        && Objects.equal(fileSize, other.fileSize)
-        && Objects.equal(localFilePath, other.localFilePath)
-        && Objects.equal(downloadId, other.downloadId)
-        && Objects.equal(downloadUrl, other.downloadUrl)
-        && Objects.equal(downloadUrlExpiry, other.downloadUrlExpiry);
+    return Objects.equals(name, other.name)
+        && Objects.equals(modelHash, other.modelHash)
+        && Objects.equals(fileSize, other.fileSize)
+        && Objects.equals(localFilePath, other.localFilePath)
+        && Objects.equals(downloadId, other.downloadId)
+        && Objects.equals(downloadUrl, other.downloadUrl)
+        && Objects.equals(downloadUrlExpiry, other.downloadUrlExpiry);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
+    return Objects.hash(
         name, modelHash, fileSize, localFilePath, downloadId, downloadUrl, downloadUrlExpiry);
   }
 

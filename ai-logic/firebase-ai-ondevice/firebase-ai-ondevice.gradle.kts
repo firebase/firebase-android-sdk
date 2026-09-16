@@ -73,7 +73,7 @@ kotlin {
 dependencies {
   implementation(libs.genai.prompt)
   api(libs.genai.schema)
-  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta05")
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

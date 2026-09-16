@@ -19,9 +19,8 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.Serializable
 
 /**
- * Various voices supported by the server. Find the list of supported voices for
- * [Gemini Developer API](https://ai.google.dev/gemini-api/docs/speech-generation) and
- * [Vertex AI Gemini API](https://docs.cloud.google.com/text-to-speech/docs/gemini-tts).
+ * Various voices supported by the server. See the
+ * [list of supported voices](https://firebase.google.com/docs/ai-logic/generate-speech?api=dev#response-voices)
  *
  * @property voiceName The name of the voice to use (such as `"Kore"`).
  */

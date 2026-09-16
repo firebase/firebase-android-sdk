@@ -22,9 +22,9 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
+import java.util.Objects;
 
 /** Configurable Firebase options. */
 public final class FirebaseOptions {
@@ -253,19 +253,19 @@ public final class FirebaseOptions {
       return false;
     }
     FirebaseOptions other = (FirebaseOptions) o;
-    return Objects.equal(applicationId, other.applicationId)
-        && Objects.equal(apiKey, other.apiKey)
-        && Objects.equal(databaseUrl, other.databaseUrl)
-        && Objects.equal(gaTrackingId, other.gaTrackingId)
-        && Objects.equal(gcmSenderId, other.gcmSenderId)
-        && Objects.equal(storageBucket, other.storageBucket)
-        && Objects.equal(recaptchaSiteKey, other.recaptchaSiteKey)
-        && Objects.equal(projectId, other.projectId);
+    return Objects.equals(applicationId, other.applicationId)
+        && Objects.equals(apiKey, other.apiKey)
+        && Objects.equals(databaseUrl, other.databaseUrl)
+        && Objects.equals(gaTrackingId, other.gaTrackingId)
+        && Objects.equals(gcmSenderId, other.gcmSenderId)
+        && Objects.equals(storageBucket, other.storageBucket)
+        && Objects.equals(recaptchaSiteKey, other.recaptchaSiteKey)
+        && Objects.equals(projectId, other.projectId);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
+    return Objects.hash(
         applicationId,
         apiKey,
         databaseUrl,
@@ -278,7 +278,7 @@ public final class FirebaseOptions {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
+    return com.google.android.gms.common.internal.Objects.toStringHelper(this)
         .add("applicationId", applicationId)
         .add("apiKey", apiKey)
         .add("databaseUrl", databaseUrl)

@@ -1,5 +1,9 @@
 # Unreleased
 
+# 19.2.1
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 19.2.0
 
 - [changed] Initialization now requires the site key to be passed as a parameter. (#8457)

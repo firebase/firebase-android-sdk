@@ -224,7 +224,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
       linkedMapOf(
         "com.google.gms:google-services" to
           ArtifactTutorialMapping(
-            "Google Services Plugin",
+            "Google services Gradle plugin",
             "google-services-plugin-class",
             listOf(
               "<!ENTITY google-services-plugin \"com.google.gms.google-services\">",

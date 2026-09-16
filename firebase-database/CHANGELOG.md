@@ -1,5 +1,9 @@
 # Unreleased
 
+# 22.0.2
+
+- [changed] Internal improvements for legacy infrastructure (#8551)
+
 # 22.0.1
 
 - [changed] Bumped internal dependencies.
