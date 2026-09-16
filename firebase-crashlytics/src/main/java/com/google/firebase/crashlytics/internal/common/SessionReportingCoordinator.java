@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -178,24 +179,47 @@ public class SessionReportingCoordinator {
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   public void persistProfilingManagerInfo(
-      String sessionId, List<Integer> triggers, List<ApplicationExitInfo> applicationExitInfoList) {
+      File filesDir,
+      String sessionId,
+      List<ApplicationExitInfo> applicationExitInfoList,
+      boolean isHeapDumpCollectionEnabled,
+      boolean wasHeapDumpGeneratedViaMarker) {
+
     Optional<Integer> trigger =
-        triggers.stream()
-            .findFirst()
-            .or(
-                () ->
-                    isOom(sessionId, applicationExitInfoList)
-                        ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM)
-                        : Optional.empty());
+        isOom(sessionId, applicationExitInfoList)
+            ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM)
+            : isMemoryLimiterKill(sessionId, applicationExitInfoList)
+                ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
+                : Optional.empty();
 
     trigger.ifPresent(
-        t ->
-            reportPersistence.persistProfilingManagerInfo(
-                ProfilingManagerInfo.builder()
-                    .setProfilingTrigger(
-                        ProfilingManagerInfo.ProfilingTrigger.builder().setTrigger(t).build())
-                    .build(),
-                sessionId));
+        t -> {
+          boolean wasHeapDumpGenerated =
+              wasHeapDumpGeneratedViaMarker
+                  || (t == ProfilingTrigger.TRIGGER_TYPE_OOM
+                      && wasHeapDumpGeneratedViaFile(
+                          filesDir, reportPersistence.getStartTimestampMillis(sessionId)));
+
+          Logger.getLogger()
+              .d(
+                  "Trigger present; "
+                      + t
+                      + ", heap dump collection enabled? "
+                      + (isHeapDumpCollectionEnabled ? "yes" : "no")
+                      + ", heap dump generated? "
+                      + (wasHeapDumpGenerated ? "yes" : "no"));
+
+          reportPersistence.persistProfilingManagerInfo(
+              ProfilingManagerInfo.builder()
+                  .setProfilingTrigger(
+                      ProfilingManagerInfo.ProfilingTrigger.builder()
+                          .setTrigger(t)
+                          .setIsHeapDumpCollectionEnabled(isHeapDumpCollectionEnabled)
+                          .setWasHeapDumpGenerated(wasHeapDumpGenerated)
+                          .build())
+                  .build(),
+              sessionId);
+        });
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -516,5 +540,59 @@ public class SessionReportingCoordinator {
             });
 
     return relevant != null;
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  boolean isMemoryLimiterKill(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    ApplicationExitInfo relevant =
+        findRelevantApplicationExitInfo(
+            sessionId,
+            applicationExitInfoList,
+            aei ->
+                aei.getReason() == ApplicationExitInfo.REASON_OTHER
+                    && aei.getDescription() != null
+                    && aei.getDescription().contains("MemoryLimiter:AnonSwap"));
+
+    return relevant != null;
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  @VisibleForTesting
+  static boolean wasHeapDumpGeneratedViaFile(File filesDir, long sessionStartTime) {
+    File heapDumpRoot = new File(filesDir, "profiling");
+    if (!heapDumpRoot.exists() || !heapDumpRoot.isDirectory()) {
+      Logger.getLogger().d("Directory profiling/ doesn't exit");
+      return false;
+    }
+
+    File[] heapDumps =
+        heapDumpRoot.listFiles(
+            (dir, name) ->
+                name.toLowerCase().endsWith(".hprof")
+                    || name.toLowerCase().endsWith(".perfetto-java-heap-dump"));
+
+    if (heapDumps == null || heapDumps.length == 0) {
+      Logger.getLogger().d("No heap dumps present");
+      return false;
+    }
+
+    return Arrays.stream(heapDumps)
+        // There is no way to filter dumps per process (this is relevant only to multi process
+        // Android apps)
+        .anyMatch(
+            heapDump -> {
+              long lastModifiedTime = heapDump.lastModified();
+
+              Logger.getLogger()
+                  .d(
+                      "Perfetto file [lmt="
+                          + lastModifiedTime
+                          + ", sst="
+                          + sessionStartTime
+                          + "] "
+                          + heapDump.getName());
+
+              return lastModifiedTime >= sessionStartTime;
+            });
   }
 }
