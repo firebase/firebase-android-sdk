@@ -61,6 +61,11 @@ class WindowSpec internal constructor(
   fun documents(preceding: Int, following: Int): WindowSpec =
     WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
 
+  /** Specify a document-count frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
+  @JvmName("withDocumentsBound")
+  fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
+    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+
   @JvmName("withDocumentsExpr")
   fun documents(preceding: Expression, following: Expression): WindowSpec =
     WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
@@ -85,6 +90,19 @@ class WindowSpec internal constructor(
 
   @JvmName("withRangeIntUnitExpr")
   fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  /** Specify a range frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
+  @JvmName("withRangeBound")
+  fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeBoundUnitString")
+  fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
+    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+
+  @JvmName("withRangeBoundUnitExpr")
+  fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
     WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
 
   /**
@@ -217,15 +235,14 @@ class WindowSpec internal constructor(
 
   companion object {
     /**
-     * Sentinel marking the current row as a frame boundary. Encoded as the string `"current"`.
+     * Alias for [WindowBound.CURRENT]: the current document's position as a frame boundary.
      *
-     * Deliberately *not* `0`: a numeric offset of `0` is distinct from `"current"` in a range
-     * frame, where `0` includes all tied peer rows while `"current"` counts only the current row.
+     * Note this is *not* the same as a numeric offset of `0` — see [WindowBound].
      */
-    @JvmField val CURRENT: Int = Int.MAX_VALUE
+    @JvmField val CURRENT: WindowBound = WindowBound.CURRENT
 
-    /** Sentinel marking an unbounded frame boundary. Encoded as the string `"unbounded"`. */
-    @JvmField val UNBOUNDED: Int = Int.MIN_VALUE
+    /** Alias for [WindowBound.UNBOUNDED]: no boundary in this direction. */
+    @JvmField val UNBOUNDED: WindowBound = WindowBound.UNBOUNDED
 
     @JvmStatic
     fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
@@ -237,6 +254,10 @@ class WindowSpec internal constructor(
 
     @JvmStatic
     fun documents(preceding: Int, following: Int): WindowSpec =
+      WindowSpec(documentsFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
       WindowSpec(documentsFrame = Pair(preceding, following))
 
     @JvmStatic
@@ -257,6 +278,18 @@ class WindowSpec internal constructor(
 
     @JvmStatic
     fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following))
+
+    @JvmStatic
+    fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
+      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+
+    @JvmStatic
+    fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
       WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
 
     @JvmStatic
@@ -319,16 +352,16 @@ internal fun resolveGroups(groups: Array<out Any>): List<Expression> {
 internal fun boundaryCanonicalId(boundary: Any): String =
   when (boundary) {
     is Expression -> boundary.canonicalId()
+    is WindowBound -> boundary.wireName()
     else -> boundary.toString()
   }
-
 
 /**
  * Encodes a frame boundary.
  *
- * Only the [WindowSpec.CURRENT] / [WindowSpec.UNBOUNDED] sentinels (and the equivalent
- * `"current"` / `"unbounded"` strings) encode as strings. Every other numeric value encodes as a
- * number, so `0` and `0.0` round-trip as real offsets rather than being coerced to `"current"`.
+ * Symbolic bounds are expressed with [WindowBound] and encode as the strings `"current"` /
+ * `"unbounded"`. Numbers always encode as numbers — in particular `0` is a genuine zero offset and
+ * is *not* the same boundary as [WindowBound.CURRENT].
  *
  * Unrecognized strings are passed through and left for the backend to reject, matching the JS SDK,
  * which performs no client-side validation of boundary strings.
@@ -336,27 +369,10 @@ internal fun boundaryCanonicalId(boundary: Any): String =
 internal fun boundaryToProto(boundary: Any, userDataReader: UserDataReader): Value {
   return when (boundary) {
     is Expression -> boundary.toProto(userDataReader)
-    is Int -> {
-      when (boundary) {
-        WindowSpec.UNBOUNDED -> encodeValue("unbounded")
-        WindowSpec.CURRENT -> encodeValue("current")
-        else -> encodeValue(boundary.toLong())
-      }
-    }
-    is Long -> {
-      when (boundary) {
-        WindowSpec.UNBOUNDED.toLong() -> encodeValue("unbounded")
-        WindowSpec.CURRENT.toLong() -> encodeValue("current")
-        else -> encodeValue(boundary)
-      }
-    }
-    is Double -> {
-      if (boundary.isInfinite()) {
-        encodeValue("unbounded")
-      } else {
-        encodeValue(boundary)
-      }
-    }
+    is WindowBound -> encodeValue(boundary.wireName())
+    is Int -> encodeValue(boundary.toLong())
+    is Long -> encodeValue(boundary)
+    is Double -> encodeValue(boundary)
     is String -> encodeValue(boundary)
     else -> throw IllegalArgumentException("Invalid boundary type: $boundary")
   }

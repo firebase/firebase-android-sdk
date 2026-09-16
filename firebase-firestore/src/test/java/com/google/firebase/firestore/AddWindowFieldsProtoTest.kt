@@ -30,6 +30,7 @@ import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.minimu
 import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.sum
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.WindowBound
 import com.google.firebase.firestore.pipeline.WindowFunction
 import com.google.firebase.firestore.pipeline.WindowSpec
 import com.google.firestore.v1.ArrayValue
@@ -289,7 +290,7 @@ class AddWindowFieldsProtoTest {
       )
   }
 
-  /** Regression test for DL-3: `0` must stay a numeric offset, not become the `current` sentinel. */
+  /** A zero offset is a real numeric bound and must not be coerced into the `current` sentinel. */
   @Test
   fun serializesZeroOffsets() {
     assertThat(
@@ -305,6 +306,74 @@ class AddWindowFieldsProtoTest {
         map(
           "sort" to array(ordering(fieldRef("date"), "ascending")),
           "documents" to map("preceding" to int(0), "following" to int(0))
+        )
+      )
+  }
+
+  /**
+   * A zero offset and [WindowBound.CURRENT] are *different* frame boundaries and must never be
+   * conflated.
+   *
+   * In a `range` frame `current` cuts off strictly at the current document's position, whereas an
+   * offset of `0` additionally admits every document whose sort value ties with the current one.
+   * Given sort values `[10, 10, 10]`, evaluating at the second document with an unbounded lower
+   * bound yields two documents under `current` but three under `0`. They must therefore reach the
+   * backend as distinct values.
+   */
+  @Test
+  fun distinguishesZeroOffsetFromCurrentBound() {
+    fun rangeSpec(preceding: Any, following: Any) =
+      windowSpecArg(
+        basePipeline()
+          .addWindowFields(
+            WindowSpec.range(preceding, following).sort(field("date").ascending()),
+            countAll().alias("c")
+          )
+      )
+
+    val zeroOffset = rangeSpec(0, 0)
+    val currentBound = rangeSpec(WindowSpec.CURRENT, WindowSpec.CURRENT)
+
+    assertThat(zeroOffset)
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "range" to map("preceding" to int(0), "following" to int(0))
+        )
+      )
+    assertThat(currentBound)
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "range" to map("preceding" to str("current"), "following" to str("current"))
+        )
+      )
+    assertThat(zeroOffset).isNotEqualTo(currentBound)
+
+    // The distinction must also survive canonicalization, which backs WindowSpec equality.
+    assertThat(WindowSpec.range(0, 0)).isNotEqualTo(WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT))
+  }
+
+  /** `UNBOUNDED` is likewise a symbolic bound, not a reserved numeric value. */
+  @Test
+  fun treatsExtremeIntegerOffsetsAsNumbers() {
+    assertThat(
+        windowSpecArg(
+          basePipeline()
+            .addWindowFields(
+              WindowSpec.documents(Int.MAX_VALUE, Int.MIN_VALUE).sort(field("date").ascending()),
+              countAll().alias("c")
+            )
+        )
+      )
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "documents" to
+            map(
+              "preceding" to int(Int.MAX_VALUE.toLong()),
+              "following" to int(Int.MIN_VALUE.toLong())
+            )
         )
       )
   }
