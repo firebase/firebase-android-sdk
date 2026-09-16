@@ -52,23 +52,34 @@ class WindowSpec internal constructor(
   fun sort(orders: List<Ordering>): WindowSpec =
     WindowSpec(partition, orders, documentsFrame, rangeFrame, unit)
 
-  // Note: frame setters intentionally preserve any previously-set frame of the other kind rather
-  // than clearing it. Specifying both `documents` and `range` is invalid, but the JS SDK encodes
-  // both and lets the backend reject it; Android matches that so the error surfaces identically.
+  // A window has at most one frame: `documents` and `range` are mutually exclusive (the API
+  // proposal types them as a `OneOf`, and the backend rejects a spec carrying both). The frame
+  // setters therefore *replace* the whole frame state rather than merging into it, so the last
+  // call wins — `range(1, 2).documents(3, 4)` is a documents frame, exactly as
+  // `documents(1, 2).documents(3, 4)` is `documents(3, 4)`.
+  //
+  // Replacing the state also clears any `unit` carried by a previous `range(...)` call, since
+  // `unit` belongs to the range frame and is meaningless without it.
+
+  private fun withDocumentsFrame(preceding: Any, following: Any): WindowSpec =
+    WindowSpec(partition, sort, Pair(preceding, following), null, null)
+
+  private fun withRangeFrame(preceding: Any, following: Any, unit: Any?): WindowSpec =
+    WindowSpec(partition, sort, null, Pair(preceding, following), unit)
 
   /** Specify document-count based window frame. */
   @JvmName("withDocumentsInt")
   fun documents(preceding: Int, following: Int): WindowSpec =
-    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+    withDocumentsFrame(preceding, following)
 
   /** Specify a document-count frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
   @JvmName("withDocumentsBound")
   fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
-    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+    withDocumentsFrame(preceding, following)
 
   @JvmName("withDocumentsExpr")
   fun documents(preceding: Expression, following: Expression): WindowSpec =
-    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+    withDocumentsFrame(preceding, following)
 
   /**
    * Specify a document-count frame with bounds of mixed or heterogeneous types, e.g.
@@ -77,33 +88,33 @@ class WindowSpec internal constructor(
    */
   @JvmName("withDocumentsAny")
   fun documents(preceding: Any, following: Any): WindowSpec =
-    WindowSpec(partition, sort, Pair(preceding, following), rangeFrame, unit)
+    withDocumentsFrame(preceding, following)
 
   /** Specify range-value based window frame. */
   @JvmName("withRangeInt")
   fun range(preceding: Int, following: Int): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, null)
 
   @JvmName("withRangeIntUnitString")
   fun range(preceding: Int, following: Int, unit: String): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeIntUnitExpr")
   fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   /** Specify a range frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
   @JvmName("withRangeBound")
   fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, null)
 
   @JvmName("withRangeBoundUnitString")
   fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeBoundUnitExpr")
   fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   /**
    * Specify a numeric range frame with fractional bounds.
@@ -113,15 +124,15 @@ class WindowSpec internal constructor(
    */
   @JvmName("withRangeDouble")
   fun range(preceding: Double, following: Double): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, null)
 
   @JvmName("withRangeDoubleUnitString")
   fun range(preceding: Double, following: Double, unit: String): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeDoubleUnitExpr")
   fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   /**
    * Specify a range frame with bounds of mixed or heterogeneous types, e.g. `(Int, Expression)` or
@@ -129,27 +140,27 @@ class WindowSpec internal constructor(
    */
   @JvmName("withRangeAny")
   fun range(preceding: Any, following: Any): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, null)
 
   @JvmName("withRangeAnyUnitString")
   fun range(preceding: Any, following: Any, unit: String): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeAnyUnitExpr")
   fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeExpr")
   fun range(preceding: Expression, following: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, null)
 
   @JvmName("withRangeExprUnitString")
   fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   @JvmName("withRangeExprUnitExpr")
   fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
-    WindowSpec(partition, sort, documentsFrame, Pair(preceding, following), unit)
+    withRangeFrame(preceding, following, unit)
 
   internal fun buildInternal(userDataReader: UserDataReader): Value {
     val builder = MapValue.newBuilder()

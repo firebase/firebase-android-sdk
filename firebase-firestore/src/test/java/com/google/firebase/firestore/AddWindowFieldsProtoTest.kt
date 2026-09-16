@@ -902,16 +902,21 @@ class AddWindowFieldsProtoTest {
   }
 
   // --------------------------------------------------------------------------------------------
-  // Backend validated combinations are still encoded
+  // Frame state, and combinations left for the backend to validate
   //
-  // The SDK deliberately does not validate these. Everything below is encodable, so it is sent to
-  // the backend, which owns validation and returns a precise error. This keeps the SDK from having
-  // to change whenever the backend relaxes or extends a rule.
+  // The frame is a one-of, so `documents`/`range` cannot both be set: the builder makes that state
+  // unrepresentable rather than encoding it. Everything else that is merely *invalid* — unknown
+  // bound strings, out-of-order bounds — is still encoded and sent, because the backend owns
+  // validation and returns a precise error. That keeps the SDK from having to change whenever the
+  // backend relaxes or extends a rule.
   // --------------------------------------------------------------------------------------------
 
-  /** Regression test for DL-5: the frame setters must not clear one another. */
+  /**
+   * `documents` and `range` are mutually exclusive, so the last frame call wins and the previous
+   * frame is dropped rather than both being encoded.
+   */
   @Test
-  fun encodesBothDocumentsAndRangeWhenBothAreSupplied() {
+  fun lastFrameCallWinsWhenSwitchingFrameKind() {
     assertThat(
         windowSpecArg(
           basePipeline()
@@ -924,8 +929,84 @@ class AddWindowFieldsProtoTest {
       .isEqualTo(
         map(
           "sort" to array(ordering(fieldRef("date"), "ascending")),
-          "documents" to map("preceding" to int(1), "following" to int(1)),
           "range" to map("preceding" to int(2), "following" to int(2))
+        )
+      )
+
+    assertThat(
+        windowSpecArg(
+          basePipeline()
+            .addWindowFields(
+              WindowSpec.sort(field("date").ascending()).range(2, 2).documents(1, 1),
+              countAll().alias("c")
+            )
+        )
+      )
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "documents" to map("preceding" to int(1), "following" to int(1))
+        )
+      )
+  }
+
+  /** Repeating the same frame kind also takes the last call. */
+  @Test
+  fun lastFrameCallWinsWhenRepeatingFrameKind() {
+    assertThat(
+        windowSpecArg(
+          basePipeline()
+            .addWindowFields(
+              WindowSpec.sort(field("date").ascending()).documents(1, 1).documents(3, 4),
+              countAll().alias("c")
+            )
+        )
+      )
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "documents" to map("preceding" to int(3), "following" to int(4))
+        )
+      )
+  }
+
+  /**
+   * `unit` belongs to the range frame, so replacing the frame must not leak a unit from an earlier
+   * call into a frame that never specified one.
+   */
+  @Test
+  fun replacingAFrameDropsAStaleUnit() {
+    // range -> range without a unit
+    assertThat(
+        windowSpecArg(
+          basePipeline()
+            .addWindowFields(
+              WindowSpec.sort(field("date").ascending()).range(1, 2, "day").range(3, 4),
+              countAll().alias("c")
+            )
+        )
+      )
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "range" to map("preceding" to int(3), "following" to int(4))
+        )
+      )
+
+    // range -> documents; the backend rejects a unit on a documents frame outright
+    assertThat(
+        windowSpecArg(
+          basePipeline()
+            .addWindowFields(
+              WindowSpec.sort(field("date").ascending()).range(1, 2, "day").documents(3, 4),
+              countAll().alias("c")
+            )
+        )
+      )
+      .isEqualTo(
+        map(
+          "sort" to array(ordering(fieldRef("date"), "ascending")),
+          "documents" to map("preceding" to int(3), "following" to int(4))
         )
       )
   }
