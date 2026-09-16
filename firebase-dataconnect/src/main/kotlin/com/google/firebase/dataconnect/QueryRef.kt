@@ -43,9 +43,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
     execute(FetchPolicy.PREFER_CACHE)
 
   /** Executes this operation with the given fetch policy, and returns the result. */
-  public suspend fun execute(
-    fetchPolicy: FetchPolicy = FetchPolicy.PREFER_CACHE
-  ): QueryResult<Data, Variables>
+  public suspend fun execute(fetchPolicy: FetchPolicy): QueryResult<Data, Variables>
 
   /** The caching policy to use in [QueryRef.execute]. */
   public enum class FetchPolicy {
