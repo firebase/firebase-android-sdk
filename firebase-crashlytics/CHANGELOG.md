@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.1.1
+
 - [fixed] Added consumer ProGuard rules to prevent R8 missing-class warnings for
   `ProfilingManager` and `ProfilingTrigger` on older compileSdk versions [#8567]
 
