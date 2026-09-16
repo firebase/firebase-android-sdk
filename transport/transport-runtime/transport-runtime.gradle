@@ -16,6 +16,7 @@ plugins {
     id "com.google.protobuf"
     id 'firebase-library'
     id 'firebase-vendor'
+    id 'kotlin-android'
 }
 
 // add a dependency on the protoc plugin's fat jar to make it available to protobuf below.
