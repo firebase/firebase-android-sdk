@@ -21,7 +21,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.dataconnect.core.FirebaseUserChangedException
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
@@ -258,7 +257,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       awaitItem().result.shouldBeSuccess()
       val newUser = signIn(dataConnect)
 
-      val exception = awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+      val exception = awaitError().shouldBeInstanceOf<AuthUserChangedException>()
 
       assertSoftly {
         exception.message shouldContainWithNonAbuttingText "null"
@@ -278,7 +277,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       awaitItem().result.shouldBeSuccess()
       signOut(dataConnect)
 
-      val exception = awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+      val exception = awaitError().shouldBeInstanceOf<AuthUserChangedException>()
 
       assertSoftly {
         exception.message shouldContainWithNonAbuttingText "null"
@@ -298,7 +297,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     querySubscription.flow.test {
       awaitItem().result.shouldBeSuccess()
       signIn(dataConnect)
-      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+      awaitError().shouldBeInstanceOf<AuthUserChangedException>()
     }
 
     querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
@@ -315,7 +314,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     querySubscription.flow.test {
       awaitItem().result.shouldBeSuccess()
       signOut(dataConnect)
-      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+      awaitError().shouldBeInstanceOf<AuthUserChangedException>()
     }
 
     querySubscription.flow.test { awaitItem().result.shouldBeSuccess() }
@@ -341,7 +340,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     querySubscription.flow.test {
       awaitItem().result.shouldBeSuccess()
       signOut(dataConnect)
-      awaitError().shouldBeInstanceOf<FirebaseUserChangedException>()
+      awaitError().shouldBeInstanceOf<AuthUserChangedException>()
     }
 
     signIn(dataConnect) { signInWithEmailAndPassword(email, password).await() }
