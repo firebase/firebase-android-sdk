@@ -24,6 +24,10 @@ package com.google.firebase.dataconnect {
     method public static com.google.firebase.dataconnect.AnyValue? fromNullableAny(com.google.firebase.dataconnect.AnyValue.Companion, Object? value);
   }
 
+  public class AuthUserChangedException extends com.google.firebase.dataconnect.DataConnectException {
+    ctor public AuthUserChangedException(String message, Throwable? cause = null);
+  }
+
   public final class CacheSettings {
     ctor public CacheSettings(com.google.firebase.dataconnect.CacheSettings.Storage storage = com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT, long maxAge = kotlin.time.Duration.ZERO);
     method public long getMaxAge();
