@@ -617,6 +617,10 @@ message ExecutePipelineRequest {
 
   // Explain / analyze options for the pipeline.
   // ExplainOptions explain_options = 8 [(google.api.field_behavior) = OPTIONAL];
+
+  // Automatically commits the transaction after the pipeline has been executed.
+  // Only permitted in combination with `transaction` or `new_transaction`.
+  bool auto_commit_transaction = 9 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // The response for [Firestore.Execute][].
