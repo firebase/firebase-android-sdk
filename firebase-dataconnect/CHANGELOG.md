@@ -1,5 +1,9 @@
 # Unreleased
 
+- [feature] `AuthUserChangedException` added to enable reliably detecting when a
+  realtime streaming connection fails due to a change in the Firebase Auth user.
+  ([#8604](https://github.com/firebase/firebase-android-sdk/pull/8604))
+
 # 17.4.0
 
 - [changed] Add gRPC request header for platform name and SDK version
