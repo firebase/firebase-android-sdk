@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Cleaned up overloads in QueryRef and DataConnectSettings.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+
 # 17.4.0
 
 - [changed] Add gRPC request header for platform name and SDK version
