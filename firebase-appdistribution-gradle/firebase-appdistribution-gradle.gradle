@@ -242,7 +242,7 @@ dependencies {
   testImplementation("com.android.tools.build:gradle:7.2.0")
   testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
   testImplementation("org.mockito:mockito-core:4.11.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
   testImplementation("org.jetbrains.kotlin:kotlin-test")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
@@ -271,3 +271,14 @@ dependencies {
 tasks.withType(ValidatePlugins).configureEach {
   enableStricterValidation = true
 }
+
+tasks.named("compileTestKotlin", org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+}
+
+tasks.named("compileTestJava", JavaCompile) {
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
+}
+
+
