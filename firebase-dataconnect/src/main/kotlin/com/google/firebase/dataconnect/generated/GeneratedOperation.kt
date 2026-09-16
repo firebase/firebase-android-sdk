@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.annotations.ExperimentalFirebaseApi
 import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.copy
@@ -76,6 +77,7 @@ public interface GeneratedOperation<Connector : GeneratedConnector<Connector>, D
    * @see withDataDeserializer
    * @see withVariablesSerializer
    */
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   public fun copy(
     connector: Connector = this.connector,
@@ -91,6 +93,7 @@ public interface GeneratedOperation<Connector : GeneratedConnector<Connector>, D
    * @see copy
    * @see withDataDeserializer
    */
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   public fun <NewVariables> withVariablesSerializer(
     variablesSerializer: SerializationStrategy<NewVariables>,
@@ -103,6 +106,7 @@ public interface GeneratedOperation<Connector : GeneratedConnector<Connector>, D
    * @see copy
    * @see withVariablesSerializer
    */
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   public fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,

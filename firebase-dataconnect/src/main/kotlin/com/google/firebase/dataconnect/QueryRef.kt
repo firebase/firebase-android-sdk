@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.ExperimentalFirebaseApi
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -90,6 +91,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
    */
   public fun subscribe(): QuerySubscription<Data, Variables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun copy(
     operationName: String,
@@ -101,6 +103,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): QueryRef<Data, Variables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewVariables> withVariablesSerializer(
     variables: NewVariables,
@@ -108,6 +111,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): QueryRef<Data, NewVariables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,

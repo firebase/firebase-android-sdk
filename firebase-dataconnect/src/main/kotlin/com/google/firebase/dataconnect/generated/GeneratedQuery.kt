@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.annotations.ExperimentalFirebaseApi
 import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
@@ -49,6 +50,7 @@ public interface GeneratedQuery<Connector : GeneratedConnector<Connector>, Data,
       callerSdkType = FirebaseDataConnect.CallerSdkType.Generated
     }
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun copy(
     connector: Connector,
@@ -57,11 +59,13 @@ public interface GeneratedQuery<Connector : GeneratedConnector<Connector>, Data,
     variablesSerializer: SerializationStrategy<Variables>,
   ): GeneratedQuery<Connector, Data, Variables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewVariables> withVariablesSerializer(
     variablesSerializer: SerializationStrategy<NewVariables>,
   ): GeneratedQuery<Connector, Data, NewVariables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,

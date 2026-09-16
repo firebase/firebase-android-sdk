@@ -16,6 +16,25 @@
 
 package com.google.firebase.dataconnect
 
+// TODO(BreakingChange) Annotate ExperimentalFirebaseDataConnect with @Deprecated
+//
+// The Data Connect code generation logic needs to be updated to generate code that uses
+// ExperimentalFirebaseApi before deprecating this annotation. Then, at the next breaking
+// change release the annotation should be changed to level=DeprecationLevel.ERROR.
+// Finally, at the breaking change release after that, it should be deleted from the
+// SDK entirely.
+//
+// @Deprecated(
+//  "Use com.google.firebase.annotations.ExperimentalFirebaseApi instead; " +
+//    "ExperimentalFirebaseDataConnect is planned to be deleted",
+//  replaceWith =
+//    ReplaceWith(
+//      "ExperimentalFirebaseApi",
+//      "com.google.firebase.annotations.ExperimentalFirebaseApi",
+//    ),
+//  level = DeprecationLevel.WARNING,
+// )
+
 /**
  * Marks declarations in the Firebase Data Connect SDK that are **experimental**.
  *

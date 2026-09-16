@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.ExperimentalFirebaseApi
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -36,6 +37,7 @@ import kotlinx.serialization.modules.SerializersModule
 public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
   override suspend fun execute(): MutationResult<Data, Variables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun copy(
     operationName: String,
@@ -47,6 +49,7 @@ public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): MutationRef<Data, Variables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewVariables> withVariablesSerializer(
     variables: NewVariables,
@@ -54,6 +57,7 @@ public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): MutationRef<Data, NewVariables>
 
+  @ExperimentalFirebaseApi
   @ExperimentalFirebaseDataConnect
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,
