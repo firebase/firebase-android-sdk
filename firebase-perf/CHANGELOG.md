@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] Updated Protocol Buffers to 4.36.1 (was 3.25.5). (#8580)
+- [changed] Updated Protocol Buffers to 4.36.1. (#8580)
 - [changed] Removed the unused dependency on `protolite-well-known-types`. It is no longer
   included as a transitive dependency of this SDK. (#8580)
 
