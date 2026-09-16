@@ -16,6 +16,9 @@ Remove any code that conditionally was run in minSdk=24, as minSdk will be bumpe
 
 ## Graduate `@ExperimentalFirebaseDataConnect` APIs
 
+Also move the `@ExperimentalFirebaseDataConnect` annotation into the
+`firebase-annotations` library.
+
 Several public APIs are annotated with `@ExperimentalFirebaseDataConnect`, which was done as a way
 to bypass API council for seemingly-useful public APIs. These APIs are most definitely stable and
 warrant graduation to bona fide APIs.
