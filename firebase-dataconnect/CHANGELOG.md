@@ -3,6 +3,10 @@
 - [feature] `AuthUserChangedException` added to enable reliably detecting when a
   realtime streaming connection fails due to a change in the Firebase Auth user.
   ([#8604](https://github.com/firebase/firebase-android-sdk/pull/8604))
+- [changed] Applied `@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)`
+  to interfaces such as `FirebaseDataConnect` and `OperationRef`, to explicitly
+  prevent implementing or inheriting from these interfaces.
+  ([#8603](https://github.com/firebase/firebase-android-sdk/pull/8603))
 
 # 17.4.0
 
