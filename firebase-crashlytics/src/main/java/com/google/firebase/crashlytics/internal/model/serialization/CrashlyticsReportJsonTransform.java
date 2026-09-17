@@ -959,6 +959,12 @@ public class CrashlyticsReportJsonTransform {
         case "trigger":
           builder.setTrigger(jsonReader.nextInt());
           break;
+        case "isHeapDumpCollectionEnabled":
+          builder.setIsHeapDumpCollectionEnabled(jsonReader.nextBoolean());
+          break;
+        case "wasHeapDumpGenerated":
+          builder.setWasHeapDumpGenerated(jsonReader.nextBoolean());
+          break;
         default:
           jsonReader.skipValue();
       }

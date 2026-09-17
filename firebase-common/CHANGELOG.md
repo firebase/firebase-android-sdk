@@ -1,6 +1,8 @@
 # Unreleased
 
-- [changed] Internal adjustments
+# 22.2.1
+
+- [changed] Internal improvements for legacy infrastructure (#8551)
 
 # 22.2.0
 

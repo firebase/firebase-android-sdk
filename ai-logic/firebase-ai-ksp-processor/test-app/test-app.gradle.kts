@@ -20,15 +20,17 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
-  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
+  id("com.google.devtools.ksp") version "2.3.6"
 }
 
 android {
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.testing.processor"
   compileSdk = 36
   defaultConfig {
     applicationId = "com.google.firebase.testing.processor"
-    minSdk = 23
+    minSdk = minSdkVersion
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
