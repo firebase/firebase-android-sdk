@@ -10,10 +10,6 @@ the M187 release in September 2026.
 * Release Details: [go/firebase-sdk-dates](http://go/firebase-sdk-dates)
 * Breaking Changes: [go/firebase-m187-android](http://go/firebase-m187-android)
 
-## Remove references to Build.VERSION_CODES.M
-
-Remove any code that conditionally was run in minSdk=24, as minSdk will be bumped to 24.
-
 ## Graduate `@ExperimentalFirebaseDataConnect` APIs
 
 Also move the `@ExperimentalFirebaseDataConnect` annotation into the
@@ -39,17 +35,6 @@ Here are some of the APIs that are candidate for inclusion:
 * [GeneratedConnector.operations()](https://github.com/firebase/firebase-android-sdk/blob/13eb0f61e731c03a403556798c5bc28797093466/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/generated/GeneratedConnector.kt#L54-L64)
 * [GeneratedConnector.queries()](https://github.com/firebase/firebase-android-sdk/blob/13eb0f61e731c03a403556798c5bc28797093466/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/generated/GeneratedConnector.kt#L66-L73)
 * [GeneratedConnector.mutations()](https://github.com/firebase/firebase-android-sdk/blob/13eb0f61e731c03a403556798c5bc28797093466/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/generated/GeneratedConnector.kt#L75-L82)
-
-## Add `@SubclassOptInRequired` to interfaces
-
-http://go/data-connect-subclass-optin-kotlin-api-proposal
-
-https://github.com/Kotlin/KEEP/issues/320
-
-https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-subclass-opt-in-required/
-
-Possibly update the Android SDK's "breaking change" detection to _not_ be triggered for additions
-to interfaces marked with this annotation.
 
 ## QueryRef cachePolicy default parameter value
 
