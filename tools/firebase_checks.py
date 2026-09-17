@@ -56,6 +56,13 @@ def get_modified_files(repo_root):
         i += 1
     return files
 
+# Set of SDK subprojects that do not run generateApiTxtFile, for example because
+# they do not apply the Firebase library plugin.
+IGNORED_GENERATE_API_TXT_SDKS = {
+    "encoders:protoc-gen-firebase-encoders",
+    "encoders:firebase-encoders-processor"
+}
+
 def get_subprojects_info(repo_root):
     cfg_path = os.path.join(repo_root, "subprojects.cfg")
     sdk_subprojects = set()
@@ -76,13 +83,15 @@ def get_subprojects_info(repo_root):
                 dir_path = proj.replace(":", os.sep)
                 subproject_types[dir_path] = comment
                 all_subprojects.add(dir_path)
-                if comment == "sdk":
+                if comment == "sdk" and proj not in IGNORED_GENERATE_API_TXT_SDKS:
                     sdk_subprojects.add(dir_path)
             else:
-                dir_path = line.strip().replace(":", os.sep)
+                proj = line.strip()
+                dir_path = proj.replace(":", os.sep)
                 all_subprojects.add(dir_path)
                 subproject_types[dir_path] = "sdk"
-                sdk_subprojects.add(dir_path)
+                if proj not in IGNORED_GENERATE_API_TXT_SDKS:
+                    sdk_subprojects.add(dir_path)
     return sdk_subprojects, subproject_types, all_subprojects
 
 def is_test_app(dir_path, subproject_types):
