@@ -1440,7 +1440,11 @@ package com.google.firebase.ai.type {
     ctor public RequestOptions();
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10);
-    ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10, String? customApiClientHeader = null);
+  }
+
+  public final class RequestOptionsFactory {
+    method public com.google.firebase.ai.type.RequestOptions createWithCustomHeader(com.google.firebase.ai.type.RequestOptions baseOptions, String customApiClientHeader);
+    field public static final com.google.firebase.ai.type.RequestOptionsFactory INSTANCE;
   }
 
   public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseAIException {
