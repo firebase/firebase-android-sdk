@@ -76,7 +76,7 @@ dependencies {
     testImplementation 'com.github.tomakehurst:wiremock:3.0.1'
     testImplementation libs.protobuf.java.util
     testImplementation libs.truth
-    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
+    testImplementation libs.truth.proto.extension
     testImplementation 'junit:junit:4.13.1'
     testImplementation libs.robolectric
 
