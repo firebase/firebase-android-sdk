@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Guard gRPC `call was cancelled exceptions` (#8608). Fixes #8601.
+
 # 26.6.0
 
 - [feature] Implemented support for retrieving documents up to 16MB over gRPC (#8363)
