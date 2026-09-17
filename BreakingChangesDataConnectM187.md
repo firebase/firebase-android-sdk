@@ -69,22 +69,8 @@ But seems like an appropriate thing to include in a major version bump.
 
 The breaking change release would be a good chance to bump some core dependencies to their latest versions, such as
 
-androidGradlePlugin
-* kotlin
 * kotlinx-coroutines-core
 * kotlinx-serialization-core
-* okhttp
-* grpc-android
-* protobuf-java
-
-Rodrigo says: Hey Denver, we are going to push kotlin to 2.1 and update any kotlin dependency to
-their last version which also depended on 2.1. protobuf & grpc are still open questions.
-
-https://chat.google.com/room/AAAAlocx6vc/Ir33EH3Bxks/Ir33EH3Bxks?cls=10
-
-Also, grpc provides a BoM `grpc-bom` that we should use instead of manual grpc version management.
-
-On May 26, 2026 a customer reported issue requests a gRPC upgrade: https://github.com/firebase/firebase-ios-sdk/issues/16203
 
 ## FirebaseDataConnect.close() refactor
 
