@@ -35,20 +35,20 @@ class WindowSpec internal constructor(
   constructor() : this(emptyList(), emptyList(), null, null, null)
 
   /** Specify partition group columns. */
-  @JvmName("withPartitionExpression")
+  @JvmName("withPartition")
   fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
     WindowSpec(resolveGroups(arrayOf(expression, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
 
-  @JvmName("withPartitionString")
+  @JvmName("withPartition")
   fun partition(fieldName: String, vararg additionalExpressions: Any): WindowSpec =
     WindowSpec(resolveGroups(arrayOf(fieldName, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
 
   /** Specify sort order for this window spec. */
-  @JvmName("withSortOrdering")
+  @JvmName("withSort")
   fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
     WindowSpec(partition, listOf(order, *additionalOrders), documentsFrame, rangeFrame, unit)
 
-  @JvmName("withSortList")
+  @JvmName("withSort")
   fun sort(orders: List<Ordering>): WindowSpec =
     WindowSpec(partition, orders, documentsFrame, rangeFrame, unit)
 
@@ -68,16 +68,16 @@ class WindowSpec internal constructor(
     WindowSpec(partition, sort, null, Pair(preceding, following), unit)
 
   /** Specify document-count based window frame. */
-  @JvmName("withDocumentsInt")
+  @JvmName("withDocuments")
   fun documents(preceding: Int, following: Int): WindowSpec =
     withDocumentsFrame(preceding, following)
 
   /** Specify a document-count frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
-  @JvmName("withDocumentsBound")
+  @JvmName("withDocuments")
   fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
     withDocumentsFrame(preceding, following)
 
-  @JvmName("withDocumentsExpr")
+  @JvmName("withDocuments")
   fun documents(preceding: Expression, following: Expression): WindowSpec =
     withDocumentsFrame(preceding, following)
 
@@ -86,33 +86,33 @@ class WindowSpec internal constructor(
    * `(Int, Expression)` or `(String, String)`. Invalid combinations are encoded and rejected by
    * the backend.
    */
-  @JvmName("withDocumentsAny")
+  @JvmName("withDocuments")
   fun documents(preceding: Any, following: Any): WindowSpec =
     withDocumentsFrame(preceding, following)
 
   /** Specify range-value based window frame. */
-  @JvmName("withRangeInt")
+  @JvmName("withRange")
   fun range(preceding: Int, following: Int): WindowSpec =
     withRangeFrame(preceding, following, null)
 
-  @JvmName("withRangeIntUnitString")
+  @JvmName("withRange")
   fun range(preceding: Int, following: Int, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeIntUnitExpr")
+  @JvmName("withRange")
   fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
   /** Specify a range frame using symbolic bounds, e.g. `(UNBOUNDED, CURRENT)`. */
-  @JvmName("withRangeBound")
+  @JvmName("withRange")
   fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
     withRangeFrame(preceding, following, null)
 
-  @JvmName("withRangeBoundUnitString")
+  @JvmName("withRange")
   fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeBoundUnitExpr")
+  @JvmName("withRange")
   fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
@@ -122,15 +122,15 @@ class WindowSpec internal constructor(
    * Only meaningful for value-based (non-time) range frames, e.g. when sorting by a price or
    * score. The backend rejects fractional offsets for time-based range frames.
    */
-  @JvmName("withRangeDouble")
+  @JvmName("withRange")
   fun range(preceding: Double, following: Double): WindowSpec =
     withRangeFrame(preceding, following, null)
 
-  @JvmName("withRangeDoubleUnitString")
+  @JvmName("withRange")
   fun range(preceding: Double, following: Double, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeDoubleUnitExpr")
+  @JvmName("withRange")
   fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
@@ -138,27 +138,27 @@ class WindowSpec internal constructor(
    * Specify a range frame with bounds of mixed or heterogeneous types, e.g. `(Int, Expression)` or
    * `(String, String)`. Invalid combinations are encoded and rejected by the backend.
    */
-  @JvmName("withRangeAny")
+  @JvmName("withRange")
   fun range(preceding: Any, following: Any): WindowSpec =
     withRangeFrame(preceding, following, null)
 
-  @JvmName("withRangeAnyUnitString")
+  @JvmName("withRange")
   fun range(preceding: Any, following: Any, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeAnyUnitExpr")
+  @JvmName("withRange")
   fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeExpr")
+  @JvmName("withRange")
   fun range(preceding: Expression, following: Expression): WindowSpec =
     withRangeFrame(preceding, following, null)
 
-  @JvmName("withRangeExprUnitString")
+  @JvmName("withRange")
   fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
-  @JvmName("withRangeExprUnitExpr")
+  @JvmName("withRange")
   fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 

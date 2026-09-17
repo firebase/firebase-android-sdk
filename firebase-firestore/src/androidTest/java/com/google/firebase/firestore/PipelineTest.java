@@ -4537,7 +4537,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.partition("product").sort(ascending("quantity")),
+                WindowSpec.partition("product").withSort(ascending("quantity")),
                 AggregateFunction.count("quantity").alias("runningCount"))
             .sort(ascending("date"))
             .select("product", "runningCount")
@@ -4560,7 +4560,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.sort(descending("date"))
-                    .documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                    .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
                 AggregateFunction.count("quantity").alias("runningCount"))
             .sort(ascending("date"))
             .select("product", "runningCount")
@@ -4583,7 +4583,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.sort(ascending("product"), ascending("date"))
-                    .documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                    .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
                 AggregateFunction.count("quantity").alias("runningCount"))
             .sort(ascending("date"))
             .select("product", "runningCount")
@@ -4608,7 +4608,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
-                    .sort(ascending("date")),
+                    .withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -4631,8 +4631,8 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
-                    .partition("product")
-                    .sort(ascending("date")),
+                    .withPartition("product")
+                    .withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -4654,7 +4654,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(WindowSpec.CURRENT, WindowSpec.CURRENT).sort(ascending("date")),
+                WindowSpec.documents(WindowSpec.CURRENT, WindowSpec.CURRENT).withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -4684,8 +4684,8 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT)
-                    .partition("product")
-                    .sort(ascending("salesPrice")),
+                    .withPartition("product")
+                    .withSort(ascending("salesPrice")),
                 AggregateFunction.count("quantity").alias("samePriceCount"))
             .sort(ascending("date"))
             .select("product", "salesPrice", "samePriceCount")
@@ -4722,7 +4722,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.range(0, 0).partition("product").sort(ascending("salesPrice")),
+                WindowSpec.range(0, 0).withPartition("product").withSort(ascending("salesPrice")),
                 AggregateFunction.count("quantity").alias("samePriceCount"))
             .sort(ascending("date"))
             .select("product", "salesPrice", "samePriceCount")
@@ -4759,7 +4759,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.range(WindowSpec.UNBOUNDED, 0).sort(ascending("salesPrice")),
+                WindowSpec.range(WindowSpec.UNBOUNDED, 0).withSort(ascending("salesPrice")),
                 AggregateFunction.count("quantity").alias("cumulativeCount"))
             .sort(ascending("date"))
             .select("salesPrice", "cumulativeCount")
@@ -4782,8 +4782,8 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
-                    .partition("product")
-                    .sort(ascending("salesPrice")),
+                    .withPartition("product")
+                    .withSort(ascending("salesPrice")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -4806,7 +4806,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT, "day")
-                    .sort(ascending("date")),
+                    .withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("cumulativeCount"))
             .sort(ascending("date"))
             .select("product", "cumulativeCount")
@@ -4830,7 +4830,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.partition("product").sort(ascending("date")),
+                WindowSpec.partition("product").withSort(ascending("date")),
                 AggregateFunction.count("quantity")
                     .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
                     .alias("runningCount"),
@@ -4872,7 +4872,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.partition("product").sort(ascending("salesPrice")),
+                WindowSpec.partition("product").withSort(ascending("salesPrice")),
                 AggregateFunction.count("quantity")
                     .over(WindowSpec.range(0, 0))
                     .alias("samePriceCount"))
@@ -5103,7 +5103,7 @@ public class PipelineTest {
                     .collection(salesCol)
                     .addWindowFields(
                         WindowSpec.sort(ascending("date"))
-                            .documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                            .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
                         AggregateFunction.count("quantity")
                             .over(
                                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED))
@@ -5144,7 +5144,7 @@ public class PipelineTest {
                     .collection(salesCol)
                     .addWindowFields(
                         WindowSpec.documents("infinite", WindowSpec.CURRENT)
-                            .sort(ascending("quantity")),
+                            .withSort(ascending("quantity")),
                         AggregateFunction.count("quantity").alias("windowCount"))
                     .execute()));
   }
@@ -5165,7 +5165,7 @@ public class PipelineTest {
                             AggregateFunction.count("quantity")
                                 .over(
                                     WindowSpec.partition("product")
-                                        .documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                                        .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
                                 .alias("windowCount"))
                         .execute()));
     assertThat(exception.getMessage().toLowerCase()).contains("unexpected field");
@@ -5282,8 +5282,8 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
-                    .partition("product")
-                    .sort(ascending("date")),
+                    .withPartition("product")
+                    .withSort(ascending("date")),
                 AggregateFunction.first("salesPrice").alias("firstPrice"),
                 AggregateFunction.last("salesPrice").alias("lastPrice"))
             .sort(ascending("date"))
@@ -5313,8 +5313,8 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
-                    .partition("product")
-                    .sort(ascending("date")),
+                    .withPartition("product")
+                    .withSort(ascending("date")),
                 AggregateFunction.arrayAgg("salesPrice").alias("allPrices"),
                 AggregateFunction.arrayAggDistinct("salesPrice").alias("distinctPrices"))
             .sort(ascending("date"))
@@ -5339,7 +5339,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
-                    .sort(ascending("date")),
+                    .withSort(ascending("date")),
                 AggregateFunction.sum("salesPrice").alias("runningTotal"))
             .sort(ascending("date"))
             .select("product", "runningTotal")
@@ -5362,7 +5362,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(1, 1).sort(ascending("date")),
+                WindowSpec.documents(1, 1).withSort(ascending("date")),
                 AggregateFunction.average("salesPrice").alias("movingAverage"),
                 AggregateFunction.countAll().alias("windowCount"))
             .sort(ascending("date"))
@@ -5401,7 +5401,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(2, 0).sort(ascending("date")),
+                WindowSpec.documents(2, 0).withSort(ascending("date")),
                 AggregateFunction.sum("salesPrice").alias("trailingTotal"))
             .sort(ascending("date"))
             .select("product", "trailingTotal")
@@ -5426,7 +5426,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(-1, 2).sort(ascending("date")),
+                WindowSpec.documents(-1, 2).withSort(ascending("date")),
                 AggregateFunction.average("salesPrice").alias("lookAheadAverage"),
                 AggregateFunction.countAll().alias("windowCount"))
             .sort(ascending("date"))
@@ -5460,7 +5460,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.range(20, 0).sort(ascending("salesPrice")),
+                WindowSpec.range(20, 0).withSort(ascending("salesPrice")),
                 AggregateFunction.sum("salesPrice").alias("nearbyTotal"))
             .sort(ascending("date"))
             .select("salesPrice", "nearbyTotal")
@@ -5483,7 +5483,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.range(3, WindowSpec.CURRENT, "day").sort(ascending("date")),
+                WindowSpec.range(3, WindowSpec.CURRENT, "day").withSort(ascending("date")),
                 AggregateFunction.sum("salesPrice").alias("threeDayTotal"))
             .sort(ascending("date"))
             .select("product", "threeDayTotal")
@@ -5507,7 +5507,7 @@ public class PipelineTest {
             .collection(windowTestCollection())
             .addWindowFields(
                 WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT, "day")
-                    .sort(ascending("date")),
+                    .withSort(ascending("date")),
                 AggregateFunction.sum("salesPrice").alias("cumulativeTotal"))
             .sort(ascending("date"))
             .select("product", "cumulativeTotal")
@@ -5601,7 +5601,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(0, 0).sort(ascending("date")),
+                WindowSpec.documents(0, 0).withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -5624,7 +5624,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(0, WindowSpec.UNBOUNDED).sort(ascending("date")),
+                WindowSpec.documents(0, WindowSpec.UNBOUNDED).withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -5647,7 +5647,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(1, 1).sort(ascending("date")),
+                WindowSpec.documents(1, 1).withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
