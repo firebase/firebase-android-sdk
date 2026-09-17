@@ -60,6 +60,7 @@ def get_modified_files(repo_root):
 # they do not apply the Firebase library plugin.
 IGNORED_GENERATE_API_TXT_SDKS = {
     "encoders:protoc-gen-firebase-encoders",
+    "encoders:firebase-encoders-processor"
 }
 
 def get_subprojects_info(repo_root):
