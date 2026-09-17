@@ -4,6 +4,12 @@ import pathlib
 import sys
 
 
+def main() -> None:
+  parser = MyArgumentParser()
+  args = parser.parse_args()
+  print(args)
+
+
 class MyArgumentParser(argparse.ArgumentParser):
   """Argument parser for local_subprojects.py."""
 
@@ -16,9 +22,8 @@ class MyArgumentParser(argparse.ArgumentParser):
       parser_class=argparse.ArgumentParser,
     )
 
-    default_subprojects_dir = (
-      pathlib.Path(__file__).resolve().parent / "local_subprojects"
-    )
+    default_gradle_project_dir = pathlib.Path.cwd()
+    default_local_subprojects_dir = pathlib.Path.cwd() / "ci" / "local_subprojects"
 
     # Subcommand: calculate
     calculate_parser = subparsers.add_parser(
@@ -37,18 +42,19 @@ class MyArgumentParser(argparse.ArgumentParser):
       "-p",
       "--project-dir",
       type=pathlib.Path,
-      default=pathlib.Path.cwd(),
+      default=default_gradle_project_dir,
       help="The directory of the root gradle project, the directory containing "
-      "subprojects.cfg. If not specified then the current directory is used.",
+      "subprojects.cfg. If not specified then the current directory is used. "
+      "(%(default)s)",
     )
     calculate_parser.add_argument(
       "-o",
       "--output-dir",
       type=pathlib.Path,
-      default=default_subprojects_dir,
+      default=default_local_subprojects_dir,
       help="The directory into which the calculated local subprojects file is to be written; "
-      "if not specified then the subdirectory 'local_subprojects' relative to the "
-      "executing python script is used.",
+      "if not specified then a 'local_subprojects' directory relative to the "
+      "current directory is used (%(default)s).",
     )
 
     # Subcommand: apply
@@ -65,25 +71,20 @@ class MyArgumentParser(argparse.ArgumentParser):
       "-p",
       "--project-dir",
       type=pathlib.Path,
-      default=pathlib.Path.cwd(),
-      help="The directory into which to write subprojects.local.cfg. "
-      "If not specified then the current directory is used.",
+      default=default_gradle_project_dir,
+      help="The directory of the root gradle project, the directory to which "
+      "subprojects.local.cfg is to be written. If not specified then the "
+      "current directory is used. (%(default)s)",
     )
     apply_parser.add_argument(
       "-s",
       "--local-subprojects-dir",
       type=pathlib.Path,
-      default=default_subprojects_dir,
-      help="The directory from which to read the local subprojects; "
-      "if not specified then the subdirectory 'local_subprojects' relative to the "
-      "executing python script is used.",
+      default=default_local_subprojects_dir,
+      help="The directory into which the calculated local subprojects file is read; "
+      "if not specified then a 'local_subprojects' directory relative to the "
+      "current directory is used (%(default)s).",
     )
-
-
-def main() -> None:
-  parser = MyArgumentParser()
-  args = parser.parse_args()
-  print(args)
 
 
 if __name__ == "__main__":
