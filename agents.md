@@ -115,7 +115,6 @@ To run integration tests on a local emulator, use the following command:
 
 To run integration tests on Firebase Test Lab, use the following command:
 
-
 ```bash
 ./gradlew :<firebase-project>:deviceCheck
 ```
@@ -218,7 +217,6 @@ When reviewing code or preparing changes for review, ensure the following requir
   * \[important\]
   * \[issue\]
   * \[unchanged\]
-
 * For breaking changes, add **Breaking change:** at the beginning of the entry.
 * Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
 * End each sentence with a period.
@@ -226,12 +224,10 @@ When reviewing code or preparing changes for review, ensure the following requir
 * For Firebase product brand names, use the appropriate standard names.
   * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
     * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
-
 * Capitalize with care.
   * Use sentence case.
     * Capitalize the following: the first letter of each sentence, proper nouns/code identifiers, official product and brand names, and abbreviations / initialisms.
     * Do not capitalize the following: every word or feature names
-
 * Wrap in backticks all strings that are code-like elements, including the following (this list is _not_ exhaustive):
   * API names
   * attribute names and values
@@ -255,7 +251,6 @@ When reviewing code or preparing changes for review, ensure the following requir
   * port numbers
   * URL strings or domain names
   * text input or output
-
 * Use ISO 8601 date formatting (YYYY-MM-DD).
 
 ## External Dependencies
