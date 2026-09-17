@@ -20,7 +20,8 @@ import com.google.firestore.v1.ArrayValue
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 
-class WindowSpec internal constructor(
+class WindowSpec
+internal constructor(
   val partition: List<Expression> = emptyList(),
   val sort: List<Ordering> = emptyList(),
   internal val documentsFrame: Pair<Any, Any>? = null,
@@ -29,19 +30,31 @@ class WindowSpec internal constructor(
 ) {
 
   /**
-   * Creates an empty window spec: a single global partition covering the entire result set, with
-   * no sort and no explicit frame.
+   * Creates an empty window spec: a single global partition covering the entire result set, with no
+   * sort and no explicit frame.
    */
   constructor() : this(emptyList(), emptyList(), null, null, null)
 
   /** Specify partition group columns. */
   @JvmName("withPartition")
   fun partition(expression: Expression, vararg additionalExpressions: Any): WindowSpec =
-    WindowSpec(resolveGroups(arrayOf(expression, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
+    WindowSpec(
+      resolveGroups(arrayOf(expression, *additionalExpressions)),
+      this.sort,
+      documentsFrame,
+      rangeFrame,
+      unit
+    )
 
   @JvmName("withPartition")
   fun partition(fieldName: String, vararg additionalExpressions: Any): WindowSpec =
-    WindowSpec(resolveGroups(arrayOf(fieldName, *additionalExpressions)), this.sort, documentsFrame, rangeFrame, unit)
+    WindowSpec(
+      resolveGroups(arrayOf(fieldName, *additionalExpressions)),
+      this.sort,
+      documentsFrame,
+      rangeFrame,
+      unit
+    )
 
   /** Specify sort order for this window spec. */
   @JvmName("withSort")
@@ -82,9 +95,9 @@ class WindowSpec internal constructor(
     withDocumentsFrame(preceding, following)
 
   /**
-   * Specify a document-count frame with bounds of mixed or heterogeneous types, e.g.
-   * `(Int, Expression)` or `(String, String)`. Invalid combinations are encoded and rejected by
-   * the backend.
+   * Specify a document-count frame with bounds of mixed or heterogeneous types, e.g. `(Int,
+   * Expression)` or `(String, String)`. Invalid combinations are encoded and rejected by the
+   * backend.
    */
   @JvmName("withDocuments")
   fun documents(preceding: Any, following: Any): WindowSpec =
@@ -92,8 +105,7 @@ class WindowSpec internal constructor(
 
   /** Specify range-value based window frame. */
   @JvmName("withRange")
-  fun range(preceding: Int, following: Int): WindowSpec =
-    withRangeFrame(preceding, following, null)
+  fun range(preceding: Int, following: Int): WindowSpec = withRangeFrame(preceding, following, null)
 
   @JvmName("withRange")
   fun range(preceding: Int, following: Int, unit: String): WindowSpec =
@@ -119,8 +131,8 @@ class WindowSpec internal constructor(
   /**
    * Specify a numeric range frame with fractional bounds.
    *
-   * Only meaningful for value-based (non-time) range frames, e.g. when sorting by a price or
-   * score. The backend rejects fractional offsets for time-based range frames.
+   * Only meaningful for value-based (non-time) range frames, e.g. when sorting by a price or score.
+   * The backend rejects fractional offsets for time-based range frames.
    */
   @JvmName("withRange")
   fun range(preceding: Double, following: Double): WindowSpec =
@@ -139,8 +151,7 @@ class WindowSpec internal constructor(
    * `(String, String)`. Invalid combinations are encoded and rejected by the backend.
    */
   @JvmName("withRange")
-  fun range(preceding: Any, following: Any): WindowSpec =
-    withRangeFrame(preceding, following, null)
+  fun range(preceding: Any, following: Any): WindowSpec = withRangeFrame(preceding, following, null)
 
   @JvmName("withRange")
   fun range(preceding: Any, following: Any, unit: String): WindowSpec =
@@ -166,16 +177,14 @@ class WindowSpec internal constructor(
     val builder = MapValue.newBuilder()
 
     if (partition.isNotEmpty()) {
-      val array = ArrayValue.newBuilder()
-        .addAllValues(partition.map { it.toProto(userDataReader) })
-        .build()
+      val array =
+        ArrayValue.newBuilder().addAllValues(partition.map { it.toProto(userDataReader) }).build()
       builder.putFields("partition", Value.newBuilder().setArrayValue(array).build())
     }
 
     if (sort.isNotEmpty()) {
-      val sortArray = ArrayValue.newBuilder()
-        .addAllValues(sort.map { it.toProto(userDataReader) })
-        .build()
+      val sortArray =
+        ArrayValue.newBuilder().addAllValues(sort.map { it.toProto(userDataReader) }).build()
       builder.putFields("sort", Value.newBuilder().setArrayValue(sortArray).build())
     }
 
@@ -195,16 +204,18 @@ class WindowSpec internal constructor(
    * `following`, matching the JS SDK wire format.
    */
   private fun frameToProto(preceding: Any, following: Any, userDataReader: UserDataReader): Value {
-    val frame = MapValue.newBuilder()
-      .putFields("preceding", boundaryToProto(preceding, userDataReader))
-      .putFields("following", boundaryToProto(following, userDataReader))
+    val frame =
+      MapValue.newBuilder()
+        .putFields("preceding", boundaryToProto(preceding, userDataReader))
+        .putFields("following", boundaryToProto(following, userDataReader))
 
     unit?.let {
-      val unitVal = when (it) {
-        is Expression -> it.toProto(userDataReader)
-        is String -> encodeValue(it)
-        else -> throw IllegalArgumentException("Invalid range unit type: $it")
-      }
+      val unitVal =
+        when (it) {
+          is Expression -> it.toProto(userDataReader)
+          is String -> encodeValue(it)
+          else -> throw IllegalArgumentException("Invalid range unit type: $it")
+        }
       frame.putFields("unit", unitVal)
     }
 
@@ -242,7 +253,6 @@ class WindowSpec internal constructor(
     this === other || (other is WindowSpec && canonicalId() == other.canonicalId())
 
   override fun hashCode(): Int = canonicalId().hashCode()
-
 
   companion object {
     /**
@@ -343,9 +353,7 @@ class WindowSpec internal constructor(
     fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
       WindowSpec(sort = listOf(order, *additionalOrders))
 
-    @JvmStatic
-    fun sort(orders: List<Ordering>): WindowSpec =
-      WindowSpec(sort = orders)
+    @JvmStatic fun sort(orders: List<Ordering>): WindowSpec = WindowSpec(sort = orders)
   }
 }
 

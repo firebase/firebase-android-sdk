@@ -30,14 +30,10 @@ private constructor(
   internal val window: WindowSpec? = null
 ) {
   companion object {
-    /**
-     * Creates a window function that assigns a unique rank to each row based on the sort order.
-     */
+    /** Creates a window function that assigns a unique rank to each row based on the sort order. */
     @JvmStatic fun rank() = WindowFunction("rank")
 
-    /**
-     * Creates a window function that assigns a dense rank to each row based on the sort order.
-     */
+    /** Creates a window function that assigns a dense rank to each row based on the sort order. */
     @JvmStatic fun denseRank() = WindowFunction("dense_rank")
 
     /**
@@ -65,8 +61,7 @@ private constructor(
    * @param window The window specification to evaluate this function over.
    * @return A new [WindowFunction] with the given framing.
    */
-  @JvmOverloads
-  fun over(window: WindowSpec? = null) = WindowFunction(name, params, options, window)
+  @JvmOverloads fun over(window: WindowSpec? = null) = WindowFunction(name, params, options, window)
 
   internal fun canonicalId(): String {
     val base = "$name(${params.joinToString(",") { it.canonicalId() }})"

@@ -16,11 +16,11 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.DatabaseId
+import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.pipeline.WindowSpec
-import com.google.firebase.firestore.pipeline.AggregateFunction
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -133,7 +133,7 @@ class PipelineProtoTest {
 
     // Arg 0: WindowSpec
     val windowSpec = args[0].mapValue.fieldsMap
-    
+
     // Check partition
     val partitionArray = windowSpec["partition"]!!.arrayValue
     assertThat(partitionArray.getValues(0).fieldReferenceValue).isEqualTo("department")
@@ -176,7 +176,8 @@ class PipelineProtoTest {
             .alias("rollingSales")
         )
 
-    val windowStage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    val windowStage =
+      pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
     val rolling = windowStage.argsList[1].mapValue.fieldsMap["rollingSales"]!!.functionValue
 
     // The accumulator is wrapped: over(sum(sales), <windowSpec>).
@@ -211,7 +212,8 @@ class PipelineProtoTest {
         .collection("foo")
         .addWindowFields(AggregateFunction.rawAggregate("sum", field("sales")).alias("total"))
 
-    val windowStage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    val windowStage =
+      pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
     assertThat(windowStage.name).isEqualTo("add_window_fields")
 
     // A global window encodes as an empty spec: no partition, no sort, no frame.
@@ -221,4 +223,3 @@ class PipelineProtoTest {
     assertThat(total.name).isEqualTo("sum")
   }
 }
-

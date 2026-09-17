@@ -25,13 +25,12 @@ import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AddWindowFieldsStage
-import com.google.firebase.firestore.pipeline.WindowSpec
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateOptions
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AliasedAggregate
-import com.google.firebase.firestore.pipeline.AliasedWindowFunction
 import com.google.firebase.firestore.pipeline.AliasedExpression
+import com.google.firebase.firestore.pipeline.AliasedWindowFunction
 import com.google.firebase.firestore.pipeline.BooleanExpression
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
@@ -65,6 +64,7 @@ import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.pipeline.WindowSpec
 import com.google.firebase.firestore.pipeline.evaluation.notImplemented
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
@@ -325,7 +325,6 @@ internal constructor(
    */
   fun addWindowFields(field: AliasedAggregate, vararg additionalFields: Any): Pipeline =
     append(AddWindowFieldsStage.withWindow(WindowSpec()).withFields(field, *additionalFields))
-
 
   /**
    * Remove fields from outputs of previous stages.

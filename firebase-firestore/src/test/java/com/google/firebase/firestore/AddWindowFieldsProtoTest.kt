@@ -59,7 +59,9 @@ class AddWindowFieldsProtoTest {
 
   private fun basePipeline(): Pipeline {
     val databaseId = DatabaseId.forDatabase("new-project", "(default)")
-    return FirebaseFirestoreIntegrationTestFactory(databaseId).firestore.pipeline()
+    return FirebaseFirestoreIntegrationTestFactory(databaseId)
+      .firestore
+      .pipeline()
       .collection("sales")
   }
 
@@ -87,7 +89,8 @@ class AddWindowFieldsProtoTest {
     return stage.argsList[1]
   }
 
-  private fun fieldRef(name: String): Value = Value.newBuilder().setFieldReferenceValue(name).build()
+  private fun fieldRef(name: String): Value =
+    Value.newBuilder().setFieldReferenceValue(name).build()
 
   private fun int(value: Long): Value = Value.newBuilder().setIntegerValue(value).build()
 
@@ -166,9 +169,7 @@ class AddWindowFieldsProtoTest {
             )
         )
       )
-      .isEqualTo(
-        map("partition" to array(fieldRef("product"), fn("to_lower", fieldRef("region"))))
-      )
+      .isEqualTo(map("partition" to array(fieldRef("product"), fn("to_lower", fieldRef("region")))))
   }
 
   @Test
@@ -351,7 +352,8 @@ class AddWindowFieldsProtoTest {
     assertThat(zeroOffset).isNotEqualTo(currentBound)
 
     // The distinction must also survive canonicalization, which backs WindowSpec equality.
-    assertThat(WindowSpec.range(0, 0)).isNotEqualTo(WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT))
+    assertThat(WindowSpec.range(0, 0))
+      .isNotEqualTo(WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT))
   }
 
   /** `UNBOUNDED` is likewise a symbolic bound, not a reserved numeric value. */
@@ -516,11 +518,7 @@ class AddWindowFieldsProtoTest {
         map(
           "sort" to array(ordering(fieldRef("date"), "ascending")),
           "range" to
-            map(
-              "preceding" to int(30),
-              "following" to str("current"),
-              "unit" to str("day")
-            )
+            map("preceding" to int(30), "following" to str("current"), "unit" to str("day"))
         )
       )
   }
@@ -552,9 +550,7 @@ class AddWindowFieldsProtoTest {
         )
 
       assertThat(spec.mapValue.fieldsMap["range"])
-        .isEqualTo(
-          map("preceding" to int(1), "following" to str("current"), "unit" to str(unit))
-        )
+        .isEqualTo(map("preceding" to int(1), "following" to str("current"), "unit" to str(unit)))
     }
   }
 
@@ -590,9 +586,7 @@ class AddWindowFieldsProtoTest {
             )
         )
       )
-      .isEqualTo(
-        map("total" to fn("sum", fieldRef("salesPrice")), "c" to fn("count"))
-      )
+      .isEqualTo(map("total" to fn("sum", fieldRef("salesPrice")), "c" to fn("count")))
   }
 
   @Test
@@ -660,9 +654,7 @@ class AddWindowFieldsProtoTest {
             )
         )
       )
-      .isEqualTo(
-        map("doubled" to fn("sum", fn("multiply", fieldRef("salesPrice"), int(2))))
-      )
+      .isEqualTo(map("doubled" to fn("sum", fn("multiply", fieldRef("salesPrice"), int(2)))))
   }
 
   @Test
@@ -679,11 +671,7 @@ class AddWindowFieldsProtoTest {
         )
       )
       .isEqualTo(
-        map(
-          "rank" to fn("rank"),
-          "denseRank" to fn("dense_rank"),
-          "rowNumber" to fn("row_number")
-        )
+        map("rank" to fn("rank"), "denseRank" to fn("dense_rank"), "rowNumber" to fn("row_number"))
       )
   }
 
@@ -751,12 +739,7 @@ class AddWindowFieldsProtoTest {
               "over",
               fn("sum", fieldRef("salesPrice")),
               map(
-                "range" to
-                  map(
-                    "preceding" to int(10),
-                    "following" to int(0),
-                    "unit" to str("day")
-                  )
+                "range" to map("preceding" to int(10), "following" to int(0), "unit" to str("day"))
               )
             )
         )
@@ -784,8 +767,7 @@ class AddWindowFieldsProtoTest {
               "over",
               fn("sum", fieldRef("salesPrice")),
               map(
-                "documents" to
-                  map("preceding" to str("unbounded"), "following" to str("current"))
+                "documents" to map("preceding" to str("unbounded"), "following" to str("current"))
               )
             ),
           "movingAverage" to
@@ -832,8 +814,7 @@ class AddWindowFieldsProtoTest {
               "over",
               fn("rank"),
               map(
-                "documents" to
-                  map("preceding" to str("unbounded"), "following" to str("current"))
+                "documents" to map("preceding" to str("unbounded"), "following" to str("current"))
               )
             )
         )
@@ -852,9 +833,7 @@ class AddWindowFieldsProtoTest {
           basePipeline()
             .addWindowFields(
               WindowSpec.sort(field("date").ascending()),
-              sum("salesPrice")
-                .over(WindowSpec.partition("product").documents(1, 1))
-                .alias("total")
+              sum("salesPrice").over(WindowSpec.partition("product").documents(1, 1)).alias("total")
             )
         )
       )

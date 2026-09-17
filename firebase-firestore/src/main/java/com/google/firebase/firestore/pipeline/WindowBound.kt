@@ -17,12 +17,12 @@ package com.google.firebase.firestore.pipeline
 /**
  * A symbolic window frame boundary, as opposed to a numeric offset.
  *
- * These are deliberately a distinct type rather than reserved [Int] values. A numeric offset of
- * `0` is *not* equivalent to [CURRENT]: in a `range` frame, [CURRENT] cuts off strictly at the
- * current document's position, while an offset of `0` includes every document whose sort value
- * ties with the current one. Given documents with sort values `[10, 10, 10]`, a frame evaluated at
- * the second document with an unbounded lower bound yields the first two documents under
- * [CURRENT], but all three under an offset of `0`.
+ * These are deliberately a distinct type rather than reserved [Int] values. A numeric offset of `0`
+ * is *not* equivalent to [CURRENT]: in a `range` frame, [CURRENT] cuts off strictly at the current
+ * document's position, while an offset of `0` includes every document whose sort value ties with
+ * the current one. Given documents with sort values `[10, 10, 10]`, a frame evaluated at the second
+ * document with an unbounded lower bound yields the first two documents under [CURRENT], but all
+ * three under an offset of `0`.
  *
  * Use these constants (or the [WindowSpec.CURRENT] / [WindowSpec.UNBOUNDED] aliases) for symbolic
  * bounds, and plain numbers for offsets:

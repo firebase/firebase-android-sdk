@@ -105,11 +105,10 @@ import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
-import com.google.firebase.firestore.pipeline.WindowSpec;
-import com.google.firebase.firestore.pipeline.WindowFunction;
-import com.google.firebase.firestore.pipeline.Ordering;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
+import com.google.firebase.firestore.pipeline.WindowFunction;
+import com.google.firebase.firestore.pipeline.WindowSpec;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -4293,6 +4292,7 @@ public class PipelineTest {
     }
     return Collections.unmodifiableMap(res);
   }
+
   // -----------------------------------------------------------------------------------------
   // addWindowFields
   //
@@ -4654,7 +4654,8 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.documents(WindowSpec.CURRENT, WindowSpec.CURRENT).withSort(ascending("date")),
+                WindowSpec.documents(WindowSpec.CURRENT, WindowSpec.CURRENT)
+                    .withSort(ascending("date")),
                 AggregateFunction.count("quantity").alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
@@ -4694,21 +4695,13 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 12L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 60L),
-                entry("samePriceCount", 1L)),
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 1L)),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("salesPrice", 60L),
@@ -4731,21 +4724,13 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 12L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 60L),
-                entry("samePriceCount", 2L)),
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 2L)),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("salesPrice", 60L),
@@ -4844,21 +4829,13 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("runningCount", 1L),
-                entry("partitionCount", 2L)),
+                entry("product", "phone"), entry("runningCount", 1L), entry("partitionCount", 2L)),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("runningCount", 2L),
-                entry("partitionCount", 2L)),
+                entry("product", "phone"), entry("runningCount", 2L), entry("partitionCount", 2L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("runningCount", 1L),
-                entry("partitionCount", 3L)),
+                entry("product", "tablet"), entry("runningCount", 1L), entry("partitionCount", 3L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("runningCount", 2L),
-                entry("partitionCount", 3L)),
+                entry("product", "tablet"), entry("runningCount", 2L), entry("partitionCount", 3L)),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("runningCount", 3L),
@@ -4883,21 +4860,13 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 12L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 30L),
-                entry("samePriceCount", 1L)),
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("salesPrice", 60L),
-                entry("samePriceCount", 2L)),
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 2L)),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("salesPrice", 60L),
@@ -4960,11 +4929,9 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("stats", mapOfEntries(entry("productCount", 2L)))),
+                entry("product", "phone"), entry("stats", mapOfEntries(entry("productCount", 2L)))),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("stats", mapOfEntries(entry("productCount", 2L)))),
+                entry("product", "phone"), entry("stats", mapOfEntries(entry("productCount", 2L)))),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("stats", mapOfEntries(entry("productCount", 3L)))),
@@ -5105,8 +5072,7 @@ public class PipelineTest {
                         WindowSpec.sort(ascending("date"))
                             .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
                         AggregateFunction.count("quantity")
-                            .over(
-                                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED))
+                            .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED))
                             .alias("windowCount"))
                     .execute()));
   }
@@ -5372,21 +5338,13 @@ public class PipelineTest {
         waitFor(execute).getResults(),
         Arrays.asList(
             mapOfEntries(
-                entry("product", "phone"),
-                entry("movingAverage", 21.0),
-                entry("windowCount", 2L)),
+                entry("product", "phone"), entry("movingAverage", 21.0), entry("windowCount", 2L)),
             mapOfEntries(
-                entry("product", "phone"),
-                entry("movingAverage", 24.0),
-                entry("windowCount", 3L)),
+                entry("product", "phone"), entry("movingAverage", 24.0), entry("windowCount", 3L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("movingAverage", 40.0),
-                entry("windowCount", 3L)),
+                entry("product", "tablet"), entry("movingAverage", 40.0), entry("windowCount", 3L)),
             mapOfEntries(
-                entry("product", "tablet"),
-                entry("movingAverage", 50.0),
-                entry("windowCount", 3L)),
+                entry("product", "tablet"), entry("movingAverage", 50.0), entry("windowCount", 3L)),
             mapOfEntries(
                 entry("product", "tablet"),
                 entry("movingAverage", 60.0),
@@ -5575,8 +5533,7 @@ public class PipelineTest {
             .pipeline()
             .collection(windowTestCollection())
             .addWindowFields(
-                WindowSpec.partition("product"),
-                AggregateFunction.countAll().alias("windowCount"))
+                WindowSpec.partition("product"), AggregateFunction.countAll().alias("windowCount"))
             .sort(ascending("date"))
             .select("product", "windowCount")
             .execute();
