@@ -457,4 +457,9 @@ internal constructor(
   public suspend fun warmUp() {
     onDeviceGenerativeModel.warmup()
   }
+
+  /** Returns the name of the on-device model. */
+  public suspend fun getModelName(): String {
+    return onDeviceGenerativeModel.getBaseModelName()
+  }
 }

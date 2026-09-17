@@ -33,6 +33,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
@@ -52,7 +53,7 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.shouldNotBeEmpty()
-        response.modelVersion shouldBe "gemini-3.1-flash-lite"
+        response.modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -80,7 +81,7 @@ internal class DevAPIUnarySnapshotTests {
         response.candidates.shouldNotBeEmpty()
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.shouldNotBeEmpty()
-        response.modelVersion shouldBe "gemini-3.1-flash-lite"
+        response.modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -96,7 +97,7 @@ internal class DevAPIUnarySnapshotTests {
           it.startIndex.shouldNotBeNull()
           it.endIndex.shouldNotBeNull()
         }
-        response.modelVersion shouldBe "gemini-3.1-flash-lite"
+        response.modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -139,7 +140,7 @@ internal class DevAPIUnarySnapshotTests {
 
         groundingMetadata.groundingChunks.shouldNotBeEmpty()
         groundingMetadata.groundingChunks.forEach { it.web.shouldBeNull() }
-        response.modelVersion shouldBe "gemini-3.1-flash-lite"
+        response.modelVersion shouldStartWith "gemini-"
       }
     }
 

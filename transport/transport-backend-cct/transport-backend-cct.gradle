@@ -45,11 +45,14 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionName version
         consumerProguardFiles 'proguard.txt'
     }
+    testOptions {
+        targetSdk project.targetSdkVersion
+    }
+
     compileOptions {
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
@@ -73,7 +76,7 @@ dependencies {
     testImplementation 'com.github.tomakehurst:wiremock:3.0.1'
     testImplementation libs.protobuf.java.util
     testImplementation libs.truth
-    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
+    testImplementation libs.truth.proto.extension
     testImplementation 'junit:junit:4.13.1'
     testImplementation libs.robolectric
 

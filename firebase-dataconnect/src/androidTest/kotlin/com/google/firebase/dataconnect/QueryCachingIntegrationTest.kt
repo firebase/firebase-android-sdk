@@ -38,6 +38,7 @@ import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
 import com.google.firebase.dataconnect.testutil.schemas.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.testutil.useSuspending
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Value as ValueProto
 import io.kotest.assertions.assertSoftly
@@ -316,33 +317,33 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   ) = runTest {
     checkAll(propTestConfig, maxAgeArb()) { maxAge ->
       val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
-      val key = CachingConnector.Key(UUID.randomUUID())
+      connector.dataConnect.useSuspending {
+        val key = CachingConnector.Key(UUID.randomUUID())
 
-      val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy) }
+        val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy) }
 
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "query was not found in the local cache"
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "query was not found in the local cache"
+        }
       }
-
-      connector.dataConnect.suspendingClose()
     }
   }
 
   private fun verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy: FetchPolicy?) = runTest {
     checkAll(propTestConfig, alphanumericStringArb(), maxAgeArb()) { string, maxAge ->
       val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
-      val key = connector.insertString(string)
+      connector.dataConnect.useSuspending {
+        val key = connector.insertString(string)
 
-      val result = connector.getString(key, fetchPolicy)
+        val result = connector.getString(key, fetchPolicy)
 
-      assertSoftly {
-        result.data.item.shouldNotBeNull().string shouldBe string
-        result.dataSource shouldBe SERVER
+        assertSoftly {
+          result.data.item.shouldNotBeNull().string shouldBe string
+          result.dataSource shouldBe SERVER
+        }
       }
-
-      connector.dataConnect.suspendingClose()
     }
   }
 

@@ -18,9 +18,18 @@ import android.annotation.TargetApi;
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import com.google.android.gms.common.internal.Objects;
+import java.util.Objects;
 
-/** Conditions to allow download of custom models. */
+/**
+ * Conditions to allow download of custom models.
+ *
+ * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+ *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+ *     alternative for hosting custom models. For more information about migration options, see the
+ *     notification banner in the
+ *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+ */
+@Deprecated
 public class CustomModelDownloadConditions {
   private final boolean isChargingRequired;
   private final boolean isWifiRequired;
@@ -33,38 +42,89 @@ public class CustomModelDownloadConditions {
     this.isDeviceIdleRequired = isDeviceIdleRequired;
   }
 
-  /** @return True if charging is required for download. */
+  /**
+   * @return True if charging is required for download.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+   */
+  @Deprecated
   public boolean isChargingRequired() {
     return isChargingRequired;
   }
 
-  /** @return True if wifi is required for download. */
+  /**
+   * @return True if wifi is required for download.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+   */
+  @Deprecated
   public boolean isWifiRequired() {
     return isWifiRequired;
   }
 
-  /** @return True if device idle is required for download. */
+  /**
+   * @return True if device idle is required for download.
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+   */
+  @Deprecated
   public boolean isDeviceIdleRequired() {
     return isDeviceIdleRequired;
   }
 
-  /** Builder of {@link CustomModelDownloadConditions}. */
+  /**
+   * Builder of {@link CustomModelDownloadConditions}.
+   *
+   * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+   *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+   */
+  @Deprecated
   public static class Builder {
     private boolean isChargingRequired = false;
     private boolean isWifiRequired = false;
     private boolean isDeviceIdleRequired = false;
 
-    /** Sets charging as required. Only works on Android N and above. */
+    /**
+     * Sets charging as required. Only works on Android N and above.
+     *
+     * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+     *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+     *     alternative for hosting custom models. For more information about migration options, see the
+     *     notification banner in the
+     *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+     */
     @NonNull
     @RequiresApi(VERSION_CODES.N)
     @TargetApi(VERSION_CODES.N)
+    @Deprecated
     public Builder requireCharging() {
       this.isChargingRequired = true;
       return this;
     }
 
-    /** Sets wifi as required. */
+    /**
+     * Sets wifi as required.
+     *
+     * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+     *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+     *     alternative for hosting custom models. For more information about migration options, see the
+     *     notification banner in the
+     *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+     */
     @NonNull
+    @Deprecated
     public Builder requireWifi() {
       this.isWifiRequired = true;
       return this;
@@ -77,17 +137,33 @@ public class CustomModelDownloadConditions {
      * in use, and has not been in use for some time.
      *
      * <p>Only works on Android N and above.
+     *
+     * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+     *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+     *     alternative for hosting custom models. For more information about migration options, see the
+     *     notification banner in the
+     *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
      */
     @NonNull
     @RequiresApi(VERSION_CODES.N)
     @TargetApi(VERSION_CODES.N)
+    @Deprecated
     public Builder requireDeviceIdle() {
       this.isDeviceIdleRequired = true;
       return this;
     }
 
-    /** Builds {@link CustomModelDownloadConditions}. */
+    /**
+     * Builds {@link CustomModelDownloadConditions}.
+     *
+     * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
+     *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
+     *     alternative for hosting custom models. For more information about migration options, see the
+     *     notification banner in the
+     *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
+     */
     @NonNull
+    @Deprecated
     public CustomModelDownloadConditions build() {
       return new CustomModelDownloadConditions(
           isChargingRequired, isWifiRequired, isDeviceIdleRequired);
@@ -112,6 +188,6 @@ public class CustomModelDownloadConditions {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(isChargingRequired, isWifiRequired, isDeviceIdleRequired);
+    return Objects.hash(isChargingRequired, isWifiRequired, isDeviceIdleRequired);
   }
 }

@@ -168,7 +168,8 @@ inline fun <reified T : WorkAction<C>, C : WorkParameters> WorkQueue.submit(
  * Attribute.of(name, T::class.java)
  * ```
  */
-inline fun <reified T> attributeFrom(name: String) = Attribute.of(name, T::class.java)
+inline fun <reified T : Any> attributeFrom(name: String): Attribute<T> =
+  Attribute.of(name, T::class.java)
 
 /**
  * Sets an attribute value.

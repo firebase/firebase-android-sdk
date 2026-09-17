@@ -27,6 +27,7 @@ import com.google.firebase.ai.ondevice.interop.TextPart as OnDeviceTextPart
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
+import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
@@ -34,6 +35,7 @@ import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
@@ -133,19 +135,35 @@ internal class OnDeviceGenerativeModelProvider(
   /**
    * Generates a structured object based on the given prompt and schema.
    *
-   * Note: This is currently not supported for on-device models.
-   *
    * @param jsonSchema The schema defining the structure of the output.
    * @param prompt The list of content parts to use as the prompt.
    * @return The generated object response.
-   * @throws FirebaseAIException Always throws as this feature is not supported.
+   * @throws FirebaseAIException If the on-device model is unavailable or if generation fails.
    */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val interopResponse = onDeviceModel.generateObject(request, jsonSchema.clazz)
+    val candidates =
+      interopResponse.instances.map {
+        Candidate(
+          content = content { text("") },
+          safetyRatings = emptyList(),
+          citationMetadata = null,
+          finishReason = FinishReason.STOP,
+          finishMessage = null,
+          groundingMetadata = null,
+          urlContextMetadata = null
+        )
+      }
+    @Suppress("UNCHECKED_CAST")
+    GenerateObjectResponse(
+      GenerateContentResponse(candidates, InferenceSource.ON_DEVICE, null, null, "ondevice"),
+      instances = ArrayList(interopResponse.instances as List<T?>)
     )
   }
 

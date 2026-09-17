@@ -33,6 +33,7 @@ public class FirebaseFirestoreSettingsTest {
     assertEquals(settings.isSslEnabled(), true);
     assertEquals(settings.isPersistenceEnabled(), true);
     assertEquals(settings.getCacheSizeBytes(), 104857600L);
+    assertEquals(settings.getGrpcFlowControlWindow(), 256 * 1024);
   }
 
   @Test
@@ -43,11 +44,13 @@ public class FirebaseFirestoreSettingsTest {
             .setSslEnabled(false)
             .setLocalCacheSettings(
                 PersistentCacheSettings.newBuilder().setSizeBytes(2000000L).build())
+            .setGrpcFlowControlWindow(512 * 1024)
             .build();
     assertEquals(settings.getHost(), "a.b.c");
     assertEquals(settings.isSslEnabled(), false);
     assertEquals(settings.isPersistenceEnabled(), true);
     assertEquals(settings.getCacheSizeBytes(), 2000000L);
+    assertEquals(settings.getGrpcFlowControlWindow(), 512 * 1024);
   }
 
   @Test
@@ -57,12 +60,14 @@ public class FirebaseFirestoreSettingsTest {
             .setHost("a.b.c")
             .setSslEnabled(false)
             .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .setGrpcFlowControlWindow(512 * 1024)
             .build();
     FirebaseFirestoreSettings settings2 = new FirebaseFirestoreSettings.Builder(settings1).build();
     assertEquals(settings2.getHost(), "a.b.c");
     assertEquals(settings2.isSslEnabled(), false);
     assertEquals(settings2.isPersistenceEnabled(), false);
     assertEquals(settings2.getCacheSizeBytes(), FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED);
+    assertEquals(settings2.getGrpcFlowControlWindow(), 512 * 1024);
   }
 
   @Test
@@ -98,6 +103,16 @@ public class FirebaseFirestoreSettingsTest {
         IllegalArgumentException.class,
         () -> {
           builder.setLocalCacheSettings(new LocalCacheSettings() {});
+        });
+  }
+
+  @Test
+  public void validatesFlowControlWindowSize() {
+    FirebaseFirestoreSettings.Builder builder = new FirebaseFirestoreSettings.Builder();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          builder.setGrpcFlowControlWindow(-1);
         });
   }
 }

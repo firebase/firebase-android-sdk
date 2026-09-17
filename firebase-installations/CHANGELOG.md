@@ -1,5 +1,7 @@
 # Unreleased
 
+# 19.1.2
+
 - [changed] Migrated from SharedPreferences to DataStore (#8355)
 
 # 19.1.1

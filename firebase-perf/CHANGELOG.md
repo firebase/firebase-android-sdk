@@ -1,5 +1,10 @@
 # Unreleased
 
+- [changed] Updated Protocol Buffers to 4.36.1. (#8580)
+- [changed] Removed the unused dependency on `protolite-well-known-types`. (#8580)
+
+# 22.0.6
+
 - [fixed] Fixed `_app_start` traces being suppressed on API 34+ devices for typical
   real-world apps. The previous timing-window heuristic has been replaced on API 34+ by
   `RunningAppProcessInfo.importance` at first capture, which indicates whether the

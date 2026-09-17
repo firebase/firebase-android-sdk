@@ -32,14 +32,13 @@ firebaseLibrary {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 
     namespace "com.google.firebase.storage"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
         versionName version
@@ -74,9 +73,13 @@ android {
                 srcDirs "src/test/resources"
             }
         }
-
-        testOptions.unitTests.includeAndroidResources = true
     }
+
+    testOptions {
+        targetSdk project.targetSdkVersion
+        unitTests.includeAndroidResources = true
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

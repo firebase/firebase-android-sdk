@@ -1,5 +1,14 @@
 # Unreleased
 
+# 22.2.1
+
+- [changed] Internal improvements for legacy infrastructure (#8551)
+
+# 22.2.0
+
+- [changed] Remvode support for reading the `recaptcha_site_key` value from the `google-services.json`
+  file. (#8457)
+
 # 22.1.0
 
 - [feature] Added support for reading the `recaptcha_site_key` value from the `google-services.json`

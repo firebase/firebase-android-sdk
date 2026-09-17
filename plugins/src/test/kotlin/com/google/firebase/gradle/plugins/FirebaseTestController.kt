@@ -161,7 +161,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
         buildscript {
             repositories {
                 google()
-                jcenter()
+                mavenCentral()
                 maven {
                     url 'https://storage.googleapis.com/android-ci/mvn/'
                     metadataSources {
@@ -177,7 +177,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
         configure(subprojects) {
             repositories {
                 google()
-                jcenter()
+                mavenCentral()
                 maven {
                     url 'https://storage.googleapis.com/android-ci/mvn/'
                     metadataSources {

@@ -221,6 +221,18 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
 
   /**
+   * Manually marks the start of user activity. Required only when automatic activity detection is
+   * disabled.
+   */
+  public abstract fun sendStartActivityRealtime(): ListenableFuture<Unit>
+
+  /**
+   * Manually marks the end of user activity. Required only when automatic activity detection is
+   * disabled.
+   */
+  public abstract fun sendStopActivityRealtime(): ListenableFuture<Unit>
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
@@ -238,6 +250,16 @@ public abstract class LiveSessionFutures internal constructor() {
    * @param content Client [Content] to be sent to the model.
    */
   public abstract fun send(content: Content): ListenableFuture<Unit>
+
+  /**
+   * Sends [data][Content] to the model.
+   *
+   * Calling this after [startAudioConversation] will play the response audio immediately.
+   *
+   * @param content Client [Content] to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
+   */
+  public abstract fun send(content: Content, turnComplete: Boolean): ListenableFuture<Unit>
 
   /**
    * Sends text to the model.
@@ -282,6 +304,9 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun send(content: Content) =
       SuspendToFutureAdapter.launchFuture { session.send(content) }
 
+    override fun send(content: Content, turnComplete: Boolean) =
+      SuspendToFutureAdapter.launchFuture { session.send(content, turnComplete) }
+
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
 
@@ -293,6 +318,12 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun sendTextRealtime(text: String): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.sendTextRealtime(text) }
+
+    override fun sendStartActivityRealtime(): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendStartActivityRealtime() }
+
+    override fun sendStopActivityRealtime(): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendStopActivityRealtime() }
 
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }

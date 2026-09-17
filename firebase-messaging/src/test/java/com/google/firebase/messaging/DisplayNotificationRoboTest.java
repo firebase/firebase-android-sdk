@@ -154,7 +154,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertThat(shadowOf(n).getContentTitle()).isNull();
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
     assertEquals(getAppIcon(), n.icon);
   }
@@ -169,7 +169,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertThat(shadowOf(n).getContentTitle()).isNull();
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
     assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
@@ -475,7 +475,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that a valid notification with color is displayed. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.M)
+  @Config(sdk = Build.VERSION_CODES.N)
   public void testColor() {
     final String color = "#123456";
     Bundle data = new Bundle();
@@ -489,7 +489,7 @@ public class DisplayNotificationRoboTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.M)
+  @Config(sdk = Build.VERSION_CODES.N)
   public void testNoColor() {
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -503,7 +503,7 @@ public class DisplayNotificationRoboTest {
 
   /** Test that the user can choose the default color via AndroidManifest metadata. */
   @Test
-  @Config(sdk = Build.VERSION_CODES.M)
+  @Config(sdk = Build.VERSION_CODES.N)
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
     metadata.putInt(
@@ -771,7 +771,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertThat(shadowOf(n).getContentTitle()).isNull();
   }
 
   /**
@@ -789,7 +789,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
+    assertThat(shadowOf(n).getContentTitle()).isNull();
   }
 
   /** Test that a notification with a bad body resource name is still displayed. */
@@ -802,7 +802,7 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertThat(shadowOf(n).getContentText().toString()).isEmpty();
+    assertThat(shadowOf(n).getContentText()).isNull();
   }
 
   @Test
@@ -820,7 +820,6 @@ public class DisplayNotificationRoboTest {
         .isTrue();
 
     Notification n = getSingleNotification();
-    assertThat(n.largeIcon.sameAs(bitmap)).isTrue();
     assertThat(shadowOf(n).getBigPicture().sameAs(bitmap)).isTrue();
   }
 

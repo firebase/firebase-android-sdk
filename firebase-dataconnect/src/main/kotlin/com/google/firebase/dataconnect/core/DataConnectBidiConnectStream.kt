@@ -16,11 +16,13 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.FIREBASE_AUTH_TOKEN_HEADER
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.CoroutineUtils.completedFlow
 import com.google.firebase.dataconnect.util.CoroutineUtils.mergeColdAndHotFlow
 import com.google.firebase.dataconnect.util.GrpcBidiFlow
@@ -39,7 +41,9 @@ import google.firebase.dataconnect.proto.ResumeRequest as ResumeRequestProto
 import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -48,6 +52,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -56,7 +61,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
@@ -98,13 +105,15 @@ internal class DataConnectBidiConnectStream(
     >,
   authToken: Flow<SequencedReference<GetAuthTokenResult?>>,
   shouldRetry: suspend (Throwable) -> RetryStrategy,
+  networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
   idStringGenerator: IdStringGenerator,
   private val grpcMetadata: DataConnectGrpcMetadata,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
+  private val random: Random,
 ) {
 
-  private val retryBackoff = RetryBackoffCalculator()
+  private val retryBackoff = RetryBackoffCalculator { random.nextDouble() - 0.5 }
   private val resetAndRetryEvent = ConflatedSignal<Unit>()
 
   val isPermanentlyFailed: Boolean
@@ -131,7 +140,7 @@ internal class DataConnectBidiConnectStream(
       )
     val connectionStateUpdater = ConnectionStateUpdater(idStringGenerator)
 
-    val sharedFlow =
+    val physicalConnectionFlow =
       mergeGrpcAndAuth(flow, authToken)
         .onStart { resetAndRetryEvent.clear() }
         .mapNotNull { event ->
@@ -157,40 +166,79 @@ internal class DataConnectBidiConnectStream(
           }
           throw throwable ?: Exception("to be handled by retryWhen")
         }
-        .retryWhen { cause, _ ->
-          resetAndRetryEvent.clear()
-          val retryStrategy =
-            try {
-              shouldRetry(cause)
-            } catch (e: Throwable) {
-              currentCoroutineContext().ensureActive()
-              _permanentFailureFlow.emit(e)
-              throw e
-            }
 
-          when (retryStrategy) {
-            RetryStrategy.RETRY_IMMEDIATELY -> {
-              retryBackoff.reset()
-              true
+    val logicalConnectionFlow =
+      physicalConnectionFlow.retryWhen { cause, _ ->
+        resetAndRetryEvent.clear()
+        val retryStrategy =
+          try {
+            shouldRetry(cause)
+          } catch (e: Throwable) {
+            currentCoroutineContext().ensureActive()
+            _permanentFailureFlow.emit(e)
+            throw e
+          }
+
+        when (retryStrategy) {
+          RetryStrategy.RETRY_IMMEDIATELY -> {
+            retryBackoff.reset()
+            true
+          }
+          RetryStrategy.RETRY_AFTER_BACKOFF -> {
+            val backoffMs = retryBackoff.next()
+            logger.debug {
+              "waiting ${backoffMs}ms before retrying connection, which failed due to $cause"
             }
-            RetryStrategy.RETRY_AFTER_BACKOFF -> {
-              val backoffMs = retryBackoff.next()
-              logger.debug {
-                "waiting ${backoffMs}ms before retrying connection, which failed due to $cause"
-              }
-              withTimeoutOrNull(backoffMs.milliseconds) {
-                onRetryBackoffForTesting.get()?.invoke(backoffMs)
-                resetAndRetryEvent.await()
-              }
-              resetAndRetryEvent.clear()
-              true
+            withTimeoutOrNull(backoffMs.milliseconds) {
+              onRetryBackoffForTesting.get()?.invoke(backoffMs)
+              resetAndRetryEvent.await()
             }
+            resetAndRetryEvent.clear()
+            true
           }
         }
+      }
+
+    val logicalConnectionWithNetworkMonitoringFlow = flow {
+      coroutineScope {
+        // Monitor for network connectivity restored events concurrently with the downstream flow
+        // collection so that retryWhen can eagerly retry the connection if connectivity is
+        // potentially restored, rather than waiting for the entire backoff duration.
+        val networkConnectivityRestoredFlowCollectJob =
+          launch(CoroutineName("NetworkConnectivityRestoredFlowCollectJob")) {
+            try {
+              networkConnectivityRestoredFlow.collect {
+                retryBackoff.reset()
+                resetAndRetryEvent.signal()
+              }
+            } catch (e: Throwable) {
+              ensureActive()
+              logger.warn(e) {
+                "WARNING: monitoring network connectivity failed; " +
+                  "automatic re-connection to the Data Connect server " +
+                  "may take longer than strictly necessary [qhrqw5xvxc]"
+              }
+            }
+          }
+
+        try {
+          emitAll(logicalConnectionFlow)
+        } finally {
+          networkConnectivityRestoredFlowCollectJob.cancel()
+        }
+      }
+    }
+
+    val sharedFlow =
+      logicalConnectionWithNetworkMonitoringFlow
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
         .shareIn(
           coroutineScope,
-          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+          started =
+            SharingStarted.WhileSubscribed(
+              stopTimeoutMillis = 15_000,
+              replayExpirationMillis = 0,
+            ),
           replay = 0,
         )
 
@@ -725,7 +773,10 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     val currentAuthUid = currentState.authToken.ref?.authUid
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
-      throw FirebaseUserChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
+      throw AuthUserChangedException(
+        "Firebase user changed from uid=${currentAuthUid?.string} " +
+          "to uid=${newAuthUid?.string} [sn36arqzt2]"
+      )
     }
 
     // Ignore outdated auth token changes.
@@ -742,7 +793,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
     // Do not send an empty token, as that is wasteful too (and should never happen in practice
     // because if newToken==null and oldToken!=newToken then it must hold that
-    // currentAuthUid!=newAuthUid, and should have resulted in FirebaseUserChangedException above).
+    // currentAuthUid!=newAuthUid, and should have resulted in AuthUserChangedException above).
     if (newToken == null) {
       return null
     }

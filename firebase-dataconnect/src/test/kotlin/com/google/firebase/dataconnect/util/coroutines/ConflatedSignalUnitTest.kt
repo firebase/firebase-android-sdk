@@ -356,4 +356,23 @@ class ConflatedSignalUnitTest {
       backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.signals.collect {} }
     job.isCompleted shouldBe false
   }
+
+  @Test
+  fun `signalIfNotNull with non-null value triggers signal`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signalIfNotNull("hello")
+
+    signal.hasPendingSignal shouldBe true
+    signal.await() shouldBe "hello"
+  }
+
+  @Test
+  fun `signalIfNotNull with null value does not trigger signal`() = runTest {
+    val signal = ConflatedSignal<String>()
+    signal.signalIfNotNull(null)
+
+    signal.hasPendingSignal shouldBe false
+    val job = backgroundScope.launch(start = CoroutineStart.UNDISPATCHED) { signal.await() }
+    job.isCompleted shouldBe false
+  }
 }

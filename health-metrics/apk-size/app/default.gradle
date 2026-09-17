@@ -17,7 +17,7 @@
  * Default build settings
  */
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
 

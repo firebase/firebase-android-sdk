@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.CachedDataNotFoundException
-import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -77,6 +77,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -100,6 +101,8 @@ internal class DataConnectGrpcRPCs(
   @get:VisibleForTesting val grpcMetadata: DataConnectGrpcMetadata,
   private val cache: DataConnectCache?,
   parentLogger: Logger,
+  private val networkConnectivityRestoredFlow: Flow<NetworkConnectivityRestored>,
+  private val random: Random,
 ) {
   private val logger =
     Logger("DataConnectGrpcRPCs").apply {
@@ -441,7 +444,10 @@ internal class DataConnectGrpcRPCs(
 
       val uidFromToken = token.ref?.authUid
       if (uidFromToken != authUid) {
-        throw FirebaseUserChangedException("ytd7yf2geh", authUid, uidFromToken)
+        throw AuthUserChangedException(
+          "Firebase user changed from uid=${authUid?.string} " +
+            "to uid=${uidFromToken?.string} [b5aqrgbvyd]"
+        )
       }
 
       return token
@@ -508,7 +514,7 @@ internal class DataConnectGrpcRPCs(
       )
 
     val shouldRetry: suspend (Throwable) -> RetryStrategy = { exception ->
-      if (exception is FirebaseUserChangedException) {
+      if (exception is AuthUserChangedException) {
         throw exception
       } else if (isUnauthenticatedFailure(exception)) {
         if (tokenManager.forceRefresh()) {
@@ -525,12 +531,14 @@ internal class DataConnectGrpcRPCs(
       flow,
       tokenManager.authToken,
       shouldRetry = shouldRetry,
+      networkConnectivityRestoredFlow,
       idStringGenerator,
       grpcMetadata,
       connectCoroutineScope,
       Logger("DataConnectBidiConnectStream[sid=$streamId]").also {
         it.debug { "created by ${logger.nameWithId}" }
-      }
+      },
+      random,
     )
   }
 
@@ -923,16 +931,6 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
 
   return ::getEntityIdForPathFunction
 }
-
-internal class FirebaseUserChangedException(
-  errorCode: String,
-  currentAuthUid: AuthUid?,
-  newAuthUid: AuthUid?,
-) :
-  DataConnectException(
-    "Firebase user changed from uid=${currentAuthUid?.string} " +
-      "to uid=${newAuthUid?.string} [$errorCode]"
-  )
 
 private fun isUnauthenticatedFailure(e: Throwable): Boolean =
   when (e) {

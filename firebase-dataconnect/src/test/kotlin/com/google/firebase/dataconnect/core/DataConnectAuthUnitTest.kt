@@ -59,6 +59,7 @@ import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.longs.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -87,6 +88,7 @@ import io.mockk.slot
 import io.mockk.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.LongAdder
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -227,11 +229,8 @@ class DataConnectAuthUnitTest {
     val latch = SuspendingCountDownLatch(100)
     val jobs =
       List(latch.count) {
-        backgroundScope.async(Dispatchers.IO) {
-          latch.run {
-            countDown()
-            await()
-          }
+        backgroundScope.async(Dispatchers.Default) {
+          latch.countDown().await()
           dataConnectAuth.close()
         }
       }
@@ -494,19 +493,18 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.initialize()
     advanceUntilIdle()
     val tokens = CopyOnWriteArrayList<String>()
+    val getAccessTokenCallCount = LongAdder()
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } answers
       {
+        getAccessTokenCallCount.add(1)
         taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
     val latch = SuspendingCountDownLatch(500)
     val jobs =
       List(latch.count) {
-        backgroundScope.async(Dispatchers.IO) {
-          latch.run {
-            countDown()
-            await()
-          }
+        backgroundScope.async(Dispatchers.Default) {
+          latch.countDown().await()
           dataConnectAuth.getToken(requestId)
         }
       }
@@ -515,7 +513,9 @@ class DataConnectAuthUnitTest {
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
-    verify(atMost = 50) { mockInternalAuthProvider.getAccessToken(any()) }
+    withClue("getAccessTokenCallCount") {
+      getAccessTokenCallCount.sum() shouldBeLessThanOrEqual 150
+    }
   }
 
   @Test

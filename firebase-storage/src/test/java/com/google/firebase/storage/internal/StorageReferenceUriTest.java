@@ -15,7 +15,6 @@
 package com.google.firebase.storage.internal;
 
 import android.net.Uri;
-import android.os.Build;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,7 +23,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.M)
+@Config(sdk = Config.OLDEST_SDK)
 public class StorageReferenceUriTest {
 
   private static final EmulatedServiceSettings EMULATOR_SETTINGS =

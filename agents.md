@@ -28,14 +28,17 @@ This file is useful for understanding the role of each subproject in the reposit
 To work with this repository, the Android SDK must be installed. Use the `sdkmanager` command-line
 tool for this purpose.
 
-1. **Install Android SDK Command-Line Tools**:
+1. **Install Java 17**
+   - All SDKs require Java 17 to build and run. Earlier or later versions will not suffice.
+     If multiple versions of java are installed, the `JAVA_HOME` environment variable can be set without modifying system configuration.
+2. **Install Android SDK Command-Line Tools**:
    - If not already installed, download the command-line tools from the
      [Android Studio page](https://developer.android.com/studio#command-line-tools-only).
    - Create a directory for the Android SDK, e.g., `android_sdk`.
    - Unzip the downloaded package. This will create a `cmdline-tools` directory. Move this
      directory to `android_sdk/cmdline-tools/latest`.
    - The final structure should be `android_sdk/cmdline-tools/latest/`.
-2. **Install required SDK packages**:
+3. **Install required SDK packages**:
    - Use `sdkmanager` to install the necessary platforms, build tools, and other packages. For
      example:
 
@@ -50,10 +53,10 @@ tool for this purpose.
      yes | sdkmanager --licenses
      ```
    - Refer to the specific requirements of the project to determine which packages to install.
-3. **Configure for integration tests**:
+4. **Configure for integration tests**:
    - To run integration tests, a `google-services.json` file is required.
    - Place this file in the root of the repository.
-4. **Install NDK for specific projects**:
+5. **Install NDK for specific projects**:
    - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
      You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
      would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
@@ -87,6 +90,16 @@ Unit tests run on the local JVM. They can be executed with the following command
 
 ```bash
 ./gradlew :<firebase-project>:check
+```
+
+#### Running Specific Unit Tests
+
+To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android
+library modules, or `test` for Java library modules):
+
+```bash
+./gradlew :<firebase-project>:testDebugUnitTest --tests "com.google.firebase.package.ClassName"
+./gradlew :<firebase-project>:testDebugUnitTest --tests "com.google.firebase.package.ClassName.methodName"
 ```
 
 #### Integration Tests
@@ -168,10 +181,82 @@ This repository uses a combination of dependency injection frameworks:
 The project supports Proguarding. Proguard rules are defined in `proguard.txt` files within each
 project.
 
+## Code Review
+
+When reviewing code or preparing changes for review, ensure the following requirements are met:
+
+- **No Latin Abbreviations**: Do not use Latin abbreviations (such as `e.g.`, `i.e.`, or `etc.`) in code comments or strings. Use plain English alternatives instead (such as "for example", "that is", or "and so on").
+- **API File Updates**: When code modifies the public API, the corresponding `api.txt` file must be updated.
+- **Changelog Updates**: When changes to a subproject are non-trivial and user-visible, the corresponding `CHANGELOG.md` file must be updated.
+- **API Documentation**: All public APIs must be documented properly using standard doc comments (Javadoc or KDoc).
+
+### Write a helpful and well-structured CHANGELOG entry
+
+#### **Content**
+
+* Focus on developer impact over technical implementation. Instead of
+  "Refactored `AuthManager.kt` observer closure", write "Fixed
+  memory leak when detaching authentication listeners."
+
+* For feature releases, include the common terminology that a
+  developer might use to describe the feature and/or its use
+  case. This helps with discovery of the feature and its related
+  codebase change.
+
+* Add hyperlinks to relevant Firebase documentation, when possible.
+  These links can be for narrative guides or reference docs.
+
+#### **Structure and syntax**
+
+* Use standardized prefix tags from the following list:
+  * \[changed\]
+  * \[feature\]
+  * \[fixed\]
+  * \[deprecated\]
+  * \[removed\]
+  * \[important\]
+  * \[issue\]
+  * \[unchanged\]
+* For breaking changes, add **Breaking change:** at the beginning of the entry.
+* Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
+* End each sentence with a period.
+* Add the relevant PR \# or Issue \# to the end of each entry, after the period.
+* For Firebase product brand names, use the appropriate standard names.
+  * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
+    * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
+* Capitalize with care.
+  * Use sentence case.
+    * Capitalize the following: the first letter of each sentence, proper nouns/code identifiers, official product and brand names, and abbreviations / initialisms.
+    * Do not capitalize the following: every word or feature names
+* Wrap in backticks all strings that are code-like elements, including the following (this list is _not_ exhaustive):
+  * API names
+  * attribute names and values
+  * class names
+  * CLI commands and CLI flags
+  * code symbols
+  * command output
+  * data types
+  * database elements
+  * defined (constant) values for an element or attribute
+  * enum names
+  * filenames and file paths
+  * folder and directory names
+  * HTTP status codes
+  * HTTP verbs
+  * IP addresses
+  * language keywords
+  * method and function names
+  * package names
+  * parameters
+  * port numbers
+  * URL strings or domain names
+  * text input or output
+* Use ISO 8601 date formatting (YYYY-MM-DD).
+
 ## External Dependencies
 
-Do not add, under any circunstance, any new dependency to a SDK that does not already exists in the
-`gradle/libs.versions.toml`, and even then, only do it if cxexplicitly asked to do so. The Firebase
+Do not add, under any circumstance, any new dependency to an SDK that does not already exist in the
+`gradle/libs.versions.toml`, and even then, only do it if explicitly asked to do so. The Firebase
 SDKs are designed to be lightweight, and adding new dependencies can increase the size of the final
 artifacts.
 

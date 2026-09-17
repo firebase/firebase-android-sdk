@@ -21,6 +21,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.BuildConfig
+import com.google.firebase.ai.common.util.TEST_MODEL_NAME
 import com.google.firebase.ai.common.util.commonTest
 import com.google.firebase.ai.common.util.createResponses
 import com.google.firebase.ai.common.util.doBlocking
@@ -117,7 +118,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         "genai-android/${BuildConfig.VERSION_NAME}",
@@ -147,7 +148,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(
           timeout = 5.seconds,
           endpoint = "https://my.custom.endpoint",
@@ -181,7 +182,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -208,7 +209,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -236,7 +237,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -267,9 +268,8 @@ internal class RequestFormatTests {
 
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
-    requestBodyAsText shouldContainJsonKey "tool_config.function_calling_config.mode"
-    requestBodyAsText shouldContainJsonKey
-      "tool_config.function_calling_config.allowed_function_names"
+    requestBodyAsText shouldContainJsonKey "toolConfig.functionCallingConfig.mode"
+    requestBodyAsText shouldContainJsonKey "toolConfig.functionCallingConfig.allowedFunctionNames"
   }
 
   @Test
@@ -283,7 +283,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -322,7 +322,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -369,7 +369,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -406,7 +406,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -442,7 +442,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -468,7 +468,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -507,7 +507,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-2.5",
+        TEST_MODEL_NAME,
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -538,8 +538,8 @@ internal class RequestFormatTests {
 
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
-    requestBodyAsText shouldContainJsonKey "generation_config.image_config.aspect_ratio"
-    requestBodyAsText shouldContainJsonKey "generation_config.image_config.image_size"
+    requestBodyAsText shouldContainJsonKey "generationConfig.imageConfig.aspectRatio"
+    requestBodyAsText shouldContainJsonKey "generationConfig.imageConfig.imageSize"
   }
 }
 
@@ -589,9 +589,9 @@ internal class ModelNamingTests(private val modelName: String, private val actua
     @ParameterizedRobolectricTestRunner.Parameters
     fun data() =
       listOf(
-        arrayOf("gemini-pro", "models/gemini-pro"),
-        arrayOf("x/gemini-pro", "x/gemini-pro"),
-        arrayOf("models/gemini-pro", "models/gemini-pro"),
+        arrayOf(TEST_MODEL_NAME, "models/$TEST_MODEL_NAME"),
+        arrayOf("x/$TEST_MODEL_NAME", "x/$TEST_MODEL_NAME"),
+        arrayOf("models/$TEST_MODEL_NAME", "models/$TEST_MODEL_NAME"),
         arrayOf("/modelname", "/modelname"),
         arrayOf("modifiedNaming/mymodel", "modifiedNaming/mymodel"),
       )

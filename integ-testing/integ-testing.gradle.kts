@@ -26,10 +26,7 @@ android {
   compileSdk = targetSdkVersion
   namespace = "com.google.firebase.testing.integ"
 
-  defaultConfig {
-    minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
-  }
+  defaultConfig { minSdk = minSdkVersion }
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8

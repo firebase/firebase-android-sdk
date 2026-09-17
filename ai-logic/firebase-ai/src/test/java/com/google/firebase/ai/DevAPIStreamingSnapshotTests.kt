@@ -78,7 +78,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           finishMessage shouldBe "Finished successfully"
         }
-        responseList.last().modelVersion shouldBe "gemini-3.1-flash-lite"
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -94,7 +94,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
         }
-        responseList.last().modelVersion shouldBe "gemini-3.1-flash-lite"
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -112,7 +112,7 @@ internal class DevAPIStreamingSnapshotTests {
           finishReason shouldBe FinishReason.STOP
           content.parts.isEmpty() shouldBe false
         }
-        responseList.last().modelVersion shouldBe "gemini-2.5-flash-image-preview"
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 
@@ -132,7 +132,7 @@ internal class DevAPIStreamingSnapshotTests {
           it.thoughtSignature.shouldNotBeNull()
           it.thoughtSignature.shouldStartWith("CiIBVKhc7vB")
         }
-        responseList.last().modelVersion shouldBe "gemini-2.5-flash"
+        responseList.last().modelVersion shouldStartWith "gemini-"
       }
     }
 

@@ -179,3 +179,10 @@ internal class ConflatedSignal<T : Any> {
 internal fun ConflatedSignal<Unit>.signal() {
   signal(Unit)
 }
+
+/** Convenience extension function to signal a [ConflatedSignal] if the given signal is not null. */
+internal fun <T : Any> ConflatedSignal<T>.signalIfNotNull(signal: T?) {
+  if (signal != null) {
+    signal(signal)
+  }
+}

@@ -16,7 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.google.firebase.gradle.plugins.ci.Coverage
 import com.google.firebase.gradle.plugins.services.GMavenService
 import java.io.File

@@ -19,6 +19,7 @@ package com.google.firebase.ai
 import android.content.Context
 import android.net.ConnectivityManager
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.common.util.TEST_MODEL_NAME
 import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
 import com.google.firebase.ai.type.GenerativeBackend
@@ -49,7 +50,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider uses hybrid suffix in PREFER_ON_DEVICE mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-2.5-flash",
+          modelName = TEST_MODEL_NAME,
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,
@@ -73,7 +74,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider uses hybrid suffix in PREFER_IN_CLOUD mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-2.5-flash",
+          modelName = TEST_MODEL_NAME,
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,
@@ -97,7 +98,7 @@ internal class GenerativeModelBuilderTests {
   fun `getModelProvider does NOT use hybrid suffix in ONLY_IN_CLOUD mode`() {
     val builder =
       GenerativeModel.Builder(
-          modelName = "gemini-2.5-flash",
+          modelName = TEST_MODEL_NAME,
           apiKey = "apiKey",
           firebaseApp = firebaseApp,
           useLimitedUseAppCheckTokens = false,

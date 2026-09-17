@@ -35,12 +35,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import org.mockito.Mockito
 
 private val TEST_CLIENT_ID = "genai-android/test"
 private val TEST_APP_ID = "1:android:12345"
 private val TEST_VERSION = 1
+internal const val TEST_MODEL_NAME = "gemini-3.5-flash"
 
 internal fun prepareStreamingResponse(
   response: List<GenerateContentResponse.Internal>
@@ -105,7 +108,7 @@ internal fun commonTest(
   val apiController =
     APIController(
       "super_cool_test_key",
-      "gemini-pro",
+      TEST_MODEL_NAME,
       requestOptions,
       MockEngine {
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
@@ -117,4 +120,19 @@ internal fun commonTest(
       null,
     )
   CommonTestScope(channel, apiController).block()
+}
+
+/**
+ * Runs the given [block] using [runBlocking] on the current thread for side effect.
+ *
+ * Using this function is like [runBlocking] with default context (which runs the given block on the
+ * calling thread) but forces the return type to be `Unit`, which is helpful when implementing
+ * suspending tests as expression functions:
+ * ```
+ * @Test
+ * fun myTest() = doBlocking {...}
+ * ```
+ */
+internal fun doBlocking(block: suspend CoroutineScope.() -> Unit) {
+  runBlocking(block = block)
 }

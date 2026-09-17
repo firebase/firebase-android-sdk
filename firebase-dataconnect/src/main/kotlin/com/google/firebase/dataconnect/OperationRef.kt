@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -37,6 +38,7 @@ import kotlinx.serialization.modules.SerializersModule
  * The [OperationRef] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface OperationRef<Data, Variables> {
 
   /** The [FirebaseDataConnect] with which this object is associated. */
@@ -275,6 +277,7 @@ public interface OperationRef<Data, Variables> {
  *
  * @see OperationRef.execute
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface OperationResult<Data, Variables> {
   /** The operation that produced this result. */
   public val ref: OperationRef<Data, Variables>

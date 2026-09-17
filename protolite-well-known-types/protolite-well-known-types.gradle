@@ -46,7 +46,6 @@ android {
     namespace "firebase.com.protolitewrapper"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionCode 1
         versionName '1.0'
@@ -61,6 +60,10 @@ android {
     }
 
     sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/', 'src/main/proto']
+
+    testOptions {
+        targetSdk project.targetSdkVersion
+    }
 }
 
 

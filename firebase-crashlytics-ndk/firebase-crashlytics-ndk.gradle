@@ -32,7 +32,7 @@ firebaseLibrary {
 }
 
 android {
-    adbOptions {
+    installation {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.crashlytics.ndk"
@@ -40,7 +40,6 @@ android {
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
         versionName version
 
         externalNativeBuild {
@@ -60,6 +59,10 @@ android {
             }
         }
     }
+    testOptions {
+        targetSdk project.targetSdkVersion
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8

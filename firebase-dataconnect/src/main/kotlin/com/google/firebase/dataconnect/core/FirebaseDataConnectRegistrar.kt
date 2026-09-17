@@ -31,6 +31,7 @@ import com.google.firebase.components.Qualified
 import com.google.firebase.dataconnect.*
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import java.util.concurrent.Executor
+import kotlin.random.Random
 
 /**
  * [ComponentRegistrar] for setting up [FirebaseDataConnect].
@@ -60,6 +61,7 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
             nonBlockingExecutor = container.get(nonBlockingExecutor),
             deferredAuthProvider = container.getDeferred(internalAuthProvider),
             deferredAppCheckProvider = container.getDeferred(interopAppCheckTokenProvider),
+            random = Random.Default,
           )
         }
         .build(),

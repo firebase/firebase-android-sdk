@@ -20,15 +20,17 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
-  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
+  id("com.google.devtools.ksp") version "2.3.6"
 }
 
 android {
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.testing.processor"
   compileSdk = 36
   defaultConfig {
     applicationId = "com.google.firebase.testing.processor"
-    minSdk = 23
+    minSdk = minSdkVersion
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
@@ -41,10 +43,19 @@ android {
   }
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    // Skip Kotlin metadata version check to prevent build failures when there is a mismatch
+    // between the Kotlin compiler version and the KSP plugin version.
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
+}
 
 dependencies {
   implementation(project(":ai-logic:firebase-ai"))
+
+  implementation(libs.genai.schema)
   ksp(project(":ai-logic:firebase-ai-ksp-processor"))
 
   implementation("com.google.firebase:firebase-common:22.0.0")
