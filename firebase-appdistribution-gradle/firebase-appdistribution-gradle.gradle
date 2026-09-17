@@ -272,8 +272,8 @@ tasks.withType(ValidatePlugins).configureEach {
   enableStricterValidation = true
 }
 
-tasks.named("compileTestKotlin", org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+tasks.named("compileTestKotlin", KotlinCompile) {
+  compilerOptions.jvmTarget = JvmTarget.JVM_11
 }
 
 tasks.named("compileTestJava", JavaCompile) {
