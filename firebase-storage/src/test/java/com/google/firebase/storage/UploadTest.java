@@ -14,6 +14,11 @@
 
 package com.google.firebase.storage;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -34,15 +39,26 @@ import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
 import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
+import com.google.firebase.storage.network.NetworkRequest;
 import com.google.firebase.storage.network.ResumableUploadCancelRequest;
+import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.testing.FirebaseAppRule;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Assert;
@@ -57,6 +73,7 @@ import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowNetworkInfo;
+import org.robolectric.util.ReflectionHelpers;
 
 /** Tests for {@link FirebaseStorage}. */
 @SuppressWarnings("ConstantConditions")
@@ -84,6 +101,98 @@ public class UploadTest {
   public void tearDown() {
     FirebaseStorageComponent component = app.get(FirebaseStorageComponent.class);
     component.clearInstancesForTesting();
+  }
+
+  @Test
+  public void finalChunkRetryPreservesAllBytes() throws Exception {
+    assertFinalChunkRetryPreservesAllBytes(0);
+  }
+
+  @Test
+  public void finalChunkRetryPreservesAllBytesAfterPartialAcceptance() throws Exception {
+    assertFinalChunkRetryPreservesAllBytes(256 * 1024);
+  }
+
+  private void assertFinalChunkRetryPreservesAllBytes(int acceptedBeforeFailure) throws Exception {
+    // The third chunk reaches EOF with more than the reduced retry chunk size still buffered.
+    byte[] data = new byte[5 * 256 * 1024 + 123];
+    new Random(0).nextBytes(data);
+    ByteArrayOutputStream uploaded = new ByteArrayOutputStream();
+    AtomicBoolean failedFinalChunk = new AtomicBoolean();
+    AtomicBoolean queriedAfterFailure = new AtomicBoolean();
+    HttpURLConnectionFactory originalFactory =
+        ReflectionHelpers.getStaticField(NetworkRequest.class, "connectionFactory");
+    HttpURLConnectionFactory factory =
+        url -> {
+          HttpURLConnection connection = mock(HttpURLConnection.class);
+          Map<String, String> requestHeaders = new HashMap<>();
+          Map<String, List<String>> responseHeaders = new HashMap<>();
+          ByteArrayOutputStream body = new ByteArrayOutputStream();
+          doAnswer(
+                  invocation -> {
+                    requestHeaders.put(invocation.getArgument(0), invocation.getArgument(1));
+                    return null;
+                  })
+              .when(connection)
+              .setRequestProperty(anyString(), anyString());
+          when(connection.getOutputStream()).thenReturn(body);
+          when(connection.getHeaderFields()).thenReturn(responseHeaders);
+          when(connection.getResponseCode())
+              .thenAnswer(
+                  invocation -> {
+                    String command = requestHeaders.get("X-Goog-Upload-Command");
+                    responseHeaders.put(
+                        "X-Goog-Upload-Status", Collections.singletonList("active"));
+                    if ("start".equals(command)) {
+                      responseHeaders.put(
+                          "X-Goog-Upload-URL",
+                          Collections.singletonList("https://localhost/upload"));
+                    } else if ("query".equals(command)) {
+                      queriedAfterFailure.set(failedFinalChunk.get());
+                      responseHeaders.put(
+                          "X-Goog-Upload-Size-Received",
+                          Collections.singletonList(Integer.toString(uploaded.size())));
+                    } else {
+                      Assert.assertEquals(
+                          uploaded.size(),
+                          Long.parseLong(requestHeaders.get("X-Goog-Upload-Offset")));
+                      if (command.contains("finalize") && !failedFinalChunk.getAndSet(true)) {
+                        uploaded.write(body.toByteArray(), 0, acceptedBeforeFailure);
+                        return 500;
+                      }
+                      uploaded.write(body.toByteArray());
+                      if (command.contains("finalize")) {
+                        responseHeaders.put(
+                            "X-Goog-Upload-Status", Collections.singletonList("final"));
+                      }
+                    }
+                    return 200;
+                  });
+          when(connection.getInputStream())
+              .thenAnswer(
+                  invocation ->
+                      new ByteArrayInputStream(
+                          ("{\"name\":\"retry.bin\",\"bucket\":\"fooey.appspot.com\",\"size\":"
+                                  + uploaded.size()
+                                  + "}")
+                              .getBytes(StandardCharsets.UTF_8)));
+          return connection;
+        };
+    ReflectionHelpers.setStaticField(NetworkRequest.class, "connectionFactory", factory);
+    try {
+      UploadTask task = FirebaseStorage.getInstance(app).getReference("retry.bin").putBytes(data);
+      // Await a completion listener so the task is also removed from the shared task registry.
+      TestUtil.await(task.continueWith(ignored -> null));
+
+      Assert.assertTrue(task.isSuccessful());
+      Assert.assertTrue(failedFinalChunk.get());
+      Assert.assertTrue(queriedAfterFailure.get());
+      Assert.assertArrayEquals(data, uploaded.toByteArray());
+      Assert.assertEquals(data.length, task.getResult().getBytesTransferred());
+      Assert.assertEquals(data.length, task.getResult().getMetadata().getSizeBytes());
+    } finally {
+      ReflectionHelpers.setStaticField(NetworkRequest.class, "connectionFactory", originalFactory);
+    }
   }
 
   @Test
