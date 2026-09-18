@@ -107,13 +107,13 @@ dependencies {
   api("com.google.firebase:firebase-installations:19.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
-  api("com.google.firebase:firebase-installations-interop:17.1.0")
+  api("com.google.firebase:firebase-installations-interop:17.3.0")
   api("com.google.firebase:firebase-measurement-connector:19.0.0")
 
   implementation(libs.androidx.annotation)
   implementation("com.google.android.datatransport:transport-api:3.1.0")
-  implementation("com.google.android.datatransport:transport-backend-cct:3.1.8")
-  implementation("com.google.android.datatransport:transport-runtime:3.1.8")
+  implementation("com.google.android.datatransport:transport-backend-cct:3.1.9")
+  implementation("com.google.android.datatransport:transport-runtime:3.1.9")
   implementation(libs.bundles.playservices)
   implementation(libs.play.services.cloud.messaging)
   implementation(libs.play.services.stats)

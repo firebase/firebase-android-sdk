@@ -7,6 +7,8 @@
   to interfaces such as `FirebaseDataConnect` and `OperationRef`, to explicitly
   prevent implementing or inheriting from these interfaces.
   ([#8603](https://github.com/firebase/firebase-android-sdk/pull/8603))
+- [changed] Upgraded gRPC to 1.84.0 and Protocol Buffers to 4.36.1.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
 
 # 17.4.0
 
