@@ -168,9 +168,11 @@ internal constructor(
    *
    * **Note for Structured Output:**
    *
-   * * **On-device (hybrid) inference:** Requires using the `@Generable` annotation on a `data
-   * class`. Manual schemas and direct `enum class` annotations are not supported.
-   * * **Cloud-based inference:** Supportsboth `@Generable` annotations and manual schemas.
+   * * **For on-device and hybrid inference (`ONLY_ON_DEVICE`, `PREFER_ON_DEVICE`, and
+   * `PREFER_IN_CLOUD`):** Requires using the `@Generable` annotation on a `data class`. Manual
+   * schemas are not supported.
+   * * **For cloud-only inference (`ONLY_IN_CLOUD`):** Supports both `@Generable` annotations and
+   * manual schemas.
    *
    * @param jsonSchema A schema for the output
    * @param prompt The input(s) given to the model as a prompt.
@@ -189,9 +191,11 @@ internal constructor(
    *
    * **Note for Structured Output:**
    *
-   * * **On-device (hybrid) inference:** Requires using the `@Generable` annotation on a `data
-   * class`. Manual schemas and direct `enum class` annotations are not supported.
-   * * **Cloud-based inference:** Supportsboth `@Generable` annotations and manual schemas.
+   * * **For on-device and hybrid inference (`ONLY_ON_DEVICE`, `PREFER_ON_DEVICE`, and
+   * `PREFER_IN_CLOUD`):** Requires using the `@Generable` annotation on a `data class`. Manual
+   * schemas are not supported.
+   * * **For cloud-only inference (`ONLY_IN_CLOUD`):** Supports both `@Generable` annotations and
+   * manual schemas.
    *
    * @param jsonSchema A schema for the output
    * @param prompt The text to be send to the model as a prompt.
