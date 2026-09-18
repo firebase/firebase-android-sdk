@@ -16,7 +16,7 @@ benchmarkMacro = "1.4.1"
 browser = "1.3.0"
 cardview = "1.0.0"
 constraintlayout = "2.2.1"
-coroutines = "1.9.0"
+coroutines = "1.10.2"
 dagger = "2.57.2"
 datastore = "1.1.7"
 dexmaker = "2.28.3"
@@ -28,7 +28,7 @@ firebaseAnnotations = "17.0.0"
 firebaseCommon = "22.0.1"
 firebaseComponents = "19.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
-genaiPrompt = "1.0.0-beta3"
+genaiPrompt = "1.0.0-beta4"
 genaiSchema = "1.0.0-alpha1"
 glide = "5.0.5"
 googleApiClient = "2.8.1"
@@ -45,17 +45,17 @@ jacksonDatabind = "2.21.3"
 javalite = "4.36.1"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
-kotestAssertionsCore = "5.8.1"
+kotestAssertionsCore = "5.9.0"
 kotlin = "2.1.21"
-kotlinpoetKsp = "2.2.0"
-ktorVersion = "3.0.3"
+kotlinpoetKsp = "2.4.0"
+ktorVersion = "3.2.4"
 legacySupportV4 = "1.0.0"
 lifecycleProcess = "2.6.2"
 material = "1.12.0"
 mavenResolverApi = "1.9.23"
 mavenResolverProvider = "3.9.11"
 mockito = "5.20.0"
-mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
+mockk = "1.14.11"
 playServicesCloudMessaging = "17.4.0"
 playServicesStats = "17.0.2"
 playServicesVision = "20.1.3"
@@ -69,7 +69,7 @@ robolectric = "4.12"            # Do not use >4.12 as it breaks the build
 runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.2.21"
-serialization = "1.7.3"
+serialization = "1.8.1"
 slf4j = "2.0.17"
 spotless = "7.0.4"
 symbolProcessingApi = "2.3.6"
@@ -154,7 +154,7 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
-kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.6.1" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version = "0.7.1" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorVersion" }
