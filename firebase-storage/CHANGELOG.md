@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed uploads reporting success with truncated data after retrying a failed final chunk.
+  (#6187)
+
 # 22.0.2
 
 - [changed] Internal improvements for legacy infrastructure (#8551)
