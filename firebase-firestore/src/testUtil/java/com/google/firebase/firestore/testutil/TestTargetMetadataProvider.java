@@ -15,8 +15,9 @@
 package com.google.firebase.firestore.testutil;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.remote.RemoteTargetData;
+import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,22 +29,29 @@ import java.util.Map;
  */
 public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetMetadataProvider {
   final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
-  final Map<Integer, TargetData> queryData = new HashMap<>();
+  final Map<Integer, RemoteTargetData> queryData = new HashMap<>();
 
   @Override
-  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(RemoteTargetId remoteTargetId) {
+    int targetId = remoteTargetId.value();
     return syncedKeys.get(targetId) != null ? syncedKeys.get(targetId) : DocumentKey.emptyKeySet();
   }
 
   @androidx.annotation.Nullable
   @Override
-  public TargetData getTargetDataForTarget(int targetId) {
+  public RemoteTargetData getTargetDataForTarget(RemoteTargetId remoteTargetId) {
+    int targetId = remoteTargetId.value();
     return queryData.get(targetId);
   }
 
+  @Override
+  public int getSdkTargetId(RemoteTargetId remoteTargetId) {
+    return remoteTargetId.value();
+  }
+
   /** Sets or replaces the local state for the provided query data. */
-  public void setSyncedKeys(TargetData targetData, ImmutableSortedSet<DocumentKey> keys) {
-    this.queryData.put(targetData.getTargetId(), targetData);
-    this.syncedKeys.put(targetData.getTargetId(), keys);
+  public void setSyncedKeys(RemoteTargetData targetData, ImmutableSortedSet<DocumentKey> keys) {
+    this.queryData.put(targetData.targetId.value(), targetData);
+    this.syncedKeys.put(targetData.targetId.value(), keys);
   }
 }
