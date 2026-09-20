@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
@@ -45,6 +46,7 @@ import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
@@ -371,11 +373,21 @@ internal constructor(
         InferenceMode.ONLY_IN_CLOUD -> buildCloudModelProvider()
         InferenceMode.ONLY_ON_DEVICE -> buildOnDeviceModelProvider(onDeviceConfig.modelOption)
         InferenceMode.PREFER_ON_DEVICE -> {
-          FallbackGenerativeModelProvider(
-            defaultModel = buildOnDeviceModelProvider(onDeviceConfig.modelOption),
-            fallbackModel = buildCloudModelProvider(isHybrid = true),
-            shouldFallbackInException = true
-          )
+          val shouldReturnNonTextResponse =
+            generationConfig?.responseModalities?.any { it != ResponseModality.TEXT } ?: false
+          if (shouldReturnNonTextResponse) {
+            Log.w(
+              TAG,
+              "On Device model doesn't support non-text response modalities, falling back to cloud"
+            )
+            buildCloudModelProvider()
+          } else {
+            FallbackGenerativeModelProvider(
+              defaultModel = buildOnDeviceModelProvider(onDeviceConfig.modelOption),
+              fallbackModel = buildCloudModelProvider(isHybrid = true),
+              shouldFallbackInException = true
+            )
+          }
         }
         InferenceMode.PREFER_IN_CLOUD ->
           FallbackGenerativeModelProvider(

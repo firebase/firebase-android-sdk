@@ -1,5 +1,15 @@
 # Unreleased
 
+- [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
+  the cloud model when non-text response modalities, unsupported
+  prompt part types, or multiple image parts are requested.
+- [changed] Updated on-device inference to throw
+  `FirebaseAIOnDeviceInvalidRequestException` when unsupported prompt
+  part types or multiple image parts are provided, instead of ignoring
+  them.
+- [fixed] Fixed on-device prompt concatenation to join multiple text
+  parts with newlines instead of empty strings.
+
 # 17.17.0
 
 - [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
@@ -222,4 +232,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
