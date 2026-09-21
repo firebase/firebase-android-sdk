@@ -1,5 +1,10 @@
 # Unreleased
 
+- [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
+  `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
+  `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
+  unsupported in Gemini 3.x and later models.
+
 # 17.17.0
 
 - [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
