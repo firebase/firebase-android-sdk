@@ -1,5 +1,12 @@
 # Unreleased
 
+- [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
+  the cloud model when non-text response modalities, unsupported
+  prompt part types, or multiple image parts are requested. (#8617)
+- [changed] Updated on-device inference to throw
+  `FirebaseAIOnDeviceInvalidRequestException` when unsupported prompt
+  part types or multiple image parts are provided, instead of ignoring
+  them. (#8617)
 - [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
   `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
   `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
@@ -243,4 +250,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

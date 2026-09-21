@@ -19,6 +19,7 @@ package com.google.firebase.ai.generativemodel
 import android.util.Log
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
@@ -199,7 +200,9 @@ internal class OnDeviceGenerativeModelProvider(
     prompt: List<Content>
   ): OnDeviceGenerateContentRequest {
     if (prompt.isEmpty()) {
-      throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
+      )
     }
     val parts =
       if (prompt.size == 1) {
@@ -208,6 +211,16 @@ internal class OnDeviceGenerativeModelProvider(
         Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
         prompt.flatMap { it.parts }
       }
+    val unsupportedParts = parts.filter { it !is TextPart && it !is ImagePart }
+    if (unsupportedParts.isNotEmpty()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException(
+            "On-device model does not support part types: ${unsupportedParts.map { it::class.java.simpleName }}"
+          )
+        )
+      )
+    }
     val textParts =
       parts.filterIsInstance<TextPart>().also {
         if (it.size > 1)
@@ -218,21 +231,21 @@ internal class OnDeviceGenerativeModelProvider(
       }
     if (textParts.isEmpty()) {
       throw FirebaseAIException.from(
-        IllegalArgumentException("On-device model requires text as part of the prompt")
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model requires text as part of the prompt")
+        )
       )
     }
-    val text = textParts.joinToString("") { it.text }
-    val image =
-      parts
-        .filterIsInstance<ImagePart>()
-        .also {
-          if (it.size > 1)
-            Log.w(
-              TAG,
-              "On-device model does not support multiple image parts, using only the first one"
-            )
-        }
-        .firstOrNull()
+    val imageParts = parts.filterIsInstance<ImagePart>()
+    if (imageParts.size > 1) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model does not support multiple image parts")
+        )
+      )
+    }
+    val text = textParts.joinToString("\n") { it.text }
+    val image = imageParts.firstOrNull()
     return OnDeviceGenerateContentRequest(
       text = OnDeviceTextPart(text),
       image = image?.let { OnDeviceImagePart(it.image) },
