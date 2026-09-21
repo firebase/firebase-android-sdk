@@ -261,7 +261,7 @@ public class FirestoreIndexValueWriter {
 
   private void writeIndexBlob(MapValue mapValue, DirectionalIndexByteEncoder encoder) {
     ByteString bytes = mapValue.getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
-    int subtype = bytes.isEmpty() ? -1 : (bytes.byteAt(0) & 0xFF);
+    int subtype = bytes.byteAt(0) & 0xFF;
     if (subtype == 0) {
       writeValueTypeLabel(encoder, INDEX_TYPE_BLOB);
       encoder.writeBytes(bytes.substring(1));

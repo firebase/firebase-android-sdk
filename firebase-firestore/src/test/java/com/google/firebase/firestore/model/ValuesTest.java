@@ -118,10 +118,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(1.0), wrap(1.0))
         .addEqualityGroup(wrap(1.1), wrap(1.1))
         .addEqualityGroup(wrap(blob(0, 1, 2)), wrap(blob(0, 1, 2)))
-        .addEqualityGroup(
-            wrap(blob(1, 2)),
-            wrap(Blob.createBsonBinary(0, new byte[] {1, 2})),
-            wrap(manualBsonBinary(0, new byte[] {1, 2})))
+        .addEqualityGroup(wrap(blob(1, 2)), wrap(Blob.createBsonBinary(0, new byte[] {1, 2})))
         .addEqualityGroup(wrap(blob(0, 1)))
         .addEqualityGroup(wrap("string"), wrap("string"))
         .addEqualityGroup(wrap("strin"))
@@ -152,7 +149,10 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("foo", 1)))
         .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860ea")), wrap(objectId1))
         .addEqualityGroup(wrap(new BsonObjectId("507f191e810c19729de860eb")), wrap(objectId2))
-        .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {1, 2})), wrap(binaryData1))
+        .addEqualityGroup(
+            wrap(Blob.createBsonBinary(1, new byte[] {1, 2})),
+            wrap(binaryData1),
+            wrap(manualBsonBinary(1, new byte[] {1, 2})))
         .addEqualityGroup(wrap(Blob.createBsonBinary(1, new byte[] {1, 2, 3})), wrap(binaryData2))
         .addEqualityGroup(wrap(Blob.createBsonBinary(2, new byte[] {1, 2})), wrap(binaryData3))
         .addEqualityGroup(wrap(new BsonTimestamp(1, 2)), wrap(bsonTimestamp1))
@@ -258,18 +258,9 @@ public class ValuesTest {
         // latin small letter e with acute accent + latin small letter a
         .addEqualityGroup(wrap("\u00e9a"))
 
-        // empty bson binary
-        .addEqualityGroup(wrap(emptyBsonBinary()))
-
         // blobs
-        .addEqualityGroup(
-            wrap(blob()),
-            wrap(Blob.createBsonBinary(0, new byte[] {})),
-            wrap(manualBsonBinary(0, new byte[] {})))
-        .addEqualityGroup(
-            wrap(blob(0)),
-            wrap(Blob.createBsonBinary(0, new byte[] {0})),
-            wrap(manualBsonBinary(0, new byte[] {0})))
+        .addEqualityGroup(wrap(blob()), wrap(Blob.createBsonBinary(0, new byte[] {})))
+        .addEqualityGroup(wrap(blob(0)), wrap(Blob.createBsonBinary(0, new byte[] {0})))
         .addEqualityGroup(wrap(blob(0, 1, 2, 3, 4)))
         .addEqualityGroup(wrap(blob(0, 1, 2, 4, 3)))
         .addEqualityGroup(wrap(blob(255)))
@@ -393,14 +384,11 @@ public class ValuesTest {
         .addEqualityGroup(
             wrap(getLowerBound(TestUtil.wrap(blob(1, 2, 3)))),
             wrap(getLowerBound(TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2, 3})))),
+            wrap(getLowerBound(manualBsonBinary(1, new byte[] {1, 2}))),
             wrap(blob()),
             wrap(Blob.createBsonBinary(0, new byte[] {})),
-            wrap(Blob.createBsonBinary((byte) 0, ByteString.EMPTY)),
-            wrap(manualBsonBinary(0, new byte[] {})))
-        .addEqualityGroup(
-            wrap(blob(0)),
-            wrap(Blob.createBsonBinary(0, new byte[] {0})),
-            wrap(manualBsonBinary(0, new byte[] {0})))
+            wrap(Blob.createBsonBinary((byte) 0, ByteString.EMPTY)))
+        .addEqualityGroup(wrap(blob(0)), wrap(Blob.createBsonBinary(0, new byte[] {0})))
 
         // resource names
         .addEqualityGroup(
@@ -494,7 +482,7 @@ public class ValuesTest {
             wrap(getUpperBound(TestUtil.wrap(blob(255)))),
             wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(128, new byte[] {1, 2})))),
             wrap(getUpperBound(TestUtil.wrap(Blob.createBsonBinary(0, new byte[] {})))),
-            wrap(getUpperBound(manualBsonBinary(0, new byte[] {}))))
+            wrap(getUpperBound(manualBsonBinary(1, new byte[] {}))))
 
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
@@ -588,6 +576,16 @@ public class ValuesTest {
     Value bsonObjectIdValue = TestUtil.wrap(new BsonObjectId("foo"));
     Value bsonBinaryDataValue1 = TestUtil.wrap(Blob.createBsonBinary(1, new byte[] {}));
     Value bsonBinaryDataValue2 = TestUtil.wrap(Blob.createBsonBinary(1, new byte[] {1, 2, 4}));
+    Value emptyBytesBinaryMap =
+        Value.newBuilder()
+            .setMapValue(
+                com.google.firestore.v1.MapValue.newBuilder()
+                    .putFields(
+                        Values.RESERVED_BSON_BINARY_KEY,
+                        Value.newBuilder().setBytesValue(ByteString.EMPTY).build()))
+            .build();
+    Value subtypeZeroEmptyBinaryMap = manualBsonBinary(0, new byte[] {});
+    Value subtypeZeroNonEmptyBinaryMap = manualBsonBinary(0, new byte[] {1, 2});
 
     assertTrue(Values.isMinKey(minKeyValue));
     assertFalse(Values.isMinKey(maxKeyValue));
@@ -668,6 +666,10 @@ public class ValuesTest {
     assertFalse(Values.isBsonBinaryData(bsonObjectIdValue));
     assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue1));
     assertTrue(Values.isBsonBinaryData(bsonBinaryDataValue2));
+    assertFalse(Values.isBsonBinaryData(emptyBytesBinaryMap));
+    assertFalse(Values.isBsonBinaryData(subtypeZeroEmptyBinaryMap));
+    assertFalse(Values.isBsonBinaryData(subtypeZeroNonEmptyBinaryMap));
+    assertTrue(Values.isBsonBinaryData(manualBsonBinary(1, new byte[] {})));
 
     assertEquals(Values.detectMapRepresentation(minKeyValue), MapRepresentation.MIN_KEY);
     assertEquals(Values.detectMapRepresentation(maxKeyValue), MapRepresentation.MAX_KEY);
@@ -682,6 +684,13 @@ public class ValuesTest {
         Values.detectMapRepresentation(bsonBinaryDataValue1), MapRepresentation.BSON_BINARY);
     assertEquals(
         Values.detectMapRepresentation(bsonBinaryDataValue2), MapRepresentation.BSON_BINARY);
+    assertEquals(
+        Values.detectMapRepresentation(emptyBytesBinaryMap), MapRepresentation.REGULAR_MAP);
+    assertEquals(
+        Values.detectMapRepresentation(subtypeZeroEmptyBinaryMap), MapRepresentation.REGULAR_MAP);
+    assertEquals(
+        Values.detectMapRepresentation(subtypeZeroNonEmptyBinaryMap),
+        MapRepresentation.REGULAR_MAP);
   }
 
   /** Small helper class that uses ProtoValues for equals() and compareTo(). */
@@ -726,9 +735,6 @@ public class ValuesTest {
       }
       ByteString bytes =
           value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
-      if (bytes.isEmpty()) {
-        return -1;
-      }
       return bytes.byteAt(0) & 0xFF;
     }
 
@@ -738,9 +744,6 @@ public class ValuesTest {
       }
       ByteString bytes =
           value.getMapValue().getFieldsMap().get(Values.RESERVED_BSON_BINARY_KEY).getBytesValue();
-      if (bytes.isEmpty()) {
-        return ByteString.EMPTY;
-      }
       return bytes.substring(1);
     }
   }
@@ -764,34 +767,5 @@ public class ValuesTest {
                     Values.RESERVED_BSON_BINARY_KEY,
                     Value.newBuilder().setBytesValue(ByteString.copyFrom(encodedBytes)).build()))
         .build();
-  }
-
-  private static Value emptyBsonBinary() {
-    return Value.newBuilder()
-        .setMapValue(
-            com.google.firestore.v1.MapValue.newBuilder()
-                .putFields(
-                    Values.RESERVED_BSON_BINARY_KEY,
-                    Value.newBuilder().setBytesValue(ByteString.EMPTY).build()))
-        .build();
-  }
-
-  @Test
-  public void testEmptyBsonBinaryEqualsAndCompare() {
-    Value empty1 = emptyBsonBinary();
-    Value empty2 = emptyBsonBinary();
-    Value nonEmptySubtype0 = manualBsonBinary(0, new byte[] {});
-    Value nonEmptySubtype1 = manualBsonBinary(1, new byte[] {});
-
-    assertTrue(Values.equals(empty1, empty2));
-    assertEquals(0, Values.compare(empty1, empty2));
-
-    assertFalse(Values.equals(empty1, nonEmptySubtype0));
-    assertFalse(Values.equals(empty1, nonEmptySubtype1));
-
-    assertTrue(Values.compare(empty1, nonEmptySubtype0) < 0);
-    assertTrue(Values.compare(nonEmptySubtype0, empty1) > 0);
-    assertTrue(Values.compare(empty1, nonEmptySubtype1) < 0);
-    assertTrue(Values.compare(nonEmptySubtype1, empty1) > 0);
   }
 }

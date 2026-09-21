@@ -25,7 +25,6 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -259,8 +258,8 @@ public class UserDataWriterTest {
   }
 
   @Test
-  public void testConvertBsonBinaryEmptyBytesThrows() {
-    Value emptyBinary =
+  public void testConvertInvalidBsonBinaryMapAsRegularMap() {
+    Value emptyBinaryMap =
         Value.newBuilder()
             .setMapValue(
                 com.google.firestore.v1.MapValue.newBuilder()
@@ -268,7 +267,35 @@ public class UserDataWriterTest {
                         Values.RESERVED_BSON_BINARY_KEY,
                         Value.newBuilder().setBytesValue(ByteString.EMPTY).build()))
             .build();
-    assertThrows(IllegalArgumentException.class, () -> convertValue(emptyBinary));
+    assertEquals(
+        map(Values.RESERVED_BSON_BINARY_KEY, Blob.fromByteString(ByteString.EMPTY)),
+        convertValue(emptyBinaryMap));
+
+    Value subtypeZeroBinaryMap =
+        Value.newBuilder()
+            .setMapValue(
+                com.google.firestore.v1.MapValue.newBuilder()
+                    .putFields(
+                        Values.RESERVED_BSON_BINARY_KEY,
+                        Value.newBuilder()
+                            .setBytesValue(ByteString.copyFrom(new byte[] {0x00, 0x01}))
+                            .build()))
+            .build();
+    assertEquals(
+        map(Values.RESERVED_BSON_BINARY_KEY, Blob.fromBytes(new byte[] {0x00, 0x01})),
+        convertValue(subtypeZeroBinaryMap));
+
+    Value validEmptyPayloadSubtypeOne =
+        Value.newBuilder()
+            .setMapValue(
+                com.google.firestore.v1.MapValue.newBuilder()
+                    .putFields(
+                        Values.RESERVED_BSON_BINARY_KEY,
+                        Value.newBuilder()
+                            .setBytesValue(ByteString.copyFrom(new byte[] {0x01}))
+                            .build()))
+            .build();
+    assertEquals(Blob.createBsonBinary(1, new byte[0]), convertValue(validEmptyPayloadSubtypeOne));
   }
 
   @Test

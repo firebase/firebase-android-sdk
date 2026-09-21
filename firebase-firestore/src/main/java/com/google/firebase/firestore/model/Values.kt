@@ -1082,8 +1082,13 @@ object Values {
     isMapWithSingleFieldOfType(value, RESERVED_OBJECT_ID_KEY, ValueTypeCase.STRING_VALUE)
 
   @JvmStatic
-  fun isBsonBinaryData(value: Value?): Boolean =
-    isMapWithSingleFieldOfType(value, RESERVED_BSON_BINARY_KEY, ValueTypeCase.BYTES_VALUE)
+  fun isBsonBinaryData(value: Value?): Boolean {
+    if (!isMapWithSingleFieldOfType(value, RESERVED_BSON_BINARY_KEY, ValueTypeCase.BYTES_VALUE)) {
+      return false
+    }
+    val bytes = value!!.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
+    return !bytes.isEmpty && bytes.byteAt(0).toInt() != 0
+  }
 
   @JvmStatic
   fun isRegexValue(value: Value?): Boolean {
@@ -1201,9 +1206,6 @@ object Values {
       return 0
     }
     val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
-    if (bytes.isEmpty) {
-      return -1
-    }
     return bytes.byteAt(0).toInt() and 0xFF
   }
 
@@ -1212,9 +1214,6 @@ object Values {
       return value.bytesValue
     }
     val bytes = value.mapValue.fieldsMap[RESERVED_BSON_BINARY_KEY]!!.bytesValue
-    if (bytes.isEmpty) {
-      return ByteString.EMPTY
-    }
     return bytes.substring(1)
   }
 }
