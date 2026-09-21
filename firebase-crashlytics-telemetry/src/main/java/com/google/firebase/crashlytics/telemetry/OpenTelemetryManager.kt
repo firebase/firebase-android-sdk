@@ -159,7 +159,7 @@ internal object OpenTelemetryManager {
 /**
  * Sealed class configurations defining strict caps and capacities for memory-mapped allocations.
  */
-sealed class MmapConfig {
+internal sealed class MmapConfig {
   abstract val maxSpans: Int
   abstract val maxAttributes: Int
 
@@ -177,7 +177,7 @@ sealed class MmapConfig {
  * MmapSize Enum pointing to sealed configurations to cleanly expose limit properties to Kotlin
  * codebases.
  */
-enum class MmapSize(val config: MmapConfig) {
+internal enum class MmapSize(val config: MmapConfig) {
   SMALL(MmapConfig.Small()),
   MEDIUM(MmapConfig.Medium()),
   LARGE(MmapConfig.Large()),
