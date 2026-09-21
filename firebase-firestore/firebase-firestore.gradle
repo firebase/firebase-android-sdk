@@ -151,7 +151,7 @@ dependencies {
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
     api libs.firebase.annotations
-    api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
+    api 'com.google.firebase:firebase-appcheck-interop:17.1.0'
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }

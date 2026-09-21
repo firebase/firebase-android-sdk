@@ -129,14 +129,14 @@ dependencies {
     api("com.google.firebase:firebase-installations:18.0.0") {
          exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
-    api 'com.google.firebase:firebase-installations-interop:17.1.0'
+    api 'com.google.firebase:firebase-installations-interop:17.1.1'
     api('com.google.firebase:firebase-measurement-connector:18.0.2') {
          exclude group: 'com.google.firebase', module: 'firebase-common'
      }
 
     implementation libs.androidx.annotation
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
-    implementation 'com.google.auto.value:auto-value-annotations:1.8.1'
+    implementation libs.autovalue.annotations
     implementation libs.grpc.okhttp
     implementation libs.grpc.protobuf.lite
     implementation libs.grpc.stub

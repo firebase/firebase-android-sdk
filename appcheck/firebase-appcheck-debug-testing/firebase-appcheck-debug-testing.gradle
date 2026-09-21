@@ -56,7 +56,7 @@ dependencies {
 
     api project(':appcheck:firebase-appcheck')
     api project(':appcheck:firebase-appcheck-debug')
-    api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
+    api 'com.google.firebase:firebase-appcheck-interop:17.1.0'
     api libs.firebase.common
     api libs.firebase.components
 
