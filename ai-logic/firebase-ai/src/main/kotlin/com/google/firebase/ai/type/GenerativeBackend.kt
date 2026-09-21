@@ -29,26 +29,6 @@ internal constructor(internal val location: String, internal val backend: Genera
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)
 
     /**
-     * References the VertexAI Gemini API backend.
-     *
-     * @param location passes a valid cloud server location, defaults to "us-central1"
-     */
-    @Deprecated(
-      message =
-        "Use agentPlatform instead. Note that agentPlatform default location is \"global\" while" +
-          " vertexAI was \"us-central1\".",
-      replaceWith = ReplaceWith("agentPlatform(location)")
-    )
-    @JvmStatic
-    @JvmOverloads
-    public fun vertexAI(location: String = "us-central1"): GenerativeBackend {
-      if (location.isBlank() || location.contains("/")) {
-        throw InvalidLocationException(location)
-      }
-      return GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
-    }
-
-    /**
      * References the Agent Platform Gemini API.
      *
      * @param location passes a valid cloud server location, defaults to "global"
@@ -69,7 +49,6 @@ internal constructor(internal val location: String, internal val backend: Genera
         GenerativeBackendEnum.GOOGLE_AI -> {
           other.backend == this.backend
         }
-        GenerativeBackendEnum.VERTEX_AI,
         GenerativeBackendEnum.AGENT_PLATFORM -> {
           other.backend == this.backend && other.location == this.location
         }
@@ -83,6 +62,5 @@ internal constructor(internal val location: String, internal val backend: Genera
 
 internal enum class GenerativeBackendEnum {
   GOOGLE_AI,
-  VERTEX_AI,
   AGENT_PLATFORM,
 }
