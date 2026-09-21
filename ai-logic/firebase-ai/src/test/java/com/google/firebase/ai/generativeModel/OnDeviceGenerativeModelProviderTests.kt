@@ -140,7 +140,7 @@ internal class OnDeviceGenerativeModelProviderTests {
       shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
         provider.generateContent(emptyList())
       }
-    exception.cause shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
   }
 
   @Test
