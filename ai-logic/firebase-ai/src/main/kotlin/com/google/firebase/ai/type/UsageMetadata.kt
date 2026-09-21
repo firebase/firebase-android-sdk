@@ -47,27 +47,6 @@ internal constructor(
   public val toolUsePromptTokensDetails: List<ModalityTokenCount>
 ) {
 
-  @Deprecated("Not intended for public use")
-  public constructor(
-    promptTokenCount: Int,
-    candidatesTokenCount: Int?,
-    totalTokenCount: Int,
-    promptTokensDetails: List<ModalityTokenCount>,
-    candidatesTokensDetails: List<ModalityTokenCount>,
-    thoughtsTokenCount: Int
-  ) : this(
-    promptTokenCount,
-    candidatesTokenCount,
-    totalTokenCount,
-    0,
-    promptTokensDetails,
-    candidatesTokensDetails,
-    emptyList(),
-    thoughtsTokenCount,
-    0,
-    emptyList()
-  )
-
   @Serializable
   internal data class Internal(
     val promptTokenCount: Int? = null,

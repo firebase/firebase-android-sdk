@@ -2,13 +2,31 @@
 
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
-  prompt part types, or multiple image parts are requested.
+  prompt part types, or multiple image parts are requested. (#8617)
 - [changed] Updated on-device inference to throw
   `FirebaseAIOnDeviceInvalidRequestException` when unsupported prompt
   part types or multiple image parts are provided, instead of ignoring
-  them.
-- [fixed] Fixed on-device prompt concatenation to join multiple text
-  parts with newlines instead of empty strings.
+  them. (#8617)
+- [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
+  `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
+  `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
+  unsupported in Gemini 3.x and later models. (#8621)
+- [removed] **Breaking change:** Removed the deprecated `GenerativeBackend.vertexAI` backend in
+  favor of [`GenerativeBackend.agentPlatform`](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  Note that `GenerativeBackend.agentPlatform` defaults to the `global` location rather than
+  `us-central1`. (#8563)
+- [removed] **Breaking change:** Removed the deprecated `MediaData` class along with
+  `LiveSession.sendMediaStream` and `LiveSessionFutures.sendMediaStream`. Use `sendAudioRealtime`,
+  `sendVideoRealtime`, or `sendTextRealtime` with `InlineData` instead for streaming realtime input
+  during live sessions. (#8563)
+- [removed] **Breaking change:** Removed deprecated classes and properties, including `Voices`
+  (use `Voice` instead), `GroundingAttribution` (use `GroundingChunk` instead),
+  `GenerativeModel.warmUp` (use `onDeviceExtension?.warmUp()` instead), and
+  `CountTokensResponse.totalBillableCharacters`. (#8563)
+- [changed] **Breaking change:** Restricted public constructors on SDK-emitted response and status
+  models to `internal`, and converted stateless status classes `DownloadStatus.DownloadCompleted`
+  and `LiveServerSetupComplete` into singletons (`object`). These classes are provided by the SDK
+  and are not intended for direct instantiation by client applications. (#8563)
 
 # 17.17.0
 
