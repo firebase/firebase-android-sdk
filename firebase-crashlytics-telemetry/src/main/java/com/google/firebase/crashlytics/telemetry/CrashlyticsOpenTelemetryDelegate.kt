@@ -23,11 +23,12 @@ import io.opentelemetry.api.trace.Tracer
  * A delegate wrapper around OpenTelemetry. Use this to wrap OpenTelemetry to add Crashlytics'
  * functionality.
  *
- * @note -
- *   https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
- *   indicates that if a method isn't implemented, Kotlin calls the delegate object by default.
+ * @note
+ * -
+ * https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
+ * indicates that if a method isn't implemented, Kotlin calls the delegate object by default.
  */
-class CrashlyticsOpenTelemetryDelegate(
+internal class CrashlyticsOpenTelemetryDelegate(
   private val delegate: OpenTelemetry,
   private val crashlyticsSpanProcessor: CrashlyticsSpanProcessor,
 ) : OpenTelemetry by delegate {

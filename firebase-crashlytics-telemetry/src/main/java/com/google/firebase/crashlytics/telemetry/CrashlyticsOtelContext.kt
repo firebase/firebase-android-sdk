@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
  * thread-safe initialization, standard shutdown lifecycles, and returns a synchronized
  * [MutationContext] for safe span storage operations.
  */
-class CrashlyticsOtelContext private constructor() {
+internal class CrashlyticsOtelContext private constructor() {
 
   companion object {
     private const val LOG_TAG = "CrashlyticsOtelContext"
@@ -50,12 +50,13 @@ class CrashlyticsOtelContext private constructor() {
      * for testing and dynamic teardown contexts.
      */
     @JvmStatic
-    fun shutdown() = lock.withLock {
-      mutationContext?.let { context ->
-        context.closeAndShutdown { ptr -> shutdownNative(ptr) }
-        mutationContext = null
+    fun shutdown() =
+      lock.withLock {
+        mutationContext?.let { context ->
+          context.closeAndShutdown { ptr -> shutdownNative(ptr) }
+          mutationContext = null
+        }
       }
-    }
 
     /**
      * Initializes the crashlytics-otel active span storage at the specified [filePath] with a given
@@ -69,21 +70,22 @@ class CrashlyticsOtelContext private constructor() {
       filePath: String,
       mmapSize: MmapSize,
       onRecovery: (suspend (List<Span>) -> Unit)? = null,
-    ): MutationContext = lock.withLock {
-      if (mutationContext == null) {
-        val ptr = initializeNative(filePath, mmapSize.ordinal)
-        mutationContext = MutationContext(ptr)
-        if (ptr != 0L) {
-          val recovered = recoverSpansNative(ptr)
-          Log.d(LOG_TAG, "Found ${recovered.size} recovered spans to export.")
-          if (onRecovery != null && recovered.isNotEmpty()) {
-            // Don't block on export
-            CoroutineScope(Dispatchers.Default).launch { onRecovery(recovered.toList()) }
+    ): MutationContext =
+      lock.withLock {
+        if (mutationContext == null) {
+          val ptr = initializeNative(filePath, mmapSize.ordinal)
+          mutationContext = MutationContext(ptr)
+          if (ptr != 0L) {
+            val recovered = recoverSpansNative(ptr)
+            Log.d(LOG_TAG, "Found ${recovered.size} recovered spans to export.")
+            if (onRecovery != null && recovered.isNotEmpty()) {
+              // Don't block on export
+              CoroutineScope(Dispatchers.Default).launch { onRecovery(recovered.toList()) }
+            }
           }
         }
+        return mutationContext!!
       }
-      return mutationContext!!
-    }
   }
 }
 
@@ -92,7 +94,7 @@ class CrashlyticsOtelContext private constructor() {
  * updates). Encapsulates internal locking to guarantee thread safety across concurrent JNI
  * operations.
  */
-class MutationContext internal constructor(ptr: Long) {
+internal class MutationContext internal constructor(ptr: Long) {
 
   companion object {
     private const val LOG_TAG = "MutationContext"
@@ -103,13 +105,14 @@ class MutationContext internal constructor(ptr: Long) {
   var contextPtr: Long = ptr
     private set
 
-  internal fun closeAndShutdown(shutdownNative: (Long) -> Unit) = lock.withLock {
-    if (contextPtr != 0L) {
-      val ptrToFree = contextPtr
-      contextPtr = 0L
-      shutdownNative(ptrToFree)
+  internal fun closeAndShutdown(shutdownNative: (Long) -> Unit) =
+    lock.withLock {
+      if (contextPtr != 0L) {
+        val ptrToFree = contextPtr
+        contextPtr = 0L
+        shutdownNative(ptrToFree)
+      }
     }
-  }
 
   fun addSpan(span: Span) {
     lock.withLock {
@@ -150,14 +153,15 @@ class MutationContext internal constructor(ptr: Long) {
     }
   }
 
-  fun countSpans(): Long = lock.withLock {
-    if (contextPtr == 0L) {
-      Log.w(LOG_TAG, "MutationContext is no longer valid")
-      0L
-    } else {
-      countSpansNative(contextPtr)
+  fun countSpans(): Long =
+    lock.withLock {
+      if (contextPtr == 0L) {
+        Log.w(LOG_TAG, "MutationContext is no longer valid")
+        0L
+      } else {
+        countSpansNative(contextPtr)
+      }
     }
-  }
 
   private external fun addSpanNative(
     contextPtr: Long,

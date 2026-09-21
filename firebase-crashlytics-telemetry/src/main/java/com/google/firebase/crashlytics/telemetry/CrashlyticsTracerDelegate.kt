@@ -20,7 +20,7 @@ import io.opentelemetry.api.trace.SpanBuilder
 import io.opentelemetry.api.trace.Tracer
 
 /** A delegate wrapper around a Tracer. An interim delegate to add a delegate to SpanBuilder. */
-class CrashlyticsTracerDelegate(
+internal class CrashlyticsTracerDelegate(
   private val delegate: Tracer,
   private val crashlyticsSpanProcessor: CrashlyticsSpanProcessor,
 ) : Tracer by delegate {

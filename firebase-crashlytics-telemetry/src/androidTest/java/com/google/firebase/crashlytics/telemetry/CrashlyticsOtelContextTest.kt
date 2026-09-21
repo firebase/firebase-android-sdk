@@ -18,8 +18,8 @@ package com.google.firebase.crashlytics.telemetry
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.firebase.crashlytics.telemetry.Span as CrashlyticsSpan
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.telemetry.Span as CrashlyticsSpan
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.sdk.testing.junit4.OpenTelemetryRule
 import java.io.File

@@ -24,11 +24,12 @@ import io.opentelemetry.api.trace.Span
  * A delegate that allows listening to changes in an in flight span. Currently this only listens to
  * attribute changes.
  *
- * @note -
- *   https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
- *   indicates that if a method isn't implemented, Kotlin calls the delegate by default.
+ * @note
+ * -
+ * https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
+ * indicates that if a method isn't implemented, Kotlin calls the delegate by default.
  */
-class CrashlyticsSpanDelegate(
+internal class CrashlyticsSpanDelegate(
   private val delegate: Span,
   private val crashlyticsSpanProcessor: CrashlyticsSpanProcessor,
 ) : Span by delegate {
