@@ -1,5 +1,9 @@
 # Unreleased
 
+- [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
+  `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
+  `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
+  unsupported in Gemini 3.x and later models. (#8621)
 - [removed] **Breaking change:** Removed the deprecated `GenerativeBackend.vertexAI` backend in
   favor of [`GenerativeBackend.agentPlatform`](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
   Note that `GenerativeBackend.agentPlatform` defaults to the `global` location rather than

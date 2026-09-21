@@ -725,21 +725,21 @@ package com.google.firebase.ai.type {
   public static final class GenerationConfig.Builder {
     ctor public GenerationConfig.Builder();
     method public com.google.firebase.ai.type.GenerationConfig build();
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setImageConfig(com.google.firebase.ai.type.ImageConfig? imageConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseMimeType(String? responseMimeType);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchemaJson(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseSchemaJson);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
-    method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
+    method @Deprecated public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
     field public Float? frequencyPenalty;
     field public com.google.firebase.ai.type.ImageConfig? imageConfig;
