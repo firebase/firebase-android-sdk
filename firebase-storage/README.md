@@ -26,7 +26,7 @@ captured state to add additional unit tests for the storage client.
 
 The app reads both from the network and from the device. To run existing test cases, you need to
 upload the files under `src/test/resources/assets` to the Storage bucket of your Firebase project.
-You can use [gsutil](https://cloud.google.com/storage/docs/gsutil) or the
+You can use [gcloud storage](https://docs.cloud.google.com/sdk/gcloud/reference/storage) or the
 [Firebase Console](https://console.firebase.google.com) for this. Furthermore, to make these file
 available locally, they should also be copied to device's local storage. The expected Storage
 location is shown when you run a test that requires a local file (e.g. an upload tests).
