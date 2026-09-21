@@ -90,3 +90,11 @@ dependencies {
     androidTestImplementation libs.junit
     androidTestImplementation libs.mockito.core
 }
+
+tasks.named("kotlindoc") {
+    dependsOn(
+        ":appcheck:firebase-appcheck-debug:kotlindoc",
+        ":appcheck:firebase-appcheck-playintegrity:kotlindoc",
+        ":appcheck:firebase-appcheck-recaptcha:kotlindoc"
+    )
+}
