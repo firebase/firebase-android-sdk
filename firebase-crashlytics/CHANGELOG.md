@@ -1,5 +1,11 @@
 # Unreleased
 
+- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
+  collection is enabled [#8549]
+- [fixed] Fixed event timestamps on ANR events [#8612]
+
+# 20.1.1
+
 - [fixed] Added consumer ProGuard rules to prevent R8 missing-class warnings for
   `ProfilingManager` and `ProfilingTrigger` on older compileSdk versions [#8567]
 

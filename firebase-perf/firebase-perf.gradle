@@ -110,11 +110,10 @@ dependencies {
     implementation libs.protobuf.java.lite
     implementation libs.kotlin.stdlib
     implementation libs.androidx.appcompat
-    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-api:3.2.0'
     implementation libs.dagger.dagger
     api libs.firebase.annotations
-    api 'com.google.firebase:firebase-installations-interop:17.1.0'
-    api project(":protolite-well-known-types")
+    api 'com.google.firebase:firebase-installations-interop:17.2.0'
     implementation libs.okhttp
     api(libs.firebase.common)
     api(libs.firebase.components)
@@ -131,7 +130,7 @@ dependencies {
     }
     javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
-    runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
+    runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }

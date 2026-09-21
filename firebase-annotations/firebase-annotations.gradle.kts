@@ -12,7 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins { id("firebase-java-library") }
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+  id("firebase-java-library")
+  kotlin("jvm")
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    optIn.add("kotlin.RequiresOptIn")
+  }
+  explicitApi()
+}
 
 firebaseLibrary {
   publishJavadoc = false

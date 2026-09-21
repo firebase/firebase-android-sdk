@@ -57,9 +57,9 @@ public class JavaSnippetCompileTests {
   public void template_chat() {
     // ...
 
-    // Initialize the Vertex AI Gemini API backend service.
+    // Initialize the Agent Platform backend service.
     TemplateGenerativeModel templateModel =
-        FirebaseAI.getInstance(GenerativeBackend.vertexAI("global")).templateGenerativeModel();
+        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
     // Initialize TemplateChat with history and inputs
     TemplateChat templateChat =
         templateModel.startChat("my-chat-template-v1-0-0", Map.of(), Collections.emptyList());
@@ -89,10 +89,10 @@ public class JavaSnippetCompileTests {
   public void template_functionCallingSchemaInTemplate(String userMessage) {
     // ...
 
-    // Initialize the Vertex AI Gemini API backend service.
+    // Initialize the Agent Platform backend service.
     // Create a `TemplateGenerativeModel` instance.
     TemplateGenerativeModel model =
-        FirebaseAI.getInstance(GenerativeBackend.vertexAI("global")).templateGenerativeModel();
+        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
 
     // Start a chat session with a template that has functions listed as tools.
     TemplateChat chatSession =
@@ -164,7 +164,7 @@ public class JavaSnippetCompileTests {
                             ))),
             JsonSchema.string("A description of the current weather."));
     TemplateGenerativeModel templateModel =
-        FirebaseAI.getInstance(GenerativeBackend.vertexAI("global"))
+        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global"))
             .templateGenerativeModel(
                 new RequestOptions(),
                 List.of(TemplateTool.functionDeclarations(List.of(tool), List.of())));

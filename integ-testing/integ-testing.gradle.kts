@@ -37,8 +37,8 @@ android {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:22.0.0")
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.common)
+  implementation(libs.firebase.components)
   implementation(libs.androidx.test.runner)
   implementation(libs.junit)
   implementation(libs.kotlin.coroutines.test)
