@@ -153,7 +153,15 @@ public class IntegrationTestUtil {
       case QA:
         return "staging-firestore.sandbox.googleapis.com";
       case NIGHTLY:
-        return "test-firestore.sandbox.googleapis.com";
+        // Workaround for UberProxy auth blocking external IPs (e.g. GitHub Actions runners) on
+        // test-firestore.sandbox.googleapis.com (b/552991017). Regional nightly endpoints are
+        // exempted; select the region matching where the test database is located in
+        // firestore-sdk-nightly (enterprise is in us-central1, default is in nam5).
+        if (getBackendEdition() == BackendEdition.ENTERPRISE) {
+          return "us-central1-test-firestore.sandbox.googleapis.com";
+        } else {
+          return "nam5-test-firestore.sandbox.googleapis.com";
+        }
       case PROD:
       default:
         return "firestore.googleapis.com";
