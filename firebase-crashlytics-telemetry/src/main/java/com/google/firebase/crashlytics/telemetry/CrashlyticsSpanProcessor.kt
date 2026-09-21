@@ -31,7 +31,8 @@ import kotlinx.coroutines.launch
  * A [SpanProcessor] that coordinates with Crashlytics, writing active span states to the
  * file-backed mutable memory mapping via the injected [mutationContext].
  */
-class CrashlyticsSpanProcessor(private val mutationContext: MutationContext) : SpanProcessor {
+internal class CrashlyticsSpanProcessor(private val mutationContext: MutationContext) :
+  SpanProcessor {
   val scope = CoroutineScope(Dispatchers.Default)
 
   override fun onStart(parentContext: Context, span: ReadWriteSpan) {

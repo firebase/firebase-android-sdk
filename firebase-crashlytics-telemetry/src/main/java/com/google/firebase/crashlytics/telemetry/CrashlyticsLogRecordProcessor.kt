@@ -27,7 +27,7 @@ import io.opentelemetry.sdk.logs.ReadWriteLogRecord
  *
  * TODO: The Crashlytics RUM effort doesn't currently support logs.
  */
-class CrashlyticsLogRecordProcessor : LogRecordProcessor {
+internal class CrashlyticsLogRecordProcessor : LogRecordProcessor {
   override fun onEmit(context: Context, logRecord: ReadWriteLogRecord) {
     val logRecordData = logRecord.toLogRecordData()
     val body = logRecordData.bodyValue

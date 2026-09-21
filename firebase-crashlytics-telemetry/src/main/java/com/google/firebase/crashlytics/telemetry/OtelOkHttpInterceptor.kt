@@ -27,7 +27,7 @@ import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Response
 
-class OtelOkHttpInterceptor(private val openTelemetry: OpenTelemetry) : Interceptor {
+public class OtelOkHttpInterceptor(private val openTelemetry: OpenTelemetry) : Interceptor {
   private val tracer = openTelemetry.getTracer("okhttp-interceptor")
 
   @Throws(IOException::class)

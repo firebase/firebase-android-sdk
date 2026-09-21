@@ -23,11 +23,12 @@ import io.opentelemetry.api.trace.SpanBuilder
  * A delegate wrapper around a SpanBuilder. This is an interim delegate to wrap a delegate around
  * each span.
  *
- * @note -
- *   https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
- *   indicates that if a method isn't implemented, Kotlin calls the delegate by default.
+ * @note
+ * -
+ * https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
+ * indicates that if a method isn't implemented, Kotlin calls the delegate by default.
  */
-class CrashlyticsSpanBuilderDelegate(
+internal class CrashlyticsSpanBuilderDelegate(
   private val delegate: SpanBuilder,
   private val crashlyticsSpanProcessor: CrashlyticsSpanProcessor,
 ) : SpanBuilder by delegate {

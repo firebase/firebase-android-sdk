@@ -35,7 +35,7 @@ import java.util.Locale
  * traceId hexadecimal and length validation upon initialization to catch failures at the
  * configuration boundary.
  */
-data class Span(
+internal data class Span(
   val traceId: String,
   val spanId: String,
   val parentSpanId: String,
@@ -112,7 +112,7 @@ data class Span(
 
 // region Helpers
 
-fun Long.toHexId(): String = this.toULong().toString(radix = 16).padStart(16, '0')
+internal fun Long.toHexId(): String = this.toULong().toString(radix = 16).padStart(16, '0')
 
 private class SpanDataDelegate(private val span: Span) : SpanData {
   override fun getTraceId(): String = span.traceId
