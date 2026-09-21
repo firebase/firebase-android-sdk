@@ -207,15 +207,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     TargetData targetData = localStore.allocateTarget(query.toTargetOrPipeline());
 
     ViewSnapshot viewSnapshot =
-        initializeViewAndComputeSnapshot(
-            query, targetData.getTargetId(), targetData.getResumeToken());
+        initializeViewAndComputeSnapshot(query, targetData.targetId, targetData.resumeToken);
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
     if (shouldListenToRemote) {
       remoteStore.listen(targetData);
     }
 
-    return targetData.getTargetId();
+    return targetData.targetId;
   }
 
   private ViewSnapshot initializeViewAndComputeSnapshot(
@@ -366,7 +365,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   /** Called by FirestoreClient to notify us of a new remote event. */
   @Override
-  public void handleRemoteEvent(RemoteEvent event) {
+  public void handleRemoteEvent(RemoteEvent<Integer> event) {
     assertCallback("handleRemoteEvent");
 
     // Update `receivedDocument` as appropriate for any limbo targets.
@@ -465,8 +464,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       Map<DocumentKey, MutableDocument> documentUpdates =
           Collections.singletonMap(limboKey, result);
       Set<DocumentKey> limboDocuments = Collections.singleton(limboKey);
-      RemoteEvent event =
-          new RemoteEvent(
+      RemoteEvent<Integer> event =
+          new RemoteEvent<>(
               SnapshotVersion.NONE,
               /* targetChanges= */ Collections.emptyMap(),
               /* targetMismatches= */ Collections.emptyMap(),
@@ -673,7 +672,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * snapshot.
    */
   private void emitNewSnapsAndNotifyLocalStore(
-      ImmutableSortedMap<DocumentKey, Document> changes, @Nullable RemoteEvent remoteEvent) {
+      ImmutableSortedMap<DocumentKey, Document> changes,
+      @Nullable RemoteEvent<Integer> remoteEvent) {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 
