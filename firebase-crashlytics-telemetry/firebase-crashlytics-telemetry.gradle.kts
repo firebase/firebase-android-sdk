@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * Copyright 2026 Google LLC
  *
@@ -15,33 +17,45 @@
  */
 
 plugins {
-  id("com.android.library")
-  id("org.jetbrains.kotlin.android")
-  id("maven-publish")
+  id("firebase-library")
+  id("kotlin-android")
+}
+
+firebaseLibrary {
+  libraryGroup = "crashlytics"
+
+  testLab.enabled = true
+  publishJavadoc = false
+
+  releaseNotes { enabled = false }
 }
 
 // Path to the native firebase-telemetry-persistence core library.
 // Can be customized via the FIREBASE_PERSISTENCE_DIR environment variable
-// or firebase.persistence.dir in gradle.properties. If not set, it defaults
+// or firebase.persistence.dir in local.properties. If not set, it defaults
 // to the adjacent sibling directory (../firebase-telemetry-persistence) or
-// fetches from https://github.com/firebase/firebase-telemetry-persistence.git via CMake FetchContent.
-val persistenceDir = providers.gradleProperty("firebase.persistence.dir")
-  .orElse(providers.environmentVariable("FIREBASE_PERSISTENCE_DIR"))
-  .orElse(rootProject.rootDir.resolve("../firebase-telemetry-persistence").normalize().absolutePath)
+// fetches from https://github.com/firebase/firebase-telemetry-persistence.git via CMake
+// FetchContent.
+val persistenceDir =
+  providers
+    .gradleProperty("firebase.persistence.dir")
+    .orElse(providers.environmentVariable("FIREBASE_PERSISTENCE_DIR"))
+    .orElse(
+      rootProject.rootDir.resolve("../firebase-telemetry-persistence").normalize().absolutePath
+    )
 
 android {
   val compileSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.crashlytics.telemetry"
   compileSdk = compileSdkVersion
 
   defaultConfig {
-    minSdk = 23
+    minSdk = minSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     externalNativeBuild {
-      cmake {
-        arguments("-DFIREBASE_PERSISTENCE_DIR=${persistenceDir.get()}")
-      }
+      cmake { arguments("-DFIREBASE_PERSISTENCE_DIR=${persistenceDir.get()}") }
     }
   }
 
@@ -53,14 +67,8 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  publishing {
-    singleVariant("release") {
-      withSourcesJar()
-    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
   }
 
   externalNativeBuild {
@@ -74,9 +82,8 @@ android {
 }
 
 kotlin {
-  compilerOptions {
-    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-  }
+  explicitApi()
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
 }
 
 dependencies {
@@ -103,18 +110,4 @@ dependencies {
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.opentelemetry.sdk.testing)
   androidTestImplementation(libs.androidx.espresso.core)
-}
-
-publishing {
-  publications {
-    register<MavenPublication>("release") {
-      groupId = "com.google.firebase"
-      artifactId = "firebase-crashlytics-telemetry"
-      version = "0.1.0-SNAPSHOT"
-
-      afterEvaluate {
-        from(components["release"])
-      }
-    }
-  }
 }
