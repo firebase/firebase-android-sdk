@@ -9,8 +9,8 @@ local.properties
 google-services.json
 _artifacts
 .DS_Store
-firebase-crashlytics-ndk/.externalNativeBuild/
-firebase-crashlytics-ndk/.cxx/
+.externalNativeBuild/
+.cxx/
 smoke-test-logs/
 smoke-tests/build-debug-headGit-smoke-test
 smoke-tests/firehorn.log
