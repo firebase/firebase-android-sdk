@@ -68,7 +68,7 @@ dependencies {
     }
     api libs.firebase.common
     api libs.firebase.components
-    api('com.google.firebase:firebase-installations-interop:17.1.0') {
+    api('com.google.firebase:firebase-installations-interop:17.1.1') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }

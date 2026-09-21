@@ -1,5 +1,33 @@
 # Unreleased
 
+- [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
+  the cloud model when non-text response modalities, unsupported
+  prompt part types, or multiple image parts are requested. (#8617)
+- [changed] Updated on-device inference to throw
+  `FirebaseAIOnDeviceInvalidRequestException` when unsupported prompt
+  part types or multiple image parts are provided, instead of ignoring
+  them. (#8617)
+- [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
+  `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
+  `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
+  unsupported in Gemini 3.x and later models. (#8621)
+- [removed] **Breaking change:** Removed the deprecated `GenerativeBackend.vertexAI` backend in
+  favor of [`GenerativeBackend.agentPlatform`](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  Note that `GenerativeBackend.agentPlatform` defaults to the `global` location rather than
+  `us-central1`. (#8563)
+- [removed] **Breaking change:** Removed the deprecated `MediaData` class along with
+  `LiveSession.sendMediaStream` and `LiveSessionFutures.sendMediaStream`. Use `sendAudioRealtime`,
+  `sendVideoRealtime`, or `sendTextRealtime` with `InlineData` instead for streaming realtime input
+  during live sessions. (#8563)
+- [removed] **Breaking change:** Removed deprecated classes and properties, including `Voices`
+  (use `Voice` instead), `GroundingAttribution` (use `GroundingChunk` instead),
+  `GenerativeModel.warmUp` (use `onDeviceExtension?.warmUp()` instead), and
+  `CountTokensResponse.totalBillableCharacters`. (#8563)
+- [changed] **Breaking change:** Restricted public constructors on SDK-emitted response and status
+  models to `internal`, and converted stateless status classes `DownloadStatus.DownloadCompleted`
+  and `LiveServerSetupComplete` into singletons (`object`). These classes are provided by the SDK
+  and are not intended for direct instantiation by client applications. (#8563)
+
 # 17.17.0
 
 - [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
@@ -222,4 +250,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
