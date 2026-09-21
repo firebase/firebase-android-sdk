@@ -125,25 +125,13 @@ private constructor(
    * @see [generationConfig]
    */
   public class Builder {
-    @Deprecated("`temperature` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var temperature: Float? = null
-    @Deprecated("`topK` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var topK: Int? = null
-    @Deprecated("`topP` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var topP: Float? = null
-    @Deprecated("`candidateCount` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var candidateCount: Int? = null
+    @JvmField public var temperature: Float? = null
+    @JvmField public var topK: Int? = null
+    @JvmField public var topP: Float? = null
+    @JvmField public var candidateCount: Int? = null
     @JvmField public var maxOutputTokens: Int? = null
-    @Deprecated("`presencePenalty` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var presencePenalty: Float? = null
-    @Deprecated("`frequencyPenalty` is unsupported in Gemini 3.x and later models")
-    @JvmField
-    public var frequencyPenalty: Float? = null
+    @JvmField public var presencePenalty: Float? = null
+    @JvmField public var frequencyPenalty: Float? = null
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
