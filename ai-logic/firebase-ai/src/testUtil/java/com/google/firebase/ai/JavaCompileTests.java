@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.ai.FirebaseAI;
 import com.google.firebase.ai.GenerativeModel;
-import com.google.firebase.ai.ImagenModel;
 import com.google.firebase.ai.InferenceMode;
 import com.google.firebase.ai.LiveGenerativeModel;
 import com.google.firebase.ai.OnDeviceConfig;
@@ -29,7 +28,6 @@ import com.google.firebase.ai.TemplateChat;
 import com.google.firebase.ai.TemplateGenerativeModel;
 import com.google.firebase.ai.java.ChatFutures;
 import com.google.firebase.ai.java.GenerativeModelFutures;
-import com.google.firebase.ai.java.ImagenModelFutures;
 import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
 import com.google.firebase.ai.java.TemplateChatFutures;
@@ -43,7 +41,6 @@ import com.google.firebase.ai.type.CitationMetadata;
 import com.google.firebase.ai.type.Content;
 import com.google.firebase.ai.type.ContentModality;
 import com.google.firebase.ai.type.CountTokensResponse;
-import com.google.firebase.ai.type.Dimensions;
 import com.google.firebase.ai.type.FileDataPart;
 import com.google.firebase.ai.type.FinishReason;
 import com.google.firebase.ai.type.FunctionCallPart;
@@ -56,11 +53,6 @@ import com.google.firebase.ai.type.HarmSeverity;
 import com.google.firebase.ai.type.ImageConfig;
 import com.google.firebase.ai.type.ImagePart;
 import com.google.firebase.ai.type.ImageSize;
-import com.google.firebase.ai.type.ImagenBackgroundMask;
-import com.google.firebase.ai.type.ImagenEditMode;
-import com.google.firebase.ai.type.ImagenEditingConfig;
-import com.google.firebase.ai.type.ImagenInlineImage;
-import com.google.firebase.ai.type.ImagenMaskReference;
 import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
 import com.google.firebase.ai.type.LatLng;
@@ -70,7 +62,6 @@ import com.google.firebase.ai.type.LiveServerMessage;
 import com.google.firebase.ai.type.LiveServerSetupComplete;
 import com.google.firebase.ai.type.LiveServerToolCall;
 import com.google.firebase.ai.type.LiveServerToolCallCancellation;
-import com.google.firebase.ai.type.MediaData;
 import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.MultiSpeakerVoiceConfig;
 import com.google.firebase.ai.type.Part;
@@ -210,17 +201,6 @@ public class JavaCompileTests {
         .build();
   }
 
-  private void testImagen() {
-    ImagenModel modelSuspend = FirebaseAI.getInstance().imagenModel("");
-    ImagenModelFutures model = ImagenModelFutures.from(modelSuspend);
-    model.editImage(
-        Collections.singletonList(new ImagenBackgroundMask()),
-        "",
-        new ImagenEditingConfig(ImagenEditMode.OUTPAINT, 25));
-    ImagenMaskReference.generateMaskAndPadForOutpainting(
-        new ImagenInlineImage(new byte[0], ""), new Dimensions(0, 0));
-  }
-
   private void testSpeechConfig() {
     SpeechConfig singleSpeechConfig = new SpeechConfig(new Voice("Charon"), "en-US");
 
@@ -333,10 +313,8 @@ public class JavaCompileTests {
 
   public void validateCountTokensResponse(CountTokensResponse response) {
     int tokens = response.getTotalTokens();
-    Integer billable = response.getTotalBillableCharacters();
     Assert.assertEquals(tokens, response.component1());
-    Assert.assertEquals(billable, response.component2());
-    Assert.assertEquals(response.getPromptTokensDetails(), response.component3());
+    Assert.assertEquals(response.getPromptTokensDetails(), response.component2());
     for (ModalityTokenCount count : response.getPromptTokensDetails()) {
       ContentModality modality = count.getModality();
       int tokenCount = count.getTokenCount();
@@ -480,7 +458,6 @@ public class JavaCompileTests {
     session.send(new Content.Builder().addText("Fake message").build());
 
     byte[] bytes = new byte[] {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
-    session.sendMediaStream(List.of(new MediaData(bytes, "image/jxl")));
     session.sendAudioRealtime(new InlineData(bytes, "audio/jxl", null));
     session.sendVideoRealtime(new InlineData(bytes, "image/jxl", null));
     session.sendTextRealtime("text");

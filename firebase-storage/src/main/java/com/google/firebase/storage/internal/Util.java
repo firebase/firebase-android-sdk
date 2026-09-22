@@ -19,7 +19,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -33,6 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -66,11 +66,6 @@ public class Util {
     return 0;
   }
 
-  /** Null-safe equivalent of {@code a.equals(b)}. */
-  public static boolean equals(@Nullable Object a, @Nullable Object b) {
-    return Objects.equal(a, b);
-  }
-
   /**
    * Normalizes a Firebase Storage uri into its "gs://" format and strips any trailing slash.
    *
@@ -100,7 +95,8 @@ public class Util {
       String scheme = uri.getScheme();
 
       if (scheme != null
-          && (equals(scheme.toLowerCase(), "http") || equals(scheme.toLowerCase(), "https"))) {
+          && (Objects.equals(scheme.toLowerCase(), "http")
+              || Objects.equals(scheme.toLowerCase(), "https"))) {
         String lowerAuthority = uri.getAuthority().toLowerCase();
         int indexOfAuth = lowerAuthority.indexOf(baseUrl.getAuthority());
         encodedPath = Slashes.slashize(uri.getEncodedPath());

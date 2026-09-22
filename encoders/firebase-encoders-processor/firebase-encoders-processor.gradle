@@ -26,7 +26,7 @@ dependencies {
     compileOnly 'javax.annotation:javax.annotation-api:1.3.2'
     implementation 'com.google.guava:guava:28.1-jre'
     implementation 'com.google.auto:auto-common:1.1.2'
-    implementation "com.google.auto.value:auto-value-annotations:1.6.6"
+    implementation libs.autovalue.annotations
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
 
@@ -44,7 +44,7 @@ configurations.testImplementation.resolutionStrategy {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.annotation:annotation:1.3.0'
 }
 
 test {

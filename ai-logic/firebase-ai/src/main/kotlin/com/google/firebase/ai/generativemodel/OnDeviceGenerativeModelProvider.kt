@@ -19,6 +19,7 @@ package com.google.firebase.ai.generativemodel
 import android.util.Log
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
@@ -27,6 +28,7 @@ import com.google.firebase.ai.ondevice.interop.TextPart as OnDeviceTextPart
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
+import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
@@ -34,6 +36,7 @@ import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
@@ -133,19 +136,35 @@ internal class OnDeviceGenerativeModelProvider(
   /**
    * Generates a structured object based on the given prompt and schema.
    *
-   * Note: This is currently not supported for on-device models.
-   *
    * @param jsonSchema The schema defining the structure of the output.
    * @param prompt The list of content parts to use as the prompt.
    * @return The generated object response.
-   * @throws FirebaseAIException Always throws as this feature is not supported.
+   * @throws FirebaseAIException If the on-device model is unavailable or if generation fails.
    */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> {
-    throw FirebaseAIException.from(
-      IllegalArgumentException("On-device mode is not supported for `generateObject`")
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    ensureOnDeviceModelAvailable()
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val interopResponse = onDeviceModel.generateObject(request, jsonSchema.clazz)
+    val candidates =
+      interopResponse.instances.map {
+        Candidate(
+          content = content { text("") },
+          safetyRatings = emptyList(),
+          citationMetadata = null,
+          finishReason = FinishReason.STOP,
+          finishMessage = null,
+          groundingMetadata = null,
+          urlContextMetadata = null
+        )
+      }
+    @Suppress("UNCHECKED_CAST")
+    GenerateObjectResponse(
+      GenerateContentResponse(candidates, InferenceSource.ON_DEVICE, null, null, "ondevice"),
+      instances = ArrayList(interopResponse.instances as List<T?>)
     )
   }
 
@@ -181,7 +200,9 @@ internal class OnDeviceGenerativeModelProvider(
     prompt: List<Content>
   ): OnDeviceGenerateContentRequest {
     if (prompt.isEmpty()) {
-      throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
+      )
     }
     val parts =
       if (prompt.size == 1) {
@@ -190,6 +211,16 @@ internal class OnDeviceGenerativeModelProvider(
         Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
         prompt.flatMap { it.parts }
       }
+    val unsupportedParts = parts.filter { it !is TextPart && it !is ImagePart }
+    if (unsupportedParts.isNotEmpty()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException(
+            "On-device model does not support part types: ${unsupportedParts.map { it::class.java.simpleName }}"
+          )
+        )
+      )
+    }
     val textParts =
       parts.filterIsInstance<TextPart>().also {
         if (it.size > 1)
@@ -200,21 +231,21 @@ internal class OnDeviceGenerativeModelProvider(
       }
     if (textParts.isEmpty()) {
       throw FirebaseAIException.from(
-        IllegalArgumentException("On-device model requires text as part of the prompt")
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model requires text as part of the prompt")
+        )
       )
     }
-    val text = textParts.joinToString("") { it.text }
-    val image =
-      parts
-        .filterIsInstance<ImagePart>()
-        .also {
-          if (it.size > 1)
-            Log.w(
-              TAG,
-              "On-device model does not support multiple image parts, using only the first one"
-            )
-        }
-        .firstOrNull()
+    val imageParts = parts.filterIsInstance<ImagePart>()
+    if (imageParts.size > 1) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model does not support multiple image parts")
+        )
+      )
+    }
+    val text = textParts.joinToString("\n") { it.text }
+    val image = imageParts.firstOrNull()
     return OnDeviceGenerateContentRequest(
       text = OnDeviceTextPart(text),
       image = image?.let { OnDeviceImagePart(it.image) },

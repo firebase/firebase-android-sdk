@@ -178,7 +178,7 @@ internal constructor(
  * The specified Vertex AI location is invalid.
  *
  * For a list of valid locations, see
- * [locations.](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+ * [locations.](https://firebase.google.com/docs/ai-logic/locations?api=vertex#available-locations)
  */
 public class InvalidLocationException
 internal constructor(location: String, cause: Throwable? = null) :
@@ -187,7 +187,7 @@ internal constructor(location: String, cause: Throwable? = null) :
 /**
  * The service is not enabled for this Firebase project. Learn how to enable the required services
  * in the
- * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/faq-and-troubleshooting#required-apis)
+ * [Firebase documentation.](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting#required-apis)
  */
 public class ServiceDisabledException
 internal constructor(message: String, cause: Throwable? = null) :
@@ -195,7 +195,7 @@ internal constructor(message: String, cause: Throwable? = null) :
 
 /**
  * The request has hit a quota limit. Learn more about quotas in the
- * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/quotas)
+ * [Firebase documentation.](https://firebase.google.com/docs/ai-logic/quotas)
  */
 public class QuotaExceededException
 internal constructor(message: String, cause: Throwable? = null) :

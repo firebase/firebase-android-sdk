@@ -72,6 +72,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
 
+        // By default, exclude large tests because they are slow.
+        // Run with `./gradlew :firebase-firestore:connectedCheck -PrunLargeTests` to run ONLY large tests.
+        if (project.hasProperty('runLargeTests')) {
+            testInstrumentationRunnerArguments annotation: 'androidx.test.filters.LargeTest'
+        } else {
+            testInstrumentationRunnerArguments notAnnotation: 'androidx.test.filters.LargeTest'
+        }
+
         // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
@@ -90,27 +98,39 @@ android {
         }
     }
 
+    testFixtures {
+        enable = true
+    }
+
     sourceSets {
         main {
             proto {
                 srcDir 'src/proto'
             }
         }
-        test {
+        testFixtures {
             java {
                 srcDir 'src/testUtil/java'
-                srcDir 'src/roboUtil/java'
             }
         }
-        androidTest {
+        test {
             java {
-                srcDir 'src/testUtil/java'
+                srcDir 'src/roboUtil/java'
             }
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        lintConfig file("lint.xml")
+        ignoreTestFixturesSources true
+    }
+    packagingOptions {
+        resources {
+            excludes += "**/*.proto"
+        }
     }
     testOptions {
         targetSdk project.targetSdkVersion
@@ -131,7 +151,7 @@ dependencies {
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
     api libs.firebase.annotations
-    api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
+    api 'com.google.firebase:firebase-appcheck-interop:17.1.0'
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
@@ -157,6 +177,15 @@ dependencies {
     annotationProcessor libs.autovalue
 
     androidTestAnnotationProcessor libs.autovalue
+
+    testFixturesImplementation libs.androidx.annotation
+    testFixturesImplementation libs.truth
+    testFixturesImplementation libs.junit
+    testFixturesImplementation libs.mockito.core
+    testFixturesImplementation libs.jackson.databind
+    testFixturesImplementation libs.grpc.protobuf.lite
+    testFixturesCompileOnly libs.protobuf.java
+    testFixturesCompileOnly libs.javax.annotation.jsr250
 
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')

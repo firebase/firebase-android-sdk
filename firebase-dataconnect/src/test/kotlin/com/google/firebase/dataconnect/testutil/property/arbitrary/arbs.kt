@@ -71,19 +71,23 @@ import kotlinx.serialization.modules.SerializersModule
 
 internal fun DataConnectArb.dataConnectGrpcMetadata(
   connectorLocation: Arb<String> = connectorLocation(),
+  connectorServiceId: Arb<String> = connectorServiceId(),
   kotlinVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   androidVersion: Arb<Int> = Arb.int(0..100),
   dataConnectSdkVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   grpcVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   appId: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
+  projectId: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
 ): Arb<DataConnectGrpcMetadata> = arbitrary {
   DataConnectGrpcMetadata(
     connectorLocation = connectorLocation.bind(),
+    connectorServiceId = connectorServiceId.bind(),
     kotlinVersion = kotlinVersion.bind(),
     androidVersion = androidVersion.bind(),
     dataConnectSdkVersion = dataConnectSdkVersion.bind(),
     grpcVersion = grpcVersion.bind(),
     appId = appId.bind(),
+    projectId = projectId.bind(),
     parentLogger = mockk(relaxed = true),
   )
 }

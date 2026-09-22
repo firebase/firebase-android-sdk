@@ -95,10 +95,10 @@ dependencies {
   implementation(libs.kotlinx.coroutines.reactive)
   implementation(libs.reactive.streams)
   implementation("com.google.guava:listenablefuture:1.0")
-  implementation("androidx.concurrent:concurrent-futures:1.2.0")
-  implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+  implementation("androidx.concurrent:concurrent-futures:1.3.0")
+  implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta03")
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta05")
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)
@@ -127,3 +127,5 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
+
+tasks.named("kotlindoc") { dependsOn(":ai-logic:firebase-ai-ondevice:kotlindoc") }

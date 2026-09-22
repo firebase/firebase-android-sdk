@@ -18,12 +18,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Stores information about custom models that are being downloaded or are already downloaded on a
@@ -32,8 +32,9 @@ import java.io.File;
  *
  * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
  *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
- *     alternative for hosting custom models. For more info, see
- *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+ *     alternative for hosting custom models. For more information about migration options, see the
+ *     notification banner in the
+ *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
  */
 @Deprecated
 public class CustomModel {
@@ -113,8 +114,9 @@ public class CustomModel {
    * @return The name of the model.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -131,8 +133,9 @@ public class CustomModel {
    *     fully downloaded model.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Nullable
   @Deprecated
@@ -184,8 +187,9 @@ public class CustomModel {
    * @return The local model size.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Deprecated
   public long getSize() {
@@ -198,8 +202,9 @@ public class CustomModel {
    * @return The model hash
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @NonNull
   @Deprecated
@@ -215,8 +220,9 @@ public class CustomModel {
    * @return The download ID (if download in progress), otherwise returns 0.
    * @deprecated Firebase ML is deprecated and will be shut down on June 15, 2027. To host custom
    *     models, you must migrate to another solution. You can use Cloud Storage for Firebase as an
-   *     alternative for hosting custom models. For more info, see
-   *     https://firebase.google.com/docs/ml/migrate-to-cloud-storage
+   *     alternative for hosting custom models. For more information about migration options, see the
+   *     notification banner in the
+   *     [Firebase ML documentation](https://firebase.google.com/docs/ml).
    */
   @Deprecated
   public long getDownloadId() {
@@ -226,8 +232,8 @@ public class CustomModel {
   @NonNull
   @Override
   public String toString() {
-    Objects.ToStringHelper stringHelper =
-        Objects.toStringHelper(this)
+    com.google.android.gms.common.internal.Objects.ToStringHelper stringHelper =
+        com.google.android.gms.common.internal.Objects.toStringHelper(this)
             .add("name", name)
             .add("modelHash", modelHash)
             .add("fileSize", fileSize);
@@ -260,18 +266,18 @@ public class CustomModel {
 
     CustomModel other = (CustomModel) o;
 
-    return Objects.equal(name, other.name)
-        && Objects.equal(modelHash, other.modelHash)
-        && Objects.equal(fileSize, other.fileSize)
-        && Objects.equal(localFilePath, other.localFilePath)
-        && Objects.equal(downloadId, other.downloadId)
-        && Objects.equal(downloadUrl, other.downloadUrl)
-        && Objects.equal(downloadUrlExpiry, other.downloadUrlExpiry);
+    return Objects.equals(name, other.name)
+        && Objects.equals(modelHash, other.modelHash)
+        && Objects.equals(fileSize, other.fileSize)
+        && Objects.equals(localFilePath, other.localFilePath)
+        && Objects.equals(downloadId, other.downloadId)
+        && Objects.equals(downloadUrl, other.downloadUrl)
+        && Objects.equals(downloadUrlExpiry, other.downloadUrlExpiry);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
+    return Objects.hash(
         name, modelHash, fileSize, localFilePath, downloadId, downloadUrl, downloadUrlExpiry);
   }
 

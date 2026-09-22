@@ -77,6 +77,7 @@ parse_args() {
   # The variable was renamed to SQL_CONNECT_PREVIEW in cl/944678266 (July 2026).
   export DATA_CONNECT_PREVIEW="${preview_flags}"
   export SQL_CONNECT_PREVIEW="${preview_flags}"
+  export SQL_CONNECT_SDK_PREVIEW="${preview_flags}"
 
   if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
     run_command podman compose down -v

@@ -73,11 +73,22 @@ public class DebugAppCheckProvider implements AppCheckProvider {
 
   private void logDebugSecret(String secret) {
     String consoleUrl = getConsoleUrl();
+    String appId = networkClient.getAppId();
+    String projectId = networkClient.getProjectId();
     String message =
-        "Enter this debug secret ("
-            + secret
-            + ") into the allow list in the Firebase Console for your project: "
-            + consoleUrl;
+        String.format(
+            "Firebase App Check debug token: %s%n%n"
+                + "To use this token for app debugging, register it with your project.%n%n"
+                + "You can do so in the Firebase Console: %n"
+                + "%s%n%n"
+                + "Or using the Firebase CLI: %n"
+                + "firebase appcheck:debugtokens:create %s --project %s --app %s%n%n"
+                + "Note: To keep your project secure, please revoke and delete this token using the %n"
+                + "Firebase Console or the CLI (`firebase appcheck:debugtokens:delete`) when you finish debugging.%n%n"
+                + "Warning: This debug token is a secret and should not be shared or uploaded to source code.%n%n"
+                + "Debug Token Guide: https://firebase.google.com/docs/app-check/ios/debug-provider%n"
+                + "Firebase CLI install instructions: https://firebase.google.com/docs/cli",
+            secret, consoleUrl, secret, projectId, appId);
     Log.d(TAG, message);
   }
 

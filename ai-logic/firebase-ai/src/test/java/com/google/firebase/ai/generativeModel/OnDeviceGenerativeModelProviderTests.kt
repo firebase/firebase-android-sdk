@@ -23,6 +23,7 @@ import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse as OnDeviceGenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
@@ -37,6 +38,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -107,20 +109,38 @@ internal class OnDeviceGenerativeModelProviderTests {
     response.inferenceSource shouldBe InferenceSource.ON_DEVICE
   }
 
-  @Test
-  fun `generateObject always throws FirebaseAIException`(): Unit = runBlocking {
-    val schema = mockk<JsonSchema<Any>>()
+  private data class TestMovieReview(val title: String, val rating: Int)
 
-    val exception = shouldThrow<FirebaseAIException> { provider.generateObject(schema, prompt) }
-    exception.cause!!::class shouldBe IllegalArgumentException::class
+  @Test
+  fun `generateObject delegates to onDeviceModel`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val dummyInstance = TestMovieReview("Inception", 5)
+    val schema: JsonSchema<TestMovieReview> = mockk {
+      every { clazz } returns TestMovieReview::class
+    }
+    val interopResponse =
+      com.google.firebase.ai.ondevice.interop.GenerateObjectResponse<TestMovieReview>(
+        instance = dummyInstance
+      )
+    coEvery {
+      onDeviceModel.generateObject(any(), any<kotlin.reflect.KClass<TestMovieReview>>())
+    } returns interopResponse
+
+    val response = provider.generateObject(schema, prompt)
+
+    response.response.inferenceSource shouldBe InferenceSource.ON_DEVICE
+    response.getObject() shouldBe dummyInstance
   }
 
   @Test
   fun `generateContent throws when prompt is empty`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
 
-    val exception = shouldThrow<FirebaseAIException> { provider.generateContent(emptyList()) }
-    exception.cause!!::class shouldBe IllegalArgumentException::class
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        provider.generateContent(emptyList())
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
   }
 
   @Test
@@ -128,8 +148,42 @@ internal class OnDeviceGenerativeModelProviderTests {
     coEvery { onDeviceModel.isAvailable() } returns true
     val promptNoText = listOf(Content(parts = emptyList()))
 
-    val exception = shouldThrow<FirebaseAIException> { provider.generateContent(promptNoText) }
-    exception.cause!!::class shouldBe IllegalArgumentException::class
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        provider.generateContent(promptNoText)
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+  }
+
+  @Test
+  fun `generateContent throws when prompt has unsupported part`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val unknownPart =
+      object : com.google.firebase.ai.type.Part {
+        override val isThought: Boolean = false
+      }
+    val promptWithUnknownPart = listOf(Content(parts = listOf(TextPart("hello"), unknownPart)))
+
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        provider.generateContent(promptWithUnknownPart)
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+  }
+
+  @Test
+  fun `generateContent throws when prompt has multiple images`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val image1 = com.google.firebase.ai.type.ImagePart(mockk<android.graphics.Bitmap>())
+    val image2 = com.google.firebase.ai.type.ImagePart(mockk<android.graphics.Bitmap>())
+    val promptWithMultipleImages =
+      listOf(Content(parts = listOf(TextPart("hello"), image1, image2)))
+
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        provider.generateContent(promptWithMultipleImages)
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
   }
 
   @Test
@@ -153,4 +207,26 @@ internal class OnDeviceGenerativeModelProviderTests {
     interopConfig.modelConfig?.preference shouldBe
       com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
   }
+
+  @Test
+  fun `generateContent concatenates multiple prompts with newline for chat history`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+      coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+        OnDeviceGenerateContentResponse(
+          listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+        )
+
+      val multiPrompt =
+        listOf(
+          Content(role = "user", parts = listOf(TextPart("hello"))),
+          Content(role = "model", parts = listOf(TextPart("hi there"))),
+          Content(role = "user", parts = listOf(TextPart("how are you?")))
+        )
+
+      provider.generateContent(multiPrompt)
+
+      capturedRequest.captured.text.text shouldBe "hello\nhi there\nhow are you?"
+    }
 }

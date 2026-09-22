@@ -16,6 +16,7 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.annotation.VisibleForTesting
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAuth.AuthUid
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
@@ -233,7 +234,11 @@ internal class DataConnectBidiConnectStream(
         .buffer(capacity = 64) // Use a finite buffer to activate gRPC flow control, when needed
         .shareIn(
           coroutineScope,
-          started = SharingStarted.WhileSubscribed(replayExpirationMillis = 0),
+          started =
+            SharingStarted.WhileSubscribed(
+              stopTimeoutMillis = 15_000,
+              replayExpirationMillis = 0,
+            ),
           replay = 0,
         )
 
@@ -768,7 +773,10 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
     val currentAuthUid = currentState.authToken.ref?.authUid
     val newAuthUid = sequencedAuthToken.ref?.authUid
     if (currentAuthUid != newAuthUid) {
-      throw FirebaseUserChangedException("cgvra2bwg3", currentAuthUid, newAuthUid)
+      throw AuthUserChangedException(
+        "Firebase user changed from uid=${currentAuthUid?.string} " +
+          "to uid=${newAuthUid?.string} [sn36arqzt2]"
+      )
     }
 
     // Ignore outdated auth token changes.
@@ -785,7 +793,7 @@ private class ConnectionStateUpdater(private val idStringGenerator: IdStringGene
 
     // Do not send an empty token, as that is wasteful too (and should never happen in practice
     // because if newToken==null and oldToken!=newToken then it must hold that
-    // currentAuthUid!=newAuthUid, and should have resulted in FirebaseUserChangedException above).
+    // currentAuthUid!=newAuthUid, and should have resulted in AuthUserChangedException above).
     if (newToken == null) {
       return null
     }

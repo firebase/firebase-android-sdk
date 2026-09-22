@@ -99,6 +99,7 @@ fun Task.runDataConnectExecutable(
           val previewFlagsStr = previewFlags.joinToString(",")
           environment("DATA_CONNECT_PREVIEW", previewFlagsStr)
           environment("SQL_CONNECT_PREVIEW", previewFlagsStr)
+          environment("SQL_CONNECT_SDK_PREVIEW", previewFlagsStr)
         }
       }
     }

@@ -19,13 +19,16 @@ import android.content.Context.CONNECTIVITY_SERVICE
 import android.net.ConnectivityManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.ReceiveTurbine
+import app.cash.turbine.TurbineContext
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.setReconnectPendingAuthTokenForTesting
 import com.google.firebase.dataconnect.core.DataConnectBidiConnectStream.Companion.unsetReconnectPendingAuthTokenForTesting
@@ -91,9 +94,11 @@ import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -111,6 +116,7 @@ import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
@@ -635,7 +641,7 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow fails with FirebaseUserChangedException if auth uid changes mid-stream`() = runTest {
+  fun `flow fails with AuthUserChangedException if auth uid changes mid-stream`() = runTest {
     val server = runningInProcessDataConnectServer()
 
     checkAll(
@@ -668,11 +674,11 @@ class QuerySubscriptionImplUnitTest {
           checkNotNull(authProvider.idTokenListener)
             .onIdTokenChanged(InternalTokenResult(authToken2))
 
-          // The flow should throw FirebaseUserChangedException and terminate
+          // The flow should throw AuthUserChangedException and terminate
           val exception = clientCollector.awaitError()
-          exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+          exception.shouldBeInstanceOf<AuthUserChangedException>()
           exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-          exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
+          exception.message shouldContainWithNonAbuttingText "sn36arqzt2"
           exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
           exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
@@ -684,7 +690,7 @@ class QuerySubscriptionImplUnitTest {
   }
 
   @Test
-  fun `flow fails with FirebaseUserChangedException if auth uid changes during reconnection`() =
+  fun `flow fails with AuthUserChangedException if auth uid changes during reconnection`() =
     runTest {
       val server = runningInProcessDataConnectServer()
 
@@ -719,13 +725,13 @@ class QuerySubscriptionImplUnitTest {
             // Close the connection from the server to force a reconnection attempt
             responseSender.onCompleted()
 
-            // The flow should throw FirebaseUserChangedException and terminate
+            // The flow should throw AuthUserChangedException and terminate
             val exception = clientCollector.awaitError()
 
-            // The flow should throw FirebaseUserChangedException and terminate
-            exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+            // The flow should throw AuthUserChangedException and terminate
+            exception.shouldBeInstanceOf<AuthUserChangedException>()
             exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-            exception.message shouldContainWithNonAbuttingText "ytd7yf2geh"
+            exception.message shouldContainWithNonAbuttingText "b5aqrgbvyd"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
@@ -737,11 +743,11 @@ class QuerySubscriptionImplUnitTest {
     }
 
   @Test
-  fun `flow fails with FirebaseUserChangedException if auth uid changes concurrently with reconnection`() =
+  fun `flow fails with AuthUserChangedException if auth uid changes concurrently with reconnection`() =
     runTest {
       val server = runningInProcessDataConnectServer()
 
-      // Make sure that FirebaseUserChangedException is thrown even if the sequence number of the
+      // Make sure that AuthUserChangedException is thrown even if the sequence number of the
       // pending reconnect token is stale; otherwise, auth uid changes could slip through.
       val postReconnectSequenceNumberArb = Arb.of(nextSequenceNumber(), Long.MAX_VALUE)
 
@@ -791,16 +797,16 @@ class QuerySubscriptionImplUnitTest {
                 // Close the connection from the server to force a reconnection attempt
                 responseSender.onCompleted()
 
-                // The flow should throw FirebaseUserChangedException and terminate
+                // The flow should throw AuthUserChangedException and terminate
                 clientCollector.awaitError()
               } finally {
                 unsetReconnectPendingAuthTokenForTesting(postReconnectPendingAuthToken)
               }
 
-            // The flow should throw FirebaseUserChangedException and terminate
-            exception.shouldBeInstanceOf<FirebaseUserChangedException>()
+            // The flow should throw AuthUserChangedException and terminate
+            exception.shouldBeInstanceOf<AuthUserChangedException>()
             exception.message shouldContainWithNonAbuttingTextIgnoringCase "Firebase user changed"
-            exception.message shouldContainWithNonAbuttingText "cgvra2bwg3"
+            exception.message shouldContainWithNonAbuttingText "sn36arqzt2"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid1?.string}"
             exception.message shouldContainWithNonAbuttingText "uid=${authUid2?.string}"
 
@@ -1682,6 +1688,7 @@ class QuerySubscriptionImplUnitTest {
           )
 
           clientCollector.cancelAndIgnoreRemainingEvents()
+          serverCollector.awaitUntilClientClosesConnection()
           serverCollector.cancelAndIgnoreRemainingEvents()
         }
       }
@@ -2035,6 +2042,133 @@ class QuerySubscriptionImplUnitTest {
     }
   }
 
+  @Test
+  fun `connection is kept alive for exactly the grace period after last subscriber unsubscribes`() =
+    testConnectionGracePeriod(Arb.long(0L until CONNECTION_GRACE_PERIOD_MS)) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration less than CONNECTION_GRACE_PERIOD_MS
+      delay(context.delayMillis.milliseconds)
+
+      // Verify that the connection is still open (no close event received on serverCollector).
+      // Based on the timing, we _may_ receive the "cancel" event, which is expected.
+      val event = context.serverCollector.asChannel().tryReceive().getOrNull()
+      if (event != null) {
+        val streamRequest = event.shouldBeInstanceOf<StreamRequestReceived>().streamRequest
+        streamRequest.hasCancel().shouldBeTrue()
+        context.serverCollector.asChannel().tryReceive().getOrNull().shouldBeNull()
+      }
+
+      // Measure the remaining time until the client closes the connection
+      val time1 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
+      context.serverCollector.awaitUntilClientClosesConnection()
+      val time2 = @OptIn(ExperimentalCoroutinesApi::class) context.testScheduler.currentTime
+
+      (time2 - time1) shouldBe (CONNECTION_GRACE_PERIOD_MS - context.delayMillis)
+    }
+
+  @Test
+  fun `re-subscribing within grace period keeps the connection alive and reuses it`() =
+    testConnectionGracePeriod(Arb.long(100L until CONNECTION_GRACE_PERIOD_MS)) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration less than CONNECTION_GRACE_PERIOD_MS
+      delay(context.delayMillis.milliseconds)
+
+      // Re-subscribe clientCollector2
+      val clientCollector2 =
+        context.subscription.flow.testIn(context.backgroundScope, name = "clientCollector2")
+
+      // Verify that the server receives a subscribe request for the connection, but the connection
+      // ID remains the same (proving reuse)
+      val subscribeRequest = context.serverCollector.awaitUntilSubscribeStreamRequest()
+      subscribeRequest.connectionId shouldBe context.initialConnectionId
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      // Wait for the new grace period to expire so we don't leak connection closure errors/events
+      context.serverCollector.awaitUntilClientClosesConnection()
+    }
+
+  @Test
+  fun `re-subscribing after grace period establishes a new connection`() =
+    testConnectionGracePeriod(
+      Arb.long(CONNECTION_GRACE_PERIOD_MS..(CONNECTION_GRACE_PERIOD_MS * 4))
+    ) { context ->
+      context.clientCollector1.cancelAndIgnoreRemainingEvents()
+
+      // Wait a random duration of at least CONNECTION_GRACE_PERIOD_MS
+      delay(context.delayMillis.milliseconds)
+
+      // Verify that the connection is closed
+      context.serverCollector.awaitUntilClientClosesConnection()
+
+      // Re-subscribe clientCollector2
+      val clientCollector2 =
+        context.subscription.flow.testIn(context.backgroundScope, name = "clientCollector2")
+
+      // Verify that a new connection is established
+      val connection2 = context.serverCollector.awaitConnectRpcStarted()
+      connection2.connectionId shouldNotBe context.initialConnectionId
+      context.serverCollector.awaitUntilInitStreamRequest()
+      context.serverCollector.awaitUntilSubscribeStreamRequest()
+
+      clientCollector2.cancelAndIgnoreRemainingEvents()
+      // Wait for connection to close to keep clean state
+      context.serverCollector.awaitUntilClientClosesConnection()
+    }
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private fun testConnectionGracePeriod(
+    delayMillisArb: Arb<Long>,
+    block: suspend TurbineContext.(TestConnectionGracePeriodContext) -> Unit
+  ) = runTest {
+    val server = runningInProcessDataConnectServer()
+    checkAll(propTestConfig, delayMillisArb, Arb.dataConnect.operationName(), testVariablesArb()) {
+      delayMillis,
+      operationName,
+      variables ->
+      runWithDataConnect(server) { dataConnect ->
+        val subscription = querySubscription(dataConnect, operationName, variables)
+
+        turbineScope {
+          val serverCollector = server.events.testIn(backgroundScope, name = "serverCollector")
+          val clientCollector1 =
+            subscription.flow.testIn(backgroundScope, name = "clientCollector1")
+
+          // Wait for initial connection and subscribe
+          val connection = serverCollector.awaitConnectRpcStarted()
+          serverCollector.awaitUntilInitStreamRequest()
+          serverCollector.awaitUntilSubscribeStreamRequest()
+
+          val context =
+            TestConnectionGracePeriodContext(
+              delayMillis = delayMillis,
+              serverCollector = serverCollector,
+              clientCollector1 = clientCollector1,
+              initialConnectionId = connection.connectionId,
+              subscription = subscription,
+              backgroundScope = backgroundScope,
+              testScheduler = testScheduler,
+            )
+
+          block(context)
+
+          serverCollector.cancelAndIgnoreRemainingEvents()
+        }
+      }
+    }
+  }
+
+  private data class TestConnectionGracePeriodContext(
+    val delayMillis: Long,
+    val serverCollector: ReceiveTurbine<InProcessDataConnectGrpcStreamingServer.Event>,
+    val clientCollector1: ReceiveTurbine<QuerySubscriptionResult<TestData, TestVariables>>,
+    val initialConnectionId: InProcessDataConnectGrpcStreamingServer.ConnectionId,
+    val subscription: QuerySubscriptionImpl<TestData, TestVariables>,
+    val backgroundScope: kotlinx.coroutines.CoroutineScope,
+    val testScheduler: TestCoroutineScheduler,
+  )
+
   private fun runningInProcessDataConnectServer(): InProcessDataConnectGrpcStreamingServer {
     val server = InProcessDataConnectGrpcStreamingServer()
     cleanups.register(server)
@@ -2272,3 +2406,14 @@ private class SequenceRandom(jitters: Sequence<Double>) : Random() {
     return lock.withLock { iterator.next() + 0.5 }
   }
 }
+
+/**
+ * The amount of time, in milliseconds, that [DataConnectBidiConnectStream] keeps the physical
+ * connection with the backend alive after the last subscriber unsubscribes. By keeping the
+ * connection alive for a short amount of time rather than closing it immediately it improves the
+ * latency and reduces the backend load if a new subscriber were to subscribe within this grace
+ * period. This rapid unsubscription and resubscription could happen, for example, between activity
+ * or fragment transitions in an application where the old activity/fragment unsubscribes in its
+ * onDestory() and the new activity/fragment subscribes in its onCreate().
+ */
+const val CONNECTION_GRACE_PERIOD_MS = 15_000L

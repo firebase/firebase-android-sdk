@@ -76,7 +76,7 @@ class ChatTemplateIntegrationTests {
   }
   @Test
   fun testTemplateChat_sendMessage_vertexAI(): Unit = runBlocking {
-    val chat = AIModels.vertexAITemplateModel.startChat("$templateId-vertex-ai", inputs)
+    val chat = AIModels.agentPlatformTemplateModel.startChat("$templateId-vertex-ai", inputs)
     val response = chat.sendMessage("which number is higher, one or ten?")
 
     response.candidates.isNotEmpty() shouldBe true
@@ -96,7 +96,7 @@ class ChatTemplateIntegrationTests {
 
   @Test
   fun testTemplateChat_sendMessageStream_vertexAI(): Unit = runBlocking {
-    val chat = AIModels.vertexAITemplateModel.startChat("$templateId-vertex-ai", inputs)
+    val chat = AIModels.agentPlatformTemplateModel.startChat("$templateId-vertex-ai", inputs)
     val responses = chat.sendMessageStream("which number is higher, one or ten?").toList()
     responses.isNotEmpty() shouldBe true
     responses.joinToString { it.text ?: "" } shouldContainIgnoringCase "ten"

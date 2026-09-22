@@ -1,5 +1,17 @@
 # Unreleased
 
+- [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
+  Protocol Buffers to `4.36.1`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+
+# 26.6.0
+
+- [feature] Implemented support for retrieving documents up to 16MB over gRPC (#8363)
+- [feature] Increases the gRPC max inbound message size to 17MB, to support 16MB documents. (#8363)
+
+# 26.5.0
+
 - [changed] Increased the default gRPC flow control window size from 64KB to 256KB to speed up large document reads, and added support for configuring this window size via `FirebaseFirestoreSettings.Builder.setGrpcFlowControlWindow()`.
 - [changed] Increased the gRPC maximum inbound message size limit to 17MB to support downloading Cloud Firestore documents of up to 16MB.
 

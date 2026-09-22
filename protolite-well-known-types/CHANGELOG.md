@@ -1,5 +1,12 @@
 # Unreleased
 
+- [changed] **Breaking change:** Updated Protocol Buffers dependency to
+  `4.36.1` and Google Common Protos to `2.75.0`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+- [changed] Removed the vendored copy of `descriptor.proto`. The
+  `DescriptorProtos` classes are no longer bundled in this library and are
+  instead provided by `protobuf-javalite`. (#8580)
+
 # 18.0.1
 
 - [changed] Updated protobuf dependency to `3.25.5` to fix

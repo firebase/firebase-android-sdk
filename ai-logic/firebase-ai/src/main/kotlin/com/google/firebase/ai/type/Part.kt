@@ -83,9 +83,6 @@ internal constructor(
   public val thoughtSignature: String?
 ) : Part {
 
-  @Deprecated("Part of the model response. Do not instantiate directly.")
-  public constructor(outcome: String, output: String) : this(outcome, output, false, null)
-
   /** Indicates if the code execution was successful */
   public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
 
@@ -133,9 +130,6 @@ internal constructor(
   public override val isThought: Boolean,
   public val thoughtSignature: String?
 ) : Part {
-
-  @Deprecated("Part of the model response. Do not instantiate directly.")
-  public constructor(language: String, code: String) : this(language, code, false, null)
 
   public companion object {
     /**
@@ -227,7 +221,7 @@ internal constructor(
   /**
    * @param inlineData the binary data as a [ByteArray]
    * @param mimeType an IANA standard MIME type. For supported values, see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    */
   public constructor(
     inlineData: ByteArray,
@@ -237,7 +231,7 @@ internal constructor(
   /**
    * @param inlineData the binary data as a [ByteArray]
    * @param mimeType an IANA standard MIME type. For supported values, see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    * @param displayName the name of the file, including the extension
    */
   public constructor(
@@ -447,7 +441,7 @@ internal constructor(
    * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
    * `"gs://bucket-name/path/image.jpg"`
    * @param mimeType an IANA standard MIME type. For supported MIME type values see the
-   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * [Firebase documentation](https://firebase.google.com/docs/ai-logic/input-file-requirements).
    */
   public constructor(uri: String, mimeType: String) : this(uri, mimeType, false, null)
 

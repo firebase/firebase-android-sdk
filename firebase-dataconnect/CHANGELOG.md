@@ -1,5 +1,37 @@
 # Unreleased
 
+- [feature] **Breaking change:** Added `AuthUserChangedException` to enable
+  reliably detecting when a realtime streaming connection fails due to a change
+  in the Firebase Auth user.
+  ([#8604](https://github.com/firebase/firebase-android-sdk/pull/8604))
+- [changed] **Breaking change:** Added `@SubclassOptInRequired` to public
+  interfaces such as `FirebaseDataConnect` and `OperationRef`, requiring an
+  opt-in to implement or extend these interfaces.
+  ([#8603](https://github.com/firebase/firebase-android-sdk/pull/8603))
+- [changed] **Breaking change:** Replaced overloads in `DataConnectSettings` and
+  `QueryRef` with default arguments and default interface implementations to
+  provide a more idiomatic Kotlin API.
+  ([#8605](https://github.com/firebase/firebase-android-sdk/pull/8605))
+- [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
+  Protocol Buffers to `4.36.1`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+
+# 17.4.0
+
+- [changed] Add gRPC request header for platform name and SDK version
+  to enable metrics collection in Cloud Monitoring.
+  ([#8486](https://github.com/firebase/firebase-android-sdk/pull/8486),
+  [#8495](https://github.com/firebase/firebase-android-sdk/pull/8495))
+- [changed] Add grpc request header for SQL Connect server affinity, to improve
+  server resource usage efficiency and performance.
+  ([#8499](https://github.com/firebase/firebase-android-sdk/pull/8499))
+- [changed] Wait for 15 seconds before closing realtime streaming connection
+  with backend after last subscriber unsubscribes (instead of closing the
+  connection immediately).
+  ([#8481](https://github.com/firebase/firebase-android-sdk/pull/8481))
+
+# 17.3.3
+
 - [changed] Realtime query subscriptions now retry connecting using an
   exponential backoff strategy.
   ([#8381](https://github.com/firebase/firebase-android-sdk/pull/8381),

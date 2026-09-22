@@ -14,12 +14,12 @@
 
 package com.google.firebase.database.snapshot;
 
-import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a node together with an index. The index and node are updated in unison. In the case
@@ -100,7 +100,7 @@ public class IndexedNode implements Iterable<NamedNode> {
   @Override
   public Iterator<NamedNode> iterator() {
     ensureIndexed();
-    if (Objects.equal(this.indexed, FALLBACK_INDEX)) {
+    if (Objects.equals(this.indexed, FALLBACK_INDEX)) {
       return this.node.iterator();
     } else {
       return this.indexed.iterator();
@@ -109,7 +109,7 @@ public class IndexedNode implements Iterable<NamedNode> {
 
   public Iterator<NamedNode> reverseIterator() {
     ensureIndexed();
-    if (Objects.equal(this.indexed, FALLBACK_INDEX)) {
+    if (Objects.equals(this.indexed, FALLBACK_INDEX)) {
       return this.node.reverseIterator();
     } else {
       return this.indexed.reverseIterator();
@@ -118,10 +118,10 @@ public class IndexedNode implements Iterable<NamedNode> {
 
   public IndexedNode updateChild(ChildKey key, Node child) {
     Node newNode = this.node.updateImmediateChild(key, child);
-    if (Objects.equal(this.indexed, FALLBACK_INDEX) && !this.index.isDefinedOn(child)) {
+    if (Objects.equals(this.indexed, FALLBACK_INDEX) && !this.index.isDefinedOn(child)) {
       // doesn't affect the index, no need to create an index
       return new IndexedNode(newNode, this.index, FALLBACK_INDEX);
-    } else if (this.indexed == null || Objects.equal(this.indexed, FALLBACK_INDEX)) {
+    } else if (this.indexed == null || Objects.equals(this.indexed, FALLBACK_INDEX)) {
       // No need to index yet, index lazily
       return new IndexedNode(newNode, this.index, null);
     } else {
@@ -143,7 +143,7 @@ public class IndexedNode implements Iterable<NamedNode> {
       return null;
     } else {
       ensureIndexed();
-      if (Objects.equal(this.indexed, FALLBACK_INDEX)) {
+      if (Objects.equals(this.indexed, FALLBACK_INDEX)) {
         ChildKey firstKey = ((ChildrenNode) this.node).getFirstChildKey();
         return new NamedNode(firstKey, this.node.getImmediateChild(firstKey));
       } else {
@@ -157,7 +157,7 @@ public class IndexedNode implements Iterable<NamedNode> {
       return null;
     } else {
       ensureIndexed();
-      if (Objects.equal(this.indexed, FALLBACK_INDEX)) {
+      if (Objects.equals(this.indexed, FALLBACK_INDEX)) {
         ChildKey lastKey = ((ChildrenNode) this.node).getLastChildKey();
         return new NamedNode(lastKey, this.node.getImmediateChild(lastKey));
       } else {
@@ -171,7 +171,7 @@ public class IndexedNode implements Iterable<NamedNode> {
       throw new IllegalArgumentException("Index not available in IndexedNode!");
     }
     ensureIndexed();
-    if (Objects.equal(this.indexed, FALLBACK_INDEX)) {
+    if (Objects.equals(this.indexed, FALLBACK_INDEX)) {
       return this.node.getPredecessorChildKey(childKey);
     } else {
       NamedNode node = this.indexed.getPredecessorEntry(new NamedNode(childKey, childNode));

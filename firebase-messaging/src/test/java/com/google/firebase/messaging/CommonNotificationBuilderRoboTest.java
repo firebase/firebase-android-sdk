@@ -41,10 +41,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowPendingIntent;
 
-@LooperMode(LooperMode.Mode.LEGACY)
 @RunWith(RobolectricTestRunner.class)
 public class CommonNotificationBuilderRoboTest {
   public static final String FCM_FALLBACK_NOTIFICATION_CHANNEL =

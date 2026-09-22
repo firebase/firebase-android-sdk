@@ -28,6 +28,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -158,6 +159,50 @@ public class TopicSubscriptionClientRoboTest {
             IOException.class, () -> runOnBackground(() -> client.unsubscribe(TEST_TOPIC)));
     assertThat(exception.getMessage())
         .isEqualTo(TopicSubscriptionClient.ERROR_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  public void testSubscribe_success_closesInputStreamAndDisconnects() throws Exception {
+    CloseTrackingInputStream inputStream = new CloseTrackingInputStream();
+    when(mockConnection.getResponseCode()).thenReturn(200);
+    when(mockConnection.getInputStream()).thenReturn(inputStream);
+
+    runOnBackground(() -> client.subscribe(TEST_TOPIC));
+
+    assertThat(inputStream.isClosed()).isTrue();
+    verify(mockConnection).disconnect();
+  }
+
+  @Test
+  public void testSubscribe_failure404_closesErrorStreamAndDisconnects() throws Exception {
+    CloseTrackingInputStream errorStream = new CloseTrackingInputStream();
+    when(mockConnection.getResponseCode()).thenReturn(404);
+    when(mockConnection.getResponseMessage()).thenReturn("Not Found");
+    when(mockConnection.getInputStream()).thenThrow(new IOException("Error"));
+    when(mockConnection.getErrorStream()).thenReturn(errorStream);
+
+    assertThrows(IOException.class, () -> runOnBackground(() -> client.subscribe(TEST_TOPIC)));
+
+    assertThat(errorStream.isClosed()).isTrue();
+    verify(mockConnection).disconnect();
+  }
+
+  private static class CloseTrackingInputStream extends ByteArrayInputStream {
+    private boolean isClosed = false;
+
+    CloseTrackingInputStream() {
+      super(new byte[0]);
+    }
+
+    @Override
+    public void close() throws IOException {
+      isClosed = true;
+      super.close();
+    }
+
+    boolean isClosed() {
+      return isClosed;
+    }
   }
 
   private void runOnBackground(ThrowingRunnable runnable) throws Exception {

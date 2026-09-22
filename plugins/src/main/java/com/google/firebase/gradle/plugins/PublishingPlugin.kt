@@ -402,6 +402,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-inappmessaging-ktx",
           "com.google.firebase:firebase-installations-ktx",
           "com.google.firebase:firebase-messaging-ktx",
+          "com.google.firebase:firebase-ml-modeldownloader",
           "com.google.firebase:firebase-ml-modeldownloader-ktx",
           "com.google.firebase:firebase-perf-ktx",
           "com.google.firebase:firebase-storage-ktx",
@@ -665,8 +666,9 @@ abstract class PublishingPlugin : Plugin<Project> {
       currentRelease.convention(project.provideProperty("currentRelease"))
       pastRelease.convention(project.provideProperty("pastRelease"))
       printReleaseConfig.convention(project.provideProperty("printOutput"))
-      commitsToIgnoreFile.convention(project.layout.projectDirectory.file("ignoreCommits.txt"))
-
+      project.layout.projectDirectory.file("ignoreCommits.txt").let {
+        if (it.asFile.exists()) commitsToIgnoreFile.convention(it)
+      }
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
       releaseReportJsonFile.convention(
         project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE)
@@ -796,7 +798,6 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-installations",
         "com.google.firebase:firebase-messaging",
         "com.google.firebase:firebase-messaging-directboot",
-        "com.google.firebase:firebase-ml-modeldownloader",
         "com.google.firebase:firebase-perf",
         "com.google.firebase:firebase-storage",
         "com.google.firebase:firebase-ai",

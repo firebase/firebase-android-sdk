@@ -29,11 +29,50 @@ public class FirebaseSymbolProcessor(
   private val logger: KSPLogger,
 ) : SymbolProcessor {
   override fun process(resolver: Resolver): List<KSAnnotated> {
-    resolver
-      .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
-      .filterIsInstance<KSClassDeclaration>()
-      .map { it to SchemaSymbolProcessorVisitor(logger, codeGenerator) }
-      .forEach { (klass, visitor) -> visitor.visitClassDeclaration(klass, Unit) }
+    val generableClasses =
+      resolver
+        .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
+        .filterIsInstance<KSClassDeclaration>()
+        .toList()
+
+    if (generableClasses.isNotEmpty()) {
+      val hasMlKitOnClasspath =
+        resolver.getClassDeclarationByName(
+          resolver.getKSNameFromString("com.google.mlkit.genai.schema.guided.GenerableProvider")
+        ) != null
+
+      val visitor =
+        SchemaSymbolProcessorVisitor(
+          logger,
+          codeGenerator,
+          generateMlKitArtifacts = hasMlKitOnClasspath,
+        )
+      val providerClassNames = mutableListOf<String>()
+      val originatingFiles = mutableListOf<com.google.devtools.ksp.symbol.KSFile>()
+
+      generableClasses.forEach { klass ->
+        visitor.visitClassDeclaration(klass, Unit)
+        if (hasMlKitOnClasspath) {
+          providerClassNames.add(
+            "${klass.packageName.asString()}.${klass.getMlKitCompanionClassName()}Provider"
+          )
+          klass.containingFile?.let { originatingFiles.add(it) }
+        }
+      }
+
+      if (hasMlKitOnClasspath && providerClassNames.isNotEmpty() && originatingFiles.isNotEmpty()) {
+        val serviceFile =
+          codeGenerator.createNewFile(
+            com.google.devtools.ksp.processing.Dependencies(true, *originatingFiles.toTypedArray()),
+            "",
+            "META-INF/services/com.google.mlkit.genai.schema.guided.GenerableProvider",
+            ""
+          )
+        serviceFile.bufferedWriter().use { writer ->
+          providerClassNames.forEach { className -> writer.write("$className\n") }
+        }
+      }
+    }
 
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Tool")

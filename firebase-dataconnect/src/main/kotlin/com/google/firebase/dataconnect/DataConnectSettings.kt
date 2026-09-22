@@ -37,15 +37,8 @@ import java.util.Objects
 public class DataConnectSettings(
   public val host: String = "firebasedataconnect.googleapis.com",
   public val sslEnabled: Boolean = true,
-  public val cacheSettings: CacheSettings?,
+  public val cacheSettings: CacheSettings? = null,
 ) {
-
-  // TODO(BreakingChange): Delete this constructor and set the default value for `cacheSettings`
-  //  in the primary constructor.
-  public constructor(
-    host: String = "firebasedataconnect.googleapis.com",
-    sslEnabled: Boolean = true,
-  ) : this(host = host, sslEnabled = sslEnabled, cacheSettings = null)
 
   /**
    * Compares this object with another object for equality.
@@ -89,19 +82,10 @@ public class DataConnectSettings(
 }
 
 /** Creates and returns a new [DataConnectSettings] instance with the given property values. */
-// TODO(BreakingChange): Delete this method and set the default value for `cacheSettings` in the
-//  remaining copy() method.
 public fun DataConnectSettings.copy(
   host: String = this.host,
   sslEnabled: Boolean = this.sslEnabled,
-): DataConnectSettings =
-  DataConnectSettings(host = host, sslEnabled = sslEnabled, cacheSettings = cacheSettings)
-
-/** Creates and returns a new [DataConnectSettings] instance with the given property values. */
-public fun DataConnectSettings.copy(
-  host: String = this.host,
-  sslEnabled: Boolean = this.sslEnabled,
-  cacheSettings: CacheSettings?,
+  cacheSettings: CacheSettings? = this.cacheSettings,
 ): DataConnectSettings =
   DataConnectSettings(host = host, sslEnabled = sslEnabled, cacheSettings = cacheSettings)
 
