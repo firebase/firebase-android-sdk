@@ -1,0 +1,8 @@
+{
+    "name": "m187_0",
+    "libraries": [
+        ":firebase-annotations",
+        ":firebase-common",
+        ":firebase-components"
+    ]
+}
