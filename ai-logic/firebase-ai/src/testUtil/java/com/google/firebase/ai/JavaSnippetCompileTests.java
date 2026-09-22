@@ -53,7 +53,7 @@ public class JavaSnippetCompileTests {
 
   // Snippets
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#chat-use-template-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#chat-use-template-in-code
   public void template_chat() {
     // ...
 
@@ -85,7 +85,7 @@ public class JavaSnippetCompileTests {
         executor);
   }
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#function-calling-use-template-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#function-calling-use-template-in-code
   public void template_functionCallingSchemaInTemplate(String userMessage) {
     // ...
 
@@ -135,7 +135,7 @@ public class JavaSnippetCompileTests {
         executor);
   }
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#function-calling-schema-defined-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#function-calling-schema-defined-in-code
   public void template_functionCallingSchemaInCode() {
     TemplateFunctionDeclaration tool =
         new TemplateFunctionDeclaration(
