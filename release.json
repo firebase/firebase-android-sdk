@@ -1,0 +1,21 @@
+{
+    "name": "m187_0",
+    "libraries": [
+        ":firebase-annotations",
+        ":firebase-common",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-database",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":protolite-well-known-types",
+        ":ai-logic:firebase-ai"
+    ]
+}
