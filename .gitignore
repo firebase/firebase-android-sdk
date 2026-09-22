@@ -30,3 +30,7 @@ gha-creds-*.json
 
 # Jetski CLI artifacts
 .jetskicli/
+
+# Firebase Skills
+.firebase-sdk-skills/
+.agents/
