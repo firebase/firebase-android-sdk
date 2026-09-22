@@ -136,7 +136,7 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
  * The Firebase project has not been configured and enabled for the selected API.
  *
  * For the Gemini Developer API, see
- * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
+ * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting#error-genai-config-not-found)
  */
 public class APINotConfiguredException
 internal constructor(message: String, cause: Throwable? = null) :
