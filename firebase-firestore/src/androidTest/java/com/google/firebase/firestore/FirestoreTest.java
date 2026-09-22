@@ -1107,15 +1107,17 @@ public class FirestoreTest {
   @Test
   public void testRestartFirestoreLeadsToNewInstance() {
     FirebaseApp app = testFirebaseApp();
-    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app, BuildConfig.TARGET_DATABASE_ID);
     instance.setFirestoreSettings(newTestSettings());
-    FirebaseFirestore sameInstance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore sameInstance =
+        FirebaseFirestore.getInstance(app, BuildConfig.TARGET_DATABASE_ID);
 
     assertSame(instance, sameInstance);
     waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
 
     waitFor(instance.terminate());
-    FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore newInstance =
+        FirebaseFirestore.getInstance(app, BuildConfig.TARGET_DATABASE_ID);
     newInstance.setFirestoreSettings(newTestSettings());
 
     // Verify new instance works.
@@ -1130,7 +1132,7 @@ public class FirestoreTest {
   @Test
   public void testAppDeleteLeadsToFirestoreTerminate() {
     FirebaseApp app = testFirebaseApp();
-    FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore instance = FirebaseFirestore.getInstance(app, BuildConfig.TARGET_DATABASE_ID);
     instance.setFirestoreSettings(newTestSettings());
     waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
 
