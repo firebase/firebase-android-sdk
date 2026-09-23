@@ -375,7 +375,7 @@ internal class GenerativeModelTesting {
           CloudGenerativeModelProvider(
             TEST_MODEL_NAME,
             safetySettings = safetySettings,
-            generativeBackend = GenerativeBackend.agentPlatform("us-central1"),
+            generativeBackend = GenerativeBackend.enterprise("us-central1"),
             controller = apiController
           ),
         requestOptions = RequestOptions()

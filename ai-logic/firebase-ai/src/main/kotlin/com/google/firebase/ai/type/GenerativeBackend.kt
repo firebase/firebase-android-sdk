@@ -31,7 +31,7 @@ internal constructor(internal val location: String, internal val backend: Genera
     @Deprecated(
       "Use `enterprise` instead",
       ReplaceWith(
-        "geminiEnterprise(location)",
+        "enterprise(location)",
         "com.google.firebase.ai.type.GenerativeBackend.Companion.enterprise"
       )
     )
