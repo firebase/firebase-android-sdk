@@ -24,14 +24,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * The companion lifecycle manager for interacting with the crashlytics-otel native library. Exposes
- * thread-safe initialization, standard shutdown lifecycles, and returns a synchronized
+ * The companion lifecycle manager for interacting with the firebase telemetry persistence library
+ *
+ * Exposes thread-safe initialization, standard shutdown lifecycles, and returns a synchronized
  * [MutationContext] for safe span storage operations.
  */
-internal class CrashlyticsOtelContext private constructor() {
+internal class TelemetryContext private constructor() {
 
   companion object {
-    private const val LOG_TAG = "CrashlyticsOtelContext"
+    private const val LOG_TAG = "TelemetryContext"
     private val lock = ReentrantLock()
     private var mutationContext: MutationContext? = null
 

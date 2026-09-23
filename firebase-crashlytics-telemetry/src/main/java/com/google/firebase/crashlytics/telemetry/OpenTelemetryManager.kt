@@ -64,7 +64,7 @@ internal object OpenTelemetryManager {
     Log.d("OpenTelemetryManager", "mmap file: $mmapFileCurrent")
 
     val mutationContext =
-      CrashlyticsOtelContext.initialize(mmapFileCurrent.absolutePath, MmapSize.SMALL) {
+      TelemetryContext.initialize(mmapFileCurrent.absolutePath, MmapSize.SMALL) {
         recoveredSpans ->
         val recoverPreviousSpans = Firebase.crashlytics.didCrashOnPreviousExecution()
         if (recoverPreviousSpans) {
