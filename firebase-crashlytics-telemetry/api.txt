@@ -1,0 +1,25 @@
+// Signature format: 3.0
+package com.google.firebase.crashlytics.telemetry {
+
+  public final class FirebaseCrashlyticsTelemetry {
+    method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName);
+    method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName, String instrumentationScopeVersion);
+    field public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry.Companion Companion;
+  }
+
+  public static final class FirebaseCrashlyticsTelemetry.Companion {
+    method public com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getInstance();
+    property public final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry instance;
+  }
+
+  public final class FirebaseCrashlyticsTelemetryKt {
+    method public static com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getTelemetry(com.google.firebase.crashlytics.FirebaseCrashlytics);
+    method public static com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getTelemetry(com.google.firebase.Firebase);
+  }
+
+  public final class OtelOkHttpInterceptor implements okhttp3.Interceptor {
+    ctor public OtelOkHttpInterceptor(io.opentelemetry.api.OpenTelemetry openTelemetry);
+    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public okhttp3.Response intercept(okhttp3.Interceptor.Chain chain) throws java.io.IOException;
+  }
+
+}
