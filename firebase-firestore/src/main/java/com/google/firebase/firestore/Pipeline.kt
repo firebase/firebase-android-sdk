@@ -288,7 +288,7 @@ internal constructor(
    * Adds window function results to the output documents of the pipeline.
    *
    * @param window The specification defining how documents are partitioned, ordered, and bounded.
-   * @param field The first window field to add, specified as an [AliasedAggregate].
+   * @param field The first window field to add, specified as an [AliasedWindowFunction].
    * @param additionalFields Optional additional window fields to add to the documents.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
@@ -296,13 +296,22 @@ internal constructor(
     window: WindowSpec,
     field: AliasedWindowFunction,
     vararg additionalFields: Any
-  ): Pipeline = append(AddWindowFieldsStage.withWindow(window).withFields(field, *additionalFields))
+  ): Pipeline = append(AddWindowFieldsStage.of(window, field, *additionalFields))
 
+  /**
+   * Adds aggregate results to the output documents of the pipeline, evaluated over the given
+   * [WindowSpec].
+   *
+   * @param window The specification defining how documents are partitioned, ordered, and bounded.
+   * @param field The first window field to add, specified as an [AliasedAggregate].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun addWindowFields(
     window: WindowSpec,
     field: AliasedAggregate,
     vararg additionalFields: Any
-  ): Pipeline = append(AddWindowFieldsStage.withWindow(window).withFields(field, *additionalFields))
+  ): Pipeline = append(AddWindowFieldsStage.of(window, field, *additionalFields))
 
   /**
    * Adds window function results to the output documents of the pipeline, over a single global
@@ -313,7 +322,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun addWindowFields(field: AliasedWindowFunction, vararg additionalFields: Any): Pipeline =
-    append(AddWindowFieldsStage.withWindow(WindowSpec()).withFields(field, *additionalFields))
+    append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
 
   /**
    * Adds aggregate results to the output documents of the pipeline, over a single global window
@@ -324,7 +333,7 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun addWindowFields(field: AliasedAggregate, vararg additionalFields: Any): Pipeline =
-    append(AddWindowFieldsStage.withWindow(WindowSpec()).withFields(field, *additionalFields))
+    append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
 
   /**
    * Remove fields from outputs of previous stages.

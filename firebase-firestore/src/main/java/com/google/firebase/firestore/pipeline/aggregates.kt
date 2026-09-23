@@ -268,14 +268,12 @@ private constructor(
    * Applies a window frame to this aggregate, turning it into a window function.
    *
    * Use this to give a single accumulator its own framing, independent of the frame declared on the
-   * enclosing `addWindowFields` stage. Passing `null` (or omitting the argument) produces a window
-   * function that inherits the stage's window.
+   * enclosing `addWindowFields` stage.
    *
    * @param window The window specification to evaluate this aggregate over.
    * @return A new [WindowFunction] wrapping this aggregate.
    */
-  @JvmOverloads
-  fun over(window: WindowSpec? = null): WindowFunction = WindowFunction.fromAggregate(this, window)
+  fun over(window: WindowSpec): WindowFunction = WindowFunction.fromAggregate(this, window)
 
   internal fun canonicalId(): String = "$name(${params.joinToString(",") { it.canonicalId() }})"
 

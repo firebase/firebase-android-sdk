@@ -1737,112 +1737,73 @@ internal constructor(
   }
 }
 
+private fun associateWithoutDuplications(
+  fields: Array<out AliasedWindowFunction>,
+  userDataReader: UserDataReader
+): Map<String, Value> {
+  return fields.fold(HashMap<String, Value>()) { results, field ->
+    if (results.contains(field.alias)) {
+      throw IllegalArgumentException("Duplicate alias: '${field.alias}'")
+    }
+
+    results.set(field.alias, field.toProto(userDataReader))
+    results
+  }
+}
+
 internal class AddWindowFieldsStage
 internal constructor(
   private val window: WindowSpec,
-  private val fields: Map<String, Any>,
+  private val fields: Array<out AliasedWindowFunction>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AddWindowFieldsStage>("add_window_fields", options) {
-
-  fun withFields(field: Any, vararg additionalFields: Any): AddWindowFieldsStage {
-    val newFields = buildFieldsMap(field, *additionalFields)
-    newFields.keys.forEach { alias ->
-      if (fields.containsKey(alias)) {
-        throw IllegalArgumentException("Duplicate alias: '$alias'")
-      }
+  init {
+    val seenAliases = HashSet<String>()
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is reserved" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is reserved" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is reserved" })
+      require(seenAliases.add(alias), { "Duplicate alias: '$alias'" })
     }
-    return AddWindowFieldsStage(window, fields.plus(newFields), options)
   }
 
   companion object {
     @JvmStatic
-    fun withWindow(window: WindowSpec): AddWindowFieldsStage {
-      return AddWindowFieldsStage(window, emptyMap())
-    }
-
-    @JvmStatic
-    fun withFields(
-      field: AliasedWindowFunction,
-      vararg additionalFields: AliasedWindowFunction
-    ): AddWindowFieldsStage {
-      val fields = buildFieldsMap(field, *additionalFields)
-      return AddWindowFieldsStage(WindowSpec(), fields)
-    }
-
-    private fun buildFieldsMap(field: Any, vararg additionalFields: Any): Map<String, Any> {
-      return additionalFields.fold(mapOf(getAlias(field) to getExpr(field))) { acc, next ->
-        val alias = getAlias(next)
-        val expr = getExpr(next)
-        if (acc.containsKey(alias)) {
-          throw IllegalArgumentException("Duplicate alias: '$alias'")
-        }
-        acc.plus(alias to expr)
-      }
-    }
-
-    private fun getAlias(obj: Any): String {
-      return when (obj) {
-        is AliasedAggregate -> obj.alias
-        is AliasedWindowFunction -> obj.alias
-        else -> throw IllegalArgumentException("Unsupported field type: $obj")
-      }
-    }
-
-    private fun getExpr(obj: Any): Any {
-      return when (obj) {
-        is AliasedAggregate -> obj.expr
-        is AliasedWindowFunction -> obj.expr
-        else -> throw IllegalArgumentException("Unsupported field type: $obj")
-      }
-    }
+    fun of(window: WindowSpec, field: Any, vararg additionalFields: Any): AddWindowFieldsStage =
+      AddWindowFieldsStage(
+        window,
+        arrayOf(
+          AliasedWindowFunction.toAliasedWindowFunction(field),
+          *additionalFields.map(AliasedWindowFunction::toAliasedWindowFunction).toTypedArray()
+        )
+      )
   }
 
   override fun self(options: InternalOptions) = AddWindowFieldsStage(window, fields, options)
 
   override fun canonicalId(): String {
-    // Sorted by alias: `fields` is an order-insensitive Map for equality purposes, so the
-    // canonical form must not depend on insertion order.
-    val fieldsId =
-      fields.entries
-        .sortedBy { it.key }
-        .joinToString(",") { (alias, func) ->
-          val funcId =
-            when (func) {
-              is AggregateFunction -> func.canonicalId()
-              is WindowFunction -> func.canonicalId()
-              else -> throw IllegalArgumentException("Unsupported function: $func")
-            }
-          "$alias=$funcId"
-        }
-    return "$name(${window.canonicalId()},$fieldsId)"
+    return "${name}(${window.canonicalId()},${fields.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
       window.buildInternal(userDataReader),
-      encodeValue(
-        fields.mapValues { entry ->
-          when (val func = entry.value) {
-            is AggregateFunction -> func.toProto(userDataReader)
-            is WindowFunction -> func.toProto(userDataReader)
-            else -> throw IllegalArgumentException("Unsupported function: $func")
-          }
-        }
-      )
+      encodeValue(associateWithoutDuplications(fields, userDataReader))
     )
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is AddWindowFieldsStage) return false
     if (window != other.window) return false
-    if (fields != other.fields) return false
+    if (!fields.contentEquals(other.fields)) return false
     if (options != other.options) return false
     return true
   }
 
   override fun hashCode(): Int {
     var result = window.hashCode()
-    result = 31 * result + fields.hashCode()
+    result = 31 * result + fields.contentHashCode()
     result = 31 * result + options.hashCode()
     return result
   }

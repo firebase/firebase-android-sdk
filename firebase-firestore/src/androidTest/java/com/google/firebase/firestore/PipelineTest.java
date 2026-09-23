@@ -107,7 +107,6 @@ import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
-import com.google.firebase.firestore.pipeline.WindowFunction;
 import com.google.firebase.firestore.pipeline.WindowSpec;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Arrays;
@@ -4295,18 +4294,7 @@ public class PipelineTest {
 
   // -----------------------------------------------------------------------------------------
   // addWindowFields
-  //
-  // Ported from the JS SDK suites in
-  // packages/firestore/test/integration/api/pipeline.test.ts ("Pipeline window functions").
-  //
-  // Only `count(<field>)` is executable against the backend today. Every test that needs another
-  // window aggregator (`sum`, `average`, `countAll`, ...), a numeric `documents` offset, or a
-  // ranking function is marked @Ignore. That mirrors the `WINDOW_AGGREGATORS_SUPPORTED = false`
-  // gate in the JS suite; flip the annotations off once the backend support lands.
   // -----------------------------------------------------------------------------------------
-
-  private static final String WINDOW_GATED =
-      "Pending backend support for window aggregators, numeric document offsets and ranking.";
 
   /**
    * Shared fixture for the window tests.
@@ -4378,8 +4366,7 @@ public class PipelineTest {
 
   /**
    * Asserts that {@code results} contains exactly {@code expected}, in order, comparing whole
-   * documents. Mirrors {@code expectResults} in the JS integration tests, which is why every window
-   * test ends with a {@code select(...)} narrowing the document to the fields under test.
+   * documents.
    */
   private static void expectResults(
       List<PipelineResult> results, List<Map<String, Object>> expected) {
@@ -5032,13 +5019,6 @@ public class PipelineTest {
   }
 
   // --- error handling ----------------------------------------------------------------------------
-  //
-  // Two JS error tests have no Android counterpart and are deliberately not ported:
-  //   * "rejects specifying both 'documents' and 'range'" — the Android frame setters are a true
-  //     one-of, so the combination cannot be constructed (JS needs an `as any` cast).
-  //   * "rejects a 'unit' on a documents frame" — there is no documents-frame overload that takes
-  //     a unit, and the backend rejects the combination anyway.
-  // Both are covered instead by AddWindowFieldsProtoTest at the serialization level.
 
   @Test
   public void testWindowFieldsRejectsARangeFrameWithoutASort() {
@@ -5098,8 +5078,6 @@ public class PipelineTest {
 
   @Test
   public void testWindowFieldsRejectsAnUnrecognizedFrameBound() {
-    // The SDK passes unrecognized bound strings straight through, matching the JS SDK, so this is
-    // a backend rejection rather than a client-side one.
     CollectionReference salesCol = windowTestCollection();
     assertThrows(
         RuntimeException.class,
@@ -5137,16 +5115,7 @@ public class PipelineTest {
     assertThat(exception.getMessage().toLowerCase()).contains("unexpected field");
   }
 
-  // ===============================================================================================
-  // Backend-gated window tests.
-  //
-  // These mirror the JS suites guarded by `WINDOW_AGGREGATORS_SUPPORTED = false`. They need either
-  // a non-count window aggregator, a numeric `documents` offset, or a ranking function, none of
-  // which the backend executes yet.
-  // ===============================================================================================
-
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesSumAverageMinimumAndMaximum() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5176,7 +5145,7 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
+  @Ignore("Pending backend support for count_if and count_distinct in add_window_fields")
   public void testWindowFieldsComputesCountIfAndCountDistinct() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5216,7 +5185,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsAggregatesOverAComputedExpression() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5240,7 +5208,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesFirstAndLastOverThePartition() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5271,8 +5238,7 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
-  public void testWindowFieldsComputesArrayAggAndArrayAggDistinct() {
+  public void testWindowFieldsComputesArrayAgg() {
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
@@ -5281,23 +5247,40 @@ public class PipelineTest {
                 WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
                     .withPartition("product")
                     .withSort(ascending("date")),
-                AggregateFunction.arrayAgg("salesPrice").alias("allPrices"),
-                AggregateFunction.arrayAggDistinct("salesPrice").alias("distinctPrices"))
+                AggregateFunction.arrayAgg("salesPrice").alias("allPrices"))
             .sort(ascending("date"))
-            .select("product", "allPrices", "distinctPrices")
+            .select("product", "allPrices")
             .execute();
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(5);
 
     assertThat(results.get(0).getData().get("allPrices")).isEqualTo(Arrays.asList(12L, 30L));
-    assertThat(results.get(0).getData().get("distinctPrices")).isEqualTo(Arrays.asList(12L, 30L));
-
     assertThat(results.get(2).getData().get("allPrices")).isEqualTo(Arrays.asList(30L, 60L, 60L));
+  }
+
+  @Test
+  @Ignore("Pending backend support for array_agg_distinct in add_window_fields")
+  public void testWindowFieldsComputesArrayAggDistinct() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("date")),
+                AggregateFunction.arrayAggDistinct("salesPrice").alias("distinctPrices"))
+            .sort(ascending("date"))
+            .select("product", "distinctPrices")
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    assertThat(results.get(0).getData().get("distinctPrices")).isEqualTo(Arrays.asList(12L, 30L));
     assertThat(results.get(2).getData().get("distinctPrices")).isEqualTo(Arrays.asList(30L, 60L));
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesARunningTotal() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5321,7 +5304,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesACenteredMovingAverage() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5352,7 +5334,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesATrailingSum() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5375,7 +5356,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesALookAheadAverageWithANegativePrecedingBound() {
     // Equivalent to "documents between 1 following and 2 following": the window is
     // [index - preceding, index + following].
@@ -5411,7 +5391,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesAValueBasedRangeWindow() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5434,7 +5413,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesATrailingThreeDayTotal() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5457,7 +5435,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsComputesACumulativeTotalWithAnUnboundedDateRange() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5481,7 +5458,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsEvaluatesEachAggregateOverADifferentFrame() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5524,10 +5500,7 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsCountAllCountsEveryDocumentInTheWindow() {
-    // `countAll()` serializes to a zero argument `count` function, which the backend maps to
-    // `FunctionKind.COUNT_ALL`. The window function converter only handles `COUNT` today.
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
@@ -5547,11 +5520,7 @@ public class PipelineTest {
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L))));
   }
 
-  // Numeric `documents` offsets are gated even though they only use `count()`: every numeric
-  // documents bound (including `0`) currently fails with an INTERNAL error.
-
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsDocumentsZeroPrecedingAndZeroFollowing() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5574,7 +5543,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsDocumentsZeroPrecedingToUnboundedFollowing() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5597,7 +5565,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore(WINDOW_GATED)
   public void testWindowFieldsDocumentsSymmetricMovingWindow() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5617,50 +5584,5 @@ public class PipelineTest {
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 2L))));
-  }
-
-  @Test
-  @Ignore(WINDOW_GATED)
-  public void testWindowFieldsComputesRankDenseRankAndRowNumber() {
-    Task<Pipeline.Snapshot> execute =
-        firestore
-            .pipeline()
-            .collection(windowTestCollection())
-            .addWindowFields(
-                WindowSpec.sort(ascending("salesPrice"), ascending("date")),
-                WindowFunction.rank().alias("priceRank"),
-                WindowFunction.denseRank().alias("priceDenseRank"),
-                WindowFunction.rowNumber().alias("priceRowNumber"))
-            .sort(ascending("date"))
-            .select("salesPrice", "priceRank", "priceDenseRank", "priceRowNumber")
-            .execute();
-    expectResults(
-        waitFor(execute).getResults(),
-        Arrays.asList(
-            mapOfEntries(
-                entry("salesPrice", 12L),
-                entry("priceRank", 1L),
-                entry("priceDenseRank", 1L),
-                entry("priceRowNumber", 1L)),
-            mapOfEntries(
-                entry("salesPrice", 30L),
-                entry("priceRank", 2L),
-                entry("priceDenseRank", 2L),
-                entry("priceRowNumber", 2L)),
-            mapOfEntries(
-                entry("salesPrice", 30L),
-                entry("priceRank", 2L),
-                entry("priceDenseRank", 2L),
-                entry("priceRowNumber", 3L)),
-            mapOfEntries(
-                entry("salesPrice", 60L),
-                entry("priceRank", 4L),
-                entry("priceDenseRank", 3L),
-                entry("priceRowNumber", 4L)),
-            mapOfEntries(
-                entry("salesPrice", 60L),
-                entry("priceRank", 4L),
-                entry("priceDenseRank", 3L),
-                entry("priceRowNumber", 5L))));
   }
 }

@@ -14,26 +14,30 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firestore.v1.ArrayValue
-import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 
 class WindowSpec
 internal constructor(
   val partition: List<Expression> = emptyList(),
   val sort: List<Ordering> = emptyList(),
-  internal val documentsFrame: Pair<Any, Any>? = null,
-  internal val rangeFrame: Pair<Any, Any>? = null,
-  val unit: Any? = null
+  internal val documentsFrame: Frame? = null,
+  internal val rangeFrame: Frame? = null
 ) {
+
+  internal data class Frame(
+    val preceding: Expression,
+    val following: Expression,
+    val unit: Expression? = null
+  )
 
   /**
    * Creates an empty window spec: a single global partition covering the entire result set, with no
    * sort and no explicit frame.
    */
-  constructor() : this(emptyList(), emptyList(), null, null, null)
+  constructor() : this(emptyList(), emptyList(), null, null)
 
   /** Specify partition group columns. */
   @JvmName("withPartition")
@@ -42,8 +46,7 @@ internal constructor(
       resolveGroups(arrayOf(expression, *additionalExpressions)),
       this.sort,
       documentsFrame,
-      rangeFrame,
-      unit
+      rangeFrame
     )
 
   @JvmName("withPartition")
@@ -52,33 +55,37 @@ internal constructor(
       resolveGroups(arrayOf(fieldName, *additionalExpressions)),
       this.sort,
       documentsFrame,
-      rangeFrame,
-      unit
+      rangeFrame
     )
 
   /** Specify sort order for this window spec. */
   @JvmName("withSort")
   fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
-    WindowSpec(partition, listOf(order, *additionalOrders), documentsFrame, rangeFrame, unit)
+    WindowSpec(partition, listOf(order, *additionalOrders), documentsFrame, rangeFrame)
 
   @JvmName("withSort")
   fun sort(orders: List<Ordering>): WindowSpec =
-    WindowSpec(partition, orders, documentsFrame, rangeFrame, unit)
+    WindowSpec(partition, orders, documentsFrame, rangeFrame)
 
-  // A window has at most one frame: `documents` and `range` are mutually exclusive (the API
-  // proposal types them as a `OneOf`, and the backend rejects a spec carrying both). The frame
-  // setters therefore *replace* the whole frame state rather than merging into it, so the last
-  // call wins — `range(1, 2).documents(3, 4)` is a documents frame, exactly as
-  // `documents(1, 2).documents(3, 4)` is `documents(3, 4)`.
-  //
-  // Replacing the state also clears any `unit` carried by a previous `range(...)` call, since
-  // `unit` belongs to the range frame and is meaningless without it.
+  // A window has at most one frame: `documents` and `range` are mutually exclusive (the backend
+  // rejects a spec carrying both). The frame setters therefore *replace* the whole frame state
+  // rather than merging into it, so the last call wins — `range(1, 2).documents(3, 4)` is a
+  // documents frame, exactly as `documents(1, 2).documents(3, 4)` is `documents(3, 4)`.
 
   private fun withDocumentsFrame(preceding: Any, following: Any): WindowSpec =
-    WindowSpec(partition, sort, Pair(preceding, following), null, null)
+    WindowSpec(partition, sort, Frame(toBoundaryExpr(preceding), toBoundaryExpr(following)), null)
 
   private fun withRangeFrame(preceding: Any, following: Any, unit: Any?): WindowSpec =
-    WindowSpec(partition, sort, null, Pair(preceding, following), unit)
+    WindowSpec(
+      partition,
+      sort,
+      null,
+      Frame(
+        toBoundaryExpr(preceding),
+        toBoundaryExpr(following),
+        unit?.let(Expression::toExprOrConstant)
+      )
+    )
 
   /** Specify document-count based window frame. */
   @JvmName("withDocuments")
@@ -174,52 +181,35 @@ internal constructor(
     withRangeFrame(preceding, following, unit)
 
   internal fun buildInternal(userDataReader: UserDataReader): Value {
-    val builder = MapValue.newBuilder()
+    val fields = mutableMapOf<String, Value>()
 
     if (partition.isNotEmpty()) {
-      val array =
-        ArrayValue.newBuilder().addAllValues(partition.map { it.toProto(userDataReader) }).build()
-      builder.putFields("partition", Value.newBuilder().setArrayValue(array).build())
+      fields["partition"] = encodeValue(partition.map { it.toProto(userDataReader) })
     }
 
     if (sort.isNotEmpty()) {
-      val sortArray =
-        ArrayValue.newBuilder().addAllValues(sort.map { it.toProto(userDataReader) }).build()
-      builder.putFields("sort", Value.newBuilder().setArrayValue(sortArray).build())
+      fields["sort"] = encodeValue(sort.map { it.toProto(userDataReader) })
     }
 
-    documentsFrame?.let { (preceding, following) ->
-      builder.putFields("documents", frameToProto(preceding, following, userDataReader))
-    }
+    documentsFrame?.let { fields["documents"] = frameToProto(it, userDataReader) }
 
-    rangeFrame?.let { (preceding, following) ->
-      builder.putFields("range", frameToProto(preceding, following, userDataReader))
-    }
+    rangeFrame?.let { fields["range"] = frameToProto(it, userDataReader) }
 
-    return Value.newBuilder().setMapValue(builder).build()
+    return encodeValue(fields)
   }
 
   /**
    * Builds a frame `MapValue`. The `unit` is nested *inside* the frame, alongside `preceding` and
-   * `following`, matching the JS SDK wire format.
+   * `following`.
    */
-  private fun frameToProto(preceding: Any, following: Any, userDataReader: UserDataReader): Value {
-    val frame =
-      MapValue.newBuilder()
-        .putFields("preceding", boundaryToProto(preceding, userDataReader))
-        .putFields("following", boundaryToProto(following, userDataReader))
-
-    unit?.let {
-      val unitVal =
-        when (it) {
-          is Expression -> it.toProto(userDataReader)
-          is String -> encodeValue(it)
-          else -> throw IllegalArgumentException("Invalid range unit type: $it")
-        }
-      frame.putFields("unit", unitVal)
-    }
-
-    return Value.newBuilder().setMapValue(frame).build()
+  private fun frameToProto(frame: Frame, userDataReader: UserDataReader): Value {
+    val fields =
+      mutableMapOf(
+        "preceding" to frame.preceding.toProto(userDataReader),
+        "following" to frame.following.toProto(userDataReader)
+      )
+    frame.unit?.let { fields["unit"] = it.toProto(userDataReader) }
+    return encodeValue(fields)
   }
 
   /**
@@ -236,19 +226,16 @@ internal constructor(
     if (sort.isNotEmpty()) {
       parts.add("sort(${sort.joinToString(",") { it.canonicalId() }})")
     }
-    documentsFrame?.let { (preceding, following) ->
-      parts.add("documents(${boundaryCanonicalId(preceding)},${boundaryCanonicalId(following)})")
+    documentsFrame?.let {
+      parts.add("documents(${it.preceding.canonicalId()},${it.following.canonicalId()})")
     }
-    rangeFrame?.let { (preceding, following) ->
-      parts.add("range(${boundaryCanonicalId(preceding)},${boundaryCanonicalId(following)})")
+    rangeFrame?.let {
+      parts.add("range(${it.preceding.canonicalId()},${it.following.canonicalId()})")
+      it.unit?.let { unit -> parts.add("unit(${unit.canonicalId()})") }
     }
-    unit?.let { parts.add("unit(${boundaryCanonicalId(it)})") }
     return "window(${parts.joinToString("|")})"
   }
 
-  // Equality is defined via `canonicalId` rather than field-by-field. Frame bounds are typed `Any`
-  // and may hold boxed primitives, strings or expressions, so comparing the canonical form keeps
-  // equality consistent with what is actually sent on the wire.
   override fun equals(other: Any?): Boolean =
     this === other || (other is WindowSpec && canonicalId() == other.canonicalId())
 
@@ -275,79 +262,77 @@ internal constructor(
 
     @JvmStatic
     fun documents(preceding: Int, following: Int): WindowSpec =
-      WindowSpec(documentsFrame = Pair(preceding, following))
+      WindowSpec().documents(preceding, following)
 
     @JvmStatic
     fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
-      WindowSpec(documentsFrame = Pair(preceding, following))
+      WindowSpec().documents(preceding, following)
 
     @JvmStatic
     fun documents(preceding: Expression, following: Expression): WindowSpec =
-      WindowSpec(documentsFrame = Pair(preceding, following))
+      WindowSpec().documents(preceding, following)
 
     @JvmStatic
     fun documents(preceding: Any, following: Any): WindowSpec =
-      WindowSpec(documentsFrame = Pair(preceding, following))
+      WindowSpec().documents(preceding, following)
 
     @JvmStatic
-    fun range(preceding: Int, following: Int): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following))
+    fun range(preceding: Int, following: Int): WindowSpec = WindowSpec().range(preceding, following)
 
     @JvmStatic
     fun range(preceding: Int, following: Int, unit: String): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following))
+      WindowSpec().range(preceding, following)
 
     @JvmStatic
     fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Double, following: Double): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following))
+      WindowSpec().range(preceding, following)
 
     @JvmStatic
     fun range(preceding: Double, following: Double, unit: String): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
-    fun range(preceding: Any, following: Any): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following))
+    fun range(preceding: Any, following: Any): WindowSpec = WindowSpec().range(preceding, following)
 
     @JvmStatic
     fun range(preceding: Any, following: Any, unit: String): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Expression, following: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following))
+      WindowSpec().range(preceding, following)
 
     @JvmStatic
     fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
-      WindowSpec(rangeFrame = Pair(preceding, following), unit = unit)
+      WindowSpec().range(preceding, following, unit)
 
     @JvmStatic
     fun sort(order: Ordering, vararg additionalOrders: Ordering): WindowSpec =
@@ -361,38 +346,22 @@ internal fun resolveGroups(groups: Array<out Any>): List<Expression> {
   return groups.map {
     when (it) {
       is String -> Expression.field(it)
+      is FieldPath -> Expression.field(it)
       is Expression -> it
       else -> throw IllegalArgumentException("Invalid partition group type: $it")
     }
   }
 }
 
-/** Renders a frame boundary (or time unit) as a stable string for canonicalization. */
-internal fun boundaryCanonicalId(boundary: Any): String =
-  when (boundary) {
-    is Expression -> boundary.canonicalId()
-    is WindowBound -> boundary.wireName()
-    else -> boundary.toString()
-  }
-
 /**
- * Encodes a frame boundary.
+ * Converts a frame boundary into an [Expression].
  *
  * Symbolic bounds are expressed with [WindowBound] and encode as the strings `"current"` /
- * `"unbounded"`. Numbers always encode as numbers — in particular `0` is a genuine zero offset and
- * is *not* the same boundary as [WindowBound.CURRENT].
- *
- * Unrecognized strings are passed through and left for the backend to reject, matching the JS SDK,
- * which performs no client-side validation of boundary strings.
+ * `"unbounded"`. Other values are converted via [Expression.toExprOrConstant] — in particular `0`
+ * is a genuine zero offset and is *not* the same boundary as [WindowBound.CURRENT].
  */
-internal fun boundaryToProto(boundary: Any, userDataReader: UserDataReader): Value {
-  return when (boundary) {
-    is Expression -> boundary.toProto(userDataReader)
-    is WindowBound -> encodeValue(boundary.wireName())
-    is Int -> encodeValue(boundary.toLong())
-    is Long -> encodeValue(boundary)
-    is Double -> encodeValue(boundary)
-    is String -> encodeValue(boundary)
-    else -> throw IllegalArgumentException("Invalid boundary type: $boundary")
+private fun toBoundaryExpr(boundary: Any): Expression =
+  when (boundary) {
+    is WindowBound -> Expression.constant(boundary.wireName())
+    else -> Expression.toExprOrConstant(boundary)
   }
-}

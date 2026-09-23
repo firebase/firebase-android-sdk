@@ -149,7 +149,7 @@ class PipelineProtoTest {
     assertThat(rangeMap["preceding"]!!.integerValue).isEqualTo(30L)
     assertThat(rangeMap["following"]!!.stringValue).isEqualTo("current")
 
-    // Check unit. It is nested *inside* the range frame, matching the JS SDK wire format.
+    // Check unit. It is nested *inside* the range frame.
     assertThat(rangeMap["unit"]!!.stringValue).isEqualTo("day")
     assertThat(windowSpec).doesNotContainKey("unit")
 

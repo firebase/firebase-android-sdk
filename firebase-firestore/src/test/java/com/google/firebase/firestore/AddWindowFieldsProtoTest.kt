@@ -43,12 +43,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * Wire-format tests for the `add_window_fields` stage.
- *
- * Ported from the JS SDK's `packages/firestore/test/unit/lite-api/add_window_fields.test.ts`, and
- * deliberately kept in the same order and grouping so the two can be diffed against each other.
- */
+/** Wire-format tests for the `add_window_fields` stage. */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class AddWindowFieldsProtoTest {
@@ -787,7 +782,7 @@ class AddWindowFieldsProtoTest {
           basePipeline()
             .addWindowFields(
               WindowSpec.sort(field("date").ascending()),
-              sum("salesPrice").over().alias("total")
+              sum("salesPrice").alias("total")
             )
         )
       )
