@@ -1,6 +1,9 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
+- [changed] Deprecated `GenerativeBackend.agentPlatform` in favor of
+  `GenerativeBackend.enterprise` to reflect the renaming of Gemini Agent
+  Platform to Gemini Enterprise API. (#8640)
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
   prompt part types, or multiple image parts are requested. (#8617)
