@@ -1,6 +1,6 @@
 # Unreleased
 
-- [unchanged] Updated to keep [config] SDK versions aligned.
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
 
 # 16.0.0
 

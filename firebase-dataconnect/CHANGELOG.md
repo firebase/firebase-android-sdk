@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
 - [feature] **Breaking change:** Added `AuthUserChangedException` to enable
   reliably detecting when a realtime streaming connection fails due to a change
   in the Firebase Auth user.

@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
   prompt part types, or multiple image parts are requested. (#8617)

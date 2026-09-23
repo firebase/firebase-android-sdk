@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
+
 # 23.1.0
 
 - [fixed] Remote Config Realtime updates now trigger when a parameter's experiment

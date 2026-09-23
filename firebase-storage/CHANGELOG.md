@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
+
 # 22.0.2
 
 - [changed] Internal improvements for legacy infrastructure (#8551)

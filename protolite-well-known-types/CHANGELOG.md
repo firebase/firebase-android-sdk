@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
 - [changed] **Breaking change:** Updated Protocol Buffers dependency to
   `4.36.1` and Google Common Protos to `2.75.0`.
   ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))

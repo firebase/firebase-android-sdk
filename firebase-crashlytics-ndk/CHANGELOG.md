@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
+
 # 20.1.1
 
 - [changed] Enabled the Relocation Read-Only (RELRO) flag across Crashlytics NDK shared libraries,
