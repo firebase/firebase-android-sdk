@@ -1,6 +1,6 @@
 # Unreleased
 
-- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher.
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
   collection is enabled [#8549]
 - [fixed] Fixed event timestamps on ANR events [#8612]
@@ -317,7 +317,7 @@ Kotlin extensions library has no additional updates.
   <code>firebase-crashlytics-ktx</code> can cause a nondeterministic crash on
   startup. For more information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/4683"
-	 class="external">GitHub Issue #4683</a>. We recommend updating to the
+     class="external">GitHub Issue #4683</a>. We recommend updating to the
   latest version (v18.3.5+) which contains a fix.
 </aside>
 
@@ -702,16 +702,16 @@ name change. The following release notes describe changes in the new SDK.
 <aside class="note"><p>The changes in these release notes are only relevant to
   [crashlytics] users who are upgrading from the legacy Fabric SDK.</p>
   <ul>
-	<li>If you're using [crashlytics] for NDK crash reporting in your app for
-	  the first time, follow the
-	  <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
-	started instructions</a>.
-	</li>
-	<li>If you're upgrading from the legacy Fabric SDK to the
-	  [firebase_crashlytics] SDK, follow the
-	  <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
-	instructions</a> to update your app with the following SDK changes.
-	</li>
+    <li>If you're using [crashlytics] for NDK crash reporting in your app for
+      the first time, follow the
+      <a href="/docs/crashlytics/get-started-new-sdk?platform=android">getting
+    started instructions</a>.
+    </li>
+    <li>If you're upgrading from the legacy Fabric SDK to the
+      [firebase_crashlytics] SDK, follow the
+      <a href="/docs/crashlytics/upgrade-sdk?platform=android">upgrade
+    instructions</a> to update your app with the following SDK changes.
+    </li>
   </ul>
 </aside>
 
