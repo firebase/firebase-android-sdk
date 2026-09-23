@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Deprecated `GenerativeBackend.agentPlatform` in favor of
+  `GenerativeBackend.enterprise` to reflect the renaming of Gemini Agent
+  Platform to Gemini Enterprise API. (#8437)
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
   prompt part types, or multiple image parts are requested. (#8617)
