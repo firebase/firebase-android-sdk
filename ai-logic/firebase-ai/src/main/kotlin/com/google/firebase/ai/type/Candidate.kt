@@ -395,13 +395,13 @@ public class FinishReason private constructor(public val name: String, public va
  * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
- * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
+ * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
  * within the Service Specific Terms).
  *
  * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
  * Maps" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
- * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
+ * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
  * within the Service Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
@@ -517,7 +517,7 @@ internal constructor(
  * @property uri The URI of the retrieved web page.
  * @property title The title of the retrieved web page.
  * @property domain The domain of the original URI from which the content was retrieved. This is
- * only populated when using the Vertex AI Gemini API.
+ * only populated when using the Gemini Enterprise API.
  */
 public class WebGroundingChunk
 internal constructor(

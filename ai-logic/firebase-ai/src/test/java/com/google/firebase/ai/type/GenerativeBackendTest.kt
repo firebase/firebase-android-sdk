@@ -27,14 +27,14 @@ internal class GenerativeBackendTest {
   fun `agentPlatform default location`() {
     val backend = GenerativeBackend.agentPlatform()
     backend.location shouldBe "global"
-    backend.backend shouldBe GenerativeBackendEnum.AGENT_PLATFORM
+    backend.backend shouldBe GenerativeBackendEnum.ENTERPRISE
   }
 
   @Test
   fun `agentPlatform custom location`() {
     val backend = GenerativeBackend.agentPlatform("europe-west1")
     backend.location shouldBe "europe-west1"
-    backend.backend shouldBe GenerativeBackendEnum.AGENT_PLATFORM
+    backend.backend shouldBe GenerativeBackendEnum.ENTERPRISE
   }
 
   @Test

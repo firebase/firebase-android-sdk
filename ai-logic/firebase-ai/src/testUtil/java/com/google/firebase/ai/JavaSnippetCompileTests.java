@@ -40,7 +40,7 @@ import kotlinx.serialization.json.JsonObject;
 import kotlinx.serialization.json.JsonPrimitive;
 
 /**
- * Contains various Java snippets used in documentation for Gemini/Vertex AI.
+ * Contains various Java snippets used in documentation for Gemini/Gemini Enterprise.
  * Compilation is a good litmus test that the snippets are sane.
  */
 public class JavaSnippetCompileTests {
@@ -57,7 +57,7 @@ public class JavaSnippetCompileTests {
   public void template_chat() {
     // ...
 
-    // Initialize the Agent Platform backend service.
+    // Initialize the Gemini Enterprise API backend service.
     TemplateGenerativeModel templateModel =
         FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
     // Initialize TemplateChat with history and inputs
@@ -89,7 +89,7 @@ public class JavaSnippetCompileTests {
   public void template_functionCallingSchemaInTemplate(String userMessage) {
     // ...
 
-    // Initialize the Agent Platform backend service.
+    // Initialize the Gemini Enterprise API backend service.
     // Create a `TemplateGenerativeModel` instance.
     TemplateGenerativeModel model =
         FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
