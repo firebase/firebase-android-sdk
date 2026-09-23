@@ -17,48 +17,35 @@
 package com.google.firebase.crashlytics.telemetry
 
 import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
 
 /** Main entry point for Firebase Crashlytics Telemetry SDK. */
 public class FirebaseCrashlyticsTelemetry
-internal constructor(
-  private val openTelemetry: OpenTelemetry,
-) {
+internal constructor(private val openTelemetry: OpenTelemetry) {
   public fun getTracer(instrumentationScopeName: String): Tracer {
     return openTelemetry.getTracer(instrumentationScopeName)
   }
 
   public fun getTracer(
     instrumentationScopeName: String,
-    instrumentationScopeVersion: String
+    instrumentationScopeVersion: String,
   ): Tracer {
     return openTelemetry.getTracer(instrumentationScopeName, instrumentationScopeVersion)
   }
 
   public companion object {
-    @JvmStatic
-    public fun getInstance(): FirebaseCrashlyticsTelemetry {
-      return FirebaseCrashlyticsTelemetry(OpenTelemetryManager.instance)
-    }
-
-    @JvmStatic
-    public fun getInstance(app: FirebaseApp): FirebaseCrashlyticsTelemetry {
-      return FirebaseCrashlyticsTelemetry(OpenTelemetryManager.instance)
-    }
+    public val instance: FirebaseCrashlyticsTelemetry =
+      Firebase.app[FirebaseCrashlyticsTelemetry::class.java]
   }
 }
 
 /** Access the FirebaseCrashlyticsTelemetry instance for the default FirebaseApp. */
 public val Firebase.telemetry: FirebaseCrashlyticsTelemetry
-  get() = FirebaseCrashlyticsTelemetry.getInstance()
+  get() = FirebaseCrashlyticsTelemetry.instance
 
 /** Access the FirebaseCrashlyticsTelemetry instance from FirebaseCrashlytics. */
 public val FirebaseCrashlytics.telemetry: FirebaseCrashlyticsTelemetry
-  get() = FirebaseCrashlyticsTelemetry.getInstance()
-
-/** Access the FirebaseCrashlyticsTelemetry instance for a specific FirebaseApp. */
-public fun Firebase.telemetry(app: FirebaseApp): FirebaseCrashlyticsTelemetry =
-  FirebaseCrashlyticsTelemetry.getInstance(app)
+  get() = FirebaseCrashlyticsTelemetry.instance
