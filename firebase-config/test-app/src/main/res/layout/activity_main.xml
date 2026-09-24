@@ -39,47 +39,118 @@
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toTopOf="parent">
 
+    <ScrollView
+        android:id="@+id/scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:layout_margin="16dp"
+        android:background="#DADADA">
+      <TextView
+          android:id="@+id/log_window"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_margin="16dp"
+          android:fontFamily="monospace"
+          android:hint="@string/app_name" />
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+      <Button
+          android:id="@+id/get_config_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin = "5dp"
+          android:layout_weight="1"
+          android:text="@string/get_active_config" />
+
+      <Button
+          android:id="@+id/clear_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin = "5dp"
+          android:layout_weight="1"
+          android:backgroundTint="@color/cardview_dark_background"
+          android:text="@string/clear" />
+    </LinearLayout>
+
     <Button
-        android:id="@+id/fetch_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="5dp"
-        android:layout_marginLeft="5dp"
-        android:layout_marginEnd="5dp"
-        android:layout_marginRight="5dp"
+        android:id="@+id/fetch_and_activate_button"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_margin = "5dp"
         android:layout_weight="1"
-        android:text="@string/fetch_config" />
+        android:text="@string/fetch_and_activate_config"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+      <Button
+          android:id="@+id/fetch_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin = "5dp"
+          android:layout_weight="1"
+          android:text="@string/fetch_config" />
+
+      <Button
+          android:id="@+id/activate_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin = "5dp"
+          android:layout_weight="1"
+          android:text="@string/activate_config" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/crashlytics_label"
+        android:padding="3dip" />
+
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:orientation="horizontal">
 
     <Button
         android:id="@+id/jvm_crash_button"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginStart="5dp"
-        android:layout_marginLeft="5dp"
         android:layout_marginEnd="5dp"
-        android:layout_marginRight="5dp"
         android:layout_weight="1"
         android:text="@string/jvm_crash" />
 
     <Button
         android:id="@+id/anr_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="5dp"
+        android:minWidth="100dp"
         android:layout_weight="1"
         android:text="@string/anr" />
 
     <Button
         android:id="@+id/on_demand_fatal_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="5dp"
         android:layout_weight="1"
         android:text="@string/on_demand_fatal" />
 
     <Button
         android:id="@+id/non_fatal_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="5dp"
         android:layout_weight="1"
         android:text="@string/non_fatal" />
+    </LinearLayout>
   </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
