@@ -24,11 +24,13 @@ import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
+import com.google.firebase.firestore.pipeline.AddWindowFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.AggregateOptions
 import com.google.firebase.firestore.pipeline.AggregateStage
 import com.google.firebase.firestore.pipeline.AliasedAggregate
 import com.google.firebase.firestore.pipeline.AliasedExpression
+import com.google.firebase.firestore.pipeline.AliasedWindowFunction
 import com.google.firebase.firestore.pipeline.BooleanExpression
 import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
@@ -62,6 +64,7 @@ import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.pipeline.WindowSpec
 import com.google.firebase.firestore.pipeline.evaluation.notImplemented
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
@@ -280,6 +283,57 @@ internal constructor(
    */
   fun addFields(field: Selectable, vararg additionalFields: Selectable): Pipeline =
     append(AddFieldsStage(arrayOf(field, *additionalFields)))
+
+  /**
+   * Adds window function results to the output documents of the pipeline.
+   *
+   * @param window The specification defining how documents are partitioned, ordered, and bounded.
+   * @param field The first window field to add, specified as an [AliasedWindowFunction].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addWindowFields(
+    window: WindowSpec,
+    field: AliasedWindowFunction,
+    vararg additionalFields: Any
+  ): Pipeline = append(AddWindowFieldsStage.of(window, field, *additionalFields))
+
+  /**
+   * Adds aggregate results to the output documents of the pipeline, evaluated over the given
+   * [WindowSpec].
+   *
+   * @param window The specification defining how documents are partitioned, ordered, and bounded.
+   * @param field The first window field to add, specified as an [AliasedAggregate].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addWindowFields(
+    window: WindowSpec,
+    field: AliasedAggregate,
+    vararg additionalFields: Any
+  ): Pipeline = append(AddWindowFieldsStage.of(window, field, *additionalFields))
+
+  /**
+   * Adds window function results to the output documents of the pipeline, over a single global
+   * window covering the entire result set.
+   *
+   * @param field The first window field to add, specified as an [AliasedWindowFunction].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addWindowFields(field: AliasedWindowFunction, vararg additionalFields: Any): Pipeline =
+    append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
+
+  /**
+   * Adds aggregate results to the output documents of the pipeline, over a single global window
+   * covering the entire result set.
+   *
+   * @param field The first window field to add, specified as an [AliasedAggregate].
+   * @param additionalFields Optional additional window fields to add to the documents.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun addWindowFields(field: AliasedAggregate, vararg additionalFields: Any): Pipeline =
+    append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
 
   /**
    * Remove fields from outputs of previous stages.

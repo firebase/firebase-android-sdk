@@ -107,6 +107,7 @@ import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
+import com.google.firebase.firestore.pipeline.WindowSpec;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -4289,5 +4290,1299 @@ public class PipelineTest {
       res.put(entry.getKey(), entry.getValue());
     }
     return Collections.unmodifiableMap(res);
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // addWindowFields
+  // -----------------------------------------------------------------------------------------
+
+  /**
+   * Shared fixture for the window tests.
+   *
+   * <p>The sales are deliberately constructed so that:
+   *
+   * <ul>
+   *   <li>{@code product} and {@code region} give overlapping, non-nested partitions,
+   *   <li>{@code salesPrice} has ties (30 and 60 both appear twice), which exercises {@code range}
+   *       framing and ranking peers, and
+   *   <li>{@code date} is strictly increasing and has an 11 day gap before the final sale, which
+   *       exercises time based {@code range} framing.
+   * </ul>
+   *
+   * <p>Sorted by {@code date} the document order is always sale1, sale2, sale3, sale4, sale5.
+   */
+  private static Map<String, Map<String, Object>> windowTestDocs() {
+    return mapOfEntries(
+        // 2026-07-01T12:00:00Z
+        entry(
+            "sale1",
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("region", "east"),
+                entry("salesPrice", 12),
+                entry("quantity", 1),
+                entry("date", new Timestamp(1782907200L, 0)))),
+        // 2026-07-02T12:00:00Z
+        entry(
+            "sale2",
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("region", "west"),
+                entry("salesPrice", 30),
+                entry("quantity", 2),
+                entry("date", new Timestamp(1782993600L, 0)))),
+        // 2026-07-02T18:00:00Z
+        entry(
+            "sale3",
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "east"),
+                entry("salesPrice", 30),
+                entry("quantity", 3),
+                entry("date", new Timestamp(1783015200L, 0)))),
+        // 2026-07-04T12:00:00Z
+        entry(
+            "sale4",
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "west"),
+                entry("salesPrice", 60),
+                entry("quantity", 4),
+                entry("date", new Timestamp(1783166400L, 0)))),
+        // 2026-07-15T12:00:00Z
+        entry(
+            "sale5",
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "east"),
+                entry("salesPrice", 60),
+                entry("quantity", 5),
+                entry("date", new Timestamp(1784116800L, 0)))));
+  }
+
+  private static CollectionReference windowTestCollection() {
+    return IntegrationTestUtil.testCollectionWithDocs(windowTestDocs());
+  }
+
+  /**
+   * Asserts that {@code results} contains exactly {@code expected}, in order, comparing whole
+   * documents.
+   */
+  private static void expectResults(
+      List<PipelineResult> results, List<Map<String, Object>> expected) {
+    assertThat(results).hasSize(expected.size());
+    for (int i = 0; i < expected.size(); i++) {
+      assertThat(results.get(i).getData()).isEqualTo(expected.get(i));
+    }
+  }
+
+  // --- partitioning --------------------------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsEmptySpecIsASingleGlobalWindow() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                new WindowSpec(), AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L))));
+  }
+
+  @Test
+  public void testWindowFieldsOmittedSpecIsASingleGlobalWindow() {
+    // The no-window overload is Android-only sugar for `new WindowSpec()`.
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L))));
+  }
+
+  @Test
+  public void testWindowFieldsPartitionsBySingleFieldName() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsPartitionsByMultipleFields() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product", "region"),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "region", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("region", "east"), entry("windowCount", 1L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("region", "west"), entry("windowCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("region", "east"), entry("windowCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("region", "west"), entry("windowCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("region", "east"), entry("windowCount", 2L))));
+  }
+
+  @Test
+  public void testWindowFieldsPartitionsByExpression() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition(Expression.toUpper("region")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("region", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("region", "east"), entry("windowCount", 3L)),
+            mapOfEntries(entry("region", "west"), entry("windowCount", 2L)),
+            mapOfEntries(entry("region", "east"), entry("windowCount", 3L)),
+            mapOfEntries(entry("region", "west"), entry("windowCount", 2L)),
+            mapOfEntries(entry("region", "east"), entry("windowCount", 3L))));
+  }
+
+  // --- sorting and default framing -----------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsRunningCountWithTheDefaultFrame() {
+    // The implicit default frame is a `range` frame, so the sort key must be numeric. `quantity`
+    // is 1..5 in the same order as `date`, and has no ties, so the running count is unambiguous.
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.sort(ascending("quantity")),
+                AggregateFunction.count("quantity").alias("runningCount"))
+            .sort(ascending("date"))
+            .select("product", "runningCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 5L))));
+  }
+
+  @Test
+  public void testWindowFieldsRunningCountWithinEachPartition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product").withSort(ascending("quantity")),
+                AggregateFunction.count("quantity").alias("runningCount"))
+            .sort(ascending("date"))
+            .select("product", "runningCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsHonorsADescendingSort() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.sort(descending("date"))
+                    .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                AggregateFunction.count("quantity").alias("runningCount"))
+            .sort(ascending("date"))
+            .select("product", "runningCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 5L)),
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 1L))));
+  }
+
+  @Test
+  public void testWindowFieldsHonorsMultipleSortOrderings() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.sort(ascending("product"), ascending("date"))
+                    .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                AggregateFunction.count("quantity").alias("runningCount"))
+            .sort(ascending("date"))
+            .select("product", "runningCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("runningCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningCount", 5L))));
+  }
+
+  // --- documents framing ---------------------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsDocumentsUnboundedToCurrent() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
+                    .withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 5L))));
+  }
+
+  @Test
+  public void testWindowFieldsDocumentsUnboundedToUnbounded() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsDocumentsCurrentToCurrent() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.CURRENT, WindowSpec.CURRENT)
+                    .withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L))));
+  }
+
+  // --- range framing -------------------------------------------------------------------------
+  //
+  // In a `range` frame the CURRENT bound resolves to the current document only. A numeric `0`
+  // offset is what widens the frame to every document with an equal sort value (the SQL "peer
+  // group"). The two tests below are the executable proof that CURRENT and 0 are different
+  // boundaries, which is why WindowBound exists.
+
+  @Test
+  public void testWindowFieldsRangeCurrentToCurrentCountsOnlyTheCurrentDocument() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT)
+                    .withPartition("product")
+                    .withSort(ascending("salesPrice")),
+                AggregateFunction.count("quantity").alias("samePriceCount"))
+            .sort(ascending("date"))
+            .select("product", "salesPrice", "samePriceCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("salesPrice", 60L),
+                entry("samePriceCount", 1L))));
+  }
+
+  @Test
+  public void testWindowFieldsRangeZeroOffsetCountsTiedPeers() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(0, 0).withPartition("product").withSort(ascending("salesPrice")),
+                AggregateFunction.count("quantity").alias("samePriceCount"))
+            .sort(ascending("date"))
+            .select("product", "salesPrice", "samePriceCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("salesPrice", 60L),
+                entry("samePriceCount", 2L))));
+  }
+
+  @Test
+  public void testWindowFieldsRangeUnboundedToZeroOffsetIncludesTiedPeers() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.UNBOUNDED, 0).withSort(ascending("salesPrice")),
+                AggregateFunction.count("quantity").alias("cumulativeCount"))
+            .sort(ascending("date"))
+            .select("salesPrice", "cumulativeCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("salesPrice", 12L), entry("cumulativeCount", 1L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("cumulativeCount", 3L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("cumulativeCount", 3L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("cumulativeCount", 5L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("cumulativeCount", 5L))));
+  }
+
+  @Test
+  public void testWindowFieldsRangeUnboundedToUnbounded() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("salesPrice")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsRangeWithATimeUnitOnADateSort() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT, "day")
+                    .withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("cumulativeCount"))
+            .sort(ascending("date"))
+            .select("product", "cumulativeCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("cumulativeCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("cumulativeCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeCount", 5L))));
+  }
+
+  // --- accumulator level framing ---------------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsEvaluatesEachAccumulatorOverItsOwnFrame() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product").withSort(ascending("date")),
+                AggregateFunction.count("quantity")
+                    .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                    .alias("runningCount"),
+                AggregateFunction.count("quantity")
+                    .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED))
+                    .alias("partitionCount"))
+            .sort(ascending("date"))
+            .select("product", "runningCount", "partitionCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("runningCount", 1L), entry("partitionCount", 2L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("runningCount", 2L), entry("partitionCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("runningCount", 1L), entry("partitionCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("runningCount", 2L), entry("partitionCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("runningCount", 3L),
+                entry("partitionCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsSupportsARangeFrameInOver() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product").withSort(ascending("salesPrice")),
+                AggregateFunction.count("quantity")
+                    .over(WindowSpec.range(0, 0))
+                    .alias("samePriceCount"))
+            .sort(ascending("date"))
+            .select("product", "salesPrice", "samePriceCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 12L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 30L), entry("samePriceCount", 1L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("salesPrice", 60L), entry("samePriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("salesPrice", 60L),
+                entry("samePriceCount", 2L))));
+  }
+
+  // --- output fields and composition -----------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsSupportsMultipleOutputFieldsInASingleStage() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("productCount"),
+                AggregateFunction.count("quantity").alias("productCountCopy"))
+            .sort(ascending("date"))
+            .select("product", "productCount", "productCountCopy")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("productCount", 2L),
+                entry("productCountCopy", 2L)),
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("productCount", 2L),
+                entry("productCountCopy", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("productCount", 3L),
+                entry("productCountCopy", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("productCount", 3L),
+                entry("productCountCopy", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("productCount", 3L),
+                entry("productCountCopy", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsSupportsNestedOutputFieldPaths() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("stats.productCount"))
+            .sort(ascending("date"))
+            .select("product", "stats")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("stats", mapOfEntries(entry("productCount", 2L)))),
+            mapOfEntries(
+                entry("product", "phone"), entry("stats", mapOfEntries(entry("productCount", 2L)))),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("stats", mapOfEntries(entry("productCount", 3L)))),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("stats", mapOfEntries(entry("productCount", 3L)))),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("stats", mapOfEntries(entry("productCount", 3L))))));
+  }
+
+  @Test
+  public void testWindowFieldsSupportsChainingMultipleStages() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("productCount"))
+            .addWindowFields(
+                WindowSpec.partition("region"),
+                AggregateFunction.count("quantity").alias("regionCount"))
+            .sort(ascending("date"))
+            .select("product", "region", "productCount", "regionCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("region", "east"),
+                entry("productCount", 2L),
+                entry("regionCount", 3L)),
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("region", "west"),
+                entry("productCount", 2L),
+                entry("regionCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "east"),
+                entry("productCount", 3L),
+                entry("regionCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "west"),
+                entry("productCount", 3L),
+                entry("regionCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("region", "east"),
+                entry("productCount", 3L),
+                entry("regionCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsSupportsFilteringOnAWindowFieldInALaterStage() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("productCount"))
+            .where(field("productCount").greaterThan(2))
+            .sort(ascending("date"))
+            .select("product", "productCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsSupportsSortingOnAWindowFieldInALaterStage() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.count("quantity").alias("productCount"))
+            .sort(ascending("productCount"), ascending("date"))
+            .select("product", "productCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("productCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("productCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("productCount", 3L))));
+  }
+
+  // --- error handling ----------------------------------------------------------------------------
+
+  @Test
+  public void testWindowFieldsRejectsARangeFrameWithoutASort() {
+    CollectionReference salesCol = windowTestCollection();
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                waitFor(
+                    firestore
+                        .pipeline()
+                        .collection(salesCol)
+                        .addWindowFields(
+                            WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                            AggregateFunction.count("quantity").alias("windowCount"))
+                        .execute()));
+    assertThat(exception.getMessage().toLowerCase()).contains("range");
+  }
+
+  @Test
+  public void testWindowFieldsRejectsMixingStageAndAccumulatorFraming() {
+    CollectionReference salesCol = windowTestCollection();
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            waitFor(
+                firestore
+                    .pipeline()
+                    .collection(salesCol)
+                    .addWindowFields(
+                        WindowSpec.sort(ascending("date"))
+                            .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT),
+                        AggregateFunction.count("quantity")
+                            .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED))
+                            .alias("windowCount"))
+                    .execute()));
+  }
+
+  @Test
+  public void testWindowFieldsRejectsPartiallySpecifiedAccumulatorFraming() {
+    CollectionReference salesCol = windowTestCollection();
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            waitFor(
+                firestore
+                    .pipeline()
+                    .collection(salesCol)
+                    .addWindowFields(
+                        WindowSpec.sort(ascending("date")),
+                        AggregateFunction.count("quantity")
+                            .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                            .alias("framed"),
+                        AggregateFunction.count("quantity").alias("unframed"))
+                    .execute()));
+  }
+
+  @Test
+  public void testWindowFieldsRejectsAnUnrecognizedFrameBound() {
+    CollectionReference salesCol = windowTestCollection();
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            waitFor(
+                firestore
+                    .pipeline()
+                    .collection(salesCol)
+                    .addWindowFields(
+                        WindowSpec.documents("infinite", WindowSpec.CURRENT)
+                            .withSort(ascending("quantity")),
+                        AggregateFunction.count("quantity").alias("windowCount"))
+                    .execute()));
+  }
+
+  @Test
+  public void testWindowFieldsRejectsAPartitionSuppliedToAnAccumulatorLevelOver() {
+    CollectionReference salesCol = windowTestCollection();
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                waitFor(
+                    firestore
+                        .pipeline()
+                        .collection(salesCol)
+                        .addWindowFields(
+                            WindowSpec.sort(ascending("quantity")),
+                            AggregateFunction.count("quantity")
+                                .over(
+                                    WindowSpec.partition("product")
+                                        .withDocuments(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                                .alias("windowCount"))
+                        .execute()));
+    assertThat(exception.getMessage().toLowerCase()).contains("unexpected field");
+  }
+
+  @Test
+  public void testWindowFieldsComputesSumAverageMinimumAndMaximum() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.sum("salesPrice").alias("total"),
+                AggregateFunction.average("salesPrice").alias("averagePrice"),
+                AggregateFunction.minimum("salesPrice").alias("minimumPrice"),
+                AggregateFunction.maximum("salesPrice").alias("maximumPrice"))
+            .sort(ascending("date"))
+            .select("product", "total", "averagePrice", "minimumPrice", "maximumPrice")
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    assertThat(results.get(0).getData().get("total")).isEqualTo(42L);
+    assertThat(results.get(0).getData().get("averagePrice")).isEqualTo(21.0);
+    assertThat(results.get(0).getData().get("minimumPrice")).isEqualTo(12L);
+    assertThat(results.get(0).getData().get("maximumPrice")).isEqualTo(30L);
+
+    assertThat(results.get(2).getData().get("total")).isEqualTo(150L);
+    assertThat(results.get(2).getData().get("averagePrice")).isEqualTo(50.0);
+    assertThat(results.get(2).getData().get("minimumPrice")).isEqualTo(30L);
+    assertThat(results.get(2).getData().get("maximumPrice")).isEqualTo(60L);
+  }
+
+  @Test
+  @Ignore("Pending backend support for count_if and count_distinct in add_window_fields")
+  public void testWindowFieldsComputesCountIfAndCountDistinct() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.countIf(field("salesPrice").greaterThan(20))
+                    .alias("expensiveCount"),
+                AggregateFunction.countDistinct("salesPrice").alias("distinctPriceCount"))
+            .sort(ascending("date"))
+            .select("product", "expensiveCount", "distinctPriceCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("expensiveCount", 1L),
+                entry("distinctPriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("expensiveCount", 1L),
+                entry("distinctPriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("expensiveCount", 3L),
+                entry("distinctPriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("expensiveCount", 3L),
+                entry("distinctPriceCount", 2L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("expensiveCount", 3L),
+                entry("distinctPriceCount", 2L))));
+  }
+
+  @Test
+  public void testWindowFieldsAggregatesOverAComputedExpression() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"),
+                AggregateFunction.sum(multiply(field("salesPrice"), field("quantity")))
+                    .alias("totalRevenue"))
+            .sort(ascending("date"))
+            .select("product", "totalRevenue")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("totalRevenue", 72L)),
+            mapOfEntries(entry("product", "phone"), entry("totalRevenue", 72L)),
+            mapOfEntries(entry("product", "tablet"), entry("totalRevenue", 630L)),
+            mapOfEntries(entry("product", "tablet"), entry("totalRevenue", 630L)),
+            mapOfEntries(entry("product", "tablet"), entry("totalRevenue", 630L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesFirstAndLastOverThePartition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("date")),
+                AggregateFunction.first("salesPrice").alias("firstPrice"),
+                AggregateFunction.last("salesPrice").alias("lastPrice"))
+            .sort(ascending("date"))
+            .select("product", "firstPrice", "lastPrice")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("firstPrice", 12L), entry("lastPrice", 30L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("firstPrice", 12L), entry("lastPrice", 30L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("firstPrice", 30L), entry("lastPrice", 60L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("firstPrice", 30L), entry("lastPrice", 60L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("firstPrice", 30L), entry("lastPrice", 60L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesArrayAgg() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("date")),
+                AggregateFunction.arrayAgg("salesPrice").alias("allPrices"))
+            .sort(ascending("date"))
+            .select("product", "allPrices")
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    assertThat(results.get(0).getData().get("allPrices")).isEqualTo(Arrays.asList(12L, 30L));
+    assertThat(results.get(2).getData().get("allPrices")).isEqualTo(Arrays.asList(30L, 60L, 60L));
+  }
+
+  @Test
+  @Ignore("Pending backend support for array_agg_distinct in add_window_fields")
+  public void testWindowFieldsComputesArrayAggDistinct() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED)
+                    .withPartition("product")
+                    .withSort(ascending("date")),
+                AggregateFunction.arrayAggDistinct("salesPrice").alias("distinctPrices"))
+            .sort(ascending("date"))
+            .select("product", "distinctPrices")
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    assertThat(results.get(0).getData().get("distinctPrices")).isEqualTo(Arrays.asList(12L, 30L));
+    assertThat(results.get(2).getData().get("distinctPrices")).isEqualTo(Arrays.asList(30L, 60L));
+  }
+
+  @Test
+  public void testWindowFieldsComputesARunningTotal() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
+                    .withSort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("runningTotal"))
+            .sort(ascending("date"))
+            .select("product", "runningTotal")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("runningTotal", 12L)),
+            mapOfEntries(entry("product", "phone"), entry("runningTotal", 42L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningTotal", 72L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningTotal", 132L)),
+            mapOfEntries(entry("product", "tablet"), entry("runningTotal", 192L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesACenteredMovingAverage() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(1, 1).withSort(ascending("date")),
+                AggregateFunction.average("salesPrice").alias("movingAverage"),
+                AggregateFunction.countAll().alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "movingAverage", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"), entry("movingAverage", 21.0), entry("windowCount", 2L)),
+            mapOfEntries(
+                entry("product", "phone"), entry("movingAverage", 24.0), entry("windowCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("movingAverage", 40.0), entry("windowCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"), entry("movingAverage", 50.0), entry("windowCount", 3L)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("movingAverage", 60.0),
+                entry("windowCount", 2L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesATrailingSum() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(2, 0).withSort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("trailingTotal"))
+            .sort(ascending("date"))
+            .select("product", "trailingTotal")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("trailingTotal", 12L)),
+            mapOfEntries(entry("product", "phone"), entry("trailingTotal", 42L)),
+            mapOfEntries(entry("product", "tablet"), entry("trailingTotal", 72L)),
+            mapOfEntries(entry("product", "tablet"), entry("trailingTotal", 120L)),
+            mapOfEntries(entry("product", "tablet"), entry("trailingTotal", 150L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesALookAheadAverageWithANegativePrecedingBound() {
+    // Equivalent to "documents between 1 following and 2 following": the window is
+    // [index - preceding, index + following].
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(-1, 2).withSort(ascending("date")),
+                AggregateFunction.average("salesPrice").alias("lookAheadAverage"),
+                AggregateFunction.countAll().alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "lookAheadAverage", "windowCount")
+            .execute();
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(5);
+
+    assertThat(results.get(0).getData().get("lookAheadAverage")).isEqualTo(30.0);
+    assertThat(results.get(0).getData().get("windowCount")).isEqualTo(2L);
+
+    assertThat(results.get(1).getData().get("lookAheadAverage")).isEqualTo(45.0);
+    assertThat(results.get(1).getData().get("windowCount")).isEqualTo(2L);
+
+    assertThat(results.get(2).getData().get("lookAheadAverage")).isEqualTo(60.0);
+    assertThat(results.get(2).getData().get("windowCount")).isEqualTo(2L);
+
+    assertThat(results.get(3).getData().get("lookAheadAverage")).isEqualTo(60.0);
+    assertThat(results.get(3).getData().get("windowCount")).isEqualTo(1L);
+
+    // The last document has an empty window.
+    assertThat(results.get(4).getData().get("lookAheadAverage")).isNull();
+    assertThat(results.get(4).getData().get("windowCount")).isEqualTo(0L);
+  }
+
+  @Test
+  public void testWindowFieldsComputesAValueBasedRangeWindow() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(20, 0).withSort(ascending("salesPrice")),
+                AggregateFunction.sum("salesPrice").alias("nearbyTotal"))
+            .sort(ascending("date"))
+            .select("salesPrice", "nearbyTotal")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("salesPrice", 12L), entry("nearbyTotal", 12L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("nearbyTotal", 72L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("nearbyTotal", 72L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("nearbyTotal", 120L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("nearbyTotal", 120L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesATrailingThreeDayTotal() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(3, WindowSpec.CURRENT, "day").withSort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("threeDayTotal"))
+            .sort(ascending("date"))
+            .select("product", "threeDayTotal")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("threeDayTotal", 12L)),
+            mapOfEntries(entry("product", "phone"), entry("threeDayTotal", 42L)),
+            mapOfEntries(entry("product", "tablet"), entry("threeDayTotal", 72L)),
+            mapOfEntries(entry("product", "tablet"), entry("threeDayTotal", 132L)),
+            mapOfEntries(entry("product", "tablet"), entry("threeDayTotal", 60L))));
+  }
+
+  @Test
+  public void testWindowFieldsComputesACumulativeTotalWithAnUnboundedDateRange() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT, "day")
+                    .withSort(ascending("date")),
+                AggregateFunction.sum("salesPrice").alias("cumulativeTotal"))
+            .sort(ascending("date"))
+            .select("product", "cumulativeTotal")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("cumulativeTotal", 12L)),
+            mapOfEntries(entry("product", "phone"), entry("cumulativeTotal", 42L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeTotal", 72L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeTotal", 132L)),
+            mapOfEntries(entry("product", "tablet"), entry("cumulativeTotal", 192L))));
+  }
+
+  @Test
+  public void testWindowFieldsEvaluatesEachAggregateOverADifferentFrame() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.sort(ascending("date")),
+                AggregateFunction.sum("salesPrice")
+                    .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                    .alias("runningTotal"),
+                AggregateFunction.average("salesPrice")
+                    .over(WindowSpec.documents(1, 1))
+                    .alias("movingAverage"))
+            .sort(ascending("date"))
+            .select("product", "runningTotal", "movingAverage")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("runningTotal", 12L),
+                entry("movingAverage", 21.0)),
+            mapOfEntries(
+                entry("product", "phone"),
+                entry("runningTotal", 42L),
+                entry("movingAverage", 24.0)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("runningTotal", 72L),
+                entry("movingAverage", 40.0)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("runningTotal", 132L),
+                entry("movingAverage", 50.0)),
+            mapOfEntries(
+                entry("product", "tablet"),
+                entry("runningTotal", 192L),
+                entry("movingAverage", 60.0))));
+  }
+
+  @Test
+  public void testWindowFieldsCountAllCountsEveryDocumentInTheWindow() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.partition("product"), AggregateFunction.countAll().alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L))));
+  }
+
+  @Test
+  public void testWindowFieldsDocumentsZeroPrecedingAndZeroFollowing() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(0, 0).withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L))));
+  }
+
+  @Test
+  public void testWindowFieldsDocumentsZeroPrecedingToUnboundedFollowing() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(0, WindowSpec.UNBOUNDED).withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 5L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 4L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L))));
+  }
+
+  @Test
+  public void testWindowFieldsDocumentsSymmetricMovingWindow() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                WindowSpec.documents(1, 1).withSort(ascending("date")),
+                AggregateFunction.count("quantity").alias("windowCount"))
+            .sort(ascending("date"))
+            .select("product", "windowCount")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 2L)),
+            mapOfEntries(entry("product", "phone"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
+            mapOfEntries(entry("product", "tablet"), entry("windowCount", 2L))));
   }
 }

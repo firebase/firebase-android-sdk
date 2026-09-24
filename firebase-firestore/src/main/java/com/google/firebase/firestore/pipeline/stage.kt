@@ -1736,3 +1736,68 @@ internal constructor(
     return result
   }
 }
+
+private fun toFieldMap(
+  fields: Array<out AliasedWindowFunction>,
+  userDataReader: UserDataReader
+): Map<String, Value> {
+  return fields.associate { it.alias to it.toProto(userDataReader) }
+}
+
+internal class AddWindowFieldsStage
+internal constructor(
+  private val window: WindowSpec,
+  private val fields: Array<out AliasedWindowFunction>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<AddWindowFieldsStage>("add_window_fields", options) {
+  init {
+    val seenAliases = HashSet<String>()
+    for (field in fields) {
+      val alias = field.alias
+      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is reserved" })
+      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is reserved" })
+      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is reserved" })
+      require(seenAliases.add(alias), { "Duplicate alias: '$alias'" })
+    }
+  }
+
+  companion object {
+    @JvmStatic
+    fun of(window: WindowSpec, field: Any, vararg additionalFields: Any): AddWindowFieldsStage =
+      AddWindowFieldsStage(
+        window,
+        arrayOf(
+          AliasedWindowFunction.toAliasedWindowFunction(field),
+          *additionalFields.map(AliasedWindowFunction::toAliasedWindowFunction).toTypedArray()
+        )
+      )
+  }
+
+  override fun self(options: InternalOptions) = AddWindowFieldsStage(window, fields, options)
+
+  override fun canonicalId(): String {
+    return "${name}(${window.canonicalId()},${fields.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(
+      window.buildInternal(userDataReader),
+      encodeValue(toFieldMap(fields, userDataReader))
+    )
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is AddWindowFieldsStage) return false
+    if (window != other.window) return false
+    if (!fields.contentEquals(other.fields)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = window.hashCode()
+    result = 31 * result + fields.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+}
