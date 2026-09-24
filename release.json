@@ -2,11 +2,8 @@
     "name": "m187",
     "libraries": [
         ":firebase-abt",
-        ":firebase-annotations",
         ":firebase-appdistribution",
         ":firebase-appdistribution-api",
-        ":firebase-common",
-        ":firebase-components",
         ":firebase-config",
         ":firebase-config-interop",
         ":firebase-crashlytics",
