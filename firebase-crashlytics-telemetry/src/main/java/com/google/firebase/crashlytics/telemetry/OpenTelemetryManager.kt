@@ -64,7 +64,8 @@ internal object OpenTelemetryManager {
     Log.d("OpenTelemetryManager", "mmap file: $mmapFileCurrent")
 
     val mutationContext =
-      TelemetryContext.initialize(mmapFileCurrent.absolutePath, MmapSize.SMALL) { recoveredSpans ->
+      PersistenceContext.initialize(mmapFileCurrent.absolutePath, MmapSize.SMALL) { recoveredSpans
+        ->
         val recoverPreviousSpans = Firebase.crashlytics.didCrashOnPreviousExecution()
         if (recoverPreviousSpans) {
           Log.d("OpenTelemetryManager", "Found ${recoveredSpans.size} recovered spans to export.")

@@ -37,7 +37,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class TelemetryContextTest {
+class PersistenceContextTest {
 
   @get:Rule val otelRule: OpenTelemetryRule = OpenTelemetryRule.create()
   private lateinit var testMmapFile: File
@@ -49,24 +49,24 @@ class TelemetryContextTest {
     testMmapFile = File(targetContext.cacheDir, "shared_test_context.mmap")
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    mutationContext = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
+    mutationContext = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
     Span.getInvalid().makeCurrent()
   }
 
   @After
   fun tearDown() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
   }
 
-  // --- 1. TelemetryContext.initialize ---
+  // --- 1. PersistenceContext.initialize ---
 
   @Test
   fun initialize_createsMmapFile() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
     assertThat(testMmapFile.exists()).isTrue()
   }
 
@@ -79,10 +79,10 @@ class TelemetryContextTest {
   fun initialize_withOnRecovery_returnsRecoveredSpans() {
     val originalSpan = createTestSpan("RecoverableSpan")
     mutationContext.addSpan(originalSpan)
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recoveredSpans ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recoveredSpans ->
       assertThat(recoveredSpans.size).isEqualTo(1)
       latch.countDown()
     }
@@ -93,7 +93,7 @@ class TelemetryContextTest {
   fun initialize_withCorruptedNonTerminatedSpanName_recoversSafelyWithoutCrash() {
     val originalSpan = createTestSpan("InitialSpan")
     mutationContext.addSpan(originalSpan)
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     // Write 64 non-null bytes into RawSpan.name (offset 88) to test create_bounded_jstring handling
     // of non-terminated/oversized buffer
@@ -104,7 +104,7 @@ class TelemetryContextTest {
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -118,16 +118,16 @@ class TelemetryContextTest {
 
   @Test
   fun initialize_calledTwice_returnsSingleton() {
-    val secondContext = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
+    val secondContext = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
     assertThat(secondContext).isSameInstanceAs(mutationContext)
   }
 
   @Test
   fun initialize_afterShutdown_createsNewInstance() {
     val firstContext = mutationContext
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
-    val secondContext = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
+    val secondContext = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL)
     assertThat(secondContext).isNotSameInstanceAs(firstContext)
   }
 
@@ -137,16 +137,16 @@ class TelemetryContextTest {
     val threadPool = Executors.newFixedThreadPool(threads)
     val countDownLatch = CountDownLatch(threads + 1)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
     val recoveryMmapFile = File(targetContext.cacheDir, "concurrent_recovery.mmap")
     if (recoveryMmapFile.exists()) recoveryMmapFile.delete()
 
     val prePopulateContext =
-      TelemetryContext.initialize(recoveryMmapFile.absolutePath, MmapSize.SMALL)
+      PersistenceContext.initialize(recoveryMmapFile.absolutePath, MmapSize.SMALL)
     prePopulateContext.addSpan(createThreadSafeTestSpan(1, 1))
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val recoveryInvocationCount = AtomicInteger(0)
     val onRecovery: suspend (List<CrashlyticsSpan>) -> Unit = {
@@ -163,7 +163,7 @@ class TelemetryContextTest {
       for (i in 0 until threads) {
         threadPool.submit {
           try {
-            TelemetryContext.initialize(
+            PersistenceContext.initialize(
               recoveryMmapFile.absolutePath,
               MmapSize.SMALL,
               onRecovery,
@@ -178,29 +178,29 @@ class TelemetryContextTest {
       assertThat(recoveryInvocationCount.get()).isEqualTo(1)
     } finally {
       threadPool.shutdown()
-      TelemetryContext.shutdown()
+      PersistenceContext.shutdown()
       if (recoveryMmapFile.exists()) recoveryMmapFile.delete()
     }
   }
 
-  // --- 2. TelemetryContext.shutdown ---
+  // --- 2. PersistenceContext.shutdown ---
 
   @Test
   fun shutdown_beforeInitialize_doesNotThrow() {
-    TelemetryContext.shutdown() // Tear down default
-    TelemetryContext.shutdown() // Should run safely when already null
+    PersistenceContext.shutdown() // Tear down default
+    PersistenceContext.shutdown() // Should run safely when already null
   }
 
   @Test
   fun shutdown_clearsMutationContext() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     assertThat(mutationContext.countSpans()).isEqualTo(0L)
   }
 
   @Test
   fun shutdown_calledTwice_doesNotThrow() {
-    TelemetryContext.shutdown()
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
+    PersistenceContext.shutdown()
   }
 
   @Test
@@ -213,7 +213,7 @@ class TelemetryContextTest {
       for (i in 0 until threads) {
         threadPool.submit {
           try {
-            TelemetryContext.shutdown()
+            PersistenceContext.shutdown()
           } finally {
             countDownLatch.countDown()
           }
@@ -227,10 +227,10 @@ class TelemetryContextTest {
 
   @Test
   fun shutdown_calledConcurrentlyWithMutations_doesNotCrashOrThrow() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    val context = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
+    val context = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
 
     val threads = 10
     val iterations = 50
@@ -259,7 +259,7 @@ class TelemetryContextTest {
 
       startLatch.countDown()
       Thread.sleep(5)
-      TelemetryContext.shutdown()
+      PersistenceContext.shutdown()
 
       assertThat(countDownLatch.await(5, TimeUnit.SECONDS)).isTrue()
     } finally {
@@ -283,7 +283,7 @@ class TelemetryContextTest {
 
   @Test
   fun countSpans_afterShutdown_returnsZero() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     assertThat(mutationContext.countSpans()).isEqualTo(0L)
   }
 
@@ -300,9 +300,9 @@ class TelemetryContextTest {
     val originalSpan = createTestSpan("PersistedSpan", mapOf("k" to "v"))
     mutationContext.addSpan(originalSpan)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       assertThat(recovered).isNotEmpty()
     }
   }
@@ -313,11 +313,11 @@ class TelemetryContextTest {
     val span = createTestSpan(oversizedName)
     mutationContext.addSpan(span)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -336,11 +336,11 @@ class TelemetryContextTest {
     val span = createTestSpan("OversizedAttrSpan", mapOf(oversizedKey to oversizedValue))
     mutationContext.addSpan(span)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -364,11 +364,11 @@ class TelemetryContextTest {
     val span = createTestSpan(utf8Name, mapOf(utf8Key to utf8Value))
     mutationContext.addSpan(span)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -385,11 +385,11 @@ class TelemetryContextTest {
     val span = createTestSpan("", emptyMap())
     mutationContext.addSpan(span)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -403,16 +403,16 @@ class TelemetryContextTest {
 
   @Test
   fun addSpan_afterShutdown_isNoOp() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     mutationContext.addSpan(createTestSpan("AfterShutdown"))
   }
 
   @Test
   fun addSpan_calledConcurrently_maintainsAccurateCount() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    val context = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
+    val context = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
 
     val threads = 10
     val iterations = 20
@@ -458,16 +458,16 @@ class TelemetryContextTest {
 
   @Test
   fun endSpan_afterShutdown_isNoOp() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     mutationContext.endSpan("0000000000000000")
   }
 
   @Test
   fun endSpan_calledConcurrently_maintainsConsistentState() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    val context = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
+    val context = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
 
     val threads = 10
     val iterations = 20
@@ -553,11 +553,11 @@ class TelemetryContextTest {
     val oversizedValue = "v".repeat(300)
     mutationContext.setAttributeOnSpan(span.spanId, oversizedKey, oversizedValue)
 
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
 
     val latch = CountDownLatch(1)
     var recoveredSpans: List<CrashlyticsSpan>? = null
-    TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
       recoveredSpans = recovered
       latch.countDown()
     }
@@ -579,16 +579,16 @@ class TelemetryContextTest {
 
   @Test
   fun setAttributeOnSpan_afterShutdown_isNoOp() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     mutationContext.setAttributeOnSpan("0000000000000000", "key", "value")
   }
 
   @Test
   fun setAttributeOnSpan_calledConcurrently_doesNotCrashOrCorrupt() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    val context = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
+    val context = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
 
     val threads = 10
     val iterations = 20
@@ -632,10 +632,10 @@ class TelemetryContextTest {
 
   @Test
   fun mixedOperations_calledConcurrently_maintainsDataIntegrityAndRecoversCleanly() {
-    TelemetryContext.shutdown()
+    PersistenceContext.shutdown()
     if (testMmapFile.exists()) testMmapFile.delete()
 
-    val context = TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
+    val context = PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE)
 
     val threads = 10
     val iterations = 20
@@ -661,11 +661,11 @@ class TelemetryContextTest {
       assertThat(countDownLatch.await(10, TimeUnit.SECONDS)).isTrue()
       assertThat(context.countSpans()).isEqualTo((threads * iterations).toLong())
 
-      TelemetryContext.shutdown()
+      PersistenceContext.shutdown()
 
       val recoveryLatch = CountDownLatch(1)
       var recoveredSpans: List<CrashlyticsSpan>? = null
-      TelemetryContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE) { recovered ->
+      PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.LARGE) { recovered ->
         recoveredSpans = recovered
         recoveryLatch.countDown()
       }
@@ -684,7 +684,7 @@ class TelemetryContextTest {
     name: String,
     attributes: Map<String, String> = emptyMap(),
   ): CrashlyticsSpan {
-    val tracer = otelRule.openTelemetry.getTracer("TelemetryContextTest")
+    val tracer = otelRule.openTelemetry.getTracer("PersistenceContextTest")
     val span = tracer.spanBuilder(name)
 
     for ((key, value) in attributes) {

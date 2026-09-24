@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
  * Exposes thread-safe initialization, standard shutdown lifecycles, and returns a synchronized
  * [MutationContext] for safe span storage operations.
  */
-internal class TelemetryContext private constructor() {
+internal class PersistenceContext private constructor() {
 
   companion object {
     private const val LOG_TAG = "TelemetryContext"
