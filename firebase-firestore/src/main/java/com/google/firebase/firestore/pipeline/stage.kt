@@ -1737,18 +1737,11 @@ internal constructor(
   }
 }
 
-private fun associateWithoutDuplications(
+private fun toFieldMap(
   fields: Array<out AliasedWindowFunction>,
   userDataReader: UserDataReader
 ): Map<String, Value> {
-  return fields.fold(HashMap<String, Value>()) { results, field ->
-    if (results.contains(field.alias)) {
-      throw IllegalArgumentException("Duplicate alias: '${field.alias}'")
-    }
-
-    results.set(field.alias, field.toProto(userDataReader))
-    results
-  }
+  return fields.associate { it.alias to it.toProto(userDataReader) }
 }
 
 internal class AddWindowFieldsStage
@@ -1789,7 +1782,7 @@ internal constructor(
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
       window.buildInternal(userDataReader),
-      encodeValue(associateWithoutDuplications(fields, userDataReader))
+      encodeValue(toFieldMap(fields, userDataReader))
     )
 
   override fun equals(other: Any?): Boolean {
