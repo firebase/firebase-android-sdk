@@ -99,30 +99,50 @@ internal constructor(
    * The output transcription. The transcription is independent to the model turn which means it
    * doesn't imply any ordering between transcription and model turn.
    */
-  public val outputTranscription: Transcription?
+  public val outputTranscription: Transcription?,
+
+  /**
+   * The interaction status of the model (`IDLE` or `IN_PROGRESS`), indicating whether the model is
+   * still actively reasoning or executing background tools across multiple turns.
+   */
+  public val interactionStatus: InteractionStatus? = null,
 ) : LiveServerMessage {
+  /** Snake_case alias for [interactionStatus]. */
+  public val interaction_status: InteractionStatus?
+    get() = interactionStatus
+
   @OptIn(ExperimentalSerializationApi::class)
   @Serializable
   internal data class Internal(
-    val modelTurn: Content.Internal?,
-    val interrupted: Boolean?,
-    val turnComplete: Boolean?,
-    val generationComplete: Boolean?,
-    val inputTranscription: Transcription.Internal?,
-    val outputTranscription: Transcription.Internal?
+    val modelTurn: Content.Internal? = null,
+    val interrupted: Boolean? = null,
+    val turnComplete: Boolean? = null,
+    val generationComplete: Boolean? = null,
+    val inputTranscription: Transcription.Internal? = null,
+    val outputTranscription: Transcription.Internal? = null,
+    @kotlinx.serialization.json.JsonNames("interaction_status", "interactionStatus")
+    val interactionStatus: InteractionStatus.Internal? = null,
   )
+
+  @OptIn(ExperimentalSerializationApi::class)
   @Serializable
-  internal data class InternalWrapper(val serverContent: Internal) : InternalLiveServerMessage {
+  internal data class InternalWrapper(
+    val serverContent: Internal,
+    @kotlinx.serialization.json.JsonNames("interaction_status", "interactionStatus")
+    val interactionStatus: InteractionStatus.Internal? = null,
+  ) : InternalLiveServerMessage {
     @OptIn(ExperimentalSerializationApi::class)
     override fun toPublic(): LiveServerContent {
       // WhenMajor(Revisit the decision to make these have default values)
+      val resolvedStatus = (serverContent.interactionStatus ?: interactionStatus)?.toPublic()
       return LiveServerContent(
         serverContent.modelTurn?.toPublic(),
         serverContent.interrupted ?: false,
         serverContent.turnComplete ?: false,
         serverContent.generationComplete ?: false,
         serverContent.inputTranscription?.toPublic(),
-        serverContent.outputTranscription?.toPublic()
+        serverContent.outputTranscription?.toPublic(),
+        resolvedStatus,
       )
     }
   }
@@ -153,16 +173,34 @@ public class LiveServerUnknownMessage private constructor() : LiveServerMessage 
  * individual [FunctionCallPart]s.
  *
  * @property functionCalls A list of [FunctionCallPart] to run and return responses for.
+ * @property interactionStatus The interaction status (`IDLE` or `IN_PROGRESS`) associated with this
+ * tool call.
  */
 @PublicPreviewAPI
 public class LiveServerToolCall
-internal constructor(public val functionCalls: List<FunctionCallPart>) : LiveServerMessage {
+internal constructor(
+  public val functionCalls: List<FunctionCallPart>,
+  public val interactionStatus: InteractionStatus? = null,
+) : LiveServerMessage {
+  /** Snake_case alias for [interactionStatus]. */
+  public val interaction_status: InteractionStatus?
+    get() = interactionStatus
+
+  @OptIn(ExperimentalSerializationApi::class)
   @Serializable
   internal data class Internal(
-    val functionCalls: List<FunctionCallPart.Internal.FunctionCall> = emptyList()
+    val functionCalls: List<FunctionCallPart.Internal.FunctionCall> = emptyList(),
+    @kotlinx.serialization.json.JsonNames("interaction_status", "interactionStatus")
+    val interactionStatus: InteractionStatus.Internal? = null,
   )
+
+  @OptIn(ExperimentalSerializationApi::class)
   @Serializable
-  internal data class InternalWrapper(val toolCall: Internal) : InternalLiveServerMessage {
+  internal data class InternalWrapper(
+    val toolCall: Internal,
+    @kotlinx.serialization.json.JsonNames("interaction_status", "interactionStatus")
+    val interactionStatus: InteractionStatus.Internal? = null,
+  ) : InternalLiveServerMessage {
     override fun toPublic() =
       LiveServerToolCall(
         toolCall.functionCalls.map { functionCall ->
@@ -171,7 +209,8 @@ internal constructor(public val functionCalls: List<FunctionCallPart>) : LiveSer
             args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
             id = functionCall.id
           )
-        }
+        },
+        (toolCall.interactionStatus ?: interactionStatus)?.toPublic(),
       )
   }
 }

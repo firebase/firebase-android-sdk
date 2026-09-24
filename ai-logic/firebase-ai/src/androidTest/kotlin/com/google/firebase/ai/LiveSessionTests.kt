@@ -390,4 +390,97 @@ class LiveSessionTests {
       session.close()
     }
   }
+
+  @Test
+  fun testRealtime_nonBlockingFunctionCallingAndThinkingLevel(): Unit = runBlocking {
+    val nonBlockingTools =
+      listOf(
+        Tool.functionDeclarations(
+          listOf(
+            FunctionDeclaration(
+              name = "getLastName",
+              description = "Gets the last name of a person.",
+              parameters =
+                mapOf(
+                  "firstName" to
+                    Schema.string(description = "The first name of the person to lookup.")
+                ),
+              behavior = com.google.firebase.ai.type.FunctionBehavior.NON_BLOCKING,
+            )
+          )
+        )
+      )
+
+    val session =
+      AIModels.getGoogleLiveModel(
+          modelName = "gemini-3.8-live",
+          config = generationConfig,
+          tools = nonBlockingTools,
+          systemInstruction = SystemInstructions.lastNames,
+        )
+        .connect()
+
+    try {
+      session.sendTextRealtime("Alex")
+
+      val toolCall =
+        withTimeoutOrNull(30.seconds) {
+          session.receive().filterIsInstance<LiveServerToolCall>().first()
+        }
+
+      toolCall.shouldNotBeNull()
+      toolCall.functionCalls.size shouldBe 1
+      val functionCall = toolCall.functionCalls.first()
+      functionCall.name shouldBe "getLastName"
+
+      val firstName = (functionCall.args["firstName"] as? JsonPrimitive)?.content
+      firstName shouldBe "Alex"
+
+      session.sendFunctionResponse(
+        listOf(
+          FunctionResponsePart(
+            name = functionCall.name,
+            response = JsonObject(mapOf("lastName" to JsonPrimitive("Smith"))),
+            id = functionCall.id,
+            scheduling = com.google.firebase.ai.type.FunctionResponseScheduling.WHEN_IDLE,
+          )
+        )
+      )
+
+      var sawTurnComplete = false
+      var lastInteractionStatus: com.google.firebase.ai.type.InteractionStatus? = null
+      val transcriptBuilder = StringBuilder()
+      withTimeoutOrNull(30.seconds) {
+        session
+          .receive()
+          .takeWhile { msg ->
+            if (msg is LiveServerContent) {
+              transcriptBuilder.append(msg.outputTranscription?.text ?: "")
+              if (msg.interactionStatus != null) {
+                lastInteractionStatus = msg.interactionStatus
+              }
+              if (msg.turnComplete) {
+                sawTurnComplete = true
+              }
+              val hasFinalAnswer =
+                transcriptBuilder.toString().toLowerCasePreservingASCIIRules().contains("smith")
+              val isIdleTurnComplete =
+                msg.turnComplete &&
+                  msg.interactionStatus == com.google.firebase.ai.type.InteractionStatus.IDLE
+              !(hasFinalAnswer && msg.turnComplete) && !isIdleTurnComplete
+            } else {
+              true
+            }
+          }
+          .collect {}
+      }
+      println(
+        "[LiveThinkingE2E] Full transcript across turns: '${transcriptBuilder}', sawTurnComplete=$sawTurnComplete, lastInteractionStatus=$lastInteractionStatus"
+      )
+      sawTurnComplete shouldBe true
+      transcriptBuilder.toString().toLowerCasePreservingASCIIRules() shouldContain "smith"
+    } finally {
+      session.close()
+    }
+  }
 }

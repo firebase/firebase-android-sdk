@@ -52,7 +52,9 @@ private constructor(
   internal val initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?,
   internal val transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
   internal val goAwayHandler: ((LiveServerGoAway) -> Unit)?,
-  internal val enableInterruptions: Boolean
+  internal val enableInterruptions: Boolean,
+  internal val interactionStatusHandler: ((InteractionStatus) -> Unit)? = null,
+  internal val turnCompleteHandler: ((Boolean, InteractionStatus?) -> Unit)? = null,
 ) {
 
   /**
@@ -70,6 +72,12 @@ private constructor(
    * @property goAwayHandler See [LiveAudioConversationConfig.goAwayHandler].
    *
    * @property enableInterruptions See [LiveAudioConversationConfig.enableInterruptions].
+   *
+   * @property interactionStatusHandler Callback invoked when the model's [InteractionStatus]
+   * updates (`IDLE` or `IN_PROGRESS`).
+   *
+   * @property turnCompleteHandler Callback invoked when a model turn completes, providing
+   * `turnComplete` and the current [InteractionStatus] if present.
    */
   public class Builder {
     @JvmField public var functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
@@ -78,6 +86,8 @@ private constructor(
     @JvmField public var transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null
     @JvmField public var goAwayHandler: ((LiveServerGoAway) -> Unit)? = null
     @JvmField public var enableInterruptions: Boolean = false
+    @JvmField public var interactionStatusHandler: ((InteractionStatus) -> Unit)? = null
+    @JvmField public var turnCompleteHandler: ((Boolean, InteractionStatus?) -> Unit)? = null
 
     public fun setFunctionCallHandler(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
@@ -99,6 +109,14 @@ private constructor(
       this.enableInterruptions = enableInterruptions
     }
 
+    public fun setInteractionStatusHandler(
+      interactionStatusHandler: ((InteractionStatus) -> Unit)?
+    ): Builder = apply { this.interactionStatusHandler = interactionStatusHandler }
+
+    public fun setTurnCompleteHandler(
+      turnCompleteHandler: ((Boolean, InteractionStatus?) -> Unit)?
+    ): Builder = apply { this.turnCompleteHandler = turnCompleteHandler }
+
     /** Create a new [LiveAudioConversationConfig] with the attached arguments. */
     public fun build(): LiveAudioConversationConfig =
       LiveAudioConversationConfig(
@@ -106,7 +124,9 @@ private constructor(
         initializationHandler = initializationHandler,
         transcriptHandler = transcriptHandler,
         goAwayHandler = goAwayHandler,
-        enableInterruptions = enableInterruptions
+        enableInterruptions = enableInterruptions,
+        interactionStatusHandler = interactionStatusHandler,
+        turnCompleteHandler = turnCompleteHandler,
       )
   }
 

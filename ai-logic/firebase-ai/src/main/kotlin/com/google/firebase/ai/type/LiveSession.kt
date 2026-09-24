@@ -267,7 +267,9 @@ internal constructor(
       processModelResponses(
         liveAudioConversationConfig.functionCallHandler,
         liveAudioConversationConfig.transcriptHandler,
-        liveAudioConversationConfig.goAwayHandler
+        liveAudioConversationConfig.goAwayHandler,
+        liveAudioConversationConfig.interactionStatusHandler,
+        liveAudioConversationConfig.turnCompleteHandler,
       )
       listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
@@ -580,20 +582,21 @@ internal constructor(
   private fun processModelResponses(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-    goAwayHandler: ((LiveServerGoAway) -> Unit)?
+    goAwayHandler: ((LiveServerGoAway) -> Unit)?,
+    interactionStatusHandler: ((InteractionStatus) -> Unit)? = null,
+    turnCompleteHandler: ((Boolean, InteractionStatus?) -> Unit)? = null,
   ) {
     receive()
       .onEach {
         when (it) {
           is LiveServerToolCall -> {
+            it.interactionStatus?.let { status -> interactionStatusHandler?.invoke(status) }
             if (it.functionCalls.isEmpty()) {
               Log.w(
                 TAG,
                 "The model sent a tool call request, but it was missing functions to call."
               )
             } else if (functionCallHandler != null) {
-              // It's fine to suspend here since you can't have a function call running concurrently
-              // with an audio response
               sendFunctionResponse(it.functionCalls.map(functionCallHandler).toList())
             } else if (
               hasFunction != null &&
@@ -617,6 +620,10 @@ internal constructor(
             )
           }
           is LiveServerContent -> {
+            it.interactionStatus?.let { status -> interactionStatusHandler?.invoke(status) }
+            if (it.turnComplete) {
+              turnCompleteHandler?.invoke(true, it.interactionStatus)
+            }
             if (it.inputTranscription != null || it.outputTranscription != null) {
               transcriptHandler?.invoke(it.inputTranscription, it.outputTranscription)
             }

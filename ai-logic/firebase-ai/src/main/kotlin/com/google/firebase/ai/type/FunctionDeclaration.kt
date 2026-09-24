@@ -52,16 +52,38 @@ import kotlinx.serialization.Serializable
  * function.
  * @see Schema
  */
-public class FunctionDeclaration(
+@OptIn(PublicPreviewAPI::class)
+public class FunctionDeclaration
+@JvmOverloads
+constructor(
   internal val name: String,
   internal val description: String,
   internal val parameters: Map<String, Schema>,
   internal val optionalParameters: List<String> = emptyList(),
+  public val behavior: FunctionBehavior? = null,
 ) {
+  /**
+   * Secondary constructor accepting [behavior] without explicitly specifying [optionalParameters].
+   */
+  public constructor(
+    name: String,
+    description: String,
+    parameters: Map<String, Schema>,
+    behavior: FunctionBehavior?,
+  ) : this(name, description, parameters, emptyList(), behavior)
+
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
 
-  internal fun toInternal() = Internal(name, description, schema.toInternalOpenApi(), null, null)
+  internal fun toInternal() =
+    Internal(
+      name,
+      description,
+      schema.toInternalOpenApi(),
+      null,
+      null,
+      behavior = behavior?.toInternal(),
+    )
 
   @Serializable
   internal data class Internal(
@@ -70,5 +92,6 @@ public class FunctionDeclaration(
     val parameters: Schema.InternalOpenAPI? = null,
     val parametersJsonSchema: Schema.InternalJson? = null,
     val responseJsonSchema: Schema.InternalJson? = null,
+    val behavior: FunctionBehavior.Internal? = null,
   )
 }

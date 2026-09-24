@@ -59,6 +59,16 @@ import kotlinx.serialization.Serializable
  *
  * @property realtimeInputConfig Configures realtime input for the session.
  *
+ * @property thinkingConfig Configuration for the model's thinking process. Note: As a user of the
+ * API, omit [thinkingLevel] (`thinking_level`) when targeting `gemini-3.8-live` (only set it for
+ * Live Thinking models such as `gemini-3.8-live-extended-thinking` or
+ * `gemini-3.1-flash-live-preview`).
+ *
+ * @property thinkingLevel The [ThinkingLevel] for Live Thinking models (`MINIMAL`, `LOW`, `MEDIUM`,
+ * `HIGH`). Note: Omit this property when targeting `gemini-3.8-live`.
+ *
+ * @property enableAffectiveDialog Enables affective dialog capabilities in the Live API session.
+ *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
@@ -78,7 +88,14 @@ private constructor(
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
   internal val contextWindowCompression: ContextWindowCompressionConfig?,
   internal val realtimeInputConfig: RealtimeInputConfig?,
+  public val thinkingConfig: ThinkingConfig? = null,
+  public val thinkingLevel: ThinkingLevel? = thinkingConfig?.thinkingLevel,
+  public val enableAffectiveDialog: Boolean? = null,
 ) {
+
+  /** Snake_case alias for [thinkingLevel]. Note: Omit when targeting `gemini-3.8-live`. */
+  public val thinking_level: ThinkingLevel?
+    get() = thinkingLevel
 
   /**
    * Builder for creating a [LiveGenerationConfig].
@@ -109,6 +126,12 @@ private constructor(
    * @property contextWindowCompression see [LiveGenerationConfig.contextWindowCompression]
    *
    * @property realtimeInputConfig see [LiveGenerationConfig.realtimeInputConfig]
+   *
+   * @property thinkingConfig see [LiveGenerationConfig.thinkingConfig]
+   *
+   * @property thinkingLevel see [LiveGenerationConfig.thinkingLevel]
+   *
+   * @property enableAffectiveDialog see [LiveGenerationConfig.enableAffectiveDialog]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
@@ -123,6 +146,10 @@ private constructor(
     @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var contextWindowCompression: ContextWindowCompressionConfig? = null
     @JvmField public var realtimeInputConfig: RealtimeInputConfig? = null
+    @JvmField public var thinkingConfig: ThinkingConfig? = null
+    @JvmField public var thinkingLevel: ThinkingLevel? = null
+    @JvmField public var thinking_level: ThinkingLevel? = null
+    @JvmField public var enableAffectiveDialog: Boolean? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -162,9 +189,37 @@ private constructor(
       this.realtimeInputConfig = config
     }
 
+    public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
+      this.thinkingConfig = thinkingConfig
+    }
+
+    public fun setThinkingLevel(thinkingLevel: ThinkingLevel?): Builder = apply {
+      this.thinkingLevel = thinkingLevel
+    }
+
+    public fun setEnableAffectiveDialog(enableAffectiveDialog: Boolean?): Builder = apply {
+      this.enableAffectiveDialog = enableAffectiveDialog
+    }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
-    public fun build(): LiveGenerationConfig =
-      LiveGenerationConfig(
+    public fun build(): LiveGenerationConfig {
+      val resolvedLevel = thinkingLevel ?: thinking_level ?: thinkingConfig?.thinkingLevel
+      val resolvedThinkingConfig =
+        when {
+          thinkingConfig != null && resolvedLevel != null && thinkingConfig?.thinkingLevel != resolvedLevel ->
+            ThinkingConfig.Builder()
+              .apply {
+                thinkingConfig?.thinkingBudget?.let { setThinkingBudget(it) }
+                thinkingConfig?.includeThoughts?.let { setIncludeThoughts(it) }
+                setThinkingLevel(resolvedLevel)
+              }
+              .build()
+          thinkingConfig != null -> thinkingConfig
+          resolvedLevel != null ->
+            ThinkingConfig.Builder().setThinkingLevel(resolvedLevel).build()
+          else -> null
+        }
+      return LiveGenerationConfig(
         temperature = temperature,
         topK = topK,
         topP = topP,
@@ -177,7 +232,11 @@ private constructor(
         outputAudioTranscription = outputAudioTranscription,
         contextWindowCompression = contextWindowCompression,
         realtimeInputConfig = realtimeInputConfig,
+        thinkingConfig = resolvedThinkingConfig,
+        thinkingLevel = resolvedLevel,
+        enableAffectiveDialog = enableAffectiveDialog,
       )
+    }
   }
 
   internal fun toInternal(): Internal {
@@ -190,7 +249,9 @@ private constructor(
       presencePenalty = presencePenalty,
       speechConfig = speechConfig?.toInternal(),
       responseModalities =
-        if (responseModality != null) listOf(responseModality.toInternal()) else null
+        if (responseModality != null) listOf(responseModality.toInternal()) else null,
+      thinkingConfig = thinkingConfig?.toInternal(),
+      enableAffectiveDialog = enableAffectiveDialog,
     )
   }
 
@@ -203,7 +264,9 @@ private constructor(
     val presencePenalty: Float? = null,
     val frequencyPenalty: Float? = null,
     val speechConfig: SpeechConfig.Internal? = null,
-    val responseModalities: List<String>? = null
+    val responseModalities: List<String>? = null,
+    val thinkingConfig: ThinkingConfig.Internal? = null,
+    val enableAffectiveDialog: Boolean? = null,
   )
 
   public companion object {

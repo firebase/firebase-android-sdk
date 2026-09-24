@@ -156,4 +156,95 @@ internal class LiveServerMessageTests {
     val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
     message.toPublic().shouldBeInstanceOf<LiveServerToolCallCancellation>()
   }
+
+  @Test
+  fun `LiveServerContent parses interactionStatus IN_PROGRESS and turnComplete true`() {
+    val json =
+      """
+      {
+        "serverContent": {
+          "turnComplete": true,
+          "interactionStatus": "IN_PROGRESS"
+        }
+      }
+    """
+        .trimIndent()
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val content = message.toPublic() as LiveServerContent
+
+    content.turnComplete shouldBe true
+    content.interactionStatus shouldBe InteractionStatus.IN_PROGRESS
+    content.interaction_status shouldBe InteractionStatus.IN_PROGRESS
+  }
+
+  @Test
+  fun `LiveServerContent parses snake_case interaction_status IDLE and turnComplete true`() {
+    val json =
+      """
+      {
+        "serverContent": {
+          "turnComplete": true,
+          "interaction_status": "IDLE"
+        }
+      }
+    """
+        .trimIndent()
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val content = message.toPublic() as LiveServerContent
+
+    content.turnComplete shouldBe true
+    content.interactionStatus shouldBe InteractionStatus.IDLE
+    content.interaction_status shouldBe InteractionStatus.IDLE
+  }
+
+  @Test
+  fun `LiveServerToolCall parses top-level and nested interactionStatus IN_PROGRESS`() {
+    val topLevelJson =
+      """
+      {
+        "toolCall": {
+          "functionCalls": [
+            {
+              "id": "function-call-123",
+              "name": "search_crm",
+              "args": { "query": "Acme Corp" }
+            }
+          ]
+        },
+        "interactionStatus": "IN_PROGRESS"
+      }
+    """
+        .trimIndent()
+
+    val topLevelMsg = JSON.decodeFromString<InternalLiveServerMessage>(topLevelJson)
+    val toolCall = topLevelMsg.toPublic() as LiveServerToolCall
+
+    toolCall.functionCalls.size shouldBe 1
+    toolCall.functionCalls.first().name shouldBe "search_crm"
+    toolCall.interactionStatus shouldBe InteractionStatus.IN_PROGRESS
+    toolCall.interaction_status shouldBe InteractionStatus.IN_PROGRESS
+
+    val nestedJson =
+      """
+      {
+        "toolCall": {
+          "functionCalls": [
+            {
+              "id": "function-call-456",
+              "name": "fetchWeather",
+              "args": { "city": "Austin" }
+            }
+          ],
+          "interaction_status": "IN_PROGRESS"
+        }
+      }
+    """
+        .trimIndent()
+
+    val nestedMsg = JSON.decodeFromString<InternalLiveServerMessage>(nestedJson)
+    val nestedToolCall = nestedMsg.toPublic() as LiveServerToolCall
+    nestedToolCall.interactionStatus shouldBe InteractionStatus.IN_PROGRESS
+  }
 }

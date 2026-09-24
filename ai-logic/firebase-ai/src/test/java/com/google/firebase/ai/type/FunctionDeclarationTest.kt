@@ -16,11 +16,16 @@
 
 package com.google.firebase.ai.type
 
+import com.google.firebase.ai.common.JSON
 import io.kotest.assertions.json.shouldEqualJson
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class FunctionDeclarationTest {
 
   @Test
@@ -96,5 +101,105 @@ internal class FunctionDeclarationTest {
         .trimIndent()
 
     Json.encodeToString(functionDeclaration.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `FunctionDeclaration with NON_BLOCKING behavior serializes behavior field`() {
+    val declaration =
+      FunctionDeclaration(
+        name = "search_crm",
+        description = "Searches CRM for customer records.",
+        parameters = mapOf("query" to Schema.string("Search query")),
+        behavior = FunctionBehavior.NON_BLOCKING,
+      )
+
+    declaration.behavior shouldBe FunctionBehavior.NON_BLOCKING
+
+    val expectedJson =
+      """
+      {
+        "name": "search_crm",
+        "description": "Searches CRM for customer records.",
+        "parameters": {
+          "type": "OBJECT",
+          "properties": {
+            "query": {
+              "type": "STRING",
+              "description": "Search query"
+            }
+          },
+          "required": ["query"]
+        },
+        "behavior": "NON_BLOCKING"
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(declaration.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `FunctionDeclaration without explicit behavior omits behavior field as passthrough`() {
+    val declarationWithoutExplicitBehavior =
+      FunctionDeclaration(
+        name = "fetchWeather",
+        description = "Get weather conditions.",
+        parameters = mapOf("city" to Schema.string("City name")),
+      )
+
+    val tool = Tool.functionDeclarations(listOf(declarationWithoutExplicitBehavior))
+    val internalTool = tool.toInternal()
+
+    val expectedJson =
+      """
+      {
+        "functionDeclarations": [
+          {
+            "name": "fetchWeather",
+            "description": "Get weather conditions.",
+            "parameters": {
+              "type": "OBJECT",
+              "properties": {
+                "city": {
+                  "type": "STRING",
+                  "description": "City name"
+                }
+              },
+              "required": ["city"]
+            }
+          }
+        ]
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(internalTool).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `FunctionResponsePart serializes scheduling WHEN_IDLE`() {
+    val responsePart =
+      FunctionResponsePart(
+        name = "search_crm",
+        response = JsonObject(mapOf("status" to JsonPrimitive("found"))),
+        id = "function-call-123",
+        scheduling = FunctionResponseScheduling.WHEN_IDLE,
+      )
+
+    val expectedJson =
+      """
+      {
+        "name": "search_crm",
+        "response": {
+          "status": "found"
+        },
+        "id": "function-call-123",
+        "parts": [],
+        "scheduling": "WHEN_IDLE"
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(responsePart.toInternalFunctionResponse()).shouldEqualJson(expectedJson)
   }
 }

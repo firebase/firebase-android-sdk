@@ -68,4 +68,61 @@ internal class LiveGenerationConfigTest {
 
     JSON.encodeToString(config.toInternal()).shouldEqualJson(expectedJson)
   }
+
+  @Test
+  fun `LiveGenerationConfig with thinkingLevel serializes thinkingConfig`() {
+    val config = liveGenerationConfig {
+      responseModality = ResponseModality.AUDIO
+      thinkingLevel = ThinkingLevel.LOW
+    }
+
+    val expectedJson =
+      """
+      {
+        "responseModalities": ["AUDIO"],
+        "thinkingConfig": {
+          "thinkingLevel": "LOW"
+        }
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(config.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `LiveGenerationConfig with thinking_level alias and includeThoughts`() {
+    val config = liveGenerationConfig {
+      thinking_level = ThinkingLevel.HIGH
+      thinkingConfig = thinkingConfig { includeThoughts = true }
+    }
+
+    val expectedJson =
+      """
+      {
+        "thinkingConfig": {
+          "includeThoughts": true,
+          "thinkingLevel": "HIGH"
+        }
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(config.toInternal()).shouldEqualJson(expectedJson)
+  }
+
+  @Test
+  fun `LiveGenerationConfig when caller omits thinkingLevel does not serialize thinkingConfig`() {
+    val config = liveGenerationConfig { responseModality = ResponseModality.AUDIO }
+
+    val expectedJson =
+      """
+      {
+        "responseModalities": ["AUDIO"]
+      }
+    """
+        .trimIndent()
+
+    JSON.encodeToString(config.toInternal()).shouldEqualJson(expectedJson)
+  }
 }

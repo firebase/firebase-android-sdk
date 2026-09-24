@@ -39,13 +39,15 @@ package com.google.firebase.ai.type
  * ```
  * @see JsonSchema
  */
+@OptIn(PublicPreviewAPI::class)
 public class AutoFunctionDeclaration<I : Any, O : Any>
 internal constructor(
   public val name: String,
   public val description: String,
   public val inputSchema: JsonSchema<I>,
   public val outputSchema: JsonSchema<O>?,
-  public val functionReference: (suspend (I) -> O)?
+  public val functionReference: (suspend (I) -> O)?,
+  public val behavior: FunctionBehavior? = null,
 ) {
   public companion object {
 
@@ -63,14 +65,44 @@ internal constructor(
       description: String,
       inputSchema: JsonSchema<I>,
       outputSchema: JsonSchema<O>,
-      functionReference: (suspend (I) -> O)? = null
+      functionReference: (suspend (I) -> O)? = null,
     ): AutoFunctionDeclaration<I, O> {
       return AutoFunctionDeclaration<I, O>(
         functionName,
         description,
         inputSchema,
         outputSchema,
-        functionReference
+        functionReference,
+        null,
+      )
+    }
+
+    /**
+     * Creates a strongly typed function declaration with an associated function reference and
+     * execution behavior.
+     *
+     * @param functionName the name of the function (to the model)
+     * @param description the description of the function
+     * @param inputSchema the object the model must provide to you as input
+     * @param outputSchema the type that will be return to the model when the function is executed
+     * @param behavior the execution behavior of the function (e.g. [FunctionBehavior.NON_BLOCKING])
+     * @param functionReference the function that will be executed when requested by the model.
+     */
+    public fun <I : Any, O : Any> create(
+      functionName: String,
+      description: String,
+      inputSchema: JsonSchema<I>,
+      outputSchema: JsonSchema<O>,
+      behavior: FunctionBehavior?,
+      functionReference: (suspend (I) -> O)? = null,
+    ): AutoFunctionDeclaration<I, O> {
+      return AutoFunctionDeclaration<I, O>(
+        functionName,
+        description,
+        inputSchema,
+        outputSchema,
+        functionReference,
+        behavior,
       )
     }
 
@@ -87,14 +119,43 @@ internal constructor(
       functionName: String,
       description: String,
       inputSchema: JsonSchema<I>,
-      functionReference: (suspend (I) -> FunctionResponsePart)? = null
+      functionReference: (suspend (I) -> FunctionResponsePart)? = null,
     ): AutoFunctionDeclaration<I, FunctionResponsePart> {
       return AutoFunctionDeclaration<I, FunctionResponsePart>(
         functionName,
         description,
         inputSchema,
         null,
-        functionReference
+        functionReference,
+        null,
+      )
+    }
+
+    /**
+     * Creates a strongly typed function declaration with an associated function reference and
+     * execution behavior. This version allows an arbitrary JsonObject as output rather than a
+     * strict schema.
+     *
+     * @param functionName the name of the function (to the model)
+     * @param description the description of the function
+     * @param inputSchema the object the model must provide to you as input
+     * @param behavior the execution behavior of the function (e.g. [FunctionBehavior.NON_BLOCKING])
+     * @param functionReference the function that will be executed when requested by the model
+     */
+    public fun <I : Any> create(
+      functionName: String,
+      description: String,
+      inputSchema: JsonSchema<I>,
+      behavior: FunctionBehavior?,
+      functionReference: (suspend (I) -> FunctionResponsePart)? = null,
+    ): AutoFunctionDeclaration<I, FunctionResponsePart> {
+      return AutoFunctionDeclaration<I, FunctionResponsePart>(
+        functionName,
+        description,
+        inputSchema,
+        null,
+        functionReference,
+        behavior,
       )
     }
   }
@@ -105,7 +166,8 @@ internal constructor(
       description,
       null,
       inputSchema.toInternalJson(),
-      outputSchema?.toInternalJson()
+      outputSchema?.toInternalJson(),
+      behavior = behavior?.toInternal(),
     )
   }
 }

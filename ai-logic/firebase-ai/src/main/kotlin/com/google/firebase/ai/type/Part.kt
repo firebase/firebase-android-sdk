@@ -352,6 +352,7 @@ internal constructor(
 }
 
 /** Represents function call output to be returned to the model when it requests a function call. */
+@OptIn(PublicPreviewAPI::class)
 public class FunctionResponsePart
 internal constructor(
   public val name: String,
@@ -359,21 +360,25 @@ internal constructor(
   public val id: String? = null,
   public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
-  public val thoughtSignature: String?
+  public val thoughtSignature: String?,
+  public val scheduling: FunctionResponseScheduling? = null,
 ) : Part {
 
   /**
    * @param name The name of the called function.
    * @param response The response produced by the function as a [JSONObject].
    * @param id Matching `id` for a [FunctionCallPart], if one was provided.
+   * @param parts Additional response parts, if any.
+   * @param scheduling Optional scheduling behavior for non-blocking Live API function responses.
    */
   @JvmOverloads
   public constructor(
     name: String,
     response: JsonObject,
     id: String? = null,
-    parts: List<Part> = emptyList()
-  ) : this(name, response, id, parts, false, null)
+    parts: List<Part> = emptyList(),
+    scheduling: FunctionResponseScheduling? = null,
+  ) : this(name, response, id, parts, false, null, scheduling)
 
   @Serializable
   internal data class Internal(
@@ -388,15 +393,22 @@ internal constructor(
       val response: JsonObject,
       val id: String? = null,
       val parts: List<InternalPart>? = null,
+      val scheduling: FunctionResponseScheduling.Internal? = null,
     )
   }
 
   internal fun toInternalFunctionResponse(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(name, response, id, parts.map { it.toInternal(true) })
+    return Internal.FunctionResponse(
+      name,
+      response,
+      id,
+      parts.map { it.toInternal(true) },
+      scheduling?.toInternal(),
+    )
   }
 
   internal fun normalizeAgainstCall(call: FunctionCallPart): FunctionResponsePart {
-    return FunctionResponsePart(call.name, this.response, call.id, this.parts)
+    return FunctionResponsePart(call.name, this.response, call.id, this.parts, this.scheduling)
   }
 
   public companion object {
@@ -424,7 +436,7 @@ internal constructor(
       isThought: Boolean,
       thoughtSignature: String?
     ): FunctionResponsePart =
-      FunctionResponsePart(name, response, id, parts, isThought, thoughtSignature)
+      FunctionResponsePart(name, response, id, parts, isThought, thoughtSignature, null)
   }
 }
 
