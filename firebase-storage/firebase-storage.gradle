@@ -93,13 +93,15 @@ dependencies {
     javadocClasspath libs.findbugs.jsr305
 
     api(libs.firebase.annotations)
-    api("com.google.firebase:firebase-appcheck:18.0.0") {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck.
+    api(project(":appcheck:firebase-appcheck")) {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-common-ktx"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-annotations"
     }
-    api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
+    api(project(":appcheck:firebase-appcheck-interop"))
     api('com.google.firebase:firebase-auth-interop:18.0.0') {
          exclude group: "com.google.firebase", module: "firebase-common"
          exclude group: "com.google.firebase", module: "firebase-components"

@@ -40,7 +40,7 @@ import kotlinx.serialization.json.JsonObject;
 import kotlinx.serialization.json.JsonPrimitive;
 
 /**
- * Contains various Java snippets used in documentation for Gemini/Vertex AI.
+ * Contains various Java snippets used in documentation for Gemini/Gemini Enterprise.
  * Compilation is a good litmus test that the snippets are sane.
  */
 public class JavaSnippetCompileTests {
@@ -53,13 +53,13 @@ public class JavaSnippetCompileTests {
 
   // Snippets
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#chat-use-template-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#chat-use-template-in-code
   public void template_chat() {
     // ...
 
-    // Initialize the Agent Platform backend service.
+    // Initialize the Gemini Enterprise API backend service.
     TemplateGenerativeModel templateModel =
-        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
+        FirebaseAI.getInstance(GenerativeBackend.enterprise("global")).templateGenerativeModel();
     // Initialize TemplateChat with history and inputs
     TemplateChat templateChat =
         templateModel.startChat("my-chat-template-v1-0-0", Map.of(), Collections.emptyList());
@@ -85,14 +85,14 @@ public class JavaSnippetCompileTests {
         executor);
   }
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#function-calling-use-template-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#function-calling-use-template-in-code
   public void template_functionCallingSchemaInTemplate(String userMessage) {
     // ...
 
-    // Initialize the Agent Platform backend service.
+    // Initialize the Gemini Enterprise API backend service.
     // Create a `TemplateGenerativeModel` instance.
     TemplateGenerativeModel model =
-        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global")).templateGenerativeModel();
+        FirebaseAI.getInstance(GenerativeBackend.enterprise("global")).templateGenerativeModel();
 
     // Start a chat session with a template that has functions listed as tools.
     TemplateChat chatSession =
@@ -135,7 +135,7 @@ public class JavaSnippetCompileTests {
         executor);
   }
 
-  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions?api=dev#function-calling-schema-defined-in-code
+  // https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions#function-calling-schema-defined-in-code
   public void template_functionCallingSchemaInCode() {
     TemplateFunctionDeclaration tool =
         new TemplateFunctionDeclaration(
@@ -164,7 +164,7 @@ public class JavaSnippetCompileTests {
                             ))),
             JsonSchema.string("A description of the current weather."));
     TemplateGenerativeModel templateModel =
-        FirebaseAI.getInstance(GenerativeBackend.agentPlatform("global"))
+        FirebaseAI.getInstance(GenerativeBackend.enterprise("global"))
             .templateGenerativeModel(
                 new RequestOptions(),
                 List.of(TemplateTool.functionDeclarations(List.of(tool), List.of())));

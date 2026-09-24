@@ -2,6 +2,7 @@
 
 - [fixed] Fixed uploads reporting success with truncated data after retrying a failed final chunk.
   (#6187)
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 22.0.2
 

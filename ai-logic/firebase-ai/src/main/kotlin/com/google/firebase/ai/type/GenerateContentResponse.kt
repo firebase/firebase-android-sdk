@@ -44,7 +44,7 @@ internal constructor(
    * The value is null if the response contains no valid text [candidates].
    *
    * Any part that's marked as a thought will be ignored. Learn more about
-   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking).
    */
   public val text: String? by lazy {
     val parts = candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<TextPart>()
@@ -58,7 +58,7 @@ internal constructor(
    * The value is an empty list if the response contains no [candidates].
    *
    * Any part that's marked as a thought will be ignored. Learn more about
-   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking).
    */
   public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.firstOrNull()?.nonThoughtParts()?.filterIsInstance<FunctionCallPart>().orEmpty()
@@ -68,7 +68,7 @@ internal constructor(
    * Convenience field representing all the text parts in the response that are marked as thoughts
    * as a single string, if they exist.
    *
-   * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
+   * Learn more about [thinking](https://firebase.google.com/docs/ai-logic/thinking).
    */
   public val thoughtSummary: String? by lazy {
     candidates.firstOrNull()?.thoughtParts()?.filterIsInstance<TextPart>()?.joinToString(" ") {
@@ -84,7 +84,7 @@ internal constructor(
    * The value is an empty list if the response contains no [candidates].
    *
    * Any part that's marked as a thought will be ignored. Learn more about
-   * [thinking](https://firebase.google.com/docs/ai-logic/thinking?api=dev).
+   * [thinking](https://firebase.google.com/docs/ai-logic/thinking).
    */
   public val inlineDataParts: List<InlineDataPart> by lazy {
     candidates

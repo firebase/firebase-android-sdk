@@ -116,26 +116,31 @@ dependencies {
 
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
-    api('com.google.firebase:firebase-abt:21.1.1') {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-abt.
+    api(project(':firebase-abt')) {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api("com.google.firebase:firebase-datatransport:18.2.0"){
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-datatransport.
+    api(project(":firebase-datatransport")){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    api("com.google.firebase:firebase-installations:18.0.0") {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
+    api(project(":firebase-installations")) {
          exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
-    api 'com.google.firebase:firebase-installations-interop:17.1.1'
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
+    api project(':firebase-installations-interop')
     api('com.google.firebase:firebase-measurement-connector:18.0.2') {
          exclude group: 'com.google.firebase', module: 'firebase-common'
      }
 
     implementation libs.androidx.annotation
-    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
+    implementation project(':transport:transport-api')
     implementation libs.autovalue.annotations
     implementation libs.grpc.okhttp
     implementation libs.grpc.protobuf.lite

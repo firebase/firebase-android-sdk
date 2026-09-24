@@ -216,7 +216,7 @@ internal constructor(
 
   private fun getLiveEndpoint(location: String): String =
     when (backend?.backend) {
-      GenerativeBackendEnum.AGENT_PLATFORM,
+      GenerativeBackendEnum.ENTERPRISE,
       null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
@@ -458,7 +458,7 @@ private suspend fun validateResponse(response: HttpResponse) {
   }
   if (message.contains("genai config not found")) {
     throw APINotConfiguredException(
-      "The Gemini Developer API is not enabled, to enable and configure, see https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found"
+      "The Gemini Developer API is not enabled, to enable and configure, see https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting#error-genai-config-not-found"
     )
   }
   getServiceDisabledErrorDetailsOrNull(error)?.let {

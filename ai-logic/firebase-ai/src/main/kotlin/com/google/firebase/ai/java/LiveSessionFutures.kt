@@ -212,7 +212,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * For details about the realtime input usage, see the `BidiGenerateContentRealtimeInput`
    * documentation (
    * [Gemini Developer API](https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput) or
-   * [Vertex AI Gemini API](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live#bidigeneratecontentrealtimeinput)
+   * [Gemini Enterprise API](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live#bidigeneratecontentrealtimeinput)
    * ).
    *
    * @param text The text data to send.
