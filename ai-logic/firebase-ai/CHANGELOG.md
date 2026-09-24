@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [changed] Deprecated `GenerativeBackend.agentPlatform` in favor of
   `GenerativeBackend.enterprise` to reflect the renaming of Gemini Agent
   Platform to Gemini Enterprise API. (#8640)

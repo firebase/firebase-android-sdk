@@ -45,8 +45,12 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-encoders-json:18.0.1")
-  api("com.google.firebase:firebase-encoders:17.0.0")
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
+  api(project(":encoders:firebase-encoders-json"))
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
+  api(project(":encoders:firebase-encoders"))
+
+  implementation(libs.androidx.annotation)
 
   compileOnly(libs.autovalue.annotations)
 

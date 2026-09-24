@@ -68,7 +68,8 @@ dependencies {
     }
     api libs.firebase.common
     api libs.firebase.components
-    api('com.google.firebase:firebase-installations-interop:17.1.1') {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
+    api(project(':firebase-installations-interop')) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
@@ -82,7 +83,8 @@ dependencies {
 
     compileOnly libs.autovalue.annotations
 
-    runtimeOnly('com.google.firebase:firebase-installations:18.0.0') {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
+    runtimeOnly(project(':firebase-installations')) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'

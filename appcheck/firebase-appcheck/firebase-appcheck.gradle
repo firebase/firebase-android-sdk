@@ -57,7 +57,8 @@ dependencies {
 
     api libs.playservices.tasks
     api libs.firebase.annotations
-    api "com.google.firebase:firebase-appcheck-interop:17.1.0"
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
+    api project(":appcheck:firebase-appcheck-interop")
     api(libs.firebase.common)
     api(libs.firebase.components)
 

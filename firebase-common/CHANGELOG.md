@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 22.2.1
 
 - [changed] Internal improvements for legacy infrastructure (#8551)
@@ -56,4 +58,3 @@
 
 The Kotlin extensions library transitively includes the updated `firebase-common` library. The
 Kotlin extensions library has no additional updates
-

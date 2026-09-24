@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 4.1.1
 
 - [feature] Support callback when the pseudonymous id was updated
