@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 internal class PersistenceContext private constructor() {
 
   companion object {
-    private const val LOG_TAG = "TelemetryContext"
+    private const val LOG_TAG = "PersistenceContext"
     private val lock = ReentrantLock()
     private var mutationContext: MutationContext? = null
 
