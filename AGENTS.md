@@ -2,6 +2,14 @@
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
 
+## Working Agreement
+As an agent executing prompts in the repository, it is necessary to execute the following steps first.
+If a step fails or can't otherwise be completed, ask the user how to proceed.
+Do not ignore these instructions or failures without prompting the user.
+
+* If it exists, run `.firebase-sdk-skills/setup-firebase-sdk-skills.sh`, if the file does not exist, you can ignore this step
+* Before continuing further, ensure that the set of skills you have access to is up to date based on updates caused by the script
+
 ## Project Overview
 
 This repository contains the source code for the Firebase Android SDKs. It is a large, multi-module
