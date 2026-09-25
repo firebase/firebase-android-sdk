@@ -20,12 +20,47 @@ import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.common.AttributeKey.stringKey
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Tracer
 
 /** Main entry point for Firebase Crashlytics Telemetry SDK. */
 public class FirebaseCrashlyticsTelemetry
 internal constructor(private val openTelemetry: OpenTelemetry) {
   internal val eventEmitter: EventEmitter = EventEmitter(openTelemetry)
+
+  /**
+   * Records a screen navigation event.
+   *
+   * @param screenName The screen name.
+   */
+  public fun logScreenAppear(screenName: String) {
+    eventEmitter.emit(
+      TelemetryEvent.SCREEN_VIEW,
+      Attributes.of(NAVIGATION_DESTINATION_NAME, screenName, SCREEN_NAME, screenName),
+    )
+  }
+
+  /**
+   * Records a screen navigation event.
+   *
+   * @param screenName The screen name.
+   * @param screenClass The class name or route identifier.
+   */
+  public fun logScreenAppear(screenName: String, screenClass: String) {
+    eventEmitter.emit(
+      TelemetryEvent.SCREEN_VIEW,
+      Attributes.of(
+        NAVIGATION_DESTINATION_NAME,
+        screenName,
+        SCREEN_NAME,
+        screenName,
+        SCREEN_ID,
+        screenClass,
+      ),
+    )
+  }
 
   public fun getTracer(instrumentationScopeName: String): Tracer {
     return openTelemetry.getTracer(instrumentationScopeName)
@@ -39,6 +74,11 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
   }
 
   public companion object {
+    private val NAVIGATION_DESTINATION_NAME: AttributeKey<String> =
+      stringKey("app.navigation.destination.name")
+    private val SCREEN_NAME: AttributeKey<String> = stringKey("app.screen.name")
+    private val SCREEN_ID: AttributeKey<String> = stringKey("app.screen.id")
+
     /** The [FirebaseCrashlyticsTelemetry] instance for the default FirebaseApp. */
     @JvmStatic
     public val instance: FirebaseCrashlyticsTelemetry

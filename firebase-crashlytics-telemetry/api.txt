@@ -14,6 +14,8 @@ package com.google.firebase.crashlytics.telemetry {
     method public static com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getInstance();
     method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName);
     method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName, String instrumentationScopeVersion);
+    method public void logScreenAppear(String screenName);
+    method public void logScreenAppear(String screenName, String screenClass);
     property public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry instance;
     field public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry.Companion Companion;
   }
