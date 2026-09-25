@@ -104,6 +104,7 @@ abstract class PomValidator : DefaultTask() {
         "listenablefuture", // guava's listenable future doesn't respect Semver
         "auto-service-annotations", // auto-service-annotations doesn't respect SemVer
         "re2j", //  re2j doesn't respect SemVer
+        "symbol-processing-api", // symbol-processing-api doesn't respect Semver
       )
   }
 }
