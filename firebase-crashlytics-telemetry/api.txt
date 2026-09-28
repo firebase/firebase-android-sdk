@@ -2,8 +2,10 @@
 package com.google.firebase.crashlytics.telemetry {
 
   public final class FirebaseCrashlyticsTelemetry {
+    method public static com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getInstance();
     method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName);
     method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName, String instrumentationScopeVersion);
+    property public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry instance;
     field public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry.Companion Companion;
   }
 
@@ -23,3 +25,4 @@ package com.google.firebase.crashlytics.telemetry {
   }
 
 }
+

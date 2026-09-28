@@ -37,8 +37,10 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
   }
 
   public companion object {
-    public val instance: FirebaseCrashlyticsTelemetry =
-      Firebase.app[FirebaseCrashlyticsTelemetry::class.java]
+    /** The [FirebaseCrashlyticsTelemetry] instance for the default FirebaseApp. */
+    @JvmStatic
+    public val instance: FirebaseCrashlyticsTelemetry
+      get() = Firebase.app[FirebaseCrashlyticsTelemetry::class.java]
   }
 }
 
