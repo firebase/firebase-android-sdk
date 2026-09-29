@@ -61,7 +61,14 @@ dependencies {
   implementation(project(":firebase-dataconnect"))
 
   implementation(libs.firebase.components)
-  implementation("com.google.firebase:firebase-auth:22.3.1")
+  // TODO(m187-repin): this module compiles against the App Check interop types,
+  // which it previously picked up as an undeclared transitive of firebase-auth.
+  // Declare the in-repo project directly and drop the stale external copy, which
+  // would otherwise be substituted by this project and fail artifact resolution.
+  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-appcheck-interop")
+  }
 
   compileOnly(libs.kotlinx.datetime)
   compileOnly(libs.commons.statistics.inference)

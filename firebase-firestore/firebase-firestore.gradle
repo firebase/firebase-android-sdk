@@ -151,14 +151,16 @@ dependencies {
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
     api libs.firebase.annotations
-    api 'com.google.firebase:firebase-appcheck-interop:17.1.0'
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
+    api project(':appcheck:firebase-appcheck-interop')
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api('com.google.firebase:firebase-database-collection:18.0.1')
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-database-collection.
+    api(project(':firebase-database-collection'))
 
     implementation libs.androidx.annotation
     implementation libs.playservices.base

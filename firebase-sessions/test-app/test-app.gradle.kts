@@ -35,6 +35,7 @@ android {
   val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.testing.sessions"
+  ndkVersion = "27.2.12479018"
   compileSdk = compileSdkVersion
 
   defaultConfig {

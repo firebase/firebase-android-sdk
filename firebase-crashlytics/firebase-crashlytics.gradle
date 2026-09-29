@@ -78,18 +78,26 @@ dependencies {
     api(libs.firebase.annotations)
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api("com.google.firebase:firebase-config-interop:16.0.1")
-    api("com.google.firebase:firebase-encoders:17.0.0")
-    api("com.google.firebase:firebase-encoders-json:18.0.1")
-    api("com.google.firebase:firebase-installations:18.0.0") {
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-config-interop.
+    api(project(":firebase-config-interop"))
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
+    api(project(":encoders:firebase-encoders"))
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
+    api(project(":encoders:firebase-encoders-json"))
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
+    api(project(":firebase-installations")) {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
-    api("com.google.firebase:firebase-installations-interop:17.2.0")
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
+    api(project(":firebase-installations-interop"))
     api("com.google.firebase:firebase-measurement-connector:20.0.1")
 
-    implementation("com.google.android.datatransport:transport-api:3.2.0")
-    implementation("com.google.android.datatransport:transport-backend-cct:3.3.0")
-    implementation("com.google.android.datatransport:transport-runtime:3.3.0")
+    // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
+    implementation(project(":transport:transport-api"))
+    // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-backend-cct.
+    implementation(project(":transport:transport-backend-cct"))
+    // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-runtime.
+    implementation(project(":transport:transport-runtime"))
     implementation(libs.androidx.annotation)
     compileOnly(libs.errorprone.annotations)
 
@@ -109,7 +117,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation("com.google.firebase:firebase-encoders-json:18.0.1")
+    // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
+    androidTestImplementation(project(":encoders:firebase-encoders-json"))
     androidTestImplementation(libs.protobuf.java)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.dexmaker)

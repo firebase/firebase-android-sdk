@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 19.1.2
 
 - [changed] Migrated from SharedPreferences to DataStore (#8355)

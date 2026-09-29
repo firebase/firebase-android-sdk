@@ -62,10 +62,13 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   // Firebase
-  api("com.google.firebase:firebase-config-interop:16.0.1")
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-config-interop.
+  api(project(":firebase-config-interop"))
   api(libs.firebase.annotations)
-  api("com.google.firebase:firebase-installations-interop:17.1.1")
-  api("com.google.firebase:firebase-abt:21.1.1") {
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
+  api(project(":firebase-installations-interop"))
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-abt.
+  api(project(":firebase-abt")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
@@ -75,7 +78,8 @@ dependencies {
   }
   api(libs.firebase.common)
   api(libs.firebase.components)
-  api("com.google.firebase:firebase-installations:18.0.0") {
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
+  api(project(":firebase-installations")) {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
 

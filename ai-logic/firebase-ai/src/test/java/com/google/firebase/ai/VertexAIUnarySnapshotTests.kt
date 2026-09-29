@@ -697,7 +697,7 @@ internal class VertexAIUnarySnapshotTests {
         usageMetadata.shouldNotBeNull()
         usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
         usageMetadata.toolUsePromptTokensDetails
-          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+          .shouldBeEmpty() // This isn't yet supported in Gemini Enterprise
       }
     }
 
@@ -734,11 +734,11 @@ internal class VertexAIUnarySnapshotTests {
         usageMetadata.shouldNotBeNull()
         usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
         usageMetadata.toolUsePromptTokensDetails
-          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+          .shouldBeEmpty() // This isn't yet supported in Gemini Enterprise
       }
     }
 
-  // This test only applies to Vertex AI, since this is a bug in the backend.
+  // This test only applies to Gemini Enterprise, since this is a bug in the backend.
   @Test
   fun `url context missing retrievedUrl`() =
     goldenVertexUnaryFile("unary-success-url-context-missing-retrievedurl.json") {

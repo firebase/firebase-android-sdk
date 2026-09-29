@@ -175,7 +175,7 @@ internal constructor(
 ) : FirebaseAIException(message, cause)
 
 /**
- * The specified Vertex AI location is invalid.
+ * The specified Gemini Enterprise location is invalid.
  *
  * For a list of valid locations, see
  * [locations.](https://firebase.google.com/docs/ai-logic/locations?api=vertex#available-locations)

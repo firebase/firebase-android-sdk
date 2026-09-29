@@ -766,15 +766,19 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerativeBackend {
-    method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform();
-    method public static com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
+    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend agentPlatform();
+    method @Deprecated public static com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
+    method public static com.google.firebase.ai.type.GenerativeBackend enterprise();
+    method public static com.google.firebase.ai.type.GenerativeBackend enterprise(String location = "global");
     method public static com.google.firebase.ai.type.GenerativeBackend googleAI();
     field public static final com.google.firebase.ai.type.GenerativeBackend.Companion Companion;
   }
 
   public static final class GenerativeBackend.Companion {
-    method public com.google.firebase.ai.type.GenerativeBackend agentPlatform();
-    method public com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
+    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend agentPlatform();
+    method @Deprecated public com.google.firebase.ai.type.GenerativeBackend agentPlatform(String location = "global");
+    method public com.google.firebase.ai.type.GenerativeBackend enterprise();
+    method public com.google.firebase.ai.type.GenerativeBackend enterprise(String location = "global");
     method public com.google.firebase.ai.type.GenerativeBackend googleAI();
   }
 
