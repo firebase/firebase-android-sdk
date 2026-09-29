@@ -32,7 +32,7 @@ else()
         FetchContent_Declare(
             firebase_telemetry_persistence
             GIT_REPOSITORY https://github.com/firebase/firebase-telemetry-persistence.git
-            GIT_TAG        7a2e6bd707f0eba9c715d0f51287f6e46a36c3c1
+            GIT_TAG        main
         )
         FetchContent_MakeAvailable(firebase_telemetry_persistence)
     endif()
