@@ -78,7 +78,10 @@ android {
     }
   }
 
-  testOptions { unitTests.all { testTask -> testTask.useJUnitPlatform() } }
+  testOptions {
+    unitTests.isReturnDefaultValues = true
+    unitTests.all { testTask -> testTask.useJUnitPlatform() }
+  }
 }
 
 kotlin {
