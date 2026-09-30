@@ -1,6 +1,7 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [fixed] Fixed topic subscription and unsubscription for topic names containing `%`. (#8620)
 
 # 25.1.3
 
