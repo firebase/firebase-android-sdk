@@ -1,4 +1,13 @@
 // Signature format: 3.0
+package com.google.firebase.crashlytics {
+
+  public final class TelemetryKt {
+    method public static com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry getTelemetry();
+    property public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry telemetry;
+  }
+
+}
+
 package com.google.firebase.crashlytics.telemetry {
 
   public final class FirebaseCrashlyticsTelemetry {

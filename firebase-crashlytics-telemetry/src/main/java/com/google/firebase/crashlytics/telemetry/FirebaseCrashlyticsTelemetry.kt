@@ -25,6 +25,8 @@ import io.opentelemetry.api.trace.Tracer
 /** Main entry point for Firebase Crashlytics Telemetry SDK. */
 public class FirebaseCrashlyticsTelemetry
 internal constructor(private val openTelemetry: OpenTelemetry) {
+  internal val eventEmitter: EventEmitter = EventEmitter(openTelemetry)
+
   public fun getTracer(instrumentationScopeName: String): Tracer {
     return openTelemetry.getTracer(instrumentationScopeName)
   }
