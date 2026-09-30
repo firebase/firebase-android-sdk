@@ -1,0 +1,14 @@
+// Signature format: 3.0
+package com.google.firebase.crashlytics.telemetry.compose {
+
+  public final class TrackNavigationKt {
+    method @androidx.compose.runtime.Composable public static androidx.navigation.NavHostController trackNavigation(androidx.navigation.NavHostController);
+  }
+
+  public final class TrackScreenKt {
+    method @androidx.compose.runtime.Composable public static void TrackScreen(String name);
+    method @androidx.compose.runtime.Composable public static void TrackScreen(String name, String screenClass);
+  }
+
+}
+
