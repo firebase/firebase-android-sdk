@@ -50,6 +50,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +97,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     FileStore testFileStore = new FileStore(getContext());
     reportMetadata = new UserMetadata(TEST_SESSION_ID, testFileStore, crashlyticsWorkers);
 
+    ResumableUploadMetadataStore resumableUploadMetadataStore =
+        new ResumableUploadMetadataStore(getContext(), testFileStore);
+
     reportingCoordinator =
         new SessionReportingCoordinator(
             dataCapture,
@@ -104,7 +108,8 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
             logFileManager,
             reportMetadata,
             idManager,
-            crashlyticsWorkers);
+            crashlyticsWorkers,
+            resumableUploadMetadataStore);
   }
 
   @After

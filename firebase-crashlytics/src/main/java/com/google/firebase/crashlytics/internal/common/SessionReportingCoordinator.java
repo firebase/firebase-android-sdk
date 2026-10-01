@@ -37,6 +37,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPay
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ProfilingManagerInfo;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
@@ -79,7 +80,8 @@ public class SessionReportingCoordinator {
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorkers crashlyticsWorkers,
+      ResumableUploadMetadataStore resumableUploadMetadataStore) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
@@ -94,7 +96,8 @@ public class SessionReportingCoordinator {
         logFileManager,
         userMetadata,
         idManager,
-        crashlyticsWorkers);
+        crashlyticsWorkers,
+        resumableUploadMetadataStore);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -106,6 +109,8 @@ public class SessionReportingCoordinator {
 
   private final CrashlyticsWorkers crashlyticsWorkers;
 
+  private final ResumableUploadMetadataStore resumableUploadMetadataStore;
+
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
@@ -113,7 +118,8 @@ public class SessionReportingCoordinator {
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
       IdManager idManager,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorkers crashlyticsWorkers,
+      ResumableUploadMetadataStore resumableUploadMetadataStore) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
@@ -121,6 +127,7 @@ public class SessionReportingCoordinator {
     this.reportMetadata = reportMetadata;
     this.idManager = idManager;
     this.crashlyticsWorkers = crashlyticsWorkers;
+    this.resumableUploadMetadataStore = resumableUploadMetadataStore;
   }
 
   public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
@@ -184,42 +191,43 @@ public class SessionReportingCoordinator {
       List<ApplicationExitInfo> applicationExitInfoList,
       boolean isHeapDumpCollectionEnabled,
       boolean wasHeapDumpGeneratedViaMarker) {
+    int trigger = getTrigger(sessionId, applicationExitInfoList);
+    if (trigger == ProfilingTrigger.TRIGGER_TYPE_NONE) {
+      return;
+    }
 
-    Optional<Integer> trigger =
-        isOom(sessionId, applicationExitInfoList)
-            ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_OOM)
-            : isMemoryLimiterKill(sessionId, applicationExitInfoList)
-                ? Optional.of(ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
-                : Optional.empty();
+    Optional<File> heapDump =
+        heapDumpForSessionTime(filesDir, reportPersistence.getStartTimestampMillis(sessionId));
 
-    trigger.ifPresent(
-        t -> {
-          boolean wasHeapDumpGenerated =
-              wasHeapDumpGeneratedViaMarker
-                  || (t == ProfilingTrigger.TRIGGER_TYPE_OOM
-                      && wasHeapDumpGeneratedViaFile(
-                          filesDir, reportPersistence.getStartTimestampMillis(sessionId)));
+    boolean wasHeapDumpGenerated = wasHeapDumpGeneratedViaMarker || heapDump.isPresent();
 
-          Logger.getLogger()
-              .d(
-                  "Trigger present; "
-                      + t
-                      + ", heap dump collection enabled? "
-                      + (isHeapDumpCollectionEnabled ? "yes" : "no")
-                      + ", heap dump generated? "
-                      + (wasHeapDumpGenerated ? "yes" : "no"));
+    if (isHeapDumpCollectionEnabled && wasHeapDumpGenerated) {
+      heapDump
+          .map(File::getName)
+          .ifPresent(
+              filename ->
+                  resumableUploadMetadataStore.addInProgressUpload(sessionId, trigger, filename));
+    }
 
-          reportPersistence.persistProfilingManagerInfo(
-              ProfilingManagerInfo.builder()
-                  .setProfilingTrigger(
-                      ProfilingManagerInfo.ProfilingTrigger.builder()
-                          .setTrigger(t)
-                          .setIsHeapDumpCollectionEnabled(isHeapDumpCollectionEnabled)
-                          .setWasHeapDumpGenerated(wasHeapDumpGenerated)
-                          .build())
-                  .build(),
-              sessionId);
-        });
+    Logger.getLogger()
+        .d(
+            "Trigger present; "
+                + trigger
+                + ", heap dump collection enabled? "
+                + (isHeapDumpCollectionEnabled ? "yes" : "no")
+                + ", heap dump generated? "
+                + (wasHeapDumpGenerated ? "yes" : "no"));
+
+    reportPersistence.persistProfilingManagerInfo(
+        ProfilingManagerInfo.builder()
+            .setProfilingTrigger(
+                ProfilingManagerInfo.ProfilingTrigger.builder()
+                    .setTrigger(trigger)
+                    .setIsHeapDumpCollectionEnabled(isHeapDumpCollectionEnabled)
+                    .setWasHeapDumpGenerated(wasHeapDumpGenerated)
+                    .build())
+            .build(),
+        sessionId);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -518,6 +526,19 @@ public class SessionReportingCoordinator {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  int getTrigger(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    if (isOom(sessionId, applicationExitInfoList)) {
+      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+    }
+
+    if (isMemoryLimiterKill(sessionId, applicationExitInfoList)) {
+      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+    }
+
+    return ProfilingTrigger.TRIGGER_TYPE_NONE;
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
   boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
     ApplicationExitInfo relevant =
@@ -559,10 +580,15 @@ public class SessionReportingCoordinator {
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
   static boolean wasHeapDumpGeneratedViaFile(File filesDir, long sessionStartTime) {
+    return heapDumpForSessionTime(filesDir, sessionStartTime).isPresent();
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  static Optional<File> heapDumpForSessionTime(File filesDir, long sessionStartTime) {
     File heapDumpRoot = new File(filesDir, "profiling");
     if (!heapDumpRoot.exists() || !heapDumpRoot.isDirectory()) {
       Logger.getLogger().d("Directory profiling/ doesn't exit");
-      return false;
+      return Optional.empty();
     }
 
     File[] heapDumps =
@@ -573,13 +599,13 @@ public class SessionReportingCoordinator {
 
     if (heapDumps == null || heapDumps.length == 0) {
       Logger.getLogger().d("No heap dumps present");
-      return false;
+      return Optional.empty();
     }
 
     return Arrays.stream(heapDumps)
         // There is no way to filter dumps per process (this is relevant only to multi process
         // Android apps)
-        .anyMatch(
+        .filter(
             heapDump -> {
               long lastModifiedTime = heapDump.lastModified();
 
@@ -593,6 +619,7 @@ public class SessionReportingCoordinator {
                           + heapDump.getName());
 
               return lastModifiedTime >= sessionStartTime;
-            });
+            })
+        .findFirst();
   }
 }
