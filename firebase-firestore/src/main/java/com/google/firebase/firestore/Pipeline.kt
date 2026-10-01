@@ -166,7 +166,11 @@ internal constructor(
   ): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
     builder.pipeline = toPipelineProto(userDataReader)
-    options?.forEach(builder::putOptions)
+    options?.forEach { key, value ->
+      if (key != "atomic") {
+        builder.putOptions(key, value)
+      }
+    }
     return builder.build()
   }
 
@@ -187,7 +191,11 @@ internal constructor(
     if (options != null && options.hasAtomic()) {
       builder.newTransaction =
         TransactionOptions.newBuilder()
-          .setReadWrite(TransactionOptions.ReadWrite.getDefaultInstance())
+          .setReadWrite(
+            TransactionOptions.ReadWrite.newBuilder()
+              .setConcurrencyMode(TransactionOptions.ConcurrencyMode.OPTIMISTIC)
+              .build()
+          )
           .build()
       builder.autoCommitTransaction = true
     }
@@ -239,8 +247,8 @@ internal constructor(
       )
     }
 
-    override fun onComplete(executionTime: Timestamp) {
-      taskCompletionSource.setResult(Snapshot(executionTime, results))
+    override fun onComplete(executionTime: Timestamp?) {
+      taskCompletionSource.setResult(Snapshot(executionTime ?: Timestamp.now(), results))
     }
 
     override fun onError(exception: FirebaseFirestoreException) {
@@ -1515,6 +1523,6 @@ internal interface PipelineResultObserver {
     createTime: Timestamp?,
     updateTime: Timestamp?
   )
-  fun onComplete(executionTime: Timestamp)
+  fun onComplete(executionTime: Timestamp?)
   fun onError(exception: FirebaseFirestoreException)
 }

@@ -1423,14 +1423,6 @@ internal constructor(
   private val fields: Array<out Field>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<RemoveFieldsStage>("remove_fields", options) {
-  init {
-    for (field in fields) {
-      val alias = field.alias
-      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is required" })
-      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is required" })
-      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is required" })
-    }
-  }
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun canonicalId(): String {
     TODO("Not yet implemented")
@@ -1855,13 +1847,8 @@ internal constructor(
     UpsertStage(fields, collectionPath, documentIdExpression, options)
   override fun canonicalId(): String = "upsert($collectionPath)"
 
-  override fun args(userDataReader: UserDataReader): Sequence<Value> {
-    return if (fields.isNotEmpty()) {
-      sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
-    } else {
-      emptySequence()
-    }
-  }
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
 
   override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     var completeOptions = options
