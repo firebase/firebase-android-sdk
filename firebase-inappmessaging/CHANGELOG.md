@@ -1,5 +1,10 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
+  Protocol Buffers to `4.36.1`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+
 # 22.0.3
 
 - [changed] Bumped internal dependencies.

@@ -92,7 +92,10 @@ internal constructor(
       apiKey,
       modelName,
       requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
+      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}".let { base ->
+        if (requestOptions.customApiClientHeader.isNullOrEmpty()) base
+        else "$base ${requestOptions.customApiClientHeader}"
+      },
       firebaseApp,
       AppCheckHeaderProvider(
         TAG,

@@ -38,7 +38,9 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.Int32Value;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -594,6 +596,350 @@ public class MutationTest {
       Map<String, Object> transformData,
       Map<String, Object> expectedData) {
     verifyTransform(baseData, Collections.singletonList(transformData), expectedData);
+  }
+
+  private void verifyDocTransform(
+      @Nullable Object baseVal, FieldValue transformOp, Object expectedVal) {
+    if (baseVal == null) {
+      verifyTransform(map(), map("val", transformOp), map("val", expectedVal));
+    } else {
+      verifyTransform(map("val", baseVal), map("val", transformOp), map("val", expectedVal));
+    }
+  }
+
+  private void verifyModelTransform(
+      TransformOperation op, @Nullable Object baseVal, Object expectedVal) {
+    Value baseProto = baseVal != null ? wrap(baseVal) : null;
+    Value expectedProto = wrap(expectedVal);
+    Value result = op.applyToLocalView(baseProto, Timestamp.now());
+    assertEquals(expectedProto, result);
+  }
+
+  // Model-level increment evaluation
+  @Test
+  public void testModelIncrementInt32AndInt32() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Int32Value(5))),
+        new Int32Value(10),
+        new Int32Value(15));
+  }
+
+  @Test
+  public void testModelIncrementIntAndInt32() {
+    verifyModelTransform(new NumericIncrementTransformOperation(wrap(new Int32Value(5))), 10L, 15L);
+  }
+
+  @Test
+  public void testModelIncrementDecimal128AndInt() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(5L)),
+        new Decimal128Value("10"),
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelIncrementIntAndDecimal128() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Decimal128Value("5"))),
+        10L,
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelIncrementInt32AndDecimal128() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Decimal128Value("5"))),
+        new Int32Value(10),
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelIncrementDoubleAndInt32() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Int32Value(5))), 10.5D, 15.5D);
+  }
+
+  @Test
+  public void testModelIncrementDecimal128AndDecimal128() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Decimal128Value("5"))),
+        new Decimal128Value("10"),
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelIncrementDoubleAndDecimal128() {
+    verifyModelTransform(
+        new NumericIncrementTransformOperation(wrap(new Decimal128Value("5"))),
+        10.5D,
+        new Decimal128Value("15.5"));
+  }
+
+  // Standalone document-level increment tests
+  @Test
+  public void testAppliesIncrementWithIntegerToInt32Base() {
+    verifyTransform(
+        map("val", new Int32Value(10)), map("val", FieldValue.increment(5)), map("val", 15L));
+  }
+
+  @Test
+  public void testAppliesIncrementWithDoubleToInt32Base() {
+    verifyTransform(
+        map("val", new Int32Value(10)), map("val", FieldValue.increment(1.5)), map("val", 11.5D));
+  }
+
+  @Test
+  public void testAppliesIncrementWithIntegerToDecimal128Base() {
+    verifyTransform(
+        map("val", new Decimal128Value("10.5")),
+        map("val", FieldValue.increment(5)),
+        map("val", new Decimal128Value("15.5")));
+  }
+
+  // Model-level minimum evaluation
+  @Test
+  public void testModelMinimumInt32AndInt32_Smaller() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(5))),
+        new Int32Value(10),
+        new Int32Value(5));
+  }
+
+  @Test
+  public void testModelMinimumInt32AndInt32_Larger() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(15))),
+        new Int32Value(10),
+        new Int32Value(10));
+  }
+
+  @Test
+  public void testModelMinimumIntAndInt32() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(5))), 10L, new Int32Value(5));
+  }
+
+  @Test
+  public void testModelMinimumInt32AndInt() {
+    verifyModelTransform(new NumericMinimumTransformOperation(wrap(5L)), new Int32Value(10), 5L);
+  }
+
+  @Test
+  public void testModelMinimumDecimal128AndInt() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(5L)), new Decimal128Value("10"), 5L);
+  }
+
+  @Test
+  public void testModelMinimumIntAndDecimal128() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Decimal128Value("5"))),
+        10L,
+        new Decimal128Value("5"));
+  }
+
+  @Test
+  public void testModelMinimumInt32AndDecimal128() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Decimal128Value("5"))),
+        new Int32Value(10),
+        new Decimal128Value("5"));
+  }
+
+  @Test
+  public void testModelMinimumDoubleAndInt32() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(5))), 10.5D, new Int32Value(5));
+  }
+
+  @Test
+  public void testModelMinimumDecimal128AndDecimal128() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Decimal128Value("5"))),
+        new Decimal128Value("10"),
+        new Decimal128Value("5"));
+  }
+
+  @Test
+  public void testModelMinimumDoubleAndDecimal128() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Decimal128Value("5"))),
+        10.5D,
+        new Decimal128Value("5"));
+  }
+
+  @Test
+  public void testModelMinimumNonNumericBaseSelectsOperand() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(5))), "hello", new Int32Value(5));
+  }
+
+  @Test
+  public void testModelMinimumNullBaseSelectsOperand() {
+    verifyModelTransform(
+        new NumericMinimumTransformOperation(wrap(new Int32Value(5))), null, new Int32Value(5));
+  }
+
+  // Model-level maximum evaluation
+  @Test
+  public void testModelMaximumInt32AndInt32_Smaller() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Int32Value(5))),
+        new Int32Value(10),
+        new Int32Value(10));
+  }
+
+  @Test
+  public void testModelMaximumInt32AndInt32_Larger() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Int32Value(15))),
+        new Int32Value(10),
+        new Int32Value(15));
+  }
+
+  @Test
+  public void testModelMaximumIntAndInt32() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Int32Value(15))), 10L, new Int32Value(15));
+  }
+
+  @Test
+  public void testModelMaximumInt32AndInt() {
+    verifyModelTransform(new NumericMaximumTransformOperation(wrap(15L)), new Int32Value(10), 15L);
+  }
+
+  @Test
+  public void testModelMaximumDecimal128AndInt() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(15L)), new Decimal128Value("10"), 15L);
+  }
+
+  @Test
+  public void testModelMaximumIntAndDecimal128() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("15"))),
+        10L,
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelMaximumInt32AndDecimal128() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("15"))),
+        new Int32Value(10),
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelMaximumDoubleAndInt32() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Int32Value(15))), 10.5D, new Int32Value(15));
+  }
+
+  @Test
+  public void testModelMaximumDecimal128AndDecimal128() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("15"))),
+        new Decimal128Value("10"),
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelMaximumDoubleAndDecimal128() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("15"))),
+        10.5D,
+        new Decimal128Value("15"));
+  }
+
+  @Test
+  public void testModelMaximumNonNumericBaseSelectsOperand() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("10.5"))),
+        "hello",
+        new Decimal128Value("10.5"));
+  }
+
+  @Test
+  public void testModelMaximumNullBaseSelectsOperand() {
+    verifyModelTransform(
+        new NumericMaximumTransformOperation(wrap(new Decimal128Value("10.5"))),
+        null,
+        new Decimal128Value("10.5"));
+  }
+
+  // Document-level numeric transform evaluation
+  @Test
+  public void testAppliesNumericTransformsToInt32Fields() {
+    Int32Value base = new Int32Value(10);
+    verifyDocTransform(base, FieldValue.increment(5), 15L);
+    verifyDocTransform(base, FieldValue.increment(1.5), 11.5D);
+    verifyDocTransform(base, FieldValue.minimum(5), 5L);
+    verifyDocTransform(base, FieldValue.minimum(15), new Int32Value(10));
+    verifyDocTransform(base, FieldValue.minimum(5.5), 5.5D);
+    verifyDocTransform(base, FieldValue.minimum(-5), -5L);
+    verifyDocTransform(base, FieldValue.maximum(5), new Int32Value(10));
+    verifyDocTransform(base, FieldValue.maximum(15), 15L);
+    verifyDocTransform(base, FieldValue.maximum(5.5), new Int32Value(10));
+    verifyDocTransform(base, FieldValue.maximum(-5), new Int32Value(10));
+  }
+
+  @Test
+  public void testAppliesNumericTransformsToDecimal128Fields() {
+    Decimal128Value base = new Decimal128Value("10.5");
+    verifyDocTransform(base, FieldValue.increment(5), new Decimal128Value("15.5"));
+    verifyDocTransform(base, FieldValue.minimum(5), 5L);
+    verifyDocTransform(base, FieldValue.minimum(15), new Decimal128Value("10.5"));
+    verifyDocTransform(base, FieldValue.minimum(5.5), 5.5D);
+    verifyDocTransform(base, FieldValue.minimum(-5), -5L);
+    verifyDocTransform(base, FieldValue.maximum(5), new Decimal128Value("10.5"));
+    verifyDocTransform(base, FieldValue.maximum(15), 15L);
+    verifyDocTransform(base, FieldValue.maximum(5.5), new Decimal128Value("10.5"));
+    verifyDocTransform(base, FieldValue.maximum(-5), new Decimal128Value("10.5"));
+  }
+
+  @Test
+  public void testAppliesNumericTransformsToStandardIntegerAndDoubleFields() {
+    long intBase = 10L;
+    verifyDocTransform(intBase, FieldValue.minimum(5), 5L);
+    verifyDocTransform(intBase, FieldValue.minimum(5.5), 5.5D);
+    verifyDocTransform(intBase, FieldValue.maximum(15), 15L);
+    verifyDocTransform(intBase, FieldValue.maximum(15.5), 15.5D);
+
+    double doubleBase = 10.5D;
+    verifyDocTransform(doubleBase, FieldValue.minimum(5), 5.0D);
+    verifyDocTransform(doubleBase, FieldValue.minimum(5.5), 5.5D);
+    verifyDocTransform(doubleBase, FieldValue.maximum(15), 15.0D);
+    verifyDocTransform(doubleBase, FieldValue.maximum(15.5), 15.5D);
+  }
+
+  @Test
+  public void testAppliesNumericTransformsToMissingAndNonNumericFields() {
+    verifyDocTransform(null, FieldValue.increment(1), 1L);
+    verifyDocTransform(null, FieldValue.minimum(10), 10L);
+    verifyDocTransform(null, FieldValue.maximum(10.5), 10.5D);
+
+    String stringBase = "hello";
+    verifyDocTransform(stringBase, FieldValue.minimum(5), 5L);
+    verifyDocTransform(stringBase, FieldValue.maximum(15), 15L);
+  }
+
+  @Test
+  public void testAppliesConsecutiveNumericTransformsOnDocument() {
+    Map<String, Object> baseDoc = map("val", new Int32Value(10));
+    Map<String, Object> t1 = map("val", FieldValue.minimum(15));
+    Map<String, Object> t2 = map("val", FieldValue.minimum(5));
+    Map<String, Object> t3 = map("val", FieldValue.maximum(20));
+    verifyTransform(baseDoc, Arrays.asList(t1, t2, t3), map("val", 20L));
+
+    Map<String, Object> numDoc = map("numberVal", 1);
+    verifyTransform(
+        numDoc,
+        Arrays.asList(
+            map("numberVal", FieldValue.increment(2)),
+            map("numberVal", FieldValue.increment(3)),
+            map("numberVal", FieldValue.increment(4))),
+        map("numberVal", 10L));
   }
 
   @Test

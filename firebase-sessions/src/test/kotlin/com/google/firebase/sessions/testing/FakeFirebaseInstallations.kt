@@ -45,6 +45,8 @@ internal class FakeFirebaseInstallations(
 
   override fun delete(): Task<Void> = throw NotImplementedError("delete not faked.")
 
+  override fun clearFidCache(): Unit = throw NotImplementedError("clearFidCache not faked.")
+
   override fun registerFidListener(listener: FidListener): FidListenerHandle =
     throw NotImplementedError("registerFidListener not faked.")
 }

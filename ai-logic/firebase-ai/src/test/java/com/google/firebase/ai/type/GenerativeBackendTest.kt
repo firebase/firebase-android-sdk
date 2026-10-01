@@ -25,31 +25,23 @@ internal class GenerativeBackendTest {
 
   @Test
   fun `agentPlatform default location`() {
-    val backend = GenerativeBackend.agentPlatform()
+    val backend = GenerativeBackend.enterprise()
     backend.location shouldBe "global"
-    backend.backend shouldBe GenerativeBackendEnum.AGENT_PLATFORM
+    backend.backend shouldBe GenerativeBackendEnum.ENTERPRISE
   }
 
   @Test
   fun `agentPlatform custom location`() {
-    val backend = GenerativeBackend.agentPlatform("europe-west1")
+    val backend = GenerativeBackend.enterprise("europe-west1")
     backend.location shouldBe "europe-west1"
-    backend.backend shouldBe GenerativeBackendEnum.AGENT_PLATFORM
+    backend.backend shouldBe GenerativeBackendEnum.ENTERPRISE
   }
 
   @Test
   fun `agentPlatform invalid locations throw exception`() {
-    shouldThrow<InvalidLocationException> { GenerativeBackend.agentPlatform("") }
-    shouldThrow<InvalidLocationException> { GenerativeBackend.agentPlatform("   ") }
-    shouldThrow<InvalidLocationException> { GenerativeBackend.agentPlatform("us/central1") }
-  }
-
-  @Test
-  @Suppress("DEPRECATION")
-  fun `vertexAI default location`() {
-    val backend = GenerativeBackend.vertexAI()
-    backend.location shouldBe "us-central1"
-    backend.backend shouldBe GenerativeBackendEnum.VERTEX_AI
+    shouldThrow<InvalidLocationException> { GenerativeBackend.enterprise("") }
+    shouldThrow<InvalidLocationException> { GenerativeBackend.enterprise("   ") }
+    shouldThrow<InvalidLocationException> { GenerativeBackend.enterprise("us/central1") }
   }
 
   @Test
@@ -60,18 +52,15 @@ internal class GenerativeBackendTest {
   }
 
   @Test
-  @Suppress("DEPRECATION")
   fun `GenerativeBackend equality and hashcode`() {
-    val agentPlatformGlobal1 = GenerativeBackend.agentPlatform("global")
-    val agentPlatformGlobal2 = GenerativeBackend.agentPlatform("global")
-    val agentPlatformUsCentral = GenerativeBackend.agentPlatform("us-central1")
-    val vertexGlobal = GenerativeBackend.vertexAI("global")
+    val agentPlatformGlobal1 = GenerativeBackend.enterprise("global")
+    val agentPlatformGlobal2 = GenerativeBackend.enterprise("global")
+    val agentPlatformUsCentral = GenerativeBackend.enterprise("us-central1")
 
     agentPlatformGlobal1 shouldBe agentPlatformGlobal2
     agentPlatformGlobal1.hashCode() shouldBe agentPlatformGlobal2.hashCode()
 
     agentPlatformGlobal1 shouldNotBe agentPlatformUsCentral
-    agentPlatformGlobal1 shouldNotBe vertexGlobal
     agentPlatformGlobal1 shouldNotBe GenerativeBackend.googleAI()
   }
 }

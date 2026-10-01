@@ -28,38 +28,31 @@ internal constructor(internal val location: String, internal val backend: Genera
     public fun googleAI(): GenerativeBackend =
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)
 
-    /**
-     * References the VertexAI Gemini API backend.
-     *
-     * @param location passes a valid cloud server location, defaults to "us-central1"
-     */
     @Deprecated(
-      message =
-        "Use agentPlatform instead. Note that agentPlatform default location is \"global\" while" +
-          " vertexAI was \"us-central1\".",
-      replaceWith = ReplaceWith("agentPlatform(location)")
+      "Use `enterprise` instead",
+      ReplaceWith(
+        "enterprise(location)",
+        "com.google.firebase.ai.type.GenerativeBackend.Companion.enterprise"
+      )
     )
     @JvmStatic
     @JvmOverloads
-    public fun vertexAI(location: String = "us-central1"): GenerativeBackend {
-      if (location.isBlank() || location.contains("/")) {
-        throw InvalidLocationException(location)
-      }
-      return GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
+    public fun agentPlatform(location: String = "global"): GenerativeBackend {
+      return enterprise(location)
     }
 
     /**
-     * References the Agent Platform Gemini API.
+     * References the Gemini Enterprise API.
      *
      * @param location passes a valid cloud server location, defaults to "global"
      */
     @JvmStatic
     @JvmOverloads
-    public fun agentPlatform(location: String = "global"): GenerativeBackend {
+    public fun enterprise(location: String = "global"): GenerativeBackend {
       if (location.isBlank() || location.contains("/")) {
         throw InvalidLocationException(location)
       }
-      return GenerativeBackend(location, GenerativeBackendEnum.AGENT_PLATFORM)
+      return GenerativeBackend(location, GenerativeBackendEnum.ENTERPRISE)
     }
   }
 
@@ -69,8 +62,7 @@ internal constructor(internal val location: String, internal val backend: Genera
         GenerativeBackendEnum.GOOGLE_AI -> {
           other.backend == this.backend
         }
-        GenerativeBackendEnum.VERTEX_AI,
-        GenerativeBackendEnum.AGENT_PLATFORM -> {
+        GenerativeBackendEnum.ENTERPRISE -> {
           other.backend == this.backend && other.location == this.location
         }
       }
@@ -83,6 +75,5 @@ internal constructor(internal val location: String, internal val backend: Genera
 
 internal enum class GenerativeBackendEnum {
   GOOGLE_AI,
-  VERTEX_AI,
-  AGENT_PLATFORM,
+  ENTERPRISE,
 }

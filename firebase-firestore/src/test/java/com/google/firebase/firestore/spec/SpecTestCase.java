@@ -38,7 +38,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.Decimal128Value;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreIntegrationTestFactory;
@@ -97,6 +99,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firestore.v1.BitSequence;
 import com.google.firestore.v1.BloomFilter;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
@@ -197,6 +200,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private LruGarbageCollector lruGarbageCollector;
   private EventManager eventManager;
   private DatabaseInfo databaseInfo;
+  private BundleSerializer bundleSerializer;
 
   /** Events to be checked by the expectations. */
   private List<QueryEvent> events;
@@ -333,6 +337,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void initClient() {
     queue = new AsyncQueue();
     datastore = new MockDatastore(databaseInfo, queue);
+    bundleSerializer = new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
 
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
@@ -488,6 +493,33 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     if (obj instanceof JSONArray) {
       return parseList((JSONArray) obj);
     } else if (obj instanceof JSONObject) {
+      JSONObject jsonObj = (JSONObject) obj;
+      if (jsonObj.has("__decimal128__")) {
+        Object val = jsonObj.get("__decimal128__");
+        if (val instanceof JSONObject) {
+          JSONObject decimalObj = (JSONObject) val;
+          if (decimalObj.has("stringValue")) {
+            return new Decimal128Value(decimalObj.getString("stringValue"));
+          }
+        } else if (val instanceof String) {
+          return new Decimal128Value((String) val);
+        }
+      }
+      String methodName = jsonObj.optString("_methodName", jsonObj.optString("methodName", null));
+      if ("increment".equals(methodName)) {
+        Object rawOperand =
+            jsonObj.has("_operand") ? jsonObj.get("_operand") : jsonObj.opt("operand");
+        Object operand = rawOperand != null ? parseObject(rawOperand) : null;
+        if (operand instanceof Long || operand instanceof Integer) {
+          return FieldValue.increment(((Number) operand).longValue());
+        } else if (operand instanceof Number) {
+          return FieldValue.increment(((Number) operand).doubleValue());
+        } else if (operand instanceof Decimal128Value) {
+          return FieldValue.increment(Double.parseDouble(((Decimal128Value) operand).stringValue));
+        } else if (operand instanceof String) {
+          return FieldValue.increment(Double.parseDouble((String) operand));
+        }
+      }
       return parseMap((JSONObject) obj);
     } else {
       return obj;
@@ -635,8 +667,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void doLoadBundle(String json) throws Exception {
     BundleReader bundleReader =
         new BundleReader(
-            new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId())),
-            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            bundleSerializer, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
     LoadBundleTask bundleTask = new LoadBundleTask();
     queue.runSync(
         () -> {
@@ -840,8 +871,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Pair<Mutation, Task<Void>> write = getCurrentOutstandingWrites().remove(0);
     validateNextWriteSent(write.first);
 
-    MutationResult mutationResult =
-        new MutationResult(version(version), /* transformResults= */ Collections.emptyList());
+    List<Value> transformResults = new ArrayList<>();
+    if (writeAckSpec.has("transformResults")) {
+      JSONArray transformResultsJson = writeAckSpec.getJSONArray("transformResults");
+      for (int i = 0; i < transformResultsJson.length(); ++i) {
+        transformResults.add(bundleSerializer.decodeValue(transformResultsJson.getJSONObject(i)));
+      }
+    }
+
+    MutationResult mutationResult = new MutationResult(version(version), transformResults);
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 

@@ -61,8 +61,15 @@ dependencies {
   implementation(project(":firebase-dataconnect"))
   implementation(project(":firebase-dataconnect:testutil"))
 
-  implementation("com.google.firebase:firebase-auth:22.3.1")
-  implementation("com.google.firebase:firebase-appcheck:18.0.0")
+  // TODO(m187-repin): the in-repo :appcheck:firebase-appcheck-interop reaches this
+  // module at runtime through :firebase-dataconnect. Drop the stale external copies
+  // so Gradle does not substitute them with that project and fail to resolve an aar.
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-appcheck-interop")
+  }
+  implementation("com.google.firebase:firebase-appcheck:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-appcheck-interop")
+  }
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)

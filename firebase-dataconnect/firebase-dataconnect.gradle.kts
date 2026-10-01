@@ -107,7 +107,8 @@ dependencies {
   api(libs.firebase.common)
 
   api(project(":firebase-annotations"))
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
+  implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation(libs.firebase.components)
 
@@ -140,8 +141,14 @@ dependencies {
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
-  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0")
-  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1")
+  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck.
+  androidTestImplementation(project(":appcheck:firebase-appcheck"))
+  // TODO(m187-repin): the in-repo :appcheck:firebase-appcheck-interop is already on
+  // this classpath. Drop the stale external copy so Gradle does not substitute it
+  // with that project and fail to resolve an aar.
+  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-appcheck-interop")
+  }
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)

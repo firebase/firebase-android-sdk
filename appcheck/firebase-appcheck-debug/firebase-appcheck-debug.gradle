@@ -44,7 +44,7 @@ android {
 
     testOptions {
         targetSdk project.targetSdkVersion
-        unitTests.includeAndroidResources = false
+        unitTests.includeAndroidResources = true
     }
 }
 

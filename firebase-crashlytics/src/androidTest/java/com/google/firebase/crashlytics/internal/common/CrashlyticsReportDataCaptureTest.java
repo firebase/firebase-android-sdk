@@ -166,7 +166,7 @@ public class CrashlyticsReportDataCaptureTest {
 
     assertEquals("anr", event.getType());
     assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
-    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(testApplicationExitInfo.getTimestamp() / 1000L, event.getTimestamp());
     assertEquals(false, event.getApp().getBackground());
   }
 
@@ -181,7 +181,7 @@ public class CrashlyticsReportDataCaptureTest {
 
     assertEquals("anr", event.getType());
     assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
-    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(testApplicationExitInfo.getTimestamp() / 1000L, event.getTimestamp());
     assertEquals(true, event.getApp().getBackground());
   }
 
@@ -211,7 +211,7 @@ public class CrashlyticsReportDataCaptureTest {
     CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
         event.getApp().getExecution().getAppExitInfo();
     assertNotEquals(testApplicationExitInfo, generatedAppExitInfo);
-    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(testApplicationExitInfo.getTimestamp() / 1000L, event.getTimestamp());
     assertEquals(generatedAppExitInfo.getBuildIdMappingForArch().size(), 1);
     assertEquals(
         generatedAppExitInfo.getBuildIdMappingForArch().get(0).getLibraryName(),
@@ -251,7 +251,7 @@ public class CrashlyticsReportDataCaptureTest {
     CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
         event.getApp().getExecution().getAppExitInfo();
     assertNotEquals(testApplicationExitInfo, generatedAppExitInfo);
-    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(testApplicationExitInfo.getTimestamp() / 1000L, event.getTimestamp());
     assertEquals(generatedAppExitInfo.getBuildIdMappingForArch().size(), 2);
     for (int i = 0; i < buildIdInfoList.size(); i++) {
       assertEquals(
@@ -601,7 +601,7 @@ public class CrashlyticsReportDataCaptureTest {
             : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
     return CrashlyticsReport.ApplicationExitInfo.builder()
         .setTraceFile("trace")
-        .setTimestamp(1L)
+        .setTimestamp(1000L)
         .setImportance(anrImportance)
         .setReasonCode(1)
         .setProcessName("test")

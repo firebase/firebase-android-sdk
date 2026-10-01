@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Sentinel values that can be used when writing document fields with {@code set()} or {@code
@@ -100,6 +101,23 @@ public abstract class FieldValue {
     Number getOperand() {
       return operand;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      NumericIncrementFieldValue that = (NumericIncrementFieldValue) o;
+      return Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(operand);
+    }
   }
 
   /** {@code FieldValue} class for {@link #minimum()} transforms. */
@@ -118,6 +136,23 @@ public abstract class FieldValue {
     Number getOperand() {
       return operand;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      NumericMinimumFieldValue that = (NumericMinimumFieldValue) o;
+      return Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(operand);
+    }
   }
 
   /** {@code FieldValue} class for {@link #maximum()} transforms. */
@@ -135,6 +170,23 @@ public abstract class FieldValue {
 
     Number getOperand() {
       return operand;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      NumericMaximumFieldValue that = (NumericMaximumFieldValue) o;
+      return Objects.equals(operand, that.operand);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(operand);
     }
   }
 

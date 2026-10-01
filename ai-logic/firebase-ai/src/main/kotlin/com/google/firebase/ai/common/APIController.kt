@@ -214,10 +214,9 @@ internal constructor(
       .map { it.validate() }
       .catch { throw FirebaseAIException.from(it) }
 
-  private fun getBidiEndpoint(location: String): String =
+  private fun getLiveEndpoint(location: String): String =
     when (backend?.backend) {
-      GenerativeBackendEnum.VERTEX_AI,
-      GenerativeBackendEnum.AGENT_PLATFORM,
+      GenerativeBackendEnum.ENTERPRISE,
       null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
@@ -230,7 +229,7 @@ internal constructor(
     // the same timeout-protected path as HTTP methods, then set them synchronously inside the
     // lambda.
     val extraHeaders = extractHeaders(headerProvider)
-    return client.webSocketSession(getBidiEndpoint(location)) {
+    return client.webSocketSession(getLiveEndpoint(location)) {
       applyCommonHeaders()
       for ((tag, value) in extraHeaders) {
         header(tag, value)
@@ -459,7 +458,7 @@ private suspend fun validateResponse(response: HttpResponse) {
   }
   if (message.contains("genai config not found")) {
     throw APINotConfiguredException(
-      "The Gemini Developer API is not enabled, to enable and configure, see https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found"
+      "The Gemini Developer API is not enabled, to enable and configure, see https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting#error-genai-config-not-found"
     )
   }
   getServiceDisabledErrorDetailsOrNull(error)?.let {

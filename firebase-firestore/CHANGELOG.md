@@ -1,5 +1,11 @@
 # Unreleased
 
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
+  Protocol Buffers to `4.36.1`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+
 # 26.6.0
 
 - [feature] Implemented support for retrieving documents up to 16MB over gRPC (#8363)

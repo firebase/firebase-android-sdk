@@ -114,4 +114,50 @@ internal class GenerativeModelBuilderTests {
     val apiClient = controller.apiClient
     apiClient shouldNotContain " hybrid"
   }
+
+  @Test
+  fun `getModelProvider falls back to cloud when non-text response modalities are requested in PREFER_ON_DEVICE mode`() {
+    val builder =
+      GenerativeModel.Builder(
+          modelName = TEST_MODEL_NAME,
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply {
+          onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
+          generationConfig =
+            com.google.firebase.ai.type.generationConfig {
+              responseModalities = listOf(com.google.firebase.ai.type.ResponseModality.IMAGE)
+            }
+        }
+
+    val provider = builder.getModelProvider()
+
+    provider.shouldBeInstanceOf<CloudGenerativeModelProvider>()
+  }
+
+  @Test
+  fun `getModelProvider uses fallback provider when only text response modality is requested in PREFER_ON_DEVICE mode`() {
+    val builder =
+      GenerativeModel.Builder(
+          modelName = TEST_MODEL_NAME,
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply {
+          onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
+          generationConfig =
+            com.google.firebase.ai.type.generationConfig {
+              responseModalities = listOf(com.google.firebase.ai.type.ResponseModality.TEXT)
+            }
+        }
+
+    val provider = builder.getModelProvider()
+
+    provider.shouldBeInstanceOf<FallbackGenerativeModelProvider>()
+  }
 }

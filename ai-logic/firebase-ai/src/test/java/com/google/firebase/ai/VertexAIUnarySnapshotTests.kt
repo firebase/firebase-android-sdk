@@ -587,7 +587,6 @@ internal class VertexAIUnarySnapshotTests {
         val response = model.countTokens("prompt")
 
         response.totalTokens shouldBe 6
-        response.totalBillableCharacters shouldBe 16
         response.promptTokensDetails.isEmpty() shouldBe true
       }
     }
@@ -599,9 +598,8 @@ internal class VertexAIUnarySnapshotTests {
         val response = model.countTokens("prompt")
 
         response.totalTokens shouldBe 1837
-        response.totalBillableCharacters shouldBe 117
         response.promptTokensDetails shouldNotBe null
-        response.promptTokensDetails?.forAtLeastOne {
+        response.promptTokensDetails.forAtLeastOne {
           it.modality shouldBe ContentModality.IMAGE
           it.tokenCount shouldBe 1806
         }
@@ -615,7 +613,6 @@ internal class VertexAIUnarySnapshotTests {
         val response = model.countTokens("prompt")
 
         response.totalTokens shouldBe 258
-        response.totalBillableCharacters shouldBe 0
       }
     }
 
@@ -700,7 +697,7 @@ internal class VertexAIUnarySnapshotTests {
         usageMetadata.shouldNotBeNull()
         usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
         usageMetadata.toolUsePromptTokensDetails
-          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+          .shouldBeEmpty() // This isn't yet supported in Gemini Enterprise
       }
     }
 
@@ -737,11 +734,11 @@ internal class VertexAIUnarySnapshotTests {
         usageMetadata.shouldNotBeNull()
         usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
         usageMetadata.toolUsePromptTokensDetails
-          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+          .shouldBeEmpty() // This isn't yet supported in Gemini Enterprise
       }
     }
 
-  // This test only applies to Vertex AI, since this is a bug in the backend.
+  // This test only applies to Gemini Enterprise, since this is a bug in the backend.
   @Test
   fun `url context missing retrievedUrl`() =
     goldenVertexUnaryFile("unary-success-url-context-missing-retrievedurl.json") {

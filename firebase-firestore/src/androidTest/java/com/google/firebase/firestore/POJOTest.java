@@ -47,6 +47,14 @@ public class POJOTest {
     Blob blob;
     GeoPoint geoPoint;
     DocumentReference documentReference;
+    BsonObjectId bsonObjectId;
+    Blob bsonBinaryData;
+    BsonTimestamp bsonTimestamp;
+    RegexValue regexValue;
+    Int32Value int32Value;
+    Decimal128Value decimal128Value;
+    MinKey minKey;
+    MaxKey maxKey;
 
     public POJO() {}
 
@@ -60,6 +68,14 @@ public class POJOTest {
       this.timestamp = new Timestamp(123, 123456000);
       this.blob = Blob.fromBytes(new byte[] {3, 1, 4, 1, 5});
       this.geoPoint = new GeoPoint(3.1415, 9.2653);
+      this.bsonObjectId = new BsonObjectId("507f191e810c19729de860ea");
+      this.bsonBinaryData = Blob.createBsonBinary(1, new byte[] {3, 1, 4, 1, 5});
+      this.bsonTimestamp = new BsonTimestamp(1, 2);
+      this.regexValue = new RegexValue("^foo", "i");
+      this.int32Value = new Int32Value(1);
+      this.decimal128Value = new Decimal128Value("1.2e3");
+      this.minKey = MinKey.instance();
+      this.maxKey = MaxKey.instance();
     }
 
     public double getNumber() {
@@ -118,6 +134,70 @@ public class POJOTest {
       this.documentReference = documentReference;
     }
 
+    public BsonObjectId getBsonObjectId() {
+      return bsonObjectId;
+    }
+
+    public void setBsonObjectId(BsonObjectId bsonObjectId) {
+      this.bsonObjectId = bsonObjectId;
+    }
+
+    public Blob getBsonBinary() {
+      return bsonBinaryData;
+    }
+
+    public void setBsonBinary(Blob bsonBinaryData) {
+      this.bsonBinaryData = bsonBinaryData;
+    }
+
+    public BsonTimestamp getBsonTimestamp() {
+      return bsonTimestamp;
+    }
+
+    public void setBsonTimestamp(BsonTimestamp bsonTimestamp) {
+      this.bsonTimestamp = bsonTimestamp;
+    }
+
+    public RegexValue getRegexValue() {
+      return regexValue;
+    }
+
+    public void setRegexValue(RegexValue regexValue) {
+      this.regexValue = regexValue;
+    }
+
+    public Int32Value getInt32Value() {
+      return int32Value;
+    }
+
+    public void setInt32Value(Int32Value int32Value) {
+      this.int32Value = int32Value;
+    }
+
+    public Decimal128Value getDecimal128Value() {
+      return decimal128Value;
+    }
+
+    public void setDecimal128Value(Decimal128Value decimal128Value) {
+      this.decimal128Value = decimal128Value;
+    }
+
+    public MinKey getMinKey() {
+      return minKey;
+    }
+
+    public void setMinKey(MinKey minKey) {
+      this.minKey = minKey;
+    }
+
+    public MaxKey getMaxKey() {
+      return maxKey;
+    }
+
+    public void setMaxKey(MaxKey maxKey) {
+      this.maxKey = maxKey;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -147,6 +227,30 @@ public class POJOTest {
       if (!geoPoint.equals(pojo.geoPoint)) {
         return false;
       }
+      if (!bsonBinaryData.equals(pojo.bsonBinaryData)) {
+        return false;
+      }
+      if (!bsonTimestamp.equals(pojo.bsonTimestamp)) {
+        return false;
+      }
+      if (!bsonObjectId.equals(pojo.bsonObjectId)) {
+        return false;
+      }
+      if (!regexValue.equals(pojo.regexValue)) {
+        return false;
+      }
+      if (!int32Value.equals(pojo.int32Value)) {
+        return false;
+      }
+      if (!decimal128Value.equals(pojo.decimal128Value)) {
+        return false;
+      }
+      if (!minKey.equals(pojo.minKey)) {
+        return false;
+      }
+      if (!maxKey.equals(pojo.maxKey)) {
+        return false;
+      }
 
       // TODO: Implement proper equality on DocumentReference.
       return documentReference.getPath().equals(pojo.documentReference.getPath());
@@ -164,6 +268,14 @@ public class POJOTest {
       result = 31 * result + blob.hashCode();
       result = 31 * result + geoPoint.hashCode();
       result = 31 * result + documentReference.getPath().hashCode();
+      result = 31 * result + bsonObjectId.hashCode();
+      result = 31 * result + bsonBinaryData.hashCode();
+      result = 31 * result + bsonTimestamp.hashCode();
+      result = 31 * result + regexValue.hashCode();
+      result = 31 * result + int32Value.hashCode();
+      result = 31 * result + decimal128Value.hashCode();
+      result = 31 * result + minKey.hashCode();
+      result = 31 * result + maxKey.hashCode();
       return result;
     }
   }
@@ -226,6 +338,26 @@ public class POJOTest {
 
     public void setStr(String str) {
       this.str = str;
+    }
+  }
+
+  @org.junit.Rule public org.junit.rules.TestName testName = new org.junit.rules.TestName();
+
+  @org.junit.Before
+  public void setUp() {
+    String name = testName.getMethodName();
+    if (name.startsWith("testWriteAndRead")
+        || name.startsWith("testSetMerge")
+        || name.startsWith("testAPIsAcceptPOJOsForFields")
+        || name.startsWith("testDocumentSnapshotGetWithPOJOs")) {
+      org.junit.Assume.assumeTrue(
+          "BSON types require Firestore Enterprise Database",
+          com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition()
+                  == com.google.firebase.firestore.testutil.IntegrationTestUtil.BackendEdition
+                      .ENTERPRISE
+              && com.google.firebase.firestore.testutil.IntegrationTestUtil.testEnvDatabaseId()
+                  .getDatabaseId()
+                  .startsWith("enterprise"));
     }
   }
 

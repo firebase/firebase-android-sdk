@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Various voices supported by the server. See the
- * [list of supported voices](https://firebase.google.com/docs/ai-logic/generate-speech?api=dev#response-voices)
+ * [list of supported voices](https://firebase.google.com/docs/ai-logic/generate-speech#response-voices)
  *
  * @property voiceName The name of the voice to use (such as `"Kore"`).
  */

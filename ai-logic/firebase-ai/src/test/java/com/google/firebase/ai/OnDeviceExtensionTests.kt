@@ -68,7 +68,7 @@ internal class OnDeviceExtensionTests {
       results.size shouldBe 3
       (results[0] as DownloadStatus.DownloadStarted).bytesToDownload shouldBe 100
       (results[1] as DownloadStatus.DownloadInProgress).totalBytesDownloaded shouldBe 50
-      results[2] shouldBe DownloadStatus.DownloadCompleted()
+      results[2] shouldBe DownloadStatus.DownloadCompleted
     }
   }
 

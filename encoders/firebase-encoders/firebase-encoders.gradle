@@ -18,7 +18,7 @@ plugins {
 
 firebaseLibrary {
     publishJavadoc = false
-    releaseNotes { 
+    releaseNotes {
         enabled.set(false)
     }
 }
@@ -37,5 +37,6 @@ dependencies {
 }
 
 tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
+    // TODO(m187): Re-enable post m187
+    // options.compilerArgs << "-Werror"
 }

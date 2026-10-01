@@ -74,7 +74,8 @@ class TemplateIntegrationTests {
 
   @Test
   fun testTemplateGenerateContent_vertexAI(): Unit = runBlocking {
-    val response = AIModels.vertexAITemplateModel.generateContent("$templateId-vertex-ai", inputs)
+    val response =
+      AIModels.agentPlatformTemplateModel.generateContent("$templateId-vertex-ai", inputs)
 
     response.candidates.shouldNotBeEmpty()
     response.text shouldContainIgnoringCase customerName
@@ -99,7 +100,9 @@ class TemplateIntegrationTests {
   @Test
   fun testTemplateGenerateContentStream_vertexAI(): Unit = runBlocking {
     val responses =
-      AIModels.vertexAITemplateModel.generateContentStream("$templateId-vertex-ai", inputs).toList()
+      AIModels.agentPlatformTemplateModel
+        .generateContentStream("$templateId-vertex-ai", inputs)
+        .toList()
     responses
       .joinToString { it.text ?: "" }
       .lowercase()

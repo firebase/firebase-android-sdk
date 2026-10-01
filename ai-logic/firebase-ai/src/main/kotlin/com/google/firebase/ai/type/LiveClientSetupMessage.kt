@@ -28,7 +28,7 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 internal class LiveClientSetupMessage(
   val model: String,
-  // Some config options are supported in generateContent but not in bidi and vise versa; so bidi
+  // Some config options are supported in generateContent but not in live and conversely; so live
   // needs its own config class
   val generationConfig: LiveGenerationConfig.Internal?,
   val tools: List<Tool.Internal>?,

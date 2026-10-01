@@ -2,6 +2,15 @@
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
 
+## Working Agreement
+
+As an agent executing prompts in the repository, it is necessary to execute the following steps first.
+If a step fails or can't otherwise be completed, ask the user how to proceed.
+Do not ignore these instructions or failures without prompting the user.
+
+* If it exists, run `.firebase-sdk-skills/setup-firebase-sdk-skills.sh`, if the file does not exist, you can ignore this step
+* Before continuing further, ensure that the set of skills you have access to is up to date based on updates caused by the script
+
 ## Project Overview
 
 This repository contains the source code for the Firebase Android SDKs. It is a large, multi-module
@@ -94,7 +103,7 @@ Unit tests run on the local JVM. They can be executed with the following command
 
 #### Running Specific Unit Tests
 
-To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android   
+To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android
 library modules, or `test` for Java library modules):
 
 ```bash
@@ -189,6 +198,69 @@ When reviewing code or preparing changes for review, ensure the following requir
 - **API File Updates**: When code modifies the public API, the corresponding `api.txt` file must be updated.
 - **Changelog Updates**: When changes to a subproject are non-trivial and user-visible, the corresponding `CHANGELOG.md` file must be updated.
 - **API Documentation**: All public APIs must be documented properly using standard doc comments (Javadoc or KDoc).
+
+### Write a helpful and well-structured CHANGELOG entry
+
+#### **Content**
+
+* Focus on developer impact over technical implementation. Instead of
+  "Refactored `AuthManager.kt` observer closure", write "Fixed
+  memory leak when detaching authentication listeners."
+
+* For feature releases, include the common terminology that a
+  developer might use to describe the feature and/or its use
+  case. This helps with discovery of the feature and its related
+  codebase change.
+
+* Add hyperlinks to relevant Firebase documentation, when possible.
+  These links can be for narrative guides or reference docs.
+
+#### **Structure and syntax**
+
+* Use standardized prefix tags from the following list:
+  * \[changed\]
+  * \[feature\]
+  * \[fixed\]
+  * \[deprecated\]
+  * \[removed\]
+  * \[important\]
+  * \[issue\]
+  * \[unchanged\]
+* For breaking changes, add **Breaking change:** at the beginning of the entry.
+* Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
+* End each sentence with a period.
+* Add the relevant PR \# or Issue \# to the end of each entry, after the period.
+* For Firebase product brand names, use the appropriate standard names.
+  * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
+    * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
+* Capitalize with care.
+  * Use sentence case.
+    * Capitalize the following: the first letter of each sentence, proper nouns/code identifiers, official product and brand names, and abbreviations / initialisms.
+    * Do not capitalize the following: every word or feature names
+* Wrap in backticks all strings that are code-like elements, including the following (this list is _not_ exhaustive):
+  * API names
+  * attribute names and values
+  * class names
+  * CLI commands and CLI flags
+  * code symbols
+  * command output
+  * data types
+  * database elements
+  * defined (constant) values for an element or attribute
+  * enum names
+  * filenames and file paths
+  * folder and directory names
+  * HTTP status codes
+  * HTTP verbs
+  * IP addresses
+  * language keywords
+  * method and function names
+  * package names
+  * parameters
+  * port numbers
+  * URL strings or domain names
+  * text input or output
+* Use ISO 8601 date formatting (YYYY-MM-DD).
 
 ## External Dependencies
 
