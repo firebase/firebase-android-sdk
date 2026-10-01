@@ -115,7 +115,7 @@ class AddWindowFieldsProtoTest {
   fun usesTheAddWindowFieldsStageNameAnd2Args() {
     val stage =
       windowStage(
-        basePipeline().addWindowFields(WindowSpec.partition("product"), countAll().alias("c"))
+        basePipeline().addWindowFields(WindowSpec().partition("product"), countAll().alias("c"))
       )
 
     assertThat(stage.name).isEqualTo("add_window_fields")
@@ -126,7 +126,7 @@ class AddWindowFieldsProtoTest {
   fun doesNotSendAnyStageOptions() {
     val stage =
       windowStage(
-        basePipeline().addWindowFields(WindowSpec.partition("product"), countAll().alias("c"))
+        basePipeline().addWindowFields(WindowSpec().partition("product"), countAll().alias("c"))
       )
 
     assertThat(stage.optionsMap).isEmpty()
@@ -147,7 +147,7 @@ class AddWindowFieldsProtoTest {
     assertThat(
         windowSpecArg(
           basePipeline()
-            .addWindowFields(WindowSpec.partition("product", "region"), countAll().alias("c"))
+            .addWindowFields(WindowSpec().partition("product", "region"), countAll().alias("c"))
         )
       )
       .isEqualTo(map("partition" to array(fieldRef("product"), fieldRef("region"))))
@@ -159,7 +159,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition(field("product"), field("region").toLower()),
+              WindowSpec().partition(field("product"), field("region").toLower()),
               countAll().alias("c")
             )
         )
@@ -172,7 +172,7 @@ class AddWindowFieldsProtoTest {
     assertThat(
         windowSpecArg(
           basePipeline()
-            .addWindowFields(WindowSpec.partition("metadata.region"), countAll().alias("c"))
+            .addWindowFields(WindowSpec().partition("metadata.region"), countAll().alias("c"))
         )
       )
       .isEqualTo(map("partition" to array(fieldRef("metadata.region"))))
@@ -183,7 +183,7 @@ class AddWindowFieldsProtoTest {
     assertThat(
         windowSpecArg(
           basePipeline()
-            .addWindowFields(WindowSpec.sort(field("date").ascending()), countAll().alias("c"))
+            .addWindowFields(WindowSpec().sort(field("date").ascending()), countAll().alias("c"))
         )
       )
       .isEqualTo(map("sort" to array(ordering(fieldRef("date"), "ascending"))))
@@ -195,7 +195,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending(), field("salesPrice").descending()),
+              WindowSpec().sort(field("date").ascending(), field("salesPrice").descending()),
               countAll().alias("c")
             )
         )
@@ -217,7 +217,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product").sort(field("date").ascending()),
+              WindowSpec().partition("product").sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -235,7 +235,7 @@ class AddWindowFieldsProtoTest {
     assertThat(
         windowSpecArg(
           basePipeline()
-            .addWindowFields(WindowSpec.sort(field("date").ascending()), countAll().alias("c"))
+            .addWindowFields(WindowSpec().sort(field("date").ascending()), countAll().alias("c"))
         )
       )
       .isEqualTo(map("sort" to array(ordering(fieldRef("date"), "ascending"))))
@@ -245,7 +245,7 @@ class AddWindowFieldsProtoTest {
   fun omitsAnUnsetSort() {
     assertThat(
         windowSpecArg(
-          basePipeline().addWindowFields(WindowSpec.partition("product"), countAll().alias("c"))
+          basePipeline().addWindowFields(WindowSpec().partition("product"), countAll().alias("c"))
         )
       )
       .isEqualTo(map("partition" to array(fieldRef("product"))))
@@ -256,7 +256,7 @@ class AddWindowFieldsProtoTest {
     val spec =
       windowSpecArg(
         basePipeline()
-          .addWindowFields(WindowSpec.sort(field("date").ascending()), countAll().alias("c"))
+          .addWindowFields(WindowSpec().sort(field("date").ascending()), countAll().alias("c"))
       )
 
     assertThat(spec.mapValue.fieldsMap).doesNotContainKey("documents")
@@ -273,7 +273,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(2, 1).sort(field("date").ascending()),
+              WindowSpec().documents(2, 1).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -293,7 +293,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(0, 0).sort(field("date").ascending()),
+              WindowSpec().documents(0, 0).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -307,14 +307,9 @@ class AddWindowFieldsProtoTest {
   }
 
   /**
-   * A zero offset and [WindowBound.CURRENT] are *different* frame boundaries and must never be
-   * conflated.
-   *
-   * In a `range` frame `current` cuts off strictly at the current document's position, whereas an
-   * offset of `0` additionally admits every document whose sort value ties with the current one.
-   * Given sort values `[10, 10, 10]`, evaluating at the second document with an unbounded lower
-   * bound yields two documents under `current` but three under `0`. They must therefore reach the
-   * backend as distinct values.
+   * A zero offset and [WindowBound.CURRENT] encode as distinct frame boundaries on the wire (`0` vs
+   * `"current"`), even though they are semantically equivalent in `range` frames (where
+   * [WindowBound.CURRENT] is peer-inclusive, matching a `0` offset).
    */
   @Test
   fun distinguishesZeroOffsetFromCurrentBound() {
@@ -322,13 +317,13 @@ class AddWindowFieldsProtoTest {
       windowSpecArg(
         basePipeline()
           .addWindowFields(
-            WindowSpec.range(preceding, following).sort(field("date").ascending()),
+            WindowSpec().range(preceding, following).sort(field("date").ascending()),
             countAll().alias("c")
           )
       )
 
     val zeroOffset = rangeSpec(0, 0)
-    val currentBound = rangeSpec(WindowSpec.CURRENT, WindowSpec.CURRENT)
+    val currentBound = rangeSpec(WindowBound.CURRENT, WindowBound.CURRENT)
 
     assertThat(zeroOffset)
       .isEqualTo(
@@ -347,8 +342,8 @@ class AddWindowFieldsProtoTest {
     assertThat(zeroOffset).isNotEqualTo(currentBound)
 
     // The distinction must also survive canonicalization, which backs WindowSpec equality.
-    assertThat(WindowSpec.range(0, 0))
-      .isNotEqualTo(WindowSpec.range(WindowSpec.CURRENT, WindowSpec.CURRENT))
+    assertThat(WindowSpec().range(0, 0))
+      .isNotEqualTo(WindowSpec().range(WindowBound.CURRENT, WindowBound.CURRENT))
   }
 
   /** `UNBOUNDED` is likewise a symbolic bound, not a reserved numeric value. */
@@ -358,7 +353,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(Int.MAX_VALUE, Int.MIN_VALUE).sort(field("date").ascending()),
+              WindowSpec().documents(Int.MAX_VALUE, Int.MIN_VALUE).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -381,7 +376,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(-1, 2).sort(field("date").ascending()),
+              WindowSpec().documents(-1, 2).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -400,7 +395,8 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
+              WindowSpec()
+                .documents(WindowBound.UNBOUNDED, WindowBound.CURRENT)
                 .sort(field("date").ascending()),
               countAll().alias("c")
             )
@@ -420,7 +416,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.UNBOUNDED),
+              WindowSpec().documents(WindowBound.UNBOUNDED, WindowBound.UNBOUNDED),
               countAll().alias("c")
             )
         )
@@ -436,7 +432,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents(constant(3), constant(0)).sort(field("date").ascending()),
+              WindowSpec().documents(constant(3), constant(0)).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -459,7 +455,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.range(10, 10).sort(field("salesPrice").ascending()),
+              WindowSpec().range(10, 10).sort(field("salesPrice").ascending()),
               countAll().alias("c")
             )
         )
@@ -484,7 +480,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.range(2.5 as Any, 0 as Any).sort(field("salesPrice").ascending()),
+              WindowSpec().range(2.5 as Any, 0 as Any).sort(field("salesPrice").ascending()),
               countAll().alias("c")
             )
         )
@@ -504,7 +500,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.range(30, WindowSpec.CURRENT, "day").sort(field("date").ascending()),
+              WindowSpec().range(30, WindowBound.CURRENT, "day").sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -539,7 +535,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.range(1, WindowSpec.CURRENT, unit).sort(field("date").ascending()),
+              WindowSpec().range(1, WindowBound.CURRENT, unit).sort(field("date").ascending()),
               countAll().alias("c")
             )
         )
@@ -555,7 +551,8 @@ class AddWindowFieldsProtoTest {
       windowSpecArg(
         basePipeline()
           .addWindowFields(
-            WindowSpec.range(WindowSpec.UNBOUNDED, WindowSpec.CURRENT)
+            WindowSpec()
+              .range(WindowBound.UNBOUNDED, WindowBound.CURRENT)
               .sort(field("salesPrice").ascending()),
             countAll().alias("c")
           )
@@ -575,7 +572,7 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product"),
+              WindowSpec().partition("product"),
               sum("salesPrice").alias("total"),
               countAll().alias("c")
             )
@@ -590,7 +587,7 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product"),
+              WindowSpec().partition("product"),
               sum("salesPrice").alias("stats.total")
             )
         )
@@ -604,7 +601,7 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product"),
+              WindowSpec().partition("product"),
               countAll().alias("countAll"),
               count("salesPrice").alias("count"),
               countIf(field("salesPrice").greaterThan(10)).alias("countIf"),
@@ -644,7 +641,7 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product"),
+              WindowSpec().partition("product"),
               sum(field("salesPrice").multiply(2)).alias("doubled")
             )
         )
@@ -653,21 +650,17 @@ class AddWindowFieldsProtoTest {
   }
 
   @Test
-  fun serializesTheRankingWindowFunctions() {
+  fun serializesTheRankWindowFunction() {
     assertThat(
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("salesPrice").descending()),
-              WindowFunction.rank().alias("rank"),
-              WindowFunction.denseRank().alias("denseRank"),
-              WindowFunction.rowNumber().alias("rowNumber")
+              WindowSpec().sort(field("salesPrice").descending()),
+              WindowFunction.rank().alias("rank")
             )
         )
       )
-      .isEqualTo(
-        map("rank" to fn("rank"), "denseRank" to fn("dense_rank"), "rowNumber" to fn("row_number"))
-      )
+      .isEqualTo(map("rank" to fn("rank")))
   }
 
   @Test
@@ -676,7 +669,7 @@ class AddWindowFieldsProtoTest {
       try {
         basePipeline()
           .addWindowFields(
-            WindowSpec.partition("product"),
+            WindowSpec().partition("product"),
             sum("salesPrice").alias("total"),
             average("salesPrice").alias("total")
           )
@@ -699,8 +692,8 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
-              average("salesPrice").over(WindowSpec.documents(1, 1)).alias("movingAverage")
+              WindowSpec().sort(field("date").ascending()),
+              average("salesPrice").over(WindowSpec().documents(1, 1)).alias("movingAverage")
             )
         )
       )
@@ -722,8 +715,8 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
-              sum("salesPrice").over(WindowSpec.range(10, 0, "day")).alias("tenDayTotal")
+              WindowSpec().sort(field("date").ascending()),
+              sum("salesPrice").over(WindowSpec().range(10, 0, "day")).alias("tenDayTotal")
             )
         )
       )
@@ -747,11 +740,11 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.partition("product").sort(field("date").ascending()),
+              WindowSpec().partition("product").sort(field("date").ascending()),
               sum("salesPrice")
-                .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                .over(WindowSpec().documents(WindowBound.UNBOUNDED, WindowBound.CURRENT))
                 .alias("runningTotal"),
-              average("salesPrice").over(WindowSpec.documents(1, 1)).alias("movingAverage")
+              average("salesPrice").over(WindowSpec().documents(1, 1)).alias("movingAverage")
             )
         )
       )
@@ -781,7 +774,7 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
+              WindowSpec().sort(field("date").ascending()),
               sum("salesPrice").alias("total")
             )
         )
@@ -795,9 +788,9 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
+              WindowSpec().sort(field("date").ascending()),
               WindowFunction.rank()
-                .over(WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT))
+                .over(WindowSpec().documents(WindowBound.UNBOUNDED, WindowBound.CURRENT))
                 .alias("r")
             )
         )
@@ -827,8 +820,10 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
-              sum("salesPrice").over(WindowSpec.partition("product").documents(1, 1)).alias("total")
+              WindowSpec().sort(field("date").ascending()),
+              sum("salesPrice")
+                .over(WindowSpec().partition("product").documents(1, 1))
+                .alias("total")
             )
         )
       )
@@ -853,9 +848,9 @@ class AddWindowFieldsProtoTest {
         fieldsArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()),
+              WindowSpec().sort(field("date").ascending()),
               sum("salesPrice")
-                .over(WindowSpec.documents(1, 1).sort(field("date").ascending()))
+                .over(WindowSpec().documents(1, 1).sort(field("date").ascending()))
                 .alias("total")
             )
         )
@@ -895,7 +890,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()).documents(1, 1).range(2, 2),
+              WindowSpec().sort(field("date").ascending()).documents(1, 1).range(2, 2),
               countAll().alias("c")
             )
         )
@@ -911,7 +906,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()).range(2, 2).documents(1, 1),
+              WindowSpec().sort(field("date").ascending()).range(2, 2).documents(1, 1),
               countAll().alias("c")
             )
         )
@@ -931,7 +926,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()).documents(1, 1).documents(3, 4),
+              WindowSpec().sort(field("date").ascending()).documents(1, 1).documents(3, 4),
               countAll().alias("c")
             )
         )
@@ -955,7 +950,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()).range(1, 2, "day").range(3, 4),
+              WindowSpec().sort(field("date").ascending()).range(1, 2, "day").range(3, 4),
               countAll().alias("c")
             )
         )
@@ -972,7 +967,7 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.sort(field("date").ascending()).range(1, 2, "day").documents(3, 4),
+              WindowSpec().sort(field("date").ascending()).range(1, 2, "day").documents(3, 4),
               countAll().alias("c")
             )
         )
@@ -992,7 +987,8 @@ class AddWindowFieldsProtoTest {
         windowSpecArg(
           basePipeline()
             .addWindowFields(
-              WindowSpec.documents("infinite" as Any, "current" as Any)
+              WindowSpec()
+                .documents("infinite" as Any, "current" as Any)
                 .sort(field("date").ascending()),
               countAll().alias("c")
             )

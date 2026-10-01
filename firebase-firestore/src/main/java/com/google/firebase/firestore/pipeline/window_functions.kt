@@ -64,21 +64,7 @@ private constructor(
      *
      * @return A new [WindowFunction] representing the rank window function.
      */
-    @JvmSynthetic internal fun rank() = WindowFunction("rank")
-
-    /**
-     * Creates a window function that assigns a dense rank to each row based on the sort order.
-     *
-     * @return A new [WindowFunction] representing the dense_rank window function.
-     */
-    @JvmSynthetic internal fun denseRank() = WindowFunction("dense_rank")
-
-    /**
-     * Creates a window function that assigns the row number to each row based on the sort order.
-     *
-     * @return A new [WindowFunction] representing the row_number window function.
-     */
-    @JvmSynthetic internal fun rowNumber() = WindowFunction("row_number")
+    @JvmStatic fun rank() = WindowFunction("rank")
 
     /**
      * Lifts an [AggregateFunction] into a window function, preserving its name, arguments and
@@ -101,9 +87,12 @@ private constructor(
    * Evaluates this function over an explicit window frame.
    *
    * The returned function carries its own framing, overriding the window declared on the enclosing
-   * `addWindowFields` stage.
+   * `addWindowFields` stage. Only `documents` or `range` window frames (created via
+   * [WindowSpec.documents] or [WindowSpec.range]) are supported on individual accumulators; other
+   * window parameters such as [WindowSpec.partition] or [WindowSpec.sort] are not supported on
+   * accumulator-level `over()` and must be specified on the enclosing `addWindowFields` stage.
    *
-   * @param window The window specification to evaluate this function over.
+   * @param window The window frame specification to evaluate this function over.
    * @return A new [WindowFunction] with the given framing.
    */
   fun over(window: WindowSpec) = WindowFunction(name, params, options, window)

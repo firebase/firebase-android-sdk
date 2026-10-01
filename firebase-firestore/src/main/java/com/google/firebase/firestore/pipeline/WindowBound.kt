@@ -17,31 +17,36 @@ package com.google.firebase.firestore.pipeline
 /**
  * A symbolic window frame boundary, as opposed to a numeric offset.
  *
- * Use these constants (or the [WindowSpec.CURRENT] / [WindowSpec.UNBOUNDED] aliases) for symbolic
- * bounds, and plain numbers for offsets:
+ * Use these constants for symbolic bounds, and plain numbers for offsets:
  * ```
- * WindowSpec.documents(WindowSpec.UNBOUNDED, WindowSpec.CURRENT) // symbolic
- * WindowSpec.range(30, WindowSpec.CURRENT, "day")                // mixed
- * WindowSpec.documents(-1, 2)                                    // numeric offsets
+ * WindowSpec().documents(WindowBound.UNBOUNDED, WindowBound.CURRENT) // symbolic
+ * WindowSpec().range(30, WindowBound.CURRENT, "day")                 // mixed
+ * WindowSpec().documents(-1, 2)                                      // numeric offsets
  * ```
  *
- * Note that a numeric offset of `0` is *not* equivalent to [CURRENT]: in a `range` frame, [CURRENT]
- * cuts off strictly at the current document's position, while an offset of `0` includes every
- * document whose sort value ties with the current one. Given documents with sort values `[10, 10,
- * 10]`, a frame evaluated at the second document with an unbounded lower bound yields the first two
- * documents under [CURRENT], but all three under an offset of `0`.
+ * In a `documents` frame, [CURRENT] refers strictly to the current document's position (documents
+ * with tied sort values are not included). In a `range` frame, [CURRENT] is peer-inclusive (like
+ * SQL `CURRENT ROW` in `RANGE` mode): it includes the current document and all peer documents whose
+ * sort value(s) tie with the current document, making it semantically equivalent to a numeric
+ * offset of `0` (though [CURRENT] and `0` still encode differently on the wire as `"current"` vs
+ * `0`).
  */
-enum class WindowBound {
-  /** The current document's position in the frame. */
-  CURRENT,
+class WindowBound private constructor(internal val value: String) {
+  companion object {
+    /**
+     * The current document's position in a `documents` frame, or the current document and all peers
+     * with tied sort values in a `range` frame.
+     */
+    @JvmField val CURRENT = WindowBound("current")
 
-  /** No boundary in this direction. */
-  UNBOUNDED;
+    /** No boundary in this direction. */
+    @JvmField val UNBOUNDED = WindowBound("unbounded")
+  }
 
-  /** The wire representation of this boundary. */
-  internal fun wireName(): String =
-    when (this) {
-      CURRENT -> "current"
-      UNBOUNDED -> "unbounded"
-    }
+  override fun equals(other: Any?): Boolean =
+    this === other || (other is WindowBound && value == other.value)
+
+  override fun hashCode(): Int = value.hashCode()
+
+  override fun toString(): String = "WindowBound($value)"
 }

@@ -20,6 +20,7 @@ import com.google.firebase.firestore.pipeline.AggregateFunction
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.SearchStage
+import com.google.firebase.firestore.pipeline.WindowBound
 import com.google.firebase.firestore.pipeline.WindowSpec
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,7 +116,8 @@ class PipelineProtoTest {
         .pipeline()
         .collection("foo")
         .addWindowFields(
-          WindowSpec.range(30, WindowSpec.CURRENT, "day")
+          WindowSpec()
+            .range(30, WindowBound.CURRENT, "day")
             .sort(field("date").ascending())
             .partition("department"),
           AggregateFunction.rawAggregate("sum", field("sales")).alias("totalSales")
@@ -170,9 +172,9 @@ class PipelineProtoTest {
         .pipeline()
         .collection("foo")
         .addWindowFields(
-          WindowSpec.partition("department"),
+          WindowSpec().partition("department"),
           AggregateFunction.rawAggregate("sum", field("sales"))
-            .over(WindowSpec.documents(1, 1).sort(field("date").ascending()))
+            .over(WindowSpec().documents(1, 1).sort(field("date").ascending()))
             .alias("rollingSales")
         )
 

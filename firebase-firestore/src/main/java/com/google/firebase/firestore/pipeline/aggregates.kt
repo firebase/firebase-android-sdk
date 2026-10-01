@@ -268,9 +268,12 @@ private constructor(
    * Applies a window frame to this aggregate, turning it into a window function.
    *
    * Use this to give a single accumulator its own framing, independent of the frame declared on the
-   * enclosing `addWindowFields` stage.
+   * enclosing `addWindowFields` stage. Only `documents` or `range` window frames (created via
+   * [WindowSpec.documents] or [WindowSpec.range]) are supported on individual accumulators; other
+   * window parameters such as [WindowSpec.partition] or [WindowSpec.sort] are not supported on
+   * accumulator-level `over()` and must be specified on the enclosing `addWindowFields` stage.
    *
-   * @param window The window specification to evaluate this aggregate over.
+   * @param window The window frame specification to evaluate this aggregate over.
    * @return A new [WindowFunction] wrapping this aggregate.
    */
   fun over(window: WindowSpec): WindowFunction = WindowFunction.fromAggregate(this, window)
