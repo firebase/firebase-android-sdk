@@ -229,4 +229,66 @@ internal class OnDeviceGenerativeModelProviderTests {
 
       capturedRequest.captured.text.text shouldBe "hello\nhi there\nhow are you?"
     }
+
+  @Test
+  fun `generateContent includes systemInstruction when configured`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+      )
+
+    val providerWithSystemInstruction =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel,
+        onDeviceConfig,
+        Content(parts = listOf(TextPart("You are a helpful assistant.")))
+      )
+
+    providerWithSystemInstruction.generateContent(prompt)
+
+    capturedRequest.captured.systemInstruction?.text shouldBe "You are a helpful assistant."
+  }
+
+  @Test
+  fun `generateContent concatenates multiple text parts in systemInstruction`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+      coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+        OnDeviceGenerateContentResponse(
+          listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+        )
+
+      val providerWithSystemInstruction =
+        OnDeviceGenerativeModelProvider(
+          onDeviceModel,
+          onDeviceConfig,
+          Content(parts = listOf(TextPart("Be concise."), TextPart("Respond in piratical tone.")))
+        )
+
+      providerWithSystemInstruction.generateContent(prompt)
+
+      capturedRequest.captured.systemInstruction?.text shouldBe
+        "Be concise.\nRespond in piratical tone."
+    }
+
+  @Test
+  fun `generateContent throws when systemInstruction has non-text part`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val image = com.google.firebase.ai.type.ImagePart(mockk<android.graphics.Bitmap>())
+    val providerWithInvalidSystemInstruction =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel,
+        onDeviceConfig,
+        Content(parts = listOf(TextPart("system instruction"), image))
+      )
+
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        providerWithInvalidSystemInstruction.generateContent(prompt)
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+  }
 }
