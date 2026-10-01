@@ -24,7 +24,14 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.AttributeKey.longKey
 import io.opentelemetry.api.common.AttributeKey.stringKey
 import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.Context
+import io.opentelemetry.extension.kotlin.asContextElement
+import io.opentelemetry.semconv.HttpAttributes.HTTP_REQUEST_METHOD
+import io.opentelemetry.semconv.UrlAttributes.URL_FULL
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.withContext
 
 /** Main entry point for Firebase Crashlytics Telemetry SDK. */
 public class FirebaseCrashlyticsTelemetry
@@ -116,6 +123,47 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
         .putAll(activeScreen)
         .build(),
     )
+  }
+
+  /**
+   * Executes a network operation inside a root span. Spans started inside [block], such as OkHttp
+   * requests, become its children.
+   *
+   * Exceptions thrown by [block] mark the request as failed and are rethrown. Cancellation is not
+   * recorded as a failure.
+   *
+   * @param url The request URL.
+   * @param method The HTTP method.
+   * @param name The span name. Defaults to [method].
+   * @param block The network operation.
+   * @return The result of [block].
+   */
+  public suspend fun <T> networkRequest(
+    url: String,
+    method: String = "GET",
+    name: String? = null,
+    block: suspend NetworkRequestContext.() -> T,
+  ): T {
+    val span =
+      getTracer(EventEmitter.INSTRUMENTATION_SCOPE_NAME)
+        .spanBuilder(name ?: method)
+        .setNoParent()
+        .setSpanKind(SpanKind.CLIENT)
+        .setAttribute(HTTP_REQUEST_METHOD, method)
+        .setAttribute(URL_FULL, url)
+        .startSpan()
+    val context = NetworkRequestContext(url, method, span)
+    try {
+      return withContext(Context.current().with(span).asContextElement()) { context.block() }
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Throwable) {
+      context.recordError(e)
+      throw e
+    } finally {
+      context.recordResponseCode()
+      span.end()
+    }
   }
 
   public companion object {
