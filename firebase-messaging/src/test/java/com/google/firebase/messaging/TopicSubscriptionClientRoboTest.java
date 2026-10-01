@@ -100,7 +100,32 @@ public class TopicSubscriptionClientRoboTest {
 
     runOnBackground(() -> client.subscribe(TEST_TOPIC));
 
-    // Verify no exception is thrown
+    verify(client)
+        .createConnection(
+            new URL(
+                "https://fcmregistrations.googleapis.com/v1/projects/"
+                    + TEST_PROJECT_ID
+                    + "/registrations/"
+                    + TEST_FID
+                    + "/topicSubscriptions/"
+                    + TEST_TOPIC
+                    + ":subscribe"));
+  }
+
+  @Test
+  public void testSubscribe_topicWithPercentSign_urlEncodesTopic() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+
+    runOnBackground(() -> client.subscribe("test-topic_1.0~alpha%22%2F%25%"));
+
+    verify(client)
+        .createConnection(
+            new URL(
+                "https://fcmregistrations.googleapis.com/v1/projects/"
+                    + TEST_PROJECT_ID
+                    + "/registrations/"
+                    + TEST_FID
+                    + "/topicSubscriptions/test-topic_1.0~alpha%2522%252F%2525%25:subscribe"));
   }
 
   @Test
@@ -137,6 +162,33 @@ public class TopicSubscriptionClientRoboTest {
     when(mockConnection.getResponseCode()).thenReturn(200);
 
     runOnBackground(() -> client.unsubscribe(TEST_TOPIC));
+
+    verify(client)
+        .createConnection(
+            new URL(
+                "https://fcmregistrations.googleapis.com/v1/projects/"
+                    + TEST_PROJECT_ID
+                    + "/registrations/"
+                    + TEST_FID
+                    + "/topicSubscriptions/"
+                    + TEST_TOPIC
+                    + ":unsubscribe"));
+  }
+
+  @Test
+  public void testUnsubscribe_topicWithPercentSign_urlEncodesTopic() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(200);
+
+    runOnBackground(() -> client.unsubscribe("test-topic_1.0~alpha%22%2F%25%"));
+
+    verify(client)
+        .createConnection(
+            new URL(
+                "https://fcmregistrations.googleapis.com/v1/projects/"
+                    + TEST_PROJECT_ID
+                    + "/registrations/"
+                    + TEST_FID
+                    + "/topicSubscriptions/test-topic_1.0~alpha%2522%252F%2525%25:unsubscribe"));
   }
 
   @Test
