@@ -1,0 +1,19 @@
+// Signature format: 3.0
+package com.google.firebase.crashlytics.telemetry.okhttp {
+
+  public final class CrashlyticsOkHttpInterceptor implements okhttp3.Interceptor {
+    ctor public CrashlyticsOkHttpInterceptor();
+    ctor public CrashlyticsOkHttpInterceptor(java.util.List<java.lang.String> tracePropagationTargets);
+    method public java.util.List<java.lang.String> getTracePropagationTargets();
+    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public okhttp3.Response intercept(okhttp3.Interceptor.Chain chain) throws java.io.IOException;
+    property public final java.util.List<java.lang.String> tracePropagationTargets;
+    field public static final String INSTRUMENTATION_SCOPE_NAME = "com.google.firebase.crashlytics.telemetry.okhttp";
+  }
+
+  public final class CrashlyticsOkHttpInterceptorKt {
+    method public static okhttp3.OkHttpClient.Builder addFirebaseCrashlyticsTelemetry(okhttp3.OkHttpClient.Builder);
+    method public static okhttp3.OkHttpClient.Builder addFirebaseCrashlyticsTelemetry(okhttp3.OkHttpClient.Builder, java.util.List<java.lang.String> tracePropagationTargets);
+  }
+
+}
+
