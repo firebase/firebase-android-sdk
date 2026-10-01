@@ -34,6 +34,7 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -46,7 +47,9 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
+import com.google.firebase.crashlytics.internal.network.ScottyUploader;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.sessions.api.CrashEventReceiver;
@@ -131,6 +134,12 @@ class CrashlyticsController {
   // A token to make sure that checkForUnsentReports only gets called once.
   final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
+  // Metadata management for in progress heap dump uploads.
+  final ResumableUploadMetadataStore resumableUploadMetadataStore;
+
+  // Out-of-band heap dump upload client.
+  final ScottyUploader scottyUploader;
+
   CrashlyticsController(
       Context context,
       IdManager idManager,
@@ -144,7 +153,9 @@ class CrashlyticsController {
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorkers crashlyticsWorkers,
+      ResumableUploadMetadataStore resumableUploadMetadataStore,
+      FirebaseApp app) {
     this.context = context;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
@@ -158,6 +169,12 @@ class CrashlyticsController {
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
     this.crashlyticsWorkers = crashlyticsWorkers;
+    this.resumableUploadMetadataStore = resumableUploadMetadataStore;
+    this.scottyUploader =
+        new ScottyUploader(
+            app.getOptions().getApiKey(),
+            fileStore,
+            ScottyUploader.makeUploadClient(crashlyticsWorkers.network));
   }
 
   // region Exception handling
@@ -535,6 +552,8 @@ class CrashlyticsController {
   boolean finalizeSessions(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
 
+    triggerHeapdumpUpload();
+
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
       return Boolean.FALSE;
@@ -550,6 +569,48 @@ class CrashlyticsController {
     Logger.getLogger().v("Closed all previously open sessions.");
 
     return true;
+  }
+
+  private void triggerHeapdumpUpload() {
+    resumableUploadMetadataStore
+        .getUpload()
+        .ifPresent(
+            upload -> {
+              String gmpAppId = appData.googleAppId;
+              String sessionId = upload.sessionId;
+              String heapdump = upload.path;
+
+              if (upload.isInProgress()) {
+                scottyUploader.resumeUpload(
+                    heapdump,
+                    upload.handle,
+                    new ScottyUploader.Listener() {
+                      @Override
+                      public void onDoneOrUnrecoverable() {
+                        resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                      }
+                    });
+              }
+
+              if (upload.isNew()) {
+                scottyUploader.triggerUpload(
+                    gmpAppId,
+                    sessionId,
+                    upload.type,
+                    heapdump,
+                    new ScottyUploader.Listener() {
+                      @Override
+                      public void onHandleAvailable(String handle) {
+                        resumableUploadMetadataStore.updateHandle(heapdump, handle);
+                      }
+
+                      @Override
+                      public void onDoneOrUnrecoverable() {
+                        resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                      }
+                    });
+              }
+            });
   }
 
   /**

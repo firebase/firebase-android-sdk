@@ -1,0 +1,356 @@
+package com.google.firebase.crashlytics.internal.persistence;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.os.ProfilingTrigger;
+import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import org.junit.Test;
+
+public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
+  FileStore fileStore = mock(FileStore.class);
+  Context context = getContext();
+
+  @Test
+  public void testSerializeDeserialize_noHandle() {
+    String sessionId = "sessionId";
+    int type = ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+    String path = "heapdump.perfetto";
+
+    ResumableUploadMetadataStore.InProgressUploadMetadata metadata =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(sessionId, type, path);
+
+    String serialized = ResumableUploadMetadataStore.serialize(metadata);
+
+    assertThat(serialized).isEqualTo("sessionId,8,null,heapdump.perfetto");
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> deserialized =
+        ResumableUploadMetadataStore.parseInProgressUploadLine(serialized);
+
+    assertThat(deserialized).hasValue(metadata);
+  }
+
+  @Test
+  public void testSerializeDeserialize_withHandle() {
+    String sessionId = "sessionId";
+    int type = ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+    String path = "heapdump.perfetto";
+    String handle = "http://some.upload.url/for/scotty";
+
+    ResumableUploadMetadataStore.InProgressUploadMetadata metadata =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(sessionId, type, handle, path);
+
+    String serialized = ResumableUploadMetadataStore.serialize(metadata);
+
+    assertThat(serialized)
+        .isEqualTo("sessionId,8,http://some.upload.url/for/scotty,heapdump.perfetto");
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> deserialized =
+        ResumableUploadMetadataStore.parseInProgressUploadLine(serialized);
+
+    assertThat(deserialized).hasValue(metadata);
+  }
+
+  @Test
+  public void testSerializeDeserialize_withHandleAndCommaPath() {
+    String sessionId = "sessionId";
+    int type = ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+    String path = "/,/oops/,/heapdump.perfetto";
+    String handle = "http://some.upload.url/for/scotty";
+
+    ResumableUploadMetadataStore.InProgressUploadMetadata metadata =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(sessionId, type, handle, path);
+
+    String serialized = ResumableUploadMetadataStore.serialize(metadata);
+
+    assertThat(serialized)
+        .isEqualTo("sessionId,8,http://some.upload.url/for/scotty,/,/oops/,/heapdump.perfetto");
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> deserialized =
+        ResumableUploadMetadataStore.parseInProgressUploadLine(serialized);
+
+    assertThat(deserialized.isPresent()).isTrue();
+    assertThat(deserialized.get().sessionId).isEqualTo(sessionId);
+    assertThat(deserialized.get().type).isEqualTo(type);
+    assertThat(deserialized.get().path).isEqualTo(path);
+    assertThat(deserialized.get().handle).isEqualTo(handle);
+
+    assertThat(deserialized).hasValue(metadata);
+  }
+
+  @Test
+  public void testGetUpload_noDuplicatesMetadataFileDoesNotExist() throws IOException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads"))
+        .thenReturn(mockFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing.sessionId, existing.type, existing.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing.sessionId, existing.type, existing.path))
+        .isFalse();
+    assertThat(store.addInProgressUpload(existing.sessionId, existing.type, existing.path))
+        .isFalse();
+    assertThat(store.addInProgressUpload(existing.sessionId, existing.type, existing.path))
+        .isFalse();
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+
+    assertThat(current.isPresent()).isTrue();
+    verify(fileStore, times(2)).getCommonFile("out-of-band-uploads");
+
+    assertThat(current.get().sessionId).isEqualTo(existing.sessionId);
+    assertThat(current.get().path).isEqualTo(existing.path);
+    assertThat(current.get().type).isEqualTo(existing.type);
+    assertThat(current.get().handle).isNull();
+  }
+
+  @Test
+  public void testGetUpload_oneItemNoHandleMetadataFileDoesNotExist() throws IOException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads"))
+        .thenReturn(mockFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing.sessionId, existing.type, existing.path))
+        .isTrue();
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+
+    assertThat(current.isPresent()).isTrue();
+    verify(fileStore, times(2)).getCommonFile("out-of-band-uploads");
+
+    assertThat(current.get().sessionId).isEqualTo(existing.sessionId);
+    assertThat(current.get().path).isEqualTo(existing.path);
+    assertThat(current.get().type).isEqualTo(existing.type);
+    assertThat(current.get().handle).isNull();
+  }
+
+  @Test
+  public void testGetUpload_manyItemsNoHandleMetadataFileDoesNotExist() throws IOException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing2 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId2", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path2");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing3 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId3", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path3");
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads"))
+        .thenReturn(mockFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing1.sessionId, existing1.type, existing1.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing2.sessionId, existing2.type, existing2.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing3.sessionId, existing3.type, existing3.path))
+        .isTrue();
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+
+    assertThat(current.isPresent()).isTrue();
+    verify(fileStore, times(4)).getCommonFile("out-of-band-uploads");
+
+    assertThat(current.get().sessionId).isEqualTo(existing1.sessionId);
+    assertThat(current.get().path).isEqualTo(existing1.path);
+    assertThat(current.get().type).isEqualTo(existing1.type);
+    assertThat(current.get().handle).isNull();
+  }
+
+  @Test
+  public void testGetUpload_manyItemsWithHandleMetadataFileDoesNotExist() throws IOException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing2 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId2", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "handle2", "path2");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing3 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId3", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path3");
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads"))
+        .thenReturn(mockFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing1.sessionId, existing1.type, existing1.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing2.sessionId, existing2.type, existing2.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing3.sessionId, existing3.type, existing3.path))
+        .isTrue();
+
+    assertThat(store.updateHandle(existing2.path, existing2.handle)).isTrue();
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+
+    assertThat(current.isPresent()).isTrue();
+    verify(fileStore, times(5)).getCommonFile("out-of-band-uploads");
+
+    assertThat(current.get().sessionId).isEqualTo(existing2.sessionId);
+    assertThat(current.get().path).isEqualTo(existing2.path);
+    assertThat(current.get().type).isEqualTo(existing2.type);
+    assertThat(current.get().handle).isEqualTo(existing2.handle);
+  }
+
+  @Test
+  public void testAddInProgressUpload_returnsFalseForNonMainProcess()
+      throws NoSuchFieldException, IllegalAccessException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing2 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId2", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "handle2", "path2");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing3 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId3", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path3");
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(mockFile);
+
+    Context context = mock(Context.class);
+    ApplicationInfo applicationInfo = mock(ApplicationInfo.class);
+
+    Field field = ApplicationInfo.class.getDeclaredField("processName");
+    field.setAccessible(true);
+    field.set(applicationInfo, "NotTheMainProcessProcess");
+
+    when(context.getApplicationInfo()).thenReturn(applicationInfo);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing1.sessionId, existing1.type, existing1.path))
+        .isFalse();
+    assertThat(store.addInProgressUpload(existing2.sessionId, existing2.type, existing2.path))
+        .isFalse();
+    assertThat(store.addInProgressUpload(existing3.sessionId, existing3.type, existing3.path))
+        .isFalse();
+  }
+
+  @Test
+  public void testRemoveInProgressUpload_uploadExists() throws IOException {
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing2 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId2", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "handle2", "path2");
+    ResumableUploadMetadataStore.InProgressUploadMetadata existing3 =
+        new ResumableUploadMetadataStore.InProgressUploadMetadata(
+            "sessionId3", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path3");
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    File mockFile = mock(File.class);
+    when(mockFile.exists()).thenReturn(false);
+
+    when(fileStore.getCommonFile("out-of-band-uploads"))
+        .thenReturn(mockFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile)
+        .thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    assertThat(store.addInProgressUpload(existing1.sessionId, existing1.type, existing1.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing2.sessionId, existing2.type, existing2.path))
+        .isTrue();
+    assertThat(store.addInProgressUpload(existing3.sessionId, existing3.type, existing3.path))
+        .isTrue();
+
+    assertThat(store.updateHandle(existing2.path, existing2.handle)).isTrue();
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+
+    assertThat(current.isPresent()).isTrue();
+    verify(fileStore, times(5)).getCommonFile("out-of-band-uploads");
+
+    assertThat(current.get().sessionId).isEqualTo(existing2.sessionId);
+    assertThat(current.get().path).isEqualTo(existing2.path);
+    assertThat(current.get().type).isEqualTo(existing2.type);
+    assertThat(current.get().handle).isEqualTo(existing2.handle);
+
+    assertThat(store.removeInProgressUpload(existing2.path)).isTrue();
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> newCurrent = store.getUpload();
+
+    assertThat(newCurrent.isPresent()).isTrue();
+
+    assertThat(newCurrent.get().sessionId).isEqualTo(existing1.sessionId);
+    assertThat(newCurrent.get().path).isEqualTo(existing1.path);
+    assertThat(newCurrent.get().type).isEqualTo(existing1.type);
+    assertThat(newCurrent.get().handle).isNull();
+  }
+}
