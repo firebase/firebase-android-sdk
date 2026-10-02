@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -31,6 +30,7 @@ import com.google.uploader.client.TransferListener;
 import com.google.uploader.client.TransferOptions;
 import com.google.uploader.client.UploadClient;
 import com.google.uploader.client.UploadClientImpl;
+import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
