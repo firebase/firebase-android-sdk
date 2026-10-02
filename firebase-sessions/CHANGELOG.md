@@ -1,6 +1,8 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [fixed] Fixed an `IllegalStateException` about multiple `DataStore`s when the default
+  `FirebaseApp` is deleted and re-initialized
 
 # 3.0.7
 
