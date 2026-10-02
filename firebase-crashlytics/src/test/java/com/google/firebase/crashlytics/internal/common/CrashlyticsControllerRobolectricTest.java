@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -92,16 +91,15 @@ public class CrashlyticsControllerRobolectricTest {
     testFileStore = new FileStore(testContext);
     crashlyticsWorkers =
         new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
-    firebaseApp =
-        FirebaseApp.initializeApp(
-            testContext,
-            new FirebaseOptions.Builder().setApplicationId("applicationId").build(),
-            "app-name");
-  }
 
-  @After
-  public void cleanUp() {
-    firebaseApp.delete();
+    FirebaseOptions options =
+        new FirebaseOptions.Builder()
+            .setApiKey("api-key")
+            .setApplicationId("applicationId")
+            .setProjectId("projectId")
+            .build();
+
+    when(firebaseApp.getOptions()).thenReturn(options);
   }
 
   @Test
