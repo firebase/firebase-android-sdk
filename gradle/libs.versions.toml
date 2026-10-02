@@ -7,6 +7,7 @@ androidGradlePlugin = "8.13.2"
 androidx-core = "1.13.1"
 androidx-test-core = "1.6.1"
 androidx-test-junit = "1.2.1"
+androidx-test-orchestrator = "1.6.1"
 androidx-test-truth = "1.6.0"
 appcompat = "1.7.1"
 autoValueParcel = "0.2.6"
@@ -103,6 +104,7 @@ androidx-espresso-intents = { module = "androidx.test.espresso:espresso-intents"
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
 androidx-legacy-support-v4 = { module = "androidx.legacy:legacy-support-v4", version.ref = "legacySupportV4" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
+androidx-test-orchestrator = { module = "androidx.test:orchestrator", version.ref = "androidx-test-orchestrator" }
 androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "testServices" }
 auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
 auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", version.ref = "autoValueParcel" }

@@ -41,6 +41,7 @@ android {
     testOptions {
         targetSdk project.targetSdkVersion
         unitTests.includeAndroidResources = true
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
     }
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -48,6 +49,7 @@ android {
 
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: 'true'
         consumerProguardFiles 'consumer-rules.pro'
     }
     sourceSets {
@@ -129,4 +131,6 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.playservices.tasks)
     androidTestImplementation(project(":integ-testing"))
+
+    androidTestUtil(libs.androidx.test.orchestrator)
 }
