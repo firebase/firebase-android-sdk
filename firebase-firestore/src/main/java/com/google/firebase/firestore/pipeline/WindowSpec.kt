@@ -135,6 +135,16 @@ internal constructor(
    *
    * [sort] is optional for document-based window frames; if no sort expressions are specified,
    * documents are processed in incoming stream (fetch) order.
+   *
+   * @param preceding The start of the window frame relative to the current document. A positive
+   * integer (e.g. `2`) includes up to that many documents before the current document. A negative
+   * integer (e.g. `-1`) indicates a boundary following the current document, enabling frames that
+   * start after the current document.
+   * @param following The end of the window frame relative to the current document. A positive
+   * integer (e.g. `2`) includes up to that many documents after the current document. A negative
+   * integer (e.g. `-1`) indicates a boundary preceding the current document, enabling frames that
+   * end before the current document (e.g. excluding the current document).
+   * @return A new [WindowSpec] with the specified document-count frame.
    */
   fun documents(preceding: Int, following: Int): WindowSpec =
     withDocumentsFrame(preceding, following)
@@ -147,6 +157,18 @@ internal constructor(
    * position (documents with tied sort values are not included). [sort] is optional for
    * document-based window frames; if no sort expressions are specified, documents are processed in
    * incoming stream (fetch) order.
+   *
+   * @param preceding The symbolic lower boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive integer such as `2` includes up to that many documents
+   * before the current document, and a negative integer such as `-1` indicates a boundary following
+   * the current document, enabling frames that start after the current document), use the `(Int,
+   * Int)` or `(Any, Any)` overload.
+   * @param following The symbolic upper boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive integer such as `2` includes up to that many documents
+   * after the current document, and a negative integer such as `-1` indicates a boundary preceding
+   * the current document, enabling frames that end before the current document), use the `(Int,
+   * Int)` or `(Any, Any)` overload.
+   * @return A new [WindowSpec] with the specified document-count frame.
    */
   fun documents(preceding: WindowBound, following: WindowBound): WindowSpec =
     withDocumentsFrame(preceding, following)
@@ -156,17 +178,38 @@ internal constructor(
    *
    * [sort] is optional for document-based window frames; if no sort expressions are specified,
    * documents are processed in incoming stream (fetch) order.
+   *
+   * @param preceding The start of the window frame relative to the current document. A positive
+   * integer (e.g. `2`) includes up to that many documents before the current document. A negative
+   * integer (e.g. `-1`) indicates a boundary following the current document, enabling frames that
+   * start after the current document.
+   * @param following The end of the window frame relative to the current document. A positive
+   * integer (e.g. `2`) includes up to that many documents after the current document. A negative
+   * integer (e.g. `-1`) indicates a boundary preceding the current document, enabling frames that
+   * end before the current document (e.g. excluding the current document).
+   * @return A new [WindowSpec] with the specified document-count frame.
    */
   fun documents(preceding: Expression, following: Expression): WindowSpec =
     withDocumentsFrame(preceding, following)
 
   /**
    * Specify a document-count frame with bounds of mixed or heterogeneous types, e.g. `(Int,
-   * Expression)` or `(String, String)`. Invalid combinations are encoded and rejected by the
+   * WindowBound)` or `(Int, Expression)`. Invalid combinations are encoded and rejected by the
    * backend.
    *
    * [sort] is optional for document-based window frames; if no sort expressions are specified,
    * documents are processed in incoming stream (fetch) order.
+   *
+   * @param preceding The start of the window frame relative to the current document (e.g. an
+   * integer offset, [WindowBound], or [Expression]). A positive integer (e.g. `2`) includes up to
+   * that many documents before the current document. A negative integer (e.g. `-1`) indicates a
+   * boundary following the current document, enabling frames that start after the current document.
+   * @param following The end of the window frame relative to the current document (e.g. an integer
+   * offset, [WindowBound], or [Expression]). A positive integer (e.g. `2`) includes up to that many
+   * documents after the current document. A negative integer (e.g. `-1`) indicates a boundary
+   * preceding the current document, enabling frames that end before the current document (e.g.
+   * excluding the current document).
+   * @return A new [WindowSpec] with the specified document-count frame.
    */
   fun documents(preceding: Any, following: Any): WindowSpec =
     withDocumentsFrame(preceding, following)
@@ -176,6 +219,16 @@ internal constructor(
    *
    * Range frames with numeric offsets require a single numeric [sort] expression. An offset of `0`
    * is peer-inclusive (equivalent to [WindowBound.CURRENT] in a range frame).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Int, following: Int): WindowSpec = withRangeFrame(preceding, following, null)
 
@@ -187,6 +240,17 @@ internal constructor(
    *
    * Range frames with time offsets require a single timestamp [sort] expression (a `unit` on a
    * string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Int, following: Int, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -199,6 +263,17 @@ internal constructor(
    *
    * Range frames with time offsets require a single timestamp [sort] expression (a `unit` on a
    * string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit expression for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Int, following: Int, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -212,6 +287,18 @@ internal constructor(
    * semantically equivalent to an offset of `0`. Because both bounds are symbolic (
    * [WindowBound.CURRENT] / [WindowBound.UNBOUNDED]) with no time `unit`, one or more [sort]
    * orderings and non-numeric sort values (such as strings or booleans) are supported.
+   *
+   * @param preceding The symbolic lower boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset subtracts from the current document's sort
+   * value, looking into the past, and a negative offset adds to the current document's sort value,
+   * shifting the lower boundary past the current document), use the numeric or `(Any, Any)`
+   * overload.
+   * @param following The symbolic upper boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset adds to the current document's sort value,
+   * looking into the future, and a negative offset subtracts from the current document's sort
+   * value, shifting the upper boundary before the current document), use the numeric or `(Any,
+   * Any)` overload.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: WindowBound, following: WindowBound): WindowSpec =
     withRangeFrame(preceding, following, null)
@@ -225,6 +312,18 @@ internal constructor(
    * In a `range` frame, [WindowBound.CURRENT] is peer-inclusive. Specifying a time `unit` requires
    * a timestamp [sort] expression (a `unit` on a string or boolean sort field is rejected by the
    * backend).
+   *
+   * @param preceding The symbolic lower boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset subtracts from the current document's sort
+   * value, looking into the past, and a negative offset adds to the current document's sort value,
+   * shifting the lower boundary past the current document), use the `(Any, Any, String)` overload.
+   * @param following The symbolic upper boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset adds to the current document's sort value,
+   * looking into the future, and a negative offset subtracts from the current document's sort
+   * value, shifting the upper boundary before the current document), use the `(Any, Any, String)`
+   * overload.
+   * @param unit The time unit for the range frame.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: WindowBound, following: WindowBound, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -238,6 +337,19 @@ internal constructor(
    * In a `range` frame, [WindowBound.CURRENT] is peer-inclusive. Specifying a time `unit` requires
    * a timestamp [sort] expression (a `unit` on a string or boolean sort field is rejected by the
    * backend).
+   *
+   * @param preceding The symbolic lower boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset subtracts from the current document's sort
+   * value, looking into the past, and a negative offset adds to the current document's sort value,
+   * shifting the lower boundary past the current document), use the `(Any, Any, Expression)`
+   * overload.
+   * @param following The symbolic upper boundary ([WindowBound.UNBOUNDED] or [WindowBound.CURRENT]
+   * ). For numeric offsets (where a positive offset adds to the current document's sort value,
+   * looking into the future, and a negative offset subtracts from the current document's sort
+   * value, shifting the upper boundary before the current document), use the `(Any, Any,
+   * Expression)` overload.
+   * @param unit The time unit expression for the range frame.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: WindowBound, following: WindowBound, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -248,6 +360,16 @@ internal constructor(
    * Only meaningful for value-based (non-time) range frames, e.g. when sorting by a price or score.
    * The backend rejects fractional offsets for time-based range frames. Range frames with numeric
    * offsets require a single numeric [sort] expression.
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Double, following: Double): WindowSpec =
     withRangeFrame(preceding, following, null)
@@ -259,6 +381,17 @@ internal constructor(
    * `"day"`, `"week"`, `"month"`, `"quarter"`, and `"year"`.
    *
    * Range frames with numeric or time offsets require a single [sort] expression.
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Double, following: Double, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -270,17 +403,38 @@ internal constructor(
    * `"day"`, `"week"`, `"month"`, `"quarter"`, and `"year"`.
    *
    * Range frames with numeric or time offsets require a single [sort] expression.
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit expression for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Double, following: Double, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
 
   /**
-   * Specify a range frame with bounds of mixed or heterogeneous types, e.g. `(Int, Expression)` or
-   * `(String, String)`. Invalid combinations are encoded and rejected by the backend.
+   * Specify a range frame with bounds of mixed or heterogeneous types, e.g. `(Int, WindowBound)` or
+   * `(Int, Expression)`. Invalid combinations are encoded and rejected by the backend.
    *
    * Range frames with numeric offsets require a single [sort] expression; range frames bounded only
    * by [WindowBound.CURRENT] and/or [WindowBound.UNBOUNDED] allow one or more [sort] expressions
    * and non-numeric sort values.
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset subtracts from the current
+   * document's sort value (looking into the past). A negative offset adds to the current document's
+   * sort value (shifting the lower boundary past the current document).
+   * @param following The upper bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset adds to the current
+   * document's sort value (looking into the future). A negative offset subtracts from the current
+   * document's sort value (shifting the upper boundary before the current document).
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Any, following: Any): WindowSpec = withRangeFrame(preceding, following, null)
 
@@ -292,6 +446,17 @@ internal constructor(
    *
    * Range frames with numeric or time offsets require a single timestamp [sort] expression (a
    * `unit` on a string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset subtracts from the current
+   * document's sort value (looking into the past). A negative offset adds to the current document's
+   * sort value (shifting the lower boundary past the current document).
+   * @param following The upper bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset adds to the current
+   * document's sort value (looking into the future). A negative offset subtracts from the current
+   * document's sort value (shifting the upper boundary before the current document).
+   * @param unit The time unit for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Any, following: Any, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -304,6 +469,17 @@ internal constructor(
    *
    * Range frames with numeric or time offsets require a single timestamp [sort] expression (a
    * `unit` on a string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset subtracts from the current
+   * document's sort value (looking into the past). A negative offset adds to the current document's
+   * sort value (shifting the lower boundary past the current document).
+   * @param following The upper bound offset relative to the current document's sort value (e.g. a
+   * numeric offset, [WindowBound], or [Expression]). A positive offset adds to the current
+   * document's sort value (looking into the future). A negative offset subtracts from the current
+   * document's sort value (shifting the upper boundary before the current document).
+   * @param unit The time unit expression for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Any, following: Any, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -314,6 +490,16 @@ internal constructor(
    * Range frames with numeric offsets require a single [sort] expression; range frames bounded only
    * by [WindowBound.CURRENT] and/or [WindowBound.UNBOUNDED] allow one or more [sort] expressions
    * and non-numeric sort values.
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Expression, following: Expression): WindowSpec =
     withRangeFrame(preceding, following, null)
@@ -326,6 +512,17 @@ internal constructor(
    *
    * Range frames with numeric or time offsets require a single timestamp [sort] expression (a
    * `unit` on a string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Expression, following: Expression, unit: String): WindowSpec =
     withRangeFrame(preceding, following, unit)
@@ -338,6 +535,17 @@ internal constructor(
    *
    * Range frames with numeric or time offsets require a single timestamp [sort] expression (a
    * `unit` on a string or boolean sort field is rejected by the backend).
+   *
+   * @param preceding The lower bound offset relative to the current document's sort value. A
+   * positive offset subtracts from the current document's sort value (looking into the past). A
+   * negative offset adds to the current document's sort value (shifting the lower boundary past the
+   * current document).
+   * @param following The upper bound offset relative to the current document's sort value. A
+   * positive offset adds to the current document's sort value (looking into the future). A negative
+   * offset subtracts from the current document's sort value (shifting the upper boundary before the
+   * current document).
+   * @param unit The time unit expression for the range offsets.
+   * @return A new [WindowSpec] with the specified range frame.
    */
   fun range(preceding: Expression, following: Expression, unit: Expression): WindowSpec =
     withRangeFrame(preceding, following, unit)
