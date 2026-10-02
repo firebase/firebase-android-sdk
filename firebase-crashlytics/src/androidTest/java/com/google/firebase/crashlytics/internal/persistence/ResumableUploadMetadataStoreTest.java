@@ -28,6 +28,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -372,5 +373,66 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
     assertThat(newCurrent.get().path).isEqualTo(existing1.path);
     assertThat(newCurrent.get().type).isEqualTo(existing1.type);
     assertThat(newCurrent.get().handle).isNull();
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testParseMalformedMetadataFile() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    // Write malformed content
+    // Valid trigger types are 7 (OOM) and 8 (ANOMALY) based on ProfilingTrigger
+    // Let's use 1 for valid and something else for invalid.
+    String content =
+        "malformed,content\nvalidSession,7,handle,path\ninvalidType,99,handle,path\ntooFewTokens,1,handle";
+    Files.write(metadataFile.toPath(), content.getBytes(StandardCharsets.UTF_8));
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+    assertThat(current.isPresent()).isTrue();
+    assertThat(current.get().sessionId).isEqualTo("validSession");
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testEmptyMetadataFile() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+    assertThat(current.isPresent()).isFalse();
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testFlushFailureRecovery() throws IOException {
+    // Simulate write failure by making the file read-only
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    // Make it read-only to cause IOException on write
+    assertThat(metadataFile.setWritable(false)).isTrue();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    // Try to add upload, should fail and return false
+    boolean result = store.addInProgressUpload("sessionId", 1, "path");
+    assertThat(result).isFalse();
+
+    // Reset permissions so it can be deleted
+    assertThat(metadataFile.setWritable(true)).isTrue();
   }
 }

@@ -300,4 +300,129 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     assertThat(listener.handleAvailableCalled.get()).isTrue();
     assertThat(listener.doneOrUnrecoverableCalled.get()).isTrue();
   }
+
+  @Test
+  public void testStreamClosedAfterResponseReceived() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("key", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    when(client.createTransfer(anyString(), anyString(), any(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    AtomicBoolean streamClosed = new AtomicBoolean(false);
+    ScottyUploader.Listener listener =
+        new ScottyUploader.Listener() {
+          @Override
+          public void closeStream() {
+            super.closeStream();
+            streamClosed.set(true);
+          }
+        };
+
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    assertThat(streamClosed.get()).isTrue();
+  }
+
+  @Test
+  public void testStreamClosedAfterException() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("key", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    TransferException transferException =
+        new TransferException(TransferException.Type.BAD_URL, "Bad URL");
+    FakeTransfer fakeTransfer = new FakeTransfer(null, transferException, null);
+
+    when(client.createTransfer(anyString(), anyString(), any(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    AtomicBoolean streamClosed = new AtomicBoolean(false);
+    ScottyUploader.Listener listener =
+        new ScottyUploader.Listener() {
+          @Override
+          public void closeStream() {
+            super.closeStream();
+            streamClosed.set(true);
+          }
+        };
+
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    assertThat(streamClosed.get()).isTrue();
+  }
+
+  @Test
+  public void testExceptionDuringCreateTransfer() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("key", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    when(client.createTransfer(anyString(), anyString(), any(), any(), anyString(), any()))
+        .thenThrow(new RuntimeException("Test exception"));
+
+    TestListener listener = new TestListener();
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    assertThat(listener.doneOrUnrecoverableCalled.get()).isTrue();
+  }
+
+  @Test
+  public void testUrlParameters() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("key", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    // Capture the URL
+    org.mockito.ArgumentCaptor<String> urlCaptor =
+        org.mockito.ArgumentCaptor.forClass(String.class);
+
+    when(client.createTransfer(urlCaptor.capture(), anyString(), any(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    TestListener listener = new TestListener();
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    String url = urlCaptor.getValue();
+    assertThat(url).contains("uploadType=media");
+    assertThat(url).contains("crashlytics_app_id=gmpAppId");
+    assertThat(url).contains("trigger_type=1");
+    assertThat(url).contains("session_id=sessionId");
+    assertThat(url).contains("key=key");
+  }
 }

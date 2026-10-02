@@ -115,7 +115,7 @@ public class ResumableUploadMetadataStore {
           .filter(InProgressUploadMetadata::isInProgress)
           .findFirst()
           // If no uploads have a valid handle, get the oldest upload
-          .or(() -> Optional.ofNullable(uploads.getLast()));
+          .or(() -> uploads.isEmpty() ? Optional.empty() : Optional.of(uploads.getLast()));
     }
     return Optional.empty();
   }
