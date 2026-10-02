@@ -183,14 +183,15 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "versionName",
               mock(DevelopmentPlatformProvider.class));
 
-      FirebaseApp firebaseApp =
-          FirebaseApp.initializeApp(
-              testContext,
-              new FirebaseOptions.Builder()
-                  .setApiKey("api-key")
-                  .setApplicationId("applicationId")
-                  .setProjectId("projectId")
-                  .build());
+      FirebaseApp firebaseApp = mock(FirebaseApp.class);
+      FirebaseOptions options =
+          new FirebaseOptions.Builder()
+              .setApiKey("api-key")
+              .setApplicationId("applicationId")
+              .setProjectId("projectId")
+              .build();
+
+      when(firebaseApp.getOptions()).thenReturn(options);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
