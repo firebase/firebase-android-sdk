@@ -94,8 +94,7 @@ dependencies {
     api(project(":firebase-installations-interop"))
     api("com.google.firebase:firebase-measurement-connector:20.0.1")
 
-    implementation files('libs/libclient_android.jar')
-    implementation("com.google.guava:listenablefuture:1.0")
+    implementation files('libs/scotty-all.jar')
 
     // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
     implementation(project(":transport:transport-api"))

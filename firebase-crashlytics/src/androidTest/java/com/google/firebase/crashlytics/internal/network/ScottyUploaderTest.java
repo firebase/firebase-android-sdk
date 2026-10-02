@@ -20,8 +20,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.uploader.client.DataStream;
@@ -31,6 +29,8 @@ import com.google.uploader.client.TransferException;
 import com.google.uploader.client.TransferExceptionOrHttpResponse;
 import com.google.uploader.client.TransferListener;
 import com.google.uploader.client.UploadClient;
+import com.google.uploader.shaded.guava.util.concurrent.Futures;
+import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
