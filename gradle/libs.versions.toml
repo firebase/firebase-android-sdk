@@ -104,7 +104,7 @@ androidx-futures = { module = "androidx.concurrent:concurrent-futures", version 
 androidx-legacy-support-v4 = { module = "androidx.legacy:legacy-support-v4", version.ref = "legacySupportV4" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "testServices" }
-auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
+auth0-jwt = { module = "com.auth0:java-jwt", version = "4.6.1" }
 auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", version.ref = "autoValueParcel" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
