@@ -24,6 +24,7 @@ import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.collection.ArrayMap;
@@ -185,18 +186,33 @@ class TopicsSubscriber {
         }
       }
 
-      if (!performTopicOperation(pendingTopicOperation)) {
-        return false;
-      }
+      try {
+        if (!performTopicOperation(pendingTopicOperation)) {
+          return false;
+        }
 
-      // Topic operation succeeded or entry was invalid, complete the corresponding Task if it
-      // exists, remove it and try the next
-      store.removeTopicOperation(pendingTopicOperation);
-      markCompletePendingOperation(pendingTopicOperation);
+        // Topic operation succeeded or entry was invalid, complete the corresponding Task if it
+        // exists, remove it and try the next
+        store.removeTopicOperation(pendingTopicOperation);
+        markCompletePendingOperation(pendingTopicOperation);
+      } catch (IOException e) {
+        Log.e(TAG, "Topic operation failed: " + e.getMessage() + ". Won't retry Topic operation.");
+        store.removeTopicOperation(pendingTopicOperation);
+        markFailedPendingOperation(pendingTopicOperation, e);
+      }
     }
   }
 
   private void markCompletePendingOperation(TopicOperation topicOperation) {
+    completePendingOperation(topicOperation, /* exception= */ null);
+  }
+
+  private void markFailedPendingOperation(TopicOperation topicOperation, Exception exception) {
+    completePendingOperation(topicOperation, exception);
+  }
+
+  private void completePendingOperation(
+      TopicOperation topicOperation, @Nullable Exception exception) {
     synchronized (pendingOperations) {
       String key = topicOperation.serialize();
       if (!pendingOperations.containsKey(key)) {
@@ -210,7 +226,11 @@ class TopicsSubscriber {
       TaskCompletionSource<Void> taskCompletionSource = list.poll();
 
       if (taskCompletionSource != null) {
-        taskCompletionSource.setResult(null);
+        if (exception == null) {
+          taskCompletionSource.setResult(null);
+        } else {
+          taskCompletionSource.setException(exception);
+        }
       }
       if (list.isEmpty()) {
         pendingOperations.remove(key);
