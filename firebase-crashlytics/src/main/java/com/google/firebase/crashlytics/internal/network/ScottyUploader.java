@@ -30,15 +30,12 @@ import com.google.uploader.client.TransferListener;
 import com.google.uploader.client.TransferOptions;
 import com.google.uploader.client.UploadClient;
 import com.google.uploader.client.UploadClientImpl;
+import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ScottyUploader {
@@ -51,10 +48,32 @@ public class ScottyUploader {
 
   private final UploadClient uploadClient;
 
-  private ListenableFuture<TransferExceptionOrHttpResponse> upload;
+  private volatile ListenableFuture<TransferExceptionOrHttpResponse> upload;
 
   public abstract static class Listener extends TransferListener {
+    private volatile DataStream stream;
+
     public Listener() {}
+
+    FileDataStream withManagedStream(File heapdump) throws FileNotFoundException {
+      FileDataStream stream = new FileDataStream(heapdump);
+      this.stream = stream;
+      return stream;
+    }
+
+    public void closeStream() {
+      if (stream == null) {
+        return;
+      }
+
+      try {
+        stream.close();
+      } catch (IOException e) {
+        Logger.getLogger().e("Failed to close DataStream", e);
+      } finally {
+        stream = null;
+      }
+    }
 
     @Override
     public void onTransferHandleReady(Transfer transfer) {
@@ -68,6 +87,7 @@ public class ScottyUploader {
 
     @Override
     public void onResponseReceived(Transfer transfer, HttpResponse response) {
+      closeStream();
       if (isSuccess(response) || !isRecoverable(response)) {
         onDoneOrUnrecoverable();
       }
@@ -75,6 +95,7 @@ public class ScottyUploader {
 
     @Override
     public void onException(Transfer transfer, TransferException exception) {
+      closeStream();
       if (exception != null && !exception.isRecoverable()) {
         onDoneOrUnrecoverable();
       }
@@ -108,40 +129,7 @@ public class ScottyUploader {
     this.key = key;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
-    this.upload =
-        new ListenableFuture<TransferExceptionOrHttpResponse>() {
-          @Override
-          public void addListener(Runnable listener, Executor executor) {
-            executor.execute(listener);
-          }
-
-          @Override
-          public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-          }
-
-          @Override
-          public TransferExceptionOrHttpResponse get()
-              throws ExecutionException, InterruptedException {
-            return null;
-          }
-
-          @Override
-          public TransferExceptionOrHttpResponse get(long timeout, TimeUnit unit)
-              throws ExecutionException, InterruptedException, TimeoutException {
-            return null;
-          }
-
-          @Override
-          public boolean isCancelled() {
-            return true;
-          }
-
-          @Override
-          public boolean isDone() {
-            return false;
-          }
-        };
+    this.upload = Futures.immediateCancelledFuture();
   }
 
   public static UploadClient makeUploadClient(CrashlyticsWorker worker) {
@@ -163,7 +151,7 @@ public class ScottyUploader {
 
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, String filename, Listener listener) {
-    File heapdump = fileStore.getCommonFile(String.format("../../profiling/%s", filename));
+    File heapdump = getHeapdumpFile(filename);
 
     if (heapdump.exists()) {
       triggerNewUpload(gmpAppId, sessionId, type, heapdump, listener);
@@ -176,29 +164,30 @@ public class ScottyUploader {
 
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
-    stream(
-        heapdump,
-        stream -> {
-          HttpHeaders headers = new HttpHeaders();
-          headers.set("Content-Type", "application/octet-stream");
+    try {
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("Content-Type", "application/octet-stream");
 
-          String url = getUrl(key, gmpAppId, sessionId, type);
+      String url = getUrl(key, gmpAppId, sessionId, type);
 
-          TransferOptions options = TransferOptions.newBuilder().build();
-          Transfer transfer =
-              uploadClient.createTransfer(url, "POST", headers, stream, "", options);
+      TransferOptions options = TransferOptions.newBuilder().build();
+      Transfer transfer =
+          uploadClient.createTransfer(
+              url, "POST", headers, listener.withManagedStream(heapdump), "", options);
 
-          transfer.attachListener(
-              listener,
-              /* progressThresholdBytes= */ 1024 * 1024,
-              /* progressThresholdMillis= */ 1000);
+      transfer.attachListener(
+          listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 1000);
 
-          upload = transfer.send();
-        });
+      upload = transfer.send();
+    } catch (Exception e) {
+      Logger.getLogger().e("Couldn't upload", e);
+      listener.closeStream();
+      listener.onDoneOrUnrecoverable();
+    }
   }
 
   private void resumeExistingUpload(String filename, String handle, Listener listener) {
-    File heapdump = fileStore.getCommonFile(String.format("../../profiling/%s", filename));
+    File heapdump = getHeapdumpFile(filename);
 
     if (heapdump.exists()) {
       resumeExistingUpload(heapdump, handle, listener);
@@ -211,29 +200,36 @@ public class ScottyUploader {
   }
 
   private void resumeExistingUpload(File heapdump, String handle, Listener listener) {
-    stream(
-        heapdump,
-        stream -> {
-          TransferOptions options = TransferOptions.newBuilder().build();
-          Transfer transfer = uploadClient.resumeTransfer(handle, stream, options);
+    try {
+      TransferOptions options = TransferOptions.newBuilder().build();
+      Transfer transfer =
+          uploadClient.resumeTransfer(handle, listener.withManagedStream(heapdump), options);
 
-          transfer.attachListener(
-              listener,
-              /* progressThresholdBytes= */ 1024 * 1024,
-              /* progressThresholdMillis= */ 1000);
+      transfer.attachListener(
+          listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 1000);
 
-          upload = transfer.send();
-        });
-  }
-
-  private static void stream(File heapdump, Consumer<DataStream> stream) {
-    try (DataStream body = new FileDataStream(heapdump)) {
-      stream.accept(body);
-    } catch (IOException e) {
-      Logger.getLogger().e("Couldn't create file stream", e);
+      upload = transfer.send();
     } catch (Exception e) {
       Logger.getLogger().e("Couldn't upload", e);
+      listener.closeStream();
+      listener.onDoneOrUnrecoverable();
     }
+  }
+
+  private File getHeapdumpFile(String filename) {
+    // Heapdumps are stored in the app's files directory under "profiling/"
+    // See SessionReportingCoordinator#heapDumpForSessionTime
+    File current = fileStore.getCommonFile("");
+    while (current != null) {
+      File profilingDir = new File(current, "profiling");
+      if (profilingDir.exists() && profilingDir.isDirectory()) {
+        return new File(profilingDir, filename);
+      }
+      current = current.getParentFile();
+    }
+
+    Logger.getLogger().w("Could not find profiling directory, falling back to relative path");
+    return fileStore.getCommonFile(String.format("../../profiling/%s", filename));
   }
 
   private static String getUrl(String key, String gmpAppId, String sessionId, int type) {
