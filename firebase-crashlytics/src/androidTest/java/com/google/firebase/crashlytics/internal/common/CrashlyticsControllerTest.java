@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -182,6 +183,15 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "versionName",
               mock(DevelopmentPlatformProvider.class));
 
+      FirebaseApp firebaseApp =
+          FirebaseApp.initializeApp(
+              testContext,
+              new FirebaseOptions.Builder()
+                  .setApiKey("api-key")
+                  .setApplicationId("applicationId")
+                  .setProjectId("projectId")
+                  .build());
+
       final CrashlyticsController controller =
           new CrashlyticsController(
               testContext.getApplicationContext(),
@@ -198,7 +208,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
               crashlyticsWorkers,
               resumableUploadMetadataStore,
-              mock(FirebaseApp.class));
+              firebaseApp);
       return controller;
     }
   }
