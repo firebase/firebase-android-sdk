@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CrashlyticsTests {
-  lateinit var firebaseApp: FirebaseApp
+  private lateinit var firebaseApp: FirebaseApp
 
   @Before
   fun setUp() {
