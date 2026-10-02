@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -101,9 +102,9 @@ public class ResumableUploadMetadataStore {
     this.fileStore = fileStore;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-      this.uploads = getInProgressUploads(fileStore);
+      this.uploads = new CopyOnWriteArrayList<>(getInProgressUploads(fileStore));
     } else {
-      this.uploads = new ArrayList<>();
+      this.uploads = new CopyOnWriteArrayList<>();
     }
   }
 
@@ -122,11 +123,13 @@ public class ResumableUploadMetadataStore {
   public boolean addInProgressUpload(@NonNull String sessionId, int type, @NonNull String path) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN && isDefaultProcess(context)) {
       if (uploads.stream().noneMatch(upload -> upload.path.equals(path))) {
-        uploads.addFirst(new InProgressUploadMetadata(sessionId, type, path));
+        InProgressUploadMetadata newUpload = new InProgressUploadMetadata(sessionId, type, path);
+        uploads.add(
+            0, newUpload); // Add to front (oldest first logic in getUpload expects this order)
 
         if (!flush(fileStore, uploads)) {
           Logger.getLogger().e("Unable to add a new in progress upload and flush");
-          uploads.removeFirst();
+          uploads.remove(newUpload);
           return false;
         }
 
