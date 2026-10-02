@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.ProfilingTrigger;
+import androidx.test.filters.SdkSuppress;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.File;
 import java.io.IOException;
@@ -104,6 +105,7 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
   public void testGetUpload_noDuplicatesMetadataFileDoesNotExist() throws IOException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing =
         new ResumableUploadMetadataStore.InProgressUploadMetadata(
@@ -143,6 +145,7 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
   public void testGetUpload_oneItemNoHandleMetadataFileDoesNotExist() throws IOException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing =
         new ResumableUploadMetadataStore.InProgressUploadMetadata(
@@ -176,6 +179,7 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
   public void testGetUpload_manyItemsNoHandleMetadataFileDoesNotExist() throws IOException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
         new ResumableUploadMetadataStore.InProgressUploadMetadata(
@@ -222,6 +226,7 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
   public void testGetUpload_manyItemsWithHandleMetadataFileDoesNotExist() throws IOException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
         new ResumableUploadMetadataStore.InProgressUploadMetadata(
@@ -308,6 +313,7 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
   public void testRemoveInProgressUpload_uploadExists() throws IOException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
         new ResumableUploadMetadataStore.InProgressUploadMetadata(
