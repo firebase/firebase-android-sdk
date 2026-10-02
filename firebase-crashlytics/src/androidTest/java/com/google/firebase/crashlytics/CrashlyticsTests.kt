@@ -32,21 +32,24 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CrashlyticsTests {
+  lateinit var firebaseApp: FirebaseApp
+
   @Before
   fun setUp() {
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId(PROJECT_ID)
-        .build(),
-    )
+    firebaseApp =
+      Firebase.initialize(
+        ApplicationProvider.getApplicationContext(),
+        FirebaseOptions.Builder()
+          .setApplicationId(APP_ID)
+          .setApiKey(API_KEY)
+          .setProjectId(PROJECT_ID)
+          .build(),
+      )
   }
 
   @After
   fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
+    firebaseApp.delete()
   }
 
   @Test
