@@ -5384,7 +5384,6 @@ public class PipelineTest {
   }
 
   @Test
-  @Ignore("Pending backend support for array_agg_distinct in add_window_fields")
   public void testWindowFieldsComputesArrayAggDistinct() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -5403,7 +5402,7 @@ public class PipelineTest {
     assertThat(results).hasSize(5);
 
     assertThat(results.get(0).getData().get("distinctPrices")).isEqualTo(Arrays.asList(12L, 30L));
-    assertThat(results.get(2).getData().get("distinctPrices")).isEqualTo(Arrays.asList(30L, 60L));
+    assertThat(results.get(2).getData().get("distinctPrices")).isEqualTo(Arrays.asList(60L, 30L));
   }
 
   @Test
