@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import android.os.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -165,10 +166,11 @@ public class ScottyUploader {
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
+      String url = getUrl(key, gmpAppId, sessionId, type);
+
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/octet-stream");
-
-      String url = getUrl(key, gmpAppId, sessionId, type);
+      headers.set("X-Goog-Upload-File-Name", makeCanonicalFilename(sessionId, type));
 
       TransferOptions options = TransferOptions.newBuilder().build();
       Transfer transfer =
@@ -230,6 +232,11 @@ public class ScottyUploader {
 
     Logger.getLogger().w("Could not find profiling directory, falling back to relative path");
     return fileStore.getCommonFile(String.format("../../profiling/%s", filename));
+  }
+
+  private String makeCanonicalFilename(String sessionId, int type) {
+    String trigger = type == ProfilingTrigger.TRIGGER_TYPE_OOM ? "oom" : "mlk";
+    return String.format("%s/%s.perfetto", trigger, sessionId);
   }
 
   private static String getUrl(String key, String gmpAppId, String sessionId, int type) {
