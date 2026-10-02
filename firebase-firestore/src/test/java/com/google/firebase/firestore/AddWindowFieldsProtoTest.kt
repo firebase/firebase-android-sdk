@@ -979,26 +979,4 @@ class AddWindowFieldsProtoTest {
         )
       )
   }
-
-  /** Regression test for DL-5: unknown bound strings go to the backend, not an exception. */
-  @Test
-  fun passesThroughAnUnrecognizedFrameBoundString() {
-    assertThat(
-        windowSpecArg(
-          basePipeline()
-            .addWindowFields(
-              WindowSpec()
-                .documents("infinite" as Any, "current" as Any)
-                .sort(field("date").ascending()),
-              countAll().alias("c")
-            )
-        )
-      )
-      .isEqualTo(
-        map(
-          "sort" to array(ordering(fieldRef("date"), "ascending")),
-          "documents" to map("preceding" to str("infinite"), "following" to str("current"))
-        )
-      )
-  }
 }

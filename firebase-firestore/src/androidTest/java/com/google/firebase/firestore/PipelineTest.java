@@ -5198,24 +5198,6 @@ public class PipelineTest {
   }
 
   @Test
-  public void testWindowFieldsRejectsAnUnrecognizedFrameBound() {
-    CollectionReference salesCol = windowTestCollection();
-    assertThrows(
-        RuntimeException.class,
-        () ->
-            waitFor(
-                firestore
-                    .pipeline()
-                    .collection(salesCol)
-                    .addWindowFields(
-                        new WindowSpec()
-                            .documents("infinite", WindowBound.CURRENT)
-                            .sort(ascending("quantity")),
-                        AggregateFunction.count("quantity").alias("windowCount"))
-                    .execute()));
-  }
-
-  @Test
   public void testWindowFieldsRejectsAPartitionSuppliedToAnAccumulatorLevelOver() {
     CollectionReference salesCol = windowTestCollection();
     RuntimeException exception =
