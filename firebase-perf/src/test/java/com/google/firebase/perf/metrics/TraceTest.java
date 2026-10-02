@@ -593,11 +593,31 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace2.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
     assertThat(trace2.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
     assertThat(trace2.getSubtraces()).isEmpty();
+    assertThat(trace2.isCanceled()).isFalse();
 
     verify(mockTransportManager, never()).log(arguments.capture());
 
     p1.recycle();
     p2.recycle();
+  }
+
+  @Test
+  public void testParcelCanceled() {
+    Trace trace1 = Trace.getTrace(TRACE_1);
+    trace1.start();
+    trace1.cancel();
+
+    Parcel p1 = Parcel.obtain();
+    trace1.writeToParcel(p1, 0);
+    byte[] bytes = p1.marshall();
+
+    Parcel p2 = Parcel.obtain();
+    p2.unmarshall(bytes, 0, bytes.length);
+    p2.setDataPosition(0);
+
+    Trace trace2 = Trace.CREATOR_DATAONLY.createFromParcel(p2);
+
+    assertThat(trace2.isCanceled()).isTrue();
   }
 
   @Test
@@ -1089,6 +1109,68 @@ public class TraceTest extends FirebasePerformanceTestBase {
     trace.stop();
   }
 
+  @Test
+  public void cancelSetsTraceToInactiveState() {
+    Trace trace = Trace.getTrace(TRACE_1);
+    trace.start();
+    trace.cancel();
+
+    assertThat(trace.isActive()).isFalse();
+  }
+
+  @Test
+  public void canceledTraceCannotBeStopped() {
+    GaugeManager gaugeManager = mock(GaugeManager.class);
+    Trace trace =
+        new Trace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor, gaugeManager);
+
+    trace.start();
+    trace.cancel();
+    trace.stop();
+
+    verify(gaugeManager, never()).collectGaugeMetricOnce(any());
+  }
+
+  @Test
+  public void cancelUnregistersFromSessionUpdates() {
+    Trace trace = Trace.getTrace(TRACE_1);
+    trace.start();
+
+    trace.cancel();
+    assertThat(trace.getSessions().size()).isEqualTo(1);
+    SessionManager.getInstance().setPerfSession(PerfSession.create());
+    assertThat(trace.getSessions().size()).isEqualTo(1);
+  }
+
+  @Test
+  public void cancelUnregistersFromAppStateUpdates() {
+    Trace trace =
+        new Trace(
+            TRACE_1,
+            mockTransportManager,
+            mockClock,
+            mockAppStateMonitor,
+            mock(GaugeManager.class));
+
+    trace.start();
+    trace.cancel();
+
+    verify(mockAppStateMonitor).unregisterForAppState(any());
+  }
+
+  @Test
+  public void cancelFinalizeNotIncrementsTsns() throws Throwable {
+    Trace trace = new Trace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor);
+
+    currentTime = 1;
+    trace.start();
+    trace.cancel();
+
+    trace.finalize();
+
+    verify(mockAppStateMonitor, never()).incrementTsnsCount(eq(Integer.valueOf(1)));
+  }
+
   private Trace createTraceWithCounters() {
     Trace trace = new Trace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor);
     currentTime = 1;
@@ -1113,6 +1195,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getCounters()).hasSize(2);
     assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
     assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
+    assertThat(trace.isCanceled()).isFalse();
 
     assertThat(trace.getSubtraces()).isEmpty();
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
