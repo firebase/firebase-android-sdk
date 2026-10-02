@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
@@ -103,6 +104,8 @@ public class CrashlyticsCore {
 
   private final CrashlyticsWorkers crashlyticsWorkers;
 
+  private final ResumableUploadMetadataStore resumableUploadMetadataStore;
+
   // region Constructors
 
   public CrashlyticsCore(
@@ -127,6 +130,7 @@ public class CrashlyticsCore {
     this.sessionsSubscriber = sessionsSubscriber;
     this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
     this.crashlyticsWorkers = crashlyticsWorkers;
+    this.resumableUploadMetadataStore = new ResumableUploadMetadataStore(context, fileStore);
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -181,7 +185,8 @@ public class CrashlyticsCore {
               settingsProvider,
               onDemandCounter,
               sessionsSubscriber,
-              crashlyticsWorkers);
+              crashlyticsWorkers,
+              resumableUploadMetadataStore);
 
       controller =
           new CrashlyticsController(
@@ -197,7 +202,9 @@ public class CrashlyticsCore {
               nativeComponent,
               analyticsEventLogger,
               sessionsSubscriber,
-              crashlyticsWorkers);
+              crashlyticsWorkers,
+              resumableUploadMetadataStore,
+              app);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -340,7 +347,7 @@ public class CrashlyticsCore {
    * <p>The log is rolling with a maximum size of 64k, such that messages are removed (oldest first)
    * if the max size is exceeded.
    *
-   * @see #logException(Throwable)
+   * @see #logException(Throwable, Map)
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;

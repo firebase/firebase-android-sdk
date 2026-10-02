@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -49,6 +50,7 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettings;
@@ -165,6 +167,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       CrashlyticsFileMarker crashMarker =
           new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore);
 
+      ResumableUploadMetadataStore resumableUploadMetadataStore =
+          new ResumableUploadMetadataStore(testContext, testFileStore);
+
       List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
       buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
       AppData appData =
@@ -177,6 +182,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "versionCode",
               "versionName",
               mock(DevelopmentPlatformProvider.class));
+
+      FirebaseApp firebaseApp = mock(FirebaseApp.class);
+      FirebaseOptions options =
+          new FirebaseOptions.Builder()
+              .setApiKey("api-key")
+              .setApplicationId("applicationId")
+              .setProjectId("projectId")
+              .build();
+
+      when(firebaseApp.getOptions()).thenReturn(options);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
@@ -192,7 +207,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               analyticsEventLogger,
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
-              crashlyticsWorkers);
+              crashlyticsWorkers,
+              resumableUploadMetadataStore,
+              firebaseApp);
       return controller;
     }
   }
