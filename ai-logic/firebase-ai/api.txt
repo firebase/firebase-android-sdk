@@ -1664,6 +1664,16 @@ package com.google.firebase.ai.type {
     property public final com.google.firebase.ai.type.Voice? voice;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechMetadata {
+    ctor public SpeechMetadata();
+    ctor public SpeechMetadata(String? speaker = null);
+    ctor public SpeechMetadata(String? speaker = null, String? style = null);
+    method public String? getSpeaker();
+    method public String? getStyle();
+    property public final String? speaker;
+    property public final String? style;
+  }
+
   public abstract class StringFormat {
   }
 
@@ -1717,11 +1727,14 @@ package com.google.firebase.ai.type {
 
   public final class TextPart implements com.google.firebase.ai.type.Part {
     ctor public TextPart(String text);
+    ctor public TextPart(String text, com.google.firebase.ai.type.SpeechMetadata speechMetadata);
     method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.TextPart createWithThinking(String text, boolean isThought, String? thoughtSignature);
+    method public com.google.firebase.ai.type.SpeechMetadata? getSpeechMetadata();
     method public String getText();
     method public String? getThoughtSignature();
     method public boolean isThought();
     property public boolean isThought;
+    property public final com.google.firebase.ai.type.SpeechMetadata? speechMetadata;
     property public final String text;
     property public final String? thoughtSignature;
     field public static final com.google.firebase.ai.type.TextPart.Companion Companion;
