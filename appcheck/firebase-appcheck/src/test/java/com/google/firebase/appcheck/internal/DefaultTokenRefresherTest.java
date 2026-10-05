@@ -37,7 +37,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class DefaultTokenRefresherTest {
 
   private static final long TIME_TO_REFRESH_MILLIS = 1000L;
