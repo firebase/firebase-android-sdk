@@ -78,7 +78,8 @@ internal class ConvertersTest {
         topK = 20,
         seed = 42,
         candidateCount = 1,
-        maxOutputTokens = 250
+        maxOutputTokens = 250,
+        systemInstruction = InteropTextPart("system instruction")
       )
     val mlKitRequest = interopRequest.toMlKit()
 
@@ -88,6 +89,7 @@ internal class ConvertersTest {
     assertThat(mlKitRequest.seed).isEqualTo(42)
     assertThat(mlKitRequest.candidateCount).isEqualTo(1)
     assertThat(mlKitRequest.maxOutputTokens).isEqualTo(250)
+    assertThat(mlKitRequest.systemInstruction?.textString).isEqualTo("system instruction")
   }
 
   @Test
@@ -98,6 +100,7 @@ internal class ConvertersTest {
     // We only assert the fields we explicitly set,
     // as ML Kit's internal defaults may vary by version or environment.
     assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
+    assertThat(mlKitRequest.systemInstruction).isNull()
   }
 
   @Test
