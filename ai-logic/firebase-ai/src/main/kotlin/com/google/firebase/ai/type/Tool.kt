@@ -123,8 +123,9 @@ internal constructor(
      * When using this feature, you are required to comply with the "Grounding with Google Search"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
-     * or Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
-     * section within the Service Specific Terms).
+     * or Agent Platform Gemini API (see
+     * [Service Terms](https://cloud.google.com/terms/service-terms) section within the Service
+     * Specific Terms).
      *
      * @param googleSearch An empty [GoogleSearch] object. The presence of this object in the list
      * of tools enables the model to use Google Search.

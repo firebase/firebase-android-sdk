@@ -395,14 +395,14 @@ public class FinishReason private constructor(public val name: String, public va
  * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
- * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
  * Maps" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
- * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
