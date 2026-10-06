@@ -248,8 +248,9 @@ internal class OnDeviceGenerativeModelProvider(
     }
     val onDeviceSystemInstruction =
       systemInstruction?.let { instruction ->
-        val unsupportedSystemParts = instruction.parts.filter { it !is TextPart }
-        if (unsupportedSystemParts.isNotEmpty()) {
+        val systemTextParts = instruction.parts.filterIsInstance<TextPart>()
+        if (systemTextParts.size < instruction.parts.size) {
+          val unsupportedSystemParts = instruction.parts.filter { it !is TextPart }
           throw FirebaseAIException.from(
             FirebaseAIOnDeviceInvalidRequestException(
               IllegalArgumentException(
@@ -258,14 +259,12 @@ internal class OnDeviceGenerativeModelProvider(
             )
           )
         }
-        val systemTextParts =
-          instruction.parts.filterIsInstance<TextPart>().also {
-            if (it.size > 1)
-              Log.w(
-                TAG,
-                "On-device model does not support multiple text parts in systemInstruction, concatenating them instead"
-              )
-          }
+        if (systemTextParts.size > 1) {
+          Log.w(
+            TAG,
+            "On-device model does not support multiple text parts in systemInstruction, concatenating them instead"
+          )
+        }
         if (systemTextParts.isEmpty()) null
         else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
       }
