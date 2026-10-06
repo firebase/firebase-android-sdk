@@ -210,6 +210,65 @@ public class TopicsSubscriberRoboTest {
   }
 
   @Test
+  public void testSingleSubscribe_nonRetryableFailure() throws Exception {
+    IOException nonRetryableException = new IOException("Topic subscribe failed with status: 400");
+    doThrow(nonRetryableException).when(mockTopicSubscriptionClient).subscribe(anyString());
+
+    Task<Void> task = topicsSubscriber.subscribeToTopic(TEST_TOPIC);
+    assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe(TEST_TOPIC));
+
+    // execute immediately
+    fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(nonRetryableException);
+    assertThat(topicsSubscriber.hasPendingOperation()).isFalse();
+    assertThat(store.getNextTopicOperation()).isNull();
+  }
+
+  @Test
+  public void testSingleUnsubscribe_nonRetryableFailure() throws Exception {
+    IOException nonRetryableException =
+        new IOException("Topic unsubscribe failed with status: 400");
+    doThrow(nonRetryableException).when(mockTopicSubscriptionClient).unsubscribe(anyString());
+
+    Task<Void> task = topicsSubscriber.unsubscribeFromTopic(TEST_TOPIC);
+    assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.unsubscribe(TEST_TOPIC));
+
+    // execute immediately
+    fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(nonRetryableException);
+    assertThat(topicsSubscriber.hasPendingOperation()).isFalse();
+    assertThat(store.getNextTopicOperation()).isNull();
+  }
+
+  @Test
+  public void testMultipleOperations_withNonRetryableFailure() throws Exception {
+    IOException nonRetryableException = new IOException("Topic subscribe failed with status: 400");
+    doThrow(nonRetryableException)
+        .doNothing()
+        .when(mockTopicSubscriptionClient)
+        .subscribe(anyString());
+
+    Task<Void> task1 = topicsSubscriber.subscribeToTopic("topic1");
+    Task<Void> task2 = topicsSubscriber.subscribeToTopic("topic2");
+
+    // execute immediately
+    fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
+
+    assertThat(task1.isComplete()).isTrue();
+    assertThat(task1.isSuccessful()).isFalse();
+    assertThat(task1.getException()).isEqualTo(nonRetryableException);
+    assertThat(task2.isSuccessful()).isTrue();
+    assertThat(topicsSubscriber.hasPendingOperation()).isFalse();
+    assertThat(store.getNextTopicOperation()).isNull();
+  }
+
+  @Test
   public void testMultipleOperations() {
     Task<Void> task1 = topicsSubscriber.subscribeToTopic("topic1");
     Task<Void> task2 = topicsSubscriber.subscribeToTopic("topic2");
