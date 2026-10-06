@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `systemInstruction` property to `GenerateContentRequest`. (#8663)
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 16.0.0-beta05

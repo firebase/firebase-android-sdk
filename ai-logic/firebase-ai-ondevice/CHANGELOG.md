@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for `systemInstruction` in on-device content generation requests. (#8663)
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 16.0.0-beta05

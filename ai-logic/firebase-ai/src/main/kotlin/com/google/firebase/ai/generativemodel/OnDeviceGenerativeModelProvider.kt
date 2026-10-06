@@ -51,11 +51,13 @@ import kotlinx.coroutines.flow.map
  *
  * @property onDeviceModel The underlying on-device model to use for generation.
  * @property onDeviceConfig Configuration options for the on-device model.
+ * @property systemInstruction Optional instructions that direct the model to behave a certain way.
  */
 @PublicPreviewAPI
 internal class OnDeviceGenerativeModelProvider(
   private val onDeviceModel: OnDeviceGenerativeModel,
-  private val onDeviceConfig: OnDeviceConfig
+  private val onDeviceConfig: OnDeviceConfig,
+  internal val systemInstruction: Content? = null
 ) : GenerativeModelProvider {
 
   /**
@@ -244,6 +246,28 @@ internal class OnDeviceGenerativeModelProvider(
         )
       )
     }
+    val onDeviceSystemInstruction =
+      systemInstruction?.let { instruction ->
+        val systemTextParts = instruction.parts.filterIsInstance<TextPart>()
+        if (systemTextParts.size < instruction.parts.size) {
+          val unsupportedSystemParts = instruction.parts.filter { it !is TextPart }
+          throw FirebaseAIException.from(
+            FirebaseAIOnDeviceInvalidRequestException(
+              IllegalArgumentException(
+                "On-device model does not support non-text parts in systemInstruction: ${unsupportedSystemParts.map { it::class.java.simpleName }}"
+              )
+            )
+          )
+        }
+        if (systemTextParts.size > 1) {
+          Log.w(
+            TAG,
+            "On-device model does not support multiple text parts in systemInstruction, concatenating them instead"
+          )
+        }
+        if (systemTextParts.isEmpty()) null
+        else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
+      }
     val text = textParts.joinToString("\n") { it.text }
     val image = imageParts.firstOrNull()
     return OnDeviceGenerateContentRequest(
@@ -253,7 +277,8 @@ internal class OnDeviceGenerativeModelProvider(
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,
       candidateCount = onDeviceConfig.candidateCount,
-      maxOutputTokens = onDeviceConfig.maxOutputTokens
+      maxOutputTokens = onDeviceConfig.maxOutputTokens,
+      systemInstruction = onDeviceSystemInstruction
     )
   }
 

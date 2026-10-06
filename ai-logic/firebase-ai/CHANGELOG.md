@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
