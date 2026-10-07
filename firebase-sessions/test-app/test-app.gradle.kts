@@ -39,7 +39,8 @@ android {
   compileSdk = compileSdkVersion
 
   defaultConfig {
-    applicationId = "com.google.firebase.testing.sessions"
+    // applicationId = "com.google.firebase.testing.sessions"
+    applicationId = "com.kman.profilingmanagertestbed"
     applicationIdSuffix = "" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion

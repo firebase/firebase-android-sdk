@@ -37,7 +37,11 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.crashlytics"
-    compileSdkVersion 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
     testOptions {
         targetSdk project.targetSdkVersion
         unitTests.includeAndroidResources = true

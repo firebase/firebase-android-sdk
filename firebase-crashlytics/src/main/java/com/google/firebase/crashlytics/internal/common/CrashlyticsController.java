@@ -173,6 +173,7 @@ class CrashlyticsController {
     this.scottyUploader =
         new ScottyUploader(
             app.getOptions().getApiKey(),
+            appData.buildId,
             fileStore,
             ScottyUploader.makeUploadClient(crashlyticsWorkers.network));
   }
@@ -281,6 +282,14 @@ class CrashlyticsController {
 
                             if (ex instanceof OutOfMemoryError) {
                               Logger.getLogger().i("OOMs will be sent on restart");
+
+                              if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
+                                ActivityManager activityManager =
+                                    (ActivityManager)
+                                        context.getSystemService(Context.ACTIVITY_SERVICE);
+                                activityManager.setProcessStateSummary("OOM, Java Heap".getBytes());
+                              }
+
                               return Tasks.forResult(null);
                             }
                             // Data collection is enabled, so it's safe to send the report.
@@ -579,6 +588,8 @@ class CrashlyticsController {
               String gmpAppId = appData.googleAppId;
               String sessionId = upload.sessionId;
               String heapdump = upload.path;
+
+              Logger.getLogger().d("About to trigger an upload!");
 
               if (upload.isInProgress()) {
                 scottyUploader.resumeUpload(

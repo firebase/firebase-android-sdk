@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import android.annotation.SuppressLint;
 import android.os.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
@@ -45,6 +46,8 @@ public class ScottyUploader {
           "hts/frbslgigp.ogepscmula/1frlglgc/pod", "tp:/ieaeogn-agolai.o/podv/ieo/eayula");
 
   private final String key;
+
+  private final String uuid;
   private final FileStore fileStore;
 
   private final UploadClient uploadClient;
@@ -79,17 +82,25 @@ public class ScottyUploader {
     @Override
     public void onTransferHandleReady(Transfer transfer) {
       if (transfer != null && transfer.getTransferHandle() != null) {
+        Logger.getLogger()
+            .d(String.format("Scotty handle available: %s", transfer.getTransferHandle()));
         onHandleAvailable(transfer.getTransferHandle());
       }
     }
 
+    @SuppressLint("DefaultLocale")
     @Override
-    public void onUploadProgress(Transfer transfer) {}
+    public void onUploadProgress(Transfer transfer) {
+      Logger.getLogger()
+          .d(String.format("Still uploading heap dump; so far: %d", transfer.getBytesUploaded()));
+    }
 
     @Override
     public void onResponseReceived(Transfer transfer, HttpResponse response) {
       closeStream();
       if (isSuccess(response) || !isRecoverable(response)) {
+        Logger.getLogger()
+            .d(String.format("Scotty upload returned; status is: %s", response.getResponseCode()));
         onDoneOrUnrecoverable();
       }
     }
@@ -98,6 +109,7 @@ public class ScottyUploader {
     public void onException(Transfer transfer, TransferException exception) {
       closeStream();
       if (exception != null && !exception.isRecoverable()) {
+        Logger.getLogger().w("Scotty upload is in an unrecoverable state!");
         onDoneOrUnrecoverable();
       }
     }
@@ -126,8 +138,9 @@ public class ScottyUploader {
     }
   }
 
-  public ScottyUploader(String key, FileStore fileStore, UploadClient uploadClient) {
+  public ScottyUploader(String key, String uuid, FileStore fileStore, UploadClient uploadClient) {
     this.key = key;
+    this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
     this.upload = Futures.immediateCancelledFuture();
@@ -166,11 +179,12 @@ public class ScottyUploader {
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
-      String url = getUrl(key, gmpAppId, sessionId, type);
+      String url = getUrl(key, uuid, gmpAppId, sessionId, type);
+      String canonicalFilename = makeCanonicalFilename(sessionId, type);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/octet-stream");
-      headers.set("X-Goog-Upload-File-Name", makeCanonicalFilename(sessionId, type));
+      headers.set("X-Goog-Upload-File-Name", canonicalFilename);
 
       TransferOptions options = TransferOptions.newBuilder().build();
       Transfer transfer =
@@ -179,6 +193,12 @@ public class ScottyUploader {
 
       transfer.attachListener(
           listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 1000);
+
+      Logger.getLogger()
+          .d(
+              String.format(
+                  "Triggering a heap dump upload for: %s, uploaded as: %s",
+                  heapdump.getName(), canonicalFilename));
 
       upload = transfer.send();
     } catch (Exception e) {
@@ -208,7 +228,7 @@ public class ScottyUploader {
           uploadClient.resumeTransfer(handle, listener.withManagedStream(heapdump), options);
 
       transfer.attachListener(
-          listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 1000);
+          listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 500);
 
       upload = transfer.send();
     } catch (Exception e) {
@@ -239,12 +259,14 @@ public class ScottyUploader {
     return String.format("%s/%s.perfetto", trigger, sessionId);
   }
 
-  private static String getUrl(String key, String gmpAppId, String sessionId, int type) {
+  private static String getUrl(
+      String key, String uuid, String gmpAppId, String sessionId, int type) {
     Map<String, String> params =
         Map.of(
             "uploadType", "media",
-            "crashlytics_app_id", gmpAppId,
-            "trigger_type", Integer.toString(type),
+            "gmp_app_id", gmpAppId,
+            "uuid", uuid,
+            "trigger_type", triggerAsString(type),
             "session_id", sessionId,
             "key", key);
 
@@ -254,5 +276,16 @@ public class ScottyUploader {
         params.entrySet().stream()
             .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
             .collect(Collectors.joining("&")));
+  }
+
+  private static String triggerAsString(int type) {
+    switch (type) {
+      case ProfilingTrigger.TRIGGER_TYPE_ANOMALY:
+        return "mlk";
+      case ProfilingTrigger.TRIGGER_TYPE_OOM:
+        return "oom";
+      default:
+        return "none";
+    }
   }
 }

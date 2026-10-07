@@ -14,12 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.annotation.SuppressLint;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.os.ProfilingTrigger;
-import android.system.OsConstants;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -545,20 +545,11 @@ public class SessionReportingCoordinator {
         findRelevantApplicationExitInfo(
             sessionId,
             applicationExitInfoList,
-            aei -> {
-              // Most devices should support REASON_LOW_MEMORY
-              boolean viaLowMemory =
-                  aei.getReason() == ApplicationExitInfo.REASON_LOW_MEMORY
-                      && aei.getDescription() != null
-                      && aei.getDescription().contains("OOM");
-              // In cases where the above isn't supported, fall back to a more primitive check
-              boolean viaSignaled =
-                  aei.getReason() == ApplicationExitInfo.REASON_SIGNALED
-                      && aei.getStatus() == OsConstants.SIGKILL;
-
-              // Get the first instance that is an OOM
-              return viaLowMemory || viaSignaled;
-            });
+            aei ->
+                aei.getReason() == ApplicationExitInfo.REASON_CRASH
+                    && aei.getProcessStateSummary() != null
+                    && aei.getProcessStateSummary().length != 0
+                    && Arrays.equals(aei.getProcessStateSummary(), "OOM, Java Heap".getBytes()));
 
     return relevant != null;
   }
@@ -569,10 +560,19 @@ public class SessionReportingCoordinator {
         findRelevantApplicationExitInfo(
             sessionId,
             applicationExitInfoList,
-            aei ->
-                aei.getReason() == ApplicationExitInfo.REASON_OTHER
-                    && aei.getDescription() != null
-                    && aei.getDescription().contains("MemoryLimiter:AnonSwap"));
+            aei -> {
+              @SuppressLint("WrongConstant")
+              boolean viaMemoryLimiter =
+                  Build.VERSION.SDK_INT > VERSION_CODES.CINNAMON_BUN
+                      && aei.getReason() == ApplicationExitInfo.REASON_MEMORY_LIMITER;
+
+              boolean viaOther =
+                  aei.getReason() == ApplicationExitInfo.REASON_OTHER
+                      && aei.getDescription() != null
+                      && aei.getDescription().contains("MemoryLimiter:AnonSwap");
+
+              return viaOther || viaMemoryLimiter;
+            });
 
     return relevant != null;
   }
@@ -591,11 +591,7 @@ public class SessionReportingCoordinator {
       return Optional.empty();
     }
 
-    File[] heapDumps =
-        heapDumpRoot.listFiles(
-            (dir, name) ->
-                name.toLowerCase().endsWith(".hprof")
-                    || name.toLowerCase().endsWith(".perfetto-java-heap-dump"));
+    File[] heapDumps = heapDumpRoot.listFiles((dir, name) -> isProfilingTriggerHeapdump(name));
 
     if (heapDumps == null || heapDumps.length == 0) {
       Logger.getLogger().d("No heap dumps present");
@@ -621,5 +617,20 @@ public class SessionReportingCoordinator {
               return lastModifiedTime >= sessionStartTime;
             })
         .findFirst();
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  private static boolean isProfilingTriggerHeapdump(String filename) {
+    boolean isHeapdump =
+        filename.toLowerCase().endsWith(".hprof")
+            || filename.toLowerCase().endsWith(".perfetto-java-heap-dump");
+
+    // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
+    // MLK heap dumps from ones that were requested manually. On API 37, it is not possible.
+    if (android.os.Build.VERSION.SDK_INT > VERSION_CODES.CINNAMON_BUN) {
+      return isHeapdump && filename.contains("trigger-type-");
+    }
+
+    return isHeapdump;
   }
 }
