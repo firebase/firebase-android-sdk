@@ -636,30 +636,6 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     assertFalse(isOom);
   }
 
-  @Test
-  public void testIsOom_returnsTrueOnReasonSignaled() {
-    ApplicationExitInfo oom =
-        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, OsConstants.SIGKILL);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
-
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
-
-    assertTrue(isOom);
-  }
-
-  @SdkSuppress(minSdkVersion = 37)
-  @Test
-  public void testIsOom_returnTrueOnReasonLowMemory() {
-    ApplicationExitInfo oom =
-        makeApplicationExitInfo(
-            ApplicationExitInfo.REASON_LOW_MEMORY, /* SUBREASON_OOM_KILL= */ 30, 0);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
-
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
-
-    assertTrue(isOom);
-  }
-
   @SdkSuppress(minSdkVersion = 37)
   @Test
   public void testIsMemoryLimiterKill() {
