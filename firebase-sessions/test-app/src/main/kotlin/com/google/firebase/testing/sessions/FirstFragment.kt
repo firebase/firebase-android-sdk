@@ -80,7 +80,7 @@ class FirstFragment : Fragment() {
       val usage = 1
 
       if (usedHeap >= maxHeap * usage) {
-          return@thread
+        return@thread
       }
 
       val chunk = ByteArray(2 * 1024 * 1024)
