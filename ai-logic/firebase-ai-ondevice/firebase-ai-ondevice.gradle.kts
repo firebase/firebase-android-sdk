@@ -74,7 +74,7 @@ dependencies {
   implementation(libs.genai.prompt)
   api(libs.genai.schema)
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta06")
+  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

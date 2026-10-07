@@ -101,7 +101,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta06")
+  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)
