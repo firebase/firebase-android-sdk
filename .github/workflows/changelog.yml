@@ -13,11 +13,11 @@ jobs:
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
       with:
         fetch-depth: 100
         submodules: true
-    - uses: ruby/setup-ruby@v1
+    - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
       with:
         ruby-version: '2.7'
     - name: Setup Bundler

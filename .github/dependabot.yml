@@ -9,3 +9,18 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+  # Keeps the SHA-pinned actions (and their "# vX.Y.Z" comments) current.
+  # "/" covers .github/workflows.
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+    schedule:
+      interval: "weekly"
+    # Wait a week before proposing a new release, so a compromised or
+    # yanked release has time to be caught upstream first.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"

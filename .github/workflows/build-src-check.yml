@@ -13,9 +13,9 @@ jobs:
   build-src-check:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@215b7e5f829ab9cac114c149667e57dc1b70b4bc # v2.5.2
         with:
           java-version: 11
           distribution: temurin
@@ -26,7 +26,7 @@ jobs:
         run: |
           ./gradlew -b buildSrc/build.gradle.kts -PenablePluginTests=true check
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action@b9f6c61d965bcaa18acc02d6daf706373a448f02 # v1.40
         with:
           files: "**/build/test-results/**/*.xml"
           check_name: "buildSrc Test Results"
