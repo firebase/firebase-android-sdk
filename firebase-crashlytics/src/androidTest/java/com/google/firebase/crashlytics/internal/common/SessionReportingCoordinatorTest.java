@@ -34,7 +34,6 @@ import static org.mockito.Mockito.when;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Parcel;
-import android.system.OsConstants;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
