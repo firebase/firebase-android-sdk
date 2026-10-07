@@ -51,11 +51,11 @@ dependencies {
 
   implementation(libs.androidx.annotation)
   // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
-  implementation(project(":transport:transport-api"))
+  implementation("com.google.android.datatransport:transport-api:5.0.0")
   // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-backend-cct.
-  implementation(project(":transport:transport-backend-cct"))
+  implementation("com.google.android.datatransport:transport-backend-cct:5.0.0")
   // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-runtime.
-  implementation(project(":transport:transport-runtime"))
+  implementation("com.google.android.datatransport:transport-runtime:5.0.0")
   implementation(libs.kotlin.stdlib.jdk8)
   implementation(libs.javax.inject)
 

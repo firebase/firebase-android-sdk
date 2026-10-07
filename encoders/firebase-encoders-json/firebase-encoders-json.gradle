@@ -51,7 +51,7 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
-    api project(':encoders:firebase-encoders')
+    api "com.google.firebase:firebase-encoders:18.0.0"
 
     implementation libs.androidx.annotation
 

@@ -85,11 +85,11 @@ dependencies {
 
   api(libs.firebase.common)
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck.
-  api(project(":appcheck:firebase-appcheck"))
+  api("com.google.firebase:firebase-appcheck:20.0.0")
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
@@ -101,7 +101,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
-  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta06")
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)

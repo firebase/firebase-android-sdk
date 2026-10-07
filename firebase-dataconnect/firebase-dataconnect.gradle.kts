@@ -108,7 +108,7 @@ dependencies {
 
   api(project(":firebase-annotations"))
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation(libs.firebase.components)
 

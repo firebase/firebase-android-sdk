@@ -1,6 +1,7 @@
 # Unreleased
 
-- [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
+# 18.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [removed] **Breaking Change**: Removed deprecated
   `GenerativeBackend.vertexAI` in favor of `GenerativeBackend.agentPlatform`. (#8437)
@@ -254,3 +255,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

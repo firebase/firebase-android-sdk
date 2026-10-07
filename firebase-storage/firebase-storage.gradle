@@ -94,14 +94,14 @@ dependencies {
 
     api(libs.firebase.annotations)
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck.
-    api(project(":appcheck:firebase-appcheck")) {
+    api("com.google.firebase:firebase-appcheck:20.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-common-ktx"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-annotations"
     }
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-    api(project(":appcheck:firebase-appcheck-interop"))
+    api("com.google.firebase:firebase-appcheck-interop:18.0.0")
     api('com.google.firebase:firebase-auth-interop:18.0.0') {
          exclude group: "com.google.firebase", module: "firebase-common"
          exclude group: "com.google.firebase", module: "firebase-components"

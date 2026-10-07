@@ -111,24 +111,24 @@ dependencies {
     implementation libs.kotlin.stdlib
     implementation libs.androidx.appcompat
     // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
-    implementation project(':transport:transport-api')
+    implementation "com.google.android.datatransport:transport-api:5.0.0"
     implementation libs.dagger.dagger
     api libs.firebase.annotations
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
-    api project(':firebase-installations-interop')
+    api "com.google.firebase:firebase-installations-interop:18.0.0"
     implementation libs.okhttp
     api(libs.firebase.common)
     api(libs.firebase.components)
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-config.
-    api(project(":firebase-config")) {
+    api("com.google.firebase:firebase-config:24.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
-    api(project(":firebase-installations")) {
+    api("com.google.firebase:firebase-installations:20.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
     }
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-sessions.
-    api(project(":firebase-sessions")) {
+    api("com.google.firebase:firebase-sessions:4.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'
@@ -136,7 +136,7 @@ dependencies {
     javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-datatransport.
-    runtimeOnly(project(":firebase-datatransport")) {
+    runtimeOnly("com.google.firebase:firebase-datatransport:21.0.0") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }

@@ -1,5 +1,7 @@
 # Unreleased
 
+# 19.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [changed] **Breaking change:** Updated Protocol Buffers dependency to
   `4.36.1` and Google Common Protos to `2.75.0`.
@@ -17,3 +19,4 @@
 
 The Kotlin extensions library transitively includes the updated `protolite-well-known-types`
 library. The Kotlin extensions library has no additional updates.
+

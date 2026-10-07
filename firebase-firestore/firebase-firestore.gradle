@@ -152,7 +152,7 @@ dependencies {
     api libs.playservices.tasks
     api libs.firebase.annotations
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-    api project(':appcheck:firebase-appcheck-interop')
+    api "com.google.firebase:firebase-appcheck-interop:18.0.0"
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
@@ -160,7 +160,7 @@ dependencies {
     api(libs.firebase.common)
     api(libs.firebase.components)
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-database-collection.
-    api(project(':firebase-database-collection'))
+    api("com.google.firebase:firebase-database-collection:19.0.0")
 
     implementation libs.androidx.annotation
     implementation libs.playservices.base
@@ -189,7 +189,7 @@ dependencies {
     testFixturesCompileOnly libs.protobuf.java
     testFixturesCompileOnly libs.javax.annotation.jsr250
 
-    testImplementation project(':firebase-database-collection')
+    testImplementation "com.google.firebase:firebase-database-collection:19.0.0"
     testImplementation project(':firebase-firestore')
     testProtobuf(libs.proto.google.common.protos)
     testImplementation libs.androidx.test.core

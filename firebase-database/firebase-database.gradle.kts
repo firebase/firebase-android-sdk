@@ -69,7 +69,7 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-  api(project(":appcheck:firebase-appcheck-interop"))
+  api("com.google.firebase:firebase-appcheck-interop:18.0.0")
   api(libs.firebase.common)
   api(libs.firebase.components)
   api("com.google.firebase:firebase-auth-interop:20.0.0") {
@@ -77,7 +77,7 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-database-collection.
-  api(project(":firebase-database-collection"))
+  api("com.google.firebase:firebase-database-collection:19.0.0")
   implementation(libs.androidx.annotation)
   implementation(libs.bundles.playservices)
   implementation(libs.kotlin.stdlib)
