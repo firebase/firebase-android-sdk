@@ -93,7 +93,6 @@ dependencies {
   api(project(":firebase-crashlytics"))
 
   implementation(libs.androidx.core.ktx)
-  implementation(libs.okhttp)
 
   implementation(platform(libs.opentelemetry.bom))
   implementation(libs.opentelemetry.sdk)
