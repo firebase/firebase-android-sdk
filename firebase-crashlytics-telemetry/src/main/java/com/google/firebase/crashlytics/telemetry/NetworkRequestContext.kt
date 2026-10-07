@@ -22,7 +22,7 @@ import io.opentelemetry.semconv.ErrorAttributes.ERROR_TYPE
 import io.opentelemetry.semconv.HttpAttributes.HTTP_RESPONSE_STATUS_CODE
 
 /**
- * Receiver of a [FirebaseCrashlyticsTelemetry.networkRequest] block.
+ * Receiver of a [FirebaseCrashlyticsTelemetry.traceRequest] block.
  *
  * @property url The request URL.
  * @property method The HTTP method.
