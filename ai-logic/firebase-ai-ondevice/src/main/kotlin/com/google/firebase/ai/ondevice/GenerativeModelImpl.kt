@@ -45,6 +45,13 @@ internal class GenerativeModelImpl(
    */
   override suspend fun isAvailable(): Boolean = mlkitModel.checkStatus() == FeatureStatus.AVAILABLE
 
+  override suspend fun isThinkingModeAvailable(): Boolean =
+    try {
+      mlkitModel.isThinkingModeAvailable()
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
   override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
     try {
       val response = mlkitModel.generateContent(request.toMlKit())

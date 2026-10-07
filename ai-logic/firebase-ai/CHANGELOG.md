@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `enableThinking` to `OnDeviceConfig` to support [thinking mode](https://firebase.google.com/docs/ai-logic/thinking) in on-device and hybrid inference modes, with automatic cloud fallback when the on-device model does not support thinking.
 - [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [changed] Deprecated `GenerativeBackend.agentPlatform` in favor of

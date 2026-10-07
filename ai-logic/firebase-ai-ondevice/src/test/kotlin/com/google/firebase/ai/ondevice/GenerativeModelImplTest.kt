@@ -65,6 +65,25 @@ class GenerativeModelImplTest {
   }
 
   @Test
+  fun `isThinkingModeAvailable returns true when MLKit supports thinking mode`() = runTest {
+    val mlkitModel =
+      mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns true }
+    val model = GenerativeModelImpl(mlkitModel)
+
+    model.isThinkingModeAvailable().shouldBeTrue()
+  }
+
+  @Test
+  fun `isThinkingModeAvailable returns false when MLKit does not support thinking mode`() =
+    runTest {
+      val mlkitModel =
+        mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns false }
+      val model = GenerativeModelImpl(mlkitModel)
+
+      model.isThinkingModeAvailable().shouldBeFalse()
+    }
+
+  @Test
   fun `generateContent should return converted response`() = runTest {
     val mlkitModel =
       mockk<MlKitGenerativeModel> {
@@ -76,6 +95,13 @@ class GenerativeModelImplTest {
                 mockk {
                   every { text } returns "response text"
                   every { finishReason } returns MlKitCandidate.FinishReason.MAX_TOKENS
+                }
+              )
+            every { thoughtProcess } returns
+              listOf(
+                mockk {
+                  every { text } returns "thought text"
+                  every { finishReason } returns MlKitCandidate.FinishReason.STOP
                 }
               )
           }
@@ -90,6 +116,11 @@ class GenerativeModelImplTest {
       candidates.first().apply {
         text shouldBe "response text"
         finishReason shouldBe FinishReason.MAX_TOKENS
+      }
+      thoughtProcess shouldHaveSize 1
+      thoughtProcess.first().apply {
+        text shouldBe "thought text"
+        finishReason shouldBe FinishReason.STOP
       }
     }
   }
@@ -123,6 +154,7 @@ class GenerativeModelImplTest {
                     every { finishReason } returns MlKitCandidate.FinishReason.STOP
                   }
                 )
+              every { thoughtProcess } returns emptyList()
             }
           )
       }

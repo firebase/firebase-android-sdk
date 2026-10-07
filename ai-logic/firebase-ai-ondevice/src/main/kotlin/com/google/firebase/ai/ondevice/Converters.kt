@@ -79,6 +79,7 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       topK = this@toMlKit.topK
       seed = this@toMlKit.seed
       systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
+      this@toMlKit.enableThinking?.let { enableThinking = it }
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)
@@ -87,7 +88,12 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
 
 internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop(
   modelName: String
-): GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() }, modelName)
+): GenerateContentResponse =
+  GenerateContentResponse(
+    candidates = candidates.map { it.toInterop() },
+    modelVersion = modelName,
+    thoughtProcess = thoughtProcess.map { it.toInterop() }
+  )
 
 // ================================================
 // `GenerationConfig` converter extension functions

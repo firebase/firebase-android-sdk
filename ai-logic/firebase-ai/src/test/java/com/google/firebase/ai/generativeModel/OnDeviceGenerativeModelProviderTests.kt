@@ -291,4 +291,80 @@ internal class OnDeviceGenerativeModelProviderTests {
       }
     exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
   }
+
+  @Test
+  fun `generateContent includes enableThinking and maps thoughtProcess to thoughtSummary`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      coEvery { onDeviceModel.isThinkingModeAvailable() } returns true
+      val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+      coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+        OnDeviceGenerateContentResponse(
+          candidates = listOf(OnDeviceCandidate("final answer", OnDeviceFinishReason.STOP)),
+          modelVersion = "gemini-nano-v4",
+          thoughtProcess =
+            listOf(OnDeviceCandidate("step-by-step reasoning", OnDeviceFinishReason.STOP))
+        )
+
+      val thinkingProvider =
+        OnDeviceGenerativeModelProvider(
+          onDeviceModel,
+          OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, enableThinking = true)
+        )
+
+      val response = thinkingProvider.generateContent(prompt)
+
+      capturedRequest.captured.enableThinking shouldBe true
+      response.text shouldBe "final answer"
+      response.thoughtSummary shouldBe "step-by-step reasoning"
+    }
+
+  @Test
+  fun `generateContent throws when thinking is enabled but thinking mode is not available`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      coEvery { onDeviceModel.isThinkingModeAvailable() } returns false
+
+      val thinkingProvider =
+        OnDeviceGenerativeModelProvider(
+          onDeviceModel,
+          OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, enableThinking = true)
+        )
+
+      val exception = shouldThrow<FirebaseAIException> { thinkingProvider.generateContent(prompt) }
+      exception.cause!!::class shouldBe FirebaseAIOnDeviceNotAvailableException::class
+    }
+
+  @Test
+  fun `generateContentStream maps thoughtProcess chunks and response text chunks`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+      coEvery { onDeviceModel.isThinkingModeAvailable() } returns true
+      val thoughtChunk =
+        OnDeviceGenerateContentResponse(
+          candidates = emptyList(),
+          thoughtProcess = listOf(OnDeviceCandidate("thinking...", OnDeviceFinishReason.OTHER))
+        )
+      val answerChunk =
+        OnDeviceGenerateContentResponse(
+          candidates = listOf(OnDeviceCandidate("streamed answer", OnDeviceFinishReason.STOP)),
+          thoughtProcess = listOf(OnDeviceCandidate("done thinking", OnDeviceFinishReason.STOP))
+        )
+      every { onDeviceModel.generateContentStream(any()) } returns flowOf(thoughtChunk, answerChunk)
+
+      val thinkingProvider =
+        OnDeviceGenerativeModelProvider(
+          onDeviceModel,
+          OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, enableThinking = true)
+        )
+
+      val emissions = mutableListOf<com.google.firebase.ai.type.GenerateContentResponse>()
+      thinkingProvider.generateContentStream(prompt).collect { emissions.add(it) }
+
+      emissions.size shouldBe 2
+      emissions[0].thoughtSummary shouldBe "thinking..."
+      emissions[0].text shouldBe null
+      emissions[1].thoughtSummary shouldBe "done thinking"
+      emissions[1].text shouldBe "streamed answer"
+    }
 }

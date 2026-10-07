@@ -34,6 +34,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to `1`.
  * @property modelOption Configuration for the on-device model selection and performance.
+ * @property enableThinking Whether to enable thinking mode for the on-device model.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -45,7 +46,8 @@ constructor(
   public val topK: Int? = null,
   public val seed: Int? = null,
   public val candidateCount: Int = 1,
-  public val modelOption: OnDeviceModelOption? = null
+  public val modelOption: OnDeviceModelOption? = null,
+  public val enableThinking: Boolean? = null
 ) {
 
   public companion object {

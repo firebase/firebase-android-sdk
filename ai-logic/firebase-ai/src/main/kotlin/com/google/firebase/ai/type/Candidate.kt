@@ -89,12 +89,34 @@ internal constructor(
   }
 
   internal companion object {
-    fun fromInterop(candidate: OnDeviceCandidate) =
+    fun fromInterop(candidate: OnDeviceCandidate, thought: OnDeviceCandidate? = null) =
       Candidate(
-        content = content { text(candidate.text) },
+        content =
+          content {
+            if (thought != null && thought.text.isNotEmpty()) {
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+            if (candidate.text.isNotEmpty() || thought == null) {
+              text(candidate.text)
+            }
+          },
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
+        groundingMetadata = null,
+        urlContextMetadata = null
+      )
+
+    fun fromInteropThought(thought: OnDeviceCandidate) =
+      Candidate(
+        content =
+          content {
+            part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+          },
+        safetyRatings = emptyList(),
+        citationMetadata = null,
+        finishReason = FinishReason.fromInterop(thought.finishReason),
         finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
