@@ -38,7 +38,7 @@ import okhttp3.Response
 
 /**
  * Records each OkHttp request as a span. Requests made inside a
- * [FirebaseCrashlyticsTelemetry.networkRequest] block become children of its span.
+ * [FirebaseCrashlyticsTelemetry.traceRequest] block become children of its span.
  */
 public class CrashlyticsOkHttpInterceptor
 internal constructor(

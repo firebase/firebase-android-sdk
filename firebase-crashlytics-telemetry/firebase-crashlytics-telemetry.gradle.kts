@@ -101,6 +101,8 @@ dependencies {
   implementation(libs.opentelemetry.exporter.otlp)
   implementation(libs.opentelemetry.semconv)
 
+  compileOnly(libs.errorprone.annotations)
+
   testImplementation(libs.junit.jupiter)
   testImplementation(libs.opentelemetry.sdk.testing)
   testImplementation(libs.truth)

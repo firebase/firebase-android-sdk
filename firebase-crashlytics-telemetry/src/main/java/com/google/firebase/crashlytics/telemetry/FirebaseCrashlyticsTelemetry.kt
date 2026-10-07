@@ -16,6 +16,7 @@
 
 package com.google.firebase.crashlytics.telemetry
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -138,7 +139,8 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
    * @param block The network operation.
    * @return The result of [block].
    */
-  public suspend fun <T> networkRequest(
+  @CanIgnoreReturnValue
+  public suspend fun <T> traceRequest(
     url: String,
     method: String = "GET",
     name: String? = null,

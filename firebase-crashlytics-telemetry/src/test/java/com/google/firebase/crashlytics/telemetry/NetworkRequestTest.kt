@@ -49,7 +49,7 @@ class NetworkRequestTest {
   fun success_recordsClientRootSpanAndReturnsResult() =
     runBlocking<Unit> {
       val result =
-        telemetry.networkRequest("https://api.example.com/users", method = "POST") {
+        telemetry.traceRequest("https://api.example.com/users", method = "POST") {
           responseCode = 201
           "created"
         }
@@ -70,7 +70,7 @@ class NetworkRequestTest {
   @Test
   fun defaults_toGetAndMethodAsSpanName() =
     runBlocking<Unit> {
-      telemetry.networkRequest("https://api.example.com") {}
+      telemetry.traceRequest("https://api.example.com") {}
 
       assertThat(onlySpan().name).isEqualTo("GET")
       assertThat(onlySpan().attributes.get(stringKey("http.request.method"))).isEqualTo("GET")
@@ -79,7 +79,7 @@ class NetworkRequestTest {
   @Test
   fun name_isUsedAsSpanName() =
     runBlocking<Unit> {
-      telemetry.networkRequest("https://api.example.com/me", name = "profile fetch") {}
+      telemetry.traceRequest("https://api.example.com/me", name = "profile fetch") {}
 
       assertThat(onlySpan().name).isEqualTo("profile fetch")
     }
@@ -87,7 +87,7 @@ class NetworkRequestTest {
   @Test
   fun errorResponseCode_marksFailure() =
     runBlocking<Unit> {
-      telemetry.networkRequest("https://api.example.com/missing") { responseCode = 404 }
+      telemetry.traceRequest("https://api.example.com/missing") { responseCode = 404 }
 
       val span = onlySpan()
       assertThat(span.attributes.get(longKey("http.response.status_code"))).isEqualTo(404L)
@@ -101,7 +101,7 @@ class NetworkRequestTest {
 
     val thrown =
       assertThrows(IOException::class.java) {
-        runBlocking { telemetry.networkRequest<Unit>("https://api.example.com") { throw failure } }
+        runBlocking { telemetry.traceRequest<Unit>("https://api.example.com") { throw failure } }
       }
 
     assertThat(thrown).hasMessageThat().isEqualTo("connection reset")
@@ -116,7 +116,7 @@ class NetworkRequestTest {
   fun setNetworkException_recordsFailureWithoutThrowing() =
     runBlocking<Unit> {
       val result =
-        telemetry.networkRequest("https://api.example.com/items", method = "POST") {
+        telemetry.traceRequest("https://api.example.com/items", method = "POST") {
           responseCode = 200
           setNetworkException(IllegalStateException("parse error"))
           "partial data"
@@ -135,7 +135,7 @@ class NetworkRequestTest {
   fun cancellation_isRethrownWithoutMarkingFailure() {
     assertThrows(CancellationException::class.java) {
       runBlocking {
-        telemetry.networkRequest<Unit>("https://api.example.com") {
+        telemetry.traceRequest<Unit>("https://api.example.com") {
           throw CancellationException("cancelled")
         }
       }
@@ -150,7 +150,7 @@ class NetworkRequestTest {
   fun span_isCurrentInsideBlock() =
     runBlocking<Unit> {
       val insideContext =
-        telemetry.networkRequest("https://api.example.com") { OtelSpan.current().spanContext }
+        telemetry.traceRequest("https://api.example.com") { OtelSpan.current().spanContext }
 
       assertThat(insideContext).isEqualTo(onlySpan().spanContext)
     }
@@ -159,7 +159,7 @@ class NetworkRequestTest {
   fun span_isRootEvenWithActiveParent() =
     runBlocking<Unit> {
       val parent = openTelemetry.getTracer("test").spanBuilder("parent").startSpan()
-      parent.makeCurrent().use { telemetry.networkRequest("https://api.example.com") {} }
+      parent.makeCurrent().use { telemetry.traceRequest("https://api.example.com") {} }
       parent.end()
 
       val request = exporter.finishedSpanItems.single { it.name == "GET" }
