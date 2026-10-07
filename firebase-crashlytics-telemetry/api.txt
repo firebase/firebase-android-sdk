@@ -16,9 +16,9 @@ package com.google.firebase.crashlytics.telemetry {
     method public io.opentelemetry.api.trace.Tracer getTracer(String instrumentationScopeName, String instrumentationScopeVersion);
     method public void logScreenAppear(String screenName);
     method public void logScreenAppear(String screenName, String screenClass);
-    method public suspend <T> Object? networkRequest(String url, String method = "GET", String? name = null, kotlin.jvm.functions.Function2<? super com.google.firebase.crashlytics.telemetry.NetworkRequestContext,? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
     method public void recordClick(String widgetName);
     method public void recordClick(String widgetName, int x, int y);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public suspend <T> Object? traceRequest(String url, String method = "GET", String? name = null, kotlin.jvm.functions.Function2<? super com.google.firebase.crashlytics.telemetry.NetworkRequestContext,? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super T>);
     property public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry instance;
     field public static final com.google.firebase.crashlytics.telemetry.FirebaseCrashlyticsTelemetry.Companion Companion;
   }
