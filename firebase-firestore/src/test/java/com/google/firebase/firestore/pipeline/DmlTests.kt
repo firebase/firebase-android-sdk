@@ -46,7 +46,7 @@ internal class DmlTests {
 
   @Test
   fun `update stage generates update proto with fields`() {
-    val pipeline = db.pipeline().collection("books").update(constant("Updated").`as`("status"))
+    val pipeline = db.pipeline().collection("books").update(constant("Updated").alias("status"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -74,7 +74,10 @@ internal class DmlTests {
       db
         .pipeline()
         .collection("books")
-        .update(constant("Updated").`as`("status"), add(field("count"), constant(1)).`as`("count"))
+        .update(
+          constant("Updated").alias("status"),
+          add(field("count"), constant(1)).alias("count")
+        )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -120,7 +123,7 @@ internal class DmlTests {
         .upsert(
           collectionPath = "books",
           documentIdExpression = constant("book1"),
-          additionalFields = arrayOf(add(field("count"), constant(1)).`as`("count"))
+          additionalFields = arrayOf(add(field("count"), constant(1)).alias("count"))
         )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
@@ -135,7 +138,7 @@ internal class DmlTests {
   @Test
   fun `in-place upsert with varargs generates upsert proto without options`() {
     val pipeline =
-      db.pipeline().collection("books").upsert(add(field("count"), constant(1)).`as`("count"))
+      db.pipeline().collection("books").upsert(add(field("count"), constant(1)).alias("count"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -151,7 +154,7 @@ internal class DmlTests {
       db
         .pipeline()
         .collection("books")
-        .upsert(listOf(add(field("count"), constant(1)).`as`("count")))
+        .upsert(listOf(add(field("count"), constant(1)).alias("count")))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -234,7 +237,10 @@ internal class DmlTests {
       db
         .pipeline()
         .collection("books")
-        .upsert(constant("In-Place").`as`("status"), add(field("count"), constant(1)).`as`("count"))
+        .upsert(
+          constant("In-Place").alias("status"),
+          add(field("count"), constant(1)).alias("count")
+        )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 

@@ -996,7 +996,6 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(com.google.firebase.firestore.pipeline.Expression array, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
     method public final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
     method public static final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(String arrayFieldName, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
-    method public com.google.firebase.firestore.pipeline.AliasedExpression as(String alias);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression asBoolean();
     method public final com.google.firebase.firestore.pipeline.Ordering ascending();
     method public final com.google.firebase.firestore.pipeline.AggregateFunction average();

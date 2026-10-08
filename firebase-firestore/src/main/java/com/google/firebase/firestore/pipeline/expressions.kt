@@ -8216,15 +8216,6 @@ abstract class Expression internal constructor() {
   open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
   /**
-   * Assigns an alias to this expression. Equivalent to [alias].
-   *
-   * @param alias The alias to assign to this expression.
-   * @return A [AliasedExpression] that wraps this expression and associates it with the provided
-   * alias.
-   */
-  open fun `as`(alias: String): AliasedExpression = alias(alias)
-
-  /**
    * Creates an expression that returns the document ID from this path expression.
    *
    * ```kotlin

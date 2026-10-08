@@ -184,8 +184,8 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book3")))
-          .addFields(field("__name__").documentId().`as`("id"))
-          .update(constant("baz").`as`("foo"))
+          .addFields(field("__name__").documentId().alias("id"))
+          .update(constant("baz").alias("foo"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -203,7 +203,7 @@ class PipelineDmlIntegrationTest {
           .collection(collRef.path)
           .where(equal(field("genre"), constant("Science Fiction")))
           .removeFields("awards")
-          .update(constant("Updated").`as`("status"))
+          .update(constant("Updated").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -224,7 +224,7 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(add(field("rating"), constant(1.0)).`as`("rating"))
+          .update(add(field("rating"), constant(1.0)).alias("rating"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -240,7 +240,7 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("UpdatedVariadic").`as`("status"))
+          .update(constant("UpdatedVariadic").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -256,7 +256,7 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("UpdatedMulti").`as`("status"), constant(99L).`as`("newField"))
+          .update(constant("UpdatedMulti").alias("status"), constant(99L).alias("newField"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -273,7 +273,7 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("nonExistingId_123")))
-          .update(constant("Updated").`as`("status"))
+          .update(constant("Updated").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -287,7 +287,7 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("AtomicUpdate").`as`("status"))
+          .update(constant("AtomicUpdate").alias("status"))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()
@@ -380,8 +380,8 @@ class PipelineDmlIntegrationTest {
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
           .upsert(
-            constant("Comedy Sci-Fi").`as`("genre"),
-            add(field("rating"), constant(0.5)).`as`("rating")
+            constant("Comedy Sci-Fi").alias("genre"),
+            add(field("rating"), constant(0.5)).alias("rating")
           )
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -400,7 +400,7 @@ class PipelineDmlIntegrationTest {
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
           .upsert(
-            listOf(constant("Updated Genre List").`as`("genre"), constant(5.0).`as`("rating"))
+            listOf(constant("Updated Genre List").alias("genre"), constant(5.0).alias("rating"))
           )
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -423,7 +423,7 @@ class PipelineDmlIntegrationTest {
             collectionPath = collRef.path,
             documentIdExpression = constant(newDocId),
             additionalFields =
-              arrayOf(constant("New Book Title").`as`("title"), constant("Sci-Fi").`as`("genre"))
+              arrayOf(constant("New Book Title").alias("title"), constant("Sci-Fi").alias("genre"))
           )
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -448,8 +448,8 @@ class PipelineDmlIntegrationTest {
             documentIdExpression = constant("target_doc_1"),
             additionalFields =
               arrayOf(
-                constant("Target Upsert Title").`as`("title"),
-                constant("Target Genre").`as`("genre")
+                constant("Target Upsert Title").alias("title"),
+                constant("Target Genre").alias("genre")
               )
           )
           .execute(ExecuteOptions().withAtomic(true))
