@@ -398,12 +398,32 @@ internal class DmlTests {
   }
 
   @Test
-  fun `literals requires at least one document`() {
-    val varargError =
-      assertThrows(IllegalArgumentException::class.java) { db.pipeline().literals() }
-    assertThat(varargError)
-      .hasMessageThat()
-      .isEqualTo("Function literals() requires at least one document.")
+  fun `literals without documents is left for the backend to reject`() {
+    val stage =
+      db
+        .pipeline()
+        .literals()
+        .toExecutePipelineRequest(null)
+        .structuredPipeline
+        .pipeline
+        .getStages(0)
+    assertThat(stage.name).isEqualTo("literals")
+    assertThat(stage.argsCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `literals leaves empty field names for the backend to reject`() {
+    val stage =
+      db
+        .pipeline()
+        .literals(mapOf("" to 1L, "m" to mapOf("" to 2L)))
+        .toExecutePipelineRequest(null)
+        .structuredPipeline
+        .pipeline
+        .getStages(0)
+    val fields = stage.getArgs(0).mapValue.fieldsMap
+    assertThat(fields[""]?.integerValue).isEqualTo(1L)
+    assertThat(fields["m"]?.mapValue?.fieldsMap?.get("")?.integerValue).isEqualTo(2L)
   }
 
   @Test

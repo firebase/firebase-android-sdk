@@ -1912,7 +1912,7 @@ internal constructor(
     val rootContext = UserData.ParseAccumulator(UserData.Source.Argument).rootContext()
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
     for ((key, value) in document) {
-      val context = withLiteralsErrorContext { rootContext.childContext(key) }
+      val context = literalChildContext(rootContext, key)
       mapValue.putFields(key, encodeTopLevelValue(value, context, userDataReader))
     }
     return Value.newBuilder().setMapValue(mapValue).build()
@@ -1948,10 +1948,7 @@ internal constructor(
         Expression.map(
           value.entries
             .flatMap { (key, element) ->
-              val childContext = withLiteralsErrorContext {
-                require(key is String) { "Maps with non-string keys are not supported" }
-                context.childContext(key)
-              }
+              val childContext = literalChildContext(context, key)
               listOf(
                 constant(key as String),
                 toLiteralExpression(element, childContext, userDataReader)
@@ -1971,15 +1968,41 @@ internal constructor(
   /**
    * Parses a literal value that contains no expressions. FieldValue sentinels and unsupported types
    * are rejected with an error that names `literals()` and the field path.
+   *
+   * Maps are traversed here rather than by [UserDataReader], so that field names are not validated
+   * client-side; the backend rejects invalid field names, such as empty ones.
    */
   private fun parseLiteralValue(
     value: Any?,
     context: UserData.ParseContext,
     userDataReader: UserDataReader
-  ): Value = withLiteralsErrorContext {
-    checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
-      "Parsed literal value should not be null."
+  ): Value =
+    if (value is Map<*, *>) {
+      val mapValue = com.google.firestore.v1.MapValue.newBuilder()
+      for ((key, element) in value) {
+        val childContext = literalChildContext(context, key)
+        mapValue.putFields(key as String, parseLiteralValue(element, childContext, userDataReader))
+      }
+      Value.newBuilder().setMapValue(mapValue).build()
+    } else {
+      withLiteralsErrorContext {
+        checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
+          "Parsed literal value should not be null."
+        }
+      }
     }
+
+  /**
+   * Returns the parse context of the field [key] in a literal map, which is used to report the
+   * field path in errors. Field names are not validated: the backend rejects invalid field names,
+   * such as empty ones.
+   */
+  private fun literalChildContext(
+    context: UserData.ParseContext,
+    key: Any?
+  ): UserData.ParseContext = withLiteralsErrorContext {
+    require(key is String) { "Maps with non-string keys are not supported" }
+    if (key.isEmpty()) context else context.childContext(key)
   }
 
   private inline fun <T> withLiteralsErrorContext(block: () -> T): T =
