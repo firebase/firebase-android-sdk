@@ -120,7 +120,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
-    androidTestImplementation(project(":encoders:firebase-encoders-json"))
+    androidTestImplementation("com.google.firebase:firebase-encoders-json:19.0.0")
     androidTestImplementation(libs.protobuf.java)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.dexmaker)
