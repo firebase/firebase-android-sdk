@@ -7,8 +7,8 @@
 - [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
 - [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
   `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
-  `List` overloads of `PipelineSource.documents()`, and support for removing reserved fields such
-  as `__name__` with `removeFields()`. ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+  and support for removing reserved fields such as `__name__` with `removeFields()`.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
 
 # 26.6.0
 

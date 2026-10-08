@@ -1423,29 +1423,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     )
   }
 
-  /**
-   * Set the pipeline's source to the documents specified by the given list of DocumentReferences.
-   *
-   * @param documents DocumentReferences specifying the individual documents that will be the source
-   * of this pipeline.
-   * @return Pipeline with [documents].
-   * @throws [IllegalArgumentException] Thrown if the [documents] provided targets a different
-   * project or database than the pipeline.
-   */
-  @JvmName("documents")
-  fun documents(documents: List<DocumentReference>): Pipeline = documents(*documents.toTypedArray())
-
-  /**
-   * Set the pipeline's source to the documents specified by the given list of paths. Java callers
-   * use `documentsByPath`.
-   *
-   * @param documents Paths specifying the individual documents that will be the source of this
-   * pipeline.
-   * @return A new [Pipeline] object with [documents].
-   */
-  @JvmName("documentsByPath")
-  fun documents(documents: List<String>): Pipeline = documents(*documents.toTypedArray())
-
   companion object {
     /**
      * Initializes a pipeline scoped to a subcollection.
