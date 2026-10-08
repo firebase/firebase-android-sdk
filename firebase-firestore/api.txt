@@ -507,7 +507,6 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline upsert(String collectionPath);
     method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression = null);
     method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression = null, com.google.firebase.firestore.pipeline.Selectable[] additionalFields = emptyArray());
-    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression? documentIdExpression = null, java.util.List<? extends com.google.firebase.firestore.pipeline.Selectable> additionalFields);
     method public com.google.firebase.firestore.Pipeline upsert(java.util.List<? extends com.google.firebase.firestore.pipeline.Selectable> additionalFields);
     method public com.google.firebase.firestore.Pipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
   }

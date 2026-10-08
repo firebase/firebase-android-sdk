@@ -1170,7 +1170,7 @@ internal constructor(
   fun upsert(
     collectionPath: String,
     documentIdExpression: Expression? = null,
-    additionalFields: Array<Selectable> = emptyArray()
+    additionalFields: Array<out Selectable> = emptyArray()
   ): Pipeline =
     append(
       UpsertStage(
@@ -1179,21 +1179,6 @@ internal constructor(
         documentIdExpression = documentIdExpression
       )
     )
-
-  /**
-   * Writes pipeline documents to a destination collection, creating or updating them.
-   *
-   * @param collectionPath The target collection path to write documents to.
-   * @param documentIdExpression An optional expression that evaluates to the document ID. If null,
-   * an auto-generated document ID will be used.
-   * @param additionalFields The list of additional fields to set or update during the upsert.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun upsert(
-    collectionPath: String,
-    documentIdExpression: Expression? = null,
-    additionalFields: List<Selectable>
-  ): Pipeline = upsert(collectionPath, documentIdExpression, additionalFields.toTypedArray())
 }
 
 /** Start of a Firestore Pipeline */

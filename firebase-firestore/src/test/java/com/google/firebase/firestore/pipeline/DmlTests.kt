@@ -191,7 +191,10 @@ internal class DmlTests {
   }
 
   @Test
-  fun `target-collection upsert with collectionPath, documentIdExpression, and additionalFields list generates upsert proto`() {
+  fun `target-collection upsert accepts a typed array of aliased expressions`() {
+    // Array<out Selectable> lets callers pass an existing Array<AliasedExpression>.
+    val additionalFields: Array<AliasedExpression> =
+      arrayOf(add(field("count"), constant(1)).alias("count"))
     val pipeline =
       db
         .pipeline()
@@ -199,7 +202,7 @@ internal class DmlTests {
         .upsert(
           collectionPath = "books",
           documentIdExpression = constant("book1"),
-          additionalFields = listOf(add(field("count"), constant(1)).`as`("count"))
+          additionalFields = additionalFields
         )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
@@ -207,6 +210,7 @@ internal class DmlTests {
     val stage = proto.getStages(1)
     assertThat(stage.name).isEqualTo("upsert")
     assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.getArgs(0).mapValue.fieldsMap.containsKey("count")).isTrue()
     assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
     assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
   }
