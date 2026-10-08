@@ -1202,8 +1202,10 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
   /** Set the pipeline's source to literal document maps. */
   fun literals(vararg data: Map<String, Any?>): Pipeline = literals(data.toList())
 
-  fun literals(data: List<Map<String, Any?>>): Pipeline =
-    Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data)))
+  fun literals(data: List<Map<String, Any?>>): Pipeline {
+    require(data.isNotEmpty()) { "Function literals() requires at least one document." }
+    return Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data)))
+  }
 
   /**
    * Convert the given Query into an equivalent Pipeline.

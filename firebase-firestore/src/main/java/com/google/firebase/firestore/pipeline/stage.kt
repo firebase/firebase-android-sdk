@@ -17,6 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.core.UserData
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
@@ -1908,9 +1909,11 @@ internal constructor(
     document: Map<String, Any?>,
     userDataReader: UserDataReader
   ): Value {
+    val rootContext = UserData.ParseAccumulator(UserData.Source.Argument).rootContext()
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
     for ((key, value) in document) {
-      mapValue.putFields(key, encodeTopLevelValue(value, userDataReader))
+      val context = withLiteralsErrorContext { rootContext.childContext(key) }
+      mapValue.putFields(key, encodeTopLevelValue(value, context, userDataReader))
     }
     return Value.newBuilder().setMapValue(mapValue).build()
   }
@@ -1923,28 +1926,68 @@ internal constructor(
    * `map(...)` or `array(...)` expression, so that the nested expressions are evaluated instead of
    * being sent as raw function values. Values without expressions are encoded as plain constants.
    */
-  private fun encodeTopLevelValue(value: Any?, userDataReader: UserDataReader): Value =
+  private fun encodeTopLevelValue(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Value =
     if (containsExpression(value)) {
-      toLiteralExpression(value, userDataReader).toProto(userDataReader)
+      toLiteralExpression(value, context, userDataReader).toProto(userDataReader)
     } else {
-      userDataReader.parseQueryValue(value)
+      parseLiteralValue(value, context, userDataReader)
     }
 
-  private fun toLiteralExpression(value: Any?, userDataReader: UserDataReader): Expression =
+  private fun toLiteralExpression(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Expression =
     when {
       value is Expression -> value
       value is Map<*, *> && containsExpression(value) ->
         Expression.map(
           value.entries
             .flatMap { (key, element) ->
-              require(key is String) { "Maps with non-string keys are not supported" }
-              listOf(constant(key), toLiteralExpression(element, userDataReader))
+              val childContext = withLiteralsErrorContext {
+                require(key is String) { "Maps with non-string keys are not supported" }
+                context.childContext(key)
+              }
+              listOf(
+                constant(key as String),
+                toLiteralExpression(element, childContext, userDataReader)
+              )
             }
             .toTypedArray()
         )
       value is List<*> && containsExpression(value) ->
-        Expression.array(value.map { toLiteralExpression(it, userDataReader) })
-      else -> Expression.Constant(userDataReader.parseQueryValue(value))
+        Expression.array(
+          value.mapIndexed { index, element ->
+            toLiteralExpression(element, context.childContext(index), userDataReader)
+          }
+        )
+      else -> Expression.Constant(parseLiteralValue(value, context, userDataReader))
+    }
+
+  /**
+   * Parses a literal value that contains no expressions. FieldValue sentinels and unsupported types
+   * are rejected with an error that names `literals()` and the field path.
+   */
+  private fun parseLiteralValue(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Value = withLiteralsErrorContext {
+    checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
+      "Parsed literal value should not be null."
+    }
+  }
+
+  private inline fun <T> withLiteralsErrorContext(block: () -> T): T =
+    try {
+      block()
+    } catch (e: IllegalArgumentException) {
+      val reason = e.message.orEmpty().removePrefix("Invalid data. ")
+      throw IllegalArgumentException("Function literals() called with invalid data. $reason", e)
     }
 
   private fun containsExpression(value: Any?): Boolean =

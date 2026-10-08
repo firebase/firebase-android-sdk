@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.Pipeline.ExecuteOptions
 import com.google.firebase.firestore.TestUtil
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firestore.v1.TransactionOptions
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -349,6 +351,65 @@ internal class DmlTests {
     assertThat(fields["list"]!!.arrayValue.valuesList.map { it.valueTypeCase.name })
       .containsExactly("INTEGER_VALUE", "STRING_VALUE")
       .inOrder()
+  }
+
+  @Test
+  fun `literals requires at least one document`() {
+    val varargError =
+      assertThrows(IllegalArgumentException::class.java) { db.pipeline().literals() }
+    assertThat(varargError)
+      .hasMessageThat()
+      .isEqualTo("Function literals() requires at least one document.")
+
+    val listError =
+      assertThrows(IllegalArgumentException::class.java) { db.pipeline().literals(emptyList()) }
+    assertThat(listError)
+      .hasMessageThat()
+      .isEqualTo("Function literals() requires at least one document.")
+  }
+
+  @Test
+  fun `literals rejects top-level FieldValue sentinel with literals context and field path`() {
+    val pipeline = db.pipeline().literals(mapOf("a" to 1L, "ts" to FieldValue.serverTimestamp()))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Function literals() called with invalid data. " +
+          "FieldValue.serverTimestamp() can only be used with set() and update() (found in field ts)"
+      )
+  }
+
+  @Test
+  fun `literals rejects nested FieldValue sentinel with full field path`() {
+    val pipeline = db.pipeline().literals(mapOf("a" to mapOf("b" to FieldValue.increment(1))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Function literals() called with invalid data. " +
+          "FieldValue.increment() can only be used with set() and update() (found in field a.b)"
+      )
+  }
+
+  @Test
+  fun `literals rejects FieldValue sentinel next to a nested expression with field path`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("a" to mapOf("sum" to add(constant(1L), constant(2L)), "d" to FieldValue.delete()))
+        )
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Function literals() called with invalid data. " +
+          "FieldValue.delete() can only be used with set() and update() (found in field a.d)"
+      )
   }
 
   @Test
