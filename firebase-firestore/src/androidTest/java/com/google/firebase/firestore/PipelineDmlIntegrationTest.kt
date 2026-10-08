@@ -296,7 +296,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Insert Stage (4 tests, all with withAtomic(true))
+  // Insert Stage (6 tests, all with withAtomic(true))
   // =========================================================================
 
   @Test
@@ -365,6 +365,43 @@ class PipelineDmlIntegrationTest {
     assertThat(targetDocs.size()).isEqualTo(1)
     assertThat(targetDocs.documents[0].getString("title"))
       .isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testInsertWithOnlyDocumentIdExpressionUsesInputParentCollection() {
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collRef.path)
+          .where(equal(field("__name__").documentId(), constant("book1")))
+          .insert(documentIdExpression = constant("book1_copy"))
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(collRef.document("book1_copy").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testInsertWithoutTargetFailsForExistingDocuments() {
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .collection(collRef.path)
+            .where(equal(field("__name__").documentId(), constant("book1")))
+            .insert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.ALREADY_EXISTS)
   }
 
   // =========================================================================

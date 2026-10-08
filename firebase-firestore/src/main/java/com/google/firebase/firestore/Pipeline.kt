@@ -1181,15 +1181,18 @@ internal constructor(
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
   /**
-   * Inserts each document produced by the previous stages as a new document in [collectionPath].
-   * The insert fails if a target document already exists.
+   * Inserts each document produced by the previous stages as a new document. The insert fails if a
+   * target document already exists.
    *
-   * The ID of each new document is determined as follows:
-   * - If [documentIdExpression] is null, the input document's ID is reused. If the input document
-   * has no ID (for example, it came from [PipelineSource.literals]), an ID is generated
-   * automatically. Documents read from the database keep their ID, so inserting them into their own
-   * collection fails because they already exist.
-   * - Otherwise, the ID that [documentIdExpression] evaluates to is used.
+   * The target document is determined by [collectionPath] and [documentIdExpression]:
+   * - Only [collectionPath] set: the input document's ID is reused under [collectionPath]. If the
+   * input document has no ID (for example, it came from [PipelineSource.literals]), an ID is
+   * generated automatically.
+   * - Only [documentIdExpression] set: the evaluated ID is used under the input document's parent
+   * collection.
+   * - Both set: the evaluated ID is used under [collectionPath].
+   * - Neither set: each document is written back to its input document's path, which fails for
+   * documents read from the database because they already exist.
    *
    * Example:
    * ```kotlin
@@ -1199,14 +1202,15 @@ internal constructor(
    *   .execute()
    * ```
    *
-   * @param collectionPath The path of the collection to insert documents into.
+   * @param collectionPath The path of the collection to insert documents into. If null, each
+   * document is inserted into the parent collection of its input document.
    * @param documentIdExpression An optional expression that is evaluated against each input
    * document to produce the ID of the document to insert. It must evaluate to a document ID, not a
    * document path.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   @JvmOverloads
-  fun insert(collectionPath: String, documentIdExpression: Expression? = null): Pipeline =
+  fun insert(collectionPath: String? = null, documentIdExpression: Expression? = null): Pipeline =
     append(InsertStage(collectionPath, documentIdExpression))
 
   /**
