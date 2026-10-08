@@ -480,7 +480,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Literals Stage (3 tests, using .union to satisfy Firebase Security Rules)
+  // Literals Stage (5 tests, using .union to satisfy Firebase Security Rules)
   // =========================================================================
 
   @Test
@@ -515,6 +515,42 @@ class PipelineDmlIntegrationTest {
     assertThat(snapshot.results).hasSize(1)
     val first = snapshot.results[0].getData()
     assertThat(first).containsExactly("base", 10L, "doubled", 20L)
+  }
+
+  @Test
+  fun testLiteralsWithExpressionNestedInMap() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(
+            mapOf(
+              "nested" to mapOf("doubled" to multiply(constant(10L), constant(2L)), "label" to "x")
+            )
+          )
+          .union(db.pipeline().collection(emptyCol.path))
+          .execute()
+      )
+    assertThat(snapshot.results).hasSize(1)
+    val first = snapshot.results[0].getData()
+    assertThat(first).containsExactly("nested", mapOf("doubled" to 20L, "label" to "x"))
+  }
+
+  @Test
+  fun testLiteralsWithExpressionNestedInList() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("list" to listOf(multiply(constant(10L), constant(2L)), 1L)))
+          .union(db.pipeline().collection(emptyCol.path))
+          .execute()
+      )
+    assertThat(snapshot.results).hasSize(1)
+    val first = snapshot.results[0].getData()
+    assertThat(first).containsExactly("list", listOf(20L, 1L))
   }
 
   @Test

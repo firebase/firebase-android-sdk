@@ -279,6 +279,79 @@ internal class DmlTests {
   }
 
   @Test
+  fun `literals stage wraps nested map containing expressions in a map expression`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("nested" to mapOf("sum" to add(constant(1L), constant(2L)), "label" to "x"))
+        )
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val fields = proto.getStages(0).getArgs(0).mapValue.fieldsMap
+
+    val nested = fields["nested"]!!
+    assertThat(nested.hasFunctionValue()).isTrue()
+    assertThat(nested.functionValue.name).isEqualTo("map")
+    // map(key1, value1, key2, value2): keys are constants, values keep their expressions.
+    val args = nested.functionValue.argsList
+    assertThat(args).hasSize(4)
+    val entries = args.chunked(2).associate { (k, v) -> k.stringValue to v }
+    assertThat(entries["sum"]?.functionValue?.name).isEqualTo("add")
+    assertThat(entries["label"]?.stringValue).isEqualTo("x")
+  }
+
+  @Test
+  fun `literals stage wraps list containing expressions in an array expression`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("list" to listOf(add(constant(1L), constant(2L)), 1L, null)))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val list = proto.getStages(0).getArgs(0).mapValue.fieldsMap["list"]!!
+
+    assertThat(list.hasFunctionValue()).isTrue()
+    assertThat(list.functionValue.name).isEqualTo("array")
+    val args = list.functionValue.argsList
+    assertThat(args).hasSize(3)
+    assertThat(args[0].functionValue.name).isEqualTo("add")
+    assertThat(args[1].integerValue).isEqualTo(1L)
+    assertThat(args[2].hasNullValue()).isTrue()
+  }
+
+  @Test
+  fun `literals stage wraps deeply nested expressions at the top-level field`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("outer" to mapOf("inner" to listOf(mapOf("v" to constant(1L))))))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val outer = proto.getStages(0).getArgs(0).mapValue.fieldsMap["outer"]!!
+
+    assertThat(outer.functionValue.name).isEqualTo("map")
+    val inner = outer.functionValue.getArgs(1)
+    assertThat(inner.functionValue.name).isEqualTo("array")
+    val element = inner.functionValue.getArgs(0)
+    assertThat(element.functionValue.name).isEqualTo("map")
+    assertThat(element.functionValue.getArgs(1).integerValue).isEqualTo(1L)
+  }
+
+  @Test
+  fun `literals stage encodes nested values without expressions as plain values`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("nested" to mapOf("key" to "value", "n" to null), "list" to listOf(1L, "a"))
+        )
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val fields = proto.getStages(0).getArgs(0).mapValue.fieldsMap
+
+    assertThat(fields["nested"]!!.hasMapValue()).isTrue()
+    assertThat(fields["nested"]!!.mapValue.fieldsMap["key"]?.stringValue).isEqualTo("value")
+    assertThat(fields["nested"]!!.mapValue.fieldsMap["n"]?.hasNullValue()).isTrue()
+    assertThat(fields["list"]!!.hasArrayValue()).isTrue()
+    assertThat(fields["list"]!!.arrayValue.valuesList.map { it.valueTypeCase.name })
+      .containsExactly("INTEGER_VALUE", "STRING_VALUE")
+      .inOrder()
+  }
+
+  @Test
   fun `atomic execution options configure newTransaction and autoCommitTransaction`() {
     val pipeline =
       db.pipeline().literals(mapOf("title" to "Atomic")).insert("books", constant("book1"))

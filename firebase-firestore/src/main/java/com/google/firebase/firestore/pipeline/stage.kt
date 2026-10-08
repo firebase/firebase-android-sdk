@@ -1901,23 +1901,59 @@ internal constructor(
   override fun canonicalId(): String = "literals()"
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {
-    return data.asSequence().map { encodeLiteralMap(it, userDataReader) }
+    return data.asSequence().map { encodeLiteralDocument(it, userDataReader) }
   }
 
-  private fun encodeLiteralMap(map: Map<String, Any?>, userDataReader: UserDataReader): Value {
+  private fun encodeLiteralDocument(
+    document: Map<String, Any?>,
+    userDataReader: UserDataReader
+  ): Value {
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
-    for ((key, value) in map) {
-      when (value) {
-        null -> mapValue.putFields(key, Values.NULL_VALUE)
-        is Expression -> mapValue.putFields(key, value.toProto(userDataReader))
-        is Map<*, *> ->
-          @Suppress("UNCHECKED_CAST")
-          mapValue.putFields(key, encodeLiteralMap(value as Map<String, Any?>, userDataReader))
-        else -> mapValue.putFields(key, userDataReader.parseQueryValue(value))
-      }
+    for ((key, value) in document) {
+      mapValue.putFields(key, encodeTopLevelValue(value, userDataReader))
     }
     return Value.newBuilder().setMapValue(mapValue).build()
   }
+
+  /**
+   * Encodes a top-level field value of a literal document.
+   *
+   * The backend evaluates expressions only in the top-level fields of each literal document. A map
+   * or list value that contains an [Expression] at any depth is therefore converted into a
+   * `map(...)` or `array(...)` expression, so that the nested expressions are evaluated instead of
+   * being sent as raw function values. Values without expressions are encoded as plain constants.
+   */
+  private fun encodeTopLevelValue(value: Any?, userDataReader: UserDataReader): Value =
+    if (containsExpression(value)) {
+      toLiteralExpression(value, userDataReader).toProto(userDataReader)
+    } else {
+      userDataReader.parseQueryValue(value)
+    }
+
+  private fun toLiteralExpression(value: Any?, userDataReader: UserDataReader): Expression =
+    when {
+      value is Expression -> value
+      value is Map<*, *> && containsExpression(value) ->
+        Expression.map(
+          value.entries
+            .flatMap { (key, element) ->
+              require(key is String) { "Maps with non-string keys are not supported" }
+              listOf(constant(key), toLiteralExpression(element, userDataReader))
+            }
+            .toTypedArray()
+        )
+      value is List<*> && containsExpression(value) ->
+        Expression.array(value.map { toLiteralExpression(it, userDataReader) })
+      else -> Expression.Constant(userDataReader.parseQueryValue(value))
+    }
+
+  private fun containsExpression(value: Any?): Boolean =
+    when (value) {
+      is Expression -> true
+      is Map<*, *> -> value.values.any(::containsExpression)
+      is List<*> -> value.any(::containsExpression)
+      else -> false
+    }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
