@@ -101,9 +101,13 @@ internal class OnDeviceGenerativeModelProvider(
    * @return A flow of generated responses.
    */
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> = flow {
-    ensureOnDeviceModelAvailable()
-
-    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val request =
+      try {
+        ensureOnDeviceModelAvailable()
+        buildOnDeviceGenerateContentRequest(prompt)
+      } catch (e: Throwable) {
+        throw FirebaseAIException.from(e)
+      }
 
     emitAll(
       onDeviceModel
