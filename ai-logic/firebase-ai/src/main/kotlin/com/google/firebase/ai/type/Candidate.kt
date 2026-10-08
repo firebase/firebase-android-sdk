@@ -113,7 +113,8 @@ internal constructor(
       Candidate(
         content =
           content {
-            thoughts.forEach { thought ->
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
               part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
             }
           },
