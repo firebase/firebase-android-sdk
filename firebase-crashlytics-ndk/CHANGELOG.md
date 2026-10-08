@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a file descriptor leak when reading the native crash trace from
+  `ApplicationExitInfo`, which could trigger a StrictMode `CloseGuard` violation on the app start
+  following a native crash. (#8510)
+
 # 21.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
@@ -343,4 +347,3 @@ the new SDK.
   [crashlytics] servers. See the
   [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk) for more
   information.
-
