@@ -5,6 +5,23 @@
   Protocol Buffers to `4.36.1`.
   ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
 - [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+- [feature] Added pipeline data manipulation (DML) stages that write to the database:
+  `Pipeline.delete()`, `Pipeline.update()`, `Pipeline.insert()`, and `Pipeline.upsert()`.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [feature] Added the `PipelineSource.literals()` pipeline source, which starts a pipeline from
+  documents defined in code.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [feature] Added `Pipeline.ExecuteOptions.withAtomic()` to execute a pipeline in a single
+  transaction, so that either all of its writes are applied or none are.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [feature] Added `List` overloads of `PipelineSource.documents()`.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [changed] `Pipeline.removeFields()` no longer rejects reserved fields such as `__name__`, so
+  copies of documents can be inserted with generated IDs.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [fixed] Fixed a `NullPointerException` when a pipeline response has no execution time, such as
+  the response to a pipeline that writes to the database.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
 
 # 26.6.0
 

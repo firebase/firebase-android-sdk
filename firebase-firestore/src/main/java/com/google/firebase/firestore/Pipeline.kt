@@ -119,6 +119,16 @@ internal constructor(
 
     fun withIndexMode(indexMode: IndexMode): ExecuteOptions = with("index_mode", indexMode.value)
 
+    /**
+     * Sets whether the pipeline is executed atomically.
+     *
+     * When `true`, the pipeline runs in a single read-write transaction that is committed
+     * automatically after the pipeline has executed, so either all of its writes (from `insert`,
+     * `upsert`, `update` and `delete` stages) are applied or none are. The default is `false`.
+     *
+     * @param atomic Whether to execute the pipeline atomically.
+     * @return A new [ExecuteOptions] with the atomic setting applied.
+     */
     fun withAtomic(atomic: Boolean): ExecuteOptions = with("atomic", atomic)
   }
 
@@ -1131,39 +1141,107 @@ internal constructor(
    */
   @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 
+  /**
+   * Deletes each document produced by the previous stages from the database.
+   *
+   * Example:
+   * ```kotlin
+   * db.pipeline()
+   *   .collection("books")
+   *   .where(field("rating").lessThan(2))
+   *   .delete()
+   *   .execute()
+   * ```
+   *
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun delete(): Pipeline = append(DeleteStage())
 
+  /**
+   * Writes each document produced by the previous stages back to its existing path, after setting
+   * the given [fields].
+   *
+   * The stored document is replaced by the pipeline document, so fields removed by earlier stages
+   * (for example, with [removeFields]) are also removed from the stored document. This stage does
+   * not create documents.
+   *
+   * Example:
+   * ```kotlin
+   * db.pipeline()
+   *   .collection("books")
+   *   .where(field("genre").equal("Science Fiction"))
+   *   .update(constant("Updated").alias("status"))
+   *   .execute()
+   * ```
+   *
+   * @param fields The fields to set on each document. Each field is written under its alias. If
+   * none are given, the documents are written back unchanged.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
+  /**
+   * Inserts each document produced by the previous stages as a new document in [collectionPath].
+   * The insert fails if a target document already exists.
+   *
+   * The ID of each new document is determined as follows:
+   * - If [documentIdExpression] is null, the input document's ID is reused. If the input document
+   * has no ID (for example, it came from [PipelineSource.literals]), an ID is generated
+   * automatically. Documents read from the database keep their ID, so inserting them into their own
+   * collection fails because they already exist.
+   * - Otherwise, the ID that [documentIdExpression] evaluates to is used.
+   *
+   * Example:
+   * ```kotlin
+   * db.pipeline()
+   *   .literals(mapOf("title" to "Dune", "author" to "Frank Herbert"))
+   *   .insert("books")
+   *   .execute()
+   * ```
+   *
+   * @param collectionPath The path of the collection to insert documents into.
+   * @param documentIdExpression An optional expression that is evaluated against each input
+   * document to produce the ID of the document to insert. It must evaluate to a document ID, not a
+   * document path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
   @JvmOverloads
   fun insert(collectionPath: String, documentIdExpression: Expression? = null): Pipeline =
     append(InsertStage(collectionPath, documentIdExpression))
 
   /**
-   * Modifies pipeline documents in-place by setting or updating the specified fields.
+   * Writes each document produced by the previous stages back to its own path, creating it if it
+   * doesn't exist and replacing it entirely if it does (stored fields are not merged).
    *
-   * @param additionalFields The fields to set or update.
+   * @param additionalFields Fields to add to each input document before it is written. A field with
+   * the same name as an existing input field overwrites that field.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun upsert(vararg additionalFields: Selectable): Pipeline =
     append(UpsertStage(fields = additionalFields))
 
   /**
-   * Modifies pipeline documents in-place by setting or updating the specified fields.
+   * Writes each document produced by the previous stages back to its own path, creating it if it
+   * doesn't exist and replacing it entirely if it does (stored fields are not merged).
    *
-   * @param additionalFields The list of fields to set or update.
+   * @param additionalFields Fields to add to each input document before it is written. A field with
+   * the same name as an existing input field overwrites that field.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun upsert(additionalFields: List<Selectable>): Pipeline =
     append(UpsertStage(fields = additionalFields.toTypedArray()))
 
   /**
-   * Writes pipeline documents to a destination collection, creating or updating them.
+   * Writes each document produced by the previous stages to [collectionPath], creating the target
+   * document if it doesn't exist and replacing it entirely if it does (stored fields are not
+   * merged).
    *
-   * @param collectionPath The target collection path to write documents to.
-   * @param documentIdExpression An optional expression that evaluates to the document ID. If null,
-   * an auto-generated document ID will be used.
-   * @param additionalFields Additional fields to set or update during the upsert.
+   * @param collectionPath The path of the collection to write documents to.
+   * @param documentIdExpression An optional expression that is evaluated against each input
+   * document to produce the ID of the target document. It must evaluate to a document ID, not a
+   * document path. If null, the input document's ID is reused.
+   * @param additionalFields Fields to add to each input document before it is written. A field with
+   * the same name as an existing input field overwrites that field.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   @JvmOverloads
@@ -1184,9 +1262,40 @@ internal constructor(
 /** Start of a Firestore Pipeline */
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
 
-  /** Set the pipeline's source to literal document maps. */
+  /**
+   * Sets the pipeline's source to the given literal documents. Each map becomes one input document.
+   *
+   * Field values can be constants or [Expression]s; expressions are evaluated, including
+   * expressions nested inside map or list values. FieldValue sentinels (for example,
+   * `FieldValue.serverTimestamp()`) are not supported; use an expression such as
+   * `currentTimestamp()` instead.
+   *
+   * Example:
+   * ```kotlin
+   * db.pipeline()
+   *   .literals(mapOf("title" to "Dune"), mapOf("title" to "Emma"))
+   *   .insert("books")
+   *   .execute()
+   * ```
+   *
+   * @param data The documents to use as the source. At least one document is required.
+   * @return A new [Pipeline] object with the literal documents as its source.
+   * @throws IllegalArgumentException Thrown if no documents are given.
+   */
   fun literals(vararg data: Map<String, Any?>): Pipeline = literals(data.toList())
 
+  /**
+   * Sets the pipeline's source to the given literal documents. Each map becomes one input document.
+   *
+   * Field values can be constants or [Expression]s; expressions are evaluated, including
+   * expressions nested inside map or list values. FieldValue sentinels (for example,
+   * `FieldValue.serverTimestamp()`) are not supported; use an expression such as
+   * `currentTimestamp()` instead.
+   *
+   * @param data The documents to use as the source. At least one document is required.
+   * @return A new [Pipeline] object with the literal documents as its source.
+   * @throws IllegalArgumentException Thrown if [data] is empty.
+   */
   fun literals(data: List<Map<String, Any?>>): Pipeline {
     require(data.isNotEmpty()) { "Function literals() requires at least one document." }
     return Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data)))
@@ -1319,9 +1428,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @throws [IllegalArgumentException] Thrown if the [documents] provided targets a different
    * project or database than the pipeline.
    */
-  @JvmName("documents")
-  fun documents(documents: List<DocumentReference>): Pipeline = documents(*documents.toTypedArray())
-
   fun documents(vararg documents: DocumentReference): Pipeline {
     val databaseId = firestore.databaseId
     for (document in documents) {
@@ -1338,6 +1444,26 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
     )
   }
 
+  /**
+   * Set the pipeline's source to the documents specified by the given list of DocumentReferences.
+   *
+   * @param documents DocumentReferences specifying the individual documents that will be the source
+   * of this pipeline.
+   * @return Pipeline with [documents].
+   * @throws [IllegalArgumentException] Thrown if the [documents] provided targets a different
+   * project or database than the pipeline.
+   */
+  @JvmName("documents")
+  fun documents(documents: List<DocumentReference>): Pipeline = documents(*documents.toTypedArray())
+
+  /**
+   * Set the pipeline's source to the documents specified by the given list of paths. Java callers
+   * use `documentsByPath`.
+   *
+   * @param documents Paths specifying the individual documents that will be the source of this
+   * pipeline.
+   * @return A new [Pipeline] object with [documents].
+   */
   @JvmName("documentsByPath")
   fun documents(documents: List<String>): Pipeline = documents(*documents.toTypedArray())
 
