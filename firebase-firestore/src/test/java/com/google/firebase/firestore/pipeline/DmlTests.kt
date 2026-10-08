@@ -373,12 +373,6 @@ internal class DmlTests {
     assertThat(varargError)
       .hasMessageThat()
       .isEqualTo("Function literals() requires at least one document.")
-
-    val listError =
-      assertThrows(IllegalArgumentException::class.java) { db.pipeline().literals(emptyList()) }
-    assertThat(listError)
-      .hasMessageThat()
-      .isEqualTo("Function literals() requires at least one document.")
   }
 
   @Test

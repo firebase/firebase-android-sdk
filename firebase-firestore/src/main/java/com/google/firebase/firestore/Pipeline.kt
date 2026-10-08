@@ -1275,23 +1275,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * @return A new [Pipeline] object with the literal documents as its source.
    * @throws IllegalArgumentException Thrown if no documents are given.
    */
-  fun literals(vararg data: Map<String, Any?>): Pipeline = literals(data.toList())
-
-  /**
-   * Sets the pipeline's source to the given literal documents. Each map becomes one input document.
-   *
-   * Field values can be constants or [Expression]s; expressions are evaluated, including
-   * expressions nested inside map or list values. FieldValue sentinels (for example,
-   * `FieldValue.serverTimestamp()`) are not supported; use an expression such as
-   * `currentTimestamp()` instead.
-   *
-   * @param data The documents to use as the source. At least one document is required.
-   * @return A new [Pipeline] object with the literal documents as its source.
-   * @throws IllegalArgumentException Thrown if [data] is empty.
-   */
-  fun literals(data: List<Map<String, Any?>>): Pipeline {
+  fun literals(vararg data: Map<String, Any?>): Pipeline {
     require(data.isNotEmpty()) { "Function literals() requires at least one document." }
-    return Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data)))
+    return Pipeline(firestore, firestore.userDataReader, listOf(LiteralsSource(data.toList())))
   }
 
   /**

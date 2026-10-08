@@ -559,7 +559,6 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline documents(java.lang.String... documents);
     method public com.google.firebase.firestore.Pipeline documents(java.util.List<com.google.firebase.firestore.DocumentReference> documents);
     method public com.google.firebase.firestore.Pipeline documentsByPath(java.util.List<java.lang.String> documents);
-    method public com.google.firebase.firestore.Pipeline literals(java.util.List<? extends java.util.Map<java.lang.String,? extends java.lang.Object?>> data);
     method public com.google.firebase.firestore.Pipeline literals(java.util.Map<java.lang.String,? extends java.lang.Object?>... data);
     method public static com.google.firebase.firestore.Pipeline subcollection(com.google.firebase.firestore.pipeline.SubcollectionSource source);
     method public static com.google.firebase.firestore.Pipeline subcollection(String path);
