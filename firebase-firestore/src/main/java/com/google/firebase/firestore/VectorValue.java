@@ -40,10 +40,10 @@ public class VectorValue {
   }
 
   /**
-   * Returns true if this VectorValue is equal to the provided object.
+   * Returns true if this {@code VectorValue} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this VectorValue is equal to the provided object.
+   * @return Whether this {@code VectorValue} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

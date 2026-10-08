@@ -30,10 +30,10 @@ public final class BsonObjectId {
   }
 
   /**
-   * Returns true if this BsonObjectId is equal to the provided object.
+   * Returns true if this {@code BsonObjectId} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this BsonObjectId is equal to the provided object.
+   * @return Whether this {@code BsonObjectId} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

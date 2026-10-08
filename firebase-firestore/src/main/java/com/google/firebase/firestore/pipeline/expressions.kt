@@ -2045,7 +2045,7 @@ abstract class Expression internal constructor() {
 
     /**
      * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the
-     * length of a Blob.
+     * length of a [Blob].
      *
      * ```kotlin
      * // Calculate the length of the 'myString' field in bytes.
@@ -2061,7 +2061,7 @@ abstract class Expression internal constructor() {
 
     /**
      * Creates an expression that calculates the length of a string represented by a field in UTF-8
-     * bytes, or just the length of a Blob.
+     * bytes, or just the length of a [Blob].
      *
      * ```kotlin
      * // Calculate the length of the 'myString' field in bytes.
@@ -8692,7 +8692,7 @@ abstract class Expression internal constructor() {
 
   /**
    * Creates an expression that calculates the length of a string in UTF-8 bytes, or just the length
-   * of a Blob.
+   * of a [Blob].
    *
    * ```kotlin
    * // Calculate the length of the 'myString' field in bytes.

@@ -334,7 +334,7 @@ internal class GenerativeModelTesting {
     val exception =
       shouldThrow<InvalidStateException> { generativeModel.generateContent("my test prompt") }
 
-    exception.message shouldContain "HarmBlockMethod is unsupported by the Google Developer API"
+    exception.message shouldContain "HarmBlockMethod is unsupported by the Gemini Developer API"
   }
 
   @Test

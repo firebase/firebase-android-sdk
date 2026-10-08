@@ -29,10 +29,10 @@ public final class RegexValue {
   }
 
   /**
-   * Returns true if this RegexValue is equal to the provided object.
+   * Returns true if this {@code RegexValue} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this RegexValue is equal to the provided object.
+   * @return Whether this {@code RegexValue} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

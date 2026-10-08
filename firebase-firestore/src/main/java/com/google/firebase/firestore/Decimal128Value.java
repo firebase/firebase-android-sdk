@@ -29,10 +29,10 @@ public final class Decimal128Value {
   }
 
   /**
-   * Returns true if this Decimal128Value is equal to the provided object.
+   * Returns true if this {@code Decimal128Value} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this Decimal128Value is equal to the provided object.
+   * @return Whether this {@code Decimal128Value} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

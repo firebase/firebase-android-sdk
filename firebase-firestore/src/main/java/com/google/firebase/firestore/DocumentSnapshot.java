@@ -439,10 +439,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a Blob.
+   * Returns the value of the field as a {@code Blob}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a Blob.
+   * @throws RuntimeException if the value is not a {@code Blob}.
    * @return The value of the field
    */
   @Nullable
@@ -451,10 +451,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a GeoPoint.
+   * Returns the value of the field as a {@code GeoPoint}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a GeoPoint.
+   * @throws RuntimeException if the value is not a {@code GeoPoint}.
    * @return The value of the field
    */
   @Nullable
@@ -463,10 +463,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a DocumentReference.
+   * Returns the value of the field as a {@code DocumentReference}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a DocumentReference.
+   * @throws RuntimeException if the value is not a {@code DocumentReference}.
    * @return The value of the field
    */
   @Nullable
@@ -498,10 +498,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a MinKey.
+   * Returns the value of the field as a {@code MinKey}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a MinKey.
+   * @throws RuntimeException if the value is not a {@code MinKey}.
    * @return The value of the field.
    */
   @Nullable
@@ -510,10 +510,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a MaxKey.
+   * Returns the value of the field as a {@code MaxKey}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a MaxKey.
+   * @throws RuntimeException if the value is not a {@code MaxKey}.
    * @return The value of the field.
    */
   @Nullable
@@ -522,10 +522,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a RegexValue.
+   * Returns the value of the field as a {@code RegexValue}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a RegexValue.
+   * @throws RuntimeException if the value is not a {@code RegexValue}.
    * @return The value of the field.
    */
   @Nullable
@@ -537,7 +537,7 @@ public class DocumentSnapshot {
    * Returns the value of the field as a 32-bit integer.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a Int32Value.
+   * @throws RuntimeException if the value is not a {@code Int32Value}.
    * @return The value of the field.
    */
   @Nullable
@@ -549,7 +549,7 @@ public class DocumentSnapshot {
    * Returns the value of the field as a 128-bit decimal.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a Decimal128Value.
+   * @throws RuntimeException if the value is not a {@code Decimal128Value}.
    * @return The value of the field.
    */
   @Nullable
@@ -558,10 +558,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a BsonObjectId.
+   * Returns the value of the field as a {@code BsonObjectId}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a BsonObjectId.
+   * @throws RuntimeException if the value is not a {@code BsonObjectId}.
    * @return The value of the field.
    */
   @Nullable
@@ -570,10 +570,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a BsonTimestampValue.
+   * Returns the value of the field as a {@code BsonTimestamp}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a BsonTimestampValue.
+   * @throws RuntimeException if the value is not a {@code BsonTimestamp}.
    * @return The value of the field.
    */
   @Nullable

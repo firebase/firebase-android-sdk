@@ -106,7 +106,7 @@ internal class CloudGenerativeModelProvider(
               safetySettingList.any { it.method != null }
           ) {
             throw InvalidStateException(
-              "HarmBlockMethod is unsupported by the Google Developer API"
+              "HarmBlockMethod is unsupported by the Gemini Developer API"
             )
           }
         }

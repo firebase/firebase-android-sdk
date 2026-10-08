@@ -33,13 +33,15 @@ import kotlinx.serialization.serializerOrNull
  * encouraged. The more information the model has about what it's expected to generate, the better
  * the results.
  *
- * **Note for Structured Output:**
+ * **Note about structured output:**
  *
- * * **For on-device and hybrid inference (`ONLY_ON_DEVICE`, `PREFER_ON_DEVICE`, and
- * `PREFER_IN_CLOUD`):** Requires using the `@Generable` annotation on a `data class`. Manual
- * schemas are not supported.
- * * **For cloud-only inference (`ONLY_IN_CLOUD`):** Supports both `@Generable` annotations
- * (recommended) and manual schemas.
+ * * **Cloud-only inference**: Supports both `@Generable` annotations (recommended) and manual
+ * schemas. This applies to both standard requests to the cloud API and when using the
+ * `OnDeviceConfig` setting of `InferenceMode.ONLY_IN_CLOUD`.
+ * * **On-device and hybrid inference**: Requires using the `@Generable` annotation on a `data
+ * class`. Manual schemas are not supported. This applies when using the `OnDeviceConfig` settings
+ * of `InferenceMode.ONLY_ON_DEVICE`, `InferenceMode.PREFER_ON_DEVICE`, and
+ * `InferenceMode.PREFER_IN_CLOUD`.
  */
 public class JsonSchema<T : Any>
 internal constructor(

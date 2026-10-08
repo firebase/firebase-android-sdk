@@ -41,7 +41,7 @@ public class Blob implements Comparable<Blob> {
    * Creates a new {@code Blob} instance from the provided bytes. Will make a copy of the bytes
    * passed in.
    *
-   * <p>By default, the subtype of a standard Blob is 0.
+   * <p>By default, the subtype of a standard {@code Blob} is 0.
    *
    * @param bytes The bytes to use for this {@code Blob} instance.
    * @return The new {@code Blob} instance
@@ -61,7 +61,8 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Creates a BSON Binary type Blob with subtype 0. Will make a copy of the bytes passed in.
+   * Creates a BSON Binary type {@code Blob} with subtype 0. Will make a copy of the bytes passed
+   * in.
    *
    * @param bytes The bytes to use for this BSON binary {@code Blob} instance.
    * @return The new BSON binary {@code Blob} instance
@@ -73,8 +74,8 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Creates a BSON Binary type Blob with the specified subtype. Will make a copy of the bytes
-   * passed in.
+   * Creates a BSON Binary type {@code Blob} with the specified subtype. Will make a copy of the
+   * bytes passed in.
    *
    * @param subtype The BSON binary subtype. Must be in the [0, 255] range.
    * @param bytes The bytes to use for this BSON binary {@code Blob} instance.
@@ -103,7 +104,7 @@ public class Blob implements Comparable<Blob> {
   }
 
   /**
-   * Returns the subtype of this BSON binary data. Returns 0 for standard non-BSON Blobs.
+   * Returns the subtype of this BSON binary data. Returns 0 for standard non-BSON {@code Blob}s.
    *
    * @return The BSON binary subtype.
    */
