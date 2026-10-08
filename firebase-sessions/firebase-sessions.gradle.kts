@@ -76,19 +76,15 @@ dependencies {
   api(libs.firebase.common)
 
   api(libs.firebase.components)
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
   api("com.google.firebase:firebase-installations-interop:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
   api(libs.firebase.annotations)
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
   api("com.google.firebase:firebase-encoders:18.0.0")
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
   api("com.google.firebase:firebase-encoders-json:19.0.0")
 
-  // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
   implementation("com.google.android.datatransport:transport-api:5.0.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
@@ -99,13 +95,11 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
   runtimeOnly("com.google.firebase:firebase-installations:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-datatransport.
   runtimeOnly("com.google.firebase:firebase-datatransport:21.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")

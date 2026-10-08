@@ -72,7 +72,6 @@ dependencies {
   javadocClasspath(libs.autovalue.annotations)
   javadocClasspath(libs.findbugs.jsr305)
 
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
   api("com.google.firebase:firebase-appcheck-interop:18.0.0")
   api(libs.firebase.common)
   api(libs.firebase.components)

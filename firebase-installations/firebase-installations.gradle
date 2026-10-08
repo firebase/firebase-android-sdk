@@ -57,7 +57,6 @@ dependencies {
     api libs.firebase.annotations
     api(libs.firebase.common)
     api(libs.firebase.components)
-    // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
     api("com.google.firebase:firebase-installations-interop:18.0.0")
 
     implementation(libs.androidx.datastore.preferences)
