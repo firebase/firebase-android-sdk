@@ -86,7 +86,7 @@ internal class OnDeviceGenerativeModelProvider(
    */
   override suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
     withFirebaseAIExceptionHandling {
-      ensureOnDeviceModelAvailable()
+      ensureOnDeviceModelAvailable(checkThinkingMode = false)
 
       val request = buildOnDeviceGenerateContentRequest(prompt)
 
