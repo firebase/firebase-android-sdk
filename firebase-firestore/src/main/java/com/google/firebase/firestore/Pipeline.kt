@@ -1376,7 +1376,8 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    *   .execute()
    * ```
    *
-   * @param data The documents to use as the source. At least one document is required.
+   * @param data The documents to use as the source. At least one document is required: the backend
+   * rejects a pipeline without literal documents when it is executed.
    * @return A new [Pipeline] object with the literal documents as its source.
    */
   fun literals(vararg data: Map<String, Any?>): Pipeline =
