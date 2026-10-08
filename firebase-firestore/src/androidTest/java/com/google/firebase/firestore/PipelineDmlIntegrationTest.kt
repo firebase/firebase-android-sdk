@@ -405,7 +405,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Upsert Stage (5 tests)
+  // Upsert Stage (4 tests)
   // =========================================================================
 
   @Test
@@ -426,25 +426,6 @@ class PipelineDmlIntegrationTest {
     val docSnap = waitFor(collRef.document("book1").get())
     assertThat(docSnap.getString("genre")).isEqualTo("Comedy Sci-Fi")
     assertThat(docSnap.getDouble("rating")).isEqualTo(4.7)
-  }
-
-  @Test
-  fun testUpsertExistingDocWithList() {
-    val snapshot =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            listOf(constant("Updated Genre List").alias("genre"), constant(5.0).alias("rating"))
-          )
-          .execute(ExecuteOptions().withAtomic(true))
-      )
-    assertThat(snapshot).isNotNull()
-    val docSnap = waitFor(collRef.document("book1").get())
-    assertThat(docSnap.getString("genre")).isEqualTo("Updated Genre List")
-    assertThat(docSnap.getDouble("rating")).isEqualTo(5.0)
   }
 
   @Test

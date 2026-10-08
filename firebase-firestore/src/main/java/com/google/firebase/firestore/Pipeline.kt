@@ -1225,17 +1225,6 @@ internal constructor(
     append(UpsertStage(fields = additionalFields))
 
   /**
-   * Writes each document produced by the previous stages back to its own path, creating it if it
-   * doesn't exist and replacing it entirely if it does (stored fields are not merged).
-   *
-   * @param additionalFields Fields to add to each input document before it is written. A field with
-   * the same name as an existing input field overwrites that field.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun upsert(additionalFields: List<Selectable>): Pipeline =
-    append(UpsertStage(fields = additionalFields.toTypedArray()))
-
-  /**
    * Writes each document produced by the previous stages to [collectionPath], creating the target
    * document if it doesn't exist and replacing it entirely if it does (stored fields are not
    * merged).

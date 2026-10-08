@@ -168,22 +168,6 @@ internal class DmlTests {
   }
 
   @Test
-  fun `in-place upsert with list generates upsert proto without options`() {
-    val pipeline =
-      db
-        .pipeline()
-        .collection("books")
-        .upsert(listOf(add(field("count"), constant(1)).alias("count")))
-    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
-    assertThat(proto.stagesCount).isEqualTo(2)
-
-    val stage = proto.getStages(1)
-    assertThat(stage.name).isEqualTo("upsert")
-    assertThat(stage.argsCount).isEqualTo(1)
-    assertThat(stage.optionsCount).isEqualTo(0)
-  }
-
-  @Test
   fun `target-collection upsert with collectionPath only generates upsert proto`() {
     val pipeline = db.pipeline().collection("books").upsert("books_backup")
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
