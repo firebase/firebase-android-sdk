@@ -3,6 +3,7 @@
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [fixed] Fixed topic subscription and unsubscription for topic names containing `%`. (#8620)
 - [fixed] Fixed topic operation queue stalling on non-retryable errors. (#8620)
+- [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
 
 # 25.1.3
 

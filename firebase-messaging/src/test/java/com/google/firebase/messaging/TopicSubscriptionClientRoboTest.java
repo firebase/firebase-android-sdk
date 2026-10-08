@@ -148,6 +148,15 @@ public class TopicSubscriptionClientRoboTest {
   }
 
   @Test
+  public void testSubscribe_failure429_throwsTooManyRequests() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(429);
+
+    IOException exception =
+        assertThrows(IOException.class, () -> runOnBackground(() -> client.subscribe(TEST_TOPIC)));
+    assertThat(exception.getMessage()).isEqualTo(TopicSubscriptionClient.ERROR_TOO_MANY_REQUESTS);
+  }
+
+  @Test
   public void testSubscribe_failure500_throwsInternalServerError() throws Exception {
     when(mockConnection.getResponseCode()).thenReturn(500);
 
@@ -200,6 +209,16 @@ public class TopicSubscriptionClientRoboTest {
         assertThrows(
             IOException.class, () -> runOnBackground(() -> client.unsubscribe(TEST_TOPIC)));
     assertThat(exception.getMessage()).contains("Topic unsubscribe failed: Forbidden");
+  }
+
+  @Test
+  public void testUnsubscribe_failure429_throwsTooManyRequests() throws Exception {
+    when(mockConnection.getResponseCode()).thenReturn(429);
+
+    IOException exception =
+        assertThrows(
+            IOException.class, () -> runOnBackground(() -> client.unsubscribe(TEST_TOPIC)));
+    assertThat(exception.getMessage()).isEqualTo(TopicSubscriptionClient.ERROR_TOO_MANY_REQUESTS);
   }
 
   @Test
