@@ -89,14 +89,15 @@ internal constructor(
   }
 
   internal companion object {
-    fun fromInterop(candidate: OnDeviceCandidate, thought: OnDeviceCandidate? = null) =
+    fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
         content =
           content {
-            if (thought != null && thought.text.isNotEmpty()) {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
               part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
             }
-            if (candidate.text.isNotEmpty() || thought == null) {
+            if (candidate.text.isNotEmpty() || nonEmptyThoughts.isEmpty()) {
               text(candidate.text)
             }
           },

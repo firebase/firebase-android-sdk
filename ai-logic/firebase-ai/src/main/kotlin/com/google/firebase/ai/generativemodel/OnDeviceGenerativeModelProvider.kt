@@ -193,7 +193,13 @@ internal class OnDeviceGenerativeModelProvider(
     val candidates =
       if (response.candidates.isNotEmpty()) {
         response.candidates.mapIndexed { index, candidate ->
-          Candidate.fromInterop(candidate, response.thoughtProcess.getOrNull(index))
+          val thoughts =
+            if (response.candidates.size == 1) {
+              response.thoughtProcess
+            } else {
+              response.thoughtProcess.getOrNull(index)?.let { listOf(it) } ?: emptyList()
+            }
+          Candidate.fromInterop(candidate, thoughts)
         }
       } else {
         response.thoughtProcess.map { thought -> Candidate.fromInteropThought(thought) }

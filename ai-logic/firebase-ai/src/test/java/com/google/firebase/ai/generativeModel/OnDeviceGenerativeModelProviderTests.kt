@@ -303,7 +303,10 @@ internal class OnDeviceGenerativeModelProviderTests {
           candidates = listOf(OnDeviceCandidate("final answer", OnDeviceFinishReason.STOP)),
           modelVersion = "gemini-nano-v4",
           thoughtProcess =
-            listOf(OnDeviceCandidate("step-by-step reasoning", OnDeviceFinishReason.STOP))
+            listOf(
+              OnDeviceCandidate("step 1", OnDeviceFinishReason.OTHER),
+              OnDeviceCandidate("step 2", OnDeviceFinishReason.STOP)
+            )
         )
 
       val thinkingProvider =
@@ -316,7 +319,7 @@ internal class OnDeviceGenerativeModelProviderTests {
 
       capturedRequest.captured.enableThinking shouldBe true
       response.text shouldBe "final answer"
-      response.thoughtSummary shouldBe "step-by-step reasoning"
+      response.thoughtSummary shouldBe "step 1 step 2"
     }
 
   @Test
