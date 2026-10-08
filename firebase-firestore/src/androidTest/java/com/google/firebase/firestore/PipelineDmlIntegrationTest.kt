@@ -296,7 +296,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Insert Stage (6 tests, all with withAtomic(true))
+  // Insert Stage (7 tests, all with withAtomic(true))
   // =========================================================================
 
   @Test
@@ -365,6 +365,24 @@ class PipelineDmlIntegrationTest {
     assertThat(targetDocs.size()).isEqualTo(1)
     assertThat(targetDocs.documents[0].getString("title"))
       .isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testInsertIntoCollectionReference() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collRef.path)
+          .where(equal(field("__name__").documentId(), constant("book1")))
+          .insert(targetCol, constant("book1_ref_copy"))
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("book1_ref_copy").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
   }
 
   @Test
@@ -437,12 +455,8 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            collectionPath = collRef.path,
-            documentIdExpression = constant(newDocId),
-            additionalFields =
-              arrayOf(constant("New Book Title").alias("title"), constant("Sci-Fi").alias("genre"))
-          )
+          .addFields(constant("New Book Title").alias("title"), constant("Sci-Fi").alias("genre"))
+          .upsert(collRef.path, constant(newDocId))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()
@@ -453,7 +467,7 @@ class PipelineDmlIntegrationTest {
   }
 
   @Test
-  fun testUpsertIntoDifferentCollectionWithAdditionalFields() {
+  fun testUpsertIntoCollectionReferenceAfterAddFields() {
     val targetCol = IntegrationTestUtil.testCollection()
     val snapshot =
       waitFor(
@@ -461,15 +475,11 @@ class PipelineDmlIntegrationTest {
           .pipeline()
           .collection(collRef.path)
           .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            collectionPath = targetCol.path,
-            documentIdExpression = constant("target_doc_1"),
-            additionalFields =
-              arrayOf(
-                constant("Target Upsert Title").alias("title"),
-                constant("Target Genre").alias("genre")
-              )
+          .addFields(
+            constant("Target Upsert Title").alias("title"),
+            constant("Target Genre").alias("genre")
           )
+          .upsert(targetCol, constant("target_doc_1"))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()

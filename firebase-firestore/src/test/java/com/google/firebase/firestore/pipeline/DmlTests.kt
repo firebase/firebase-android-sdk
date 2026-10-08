@@ -16,9 +16,11 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestoreIntegrationTestFactory
 import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.Pipeline.ExecuteOptions
 import com.google.firebase.firestore.TestUtil
+import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
@@ -32,6 +34,9 @@ import org.robolectric.RobolectricTestRunner
 internal class DmlTests {
 
   private val db = TestUtil.firestore()
+  private val otherDb =
+    FirebaseFirestoreIntegrationTestFactory(DatabaseId.forDatabase("otherProject", "otherDb"))
+      .firestore
 
   @Test
   fun `delete stage generates delete proto`() {
@@ -134,22 +139,53 @@ internal class DmlTests {
   }
 
   @Test
-  fun `upsert stage generates upsert proto with transforms and options`() {
+  fun `insert stage with CollectionReference generates insert proto with collection option`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("title" to "New Book")).insert(db.collection("books"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
+  fun `insert stage with CollectionReference and documentIdExpression generates insert proto`() {
     val pipeline =
       db
         .pipeline()
-        .literals(mapOf("title" to "Upserted Book", "count" to 1))
-        .upsert(
-          collectionPath = "books",
-          documentIdExpression = constant("book1"),
-          additionalFields = arrayOf(add(field("count"), constant(1)).alias("count"))
-        )
+        .literals(mapOf("title" to "New Book"))
+        .insert(db.collection("books"), constant("book1"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+  }
+
+  @Test
+  fun `insert stage rejects a CollectionReference from another Firestore instance`() {
+    val error =
+      assertThrows(IllegalArgumentException::class.java) {
+        db.pipeline().collection("books").insert(otherDb.collection("books"))
+      }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo("Provided collection reference is from a different Firestore instance.")
+  }
+
+  @Test
+  fun `target-collection upsert with CollectionReference and documentIdExpression generates upsert proto`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(mapOf("title" to "Upserted Book"))
+        .upsert(db.collection("books"), constant("book1"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
     val stage = proto.getStages(1)
     assertThat(stage.name).isEqualTo("upsert")
     assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.getArgs(0).mapValue.fieldsCount).isEqualTo(0)
     assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
     assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
   }
@@ -197,28 +233,23 @@ internal class DmlTests {
   }
 
   @Test
-  fun `target-collection upsert accepts a typed array of aliased expressions`() {
-    // Array<out Selectable> lets callers pass an existing Array<AliasedExpression>.
-    val additionalFields: Array<AliasedExpression> =
-      arrayOf(add(field("count"), constant(1)).alias("count"))
-    val pipeline =
-      db
-        .pipeline()
-        .literals(mapOf("title" to "Upserted Book", "count" to 1))
-        .upsert(
-          collectionPath = "books",
-          documentIdExpression = constant("book1"),
-          additionalFields = additionalFields
-        )
-    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
-    assertThat(proto.stagesCount).isEqualTo(2)
-
-    val stage = proto.getStages(1)
+  fun `target-collection upsert with CollectionReference only generates upsert proto`() {
+    val pipeline = db.pipeline().collection("books").upsert(db.collection("books_backup"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
     assertThat(stage.name).isEqualTo("upsert")
-    assertThat(stage.argsCount).isEqualTo(1)
-    assertThat(stage.getArgs(0).mapValue.fieldsMap.containsKey("count")).isTrue()
-    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
-    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books_backup")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
+  fun `target-collection upsert rejects a CollectionReference from another Firestore instance`() {
+    val error =
+      assertThrows(IllegalArgumentException::class.java) {
+        db.pipeline().collection("books").upsert(otherDb.collection("books"), constant("book1"))
+      }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo("Provided collection reference is from a different Firestore instance.")
   }
 
   @Test

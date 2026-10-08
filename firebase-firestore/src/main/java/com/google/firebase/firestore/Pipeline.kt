@@ -1181,18 +1181,27 @@ internal constructor(
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
   /**
-   * Inserts each document produced by the previous stages as a new document. The insert fails if a
-   * target document already exists.
+   * Inserts each document produced by the previous stages as a new document at its input document's
+   * path. The insert fails if a target document already exists, so this form fails for documents
+   * read from the database.
    *
-   * The target document is determined by [collectionPath] and [documentIdExpression]:
-   * - Only [collectionPath] set: the input document's ID is reused under [collectionPath]. If the
-   * input document has no ID (for example, it came from [PipelineSource.literals]), an ID is
-   * generated automatically.
-   * - Only [documentIdExpression] set: the evaluated ID is used under the input document's parent
-   * collection.
-   * - Both set: the evaluated ID is used under [collectionPath].
-   * - Neither set: each document is written back to its input document's path, which fails for
-   * documents read from the database because they already exist.
+   * Use the other `insert` overloads to choose the target document:
+   * - With only a collection, the input document's ID is reused under that collection. If the input
+   * document has no ID (for example, it came from [PipelineSource.literals]), an ID is generated
+   * automatically.
+   * - With only a `documentIdExpression`, the evaluated ID is used under the input document's
+   * parent collection.
+   * - With both, the evaluated ID is used under the given collection.
+   *
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun insert(): Pipeline = append(InsertStage(null, null))
+
+  /**
+   * Inserts each document produced by the previous stages as a new document in the collection at
+   * [collectionPath], reusing the input document's ID. If the input document has no ID (for
+   * example, it came from [PipelineSource.literals]), an ID is generated automatically. The insert
+   * fails if a target document already exists.
    *
    * Example:
    * ```kotlin
@@ -1202,16 +1211,67 @@ internal constructor(
    *   .execute()
    * ```
    *
-   * @param collectionPath The path of the collection to insert documents into. If null, each
-   * document is inserted into the parent collection of its input document.
-   * @param documentIdExpression An optional expression that is evaluated against each input
-   * document to produce the ID of the document to insert. It must evaluate to a document ID, not a
-   * document path.
+   * @param collectionPath The path of the collection to insert documents into.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  @JvmOverloads
-  fun insert(collectionPath: String? = null, documentIdExpression: Expression? = null): Pipeline =
+  fun insert(collectionPath: String): Pipeline = append(InsertStage(collectionPath, null))
+
+  /**
+   * Inserts each document produced by the previous stages as a new document in [collection],
+   * reusing the input document's ID. If the input document has no ID (for example, it came from
+   * [PipelineSource.literals]), an ID is generated automatically. The insert fails if a target
+   * document already exists.
+   *
+   * @param collection The collection to insert documents into.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   * @throws IllegalArgumentException Thrown if [collection] belongs to a different Firestore
+   * instance than the pipeline.
+   */
+  fun insert(collection: CollectionReference): Pipeline =
+    append(InsertStage(collectionPathOf(collection), null))
+
+  /**
+   * Inserts each document produced by the previous stages as a new document in its input document's
+   * parent collection, with the ID produced by [documentIdExpression]. The insert fails if a target
+   * document already exists.
+   *
+   * @param documentIdExpression An expression that is evaluated against each input document to
+   * produce the ID of the document to insert. It must evaluate to a document ID, not a document
+   * path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun insert(documentIdExpression: Expression): Pipeline =
+    append(InsertStage(null, documentIdExpression))
+
+  /**
+   * Inserts each document produced by the previous stages as a new document in the collection at
+   * [collectionPath], with the ID produced by [documentIdExpression]. The insert fails if a target
+   * document already exists.
+   *
+   * @param collectionPath The path of the collection to insert documents into.
+   * @param documentIdExpression An expression that is evaluated against each input document to
+   * produce the ID of the document to insert. It must evaluate to a document ID, not a document
+   * path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun insert(collectionPath: String, documentIdExpression: Expression): Pipeline =
     append(InsertStage(collectionPath, documentIdExpression))
+
+  /**
+   * Inserts each document produced by the previous stages as a new document in [collection], with
+   * the ID produced by [documentIdExpression]. The insert fails if a target document already
+   * exists.
+   *
+   * @param collection The collection to insert documents into.
+   * @param documentIdExpression An expression that is evaluated against each input document to
+   * produce the ID of the document to insert. It must evaluate to a document ID, not a document
+   * path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   * @throws IllegalArgumentException Thrown if [collection] belongs to a different Firestore
+   * instance than the pipeline.
+   */
+  fun insert(collection: CollectionReference, documentIdExpression: Expression): Pipeline =
+    append(InsertStage(collectionPathOf(collection), documentIdExpression))
 
   /**
    * Writes each document produced by the previous stages back to its own path, creating it if it
@@ -1225,31 +1285,72 @@ internal constructor(
     append(UpsertStage(fields = additionalFields))
 
   /**
-   * Writes each document produced by the previous stages to [collectionPath], creating the target
-   * document if it doesn't exist and replacing it entirely if it does (stored fields are not
-   * merged).
+   * Writes each document produced by the previous stages to the collection at [collectionPath],
+   * reusing the input document's ID. The target document is created if it doesn't exist and
+   * replaced entirely if it does (stored fields are not merged).
+   *
+   * To add fields to each document before it is written, call [addFields] before this stage.
    *
    * @param collectionPath The path of the collection to write documents to.
-   * @param documentIdExpression An optional expression that is evaluated against each input
-   * document to produce the ID of the target document. It must evaluate to a document ID, not a
-   * document path. If null, the input document's ID is reused.
-   * @param additionalFields Fields to add to each input document before it is written. A field with
-   * the same name as an existing input field overwrites that field.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  @JvmOverloads
-  fun upsert(
-    collectionPath: String,
-    documentIdExpression: Expression? = null,
-    additionalFields: Array<out Selectable> = emptyArray()
-  ): Pipeline =
-    append(
-      UpsertStage(
-        fields = additionalFields,
-        collectionPath = collectionPath,
-        documentIdExpression = documentIdExpression
+  fun upsert(collectionPath: String): Pipeline = append(UpsertStage(collectionPath, null))
+
+  /**
+   * Writes each document produced by the previous stages to [collection], reusing the input
+   * document's ID. The target document is created if it doesn't exist and replaced entirely if it
+   * does (stored fields are not merged).
+   *
+   * To add fields to each document before it is written, call [addFields] before this stage.
+   *
+   * @param collection The collection to write documents to.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   * @throws IllegalArgumentException Thrown if [collection] belongs to a different Firestore
+   * instance than the pipeline.
+   */
+  fun upsert(collection: CollectionReference): Pipeline =
+    append(UpsertStage(collectionPathOf(collection), null))
+
+  /**
+   * Writes each document produced by the previous stages to the collection at [collectionPath],
+   * with the ID produced by [documentIdExpression]. The target document is created if it doesn't
+   * exist and replaced entirely if it does (stored fields are not merged).
+   *
+   * To add fields to each document before it is written, call [addFields] before this stage.
+   *
+   * @param collectionPath The path of the collection to write documents to.
+   * @param documentIdExpression An expression that is evaluated against each input document to
+   * produce the ID of the target document. It must evaluate to a document ID, not a document path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun upsert(collectionPath: String, documentIdExpression: Expression): Pipeline =
+    append(UpsertStage(collectionPath, documentIdExpression))
+
+  /**
+   * Writes each document produced by the previous stages to [collection], with the ID produced by
+   * [documentIdExpression]. The target document is created if it doesn't exist and replaced
+   * entirely if it does (stored fields are not merged).
+   *
+   * To add fields to each document before it is written, call [addFields] before this stage.
+   *
+   * @param collection The collection to write documents to.
+   * @param documentIdExpression An expression that is evaluated against each input document to
+   * produce the ID of the target document. It must evaluate to a document ID, not a document path.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   * @throws IllegalArgumentException Thrown if [collection] belongs to a different Firestore
+   * instance than the pipeline.
+   */
+  fun upsert(collection: CollectionReference, documentIdExpression: Expression): Pipeline =
+    append(UpsertStage(collectionPathOf(collection), documentIdExpression))
+
+  private fun collectionPathOf(collection: CollectionReference): String {
+    if (firestore != null && collection.firestore.databaseId != firestore.databaseId) {
+      throw IllegalArgumentException(
+        "Provided collection reference is from a different Firestore instance."
       )
-    )
+    }
+    return collection.path
+  }
 }
 
 /** Start of a Firestore Pipeline */
