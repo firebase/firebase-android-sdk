@@ -19,6 +19,7 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
+import android.os.Build.VERSION_CODES_FULL;
 import android.os.ProfilingTrigger;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -563,7 +564,7 @@ public class SessionReportingCoordinator {
             aei -> {
               @SuppressLint("WrongConstant")
               boolean viaMemoryLimiter =
-                  Build.VERSION.SDK_INT > VERSION_CODES.CINNAMON_BUN
+                  Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2
                       && aei.getReason() == ApplicationExitInfo.REASON_MEMORY_LIMITER;
 
               boolean viaOther =
@@ -627,7 +628,7 @@ public class SessionReportingCoordinator {
 
     // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
     // MLK heap dumps from ones that were requested manually. On API 37, it is not possible.
-    if (android.os.Build.VERSION.SDK_INT > VERSION_CODES.CINNAMON_BUN) {
+    if (android.os.Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2) {
       return isHeapdump && filename.contains("trigger-type-");
     }
 
