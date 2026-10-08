@@ -169,7 +169,10 @@ internal class DmlTests {
       }
     assertThat(error)
       .hasMessageThat()
-      .isEqualTo("Provided collection reference is from a different Firestore instance.")
+      .isEqualTo(
+        "Invalid CollectionReference. The Firestore instance of the CollectionReference must " +
+          "match the Firestore instance of the Pipeline."
+      )
   }
 
   @Test
@@ -249,7 +252,10 @@ internal class DmlTests {
       }
     assertThat(error)
       .hasMessageThat()
-      .isEqualTo("Provided collection reference is from a different Firestore instance.")
+      .isEqualTo(
+        "Invalid CollectionReference. The Firestore instance of the CollectionReference must " +
+          "match the Firestore instance of the Pipeline."
+      )
   }
 
   @Test

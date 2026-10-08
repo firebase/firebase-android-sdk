@@ -1344,9 +1344,13 @@ internal constructor(
     append(UpsertStage(collectionPathOf(collection), documentIdExpression))
 
   private fun collectionPathOf(collection: CollectionReference): String {
-    if (firestore != null && collection.firestore.databaseId != firestore.databaseId) {
+    if (
+      firestore != null &&
+        (collection.firestore.databaseId != firestore.databaseId ||
+          collection.firestore.app?.options?.projectId != firestore.app?.options?.projectId)
+    ) {
       throw IllegalArgumentException(
-        "Provided collection reference is from a different Firestore instance."
+        "Invalid CollectionReference. The Firestore instance of the CollectionReference must match the Firestore instance of the Pipeline."
       )
     }
     return collection.path
