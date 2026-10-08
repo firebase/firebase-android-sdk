@@ -553,3 +553,4 @@ and should not be used. A fix for these issues was released on
   [`FirebaseMessaging`](/docs/reference/android/com/google/firebase/messaging/FirebaseMessaging) now
   return a [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can be used to
   see when the request has completed.
+
