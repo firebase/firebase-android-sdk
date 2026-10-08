@@ -4,6 +4,7 @@
 - [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
   collection is enabled [#8549]
 - [fixed] Fixed event timestamps on ANR events [#8612]
+- [feature] Enable heap dump uploads for OOM and MLK issues on API levels 37+ [#8661]
 
 # 20.1.1
 

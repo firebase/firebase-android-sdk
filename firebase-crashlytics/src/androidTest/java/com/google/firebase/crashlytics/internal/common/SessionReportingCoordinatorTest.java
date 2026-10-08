@@ -34,7 +34,6 @@ import static org.mockito.Mockito.when;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Parcel;
-import android.system.OsConstants;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.gms.tasks.Task;
@@ -50,6 +49,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +96,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     FileStore testFileStore = new FileStore(getContext());
     reportMetadata = new UserMetadata(TEST_SESSION_ID, testFileStore, crashlyticsWorkers);
 
+    ResumableUploadMetadataStore resumableUploadMetadataStore =
+        new ResumableUploadMetadataStore(getContext(), testFileStore);
+
     reportingCoordinator =
         new SessionReportingCoordinator(
             dataCapture,
@@ -104,7 +107,8 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
             logFileManager,
             reportMetadata,
             idManager,
-            crashlyticsWorkers);
+            crashlyticsWorkers,
+            resumableUploadMetadataStore);
   }
 
   @After
@@ -629,30 +633,6 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3));
 
     assertFalse(isOom);
-  }
-
-  @Test
-  public void testIsOom_returnsTrueOnReasonSignaled() {
-    ApplicationExitInfo oom =
-        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, OsConstants.SIGKILL);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
-
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
-
-    assertTrue(isOom);
-  }
-
-  @SdkSuppress(minSdkVersion = 37)
-  @Test
-  public void testIsOom_returnTrueOnReasonLowMemory() {
-    ApplicationExitInfo oom =
-        makeApplicationExitInfo(
-            ApplicationExitInfo.REASON_LOW_MEMORY, /* SUBREASON_OOM_KILL= */ 30, 0);
-    ApplicationExitInfo nonOom = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
-
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom, oom));
-
-    assertTrue(isOom);
   }
 
   @SdkSuppress(minSdkVersion = 37)
