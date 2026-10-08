@@ -105,8 +105,8 @@ protobuf {
 
 dependencies {
   api(libs.firebase.common)
+  api(libs.firebase.annotations)
 
-  api(project(":firebase-annotations"))
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
   implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
