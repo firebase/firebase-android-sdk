@@ -346,7 +346,11 @@ internal class OnDeviceGenerativeModelProviderTests {
       val thoughtChunk =
         OnDeviceGenerateContentResponse(
           candidates = emptyList(),
-          thoughtProcess = listOf(OnDeviceCandidate("thinking...", OnDeviceFinishReason.OTHER))
+          thoughtProcess =
+            listOf(
+              OnDeviceCandidate("thinking 1...", OnDeviceFinishReason.OTHER),
+              OnDeviceCandidate("thinking 2...", OnDeviceFinishReason.OTHER)
+            )
         )
       val answerChunk =
         OnDeviceGenerateContentResponse(
@@ -365,7 +369,8 @@ internal class OnDeviceGenerativeModelProviderTests {
       thinkingProvider.generateContentStream(prompt).collect { emissions.add(it) }
 
       emissions.size shouldBe 2
-      emissions[0].thoughtSummary shouldBe "thinking..."
+      emissions[0].candidates.size shouldBe 1
+      emissions[0].thoughtSummary shouldBe "thinking 1... thinking 2..."
       emissions[0].text shouldBe null
       emissions[1].thoughtSummary shouldBe "done thinking"
       emissions[1].text shouldBe "streamed answer"

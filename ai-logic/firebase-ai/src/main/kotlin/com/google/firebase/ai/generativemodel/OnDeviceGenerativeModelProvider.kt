@@ -192,17 +192,13 @@ internal class OnDeviceGenerativeModelProvider(
   ): GenerateContentResponse {
     val candidates =
       if (response.candidates.isNotEmpty()) {
-        response.candidates.mapIndexed { index, candidate ->
-          val thoughts =
-            if (response.candidates.size == 1) {
-              response.thoughtProcess
-            } else {
-              response.thoughtProcess.getOrNull(index)?.let { listOf(it) } ?: emptyList()
-            }
-          Candidate.fromInterop(candidate, thoughts)
+        response.candidates.map { candidate ->
+          Candidate.fromInterop(candidate, response.thoughtProcess)
         }
+      } else if (response.thoughtProcess.isNotEmpty()) {
+        listOf(Candidate.fromInteropThought(response.thoughtProcess))
       } else {
-        response.thoughtProcess.map { thought -> Candidate.fromInteropThought(thought) }
+        emptyList()
       }
     return GenerateContentResponse(
       candidates,

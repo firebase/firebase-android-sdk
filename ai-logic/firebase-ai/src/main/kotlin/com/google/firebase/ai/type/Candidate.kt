@@ -109,15 +109,17 @@ internal constructor(
         urlContextMetadata = null
       )
 
-    fun fromInteropThought(thought: OnDeviceCandidate) =
+    fun fromInteropThought(thoughts: List<OnDeviceCandidate>) =
       Candidate(
         content =
           content {
-            part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            thoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
           },
         safetyRatings = emptyList(),
         citationMetadata = null,
-        finishReason = FinishReason.fromInterop(thought.finishReason),
+        finishReason = thoughts.lastOrNull()?.let { FinishReason.fromInterop(it.finishReason) },
         finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
