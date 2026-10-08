@@ -139,7 +139,13 @@ internal constructor(
   class Snapshot internal constructor(executionTime: Timestamp, results: List<PipelineResult>) :
     Iterable<PipelineResult> {
 
-    /** The time at which the pipeline producing this result is executed. */
+    /**
+     * The time at which the pipeline producing this result is executed.
+     *
+     * If the server response does not include an execution time, for example for pipelines that
+     * write to the database, this is the time on the device's clock at which the result was
+     * received instead.
+     */
     val executionTime: Timestamp = executionTime
 
     /** List of all the results */

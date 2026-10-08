@@ -20,7 +20,8 @@
   copies of documents can be inserted with generated IDs.
   ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
 - [fixed] Fixed a `NullPointerException` when a pipeline response has no execution time, such as
-  the response to a pipeline that writes to the database.
+  the response to a pipeline that writes to the database. In that case,
+  `Pipeline.Snapshot.executionTime` is the device time at which the result was received.
   ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
 
 # 26.6.0
