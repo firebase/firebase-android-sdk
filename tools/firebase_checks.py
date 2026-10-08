@@ -24,37 +24,13 @@ def get_git_root():
 
 def get_modified_files(repo_root):
     res = subprocess.run(
-        ["git", "status", "--porcelain", "-z"],
+        ["git", "diff", "--name-only", "-z", "main...HEAD"],
         cwd=repo_root,
         capture_output=True,
         text=True,
         check=True
     )
-    files = []
-    entries = res.stdout.split("\0")
-    i = 0
-    # Each line follows the format defined in
-    # https://git-scm.com/docs/git-status#_short_format, for example
-    # "M README.md" for a change to the README.md file
-    while i < len(entries):
-        entry = entries[i]
-        if not entry:
-            i += 1
-            continue
-        status = entry[:2]
-        path = entry[3:]
-        # For renames (R) or copies (C), the entry for the old name
-        # and the new name are one after the other, for example (with
-        # newline rather than NUL for readability)
-        # R  agent-new.md
-        # agents.md
-        if "R" in status or "C" in status:
-            i += 1
-            if i < len(entries):
-                path = entries[i]
-        files.append(path)
-        i += 1
-    return files
+    return [f for f in res.stdout.split("\0") if f]
 
 # Set of SDK subprojects that do not run generateApiTxtFile, for example because
 # they do not apply the Firebase library plugin.
