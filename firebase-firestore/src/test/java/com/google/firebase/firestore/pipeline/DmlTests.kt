@@ -416,7 +416,7 @@ internal class DmlTests {
     val stage =
       db
         .pipeline()
-        .literals(mapOf("" to 1L, "m" to mapOf("" to 2L)))
+        .literals(mapOf("" to 1L, "m" to mapOf("" to 2L), "l" to listOf(mapOf("" to 3L))))
         .toExecutePipelineRequest(null)
         .structuredPipeline
         .pipeline
@@ -424,6 +424,26 @@ internal class DmlTests {
     val fields = stage.getArgs(0).mapValue.fieldsMap
     assertThat(fields[""]?.integerValue).isEqualTo(1L)
     assertThat(fields["m"]?.mapValue?.fieldsMap?.get("")?.integerValue).isEqualTo(2L)
+    assertThat(fields["l"]?.arrayValue?.getValues(0)?.mapValue?.fieldsMap?.get("")?.integerValue)
+      .isEqualTo(3L)
+  }
+
+  @Test
+  fun `literals rejects nested arrays without expressions`() {
+    val pipeline = db.pipeline().literals(mapOf("l" to listOf(listOf(1L))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo("Function literals() called with invalid data. Nested arrays are not supported")
+  }
+
+  @Test
+  fun `literals rejects FieldValue sentinel in a list with literals context`() {
+    val pipeline = db.pipeline().literals(mapOf("l" to listOf(mapOf("ts" to FieldValue.delete()))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error).hasMessageThat().startsWith("Function literals() called with invalid data. ")
   }
 
   @Test

@@ -1969,8 +1969,8 @@ internal constructor(
    * Parses a literal value that contains no expressions. FieldValue sentinels and unsupported types
    * are rejected with an error that names `literals()` and the field path.
    *
-   * Maps are traversed here rather than by [UserDataReader], so that field names are not validated
-   * client-side; the backend rejects invalid field names, such as empty ones.
+   * Maps and lists are traversed here rather than by [UserDataReader], so that field names are not
+   * validated client-side; the backend rejects invalid field names, such as empty ones.
    */
   private fun parseLiteralValue(
     value: Any?,
@@ -1984,6 +1984,17 @@ internal constructor(
         mapValue.putFields(key as String, parseLiteralValue(element, childContext, userDataReader))
       }
       Value.newBuilder().setMapValue(mapValue).build()
+    } else if (value is List<*>) {
+      withLiteralsErrorContext {
+        if (context.isArrayElement) throw context.createError("Nested arrays are not supported")
+      }
+      val arrayValue = com.google.firestore.v1.ArrayValue.newBuilder()
+      value.forEachIndexed { index, element ->
+        arrayValue.addValues(
+          parseLiteralValue(element, context.childContext(index), userDataReader)
+        )
+      }
+      Value.newBuilder().setArrayValue(arrayValue).build()
     } else {
       withLiteralsErrorContext {
         checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
