@@ -14,23 +14,26 @@ More information about Firebase can be found at https://firebase.google.com.
 3. [Annotations](#annotations)
    1. [@Keep](#keep)
    2. [@KeepForSdk](#keepforsdk)
-   3. [@PublicApi](#publicapi)
-4. [Proguarding](#proguarding)
+4. [Public API Surface](#public-api-surface)
+5. [Proguarding](#proguarding)
    1. [Proguard config](#proguard-config)
-5. [Publishing](#publishing)
+6. [Publishing](#publishing)
    1. [Dependencies](#dependencies)
    2. [Commands](#commands)
-6. [Code Formatting](#code-formatting)
-7. [Contributing](#contributing)
+7. [Code Formatting](#code-formatting)
+8. [Contributing](#contributing)
 
 ## Getting Started
 
 - Install JDK 17 (required to build and run all SDKs).
-- Install the latest Android Studio (should be Meerkat | 2024.3.1 or later).
+- Install the latest stable Android Studio. The minimum supported version is dictated by the
+  `androidGradlePlugin` version in `gradle/libs.versions.toml` (currently AGP 8.13, which requires
+  Narwhal 3 Feature Drop | 2025.1.3 or later).
 - Clone the repo (`git clone --recurse-submodules git@github.com:firebase/firebase-android-sdk.git`).
   - When cloning the repo, it is important to get the submodules as well. If you have already cloned
-    the repo without the submodules, they will be initialized automatically during `preBuild`, or you
-    can update them manually by running `git submodule update --init --recursive`.
+    the repo without the submodules, they will be initialized automatically when
+    `firebase-crashlytics-ndk` is built (by its `preBuild` task), or you can update them manually by
+    running `git submodule update --init --recursive`.
 - Open the `firebase-android-sdk` Gradle project in Android Studio.
 - `firebase-crashlytics-ndk` requires Android NDK 27 (`27.2.12479018`). See
   [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more details on building and
@@ -51,9 +54,10 @@ support changes.
 
 ### Unit Testing
 
-These are tests that run on your machine's local Java Virtual Machine (JVM). At runtime, these tests
-are executed against a modified version of `android.jar` where all final modifiers have been stripped
-off. This lets us sandbox behaviors at desired places and use popular mocking libraries.
+These are tests that run on your machine's local Java Virtual Machine (JVM). Most projects use
+[Robolectric](https://robolectric.org/), which runs the tests against an instrumented version of the
+Android framework classes. This lets us sandbox behaviors at desired places and use popular mocking
+libraries.
 
 Unit tests can be executed on the command line by running:
 
@@ -144,13 +148,22 @@ APIs that are intended to be used by Firebase SDKs should be annotated with `@Ke
 benefit here is that the annotation is _blessed_ to throw linter errors in Android Studio if used by
 the developer from a non-Firebase package, thereby providing a valuable guardrail.
 
-### @PublicApi
+## Public API Surface
 
-We annotate APIs that are meant to be used by developers with
-[@PublicApi](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java) as a
-convention to mark public consumption. Public API surface tracking and semantic version checks
-(major, minor, patch) are enforced via Metalava against each project's `api.txt` file based on
-standard Java and Kotlin visibility rules.
+There is no marker annotation for public APIs. Anything that is `public` or `protected` under
+standard Java and Kotlin visibility rules is part of the public API surface, unless its doc comment
+carries an `@hide` tag. Members annotated with `@KeepForSdk` must also be tagged `@hide`, otherwise
+they are reported as public API.
+
+The public API surface is tracked with Metalava in each project's `api.txt`. After changing a public
+API, regenerate it by running:
+
+```bash
+./gradlew :<firebase-project>:generateApiTxtFile
+```
+
+The `apiInformation` and `metalavaSemver` tasks verify API compatibility and determine the version
+bump (major, minor, patch) required for the next release.
 
 ## Proguarding
 
@@ -159,10 +172,10 @@ proguard-friendly, but the dependencies of Firebase SDKs may not be.
 
 ### Proguard config
 
-Projects declare consumer ProGuard rules in `proguard.txt` (or `proguard-rules.pro` via
-`consumerProguardFiles`) that are honored by the developer's app while building the app's
-proguarded APK. This file typically contains the keep rules that need to be honored during the
-app's proguarding phase.
+Projects that need consumer ProGuard rules declare them in a file (conventionally `proguard.txt`)
+registered via `consumerProguardFiles` in the project's build file. These rules are honored by the
+developer's app while building the app's proguarded APK, and typically contain the keep rules that
+need to be honored during the app's proguarding phase.
 
 As a best practice, these explicit rules should be scoped to only libraries whose source code is
 outside the firebase-android-sdk codebase, making annotation-based approaches insufficient. The
