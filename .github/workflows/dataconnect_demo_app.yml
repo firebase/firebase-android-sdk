@@ -88,6 +88,7 @@ jobs:
           mkdir -p "$FDC_FIREBASE_TOOLS_DIR"
           cd "$FDC_FIREBASE_TOOLS_DIR"
           echo '{}' > package.json
+          npm install-scripts approve google-logging-utils protobufjs re2
           npm install --fund=false --audit=false --save --save-exact firebase-tools@"$FDC_FIREBASE_TOOLS_VERSION"
 
       - name: install firebase-tools from package-lock.json
