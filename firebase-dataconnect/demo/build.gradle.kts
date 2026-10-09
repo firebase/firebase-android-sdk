@@ -22,11 +22,11 @@ plugins {
   // Use whichever versions of these dependencies suit your application.
   // The versions shown here were the latest versions as of October 09, 2026.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
-  // in general, match the version of kotlin("android").
+  // in general, match the version of the kotlin compiler bundled with the
+  // Android Gradle Plugin id("com.android.application").
   id("com.android.application") version "9.4.1"
+  kotlin("plugin.serialization") version "2.2.10"
   id("com.google.gms.google-services") version "4.5.0"
-  val kotlinVersion = "2.2.10"
-  kotlin("plugin.serialization") version kotlinVersion
 
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
@@ -153,8 +153,6 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
   @get:Inject protected abstract val execOperations: ExecOperations
 
   @get:Inject protected abstract val providerFactory: ProviderFactory
-
-  @get:Inject protected abstract val fileSystemOperations: FileSystemOperations
 
   @TaskAction
   fun run() {
