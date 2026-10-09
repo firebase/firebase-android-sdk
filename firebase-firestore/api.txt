@@ -468,6 +468,10 @@ package com.google.firebase.firestore {
 
   public final class Pipeline {
     method public com.google.firebase.firestore.Pipeline addFields(com.google.firebase.firestore.pipeline.Selectable field, com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public com.google.firebase.firestore.Pipeline addWindowFields(com.google.firebase.firestore.pipeline.AliasedAggregate field, java.lang.Object... additionalFields);
+    method public com.google.firebase.firestore.Pipeline addWindowFields(com.google.firebase.firestore.pipeline.AliasedWindowFunction field, java.lang.Object... additionalFields);
+    method public com.google.firebase.firestore.Pipeline addWindowFields(com.google.firebase.firestore.pipeline.WindowSpec window, com.google.firebase.firestore.pipeline.AliasedAggregate field, java.lang.Object... additionalFields);
+    method public com.google.firebase.firestore.Pipeline addWindowFields(com.google.firebase.firestore.pipeline.WindowSpec window, com.google.firebase.firestore.pipeline.AliasedWindowFunction field, java.lang.Object... additionalFields);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage, com.google.firebase.firestore.pipeline.AggregateOptions options);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AliasedAggregate accumulator, com.google.firebase.firestore.pipeline.AliasedAggregate... additionalAccumulators);
@@ -760,6 +764,7 @@ package com.google.firebase.firestore.pipeline {
     method public static com.google.firebase.firestore.pipeline.AggregateFunction maximum(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction minimum(com.google.firebase.firestore.pipeline.Expression expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction minimum(String fieldName);
+    method public com.google.firebase.firestore.pipeline.WindowFunction over(com.google.firebase.firestore.pipeline.WindowSpec window);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction rawAggregate(String name, com.google.firebase.firestore.pipeline.Expression... expr);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction sum(com.google.firebase.firestore.pipeline.Expression expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction sum(String fieldName);
@@ -821,6 +826,9 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression getExpr();
     property public String alias;
     property public com.google.firebase.firestore.pipeline.Expression expr;
+  }
+
+  public final class AliasedWindowFunction {
   }
 
   public abstract class BooleanExpression extends com.google.firebase.firestore.pipeline.Expression {
@@ -2118,6 +2126,53 @@ package com.google.firebase.firestore.pipeline {
   public static final class UnnestStage.Companion {
     method public com.google.firebase.firestore.pipeline.UnnestStage withField(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias);
     method public com.google.firebase.firestore.pipeline.UnnestStage withField(String arrayField, String alias);
+  }
+
+  public final class WindowBound {
+    field public static final com.google.firebase.firestore.pipeline.WindowBound CURRENT;
+    field public static final com.google.firebase.firestore.pipeline.WindowBound.Companion Companion;
+    field public static final com.google.firebase.firestore.pipeline.WindowBound UNBOUNDED;
+  }
+
+  public static final class WindowBound.Companion {
+  }
+
+  public final class WindowFunction {
+    method public com.google.firebase.firestore.pipeline.AliasedWindowFunction alias(String alias);
+    method public com.google.firebase.firestore.pipeline.WindowFunction over(com.google.firebase.firestore.pipeline.WindowSpec window);
+    method public static com.google.firebase.firestore.pipeline.WindowFunction rank();
+    field public static final com.google.firebase.firestore.pipeline.WindowFunction.Companion Companion;
+  }
+
+  public static final class WindowFunction.Companion {
+    method public com.google.firebase.firestore.pipeline.WindowFunction rank();
+  }
+
+  public final class WindowSpec {
+    ctor public WindowSpec();
+    method public com.google.firebase.firestore.pipeline.WindowSpec documents(com.google.firebase.firestore.pipeline.Expression preceding, com.google.firebase.firestore.pipeline.Expression following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec documents(com.google.firebase.firestore.pipeline.WindowBound preceding, com.google.firebase.firestore.pipeline.WindowBound following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec documents(int preceding, int following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec documents(Object preceding, Object following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec partition(com.google.firebase.firestore.pipeline.Expression expression, java.lang.Object... additionalExpressions);
+    method public com.google.firebase.firestore.pipeline.WindowSpec partition(String fieldName, java.lang.Object... additionalExpressions);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.Expression preceding, com.google.firebase.firestore.pipeline.Expression following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.Expression preceding, com.google.firebase.firestore.pipeline.Expression following, com.google.firebase.firestore.pipeline.Expression unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.Expression preceding, com.google.firebase.firestore.pipeline.Expression following, String unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.WindowBound preceding, com.google.firebase.firestore.pipeline.WindowBound following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.WindowBound preceding, com.google.firebase.firestore.pipeline.WindowBound following, com.google.firebase.firestore.pipeline.Expression unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(com.google.firebase.firestore.pipeline.WindowBound preceding, com.google.firebase.firestore.pipeline.WindowBound following, String unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(double preceding, double following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(double preceding, double following, com.google.firebase.firestore.pipeline.Expression unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(double preceding, double following, String unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(int preceding, int following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(int preceding, int following, com.google.firebase.firestore.pipeline.Expression unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(int preceding, int following, String unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(Object preceding, Object following);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(Object preceding, Object following, com.google.firebase.firestore.pipeline.Expression unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec range(Object preceding, Object following, String unit);
+    method public com.google.firebase.firestore.pipeline.WindowSpec sort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrders);
+    method public com.google.firebase.firestore.pipeline.WindowSpec sort(java.util.List<com.google.firebase.firestore.pipeline.Ordering> orders);
   }
 
 }
