@@ -26,7 +26,7 @@ on:
 env:
   FDC_NODE_VERSION: ${{ inputs.nodeVersion || '24' }}
   FDC_INPUT_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
-  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '21' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
