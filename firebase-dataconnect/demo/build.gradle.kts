@@ -93,7 +93,7 @@ kotlin {
 }
 
 spotless {
-  val ktfmtVersion = "0.53"
+  val ktfmtVersion = "0.65"
   kotlin {
     target("**/*.kt")
     targetExclude("build/")
@@ -249,7 +249,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 }
 
 @DisableCachingByDefault(
-  because = "Copying files is not worth caching, just like org.gradle.api.tasks.Copy"
+  because = "Copying files is not worth caching, just like org.gradle.api.tasks.Copy",
 )
 abstract class CopyDirectoryTask : DefaultTask() {
 
@@ -340,15 +340,14 @@ run {
         description =
           "Copy the generated Data Connect Kotlin SDK sources into the " +
             "generated code directory for the \"${variant.name}\" variant."
-        srcDirectory =
-          generateSourcesTask.flatMap {
-            it.outputDirectory.map { outputDirectory ->
-              objectFactory.fileTree().apply {
-                setDir(outputDirectory)
-                exclude("**/*.log")
-              }
+        srcDirectory = generateSourcesTask.flatMap {
+          it.outputDirectory.map { outputDirectory ->
+            objectFactory.fileTree().apply {
+              setDir(outputDirectory)
+              exclude("**/*.log")
             }
           }
+        }
       }
 
     variant.sources.java!!.addGeneratedSourceDirectory(copyTask, CopyDirectoryTask::destDirectory)

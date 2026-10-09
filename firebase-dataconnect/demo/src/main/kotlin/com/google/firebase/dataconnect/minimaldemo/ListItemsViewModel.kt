@@ -46,16 +46,15 @@ class ListItemsViewModel(private val app: MyApplication) : ViewModel() {
     private set
 
   private var job: Job? = null
-  val loadingState: LoadingState =
-    job.let {
-      if (it === null) {
-        LoadingState.NotStarted
-      } else if (it.isCancelled || it.isCompleted) {
-        LoadingState.Completed
-      } else {
-        LoadingState.InProgress
-      }
+  val loadingState: LoadingState = job.let {
+    if (it === null) {
+      LoadingState.NotStarted
+    } else if (it.isCancelled || it.isCompleted) {
+      LoadingState.Completed
+    } else {
+      LoadingState.InProgress
     }
+  }
 
   enum class LoadingState {
     NotStarted,
@@ -73,8 +72,9 @@ class ListItemsViewModel(private val app: MyApplication) : ViewModel() {
     }
 
     // Start a new coroutine to perform the "get items" operation.
-    val job: Deferred<List<GetAllItemsQuery.Data.ItemsItem>> =
-      viewModelScope.async { app.getConnector().getAllItems.execute().data.items }
+    val job: Deferred<List<GetAllItemsQuery.Data.ItemsItem>> = viewModelScope.async {
+      app.getConnector().getAllItems.execute().data.items
+    }
 
     this.result = null
     this.job = job
