@@ -89,7 +89,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Delete Stage (5 tests)
+  // Delete Stage
   // =========================================================================
 
   @Test
@@ -173,7 +173,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Update Stage (8 tests)
+  // Update Stage
   // =========================================================================
 
   @Test
@@ -296,7 +296,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Insert Stage (9 tests, all with withAtomic(true))
+  // Insert Stage (all with withAtomic(true))
   // =========================================================================
 
   @Test
@@ -463,7 +463,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Upsert Stage (7 tests)
+  // Upsert Stage
   // =========================================================================
 
   @Test
@@ -609,7 +609,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Literals Stage (5 tests, using .union to satisfy Firebase Security Rules)
+  // Literals Stage (using .union to satisfy Firebase Security Rules)
   // =========================================================================
 
   @Test

@@ -1181,13 +1181,10 @@ internal constructor(
   fun update(vararg fields: Selectable): Pipeline = append(UpdateStage(fields))
 
   /**
-   * Inserts each document produced by the previous stages as a new document at its input document's
-   * path. The insert fails if a target document already exists, so this form fails for documents
-   * read from the database.
-   *
-   * The path comes from the input document's `__name__` field. A document from
-   * [PipelineSource.literals] can set `__name__` to a [DocumentReference] to choose its path;
-   * without it, the pipeline fails.
+   * Inserts each document produced by the previous stages as a new document at the path in its
+   * `__name__` field. The insert fails if a target document already exists, so it fails for
+   * documents read from the database. A document from [PipelineSource.literals] must set `__name__`
+   * to a [DocumentReference], or the pipeline fails.
    *
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
@@ -1196,8 +1193,8 @@ internal constructor(
   /**
    * Inserts each document produced by the previous stages as a new document in the collection at
    * [collectionPath], reusing the input document's ID. If the input document has no ID (for
-   * example, it came from [PipelineSource.literals]), an ID is generated automatically. The insert
-   * fails if a target document already exists.
+   * example, a [PipelineSource.literals] document without `__name__`), an ID is generated
+   * automatically. The insert fails if a target document already exists.
    *
    * Example:
    * ```kotlin
@@ -1214,9 +1211,9 @@ internal constructor(
 
   /**
    * Inserts each document produced by the previous stages as a new document in [collection],
-   * reusing the input document's ID. If the input document has no ID (for example, it came from
-   * [PipelineSource.literals]), an ID is generated automatically. The insert fails if a target
-   * document already exists.
+   * reusing the input document's ID. If the input document has no ID (for example, a
+   * [PipelineSource.literals] document without `__name__`), an ID is generated automatically. The
+   * insert fails if a target document already exists.
    *
    * @param collection The collection to insert documents into.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -1270,13 +1267,13 @@ internal constructor(
     append(InsertStage(collectionPathOf(collection), documentIdExpression))
 
   /**
-   * Writes each document produced by the previous stages back to its own path, creating it if it
-   * doesn't exist and replacing it entirely if it does (stored fields are not merged).
+   * Writes each document produced by the previous stages to the path in its `__name__` field,
+   * creating the document if it doesn't exist and replacing it entirely if it does (stored fields
+   * are not merged).
    *
-   * The path comes from the input document's `__name__` field, so no document ID is generated. A
-   * document from [PipelineSource.literals] can set `__name__` to a [DocumentReference] to choose
-   * its path; without it, the pipeline fails. To write such documents with generated IDs, use the
-   * `upsert` overloads that take a collection.
+   * No document ID is generated: a document from [PipelineSource.literals] must set `__name__` to a
+   * [DocumentReference], or the pipeline fails. To generate IDs, use an `upsert` overload that
+   * takes a collection.
    *
    * @param additionalFields Fields to add to each input document before it is written. A field with
    * the same name as an existing input field overwrites that field.
@@ -1287,9 +1284,10 @@ internal constructor(
 
   /**
    * Writes each document produced by the previous stages to the collection at [collectionPath],
-   * reusing the input document's ID. If the input document has no ID (for example, it came from
-   * [PipelineSource.literals]), an ID is generated automatically. The target document is created if
-   * it doesn't exist and replaced entirely if it does (stored fields are not merged).
+   * reusing the input document's ID. If the input document has no ID (for example, a
+   * [PipelineSource.literals] document without `__name__`), an ID is generated automatically. The
+   * target document is created if it doesn't exist and replaced entirely if it does (stored fields
+   * are not merged).
    *
    * To add fields to each document before it is written, call [addFields] before this stage.
    *
@@ -1300,9 +1298,9 @@ internal constructor(
 
   /**
    * Writes each document produced by the previous stages to [collection], reusing the input
-   * document's ID. If the input document has no ID (for example, it came from
-   * [PipelineSource.literals]), an ID is generated automatically. The target document is created if
-   * it doesn't exist and replaced entirely if it does (stored fields are not merged).
+   * document's ID. If the input document has no ID (for example, a [PipelineSource.literals]
+   * document without `__name__`), an ID is generated automatically. The target document is created
+   * if it doesn't exist and replaced entirely if it does (stored fields are not merged).
    *
    * To add fields to each document before it is written, call [addFields] before this stage.
    *
@@ -1371,6 +1369,9 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    * `FieldValue.serverTimestamp()`) are not supported; use an expression such as
    * `currentTimestamp()` instead.
    *
+   * To give a document a path, for example to write it with [Pipeline.upsert], set its `__name__`
+   * field to a [DocumentReference].
+   *
    * Example:
    * ```kotlin
    * db.pipeline()
@@ -1379,8 +1380,8 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
    *   .execute()
    * ```
    *
-   * @param data The documents to use as the source. At least one document is required: the backend
-   * rejects a pipeline without literal documents when it is executed.
+   * @param data The documents to use as the source. At least one document is required; a pipeline
+   * without literal documents fails when it is executed.
    * @return A new [Pipeline] object with the literal documents as its source.
    */
   fun literals(vararg data: Map<String, Any?>): Pipeline =

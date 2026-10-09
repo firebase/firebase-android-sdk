@@ -404,7 +404,7 @@ internal class DmlTests {
   }
 
   @Test
-  fun `literals without documents is left for the backend to reject`() {
+  fun `literals without documents produces a stage with no arguments`() {
     val stage =
       db
         .pipeline()

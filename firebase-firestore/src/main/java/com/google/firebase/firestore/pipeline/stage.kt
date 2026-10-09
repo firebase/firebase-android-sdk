@@ -1905,10 +1905,6 @@ internal constructor(
     return data.asSequence().map { encodeLiteralDocument(it, userDataReader) }
   }
 
-  /**
-   * Encodes a literal document. Values that contain no [Expression] are parsed by [UserDataReader],
-   * so they are validated like the data of other APIs.
-   */
   private fun encodeLiteralDocument(
     document: Map<String, Any?>,
     userDataReader: UserDataReader
@@ -1930,12 +1926,9 @@ internal constructor(
   }
 
   /**
-   * Converts a value that contains an [Expression] at any depth into an expression.
-   *
-   * The backend evaluates expressions only in the top-level fields of each literal document. A map
-   * or list value that contains an [Expression] is therefore converted into a `map(...)` or
-   * `array(...)` expression, so that the nested expressions are evaluated instead of being sent as
-   * raw function values. Values without expressions are parsed by [UserDataReader].
+   * The backend only evaluates expressions in the top-level fields of a literal document, so maps
+   * and lists that contain an [Expression] are sent as `map(...)` and `array(...)` expressions for
+   * the nested expressions to be evaluated.
    */
   private fun toLiteralExpression(
     value: Any?,
