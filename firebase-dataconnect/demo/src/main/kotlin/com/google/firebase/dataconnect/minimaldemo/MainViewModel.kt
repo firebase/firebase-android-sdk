@@ -74,8 +74,9 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Start a new coroutine to perform the "insert" operation.
     Log.i(TAG, "Inserting item: $variables")
-    val job: Deferred<Zwda6x9zyyKey> =
-      viewModelScope.async { app.getConnector().insertItem.ref(variables).execute().data.key }
+    val job: Deferred<Zwda6x9zyyKey> = viewModelScope.async {
+      app.getConnector().insertItem.ref(variables).execute().data.key
+    }
     val inProgressOperationState =
       OperationState.InProgress(_stateSequenceNumber.value, variables, job)
     insertState = inProgressOperationState
@@ -122,8 +123,9 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Start a new coroutine to perform the "get" operation.
     Log.i(TAG, "Retrieving item with key: $key")
-    val job: Deferred<GetItemByKeyQuery.Data.Item?> =
-      viewModelScope.async { app.getConnector().getItemByKey.execute(key).data.item }
+    val job: Deferred<GetItemByKeyQuery.Data.Item?> = viewModelScope.async {
+      app.getConnector().getItemByKey.execute(key).data.item
+    }
     val inProgressOperationState = OperationState.InProgress(_stateSequenceNumber.value, key, job)
     getState = inProgressOperationState
     _stateSequenceNumber.value++
@@ -167,8 +169,9 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Start a new coroutine to perform the "delete" operation.
     Log.i(TAG, "Deleting item with key: $key")
-    val job: Deferred<Unit> =
-      viewModelScope.async { app.getConnector().deleteItemByKey.execute(key) }
+    val job: Deferred<Unit> = viewModelScope.async {
+      app.getConnector().deleteItemByKey.execute(key)
+    }
     val inProgressOperationState = OperationState.InProgress(_stateSequenceNumber.value, key, job)
     deleteState = inProgressOperationState
     _stateSequenceNumber.value++

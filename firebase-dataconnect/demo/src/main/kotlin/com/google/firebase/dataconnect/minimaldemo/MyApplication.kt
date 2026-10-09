@@ -58,7 +58,7 @@ class MyApplication : Application() {
               "(error code 8xrn9vvddd)",
             throwable,
           )
-        }
+        },
     )
 
   private val initialLogLevel = FirebaseDataConnect.logLevel.value
