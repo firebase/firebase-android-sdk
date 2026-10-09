@@ -53,7 +53,7 @@ import org.robolectric.annotation.LooperMode;
 /** Tests for {@link PlayIntegrityAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class PlayIntegrityAppCheckProviderTest {
 
   private static final String PROJECT_NUMBER = "123456";

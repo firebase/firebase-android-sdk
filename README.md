@@ -14,26 +14,30 @@ More information about Firebase can be found at https://firebase.google.com.
 3. [Annotations](#annotations)
    1. [@Keep](#keep)
    2. [@KeepForSdk](#keepforsdk)
-   3. [@PublicApi](#publicapi)
-4. [Proguarding](#proguarding)
+4. [Public API Surface](#public-api-surface)
+5. [Proguarding](#proguarding)
    1. [Proguard config](#proguard-config)
-5. [Publishing](#publishing)
+6. [Publishing](#publishing)
    1. [Dependencies](#dependencies)
    2. [Commands](#commands)
-6. [Code Formatting](#code-formatting)
-7. [Contributing](#contributing)
+7. [Code Formatting](#code-formatting)
+8. [Contributing](#contributing)
 
 ## Getting Started
 
-- Install the latest Android Studio (should be Meerkat | 2024.3.1 or later).
+- Install JDK 17 (required to build and run all SDKs).
+- Install the latest stable Android Studio. The minimum supported version is dictated by the
+  `androidGradlePlugin` version in `gradle/libs.versions.toml` (currently AGP 8.13, which requires
+  Narwhal 3 Feature Drop | 2025.1.3 or later).
 - Clone the repo (`git clone --recurse-submodules git@github.com:firebase/firebase-android-sdk.git`).
   - When cloning the repo, it is important to get the submodules as well. If you have already cloned
-    the repo without the submodules, you can update the submodules by running
-    `git submodule update --init --recursive`.
-- Import the firebase-android-sdk Gradle project into Android Studio using the **Import project
-  (Gradle, Eclipse ADT, etc.)** option.
-- `firebase-crashlytics-ndk` must be built with NDK 21. See
-  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more details.
+    the repo without the submodules, they will be initialized automatically when
+    `firebase-crashlytics-ndk` is built (by its `preBuild` task), or you can update them manually by
+    running `git submodule update --init --recursive`.
+- Open the `firebase-android-sdk` Gradle project in Android Studio.
+- `firebase-crashlytics-ndk` requires Android NDK 27 (`27.2.12479018`). See
+  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more details on building and
+  testing that module.
 
 ## Testing
 
@@ -50,9 +54,10 @@ support changes.
 
 ### Unit Testing
 
-These are tests that run on your machine's local Java Virtual Machine (JVM). At runtime, these tests
-are executed against a modified version of `android.jar` where all final modifiers have been stripped
-off. This lets us sandbox behaviors at desired places and use popular mocking libraries.
+These are tests that run on your machine's local Java Virtual Machine (JVM). Most projects use
+[Robolectric](https://robolectric.org/), which runs the tests against an instrumented version of the
+Android framework classes. This lets us sandbox behaviors at desired places and use popular mocking
+libraries.
 
 Unit tests can be executed on the command line by running:
 
@@ -130,8 +135,8 @@ Firebase SDKs use some special annotations for tooling purposes.
 ### @Keep
 
 APIs that need to be preserved up until the app's runtime can be annotated with
-[@Keep](https://developer.android.com/reference/android/support/annotation/Keep). The
-[@Keep](https://developer.android.com/reference/android/support/annotation/Keep) annotation is
+[@Keep](https://developer.android.com/reference/androidx/annotation/Keep). The
+[@Keep](https://developer.android.com/reference/androidx/annotation/Keep) annotation is
 _blessed_ to be honored by Android's
 [default ProGuard configuration](https://developer.android.com/studio/write/annotations#keep). This
 annotation is commonly used for reflection. These APIs should be generally
@@ -143,12 +148,22 @@ APIs that are intended to be used by Firebase SDKs should be annotated with `@Ke
 benefit here is that the annotation is _blessed_ to throw linter errors in Android Studio if used by
 the developer from a non-Firebase package, thereby providing a valuable guardrail.
 
-### @PublicApi
+## Public API Surface
 
-We annotate APIs that are meant to be used by developers with
-[@PublicApi](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java). This
-annotation will be used by tooling to help inform the version bump (major, minor, patch) that is
-required for the next release.
+There is no marker annotation for public APIs. Anything that is `public` or `protected` under
+standard Java and Kotlin visibility rules is part of the public API surface, unless its doc comment
+carries an `@hide` tag. Members annotated with `@KeepForSdk` must also be tagged `@hide`, otherwise
+they are reported as public API.
+
+The public API surface is tracked with Metalava in each project's `api.txt`. After changing a public
+API, regenerate it by running:
+
+```bash
+./gradlew :<firebase-project>:generateApiTxtFile
+```
+
+The `apiInformation` and `metalavaSemver` tasks verify API compatibility and determine the version
+bump (major, minor, patch) required for the next release.
 
 ## Proguarding
 
@@ -157,14 +172,15 @@ proguard-friendly, but the dependencies of Firebase SDKs may not be.
 
 ### Proguard config
 
-In addition to `preguard.txt`, projects declare an additional set of proguard rules in a `proguard.txt`
-that are honored by the developer's app while building the app's proguarded APK. This file typically
-contains the keep rules that need to be honored during the app's proguarding phase.
+Projects that need consumer ProGuard rules declare them in a file (conventionally `proguard.txt`)
+registered via `consumerProguardFiles` in the project's build file. These rules are honored by the
+developer's app while building the app's proguarded APK, and typically contain the keep rules that
+need to be honored during the app's proguarding phase.
 
 As a best practice, these explicit rules should be scoped to only libraries whose source code is
 outside the firebase-android-sdk codebase, making annotation-based approaches insufficient. The
-combination of keep rules resulting from the annotations, `preguard.txt`, and `proguard.txt`
-collectively determines the APIs that are preserved at **runtime**.
+combination of keep rules resulting from the annotations and `proguard.txt` collectively determines
+the APIs that are preserved at **runtime**.
 
 ## Publishing
 
@@ -200,7 +216,8 @@ app module's `build.gradle`.
 
 ## Code Formatting
 
-Java and Kotlin are both formatted using `spotless`.
+Java, Kotlin, Gradle Kotlin DSL scripts (`.gradle.kts`), and Markdown files are formatted using
+`spotless`.
 
 To run formatting on a project, run:
 
