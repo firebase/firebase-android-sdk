@@ -26,7 +26,6 @@ plugins {
   id("com.android.application") version "9.4.1"
   id("com.google.gms.google-services") version "4.5.0"
   val kotlinVersion = "2.2.10"
-  kotlin("android") version kotlinVersion
   kotlin("plugin.serialization") version kotlinVersion
 
   // The following code in this "plugins" block can be omitted from customer
@@ -60,8 +59,8 @@ dependencies {
 
 dokka {
   moduleName.set("Data Connect Demo")
-  dokkaSourceSets.main {
-    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+  dokkaSourceSets.configureEach {
+    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/"))
   }
 }
 
