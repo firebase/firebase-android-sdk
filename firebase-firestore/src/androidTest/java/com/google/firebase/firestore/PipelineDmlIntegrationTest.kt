@@ -89,7 +89,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Delete Stage (5 tests)
+  // Delete Stage
   // =========================================================================
 
   @Test
@@ -99,7 +99,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book2")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book2")))
           .delete()
           .execute()
       )
@@ -133,7 +133,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("nonExistingId_999")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("nonExistingId_999")))
           .delete()
           .execute()
       )
@@ -147,7 +147,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .delete()
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -163,7 +163,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book3")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book3")))
           .delete()
           .execute(ExecuteOptions().withAtomic(false))
       )
@@ -173,7 +173,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Update Stage (8 tests)
+  // Update Stage
   // =========================================================================
 
   @Test
@@ -183,9 +183,9 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book3")))
-          .addFields(field("__name__").documentId().`as`("id"))
-          .update(constant("baz").`as`("foo"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book3")))
+          .addFields(field(FieldPath.documentId()).documentId().alias("id"))
+          .update(constant("baz").alias("foo"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -203,7 +203,7 @@ class PipelineDmlIntegrationTest {
           .collection(collRef.path)
           .where(equal(field("genre"), constant("Science Fiction")))
           .removeFields("awards")
-          .update(constant("Updated").`as`("status"))
+          .update(constant("Updated").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -223,8 +223,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(add(field("rating"), constant(1.0)).`as`("rating"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .update(add(field("rating"), constant(1.0)).alias("rating"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -239,8 +239,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("UpdatedVariadic").`as`("status"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .update(constant("UpdatedVariadic").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -255,8 +255,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("UpdatedMulti").`as`("status"), constant(99L).`as`("newField"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .update(constant("UpdatedMulti").alias("status"), constant(99L).alias("newField"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -272,8 +272,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("nonExistingId_123")))
-          .update(constant("Updated").`as`("status"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("nonExistingId_123")))
+          .update(constant("Updated").alias("status"))
           .execute()
       )
     assertThat(snapshot).isNotNull()
@@ -286,8 +286,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .update(constant("AtomicUpdate").`as`("status"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .update(constant("AtomicUpdate").alias("status"))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()
@@ -296,7 +296,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Insert Stage (4 tests, all with withAtomic(true))
+  // Insert Stage (all with withAtomic(true))
   // =========================================================================
 
   @Test
@@ -306,7 +306,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .removeFields("__name__")
           .insert(collRef.path)
           .execute(ExecuteOptions().withAtomic(true))
@@ -324,7 +324,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(targetCol.path, constant("my_custom_id_123"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -341,7 +341,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(collRef.path, constant("book2"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -356,7 +356,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(targetCol.path)
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -367,8 +367,103 @@ class PipelineDmlIntegrationTest {
       .isEqualTo("The Hitchhiker's Guide to the Galaxy")
   }
 
+  @Test
+  fun testInsertIntoCollectionReference() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collRef.path)
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .insert(targetCol, constant("book1_ref_copy"))
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("book1_ref_copy").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testInsertWithOnlyDocumentIdExpressionUsesInputParentCollection() {
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collRef.path)
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .insert(documentIdExpression = constant("book1_copy"))
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(collRef.document("book1_copy").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testInsertWithoutTargetFailsForExistingDocuments() {
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .collection(collRef.path)
+            .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+            .insert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.ALREADY_EXISTS)
+  }
+
+  @Test
+  fun testInsertWithoutTargetUsesLiteralName() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("__name__" to targetCol.document("named"), "name" to "Named Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .insert()
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("named").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("name")).isEqualTo("Named Literal")
+  }
+
+  @Test
+  fun testInsertWithoutTargetFailsForLiteralWithoutName() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .literals(mapOf("name" to "Unnamed Literal"))
+            .union(db.pipeline().collection(emptyCol.path))
+            .insert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.INVALID_ARGUMENT)
+  }
+
   // =========================================================================
-  // Upsert Stage (5 tests)
+  // Upsert Stage
   // =========================================================================
 
   @Test
@@ -378,10 +473,10 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .upsert(
-            constant("Comedy Sci-Fi").`as`("genre"),
-            add(field("rating"), constant(0.5)).`as`("rating")
+            constant("Comedy Sci-Fi").alias("genre"),
+            add(field("rating"), constant(0.5)).alias("rating")
           )
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -392,25 +487,6 @@ class PipelineDmlIntegrationTest {
   }
 
   @Test
-  fun testUpsertExistingDocWithList() {
-    val snapshot =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            listOf(constant("Updated Genre List").`as`("genre"), constant(5.0).`as`("rating"))
-          )
-          .execute(ExecuteOptions().withAtomic(true))
-      )
-    assertThat(snapshot).isNotNull()
-    val docSnap = waitFor(collRef.document("book1").get())
-    assertThat(docSnap.getString("genre")).isEqualTo("Updated Genre List")
-    assertThat(docSnap.getDouble("rating")).isEqualTo(5.0)
-  }
-
-  @Test
   fun testUpsertNewDocWhenDoesNotExist() {
     val newDocId = "new_upsert_doc_id"
     val snapshot =
@@ -418,13 +494,9 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            collectionPath = collRef.path,
-            documentIdExpression = constant(newDocId),
-            additionalFields =
-              arrayOf(constant("New Book Title").`as`("title"), constant("Sci-Fi").`as`("genre"))
-          )
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .addFields(constant("New Book Title").alias("title"), constant("Sci-Fi").alias("genre"))
+          .upsert(collRef.path, constant(newDocId))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()
@@ -435,23 +507,19 @@ class PipelineDmlIntegrationTest {
   }
 
   @Test
-  fun testUpsertIntoDifferentCollectionWithAdditionalFields() {
+  fun testUpsertIntoCollectionReferenceAfterAddFields() {
     val targetCol = IntegrationTestUtil.testCollection()
     val snapshot =
       waitFor(
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
-          .upsert(
-            collectionPath = targetCol.path,
-            documentIdExpression = constant("target_doc_1"),
-            additionalFields =
-              arrayOf(
-                constant("Target Upsert Title").`as`("title"),
-                constant("Target Genre").`as`("genre")
-              )
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
+          .addFields(
+            constant("Target Upsert Title").alias("title"),
+            constant("Target Genre").alias("genre")
           )
+          .upsert(targetCol, constant("target_doc_1"))
           .execute(ExecuteOptions().withAtomic(true))
       )
     assertThat(snapshot).isNotNull()
@@ -469,7 +537,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .upsert(collectionPath = targetCol.path, documentIdExpression = constant("target_doc_2"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -479,8 +547,69 @@ class PipelineDmlIntegrationTest {
     assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
   }
 
+  @Test
+  fun testUpsertWithoutTargetUsesLiteralName() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    waitFor(targetCol.document("named").set(mapOf("old" to true)))
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("__name__" to targetCol.document("named"), "name" to "Named Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .upsert()
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("named").get())
+    assertThat(docSnap.getData()).containsExactly("name", "Named Literal")
+  }
+
+  @Test
+  fun testUpsertWithoutTargetFailsForLiteralWithoutName() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .literals(mapOf("name" to "Unnamed Literal"))
+            .union(db.pipeline().collection(emptyCol.path))
+            .upsert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.INVALID_ARGUMENT)
+    assertThat(waitFor(emptyCol.get()).isEmpty).isTrue()
+  }
+
+  @Test
+  fun testUpsertIntoCollectionGeneratesIdForLiteral() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("name" to "Unnamed Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .upsert(targetCol.path)
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val targetDocs = waitFor(targetCol.get())
+    assertThat(targetDocs.size()).isEqualTo(1)
+    assertThat(targetDocs.documents[0].id).isNotEmpty()
+    assertThat(targetDocs.documents[0].getString("name")).isEqualTo("Unnamed Literal")
+  }
+
   // =========================================================================
-  // Literals Stage (3 tests, using .union to satisfy Firebase Security Rules)
+  // Literals Stage (using .union to satisfy Firebase Security Rules)
   // =========================================================================
 
   @Test
@@ -515,6 +644,42 @@ class PipelineDmlIntegrationTest {
     assertThat(snapshot.results).hasSize(1)
     val first = snapshot.results[0].getData()
     assertThat(first).containsExactly("base", 10L, "doubled", 20L)
+  }
+
+  @Test
+  fun testLiteralsWithExpressionNestedInMap() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(
+            mapOf(
+              "nested" to mapOf("doubled" to multiply(constant(10L), constant(2L)), "label" to "x")
+            )
+          )
+          .union(db.pipeline().collection(emptyCol.path))
+          .execute()
+      )
+    assertThat(snapshot.results).hasSize(1)
+    val first = snapshot.results[0].getData()
+    assertThat(first).containsExactly("nested", mapOf("doubled" to 20L, "label" to "x"))
+  }
+
+  @Test
+  fun testLiteralsWithExpressionNestedInList() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("list" to listOf(multiply(constant(10L), constant(2L)), 1L)))
+          .union(db.pipeline().collection(emptyCol.path))
+          .execute()
+      )
+    assertThat(snapshot.results).hasSize(1)
+    val first = snapshot.results[0].getData()
+    assertThat(first).containsExactly("list", listOf(20L, 1L))
   }
 
   @Test

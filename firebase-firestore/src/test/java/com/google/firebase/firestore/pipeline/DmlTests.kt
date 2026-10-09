@@ -15,13 +15,17 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestoreIntegrationTestFactory
 import com.google.firebase.firestore.Pipeline
 import com.google.firebase.firestore.Pipeline.ExecuteOptions
 import com.google.firebase.firestore.TestUtil
+import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firestore.v1.TransactionOptions
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -30,6 +34,9 @@ import org.robolectric.RobolectricTestRunner
 internal class DmlTests {
 
   private val db = TestUtil.firestore()
+  private val otherDb =
+    FirebaseFirestoreIntegrationTestFactory(DatabaseId.forDatabase("otherProject", "otherDb"))
+      .firestore
 
   @Test
   fun `delete stage generates delete proto`() {
@@ -44,7 +51,7 @@ internal class DmlTests {
 
   @Test
   fun `update stage generates update proto with fields`() {
-    val pipeline = db.pipeline().collection("books").update(constant("Updated").`as`("status"))
+    val pipeline = db.pipeline().collection("books").update(constant("Updated").alias("status"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -72,7 +79,10 @@ internal class DmlTests {
       db
         .pipeline()
         .collection("books")
-        .update(constant("Updated").`as`("status"), add(field("count"), constant(1)).`as`("count"))
+        .update(
+          constant("Updated").alias("status"),
+          add(field("count"), constant(1)).alias("count")
+        )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -110,22 +120,75 @@ internal class DmlTests {
   }
 
   @Test
-  fun `upsert stage generates upsert proto with transforms and options`() {
+  fun `insert stage without arguments generates insert proto without options`() {
+    val pipeline = db.pipeline().collection("books").insert()
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.argsCount).isEqualTo(0)
+    assertThat(stage.optionsCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `insert stage with only documentIdExpression generates insert proto without collection`() {
+    val pipeline =
+      db.pipeline().collection("books").insert(documentIdExpression = constant("book1_copy"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap.containsKey("collection")).isFalse()
+    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1_copy")
+  }
+
+  @Test
+  fun `insert stage with CollectionReference generates insert proto with collection option`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("title" to "New Book")).insert(db.collection("books"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
+  fun `insert stage with CollectionReference and documentIdExpression generates insert proto`() {
     val pipeline =
       db
         .pipeline()
-        .literals(mapOf("title" to "Upserted Book", "count" to 1))
-        .upsert(
-          collectionPath = "books",
-          documentIdExpression = constant("book1"),
-          additionalFields = arrayOf(add(field("count"), constant(1)).`as`("count"))
-        )
+        .literals(mapOf("title" to "New Book"))
+        .insert(db.collection("books"), constant("book1"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
+    assertThat(stage.name).isEqualTo("insert")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
+    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+  }
+
+  @Test
+  fun `insert stage rejects a CollectionReference from another Firestore instance`() {
+    val error =
+      assertThrows(IllegalArgumentException::class.java) {
+        db.pipeline().collection("books").insert(otherDb.collection("books"))
+      }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Invalid CollectionReference. The Firestore instance of the CollectionReference must " +
+          "match the Firestore instance of the Pipeline."
+      )
+  }
+
+  @Test
+  fun `target-collection upsert with CollectionReference and documentIdExpression generates upsert proto`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(mapOf("title" to "Upserted Book"))
+        .upsert(db.collection("books"), constant("book1"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
     val stage = proto.getStages(1)
     assertThat(stage.name).isEqualTo("upsert")
     assertThat(stage.argsCount).isEqualTo(1)
+    assertThat(stage.getArgs(0).mapValue.fieldsCount).isEqualTo(0)
     assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
     assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
   }
@@ -133,23 +196,7 @@ internal class DmlTests {
   @Test
   fun `in-place upsert with varargs generates upsert proto without options`() {
     val pipeline =
-      db.pipeline().collection("books").upsert(add(field("count"), constant(1)).`as`("count"))
-    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
-    assertThat(proto.stagesCount).isEqualTo(2)
-
-    val stage = proto.getStages(1)
-    assertThat(stage.name).isEqualTo("upsert")
-    assertThat(stage.argsCount).isEqualTo(1)
-    assertThat(stage.optionsCount).isEqualTo(0)
-  }
-
-  @Test
-  fun `in-place upsert with list generates upsert proto without options`() {
-    val pipeline =
-      db
-        .pipeline()
-        .collection("books")
-        .upsert(listOf(add(field("count"), constant(1)).`as`("count")))
+      db.pipeline().collection("books").upsert(add(field("count"), constant(1)).alias("count"))
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -189,24 +236,26 @@ internal class DmlTests {
   }
 
   @Test
-  fun `target-collection upsert with collectionPath, documentIdExpression, and additionalFields list generates upsert proto`() {
-    val pipeline =
-      db
-        .pipeline()
-        .literals(mapOf("title" to "Upserted Book", "count" to 1))
-        .upsert(
-          collectionPath = "books",
-          documentIdExpression = constant("book1"),
-          additionalFields = listOf(add(field("count"), constant(1)).`as`("count"))
-        )
-    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
-    assertThat(proto.stagesCount).isEqualTo(2)
-
-    val stage = proto.getStages(1)
+  fun `target-collection upsert with CollectionReference only generates upsert proto`() {
+    val pipeline = db.pipeline().collection("books").upsert(db.collection("books_backup"))
+    val stage = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline.getStages(1)
     assertThat(stage.name).isEqualTo("upsert")
-    assertThat(stage.argsCount).isEqualTo(1)
-    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books")
-    assertThat(stage.optionsMap["document_id"]?.stringValue).isEqualTo("book1")
+    assertThat(stage.optionsMap["collection"]?.referenceValue).isEqualTo("/books_backup")
+    assertThat(stage.optionsMap.containsKey("document_id")).isFalse()
+  }
+
+  @Test
+  fun `target-collection upsert rejects a CollectionReference from another Firestore instance`() {
+    val error =
+      assertThrows(IllegalArgumentException::class.java) {
+        db.pipeline().collection("books").upsert(otherDb.collection("books"), constant("book1"))
+      }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Invalid CollectionReference. The Firestore instance of the CollectionReference must " +
+          "match the Firestore instance of the Pipeline."
+      )
   }
 
   @Test
@@ -228,7 +277,10 @@ internal class DmlTests {
       db
         .pipeline()
         .collection("books")
-        .upsert(constant("In-Place").`as`("status"), add(field("count"), constant(1)).`as`("count"))
+        .upsert(
+          constant("In-Place").alias("status"),
+          add(field("count"), constant(1)).alias("count")
+        )
     val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
     assertThat(proto.stagesCount).isEqualTo(2)
 
@@ -276,6 +328,175 @@ internal class DmlTests {
     assertThat(fields["title"]?.stringValue).isEqualTo("Book 1")
     assertThat(fields["nested"]?.mapValue?.fieldsMap?.get("key")?.stringValue).isEqualTo("value")
     assertThat(fields["computed"]?.functionValue?.name).isEqualTo("add")
+  }
+
+  @Test
+  fun `literals stage wraps nested map containing expressions in a map expression`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("nested" to mapOf("sum" to add(constant(1L), constant(2L)), "label" to "x"))
+        )
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val fields = proto.getStages(0).getArgs(0).mapValue.fieldsMap
+
+    val nested = fields["nested"]!!
+    assertThat(nested.hasFunctionValue()).isTrue()
+    assertThat(nested.functionValue.name).isEqualTo("map")
+    // map(key1, value1, key2, value2): keys are constants, values keep their expressions.
+    val args = nested.functionValue.argsList
+    assertThat(args).hasSize(4)
+    val entries = args.chunked(2).associate { (k, v) -> k.stringValue to v }
+    assertThat(entries["sum"]?.functionValue?.name).isEqualTo("add")
+    assertThat(entries["label"]?.stringValue).isEqualTo("x")
+  }
+
+  @Test
+  fun `literals stage wraps list containing expressions in an array expression`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("list" to listOf(add(constant(1L), constant(2L)), 1L, null)))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val list = proto.getStages(0).getArgs(0).mapValue.fieldsMap["list"]!!
+
+    assertThat(list.hasFunctionValue()).isTrue()
+    assertThat(list.functionValue.name).isEqualTo("array")
+    val args = list.functionValue.argsList
+    assertThat(args).hasSize(3)
+    assertThat(args[0].functionValue.name).isEqualTo("add")
+    assertThat(args[1].integerValue).isEqualTo(1L)
+    assertThat(args[2].hasNullValue()).isTrue()
+  }
+
+  @Test
+  fun `literals stage wraps deeply nested expressions at the top-level field`() {
+    val pipeline =
+      db.pipeline().literals(mapOf("outer" to mapOf("inner" to listOf(mapOf("v" to constant(1L))))))
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val outer = proto.getStages(0).getArgs(0).mapValue.fieldsMap["outer"]!!
+
+    assertThat(outer.functionValue.name).isEqualTo("map")
+    val inner = outer.functionValue.getArgs(1)
+    assertThat(inner.functionValue.name).isEqualTo("array")
+    val element = inner.functionValue.getArgs(0)
+    assertThat(element.functionValue.name).isEqualTo("map")
+    assertThat(element.functionValue.getArgs(1).integerValue).isEqualTo(1L)
+  }
+
+  @Test
+  fun `literals stage encodes nested values without expressions as plain values`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("nested" to mapOf("key" to "value", "n" to null), "list" to listOf(1L, "a"))
+        )
+    val proto = pipeline.toExecutePipelineRequest(null).structuredPipeline.pipeline
+    val fields = proto.getStages(0).getArgs(0).mapValue.fieldsMap
+
+    assertThat(fields["nested"]!!.hasMapValue()).isTrue()
+    assertThat(fields["nested"]!!.mapValue.fieldsMap["key"]?.stringValue).isEqualTo("value")
+    assertThat(fields["nested"]!!.mapValue.fieldsMap["n"]?.hasNullValue()).isTrue()
+    assertThat(fields["list"]!!.hasArrayValue()).isTrue()
+    assertThat(fields["list"]!!.arrayValue.valuesList.map { it.valueTypeCase.name })
+      .containsExactly("INTEGER_VALUE", "STRING_VALUE")
+      .inOrder()
+  }
+
+  @Test
+  fun `literals without documents produces a stage with no arguments`() {
+    val stage =
+      db
+        .pipeline()
+        .literals()
+        .toExecutePipelineRequest(null)
+        .structuredPipeline
+        .pipeline
+        .getStages(0)
+    assertThat(stage.name).isEqualTo("literals")
+    assertThat(stage.argsCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `literals rejects empty field names at any depth`() {
+    for (document in
+      listOf(
+        mapOf("" to 1L),
+        mapOf("m" to mapOf("" to 2L)),
+        mapOf("l" to listOf(mapOf("" to 3L))),
+        mapOf("m" to mapOf("sum" to add(constant(1L), constant(2L)), "" to 4L)),
+      )) {
+      val pipeline = db.pipeline().literals(document)
+      val error =
+        assertThrows(IllegalArgumentException::class.java) {
+          pipeline.toExecutePipelineRequest(null)
+        }
+      assertThat(error)
+        .hasMessageThat()
+        .startsWith("Invalid data. Document fields must not be empty")
+    }
+  }
+
+  @Test
+  fun `literals rejects nested arrays without expressions`() {
+    val pipeline = db.pipeline().literals(mapOf("l" to listOf(listOf(1L))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error).hasMessageThat().isEqualTo("Invalid data. Nested arrays are not supported")
+  }
+
+  @Test
+  fun `literals rejects FieldValue sentinel in a list`() {
+    val pipeline = db.pipeline().literals(mapOf("l" to listOf(mapOf("ts" to FieldValue.delete()))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo("Invalid data. FieldValue.delete() can only be used with set() and update()")
+  }
+
+  @Test
+  fun `literals rejects top-level FieldValue sentinel with field path`() {
+    val pipeline = db.pipeline().literals(mapOf("a" to 1L, "ts" to FieldValue.serverTimestamp()))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Invalid data. " +
+          "FieldValue.serverTimestamp() can only be used with set() and update() (found in field ts)"
+      )
+  }
+
+  @Test
+  fun `literals rejects nested FieldValue sentinel with full field path`() {
+    val pipeline = db.pipeline().literals(mapOf("a" to mapOf("b" to FieldValue.increment(1))))
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Invalid data. " +
+          "FieldValue.increment() can only be used with set() and update() (found in field a.b)"
+      )
+  }
+
+  @Test
+  fun `literals rejects FieldValue sentinel next to a nested expression with field path`() {
+    val pipeline =
+      db
+        .pipeline()
+        .literals(
+          mapOf("a" to mapOf("sum" to add(constant(1L), constant(2L)), "d" to FieldValue.delete()))
+        )
+    val error =
+      assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "Invalid data. " +
+          "FieldValue.delete() can only be used with set() and update() (found in field a.d)"
+      )
   }
 
   @Test

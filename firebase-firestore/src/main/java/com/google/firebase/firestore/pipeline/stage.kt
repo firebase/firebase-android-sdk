@@ -17,6 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.core.UserData
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
@@ -1901,23 +1902,80 @@ internal constructor(
   override fun canonicalId(): String = "literals()"
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {
-    return data.asSequence().map { encodeLiteralMap(it, userDataReader) }
+    return data.asSequence().map { encodeLiteralDocument(it, userDataReader) }
   }
 
-  private fun encodeLiteralMap(map: Map<String, Any?>, userDataReader: UserDataReader): Value {
+  private fun encodeLiteralDocument(
+    document: Map<String, Any?>,
+    userDataReader: UserDataReader
+  ): Value {
+    val rootContext = UserData.ParseAccumulator(UserData.Source.Argument).rootContext()
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
-    for ((key, value) in map) {
-      when (value) {
-        null -> mapValue.putFields(key, Values.NULL_VALUE)
-        is Expression -> mapValue.putFields(key, value.toProto(userDataReader))
-        is Map<*, *> ->
-          @Suppress("UNCHECKED_CAST")
-          mapValue.putFields(key, encodeLiteralMap(value as Map<String, Any?>, userDataReader))
-        else -> mapValue.putFields(key, userDataReader.parseQueryValue(value))
-      }
+    for ((key, value) in document) {
+      val context = rootContext.childContext(key)
+      mapValue.putFields(
+        key,
+        if (containsExpression(value)) {
+          toLiteralExpression(value, context, userDataReader).toProto(userDataReader)
+        } else {
+          parseValue(value, context, userDataReader)
+        }
+      )
     }
     return Value.newBuilder().setMapValue(mapValue).build()
   }
+
+  /**
+   * The backend only evaluates expressions in the top-level fields of a literal document, so maps
+   * and lists that contain an [Expression] are sent as `map(...)` and `array(...)` expressions for
+   * the nested expressions to be evaluated.
+   */
+  private fun toLiteralExpression(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Expression =
+    when {
+      value is Expression -> value
+      value is Map<*, *> && containsExpression(value) ->
+        Expression.map(
+          value.entries
+            .flatMap { (key, element) ->
+              if (key !is String) {
+                throw context.createError("Maps with non-string keys are not supported")
+              }
+              listOf(
+                constant(key),
+                toLiteralExpression(element, context.childContext(key), userDataReader)
+              )
+            }
+            .toTypedArray()
+        )
+      value is List<*> && containsExpression(value) ->
+        Expression.array(
+          value.mapIndexed { index, element ->
+            toLiteralExpression(element, context.childContext(index), userDataReader)
+          }
+        )
+      else -> Expression.Constant(parseValue(value, context, userDataReader))
+    }
+
+  private fun parseValue(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Value =
+    checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
+      "Parsed literal value should not be null."
+    }
+
+  private fun containsExpression(value: Any?): Boolean =
+    when (value) {
+      is Expression -> true
+      is Map<*, *> -> value.values.any(::containsExpression)
+      is List<*> -> value.any(::containsExpression)
+      else -> false
+    }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
