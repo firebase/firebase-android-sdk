@@ -1905,6 +1905,10 @@ internal constructor(
     return data.asSequence().map { encodeLiteralDocument(it, userDataReader) }
   }
 
+  /**
+   * Encodes a literal document. Values that contain no [Expression] are parsed by [UserDataReader],
+   * so they are validated like the data of other APIs.
+   */
   private fun encodeLiteralDocument(
     document: Map<String, Any?>,
     userDataReader: UserDataReader
@@ -1912,31 +1916,27 @@ internal constructor(
     val rootContext = UserData.ParseAccumulator(UserData.Source.Argument).rootContext()
     val mapValue = com.google.firestore.v1.MapValue.newBuilder()
     for ((key, value) in document) {
-      val context = literalChildContext(rootContext, key)
-      mapValue.putFields(key, encodeTopLevelValue(value, context, userDataReader))
+      val context = rootContext.childContext(key)
+      mapValue.putFields(
+        key,
+        if (containsExpression(value)) {
+          toLiteralExpression(value, context, userDataReader).toProto(userDataReader)
+        } else {
+          parseValue(value, context, userDataReader)
+        }
+      )
     }
     return Value.newBuilder().setMapValue(mapValue).build()
   }
 
   /**
-   * Encodes a top-level field value of a literal document.
+   * Converts a value that contains an [Expression] at any depth into an expression.
    *
    * The backend evaluates expressions only in the top-level fields of each literal document. A map
-   * or list value that contains an [Expression] at any depth is therefore converted into a
-   * `map(...)` or `array(...)` expression, so that the nested expressions are evaluated instead of
-   * being sent as raw function values. Values without expressions are encoded as plain constants.
+   * or list value that contains an [Expression] is therefore converted into a `map(...)` or
+   * `array(...)` expression, so that the nested expressions are evaluated instead of being sent as
+   * raw function values. Values without expressions are parsed by [UserDataReader].
    */
-  private fun encodeTopLevelValue(
-    value: Any?,
-    context: UserData.ParseContext,
-    userDataReader: UserDataReader
-  ): Value =
-    if (containsExpression(value)) {
-      toLiteralExpression(value, context, userDataReader).toProto(userDataReader)
-    } else {
-      parseLiteralValue(value, context, userDataReader)
-    }
-
   private fun toLiteralExpression(
     value: Any?,
     context: UserData.ParseContext,
@@ -1948,10 +1948,12 @@ internal constructor(
         Expression.map(
           value.entries
             .flatMap { (key, element) ->
-              val childContext = literalChildContext(context, key)
+              if (key !is String) {
+                throw context.createError("Maps with non-string keys are not supported")
+              }
               listOf(
-                constant(key as String),
-                toLiteralExpression(element, childContext, userDataReader)
+                constant(key),
+                toLiteralExpression(element, context.childContext(key), userDataReader)
               )
             }
             .toTypedArray()
@@ -1962,66 +1964,16 @@ internal constructor(
             toLiteralExpression(element, context.childContext(index), userDataReader)
           }
         )
-      else -> Expression.Constant(parseLiteralValue(value, context, userDataReader))
+      else -> Expression.Constant(parseValue(value, context, userDataReader))
     }
 
-  /**
-   * Parses a literal value that contains no expressions. FieldValue sentinels and unsupported types
-   * are rejected with an error that names `literals()` and the field path.
-   *
-   * Maps and lists are traversed here rather than by [UserDataReader], so that field names are not
-   * validated client-side; the backend rejects invalid field names, such as empty ones.
-   */
-  private fun parseLiteralValue(
+  private fun parseValue(
     value: Any?,
     context: UserData.ParseContext,
     userDataReader: UserDataReader
   ): Value =
-    if (value is Map<*, *>) {
-      val mapValue = com.google.firestore.v1.MapValue.newBuilder()
-      for ((key, element) in value) {
-        val childContext = literalChildContext(context, key)
-        mapValue.putFields(key as String, parseLiteralValue(element, childContext, userDataReader))
-      }
-      Value.newBuilder().setMapValue(mapValue).build()
-    } else if (value is List<*>) {
-      withLiteralsErrorContext {
-        if (context.isArrayElement) throw context.createError("Nested arrays are not supported")
-      }
-      val arrayValue = com.google.firestore.v1.ArrayValue.newBuilder()
-      value.forEachIndexed { index, element ->
-        arrayValue.addValues(
-          parseLiteralValue(element, context.childContext(index), userDataReader)
-        )
-      }
-      Value.newBuilder().setArrayValue(arrayValue).build()
-    } else {
-      withLiteralsErrorContext {
-        checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
-          "Parsed literal value should not be null."
-        }
-      }
-    }
-
-  /**
-   * Returns the parse context of the field [key] in a literal map, which is used to report the
-   * field path in errors. Field names are not validated: the backend rejects invalid field names,
-   * such as empty ones.
-   */
-  private fun literalChildContext(
-    context: UserData.ParseContext,
-    key: Any?
-  ): UserData.ParseContext = withLiteralsErrorContext {
-    require(key is String) { "Maps with non-string keys are not supported" }
-    if (key.isEmpty()) context else context.childContext(key)
-  }
-
-  private inline fun <T> withLiteralsErrorContext(block: () -> T): T =
-    try {
-      block()
-    } catch (e: IllegalArgumentException) {
-      val reason = e.message.orEmpty().removePrefix("Invalid data. ")
-      throw IllegalArgumentException("Function literals() called with invalid data. $reason", e)
+    checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
+      "Parsed literal value should not be null."
     }
 
   private fun containsExpression(value: Any?): Boolean =

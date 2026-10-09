@@ -418,20 +418,23 @@ internal class DmlTests {
   }
 
   @Test
-  fun `literals leaves empty field names for the backend to reject`() {
-    val stage =
-      db
-        .pipeline()
-        .literals(mapOf("" to 1L, "m" to mapOf("" to 2L), "l" to listOf(mapOf("" to 3L))))
-        .toExecutePipelineRequest(null)
-        .structuredPipeline
-        .pipeline
-        .getStages(0)
-    val fields = stage.getArgs(0).mapValue.fieldsMap
-    assertThat(fields[""]?.integerValue).isEqualTo(1L)
-    assertThat(fields["m"]?.mapValue?.fieldsMap?.get("")?.integerValue).isEqualTo(2L)
-    assertThat(fields["l"]?.arrayValue?.getValues(0)?.mapValue?.fieldsMap?.get("")?.integerValue)
-      .isEqualTo(3L)
+  fun `literals rejects empty field names at any depth`() {
+    for (document in
+      listOf(
+        mapOf("" to 1L),
+        mapOf("m" to mapOf("" to 2L)),
+        mapOf("l" to listOf(mapOf("" to 3L))),
+        mapOf("m" to mapOf("sum" to add(constant(1L), constant(2L)), "" to 4L)),
+      )) {
+      val pipeline = db.pipeline().literals(document)
+      val error =
+        assertThrows(IllegalArgumentException::class.java) {
+          pipeline.toExecutePipelineRequest(null)
+        }
+      assertThat(error)
+        .hasMessageThat()
+        .startsWith("Invalid data. Document fields must not be empty")
+    }
   }
 
   @Test
@@ -439,28 +442,28 @@ internal class DmlTests {
     val pipeline = db.pipeline().literals(mapOf("l" to listOf(listOf(1L))))
     val error =
       assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
-    assertThat(error)
-      .hasMessageThat()
-      .isEqualTo("Function literals() called with invalid data. Nested arrays are not supported")
+    assertThat(error).hasMessageThat().isEqualTo("Invalid data. Nested arrays are not supported")
   }
 
   @Test
-  fun `literals rejects FieldValue sentinel in a list with literals context`() {
+  fun `literals rejects FieldValue sentinel in a list`() {
     val pipeline = db.pipeline().literals(mapOf("l" to listOf(mapOf("ts" to FieldValue.delete()))))
     val error =
       assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
-    assertThat(error).hasMessageThat().startsWith("Function literals() called with invalid data. ")
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo("Invalid data. FieldValue.delete() can only be used with set() and update()")
   }
 
   @Test
-  fun `literals rejects top-level FieldValue sentinel with literals context and field path`() {
+  fun `literals rejects top-level FieldValue sentinel with field path`() {
     val pipeline = db.pipeline().literals(mapOf("a" to 1L, "ts" to FieldValue.serverTimestamp()))
     val error =
       assertThrows(IllegalArgumentException::class.java) { pipeline.toExecutePipelineRequest(null) }
     assertThat(error)
       .hasMessageThat()
       .isEqualTo(
-        "Function literals() called with invalid data. " +
+        "Invalid data. " +
           "FieldValue.serverTimestamp() can only be used with set() and update() (found in field ts)"
       )
   }
@@ -473,7 +476,7 @@ internal class DmlTests {
     assertThat(error)
       .hasMessageThat()
       .isEqualTo(
-        "Function literals() called with invalid data. " +
+        "Invalid data. " +
           "FieldValue.increment() can only be used with set() and update() (found in field a.b)"
       )
   }
@@ -491,7 +494,7 @@ internal class DmlTests {
     assertThat(error)
       .hasMessageThat()
       .isEqualTo(
-        "Function literals() called with invalid data. " +
+        "Invalid data. " +
           "FieldValue.delete() can only be used with set() and update() (found in field a.d)"
       )
   }
