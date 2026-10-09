@@ -20,36 +20,36 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of July 17, 2025.
+  // The versions shown here were the latest versions as of October 09, 2026.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
   // in general, match the version of kotlin("android").
   id("com.android.application") version "9.4.1"
-  id("com.google.gms.google-services") version "4.4.3"
+  id("com.google.gms.google-services") version "4.5.0"
   val kotlinVersion = "2.2.10"
   kotlin("android") version kotlinVersion
   kotlin("plugin.serialization") version kotlinVersion
 
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
-  id("com.diffplug.spotless") version "7.1.0"
+  id("com.diffplug.spotless") version "8.10.4"
 
-  id("org.jetbrains.dokka") version "2.0.0"
+  id("org.jetbrains.dokka") version "2.2.0"
 }
 
 dependencies {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of July 17, 2025.
+  // The versions shown here were the latest versions as of October 09, 2026.
 
   // Data Connect
-  implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+  implementation(platform("com.google.firebase:firebase-bom:35.0.0"))
   implementation("com.google.firebase:firebase-dataconnect")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
-  implementation("androidx.appcompat:appcompat:1.7.1")
-  implementation("androidx.activity:activity-ktx:1.10.1")
-  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
-  implementation("com.google.android.material:material:1.12.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
+  implementation("androidx.appcompat:appcompat:1.8.0")
+  implementation("androidx.activity:activity-ktx:1.13.0")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
+  implementation("com.google.android.material:material:1.14.0")
 
   // The following code in this "dependencies" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
@@ -71,10 +71,10 @@ dokka {
 
 android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
-  compileSdk = 36
+  compileSdk = 37
   defaultConfig {
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 37
     versionCode = 1
     versionName = "1.0"
   }
