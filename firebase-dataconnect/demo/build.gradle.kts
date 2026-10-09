@@ -23,7 +23,7 @@ plugins {
   // The versions shown here were the latest versions as of July 17, 2025.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
   // in general, match the version of kotlin("android").
-  id("com.android.application") version "8.11.1"
+  id("com.android.application") version "8.13.2"
   id("com.google.gms.google-services") version "4.4.3"
   val kotlinVersion = "2.1.10"
   kotlin("android") version kotlinVersion
