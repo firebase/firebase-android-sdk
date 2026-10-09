@@ -17,6 +17,7 @@ package com.google.firebase.firestore.pipeline
 import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
+import com.google.firebase.firestore.core.UserData
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
@@ -1423,14 +1424,6 @@ internal constructor(
   private val fields: Array<out Field>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<RemoveFieldsStage>("remove_fields", options) {
-  init {
-    for (field in fields) {
-      val alias = field.alias
-      require(alias != Field.DOCUMENT_ID.alias, { "Alias ${Field.DOCUMENT_ID.alias} is required" })
-      require(alias != Field.CREATE_TIME.alias, { "Alias ${Field.CREATE_TIME.alias} is required" })
-      require(alias != Field.UPDATE_TIME.alias, { "Alias ${Field.UPDATE_TIME.alias} is required" })
-    }
-  }
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
   override fun canonicalId(): String {
     TODO("Not yet implemented")
@@ -1732,6 +1725,267 @@ internal constructor(
 
   override fun hashCode(): Int {
     var result = aliasedExpressions.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+}
+
+internal class DeleteStage internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<DeleteStage>("delete", options) {
+  override fun self(options: InternalOptions) = DeleteStage(options)
+  override fun canonicalId(): String = "delete()"
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DeleteStage) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int = options.hashCode()
+}
+
+internal class UpdateStage
+internal constructor(
+  private val fields: Array<out Selectable>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<UpdateStage>("update", options) {
+  override fun self(options: InternalOptions) = UpdateStage(fields, options)
+  override fun canonicalId(): String = "update()"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+    return if (fields.isNotEmpty()) {
+      sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
+    } else {
+      sequenceOf(encodeValue(emptyMap<String, Value>()))
+    }
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is UpdateStage) return false
+    if (!fields.contentEquals(other.fields)) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    var result = fields.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
+  }
+}
+
+internal class InsertStage
+internal constructor(
+  internal val collectionPath: String?,
+  internal val documentIdExpression: Expression?,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<InsertStage>("insert", buildOptions(collectionPath, options)) {
+
+  override fun self(options: InternalOptions) =
+    InsertStage(collectionPath, documentIdExpression, options)
+  override fun canonicalId(): String = "insert($collectionPath)"
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options
+    if (documentIdExpression != null) {
+      completeOptions =
+        completeOptions.with("document_id", documentIdExpression.toProto(userDataReader))
+    }
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is InsertStage) return false
+    if (collectionPath != other.collectionPath) return false
+    if (documentIdExpression != other.documentIdExpression) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    var result = collectionPath?.hashCode() ?: 0
+    result = 31 * result + (documentIdExpression?.hashCode() ?: 0)
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
+  companion object {
+    private fun buildOptions(
+      collectionPath: String?,
+      baseOptions: InternalOptions
+    ): InternalOptions {
+      var opts = baseOptions
+      if (collectionPath != null) {
+        val path = if (collectionPath.startsWith("/")) collectionPath else "/$collectionPath"
+        opts = opts.with("collection", Value.newBuilder().setReferenceValue(path).build())
+      }
+      return opts
+    }
+  }
+}
+
+internal class UpsertStage
+internal constructor(
+  private val fields: Array<out Selectable> = emptyArray(),
+  internal val collectionPath: String? = null,
+  internal val documentIdExpression: Expression? = null,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<UpsertStage>("upsert", buildOptions(collectionPath, options)) {
+
+  internal val additionalFields: Array<out Selectable>
+    get() = fields
+
+  internal constructor(
+    collectionPath: String?,
+    documentIdExpression: Expression? = null,
+    additionalFields: Array<out Selectable> = emptyArray(),
+    options: InternalOptions = InternalOptions.EMPTY
+  ) : this(additionalFields, collectionPath, documentIdExpression, options)
+
+  override fun self(options: InternalOptions) =
+    UpsertStage(fields, collectionPath, documentIdExpression, options)
+  override fun canonicalId(): String = "upsert($collectionPath)"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options
+    if (documentIdExpression != null) {
+      completeOptions =
+        completeOptions.with("document_id", documentIdExpression.toProto(userDataReader))
+    }
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is UpsertStage) return false
+    if (!fields.contentEquals(other.fields)) return false
+    if (collectionPath != other.collectionPath) return false
+    if (documentIdExpression != other.documentIdExpression) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    var result = fields.contentHashCode()
+    result = 31 * result + (collectionPath?.hashCode() ?: 0)
+    result = 31 * result + (documentIdExpression?.hashCode() ?: 0)
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
+  companion object {
+    private fun buildOptions(
+      collectionPath: String?,
+      baseOptions: InternalOptions
+    ): InternalOptions {
+      var opts = baseOptions
+      if (collectionPath != null) {
+        val path = if (collectionPath.startsWith("/")) collectionPath else "/$collectionPath"
+        opts = opts.with("collection", Value.newBuilder().setReferenceValue(path).build())
+      }
+      return opts
+    }
+  }
+}
+
+class LiteralsSource
+internal constructor(
+  internal val data: List<Map<String, Any?>>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<LiteralsSource>("literals", options) {
+
+  override fun self(options: InternalOptions) = LiteralsSource(data, options)
+  override fun canonicalId(): String = "literals()"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+    return data.asSequence().map { encodeLiteralDocument(it, userDataReader) }
+  }
+
+  private fun encodeLiteralDocument(
+    document: Map<String, Any?>,
+    userDataReader: UserDataReader
+  ): Value {
+    val rootContext = UserData.ParseAccumulator(UserData.Source.Argument).rootContext()
+    val mapValue = com.google.firestore.v1.MapValue.newBuilder()
+    for ((key, value) in document) {
+      val context = rootContext.childContext(key)
+      mapValue.putFields(
+        key,
+        if (containsExpression(value)) {
+          toLiteralExpression(value, context, userDataReader).toProto(userDataReader)
+        } else {
+          parseValue(value, context, userDataReader)
+        }
+      )
+    }
+    return Value.newBuilder().setMapValue(mapValue).build()
+  }
+
+  /**
+   * The backend only evaluates expressions in the top-level fields of a literal document, so maps
+   * and lists that contain an [Expression] are sent as `map(...)` and `array(...)` expressions for
+   * the nested expressions to be evaluated.
+   */
+  private fun toLiteralExpression(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Expression =
+    when {
+      value is Expression -> value
+      value is Map<*, *> && containsExpression(value) ->
+        Expression.map(
+          value.entries
+            .flatMap { (key, element) ->
+              if (key !is String) {
+                throw context.createError("Maps with non-string keys are not supported")
+              }
+              listOf(
+                constant(key),
+                toLiteralExpression(element, context.childContext(key), userDataReader)
+              )
+            }
+            .toTypedArray()
+        )
+      value is List<*> && containsExpression(value) ->
+        Expression.array(
+          value.mapIndexed { index, element ->
+            toLiteralExpression(element, context.childContext(index), userDataReader)
+          }
+        )
+      else -> Expression.Constant(parseValue(value, context, userDataReader))
+    }
+
+  private fun parseValue(
+    value: Any?,
+    context: UserData.ParseContext,
+    userDataReader: UserDataReader
+  ): Value =
+    checkNotNull(userDataReader.convertAndParseFieldData(value, context)) {
+      "Parsed literal value should not be null."
+    }
+
+  private fun containsExpression(value: Any?): Boolean =
+    when (value) {
+      is Expression -> true
+      is Map<*, *> -> value.values.any(::containsExpression)
+      is List<*> -> value.any(::containsExpression)
+      else -> false
+    }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is LiteralsSource) return false
+    if (data != other.data) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    var result = data.hashCode()
     result = 31 * result + options.hashCode()
     return result
   }
