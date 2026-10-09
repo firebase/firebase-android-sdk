@@ -22,7 +22,6 @@ import com.google.firebase.app
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.common.AttributeKey.longKey
 import io.opentelemetry.api.common.AttributeKey.stringKey
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.SpanKind
@@ -45,7 +44,7 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
    *
    * @param screenName The screen name.
    */
-  public fun logScreenAppear(screenName: String) {
+  public fun recordScreenAppear(screenName: String) {
     activeScreen = Attributes.of(SCREEN_NAME, screenName)
     eventEmitter.emit(
       TelemetryEvent.SCREEN_VIEW,
@@ -59,7 +58,7 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
    * @param screenName The screen name.
    * @param screenClass The class name or route identifier.
    */
-  public fun logScreenAppear(screenName: String, screenClass: String) {
+  public fun recordScreenAppear(screenName: String, screenClass: String) {
     activeScreen = Attributes.of(SCREEN_NAME, screenName, SCREEN_ID, screenClass)
     eventEmitter.emit(
       TelemetryEvent.SCREEN_VIEW,
@@ -94,32 +93,6 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
     eventEmitter.emit(
       TelemetryEvent.CLICK,
       Attributes.of(WIDGET_ID, widgetName, WIDGET_NAME, widgetName)
-        .toBuilder()
-        .putAll(activeScreen)
-        .build(),
-    )
-  }
-
-  /**
-   * Records a widget click event.
-   *
-   * @param widgetName The widget name or identifier.
-   * @param x Horizontal screen coordinate, in pixels.
-   * @param y Vertical screen coordinate, in pixels.
-   */
-  public fun recordClick(widgetName: String, x: Int, y: Int) {
-    eventEmitter.emit(
-      TelemetryEvent.CLICK,
-      Attributes.of(
-          WIDGET_ID,
-          widgetName,
-          WIDGET_NAME,
-          widgetName,
-          SCREEN_COORDINATE_X,
-          x.toLong(),
-          SCREEN_COORDINATE_Y,
-          y.toLong(),
-        )
         .toBuilder()
         .putAll(activeScreen)
         .build(),
@@ -175,8 +148,6 @@ internal constructor(private val openTelemetry: OpenTelemetry) {
     private val SCREEN_ID: AttributeKey<String> = stringKey("app.screen.id")
     private val WIDGET_ID: AttributeKey<String> = stringKey("app.widget.id")
     private val WIDGET_NAME: AttributeKey<String> = stringKey("app.widget.name")
-    private val SCREEN_COORDINATE_X: AttributeKey<Long> = longKey("app.screen.coordinate.x")
-    private val SCREEN_COORDINATE_Y: AttributeKey<Long> = longKey("app.screen.coordinate.y")
 
     /** The [FirebaseCrashlyticsTelemetry] instance for the default FirebaseApp. */
     @JvmStatic

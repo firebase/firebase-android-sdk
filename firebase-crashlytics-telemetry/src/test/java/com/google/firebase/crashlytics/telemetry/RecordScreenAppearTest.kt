@@ -22,7 +22,7 @@ import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class LogScreenAppearTest {
+class RecordScreenAppearTest {
   private lateinit var exporter: InMemoryLogRecordExporter
   private lateinit var telemetry: FirebaseCrashlyticsTelemetry
 
@@ -33,8 +33,8 @@ class LogScreenAppearTest {
   }
 
   @Test
-  fun logScreenAppear_emitsNavigationCompleteEvent() {
-    telemetry.logScreenAppear("Home")
+  fun recordScreenAppear_emitsNavigationCompleteEvent() {
+    telemetry.recordScreenAppear("Home")
 
     val record = exporter.finishedLogRecordItems.single()
     assertThat(record.eventName).isEqualTo("app.navigation.complete")
@@ -45,8 +45,8 @@ class LogScreenAppearTest {
   }
 
   @Test
-  fun logScreenAppear_withScreenClass_setsScreenId() {
-    telemetry.logScreenAppear("Profile", "com.example.ProfileRoute")
+  fun recordScreenAppear_withScreenClass_setsScreenId() {
+    telemetry.recordScreenAppear("Profile", "com.example.ProfileRoute")
 
     val record = exporter.finishedLogRecordItems.single()
     assertThat(record.eventName).isEqualTo("app.navigation.complete")
