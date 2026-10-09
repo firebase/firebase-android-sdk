@@ -99,7 +99,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book2")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book2")))
           .delete()
           .execute()
       )
@@ -133,7 +133,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("nonExistingId_999")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("nonExistingId_999")))
           .delete()
           .execute()
       )
@@ -147,7 +147,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .delete()
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -163,7 +163,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book3")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book3")))
           .delete()
           .execute(ExecuteOptions().withAtomic(false))
       )
@@ -183,8 +183,8 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book3")))
-          .addFields(field("__name__").documentId().alias("id"))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book3")))
+          .addFields(field(FieldPath.documentId()).documentId().alias("id"))
           .update(constant("baz").alias("foo"))
           .execute()
       )
@@ -223,7 +223,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .update(add(field("rating"), constant(1.0)).alias("rating"))
           .execute()
       )
@@ -239,7 +239,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .update(constant("UpdatedVariadic").alias("status"))
           .execute()
       )
@@ -255,7 +255,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .update(constant("UpdatedMulti").alias("status"), constant(99L).alias("newField"))
           .execute()
       )
@@ -272,7 +272,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("nonExistingId_123")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("nonExistingId_123")))
           .update(constant("Updated").alias("status"))
           .execute()
       )
@@ -286,7 +286,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .update(constant("AtomicUpdate").alias("status"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -306,7 +306,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .removeFields("__name__")
           .insert(collRef.path)
           .execute(ExecuteOptions().withAtomic(true))
@@ -324,7 +324,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(targetCol.path, constant("my_custom_id_123"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -341,7 +341,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(collRef.path, constant("book2"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -356,7 +356,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(targetCol.path)
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -375,7 +375,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(targetCol, constant("book1_ref_copy"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -392,7 +392,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .insert(documentIdExpression = constant("book1_copy"))
           .execute(ExecuteOptions().withAtomic(true))
       )
@@ -410,7 +410,7 @@ class PipelineDmlIntegrationTest {
           db
             .pipeline()
             .collection(collRef.path)
-            .where(equal(field("__name__").documentId(), constant("book1")))
+            .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
             .insert()
             .execute(ExecuteOptions().withAtomic(true))
         )
@@ -473,7 +473,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .upsert(
             constant("Comedy Sci-Fi").alias("genre"),
             add(field("rating"), constant(0.5)).alias("rating")
@@ -494,7 +494,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .addFields(constant("New Book Title").alias("title"), constant("Sci-Fi").alias("genre"))
           .upsert(collRef.path, constant(newDocId))
           .execute(ExecuteOptions().withAtomic(true))
@@ -514,7 +514,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .addFields(
             constant("Target Upsert Title").alias("title"),
             constant("Target Genre").alias("genre")
@@ -537,7 +537,7 @@ class PipelineDmlIntegrationTest {
         db
           .pipeline()
           .collection(collRef.path)
-          .where(equal(field("__name__").documentId(), constant("book1")))
+          .where(field(FieldPath.documentId()).equal(collRef.document("book1")))
           .upsert(collectionPath = targetCol.path, documentIdExpression = constant("target_doc_2"))
           .execute(ExecuteOptions().withAtomic(true))
       )
