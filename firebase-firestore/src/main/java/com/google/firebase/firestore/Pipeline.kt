@@ -1185,14 +1185,6 @@ internal constructor(
    * path. The insert fails if a target document already exists, so this form fails for documents
    * read from the database.
    *
-   * Use the other `insert` overloads to choose the target document:
-   * - With only a collection, the input document's ID is reused under that collection. If the input
-   * document has no ID (for example, it came from [PipelineSource.literals]), an ID is generated
-   * automatically.
-   * - With only a `documentIdExpression`, the evaluated ID is used under the input document's
-   * parent collection.
-   * - With both, the evaluated ID is used under the given collection.
-   *
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun insert(): Pipeline = append(InsertStage(null, null))
