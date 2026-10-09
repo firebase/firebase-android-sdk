@@ -17,7 +17,6 @@
 package com.google.firebase.crashlytics.telemetry
 
 import com.google.common.truth.Truth.assertThat
-import io.opentelemetry.api.common.AttributeKey.longKey
 import io.opentelemetry.api.common.AttributeKey.stringKey
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import org.junit.jupiter.api.BeforeEach
@@ -34,25 +33,13 @@ class RecordClickTest {
   }
 
   @Test
-  fun recordClick_withCoordinates_emitsWidgetClickEvent() {
-    telemetry.recordClick("checkout_button", x = 140, y = 120)
+  fun recordClick_emitsWidgetClickEvent() {
+    telemetry.recordClick("checkout_button")
 
     val record = exporter.finishedLogRecordItems.single()
     assertThat(record.eventName).isEqualTo("app.widget.click")
     assertThat(record.attributes.get(stringKey("app.widget.id"))).isEqualTo("checkout_button")
     assertThat(record.attributes.get(stringKey("app.widget.name"))).isEqualTo("checkout_button")
-    assertThat(record.attributes.get(longKey("app.screen.coordinate.x"))).isEqualTo(140L)
-    assertThat(record.attributes.get(longKey("app.screen.coordinate.y"))).isEqualTo(120L)
-  }
-
-  @Test
-  fun recordClick_withoutCoordinates_omitsCoordinateAttributes() {
-    telemetry.recordClick("checkout_button")
-
-    val attributes = exporter.finishedLogRecordItems.single().attributes
-    assertThat(attributes.get(stringKey("app.widget.id"))).isEqualTo("checkout_button")
-    assertThat(attributes.get(longKey("app.screen.coordinate.x"))).isNull()
-    assertThat(attributes.get(longKey("app.screen.coordinate.y"))).isNull()
   }
 
   @Test
@@ -66,7 +53,7 @@ class RecordClickTest {
 
   @Test
   fun recordClick_withActiveScreen_includesScreenAttributes() {
-    telemetry.logScreenAppear("Cart", "com.example.CartRoute")
+    telemetry.recordScreenAppear("Cart", "com.example.CartRoute")
     exporter.reset()
 
     telemetry.recordClick("checkout_button")
