@@ -296,7 +296,7 @@ class PipelineDmlIntegrationTest {
   }
 
   // =========================================================================
-  // Insert Stage (7 tests, all with withAtomic(true))
+  // Insert Stage (9 tests, all with withAtomic(true))
   // =========================================================================
 
   @Test
@@ -422,8 +422,48 @@ class PipelineDmlIntegrationTest {
       .isEqualTo(FirebaseFirestoreException.Code.ALREADY_EXISTS)
   }
 
+  @Test
+  fun testInsertWithoutTargetUsesLiteralName() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("__name__" to targetCol.document("named"), "name" to "Named Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .insert()
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("named").get())
+    assertThat(docSnap.exists()).isTrue()
+    assertThat(docSnap.getString("name")).isEqualTo("Named Literal")
+  }
+
+  @Test
+  fun testInsertWithoutTargetFailsForLiteralWithoutName() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .literals(mapOf("name" to "Unnamed Literal"))
+            .union(db.pipeline().collection(emptyCol.path))
+            .insert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.INVALID_ARGUMENT)
+  }
+
   // =========================================================================
-  // Upsert Stage (4 tests)
+  // Upsert Stage (7 tests)
   // =========================================================================
 
   @Test
@@ -505,6 +545,67 @@ class PipelineDmlIntegrationTest {
     val docSnap = waitFor(targetCol.document("target_doc_2").get())
     assertThat(docSnap.exists()).isTrue()
     assertThat(docSnap.getString("title")).isEqualTo("The Hitchhiker's Guide to the Galaxy")
+  }
+
+  @Test
+  fun testUpsertWithoutTargetUsesLiteralName() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    waitFor(targetCol.document("named").set(mapOf("old" to true)))
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("__name__" to targetCol.document("named"), "name" to "Named Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .upsert()
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val docSnap = waitFor(targetCol.document("named").get())
+    assertThat(docSnap.getData()).containsExactly("name", "Named Literal")
+  }
+
+  @Test
+  fun testUpsertWithoutTargetFailsForLiteralWithoutName() {
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val error =
+      assertThrows(Exception::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .literals(mapOf("name" to "Unnamed Literal"))
+            .union(db.pipeline().collection(emptyCol.path))
+            .upsert()
+            .execute(ExecuteOptions().withAtomic(true))
+        )
+      }
+    var cause: Throwable? = error
+    while (cause != null && cause !is FirebaseFirestoreException) cause = cause.cause
+    assertThat(cause).isInstanceOf(FirebaseFirestoreException::class.java)
+    assertThat((cause as FirebaseFirestoreException).code)
+      .isEqualTo(FirebaseFirestoreException.Code.INVALID_ARGUMENT)
+    assertThat(waitFor(emptyCol.get()).isEmpty).isTrue()
+  }
+
+  @Test
+  fun testUpsertIntoCollectionGeneratesIdForLiteral() {
+    val targetCol = IntegrationTestUtil.testCollection()
+    val emptyCol = IntegrationTestUtil.testCollection()
+    val snapshot =
+      waitFor(
+        db
+          .pipeline()
+          .literals(mapOf("name" to "Unnamed Literal"))
+          .union(db.pipeline().collection(emptyCol.path))
+          .upsert(targetCol.path)
+          .execute(ExecuteOptions().withAtomic(true))
+      )
+    assertThat(snapshot).isNotNull()
+    val targetDocs = waitFor(targetCol.get())
+    assertThat(targetDocs.size()).isEqualTo(1)
+    assertThat(targetDocs.documents[0].id).isNotEmpty()
+    assertThat(targetDocs.documents[0].getString("name")).isEqualTo("Unnamed Literal")
   }
 
   // =========================================================================

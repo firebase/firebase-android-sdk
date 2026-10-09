@@ -1185,6 +1185,10 @@ internal constructor(
    * path. The insert fails if a target document already exists, so this form fails for documents
    * read from the database.
    *
+   * The path comes from the input document's `__name__` field. A document from
+   * [PipelineSource.literals] can set `__name__` to a [DocumentReference] to choose its path;
+   * without it, the pipeline fails.
+   *
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun insert(): Pipeline = append(InsertStage(null, null))
@@ -1269,6 +1273,11 @@ internal constructor(
    * Writes each document produced by the previous stages back to its own path, creating it if it
    * doesn't exist and replacing it entirely if it does (stored fields are not merged).
    *
+   * The path comes from the input document's `__name__` field, so no document ID is generated. A
+   * document from [PipelineSource.literals] can set `__name__` to a [DocumentReference] to choose
+   * its path; without it, the pipeline fails. To write such documents with generated IDs, use the
+   * `upsert` overloads that take a collection.
+   *
    * @param additionalFields Fields to add to each input document before it is written. A field with
    * the same name as an existing input field overwrites that field.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -1278,8 +1287,9 @@ internal constructor(
 
   /**
    * Writes each document produced by the previous stages to the collection at [collectionPath],
-   * reusing the input document's ID. The target document is created if it doesn't exist and
-   * replaced entirely if it does (stored fields are not merged).
+   * reusing the input document's ID. If the input document has no ID (for example, it came from
+   * [PipelineSource.literals]), an ID is generated automatically. The target document is created if
+   * it doesn't exist and replaced entirely if it does (stored fields are not merged).
    *
    * To add fields to each document before it is written, call [addFields] before this stage.
    *
@@ -1290,8 +1300,9 @@ internal constructor(
 
   /**
    * Writes each document produced by the previous stages to [collection], reusing the input
-   * document's ID. The target document is created if it doesn't exist and replaced entirely if it
-   * does (stored fields are not merged).
+   * document's ID. If the input document has no ID (for example, it came from
+   * [PipelineSource.literals]), an ID is generated automatically. The target document is created if
+   * it doesn't exist and replaced entirely if it does (stored fields are not merged).
    *
    * To add fields to each document before it is written, call [addFields] before this stage.
    *
