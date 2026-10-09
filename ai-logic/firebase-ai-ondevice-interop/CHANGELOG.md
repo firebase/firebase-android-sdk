@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added `enableThinking` to `GenerateContentRequest`, `thoughtProcess` to `GenerateContentResponse`, and `isThinkingModeAvailable` to `GenerativeModel` to support thinking mode.
 - [feature] Added `systemInstruction` property to `GenerateContentRequest`. (#8663)
 
 # 16.0.0-beta06

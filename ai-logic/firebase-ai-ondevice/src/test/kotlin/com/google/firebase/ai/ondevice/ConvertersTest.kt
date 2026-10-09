@@ -79,7 +79,8 @@ internal class ConvertersTest {
         seed = 42,
         candidateCount = 1,
         maxOutputTokens = 250,
-        systemInstruction = InteropTextPart("system instruction")
+        systemInstruction = InteropTextPart("system instruction"),
+        enableThinking = true
       )
     val mlKitRequest = interopRequest.toMlKit()
 
@@ -90,6 +91,7 @@ internal class ConvertersTest {
     assertThat(mlKitRequest.candidateCount).isEqualTo(1)
     assertThat(mlKitRequest.maxOutputTokens).isEqualTo(250)
     assertThat(mlKitRequest.systemInstruction?.textString).isEqualTo("system instruction")
+    assertThat(mlKitRequest.enableThinking).isTrue()
   }
 
   @Test
@@ -101,6 +103,7 @@ internal class ConvertersTest {
     // as ML Kit's internal defaults may vary by version or environment.
     assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
     assertThat(mlKitRequest.systemInstruction).isNull()
+    assertThat(mlKitRequest.enableThinking).isFalse()
   }
 
   @Test
@@ -110,14 +113,22 @@ internal class ConvertersTest {
         `when`(text).thenReturn("hello")
         `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
       }
+    val mlKitThoughtCandidate =
+      mock(Candidate::class.java).apply {
+        `when`(text).thenReturn("reasoning step")
+        `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
+      }
     val mlKitResponse =
       mock(com.google.mlkit.genai.prompt.GenerateContentResponse::class.java).apply {
         `when`(candidates).thenReturn(listOf(mlKitCandidate))
+        `when`(thoughtProcess).thenReturn(listOf(mlKitThoughtCandidate))
       }
     val interopResponse = mlKitResponse.toInterop("gemini-3.1-flash-lite")
 
     assertThat(interopResponse.candidates.size).isEqualTo(1)
     assertThat(interopResponse.candidates[0].text).isEqualTo("hello")
+    assertThat(interopResponse.thoughtProcess.size).isEqualTo(1)
+    assertThat(interopResponse.thoughtProcess[0].text).isEqualTo("reasoning step")
     assertThat(interopResponse.modelVersion).isEqualTo("gemini-3.1-flash-lite")
   }
 }
