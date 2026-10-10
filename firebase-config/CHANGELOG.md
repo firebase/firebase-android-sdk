@@ -3,6 +3,12 @@
 # 24.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [fixed] `ConcurrentModificationException` crash when a config update listener is removed
+  from inside its own callback. (#5439)
+
+# Unreleased
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 23.1.0
 
@@ -142,7 +148,8 @@ The Kotlin extensions library transitively includes the updated `firebase-config
 Kotlin extensions library has the following additional updates.
 
 - [feature] Added the
-  [`FirebaseRemoteConfig.configUpdates`](</docs/reference/kotlin/com/google/firebase/remoteconfig/ktx/package-summary#(com.google.firebase.remoteconfig.FirebaseRemoteConfig).configUpdates()>)
+  [
+  `FirebaseRemoteConfig.configUpdates`](</docs/reference/kotlin/com/google/firebase/remoteconfig/ktx/package-summary#(com.google.firebase.remoteconfig.FirebaseRemoteConfig).configUpdates()>)
   Kotlin Flow to listen for real-time config updates.
 
 # 21.3.0
@@ -175,7 +182,8 @@ The Kotlin extensions library transitively includes the updated `firebase-config
 Kotlin extensions library has the following additional updates:
 
 - [feature] Firebase now supports Kotlin coroutines. With this release, we added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
+  [
+  `kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
   .external} to `firebase-config-ktx` as a transitive dependency, which exposes the
   `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin coroutine.
@@ -292,26 +300,34 @@ Kotlin extensions library has no additional updates.
   with [remote_config] v16.3.0).
 - [removed] Removed the deprecated synchronous method `FirebaseRemoteConfig.activateFetched()`. Use
   the asynchronous
-  [`FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>)
+  [
+  `FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>)
   instead.
 - [removed] Removed the deprecated synchronous methods `FirebaseRemoteConfig.setDefaults(int)` and
   `FirebaseRemoteConfig.setDefaults(Map<String,Object>)`. Use the asynchronous
-  [`FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
+  [
+  `FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
   and
-  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(Map<String,Object)>>)
+  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](<
+  /docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(
+  Map<String,Object)>>)
   instead.
 - [removed] Removed the deprecated synchronous method
   `FirebaseRemoteConfig.setConfigSettings(FirebaseRemoteConfigSettings)`. Use the asynchronous
-  [`FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>)
+  [
+  `FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>)
   instead.
 - [removed] Removed the deprecated method `FirebaseRemoteConfig.getByteArray(String)`. Use
-  [`FirebaseRemoteConfig.getString(String)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getString(String)>)
+  [
+  `FirebaseRemoteConfig.getString(String)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getString(String)>)
   instead.
 - [removed] Removed the deprecated methods `FirebaseRemoteConfigSettings.isDeveloperModeEnabled()`
   and `FirebaseRemoteConfigSettings.Builder.setDeveloperModeEnabled(boolean)`. Use
-  [`FirebaseRemoteConfigSettings#getMinimumFetchIntervalInSeconds()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings#getMinimumFetchIntervalInSeconds()>)
+  [
+  `FirebaseRemoteConfigSettings#getMinimumFetchIntervalInSeconds()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings#getMinimumFetchIntervalInSeconds()>)
   and
-  [`FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>)
+  [
+  `FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>)
   instead.
 
 ## Kotlin
@@ -348,7 +364,8 @@ Kotlin extensions library has no additional updates.
 # 19.1.3
 
 - [fixed] Fixed an issue where
-  [`FirebaseRemoteConfig.fetch()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch()>)
+  [
+  `FirebaseRemoteConfig.fetch()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch()>)
   would sometimes report a misformatted language tag.
 
 ## Kotlin
@@ -359,7 +376,8 @@ Kotlin extensions library has no additional updates.
 # 19.1.2
 
 - [fixed] Resolved known issue where
-  [`FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
+  [
+  `FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
   was not always honored.
 
 ## Kotlin
@@ -370,11 +388,14 @@ Kotlin extensions library has no additional updates.
 # 19.1.1
 
 - [changed] Updated
-  [`FirebaseRemoteConfig.fetch()`](<docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch()>)
+  [
+  `FirebaseRemoteConfig.fetch()`](<docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch()>)
   implementation to use
-  [`FirebaseInstanceId.getInstanceId()`](</docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getInstanceId()>)
+  [
+  `FirebaseInstanceId.getInstanceId()`](</docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getInstanceId()>)
   in favor of the deprecated
-  [`FirebaseInstanceId.getToken()`](</docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getToken()>).
+  [
+  `FirebaseInstanceId.getToken()`](</docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getToken()>).
 
 ## Kotlin
 
@@ -384,7 +405,8 @@ Kotlin extensions library has no additional updates.
 # 19.1.0
 
 - [changed] Added getters to the fields of the
-  [`FirebaseRemoteConfigSettings.Builder`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
+  [
+  `FirebaseRemoteConfigSettings.Builder`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
   object to provide better Kotlin patterns.
 
 ## Kotlin
@@ -408,8 +430,11 @@ Kotlin extensions library has no additional updates.
   the [firebase_remote_config] SDK threw an error when Android
   [StrictMode](https://developer.android.com/reference/android/os/StrictMode) was turned on.
 - [fixed] Resolved issue where setting Byte Arrays via
-  [`FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>),
-  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(Map<String,Object)>>)
+  [
+  `FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>),
+  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](<
+  /docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(
+  Map<String,Object)>>)
   and their synchronous counterparts would cause `getByteArray` to return an object reference
   instead of the Byte Array. Byte Arrays set via the Firebase console were unaffected by this bug.
 
@@ -442,28 +467,37 @@ Kotlin extensions library has no additional updates.
 # 17.0.0
 
 - [feature] Added an asynchronous way to set config settings:
-  [`FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>).
+  [
+  `FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>).
 - [feature] Added
-  [`FirebaseRemoteConfigServerException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigServerException)
+  [
+  `FirebaseRemoteConfigServerException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigServerException)
   and
-  [`FirebaseRemoteConfigClientException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigClientException)
+  [
+  `FirebaseRemoteConfigClientException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigClientException)
   to provide more nuanced error reporting.
 - [changed] Updated all "cache expiration" references to "minimum fetch interval" and "cache"
   references to "local storage".
 - [deprecated] Deprecated developer mode. Use
-  [`FirebaseRemoteConfigSettings.Builder.setMinimumFetchIntervalInSeconds(0L)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>)
+  [
+  `FirebaseRemoteConfigSettings.Builder.setMinimumFetchIntervalInSeconds(0L)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>)
   instead.
 - [deprecated] Deprecated the synchronous
-  [`FirebaseRemoteConfig.setConfigSettings(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettings(FirebaseRemoteConfigSettings)>).
+  [
+  `FirebaseRemoteConfig.setConfigSettings(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettings(FirebaseRemoteConfigSettings)>).
   Use the asynchronous
-  [`FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>)
+  [
+  `FirebaseRemoteConfig.setConfigSettingsAsync(FirebaseRemoteConfigSettings)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setConfigSettingsAsync(FirebaseRemoteConfigSettings)>)
   instead.
 - [deprecated] Deprecated
-  [`FirebaseRemoteConfigFetchException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigFetchException).
+  [
+  `FirebaseRemoteConfigFetchException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigFetchException).
   Use the more granular
-  [`FirebaseRemoteConfigServerException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigServerException)
+  [
+  `FirebaseRemoteConfigServerException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigServerException)
   and
-  [`FirebaseRemoteConfigClientException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigClientException)
+  [
+  `FirebaseRemoteConfigClientException`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigClientException)
   instead.
 - [removed] Removed all namespace methods.
 - [removed] Removed all default constructors for Exception classes.
@@ -472,48 +506,69 @@ Kotlin extensions library has no additional updates.
 # 16.5.0
 
 - [feature] Enabled multi-App support. Use
-  [`FirebaseRemoteConfig.getInstance(FirebaseApp)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getInstance(FirebaseApp)>)
+  [
+  `FirebaseRemoteConfig.getInstance(FirebaseApp)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getInstance(FirebaseApp)>)
   to retrieve a singleton instance of
-  [`FirebaseRemoteConfig`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig)
+  [
+  `FirebaseRemoteConfig`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig)
   for the given [`FirebaseApp`](/docs/reference/android/com/google/firebase/FirebaseApp).
 - [feature] Added a method that fetches configs and activates them:
-  [`FirebaseRemoteConfig.fetchAndActivate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#fetchAndActivate()>).
+  [
+  `FirebaseRemoteConfig.fetchAndActivate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#fetchAndActivate()>).
 - [feature] Network connection timeout for fetch requests is now customizable. To set the network
   timeout, use
-  [`FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setFetchTimeoutInSeconds(long)>).
+  [
+  `FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setFetchTimeoutInSeconds(long)>).
 - [feature] The default minimum fetch interval is now customizable. To set the default minimum fetch
   interval, use
-  [`FirebaseRemoteConfigSettings.Builder.setMinimumFetchIntervalInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>).
+  [
+  `FirebaseRemoteConfigSettings.Builder.setMinimumFetchIntervalInSeconds(long)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)>).
 - [feature] Added a way to get all activated configs as a Java `Map`:
-  [`FirebaseRemoteConfig.getAll()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getAll()>).
+  [
+  `FirebaseRemoteConfig.getAll()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getAll()>).
 - [feature] Added the ability to reset a Firebase Remote Config instance:
-  [`FirebaseRemoteConfig.reset()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#reset()>).
+  [
+  `FirebaseRemoteConfig.reset()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#reset()>).
 - [feature] Added a way to determine if the Firebase Remote Config instance has finished
   initializing. To get a task that will complete when the Firebase Remote Config instance is
   finished initializing, use
-  [`FirebaseRemoteConfig.ensureInitialized()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#ensureInitialized()>).
+  [
+  `FirebaseRemoteConfig.ensureInitialized()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#ensureInitialized()>).
 - [feature] Added an asynchronous way to activate configs:
-  [`FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>).
+  [
+  `FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>).
 - [feature] Added an asynchronous way to set defaults:
-  [`FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
+  [
+  `FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
   and
-  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(Map<String,Object)>>).
+  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](<
+  /docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(
+  Map<String,Object)>>).
 - [deprecated] Deprecated the synchronous
-  [`FirebaseRemoteConfig.activateFetched()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activateFetched()>).
+  [
+  `FirebaseRemoteConfig.activateFetched()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activateFetched()>).
   Use the asynchronous
-  [`FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>)
+  [
+  `FirebaseRemoteConfig.activate()`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()>)
   instead.
 - [deprecated] Deprecated the synchronous
-  [`FirebaseRemoteConfig.setDefaults(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaults(int)>)
+  [
+  `FirebaseRemoteConfig.setDefaults(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaults(int)>)
   and
-  [`FirebaseRemoteConfig.setDefaults(Map<String,Object>)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefalts(Map<String,Object)>>).
+  [`FirebaseRemoteConfig.setDefaults(Map<String,Object>)`](<
+  /docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefalts(Map<
+  String,Object)>>).
   Use the asynchronous
-  [`FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
+  [
+  `FirebaseRemoteConfig.setDefaultsAsync(int)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)>)
   and
-  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(Map<String,Object)>>)
+  [`FirebaseRemoteConfig.setDefaultsAsync(Map<String,Object>)`](<
+  /docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(
+  Map<String,Object)>>)
   instead.
 - [deprecated] Deprecated
-  [`FirebaseRemoteConfig.getByteArray(String)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getByteArray(String)>).
+  [
+  `FirebaseRemoteConfig.getByteArray(String)`](</docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getByteArray(String)>).
 - [deprecated] Deprecated all methods with a namespace parameter.
 
 # 16.4.1
