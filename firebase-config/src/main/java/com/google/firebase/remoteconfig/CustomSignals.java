@@ -83,4 +83,16 @@ public class CustomSignals {
   CustomSignals(@NonNull Builder builder) {
     this.customSignals = builder.customSignals;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+        return true;
+    }
+    if (obj == null || ! obj instanceof CustomSignals) {
+        return false;
+    }
+    CustomSignals otherCustomSignal = (CustomSignals) obj;
+    return this.customSignals.equals(obj.customSignals);
+  }
 }
