@@ -1,12 +1,7 @@
 # Unreleased
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
-- [fixed] `ConcurrentModificationException` crash when a config update listener is removed
-  from inside its own callback. (#5439)
-
-# Unreleased
-
-- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [fixed] Fixed a `ConcurrentModificationException` crash when a config update listener is removed from inside its own callback. (#5439)
 
 # 23.1.0
 
