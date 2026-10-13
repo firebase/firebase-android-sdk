@@ -32,12 +32,12 @@ import com.google.uploader.client.TransferListener;
 import com.google.uploader.client.TransferOptions;
 import com.google.uploader.client.UploadClient;
 import com.google.uploader.client.UploadClientImpl;
-import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ScottyUploader {
@@ -72,8 +72,6 @@ public class ScottyUploader {
 
       try {
         stream.close();
-      } catch (IOException e) {
-        Logger.getLogger().e("Failed to close DataStream", e);
       } finally {
         stream = null;
       }
@@ -143,7 +141,36 @@ public class ScottyUploader {
     this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
-    this.upload = Futures.immediateCancelledFuture();
+    this.upload =
+        new ListenableFuture<TransferExceptionOrHttpResponse>() {
+          @Override
+          public void addListener(Runnable runnable, Executor executor) {}
+
+          @Override
+          public boolean cancel(boolean b) {
+            return false;
+          }
+
+          @Override
+          public TransferExceptionOrHttpResponse get() {
+            return null;
+          }
+
+          @Override
+          public TransferExceptionOrHttpResponse get(long l, TimeUnit timeUnit) {
+            return null;
+          }
+
+          @Override
+          public boolean isCancelled() {
+            return true;
+          }
+
+          @Override
+          public boolean isDone() {
+            return false;
+          }
+        };
   }
 
   public static UploadClient makeUploadClient(CrashlyticsWorker worker) {

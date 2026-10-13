@@ -561,8 +561,6 @@ class CrashlyticsController {
   boolean finalizeSessions(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
 
-    triggerHeapdumpUpload();
-
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
       return Boolean.FALSE;
@@ -577,6 +575,7 @@ class CrashlyticsController {
     }
     Logger.getLogger().v("Closed all previously open sessions.");
 
+    triggerHeapdumpUpload();
     return true;
   }
 

@@ -32,7 +32,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,6 +45,8 @@ public class ResumableUploadMetadataStore {
   private final FileStore fileStore;
 
   private final List<InProgressUploadMetadata> uploads;
+
+  private final ReentrantLock lock = new ReentrantLock(/* fair= */ false);
 
   public static class InProgressUploadMetadata {
 
@@ -102,39 +105,47 @@ public class ResumableUploadMetadataStore {
     this.fileStore = fileStore;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-      this.uploads = new CopyOnWriteArrayList<>(getInProgressUploads(fileStore));
+      this.uploads = new ArrayList<>(getInProgressUploads(fileStore));
     } else {
-      this.uploads = new CopyOnWriteArrayList<>();
+      this.uploads = new ArrayList<>();
     }
   }
 
   public Optional<InProgressUploadMetadata> getUpload() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN && isDefaultProcess(context)) {
       // Find the oldest in-progress upload. An in progress upload will contain a non-null handle
-      return uploads.reversed().stream()
-          .filter(InProgressUploadMetadata::isInProgress)
-          .findFirst()
-          // If no uploads have a valid handle, get the oldest upload
-          .or(() -> uploads.isEmpty() ? Optional.empty() : Optional.of(uploads.getLast()));
+      return locked(
+          () ->
+              uploads.reversed().stream()
+                  .filter(InProgressUploadMetadata::isInProgress)
+                  .findFirst()
+                  // If no uploads have a valid handle, get the oldest upload
+                  .or(() -> uploads.isEmpty() ? Optional.empty() : Optional.of(uploads.getLast())));
     }
     return Optional.empty();
   }
 
   public boolean addInProgressUpload(@NonNull String sessionId, int type, @NonNull String path) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN && isDefaultProcess(context)) {
-      if (uploads.stream().noneMatch(upload -> upload.path.equals(path))) {
-        InProgressUploadMetadata newUpload = new InProgressUploadMetadata(sessionId, type, path);
-        uploads.add(
-            0, newUpload); // Add to front (oldest first logic in getUpload expects this order)
+      return locked(
+          () -> {
+            if (uploads.stream().noneMatch(upload -> upload.path.equals(path))) {
+              InProgressUploadMetadata newUpload =
+                  new InProgressUploadMetadata(sessionId, type, path);
+              // Add to front (oldest first logic in getUpload expects this order)
+              uploads.add(0, newUpload);
 
-        if (!flush(fileStore, uploads)) {
-          Logger.getLogger().e("Unable to add a new in progress upload and flush");
-          uploads.remove(newUpload);
-          return false;
-        }
+              if (!flush(fileStore, uploads)) {
+                Logger.getLogger().e("Unable to add a new in progress upload and flush");
+                uploads.remove(newUpload);
+                return false;
+              }
 
-        return true;
-      }
+              return true;
+            }
+
+            return false;
+          });
     }
 
     return false;
@@ -142,22 +153,25 @@ public class ResumableUploadMetadataStore {
 
   public boolean updateHandle(@NonNull String path, @NonNull String handle) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-      return uploads.stream()
-          .filter(upload -> upload.path.equals(path))
-          .findFirst()
-          .map(
-              upload -> {
-                upload.setHandle(handle);
+      return locked(
+          () ->
+              uploads.stream()
+                  .filter(upload -> upload.path.equals(path))
+                  .findFirst()
+                  .map(
+                      upload -> {
+                        upload.setHandle(handle);
 
-                if (!flush(fileStore, uploads)) {
-                  Logger.getLogger().e("Unable to update handle and flush an in progress upload");
-                  upload.setHandle(null);
-                  return false;
-                }
+                        if (!flush(fileStore, uploads)) {
+                          Logger.getLogger()
+                              .e("Unable to update handle and flush an in progress upload");
+                          upload.setHandle(null);
+                          return false;
+                        }
 
-                return true;
-              })
-          .orElse(false);
+                        return true;
+                      })
+                  .orElse(false));
     }
 
     return false;
@@ -165,14 +179,16 @@ public class ResumableUploadMetadataStore {
 
   public boolean removeInProgressUpload(@NonNull String path) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-      if (uploads.removeIf(upload -> upload.path.equals(path))) {
-        if (!flush(fileStore, uploads)) {
-          Logger.getLogger().e("Unable to remove and flush an in progress upload");
-          return false;
-        }
+      return locked(
+          () -> {
+            if (uploads.removeIf(upload -> upload.path.equals(path))
+                && !flush(fileStore, uploads)) {
+              Logger.getLogger().e("Unable to remove and flush an in progress upload");
+              return false;
+            }
 
-        return true;
-      }
+            return true;
+          });
     }
 
     return false;
@@ -190,11 +206,11 @@ public class ResumableUploadMetadataStore {
   private static boolean flush(FileStore fileStore, List<InProgressUploadMetadata> uploads) {
     File metadata = fileStore.getCommonFile(METADATA_FILENAME);
 
-    if (!metadata.exists() && !touch(fileStore)) {
-      return false;
-    }
-
     try {
+      if (!metadata.exists() && !touch(fileStore)) {
+        return false;
+      }
+
       String content = serialize(uploads);
       Files.write(metadata.toPath(), content.getBytes());
       return true;
@@ -285,5 +301,14 @@ public class ResumableUploadMetadataStore {
     return defaultProcess != null
         ? currentProcess.equals(defaultProcess)
         : currentProcess.equals(context.getPackageName());
+  }
+
+  private <T> T locked(Supplier<T> func) {
+    lock.lock();
+    try {
+      return func.get();
+    } finally {
+      lock.unlock();
+    }
   }
 }
