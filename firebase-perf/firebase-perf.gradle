@@ -86,6 +86,8 @@ android {
         targetSdk project.targetSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     compileOptions {
