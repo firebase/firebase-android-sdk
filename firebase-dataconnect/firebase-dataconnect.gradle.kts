@@ -50,6 +50,7 @@ android {
     minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("proguard-rules.pro")
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
