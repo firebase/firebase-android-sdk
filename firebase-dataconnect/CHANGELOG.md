@@ -1,5 +1,7 @@
 # Unreleased
 
+# 18.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [feature] **Breaking change:** Added `AuthUserChangedException` to enable
   reliably detecting when a realtime streaming connection fails due to a change

@@ -84,12 +84,10 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck.
-  api(project(":appcheck:firebase-appcheck"))
+  api("com.google.firebase:firebase-appcheck:20.0.0")
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)

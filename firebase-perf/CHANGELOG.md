@@ -1,5 +1,7 @@
 # Unreleased
 
+# 23.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [changed] **Breaking change:** Updated Protocol Buffers dependency to
   `4.36.1`.
