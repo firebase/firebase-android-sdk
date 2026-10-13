@@ -1,8 +1,11 @@
 # Unreleased
 
-- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [fixed] Fixed topic subscription and unsubscription for topic names containing `%`. (#8620)
 - [fixed] Fixed topic operation queue stalling on non-retryable errors. (#8620)
+
+# 26.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 25.1.3
 
