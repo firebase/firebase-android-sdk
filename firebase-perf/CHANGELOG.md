@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed an issue where `NoSuchFieldException` was thrown at runtime in
+  apps compiled with R8 or ProGuard optimizations enabled.
+  ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
