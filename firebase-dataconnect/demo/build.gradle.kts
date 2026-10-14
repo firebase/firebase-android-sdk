@@ -20,36 +20,35 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of July 17, 2025.
+  // The versions shown here were the latest versions as of October 09, 2026.
   // Note, however, that the version of kotlin("plugin.serialization") _must_,
-  // in general, match the version of kotlin("android").
-  id("com.android.application") version "8.11.1"
-  id("com.google.gms.google-services") version "4.4.3"
-  val kotlinVersion = "2.1.10"
-  kotlin("android") version kotlinVersion
-  kotlin("plugin.serialization") version kotlinVersion
+  // in general, match the version of the kotlin compiler bundled with the
+  // Android Gradle Plugin id("com.android.application").
+  id("com.android.application") version "9.4.1"
+  kotlin("plugin.serialization") version "2.2.10"
+  id("com.google.gms.google-services") version "4.5.0"
 
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
-  id("com.diffplug.spotless") version "7.1.0"
+  id("com.diffplug.spotless") version "8.10.4"
 
-  id("org.jetbrains.dokka") version "2.0.0"
+  id("org.jetbrains.dokka") version "2.2.0"
 }
 
 dependencies {
   // Use whichever versions of these dependencies suit your application.
-  // The versions shown here were the latest versions as of July 17, 2025.
+  // The versions shown here were the latest versions as of October 09, 2026.
 
   // Data Connect
-  implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+  implementation(platform("com.google.firebase:firebase-bom:35.0.0"))
   implementation("com.google.firebase:firebase-dataconnect")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
-  implementation("androidx.appcompat:appcompat:1.7.1")
-  implementation("androidx.activity:activity-ktx:1.10.1")
-  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
-  implementation("com.google.android.material:material:1.12.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
+  implementation("androidx.appcompat:appcompat:1.8.0")
+  implementation("androidx.activity:activity-ktx:1.13.0")
+  implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
+  implementation("com.google.android.material:material:1.14.0")
 
   // The following code in this "dependencies" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
@@ -60,8 +59,8 @@ dependencies {
 
 dokka {
   moduleName.set("Data Connect Demo")
-  dokkaSourceSets.main {
-    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/").get())
+  dokkaSourceSets.configureEach {
+    sourceRoots.from(layout.buildDirectory.dir("dataConnect/generatedSources/"))
   }
 }
 
@@ -71,16 +70,16 @@ dokka {
 
 android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
-  compileSdk = 36
+  compileSdk = 37
   defaultConfig {
     minSdk = 24
-    targetSdk = 36
+    targetSdk = 37
     versionCode = 1
     versionName = "1.0"
   }
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
     isCoreLibraryDesugaringEnabled = true
   }
   buildFeatures.viewBinding = true
@@ -88,13 +87,13 @@ android {
 
 kotlin {
   compilerOptions {
-    jvmTarget = JvmTarget.JVM_1_8
+    jvmTarget = JvmTarget.JVM_11
     optIn.add("kotlin.RequiresOptIn")
   }
 }
 
 spotless {
-  val ktfmtVersion = "0.53"
+  val ktfmtVersion = "0.65"
   kotlin {
     target("**/*.kt")
     targetExclude("build/")
@@ -154,8 +153,6 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
   @get:Inject protected abstract val execOperations: ExecOperations
 
   @get:Inject protected abstract val providerFactory: ProviderFactory
-
-  @get:Inject protected abstract val fileSystemOperations: FileSystemOperations
 
   @TaskAction
   fun run() {
@@ -252,7 +249,7 @@ abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 }
 
 @DisableCachingByDefault(
-  because = "Copying files is not worth caching, just like org.gradle.api.tasks.Copy"
+  because = "Copying files is not worth caching, just like org.gradle.api.tasks.Copy",
 )
 abstract class CopyDirectoryTask : DefaultTask() {
 
@@ -343,15 +340,14 @@ run {
         description =
           "Copy the generated Data Connect Kotlin SDK sources into the " +
             "generated code directory for the \"${variant.name}\" variant."
-        srcDirectory =
-          generateSourcesTask.flatMap {
-            it.outputDirectory.map { outputDirectory ->
-              objectFactory.fileTree().apply {
-                setDir(outputDirectory)
-                exclude("**/*.log")
-              }
+        srcDirectory = generateSourcesTask.flatMap {
+          it.outputDirectory.map { outputDirectory ->
+            objectFactory.fileTree().apply {
+              setDir(outputDirectory)
+              exclude("**/*.log")
             }
           }
+        }
       }
 
     variant.sources.java!!.addGeneratedSourceDirectory(copyTask, CopyDirectoryTask::destDirectory)

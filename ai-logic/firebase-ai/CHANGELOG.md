@@ -5,6 +5,9 @@
   on-device and hybrid inference modes, with automatic cloud fallback when the
   on-device model does not support thinking. (#8678)
 - [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
+
+# 18.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [removed] **Breaking Change**: Removed deprecated
   `GenerativeBackend.vertexAI` in favor of `GenerativeBackend.agentPlatform`. (#8437)
