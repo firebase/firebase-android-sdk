@@ -42,6 +42,11 @@ class FcmExecutors {
   private static final String THREAD_INTENT_HANDLE = "Firebase-Messaging-Intent-Handle";
   private static final String THREAD_TOPICS_IO = "Firebase-Messaging-Topics-Io";
   private static final String THREAD_INIT = "Firebase-Messaging-Init";
+  private static final String THREAD_NOTIFICATION_DELIVERY =
+      "Firebase-Messaging-Notification-Delivery";
+  private static final String THREAD_BACKGROUND_SYNC_DELIVERY =
+      "Firebase-Messaging-Background-Sync-Delivery";
+  private static final String THREAD_SERVICE_CONNECTION = "Firebase-Messaging-Service-Connection";
 
   static final String THREAD_FILE_IO = "Firebase-Messaging-File-Io";
   static final String THREAD_RPC_TASK = "Firebase-Messaging-Rpc-Task";
@@ -115,6 +120,44 @@ class FcmExecutors {
   static ScheduledExecutorService newInitExecutor() {
     return new ScheduledThreadPoolExecutor(
         /* corePoolSize= */ 1, new NamedThreadFactory(THREAD_INIT));
+  }
+
+  /**
+   * Creates the executor that hands a RemoteNotification to the developer's {@code
+   * onNotificationReceived}, off the main thread the connection callback arrives on.
+   *
+   * <p>Google Play services does not limit how many messages it delivers to an app at once, so this
+   * bounds how many of those callbacks run concurrently.
+   */
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
+  static ExecutorService newNotificationDeliveryExecutor() {
+    return PoolableExecutors.factory()
+        .newThreadPool(
+            /* maxConcurrency= */ 10,
+            new NamedThreadFactory(THREAD_NOTIFICATION_DELIVERY),
+            ThreadPriority.HIGH_SPEED);
+  }
+
+  /**
+   * Creates the executor that hands a BackgroundSync to the developer's service. Single threaded to
+   * match the cloud messaging client library, so background syncs stay serialized.
+   */
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
+  static ExecutorService newBackgroundSyncDeliveryExecutor() {
+    return PoolableExecutors.factory()
+        .newSingleThreadExecutor(
+            new NamedThreadFactory(THREAD_BACKGROUND_SYNC_DELIVERY), ThreadPriority.LOW_POWER);
+  }
+
+  /** Creates the executor for connection give-up timers. Never runs developer code. */
+  @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
+  static ScheduledExecutorService newServiceConnectionExecutor() {
+    return new ScheduledThreadPoolExecutor(
+        /* corePoolSize= */ 1, new NamedThreadFactory(THREAD_SERVICE_CONNECTION));
   }
 
   private FcmExecutors() {}

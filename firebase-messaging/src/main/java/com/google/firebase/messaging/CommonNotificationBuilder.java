@@ -437,7 +437,7 @@ public final class CommonNotificationBuilder {
   }
 
   @TargetApi(VERSION_CODES.O)
-  @VisibleForTesting
+  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public static String getOrCreateChannel(
       Context context, String msgChannel, Bundle manifestMetadata) {
     if (Build.VERSION.SDK_INT < VERSION_CODES.O) {

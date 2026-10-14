@@ -122,7 +122,7 @@ class DisplayNotification {
     return imageDownload;
   }
 
-  private void waitForAndApplyImageDownload(
+  static void waitForAndApplyImageDownload(
       NotificationCompat.Builder n, @Nullable ImageDownload imageDownload) {
     if (imageDownload == null) {
       return;

@@ -198,7 +198,7 @@ public class ServiceStarter {
    * <p>See: http://b/19873307 and http://b/24065801 for FCM
    */
   @Nullable
-  private synchronized String resolveServiceClassName(Context context, Intent intent) {
+  synchronized String resolveServiceClassName(Context context, Intent intent) {
     if (firebaseMessagingServiceClassName != null) {
       return firebaseMessagingServiceClassName;
     }

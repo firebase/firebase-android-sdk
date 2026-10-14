@@ -384,7 +384,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
    * @param unit the time unit of the timeout argument
    * @return <tt>true</tt> iff a task was run
    */
-  @SuppressWarnings("GoodTime") // should accept a java.time.Duration
+  @SuppressWarnings({"GoodTime", "FutureReturnValueIgnored"}) // should accept a java.time.Duration
   public boolean simulateSleepExecutingAtMostOneTask(long timeout, TimeUnit unit) {
     checkArgument(timeout >= 0, "timeout (%s) cannot be negative", timeout);
     if (scheduledQueue.isEmpty()) {

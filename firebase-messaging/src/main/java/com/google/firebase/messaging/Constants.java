@@ -117,6 +117,13 @@ public final class Constants {
     /** Sender ID of message. */
     public static final String SENDER_ID = RESERVED_CLIENT_LIB_PREFIX + "sender.id";
 
+    /**
+     * Absolute timestamp (in {@link android.os.SystemClock#elapsedRealtime()} ms) by which the app
+     * must finish handling the message.
+     */
+    public static final String TIMEOUT_TIMESTAMP_MS =
+        RESERVED_CLIENT_LIB_PREFIX + "timeout_timestamp_ms";
+
     public static ArrayMap<String, String> extractDeveloperDefinedPayload(Bundle bundle) {
       ArrayMap<String, String> data = new ArrayMap<>();
       for (String key : bundle.keySet()) {

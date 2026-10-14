@@ -52,6 +52,7 @@ import static com.google.firebase.messaging.RemoteMessageBuilder.EXTRA_PRIORITY_
 import static com.google.firebase.messaging.RemoteMessageBuilder.EXTRA_PRIORITY_V19;
 import static com.google.firebase.messaging.RemoteMessageBuilder.EXTRA_SENDER_ID;
 import static com.google.firebase.messaging.RemoteMessageBuilder.EXTRA_SENT_TIME;
+import static com.google.firebase.messaging.RemoteMessageBuilder.EXTRA_TIMEOUT_TIMESTAMP_MS;
 import static com.google.firebase.messaging.RemoteMessageBuilder.messagesEqual;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -103,6 +104,8 @@ public class RemoteMessageRoboTest {
     assertEquals("test_message_id", message.getMessageId());
     assertEquals("test_message_type", message.getMessageType());
     assertEquals(0 /* will be set when sent */, message.getSentTime());
+    assertEquals(
+        0 /* will be set when delivered */, message.getElapsedRealtimeProcessingDeadlineMs());
     assertEquals(123, message.getTtl());
     assertEquals("test_collapse_key", message.getCollapseKey());
     assertNull(message.getNotification());
@@ -170,6 +173,28 @@ public class RemoteMessageRoboTest {
     RemoteMessage message = new RemoteMessage.Builder("test_to").build();
     message.bundle.putString(EXTRA_SENT_TIME, "abc");
     assertEquals(0, message.getSentTime());
+  }
+
+  @Test
+  public void getElapsedRealtimeProcessingDeadlineMs_long() {
+    final long deadline = 20_000_000_000L;
+    RemoteMessage message = new RemoteMessage.Builder("test_to").build();
+    message.bundle.putLong(EXTRA_TIMEOUT_TIMESTAMP_MS, deadline);
+    assertEquals(deadline, message.getElapsedRealtimeProcessingDeadlineMs());
+  }
+
+  @Test
+  public void getElapsedRealtimeProcessingDeadlineMs_unexpectedType() {
+    final long deadline = 10_000_000_000L;
+    RemoteMessage message = new RemoteMessage.Builder("test_to").build();
+    message.bundle.putString(EXTRA_TIMEOUT_TIMESTAMP_MS, String.valueOf(deadline));
+    assertEquals(0, message.getElapsedRealtimeProcessingDeadlineMs());
+  }
+
+  @Test
+  public void getElapsedRealtimeProcessingDeadlineMs_default() {
+    RemoteMessage message = new RemoteMessage.Builder("test_to").build();
+    assertEquals(0, message.getElapsedRealtimeProcessingDeadlineMs());
   }
 
   @Test
