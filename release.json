@@ -1,0 +1,7 @@
+{
+    "name": "m187_1",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-perf"
+    ]
+}
