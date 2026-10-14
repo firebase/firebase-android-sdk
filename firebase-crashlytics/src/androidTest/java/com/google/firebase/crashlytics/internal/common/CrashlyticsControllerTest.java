@@ -56,7 +56,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -585,40 +584,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingManager
-  @Test
-  public void testWritingProfilingManagerTriggerHeapDumpEnabledMarker() {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerHeapDumpCollectionEnabledMarker("sessionId", true);
-
-    List<File> markers =
-        testFileStore.getSessionFiles(
-            "sessionId", (dir, name) -> name.contains("trigger-heap-dump-collection-enabled"));
-
-    assertFalse(markers.isEmpty());
-    assertEquals(1, markers.size());
-    assertEquals("trigger-heap-dump-collection-enabled", markers.get(0).getName());
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingTrigger
-  @Test
-  public void testWritingProfilingManagerTriggerHeapDumpMarker() throws IOException {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerHeapDumpGeneratedMarker("sessionId", "path/to/heap");
-
-    List<File> markers =
-        testFileStore.getSessionFiles(
-            "sessionId", (dir, name) -> name.contains("trigger-heap-dump-generated"));
-
-    assertFalse(markers.isEmpty());
-    assertEquals(1, markers.size());
-    assertEquals("trigger-heap-dump-generated", markers.get(0).getName());
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo

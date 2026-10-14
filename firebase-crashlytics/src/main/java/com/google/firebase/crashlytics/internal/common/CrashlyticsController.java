@@ -89,12 +89,6 @@ class CrashlyticsController {
   private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
   private static final String META_INF_FOLDER = "META-INF/";
 
-  private static final String TRIGGER_HEAP_DUMP_GENERATED_MARKER_FILENAME =
-      "trigger-heap-dump-generated";
-
-  private static final String TRIGGER_HEAP_DUMP_ENABLED_MARKER_FILENAME =
-      "trigger-heap-dump-collection-enabled";
-
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final Context context;
@@ -206,9 +200,9 @@ class CrashlyticsController {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  void enableProfilingManagerListener(String sessionId) {
+  void enableProfilingManagerListener() {
     // Set up profiling manager here, use background executor because it's just file I/O
-    registerProfilingManagerListener(sessionId, crashlyticsWorkers.diskWrite.getExecutor());
+    registerProfilingManagerListener(crashlyticsWorkers.diskWrite.getExecutor());
   }
 
   void handleUncaughtException(
@@ -256,6 +250,20 @@ class CrashlyticsController {
                     ex, thread, currentSessionId, timestampSeconds);
 
                 doWriteAppExceptionMarker(timestampMillis);
+
+                if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN
+                    && ex instanceof OutOfMemoryError
+                    && !isOnDemand) {
+                  Logger.getLogger().i("OOMs will be sent on restart");
+
+                  ActivityManager activityManager =
+                      (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                  activityManager.setProcessStateSummary("OOM, Java Heap".getBytes());
+
+                  crashMarker.remove();
+                  return Tasks.forResult(null);
+                }
+
                 doCloseSessions(settingsProvider);
                 doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
 
@@ -280,18 +288,6 @@ class CrashlyticsController {
                               return Tasks.forResult(null);
                             }
 
-                            if (ex instanceof OutOfMemoryError) {
-                              Logger.getLogger().i("OOMs will be sent on restart");
-
-                              if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
-                                ActivityManager activityManager =
-                                    (ActivityManager)
-                                        context.getSystemService(Context.ACTIVITY_SERVICE);
-                                activityManager.setProcessStateSummary("OOM, Java Heap".getBytes());
-                              }
-
-                              return Tasks.forResult(null);
-                            }
                             // Data collection is enabled, so it's safe to send the report.
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
@@ -697,7 +693,7 @@ class CrashlyticsController {
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
     }
 
-    if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
+    if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN && isInitProcess) {
       writeProfilingManagerInfo(mostRecentSessionIdToClose);
     }
 
@@ -1049,37 +1045,21 @@ class CrashlyticsController {
   private void writeProfilingManagerInfo(String sessionId) {
     ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
-    Logger.getLogger().d("Collecting ProfilingManager info...");
+    Logger.getLogger()
+        .d(String.format("Collecting ProfilingManager info for session: %s", sessionId));
 
-    List<File> markerFiles =
-        fileStore.getSessionFiles(
-            sessionId,
-            (dir, name) ->
-                List.of(
-                        TRIGGER_HEAP_DUMP_GENERATED_MARKER_FILENAME,
-                        TRIGGER_HEAP_DUMP_ENABLED_MARKER_FILENAME)
-                    .contains(name));
     List<ApplicationExitInfo> appExits = manager.getHistoricalProcessExitReasons(null, 0, 0);
-
-    boolean isHeapDumpCollectionEnabled =
-        markerFiles.stream()
-            .anyMatch(file -> file.getName().contains(TRIGGER_HEAP_DUMP_ENABLED_MARKER_FILENAME));
-    boolean wasHeapDumpGeneratedViaMarker =
-        markerFiles.stream()
-            .anyMatch(file -> file.getName().contains(TRIGGER_HEAP_DUMP_GENERATED_MARKER_FILENAME));
 
     reportingCoordinator.persistProfilingManagerInfo(
         context.getFilesDir(),
         sessionId,
         appExits,
-        isHeapDumpCollectionEnabled,
-        wasHeapDumpGeneratedViaMarker);
+        settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled);
   }
 
-  @SuppressLint("WrongConstant") // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
+  @SuppressLint({"WrongConstant", "DefaultLocale"}) // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private void registerProfilingManagerListener(
-      String sessionId, @Background Executor backgroundExecutor) {
+  private void registerProfilingManagerListener(@Background Executor backgroundExecutor) {
     ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
 
     boolean isTriggerHeapDumpCollectionEnabled =
@@ -1087,13 +1067,9 @@ class CrashlyticsController {
 
     Logger.getLogger()
         .i(
-            "Registering with ProfilingManager; heap dump collection is "
-                + (isTriggerHeapDumpCollectionEnabled ? "enabled" : "disabled"));
-
-    // It is necessary to write the marker file for whether heap dump collection is enabled
-    // before any callback is invoked because OOMs will trigger after the process restarts & the
-    // flag could have been changed.
-    writeTriggerHeapDumpCollectionEnabledMarker(sessionId, isTriggerHeapDumpCollectionEnabled);
+            String.format(
+                "Registering with ProfilingManager; heap dump collection is %s",
+                (isTriggerHeapDumpCollectionEnabled ? "enabled" : "disabled")));
 
     profilingManager.addProfilingTriggers(
         List.of(
@@ -1102,60 +1078,13 @@ class CrashlyticsController {
     profilingManager.registerForAllProfilingResults(
         backgroundExecutor,
         (result) -> {
-          // Only write the heap dump trigger for Memory Limiter kills. Currently, only Limiter
-          // kills invoke the callback _before_ the process shuts down, ensuring that the marker
-          // file is part of the session. OOMs trigger the callback _after_ the process restarts,
-          // meaning that the marker file will be associated with the newly opened session.
-          // OOM heap dumps will be associated with the correct session via other means.
-          if (result.getTriggerType() == ProfilingTrigger.TRIGGER_TYPE_ANOMALY) {
-            writeTriggerHeapDumpGeneratedMarker(sessionId, result.getResultFilePath());
-          }
+          // No-op, we determine oom or mlk on restart.
+          Logger.getLogger()
+              .d(
+                  String.format(
+                      "Got trigger %d, path: %s",
+                      result.getTriggerType(), result.getResultFilePath()));
         });
-  }
-
-  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  @VisibleForTesting
-  void writeTriggerHeapDumpGeneratedMarker(String sessionId, @Nullable String heapDumpPath) {
-    if (heapDumpPath == null || heapDumpPath.isEmpty()) {
-      return;
-    }
-
-    try {
-      createTriggerFile(fileStore, sessionId, TRIGGER_HEAP_DUMP_GENERATED_MARKER_FILENAME);
-      Logger.getLogger().d("Wrote heap dump generation marker");
-    } catch (IOException e) {
-      Logger.getLogger()
-          .e("Unable to create trigger file " + TRIGGER_HEAP_DUMP_GENERATED_MARKER_FILENAME);
-    }
-  }
-
-  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  @VisibleForTesting
-  void writeTriggerHeapDumpCollectionEnabledMarker(String sessionId, boolean isEnabled) {
-    if (!isEnabled) {
-      return;
-    }
-
-    try {
-      createTriggerFile(fileStore, sessionId, TRIGGER_HEAP_DUMP_ENABLED_MARKER_FILENAME);
-      Logger.getLogger().d("Wrote heap dump collection enabled marker");
-    } catch (IOException e) {
-      Logger.getLogger()
-          .e("Unable to create trigger file " + TRIGGER_HEAP_DUMP_ENABLED_MARKER_FILENAME);
-    }
-  }
-
-  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  @SuppressWarnings("UnusedReturnValue")
-  private static File createTriggerFile(
-      FileStore fileStore, String sessionId, String triggerFilename) throws IOException {
-    File triggerFile = fileStore.getSessionFile(sessionId, triggerFilename);
-
-    if (!triggerFile.createNewFile()) {
-      Logger.getLogger().d("Trigger file " + triggerFilename + " exists for session: " + sessionId);
-    }
-
-    return triggerFile;
   }
   // endregion
 }

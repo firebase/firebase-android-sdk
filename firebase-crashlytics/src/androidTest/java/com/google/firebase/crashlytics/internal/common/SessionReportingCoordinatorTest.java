@@ -656,7 +656,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     assertTrue(profilingDir.mkdir());
 
     File heapDump =
-        new File(context.getFilesDir(), "profiling/com.google.firebase.crashlytics.test.hprof");
+        new File(
+            context.getFilesDir(),
+            "profiling/com.google.firebase.crashlytics.test.trigger-type-7.hprof");
     assertTrue(heapDump.createNewFile());
 
     long sessionTime = heapDump.lastModified();

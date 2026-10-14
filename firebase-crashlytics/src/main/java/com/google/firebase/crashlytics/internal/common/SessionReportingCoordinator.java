@@ -185,39 +185,42 @@ public class SessionReportingCoordinator {
     reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
   }
 
+  @SuppressLint("DefaultLocale")
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   public void persistProfilingManagerInfo(
       File filesDir,
       String sessionId,
       List<ApplicationExitInfo> applicationExitInfoList,
-      boolean isHeapDumpCollectionEnabled,
-      boolean wasHeapDumpGeneratedViaMarker) {
+      boolean isHeapDumpCollectionEnabled) {
     int trigger = getTrigger(sessionId, applicationExitInfoList);
     if (trigger == ProfilingTrigger.TRIGGER_TYPE_NONE) {
+      Logger.getLogger().d(String.format("No trigger present for session: %s", sessionId));
       return;
     }
 
     Optional<File> heapDump =
         heapDumpForSessionTime(filesDir, reportPersistence.getStartTimestampMillis(sessionId));
 
-    boolean wasHeapDumpGenerated = wasHeapDumpGeneratedViaMarker || heapDump.isPresent();
-
-    if (isHeapDumpCollectionEnabled && wasHeapDumpGenerated) {
+    if (isHeapDumpCollectionEnabled) {
       heapDump
           .map(File::getName)
           .ifPresent(
-              filename ->
-                  resumableUploadMetadataStore.addInProgressUpload(sessionId, trigger, filename));
+              filename -> {
+                Logger.getLogger()
+                    .d(
+                        String.format(
+                            "Queueing %s for upload for session: %s", filename, sessionId));
+                resumableUploadMetadataStore.addInProgressUpload(sessionId, trigger, filename);
+              });
     }
 
     Logger.getLogger()
         .d(
-            "Trigger present; "
-                + trigger
-                + ", heap dump collection enabled? "
-                + (isHeapDumpCollectionEnabled ? "yes" : "no")
-                + ", heap dump generated? "
-                + (wasHeapDumpGenerated ? "yes" : "no"));
+            String.format(
+                "Trigger present; %d, heap dump collection enabled? %s, heap dump generated? %s",
+                trigger,
+                (isHeapDumpCollectionEnabled ? "yes" : "no"),
+                (heapDump.isPresent() ? "yes" : "no")));
 
     reportPersistence.persistProfilingManagerInfo(
         ProfilingManagerInfo.builder()
@@ -225,7 +228,7 @@ public class SessionReportingCoordinator {
                 ProfilingManagerInfo.ProfilingTrigger.builder()
                     .setTrigger(trigger)
                     .setIsHeapDumpCollectionEnabled(isHeapDumpCollectionEnabled)
-                    .setWasHeapDumpGenerated(wasHeapDumpGenerated)
+                    .setWasHeapDumpGenerated(heapDump.isPresent())
                     .build())
             .build(),
         sessionId);

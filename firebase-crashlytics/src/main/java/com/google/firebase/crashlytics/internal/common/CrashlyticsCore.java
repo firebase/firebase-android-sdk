@@ -218,7 +218,7 @@ public class CrashlyticsCore {
           sessionIdentifier, Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
 
       if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN) {
-        controller.enableProfilingManagerListener(sessionIdentifier);
+        controller.enableProfilingManagerListener();
       }
 
       if (initializeSynchronously && CommonUtils.canTryConnection(context)) {
