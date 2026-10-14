@@ -1,8 +1,8 @@
 # Unreleased
 
-- [fixed] NoSuchFieldException is no longer thrown by query and mutation
-  executions in apps compiled with r8/ProGuard optimizations enabled.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+- [fixed] Fixed an issue where `NoSuchFieldException` was thrown during query
+  and mutation execution in apps compiled with R8 or ProGuard optimizations
+  enabled. ([#8698](https://github.com/firebase/firebase-android-sdk/pull/8698))
 
 # 18.0.0
 
