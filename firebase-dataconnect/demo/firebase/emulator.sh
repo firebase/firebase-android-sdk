@@ -14,4 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-exec firebase -P fakeproject emulators:start --only dataconnect --debug
+exec firebase -P demo-fakeproject emulators:start --only dataconnect --debug
