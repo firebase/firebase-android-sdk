@@ -35,10 +35,7 @@ import com.google.uploader.client.UploadClientImpl;
 import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ScottyUploader {
@@ -60,7 +57,7 @@ public class ScottyUploader {
 
     public Listener() {}
 
-    FileDataStream withManagedStream(File heapdump) throws FileNotFoundException {
+    FileDataStream withManagedStream(File heapdump) {
       FileDataStream stream = new FileDataStream(heapdump);
       this.stream = stream;
       return stream;
@@ -142,7 +139,7 @@ public class ScottyUploader {
     this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
-    this.upload = Futures.immediateCancelledFuture()
+    this.upload = Futures.immediateCancelledFuture();
   }
 
   public static UploadClient makeUploadClient(CrashlyticsWorker worker) {
