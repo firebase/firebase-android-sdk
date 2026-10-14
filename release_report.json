@@ -1,0 +1,221 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "7b511ff26a00acecaa5b59bd102694da13ed7830",
+                "prId": "8686",
+                "author": "tanyagoyan-boop",
+                "message": "Fixes #5439: Fix ConcurrentModificationException  (#8686)\n\n### Problem\nThe listeners in `ConfigRealtimeHandler` are stored in a\n`LinkedHashSet`. If a listener calls `remove()` inside its own\n`onError`, `ConfigRealtimeHttpClient.propagateErrors` throws a\n`ConcurrentModificationException` while looping over the set. On the\nmain thread (Activity `onResume` → `setBackgroundState(false)` →\n`makeRealtimeHttpConnection`), the app crashes with \"Unable to resume\nactivity\".\n\n### Fix\nStore the listeners in a `CopyOnWriteArraySet`. Loops then run over a\nsnapshot of the set, so a listener can remove itself mid-loop without\nbreaking it.\n\n### Testing\n- Added `ConfigRealtimeHandlerTest`: listener A removes itself in\n`onError`, and the test checks that listener B is still notified. It\nfails before the fix and passes after.\nWith LinkedHashSet : https://screenshot-v2.corp.google.com/43mnvd33td1bg\nWith CopyOnWriteArraySet :\nhttps://screenshot-v2.corp.google.com/4sl8fqrodc3h8\n- Manual repro in the Remote Config quickstart, using a local SDK build\nwith retries lowered to 1 and the Realtime API disabled:\n  - Before the fix, : \n\n\nhttps://github.com/user-attachments/assets/a33fa3d4-6798-4eb6-8f61-db800f118835\n\n\n- After the fix, both listeners received `onError` and there was no\ncrash.\n  \n\n\nhttps://github.com/user-attachments/assets/37514025-3de4-4339-b62b-cb408a6ac029",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b511ff26a00acecaa5b59bd102694da13ed7830",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8686"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "c9c9d37387cf72150bfff50ec60cdaf09b7be66f",
+                "prId": "8666",
+                "author": "Matthew Robertson",
+                "message": "Set up Android Test Orchestrator for Crashlytics instrumentation tests (#8666)\n\nThis is needed because there is an issue with multiple `DataStore`s when\nthe `FirebaseApp` is deleted and re-initialized in tests\n\nI am working on the DataStore issue in Sessions, but it also exists in\nother places that will need to be cleaned up",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9c9d37387cf72150bfff50ec60cdaf09b7be66f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8666"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "56c3d5af3bba7bac303671b4d5b4b2e0d21a65fc",
+                "prId": "8657",
+                "author": "Matthew Robertson",
+                "message": "Close the ApplicationExitInfo trace stream in Crashlytics NDK (#8657)\n\nCherry-pick #8531 by @jrodiz to fix #8510\n\n---------\n\nCo-authored-by: Joseph Rodiz <rodiz.cj@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/56c3d5af3bba7bac303671b4d5b4b2e0d21a65fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8657"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "779937742efe428ee31f8be9681d817d5211fef6",
+                "prId": "8644",
+                "author": "Matthew Robertson",
+                "message": "Pin the AQS test app to same NDK version as Crashlytics NDK (#8644)\n\nThis being a different ndk version than crashlytics was causing github\nworkflows to download and instal two ndk versions side by side. I\nnoticed the e2e test app workflow failing more often over the last\nlittle while, I think due to this wasting time",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/779937742efe428ee31f8be9681d817d5211fef6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8644"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "274deea3c1d5eefead0abc1609541197989fbede",
+                "prId": "8698",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(fix): add proguard rules to prevent minification of GeneratedMessageLite (#8698)\n\nThis PR adds consumer ProGuard rules to `firebase-dataconnect` to\nprevent minification of classes extending\n`com.google.protobuf.GeneratedMessageLite`, fixing\n`NoSuchFieldException` crashes at runtime when executing queries or\nmutations in apps with R8/ProGuard optimizations enabled. This change is\nan adaptation of the same fix applied to `firebase-perf` in #8697.\n\nThis regression was introduced in `firebase-dataconnect` version\n`18.0.0` (Firebase BoM version `35.0.0`, released October 07, 2026) by\n#8580 (the gRPC upgrade to `1.84.0`), which removed the transitive\ndependency on `protolite-well-known-types` and the consumer ProGuard\nrules that it exported. Without those rules, R8/ProGuard obfuscates\nfields on `GeneratedMessageLite` subclasses that `protobuf-javalite`\naccesses via reflection, resulting in runtime exceptions such as:\n\n```\njava.lang.RuntimeException: Field kind_ for o42 not found. Known fields are [public byte o42.e, public java.lang.Object o42.f, public static final o42 o42.g, public static volatile nb0 o42.h]\n  at e21.F(r8-map-id-1bddf604103a63afe053c8136fba1566463c4190837d3f6c7eba12c97a5f4b9b:64)\n  ...\nCaused by: java.lang.NoSuchFieldException: No field kind_ in class Lo42; (declaration of 'o42')\n  at java.lang.Class.getDeclaredField(Native Method)\n  ...\n```\n\n### Highlights\n\n* **Consumer ProGuard Rules for Protobuf Lite**: Added\n`proguard-rules.pro` with `-keepclassmembers` for subclasses of\n`com.google.protobuf.GeneratedMessageLite` to work around\n[protocolbuffers/protobuf#6463](https://github.com/protocolbuffers/protobuf/issues/6463#issuecomment-553183215)\nand configured `firebase-dataconnect` to export these consumer ProGuard\nrules.\n* **Regression Fix**: Restores the consumer ProGuard rules that were\npreviously provided transitively by `protolite-well-known-types` prior\nto the gRPC `1.84.0` upgrade in #8580, matching the fix made for\n`firebase-perf` in #8697.\n\n<details>\n\n<summary><b>Changelog</b></summary>\n\n* **CHANGELOG.md**\n* Added a `[fixed]` entry under `Unreleased` noting that\n`NoSuchFieldException` is no longer thrown by query and mutation\nexecutions when R8/ProGuard optimizations are enabled.\n* **firebase-dataconnect.gradle.kts**\n* Added `consumerProguardFiles(\"proguard-rules.pro\")` to `defaultConfig`\nin the `android` block.\n* **proguard-rules.pro**\n* New file containing a `-keepclassmembers` ProGuard rule preserving\nfields of classes extending `com.google.protobuf.GeneratedMessageLite`.\n</details>\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/274deea3c1d5eefead0abc1609541197989fbede",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8698"
+            },
+            {
+                "commitId": "5f9d2bd1785910c55f0003b78717b0622ec7e371",
+                "prId": "8689",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Dataconnect dependency and Messaging changelog  (#8689)\n\n- Switched the `firebase-annotations` dependency in\n`firebase-dataconnect` to use the version\ncatalog:(`libs.firebase.annotations`) instead of a direct project\nreference.\n- Updated `firebase-messaging` changelog to mark version 26.0.0 with the\n`minSdkVersion` breaking change.\n\n---------\n\nCo-authored-by: Denver Coneybeare <dconeybe@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f9d2bd1785910c55f0003b78717b0622ec7e371",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8689"
+            },
+            {
+                "commitId": "ea734d23e79b19b162923580b79843c77e771ae0",
+                "prId": "8692",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect/demo: upgrade dependencies to fix build (#8692)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ea734d23e79b19b162923580b79843c77e771ae0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8692"
+            },
+            {
+                "commitId": "09ee73c86d802a46473e12a4abc3b3ebb2e16224",
+                "prId": "8650",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.21 (was 3.4.19) and firebase-tools to 15.32.0 (was 15.30.0) (#8650)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/09ee73c86d802a46473e12a4abc3b3ebb2e16224",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8650"
+            },
+            {
+                "commitId": "981ed9a12f687f668654fb1c87fc4f2da023961a",
+                "prId": "8649",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): AnyValue.kt: disambiguate [serializer] kdoc links (#8649)\n\nThis PR fixes ambiguous `[serializer]` KDoc references in `AnyValue.kt`\nso that they render properly as hyperlinks in the generated HTML\ndocumentation. It replaces the unqualified `[serializer]` KDoc links\nwith fully qualified `[kotlinx.serialization.serializer]` links and\nremoves the unused `AnyValue.Companion.serializer` import that caused\nthe ambiguity.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/981ed9a12f687f668654fb1c87fc4f2da023961a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8649"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "3237cbd9a80db589a8f8d24ca1fbda1dcca78fd1",
+                "prId": "8524",
+                "author": "wu-hui",
+                "message": "feat(firestore): add DML stages, literals source, and atomic execution option (#8524)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3237cbd9a80db589a8f8d24ca1fbda1dcca78fd1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8524"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "5f9d2bd1785910c55f0003b78717b0622ec7e371",
+                "prId": "8689",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Update Dataconnect dependency and Messaging changelog  (#8689)\n\n- Switched the `firebase-annotations` dependency in\n`firebase-dataconnect` to use the version\ncatalog:(`libs.firebase.annotations`) instead of a direct project\nreference.\n- Updated `firebase-messaging` changelog to mark version 26.0.0 with the\n`minSdkVersion` breaking change.\n\n---------\n\nCo-authored-by: Denver Coneybeare <dconeybe@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f9d2bd1785910c55f0003b78717b0622ec7e371",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8689"
+            },
+            {
+                "commitId": "1bbd6a79622e8aee87ca5d2c9b191739699ee0ec",
+                "prId": "8662",
+                "author": "Vick Wang",
+                "message": "Handle non-retryable errors in TopicsSubscriber (#8662)\n\nWhen performTopicOperation() throws a non-retryable IOException (such as\nHTTP 400 Bad Request), syncTopics() previously aborted without removing\nthe failed operation from TopicsStore or completing its pending\nTaskCompletionSource. This caused the caller's Task<Void> to hang\nindefinitely and blocked all subsequent topic operations in the\npersistent queue.\n\n- Catch non-retryable IOExceptions per operation in syncTopics(), remove\nthe failed operation from TopicsStore, fail the corresponding\nTaskCompletionSource with the exception, and continue syncing remaining\nqueued operations.\n\n- Add unit tests in TopicsSubscriberRoboTest covering non-retryable\nsubscribe/unsubscribe failures and multi-operation queue progression.\n\nFixes https://github.com/firebase/firebase-android-sdk/issues/8620",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1bbd6a79622e8aee87ca5d2c9b191739699ee0ec",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8662"
+            },
+            {
+                "commitId": "e51192421f7e05225acd3a568bd30f1e06b8e69d",
+                "prId": "8658",
+                "author": "Vick Wang",
+                "message": "URL-encode topic name in TopicSubscriptionClient (#8658)\n\nURL-encode the topic name in TopicSubscriptionClient when constructing\nthe topicSubscriptions URL path.\n\n- Use Uri.encode(topic) so percent characters (%) in valid topic names\nare encoded as %25 while preserving RFC 3986 unreserved characters (-,\n_, ., ~).\n\n- Add unit tests in TopicSubscriptionClientRoboTest covering URL\nencoding for subscribe and unsubscribe requests.\n\nFixes https://github.com/firebase/firebase-android-sdk/issues/8620",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e51192421f7e05225acd3a568bd30f1e06b8e69d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8658"
+            }
+        ],
+        "firebase-messaging-directboot": [],
+        "firebase-perf": [
+            {
+                "commitId": "f546b3b2a69ee89fc39c12b119c0b3d79f4287cb",
+                "prId": "8700",
+                "author": "Rodrigo Lazo",
+                "message": "[Perf] Update firebase-perf changelog for NoSuchFieldException fix (#8700)\n\nAdd a release note entry under Unreleased documenting the fix for\nNoSuchFieldException occurring at runtime in apps compiled with R8 or\nProGuard optimizations.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f546b3b2a69ee89fc39c12b119c0b3d79f4287cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8700"
+            },
+            {
+                "commitId": "f1f34fc8c402480cab71cfc93724cf00db246244",
+                "prId": "8697",
+                "author": "Rodrigo Lazo",
+                "message": "[Perf] Add consumer ProGuard rules for protobuf-javalite (#8697)\n\nAdded a `proguard-rules.pro` file with rules to keep class members for\nclasses extending `com.google.protobuf.GeneratedMessageLite` to work\naround a known issue in protobuf-javalite. Configured\n`firebase-perf.gradle` to include these consumer ProGuard files.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1f34fc8c402480cab71cfc93724cf00db246244",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8697"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prId": "8678",
+                "author": "Vinay Guthal",
+                "message": "Add thinking mode for ai logic hybrid (#8678)\n\nAdds support for thinking mode (`enableThinking`) when generating\ncontent using on-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**:\n  - Added `enableThinking: Boolean?` to `GenerateContentRequest`.\n- Added `thoughtProcess: List<Candidate>` to `GenerateContentResponse`.\n  - Added `isThinkingModeAvailable(): Boolean` to `GenerativeModel`.\n  - Updated `api.txt`.\n- **`firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isThinkingModeAvailable()` delegating\nto ML Kit's `GenerativeModel.isThinkingModeAvailable()`.\n- Updated `Converters.kt` to pass `enableThinking` to the ML Kit request\nand map `thoughtProcess` candidates to the interop\n`GenerateContentResponse`.\n- **`firebase-ai`**:\n- Added `enableThinking: Boolean? = null` to `OnDeviceConfig` and\nupdated `api.txt`.\n- Updated `OnDeviceGenerativeModelProvider` to check\n`onDeviceModel.isThinkingModeAvailable()` when `enableThinking == true`\n(throwing `FirebaseAIOnDeviceNotAvailableException` so\n`PREFER_ON_DEVICE` falls back to cloud when unsupported) and forward\n`enableThinking` to the on-device request.\n- Updated `Candidate` and `OnDeviceGenerativeModelProvider` response\nmapping to convert interop `thoughtProcess` candidates into `TextPart`\nentries with `isThought = true` (populating\n`GenerateContentResponse.thoughtSummary` for both unary and streaming\nresponses).\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelImplTest`, and `OnDeviceGenerativeModelProviderTests`,\nand updated `CHANGELOG.md` across all three modules.\n\n\nTested at https://github.com/firebase/quickstart-android/pull/2848\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8678"
+            },
+            {
+                "commitId": "61d7ea4717667f5da0dd662008ac7c1699081124",
+                "prId": "8675",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Fix AI Logic changelog (#8675)\n\nUpdate `ai-logic/firebase-ai/CHANGELOG.md` to reflect the latest change\nin `GenerativeBackend`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/61d7ea4717667f5da0dd662008ac7c1699081124",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8675"
+            },
+            {
+                "commitId": "1df4021f956c6c042ebbf68b0765fc9dfcca6030",
+                "prId": "8674",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Address rebranding changes (#8674)\n\nReverts changes introduced in PR #8640",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1df4021f956c6c042ebbf68b0765fc9dfcca6030",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8674"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prId": "8678",
+                "author": "Vinay Guthal",
+                "message": "Add thinking mode for ai logic hybrid (#8678)\n\nAdds support for thinking mode (`enableThinking`) when generating\ncontent using on-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**:\n  - Added `enableThinking: Boolean?` to `GenerateContentRequest`.\n- Added `thoughtProcess: List<Candidate>` to `GenerateContentResponse`.\n  - Added `isThinkingModeAvailable(): Boolean` to `GenerativeModel`.\n  - Updated `api.txt`.\n- **`firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isThinkingModeAvailable()` delegating\nto ML Kit's `GenerativeModel.isThinkingModeAvailable()`.\n- Updated `Converters.kt` to pass `enableThinking` to the ML Kit request\nand map `thoughtProcess` candidates to the interop\n`GenerateContentResponse`.\n- **`firebase-ai`**:\n- Added `enableThinking: Boolean? = null` to `OnDeviceConfig` and\nupdated `api.txt`.\n- Updated `OnDeviceGenerativeModelProvider` to check\n`onDeviceModel.isThinkingModeAvailable()` when `enableThinking == true`\n(throwing `FirebaseAIOnDeviceNotAvailableException` so\n`PREFER_ON_DEVICE` falls back to cloud when unsupported) and forward\n`enableThinking` to the on-device request.\n- Updated `Candidate` and `OnDeviceGenerativeModelProvider` response\nmapping to convert interop `thoughtProcess` candidates into `TextPart`\nentries with `isThought = true` (populating\n`GenerateContentResponse.thoughtSummary` for both unary and streaming\nresponses).\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelImplTest`, and `OnDeviceGenerativeModelProviderTests`,\nand updated `CHANGELOG.md` across all three modules.\n\n\nTested at https://github.com/firebase/quickstart-android/pull/2848\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8678"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prId": "8678",
+                "author": "Vinay Guthal",
+                "message": "Add thinking mode for ai logic hybrid (#8678)\n\nAdds support for thinking mode (`enableThinking`) when generating\ncontent using on-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**:\n  - Added `enableThinking: Boolean?` to `GenerateContentRequest`.\n- Added `thoughtProcess: List<Candidate>` to `GenerateContentResponse`.\n  - Added `isThinkingModeAvailable(): Boolean` to `GenerativeModel`.\n  - Updated `api.txt`.\n- **`firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isThinkingModeAvailable()` delegating\nto ML Kit's `GenerativeModel.isThinkingModeAvailable()`.\n- Updated `Converters.kt` to pass `enableThinking` to the ML Kit request\nand map `thoughtProcess` candidates to the interop\n`GenerateContentResponse`.\n- **`firebase-ai`**:\n- Added `enableThinking: Boolean? = null` to `OnDeviceConfig` and\nupdated `api.txt`.\n- Updated `OnDeviceGenerativeModelProvider` to check\n`onDeviceModel.isThinkingModeAvailable()` when `enableThinking == true`\n(throwing `FirebaseAIOnDeviceNotAvailableException` so\n`PREFER_ON_DEVICE` falls back to cloud when unsupported) and forward\n`enableThinking` to the on-device request.\n- Updated `Candidate` and `OnDeviceGenerativeModelProvider` response\nmapping to convert interop `thoughtProcess` candidates into `TextPart`\nentries with `isThought = true` (populating\n`GenerateContentResponse.thoughtSummary` for both unary and streaming\nresponses).\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelImplTest`, and `OnDeviceGenerativeModelProviderTests`,\nand updated `CHANGELOG.md` across all three modules.\n\n\nTested at https://github.com/firebase/quickstart-android/pull/2848\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f8a568fe3d18e5de6f69131ee66c08b791ea56e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8678"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-annotations",
+        ":firebase-common",
+        ":firebase-components",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-recaptcha"
+    ]
+}

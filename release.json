@@ -1,0 +1,17 @@
+{
+    "name": "m188",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-perf",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop"
+    ]
+}
