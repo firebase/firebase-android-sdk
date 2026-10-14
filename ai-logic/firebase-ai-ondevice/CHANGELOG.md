@@ -1,6 +1,7 @@
 # Unreleased
 
-- [feature] Added support for thinking mode in on-device content generation requests and responses.
+- [feature] Added support for thinking mode in on-device content generation
+  requests and responses. (#8678)
 - [feature] Added support for `systemInstruction` in on-device content generation requests. (#8663)
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 

@@ -79,7 +79,7 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       topK = this@toMlKit.topK
       seed = this@toMlKit.seed
       systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
-      this@toMlKit.enableThinking?.let { enableThinking = it }
+      enableThinking = this@toMlKit.enableThinking ?: false
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)
