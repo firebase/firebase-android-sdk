@@ -32,6 +32,7 @@ import com.google.uploader.client.TransferListener;
 import com.google.uploader.client.TransferOptions;
 import com.google.uploader.client.UploadClient;
 import com.google.uploader.client.UploadClientImpl;
+import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -141,36 +142,7 @@ public class ScottyUploader {
     this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
-    this.upload =
-        new ListenableFuture<TransferExceptionOrHttpResponse>() {
-          @Override
-          public void addListener(Runnable runnable, Executor executor) {}
-
-          @Override
-          public boolean cancel(boolean b) {
-            return false;
-          }
-
-          @Override
-          public TransferExceptionOrHttpResponse get() {
-            return null;
-          }
-
-          @Override
-          public TransferExceptionOrHttpResponse get(long l, TimeUnit timeUnit) {
-            return null;
-          }
-
-          @Override
-          public boolean isCancelled() {
-            return true;
-          }
-
-          @Override
-          public boolean isDone() {
-            return false;
-          }
-        };
+    this.upload = Futures.immediateCancelledFuture()
   }
 
   public static UploadClient makeUploadClient(CrashlyticsWorker worker) {
