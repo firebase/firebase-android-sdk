@@ -89,12 +89,38 @@ internal constructor(
   }
 
   internal companion object {
-    fun fromInterop(candidate: OnDeviceCandidate) =
+    fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
-        content = content { text(candidate.text) },
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+            if (candidate.text.isNotEmpty() || nonEmptyThoughts.isEmpty()) {
+              text(candidate.text)
+            }
+          },
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
+        groundingMetadata = null,
+        urlContextMetadata = null
+      )
+
+    fun fromInteropThought(thoughts: List<OnDeviceCandidate>) =
+      Candidate(
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+          },
+        safetyRatings = emptyList(),
+        citationMetadata = null,
+        finishReason = thoughts.lastOrNull()?.let { FinishReason.fromInterop(it.finishReason) },
         finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null

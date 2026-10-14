@@ -74,13 +74,7 @@ internal class OnDeviceGenerativeModelProvider(
       val request = buildOnDeviceGenerateContentRequest(prompt)
 
       val response = onDeviceModel.generateContent(request)
-      GenerateContentResponse(
-        response.candidates.map { Candidate.fromInterop(it) },
-        InferenceSource.ON_DEVICE,
-        null,
-        null,
-        response.modelVersion
-      )
+      toPublicResponse(response)
     }
 
   /**
@@ -92,11 +86,7 @@ internal class OnDeviceGenerativeModelProvider(
    */
   override suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
     withFirebaseAIExceptionHandling {
-      if (!onDeviceModel.isAvailable()) {
-        throw FirebaseAIException.from(
-          FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-        )
-      }
+      ensureOnDeviceModelAvailable(checkThinkingMode = false)
 
       val request = buildOnDeviceGenerateContentRequest(prompt)
 
@@ -111,27 +101,19 @@ internal class OnDeviceGenerativeModelProvider(
    * @return A flow of generated responses.
    */
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> = flow {
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
-    }
-
-    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val request =
+      try {
+        ensureOnDeviceModelAvailable()
+        buildOnDeviceGenerateContentRequest(prompt)
+      } catch (e: Throwable) {
+        throw FirebaseAIException.from(e)
+      }
 
     emitAll(
       onDeviceModel
         .generateContentStream(request)
         .catch { throw FirebaseAIException.from(it) }
-        .map {
-          GenerateContentResponse(
-            it.candidates.map { candidate -> Candidate.fromInterop(candidate) },
-            InferenceSource.ON_DEVICE,
-            null,
-            null,
-            it.modelVersion
-          )
-        }
+        .map { toPublicResponse(it) }
     )
   }
 
@@ -177,7 +159,7 @@ internal class OnDeviceGenerativeModelProvider(
    */
   override suspend fun warmUp() {
     withFirebaseAIExceptionHandling {
-      ensureOnDeviceModelAvailable()
+      ensureOnDeviceModelAvailable(checkThinkingMode = false)
       onDeviceModel.warmup()
     }
   }
@@ -190,12 +172,45 @@ internal class OnDeviceGenerativeModelProvider(
     }
   }
 
-  private suspend fun ensureOnDeviceModelAvailable() {
+  private suspend fun ensureOnDeviceModelAvailable(checkThinkingMode: Boolean = true) {
     if (!onDeviceModel.isAvailable()) {
       throw FirebaseAIException.from(
         FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
       )
     }
+    if (
+      checkThinkingMode &&
+        onDeviceConfig.enableThinking == true &&
+        !onDeviceModel.isThinkingModeAvailable()
+    ) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException(
+          "Thinking mode is not available on the on-device model"
+        )
+      )
+    }
+  }
+
+  private fun toPublicResponse(
+    response: com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+  ): GenerateContentResponse {
+    val candidates =
+      if (response.candidates.isNotEmpty()) {
+        response.candidates.map { candidate ->
+          Candidate.fromInterop(candidate, response.thoughtProcess)
+        }
+      } else if (response.thoughtProcess.isNotEmpty()) {
+        listOf(Candidate.fromInteropThought(response.thoughtProcess))
+      } else {
+        emptyList()
+      }
+    return GenerateContentResponse(
+      candidates,
+      InferenceSource.ON_DEVICE,
+      null,
+      null,
+      response.modelVersion
+    )
   }
 
   private fun buildOnDeviceGenerateContentRequest(
@@ -278,7 +293,8 @@ internal class OnDeviceGenerativeModelProvider(
       seed = onDeviceConfig.seed,
       candidateCount = onDeviceConfig.candidateCount,
       maxOutputTokens = onDeviceConfig.maxOutputTokens,
-      systemInstruction = onDeviceSystemInstruction
+      systemInstruction = onDeviceSystemInstruction,
+      enableThinking = onDeviceConfig.enableThinking
     )
   }
 
