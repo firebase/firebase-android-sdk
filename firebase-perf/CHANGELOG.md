@@ -2,7 +2,7 @@
 
 - [fixed] Fixed an issue where `NoSuchFieldException` was thrown at runtime in
   apps compiled with R8 or ProGuard optimizations enabled.
-  ([#8700](https://github.com/firebase/firebase-android-sdk/pull/8700))
+  ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))
 
 # 23.0.0
 
