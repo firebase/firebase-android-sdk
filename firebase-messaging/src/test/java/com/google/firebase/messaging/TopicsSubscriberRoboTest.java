@@ -210,6 +210,23 @@ public class TopicsSubscriberRoboTest {
   }
 
   @Test
+  public void testSingleSubscribe_tooManyRequests_retries() throws Exception {
+    doThrow(new IOException(TopicSubscriptionClient.ERROR_TOO_MANY_REQUESTS))
+        .when(mockTopicSubscriptionClient)
+        .subscribe(anyString());
+
+    Task<Void> task = topicsSubscriber.subscribeToTopic(TEST_TOPIC);
+    assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe(TEST_TOPIC));
+
+    // execute immediately
+    fakeExecutor.simulateNormalOperationFor(/* timeout= */ 0, SECONDS);
+
+    assertThat(task.isComplete()).isFalse();
+    assertThat(topicsSubscriber.hasPendingOperation()).isTrue();
+    assertThat(store.getNextTopicOperation()).isEqualTo(TopicOperation.subscribe(TEST_TOPIC));
+  }
+
+  @Test
   public void testSingleSubscribe_nonRetryableFailure() throws Exception {
     IOException nonRetryableException = new IOException("Topic subscribe failed with status: 400");
     doThrow(nonRetryableException).when(mockTopicSubscriptionClient).subscribe(anyString());
