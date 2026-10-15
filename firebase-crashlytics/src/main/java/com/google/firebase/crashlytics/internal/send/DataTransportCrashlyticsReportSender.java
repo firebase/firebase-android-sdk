@@ -76,7 +76,7 @@ public class DataTransportCrashlyticsReportSender {
     return reportQueue.enqueueReport(reportWithSessionId, isOnDemand).getTask();
   }
 
-  private static String mergeStrings(String part1, String part2) {
+  public static String mergeStrings(String part1, String part2) {
     int sizeDiff = part1.length() - part2.length();
     if (sizeDiff < 0 || sizeDiff > 1) {
       throw new IllegalArgumentException("Invalid input received");

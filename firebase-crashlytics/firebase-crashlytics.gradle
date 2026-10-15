@@ -37,7 +37,11 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.crashlytics"
-    compileSdkVersion 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
     testOptions {
         targetSdk project.targetSdkVersion
         unitTests.includeAndroidResources = true
@@ -89,9 +93,12 @@ dependencies {
     api("com.google.firebase:firebase-installations-interop:18.0.0")
     api("com.google.firebase:firebase-measurement-connector:20.0.1")
 
+    implementation files('libs/scotty-minified.jar')
+
     implementation("com.google.android.datatransport:transport-api:5.0.0")
     implementation("com.google.android.datatransport:transport-backend-cct:5.0.0")
     implementation("com.google.android.datatransport:transport-runtime:5.0.0")
+
     implementation(libs.androidx.annotation)
     compileOnly(libs.errorprone.annotations)
 

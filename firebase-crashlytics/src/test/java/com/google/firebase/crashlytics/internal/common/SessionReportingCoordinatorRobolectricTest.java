@@ -34,6 +34,7 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -62,6 +63,8 @@ public class SessionReportingCoordinatorRobolectricTest {
   @Mock private LogFileManager mockLogFileManager;
   @Mock UserMetadata mockUserMetadata;
 
+  @Mock private ResumableUploadMetadataStore store;
+
   private SessionReportingCoordinator reportingCoordinator;
 
   private final CrashlyticsWorkers crashlyticsWorkers =
@@ -79,7 +82,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             logFileManager,
             reportMetadata,
             idManager,
-            crashlyticsWorkers);
+            crashlyticsWorkers,
+            store);
     mockEventInteractions();
   }
 
