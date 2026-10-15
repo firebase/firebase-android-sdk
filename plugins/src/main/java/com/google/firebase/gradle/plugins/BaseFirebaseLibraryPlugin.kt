@@ -177,8 +177,8 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
     project.tasks.register<NewPomDependencyValidator>("checkNewPomDependencies") {
       pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
-      groupId.set(firebaseLibrary.groupId.get())
-      artifactId.set(firebaseLibrary.artifactId.get())
+      groupId.set(firebaseLibrary.groupId)
+      artifactId.set(firebaseLibrary.artifactId)
       dependsOn("generatePomFileForMavenAarPublication")
     }
   }
