@@ -37,6 +37,9 @@ public interface Part {
 /**
  * Represents text or string based data sent to and received from requests.
  *
+ * @property text The text content of the part.
+ * @property isThought Indicates whether the response is a thought.
+ * @property thoughtSignature Optional A blob used to by the model to preserve state.
  * @property speechMetadata Optional [SpeechMetadata] used to guide speech generation for this text,
  * such as the speaker and vocal style.
  */

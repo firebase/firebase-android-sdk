@@ -493,6 +493,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Content.Builder addInlineData(byte[] bytes, String mimeType);
     method public <T extends com.google.firebase.ai.type.Part> com.google.firebase.ai.type.Content.Builder addPart(T data);
     method public com.google.firebase.ai.type.Content.Builder addText(String text);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Content.Builder addText(String text, com.google.firebase.ai.type.SpeechMetadata speechMetadata);
     method public com.google.firebase.ai.type.Content build();
     method public com.google.firebase.ai.type.Content.Builder setParts(java.util.List<com.google.firebase.ai.type.Part> parts);
     method public com.google.firebase.ai.type.Content.Builder setRole(String? role);
