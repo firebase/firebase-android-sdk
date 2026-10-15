@@ -1,0 +1,799 @@
+{
+    "changesByLibraryName": {
+        "firebase-abt": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-appdistribution": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-config-interop": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e1d9be2f9939d89690b1f3896897ebabb1b19142",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Pin firebase-encoders-json version for crashlytics\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e1d9be2f9939d89690b1f3896897ebabb1b19142",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "c9c9d37387cf72150bfff50ec60cdaf09b7be66f",
+                "prId": "8666",
+                "author": "Matthew Robertson",
+                "message": "Set up Android Test Orchestrator for Crashlytics instrumentation tests (#8666)\n\nThis is needed because there is an issue with multiple `DataStore`s when\nthe `FirebaseApp` is deleted and re-initialized in tests\n\nI am working on the DataStore issue in Sessions, but it also exists in\nother places that will need to be cleaned up",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9c9d37387cf72150bfff50ec60cdaf09b7be66f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8666"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "37fe52b314c69651c0942433da19f5df2babc802",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Fix format\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/37fe52b314c69651c0942433da19f5df2babc802",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Adjust changelog entries\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "56c3d5af3bba7bac303671b4d5b4b2e0d21a65fc",
+                "prId": "8657",
+                "author": "Matthew Robertson",
+                "message": "Close the ApplicationExitInfo trace stream in Crashlytics NDK (#8657)\n\nCherry-pick #8531 by @jrodiz to fix #8510\n\n---------\n\nCo-authored-by: Joseph Rodiz <rodiz.cj@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/56c3d5af3bba7bac303671b4d5b4b2e0d21a65fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8657"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "779937742efe428ee31f8be9681d817d5211fef6",
+                "prId": "8644",
+                "author": "Matthew Robertson",
+                "message": "Pin the AQS test app to same NDK version as Crashlytics NDK (#8644)\n\nThis being a different ndk version than crashlytics was causing github\nworkflows to download and instal two ndk versions side by side. I\nnoticed the e2e test app workflow failing more often over the last\nlittle while, I think due to this wasting time",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/779937742efe428ee31f8be9681d817d5211fef6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8644"
+            }
+        ],
+        "firebase-database": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-database-collection": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "09ee73c86d802a46473e12a4abc3b3ebb2e16224",
+                "prId": "8650",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.21 (was 3.4.19) and firebase-tools to 15.32.0 (was 15.30.0) (#8650)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/09ee73c86d802a46473e12a4abc3b3ebb2e16224",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8650"
+            },
+            {
+                "commitId": "981ed9a12f687f668654fb1c87fc4f2da023961a",
+                "prId": "8649",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): AnyValue.kt: disambiguate [serializer] kdoc links (#8649)\n\nThis PR fixes ambiguous `[serializer]` KDoc references in `AnyValue.kt`\nso that they render properly as hyperlinks in the generated HTML\ndocumentation. It replaces the unqualified `[serializer]` KDoc links\nwith fully qualified `[kotlinx.serialization.serializer]` links and\nremoves the unused `AnyValue.Companion.serializer` import that caused\nthe ambiguity.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/981ed9a12f687f668654fb1c87fc4f2da023961a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8649"
+            }
+        ],
+        "firebase-datatransport": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "4bd6d512c505eb1a2e54f1e01481eccc3aa3d3ae",
+                "prId": "8705",
+                "author": "Daniel La Rocque",
+                "message": "fix(firestore): revert testFixtures change (#8705)\n\nFixes #8696 \n\nFixes to this issue are non-trivial. For quick resolution, I chose to\nsimply revert the culprit #8525.\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4bd6d512c505eb1a2e54f1e01481eccc3aa3d3ae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8705"
+            },
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-installations": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-installations-interop": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "1bbd6a79622e8aee87ca5d2c9b191739699ee0ec",
+                "prId": "8662",
+                "author": "Vick Wang",
+                "message": "Handle non-retryable errors in TopicsSubscriber (#8662)\n\nWhen performTopicOperation() throws a non-retryable IOException (such as\nHTTP 400 Bad Request), syncTopics() previously aborted without removing\nthe failed operation from TopicsStore or completing its pending\nTaskCompletionSource. This caused the caller's Task<Void> to hang\nindefinitely and blocked all subsequent topic operations in the\npersistent queue.\n\n- Catch non-retryable IOExceptions per operation in syncTopics(), remove\nthe failed operation from TopicsStore, fail the corresponding\nTaskCompletionSource with the exception, and continue syncing remaining\nqueued operations.\n\n- Add unit tests in TopicsSubscriberRoboTest covering non-retryable\nsubscribe/unsubscribe failures and multi-operation queue progression.\n\nFixes https://github.com/firebase/firebase-android-sdk/issues/8620",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1bbd6a79622e8aee87ca5d2c9b191739699ee0ec",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8662"
+            },
+            {
+                "commitId": "e51192421f7e05225acd3a568bd30f1e06b8e69d",
+                "prId": "8658",
+                "author": "Vick Wang",
+                "message": "URL-encode topic name in TopicSubscriptionClient (#8658)\n\nURL-encode the topic name in TopicSubscriptionClient when constructing\nthe topicSubscriptions URL path.\n\n- Use Uri.encode(topic) so percent characters (%) in valid topic names\nare encoded as %25 while preserving RFC 3986 unreserved characters (-,\n_, ., ~).\n\n- Add unit tests in TopicSubscriptionClientRoboTest covering URL\nencoding for subscribe and unsubscribe requests.\n\nFixes https://github.com/firebase/firebase-android-sdk/issues/8620",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e51192421f7e05225acd3a568bd30f1e06b8e69d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8658"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "protolite-well-known-types": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Adjust changelog entries\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e40817898cc84da62af219128cf18c14184f1bbe",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Project level dependencies for ai-ondevice is still necessary\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e40817898cc84da62af219128cf18c14184f1bbe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "61d7ea4717667f5da0dd662008ac7c1699081124",
+                "prId": "8675",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Fix AI Logic changelog (#8675)\n\nUpdate `ai-logic/firebase-ai/CHANGELOG.md` to reflect the latest change\nin `GenerativeBackend`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/61d7ea4717667f5da0dd662008ac7c1699081124",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8675"
+            },
+            {
+                "commitId": "1df4021f956c6c042ebbf68b0765fc9dfcca6030",
+                "prId": "8674",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Address rebranding changes (#8674)\n\nReverts changes introduced in PR #8640",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1df4021f956c6c042ebbf68b0765fc9dfcca6030",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8674"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ],
+        "ai-logic/firebase-ai-ksp-processor": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "37fe52b314c69651c0942433da19f5df2babc802",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Fix format\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/37fe52b314c69651c0942433da19f5df2babc802",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Adjust changelog entries\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e40817898cc84da62af219128cf18c14184f1bbe",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Project level dependencies for ai-ondevice is still necessary\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e40817898cc84da62af219128cf18c14184f1bbe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "37fe52b314c69651c0942433da19f5df2babc802",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Fix format\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/37fe52b314c69651c0942433da19f5df2babc802",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Adjust changelog entries\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/85b97a89687a54276403dbe16bd9c39e9877daf6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prId": "8663",
+                "author": "Vinay Guthal",
+                "message": "Add support for system instructions in the ondevice sdk. (#8663)\n\nAdds support for `systemInstruction` when generating content using\non-device and hybrid inference modes.\n\n### Summary of Changes\n- **`firebase-ai-ondevice-interop`**: Added an optional\n`systemInstruction: TextPart?` property to `GenerateContentRequest` and\nupdated `api.txt`.\n- **`firebase-ai-ondevice`**: Updated `GenerateContentRequest.toMlKit()`\nin `Converters.kt` to convert the interop `TextPart` into an ML Kit\n`SystemInstruction`.\n- **`firebase-ai`**:\n- Passed `systemInstruction` from `GenerativeModel.Builder` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `OnDeviceGenerativeModelProvider` to validate that\n`systemInstruction` contains only text parts (throwing\n`FirebaseAIOnDeviceInvalidRequestException` for non-text parts),\nconcatenate multiple `TextPart` instances with a newline, and attach it\nto the on-device request.\n- **Tests & Changelogs**: Added unit tests in `ConvertersTest`,\n`GenerativeModelBuilderTests`, and\n`OnDeviceGenerativeModelProviderTests`, and updated `CHANGELOG.md`\nacross all three modules.\n\n\nTested updating the quickstart app to add testing functionality for\nsystem instruction at\nhttps://github.com/firebase/quickstart-android/pull/2846",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46ae3a2e547a09f49507550f532a10a1e81d5a61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8663"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prId": "8671",
+                "author": "Rodrigo Lazo",
+                "message": "[Appcheck] Update AppCheck tests to use PAUSED LooperMode (#8671)\n\nSwitched the Robolectric `@LooperMode` from `LEGACY` to `PAUSED` across\nApp Check test suites. Additionally, added explicit\n`ShadowLooper.idleMainLooper()` calls in `DefaultFirebaseAppCheckTest`\nto properly execute pending tasks on the main looper under paused looper\nsemantics.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8671"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prId": "8671",
+                "author": "Rodrigo Lazo",
+                "message": "[Appcheck] Update AppCheck tests to use PAUSED LooperMode (#8671)\n\nSwitched the Robolectric `@LooperMode` from `LEGACY` to `PAUSED` across\nApp Check test suites. Additionally, added explicit\n`ShadowLooper.idleMainLooper()` calls in `DefaultFirebaseAppCheckTest`\nto properly execute pending tasks on the main looper under paused looper\nsemantics.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8671"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prId": "8671",
+                "author": "Rodrigo Lazo",
+                "message": "[Appcheck] Update AppCheck tests to use PAUSED LooperMode (#8671)\n\nSwitched the Robolectric `@LooperMode` from `LEGACY` to `PAUSED` across\nApp Check test suites. Additionally, added explicit\n`ShadowLooper.idleMainLooper()` calls in `DefaultFirebaseAppCheckTest`\nto properly execute pending tasks on the main looper under paused looper\nsemantics.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8671"
+            }
+        ],
+        "appcheck/firebase-appcheck-recaptcha": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prId": "8671",
+                "author": "Rodrigo Lazo",
+                "message": "[Appcheck] Update AppCheck tests to use PAUSED LooperMode (#8671)\n\nSwitched the Robolectric `@LooperMode` from `LEGACY` to `PAUSED` across\nApp Check test suites. Additionally, added explicit\n`ShadowLooper.idleMainLooper()` calls in `DefaultFirebaseAppCheckTest`\nto properly execute pending tasks on the main looper under paused looper\nsemantics.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fc6b747935714430fd818f89f54e8971e6f5761a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8671"
+            }
+        ],
+        "appcheck/firebase-appcheck-interop": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "encoders/firebase-encoders": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "encoders/firebase-encoders-json": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "encoders/firebase-encoders-proto": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-components/firebase-dynamic-module-support": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "transport/transport-api": [
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "transport/transport-backend-cct": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Remove outdated comments\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a8206d5a320a2acdbc30ec6351244f290547741",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prId": "",
+                "author": "rlazo",
+                "message": "Post release cleanup for m187\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7c946b81b29c8f9d17bbd44f2527ec796b6bee36",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-components"
+    ]
+}
