@@ -374,7 +374,8 @@ internal constructor(
       onDeviceFactoryProvider?.let {
         OnDeviceGenerativeModelProvider(
           it.newGenerativeModel(modelOption?.toInterop()),
-          onDeviceConfig
+          onDeviceConfig,
+          systemInstruction
         )
       }
         ?: MissingOnDeviceGenerativeModelProvider()

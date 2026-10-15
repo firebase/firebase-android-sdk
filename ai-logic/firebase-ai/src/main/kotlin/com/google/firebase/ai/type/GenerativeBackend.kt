@@ -28,31 +28,18 @@ internal constructor(internal val location: String, internal val backend: Genera
     public fun googleAI(): GenerativeBackend =
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)
 
-    @Deprecated(
-      "Use `enterprise` instead",
-      ReplaceWith(
-        "enterprise(location)",
-        "com.google.firebase.ai.type.GenerativeBackend.Companion.enterprise"
-      )
-    )
-    @JvmStatic
-    @JvmOverloads
-    public fun agentPlatform(location: String = "global"): GenerativeBackend {
-      return enterprise(location)
-    }
-
     /**
-     * References the Gemini Enterprise API.
+     * References the Agent Platform Gemini API.
      *
      * @param location passes a valid cloud server location, defaults to "global"
      */
     @JvmStatic
     @JvmOverloads
-    public fun enterprise(location: String = "global"): GenerativeBackend {
+    public fun agentPlatform(location: String = "global"): GenerativeBackend {
       if (location.isBlank() || location.contains("/")) {
         throw InvalidLocationException(location)
       }
-      return GenerativeBackend(location, GenerativeBackendEnum.ENTERPRISE)
+      return GenerativeBackend(location, GenerativeBackendEnum.AGENT_PLATFORM)
     }
   }
 
@@ -62,7 +49,7 @@ internal constructor(internal val location: String, internal val backend: Genera
         GenerativeBackendEnum.GOOGLE_AI -> {
           other.backend == this.backend
         }
-        GenerativeBackendEnum.ENTERPRISE -> {
+        GenerativeBackendEnum.AGENT_PLATFORM -> {
           other.backend == this.backend && other.location == this.location
         }
       }
@@ -75,5 +62,5 @@ internal constructor(internal val location: String, internal val backend: Genera
 
 internal enum class GenerativeBackendEnum {
   GOOGLE_AI,
-  ENTERPRISE,
+  AGENT_PLATFORM,
 }

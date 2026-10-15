@@ -1,5 +1,12 @@
 # Unreleased
 
+- [feature] Added `enableThinking` to `GenerateContentRequest`,
+  `thoughtProcess` to `GenerateContentResponse`, and `isThinkingModeAvailable`
+  to `GenerativeModel` to support thinking mode. (#8678)
+- [feature] Added `systemInstruction` property to `GenerateContentRequest`. (#8663)
+
+# 16.0.0-beta06
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 
 # 16.0.0-beta05

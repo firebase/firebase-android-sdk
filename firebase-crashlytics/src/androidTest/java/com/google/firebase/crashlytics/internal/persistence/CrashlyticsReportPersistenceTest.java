@@ -193,6 +193,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
             .setProfilingTrigger(
                 ProfilingTrigger.builder()
                     .setTrigger(android.os.ProfilingTrigger.TRIGGER_TYPE_ANOMALY)
+                    .setIsHeapDumpCollectionEnabled(true)
+                    .setWasHeapDumpGenerated(true)
                     .build())
             .build();
 

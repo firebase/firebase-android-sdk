@@ -89,12 +89,38 @@ internal constructor(
   }
 
   internal companion object {
-    fun fromInterop(candidate: OnDeviceCandidate) =
+    fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
-        content = content { text(candidate.text) },
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+            if (candidate.text.isNotEmpty() || nonEmptyThoughts.isEmpty()) {
+              text(candidate.text)
+            }
+          },
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
+        groundingMetadata = null,
+        urlContextMetadata = null
+      )
+
+    fun fromInteropThought(thoughts: List<OnDeviceCandidate>) =
+      Candidate(
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+          },
+        safetyRatings = emptyList(),
+        citationMetadata = null,
+        finishReason = thoughts.lastOrNull()?.let { FinishReason.fromInterop(it.finishReason) },
         finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
@@ -395,14 +421,14 @@ public class FinishReason private constructor(public val name: String, public va
  * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
- * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
  * Maps" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
- * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
@@ -517,7 +543,7 @@ internal constructor(
  * @property uri The URI of the retrieved web page.
  * @property title The title of the retrieved web page.
  * @property domain The domain of the original URI from which the content was retrieved. This is
- * only populated when using the Gemini Enterprise API.
+ * only populated when using the Agent Platform Gemini API.
  */
 public class WebGroundingChunk
 internal constructor(

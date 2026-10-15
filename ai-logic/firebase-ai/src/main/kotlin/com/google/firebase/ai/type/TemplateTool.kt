@@ -72,7 +72,7 @@ internal constructor(
      * When using this feature, you are required to comply with the "Grounding with Google Maps"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
-     * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
      * section within the Service Specific Terms).
      *
      * @return A [TemplateTool] configured for Google Maps.

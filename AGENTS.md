@@ -67,9 +67,9 @@ tool for this purpose.
    - Place this file in the root of the repository.
 5. **Install NDK for specific projects**:
    - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
-     You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
-     would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
-     exact version required.
+     You can install it using `sdkmanager`. For example, to install NDK version 27.2.12479018, you
+     would run `sdkmanager "ndk;27.2.12479018"`. Always refer to the `ndkVersion` declared in the
+     project's build file for the exact version required.
 
 ## Building and Running
 
@@ -164,13 +164,19 @@ To format a specific project, run:
 
 ### API Surface
 
-The public API of the Firebase SDKs is managed using a set of annotations:
+The public API surface of each SDK is determined by standard Java and Kotlin visibility rules and
+tracked with Metalava in the project's `api.txt` file. There is no marker annotation for public
+APIs; instead, the following annotations and tags control what is exposed:
 
-- `@PublicApi`: Marks APIs that are intended for public consumption by developers.
+- `@hide` (doc comment tag): Excludes a `public` or `protected` member from the public API surface.
 - `@KeepForSdk`: Marks APIs that are intended for use by other Firebase SDKs. These APIs will
-  trigger a linter error if used by developers outside of a Firebase package.
+  trigger a linter error if used by developers outside of a Firebase package. They must also carry
+  an `@hide` tag, otherwise they are reported as public API.
 - `@Keep`: Marks APIs that need to be preserved at runtime, usually due to reflection. This
   annotation should be used sparingly as it prevents Proguard from removing or renaming the code.
+
+After changing a public API, regenerate `api.txt` with
+`./gradlew :<firebase-project>:generateApiTxtFile`.
 
 ### Common Patterns
 
@@ -187,8 +193,8 @@ This repository uses a combination of dependency injection frameworks:
 
 ### Proguarding
 
-The project supports Proguarding. Proguard rules are defined in `proguard.txt` files within each
-project.
+The project supports Proguarding. Projects that need consumer Proguard rules declare them in a file
+(conventionally `proguard.txt`) registered via `consumerProguardFiles` in the project's build file.
 
 ## Code Review
 
