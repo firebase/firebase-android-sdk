@@ -42,6 +42,7 @@ public class TopicSubscriptionClient {
 
   static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
   static final String ERROR_SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
+  static final String ERROR_TOO_MANY_REQUESTS = "TOO_MANY_REQUESTS";
 
   private static final long RPC_TIMEOUT_SEC = 30;
 
@@ -151,6 +152,8 @@ public class TopicSubscriptionClient {
         Log.d(TAG, "Topic " + operation + " failed: " + responseMessage);
       }
       throw new IOException("Topic " + operation + " failed: " + responseMessage);
+    } else if (responseCode == 429) {
+      throw new IOException(ERROR_TOO_MANY_REQUESTS);
     } else if (responseCode >= 500) {
       throw new IOException(ERROR_INTERNAL_SERVER_ERROR);
     } else {
