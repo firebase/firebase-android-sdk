@@ -1,0 +1,6 @@
+{
+    "name": "m187_2",
+    "libraries": [
+        ":firebase-firestore"
+    ]
+}
