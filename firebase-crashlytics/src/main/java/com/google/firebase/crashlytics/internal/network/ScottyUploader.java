@@ -191,7 +191,7 @@ public class ScottyUploader {
           listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 1000);
 
       Logger.getLogger()
-          .d(
+          .i(
               String.format(
                   "Triggering a heap dump upload for: %s, uploaded as: %s",
                   heapdump.getName(), canonicalFilename));
@@ -225,6 +225,8 @@ public class ScottyUploader {
 
       transfer.attachListener(
           listener, /* progressThresholdBytes= */ 1024 * 1024, /* progressThresholdMillis= */ 500);
+
+      Logger.getLogger().i(String.format("Resuming a heap dump upload with handle: %s", handle));
 
       upload = transfer.send();
     } catch (Exception e) {

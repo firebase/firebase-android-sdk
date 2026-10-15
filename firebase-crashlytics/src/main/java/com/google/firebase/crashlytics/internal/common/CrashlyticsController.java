@@ -23,6 +23,7 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.ProfilingManager;
+import android.os.ProfilingResult;
 import android.os.ProfilingTrigger;
 import android.os.StatFs;
 import android.util.Base64;
@@ -1078,6 +1079,11 @@ class CrashlyticsController {
     profilingManager.registerForAllProfilingResults(
         backgroundExecutor,
         (result) -> {
+          if (result.getErrorCode() != ProfilingResult.ERROR_NONE) {
+            Logger.getLogger().d(String.format("Profiling failed; %s", result.getErrorCode()));
+            return;
+          }
+
           // No-op, we determine oom or mlk on restart.
           Logger.getLogger()
               .d(

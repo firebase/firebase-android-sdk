@@ -207,7 +207,7 @@ public class SessionReportingCoordinator {
           .ifPresent(
               filename -> {
                 Logger.getLogger()
-                    .d(
+                    .i(
                         String.format(
                             "Queueing %s for upload for session: %s", filename, sessionId));
                 resumableUploadMetadataStore.addInProgressUpload(sessionId, trigger, filename);
