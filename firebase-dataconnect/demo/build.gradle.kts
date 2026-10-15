@@ -83,6 +83,12 @@ android {
     isCoreLibraryDesugaringEnabled = true
   }
   buildFeatures.viewBinding = true
+  buildTypes {
+    getByName("release") {
+      signingConfig = signingConfigs.getByName("debug")
+      optimization { enable = true }
+    }
+  }
 }
 
 kotlin {
