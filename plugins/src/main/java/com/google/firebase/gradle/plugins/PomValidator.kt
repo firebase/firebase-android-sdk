@@ -109,15 +109,15 @@ abstract class PomValidator : DefaultTask() {
 }
 
 /**
- * Checks if any new dependencies have been added to the POM.
+ * Checks if any dependencies have been added to or removed from the POM.
  *
  * Compares the latest POM at gmaven for the given artifact with the one generated for the current
- * release, printing any newly added dependencies and failing the build if any are found.
+ * release, printing any newly added or removed dependencies and failing the build if any are found.
  *
  * @property pomFile The pom file for the current release
  * @property artifactId The artifactId for the pom parent
  * @property groupId The groupId for the pom parent
- * @throws GradleException if a new dependency is found in the current pom
+ * @throws GradleException if a new or removed dependency is found in the current pom
  */
 abstract class NewPomDependencyValidator : DefaultTask() {
   @get:InputFile abstract val pomFile: RegularFileProperty
@@ -131,7 +131,7 @@ abstract class NewPomDependencyValidator : DefaultTask() {
 
       if (diff.isNotEmpty()) {
         println(diff)
-        throw GradleException("New dependencies found, please verify they are intended:\n${diff}")
+        throw GradleException(diff)
       }
     } catch (_: java.io.FileNotFoundException) {
       // Gmaven artifact doesn't exist.
@@ -164,6 +164,21 @@ abstract class NewPomDependencyValidator : DefaultTask() {
     val oldDependencies = getMapOfDependencies(oldPom.documentElement)
     val currentDependencies = getMapOfDependencies(currentPom.documentElement)
 
-    return currentDependencies.filterKeys { it !in oldDependencies }.values.joinToString("\n")
+    val newDependencies = currentDependencies.filterKeys { it !in oldDependencies }.values
+    val removedDependencies = oldDependencies.filterKeys { it !in currentDependencies }.values
+
+    return buildList {
+        if (newDependencies.isNotEmpty()) {
+          add(
+            "New dependencies found, please verify they are intended:\n${newDependencies.joinToString("\n")}"
+          )
+        }
+        if (removedDependencies.isNotEmpty()) {
+          add(
+            "Removed dependencies found, please verify they are intended:\n${removedDependencies.joinToString("\n")}"
+          )
+        }
+      }
+      .joinToString("\n\n")
   }
 }
