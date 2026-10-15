@@ -150,7 +150,10 @@ abstract class NewPomDependencyValidator : DefaultTask() {
   fun diffWithPomFromURL(url: String): String {
     val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 
-    val oldPom = documentBuilder.parse(URL(url).openStream())
+    val oldPom = URL(url).openConnection().apply {
+      connectTimeout = 10000
+      readTimeout = 10000
+    }.getInputStream().use { documentBuilder.parse(it) }
     val currentPom = documentBuilder.parse(pomFile.get().asFile)
 
     val oldDependencies = getMapOfDependencies(oldPom.documentElement)
