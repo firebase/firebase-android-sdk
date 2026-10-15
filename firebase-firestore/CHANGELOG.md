@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed an issue where test-only dependencies (`truth`, `junit`, `mockito-core`, and
+  `jackson-databind`) were inadvertently included as runtime dependencies in the published Maven POM
+  (#8696).
+
 # 27.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
