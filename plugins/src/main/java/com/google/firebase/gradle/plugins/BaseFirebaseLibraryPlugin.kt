@@ -175,6 +175,12 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       artifactId.set(firebaseLibrary.artifactId.get())
       dependsOn("generatePomFileForMavenAarPublication")
     }
+    project.tasks.register<NewPomDependencyValidator>("checkNewPomDependencies") {
+      pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
+      groupId.set(firebaseLibrary.groupId.get())
+      artifactId.set(firebaseLibrary.artifactId.get())
+      dependsOn("generatePomFileForMavenAarPublication")
+    }
   }
 
   protected fun getGenerateApiTxt(project: Project, srcDirs: ConfigurableFileCollection) =

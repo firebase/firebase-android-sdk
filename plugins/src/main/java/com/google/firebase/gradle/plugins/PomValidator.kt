@@ -107,3 +107,55 @@ abstract class PomValidator : DefaultTask() {
       )
   }
 }
+
+/**
+ * Checks if any new dependencies have been added to the POM.
+ *
+ * Compares the latest POM at gmaven for the given artifact with the one generated for the current
+ * release, printing any newly added dependencies and failing the build if any are found.
+ *
+ * @property pomFile The pom file for the current release
+ * @property artifactId The artifactId for the pom parent
+ * @property groupId The groupId for the pom parent
+ * @throws GradleException if a new dependency is found in the current pom
+ */
+abstract class NewPomDependencyValidator : DefaultTask() {
+  @get:InputFile abstract val pomFile: RegularFileProperty
+  @get:Input abstract val artifactId: Property<String>
+  @get:Input abstract val groupId: Property<String>
+
+  @TaskAction
+  fun run() {
+    try {
+      val diff = diffWithPomFromURL(resolveLatestReleasePomUrl())
+
+      if (diff.isNotEmpty()) {
+        println(diff)
+        throw GradleException("New dependencies found, please verify they are intended:\n${diff}")
+      }
+    } catch (_: java.io.FileNotFoundException) {
+      // Gmaven artifact doesn't exist.
+      return
+    }
+  }
+
+  internal open fun resolveLatestReleasePomUrl() =
+    with(GmavenHelper(groupId.get(), artifactId.get())) {
+      getPomFileForVersion(getLatestReleasedVersion())
+    }
+
+  private fun getMapOfDependencies(doc: Element) =
+    doc.findElementsByTag("dependency").associate { it.toMavenName() to it.toArtifactString() }
+
+  fun diffWithPomFromURL(url: String): String {
+    val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+
+    val oldPom = documentBuilder.parse(URL(url).openStream())
+    val currentPom = documentBuilder.parse(pomFile.get().asFile)
+
+    val oldDependencies = getMapOfDependencies(oldPom.documentElement)
+    val currentDependencies = getMapOfDependencies(currentPom.documentElement)
+
+    return currentDependencies.filterKeys { it !in oldDependencies }.values.joinToString("\n")
+  }
+}
