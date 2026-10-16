@@ -168,14 +168,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     return apiInfo
   }
 
-  protected fun getIsPomValidTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+  protected fun registerPomValidationTasks(
+    project: Project,
+    firebaseLibrary: FirebaseLibraryExtension,
+  ) {
     project.tasks.register<PomValidator>("isPomDependencyValid") {
       pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
       groupId.set(firebaseLibrary.groupId.get())
       artifactId.set(firebaseLibrary.artifactId.get())
       dependsOn("generatePomFileForMavenAarPublication")
     }
-    project.tasks.register<NewPomDependencyValidator>("checkNewPomDependencies") {
+    project.tasks.register<PomDependencyChangesValidator>("checkPomDependencyChanges") {
       pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
       groupId.set(firebaseLibrary.groupId)
       artifactId.set(firebaseLibrary.artifactId)

@@ -134,7 +134,7 @@ abstract class PomValidator : DefaultTask() {
  * @property groupId The groupId for the pom parent
  * @throws GradleException if a new or removed dependency is found in the current pom
  */
-abstract class NewPomDependencyValidator : DefaultTask() {
+abstract class PomDependencyChangesValidator : DefaultTask() {
   @get:InputFile abstract val pomFile: RegularFileProperty
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
