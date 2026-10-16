@@ -16,12 +16,17 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.plugins.datamodels.PomElement
+import com.google.firebase.gradle.plugins.datamodels.fullArtifactName
+import com.google.firebase.gradle.plugins.datamodels.simpleDepString
+import com.google.firebase.gradle.plugins.services.GMavenService
 import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
@@ -45,8 +50,9 @@ abstract class PomValidator : DefaultTask() {
 
   @TaskAction
   fun run() {
+    val pomUrl = getLatestReleasePomUrl() ?: return
     try {
-      var diff = diffWithPomFromURL(getLatestReleasePomUrl())
+      var diff = diffWithPomFromURL(pomUrl)
 
       if (diff.isNotEmpty()) {
         throw GradleException("Dependency version errors found:\n${diff}")
@@ -57,9 +63,10 @@ abstract class PomValidator : DefaultTask() {
     }
   }
 
-  private fun getLatestReleasePomUrl() =
+  private fun getLatestReleasePomUrl(): String? =
     with(GmavenHelper(groupId.get(), artifactId.get())) {
-      getPomFileForVersion(getLatestReleasedVersion())
+      val latestVersion = getLatestReleasedVersion()
+      if (latestVersion.isEmpty()) null else getPomFileForVersion(latestVersion)
     }
 
   private fun getMapOfDependencies(doc: Element) =
@@ -81,7 +88,15 @@ abstract class PomValidator : DefaultTask() {
   fun diffWithPomFromURL(url: String): String {
     val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 
-    val oldPom = documentBuilder.parse(URL(url).openStream())
+    val oldPom =
+      URL(url)
+        .openConnection()
+        .apply {
+          connectTimeout = 10000
+          readTimeout = 10000
+        }
+        .getInputStream()
+        .use { documentBuilder.parse(it) }
     val currentPom = documentBuilder.parse(pomFile.get().asFile)
 
     val oldDependencies = getMapOfDependencies(oldPom.documentElement)
@@ -123,46 +138,27 @@ abstract class NewPomDependencyValidator : DefaultTask() {
   @get:InputFile abstract val pomFile: RegularFileProperty
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenService>
 
   @TaskAction
   fun run() {
-    try {
-      val diff = diffWithPomFromURL(resolveLatestReleasePomUrl())
+    val latestVersion = gmaven.get().latestVersionOrNull(groupId.get(), artifactId.get()) ?: return
+    val oldPom = gmaven.get().pomOrNull(groupId.get(), artifactId.get(), latestVersion) ?: return
+    val currentPom = PomElement.fromFile(pomFile.get().asFile)
 
-      if (diff.isNotEmpty()) {
-        println(diff)
-        throw GradleException(diff)
-      }
-    } catch (_: java.io.FileNotFoundException) {
-      // Gmaven artifact doesn't exist.
-      return
+    val diff = diffPoms(oldPom, currentPom)
+
+    if (diff.isNotEmpty()) {
+      println(diff)
+      throw GradleException(diff)
     }
   }
 
-  internal open fun resolveLatestReleasePomUrl() =
-    with(GmavenHelper(groupId.get(), artifactId.get())) {
-      getPomFileForVersion(getLatestReleasedVersion())
-    }
-
-  private fun getMapOfDependencies(doc: Element) =
-    doc.findElementsByTag("dependency").associate { it.toMavenName() to it.toArtifactString() }
-
-  fun diffWithPomFromURL(url: String): String {
-    val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-
-    val oldPom =
-      URL(url)
-        .openConnection()
-        .apply {
-          connectTimeout = 10000
-          readTimeout = 10000
-        }
-        .getInputStream()
-        .use { documentBuilder.parse(it) }
-    val currentPom = documentBuilder.parse(pomFile.get().asFile)
-
-    val oldDependencies = getMapOfDependencies(oldPom.documentElement)
-    val currentDependencies = getMapOfDependencies(currentPom.documentElement)
+  fun diffPoms(oldPom: PomElement, currentPom: PomElement): String {
+    val oldDependencies =
+      oldPom.dependencies.orEmpty().associate { it.fullArtifactName to it.simpleDepString }
+    val currentDependencies =
+      currentPom.dependencies.orEmpty().associate { it.fullArtifactName to it.simpleDepString }
 
     val newDependencies = currentDependencies.filterKeys { it !in oldDependencies }.values
     val removedDependencies = oldDependencies.filterKeys { it !in currentDependencies }.values
