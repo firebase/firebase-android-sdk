@@ -340,7 +340,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * API 34+: {@link AppStartCause} owns the decision. {@code FOREGROUND} lets the
    *   trace through; {@code UNKNOWN} or null suppresses.
    *
-   * See b/339891952 and https://github.com/firebase/firebase-android-sdk/issues/8103.
+   * {@link AppStartCause#capture} documents why the importance signal is only acted on
+   * from API 34 up even though it is read on every API level.
+   *
+   * See b/339891952, https://github.com/firebase/firebase-android-sdk/issues/8103 and
+   * https://github.com/firebase/firebase-android-sdk/issues/8509.
    */
   private void resolveIsStartedFromBackground() {
     // Only on API < 34 do we consult/consume mainThreadRunnableTime: if the
