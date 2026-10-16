@@ -132,12 +132,12 @@ public class ResumableUploadMetadataStore {
             if (uploads.stream().noneMatch(upload -> upload.path.equals(path))) {
               InProgressUploadMetadata newUpload =
                   new InProgressUploadMetadata(sessionId, type, path);
-              // Add to front (oldest first logic in getUpload expects this order)
-              uploads.add(0, newUpload);
-
               // Prevent the file from growing unbounded, especially if the device is always on
               // a metered network
               trim(uploads);
+
+              // Add to front (oldest first logic in getUpload expects this order)
+              uploads.add(0, newUpload);
 
               if (!flush(fileStore, uploads)) {
                 Logger.getLogger().e("Unable to add a new in progress upload and flush");
