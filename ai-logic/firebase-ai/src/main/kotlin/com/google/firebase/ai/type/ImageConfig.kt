@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -48,7 +47,6 @@ private constructor(
     public fun build(): ImageConfig = ImageConfig(aspectRatio, imageSize)
   }
 
-  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(val aspectRatio: String? = null, val imageSize: String? = null)
 

@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -48,7 +47,6 @@ internal constructor(
       googleMaps = this.googleMaps?.toInternal(),
     )
 
-  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,

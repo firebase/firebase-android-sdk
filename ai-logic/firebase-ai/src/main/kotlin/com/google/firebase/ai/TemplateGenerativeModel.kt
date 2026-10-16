@@ -42,7 +42,6 @@ import kotlin.collections.emptyList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -189,7 +188,6 @@ internal constructor(
       ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
     if (tools.isNullOrEmpty()) {
       throw RuntimeException("No registered tools")
@@ -205,7 +203,6 @@ internal constructor(
     )
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
     functionCall: FunctionCallPart,
     functionDeclaration: TemplateAutoFunctionDeclaration<I, O>,
