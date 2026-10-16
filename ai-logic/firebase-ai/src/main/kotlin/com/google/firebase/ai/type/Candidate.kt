@@ -88,6 +88,7 @@ internal constructor(
     }
   }
 
+  @OptIn(PublicPreviewAPI::class)
   internal companion object {
     fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
