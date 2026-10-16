@@ -135,6 +135,10 @@ public class ResumableUploadMetadataStore {
               // Add to front (oldest first logic in getUpload expects this order)
               uploads.add(0, newUpload);
 
+              // Prevent the file from growing unbounded, especially if the device is always on
+              // a metered network
+              trim(uploads);
+
               if (!flush(fileStore, uploads)) {
                 Logger.getLogger().e("Unable to add a new in progress upload and flush");
                 uploads.remove(newUpload);
@@ -192,6 +196,23 @@ public class ResumableUploadMetadataStore {
     }
 
     return false;
+  }
+
+  @RequiresApi(api = 37)
+  private static void trim(List<InProgressUploadMetadata> uploads) {
+    if (uploads.size() <= 10) {
+      return;
+    }
+
+    uploads.reversed().stream()
+        .filter(InProgressUploadMetadata::isNew)
+        .findFirst()
+        .or(
+            () ->
+                uploads.reversed().stream()
+                    .filter(InProgressUploadMetadata::isInProgress)
+                    .findFirst())
+        .ifPresent(uploads::remove);
   }
 
   @RequiresApi(api = 37)
