@@ -32,6 +32,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
@@ -277,6 +281,130 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testTrim_removesOldestNewUploadFirst() throws IOException {
+    // To test this, we need to start with a file that has > 10 new uploads.
+    // The store adds new uploads to the FRONT of the list (index 0).
+    // When serialized, the list is written in order (index 0 to N).
+    // So the NEWEST upload is at the TOP of the file (index 0).
+    // The OLDEST upload is at the BOTTOM of the file (index N).
+    // Let's construct the file to match this behavior.
+    // path1 is the oldest, so it should be at the bottom.
+    // path11 is the newest, so it should be at the top.
+    StringBuilder sb = new StringBuilder();
+    for (int i = 11; i >= 1; i--) {
+      sb.append("session").append(i).append(",7,null,path").append(i).append("\n");
+    }
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+    Files.write(metadataFile.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    // Constructor loads the 11 new uploads.
+    // The list order in memory will be: path11 (index 0), path10 (index 1), ..., path1 (index 10).
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    // Now add the 12th upload. This should trigger trim BEFORE adding path12.
+    // The list size is 11. Trim should remove the oldest "new" upload, which is at the back of the
+    // list
+    // (index 10, which is "path1").
+    // Then path12 is added to the front (index 0).
+    store.addInProgressUpload("session12", ProfilingTrigger.TRIGGER_TYPE_OOM, "path12");
+
+    String content = new String(Files.readAllBytes(metadataFile.toPath()), StandardCharsets.UTF_8);
+    // It should remove path1 because it is the oldest new upload (at the back of the list).
+    assertThat(content).doesNotContain("path1\n");
+    // The new one (path12) should be added.
+    assertThat(content).contains("path12");
+    // Other items should remain.
+    assertThat(content).contains("path2");
+    assertThat(content).contains("path11");
+
+    // Total lines should be 11 (11 started + 1 added - 1 trimmed).
+    long lineCount = Files.lines(metadataFile.toPath()).count();
+    assertThat(lineCount).isEqualTo(11);
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testTrim_removesOldestInProgressUploadIfNoNewOnes() throws IOException {
+    // To test this, we need to start with a file that has > 10 in-progress uploads.
+    // Similar to the previous test, the oldest upload should be at the bottom of the file.
+    StringBuilder sb = new StringBuilder();
+    for (int i = 11; i >= 1; i--) {
+      sb.append("session")
+          .append(i)
+          .append(",7,handle")
+          .append(i)
+          .append(",path")
+          .append(i)
+          .append("\n");
+    }
+
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+    Files.write(metadataFile.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    // Constructor loads the 11 in-progress uploads.
+    // The list order in memory will be: path11 (index 0), path10 (index 1), ..., path1 (index 10).
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    // Now add the 12th upload (new).
+    // The list size is 11. Trim looks for "new" uploads first. There are NONE in the existing list
+    // (path12 is not added yet).
+    // So it falls back to removing the oldest "in-progress" upload, which is at the back of the
+    // list
+    // (index 10, which is "path1").
+    // Then path12 is added to the front.
+    store.addInProgressUpload("session12", ProfilingTrigger.TRIGGER_TYPE_OOM, "path12");
+
+    String content = new String(Files.readAllBytes(metadataFile.toPath()), StandardCharsets.UTF_8);
+    // It should remove path1 because it is the oldest in-progress upload and no new ones existed.
+    assertThat(content).doesNotContain("path1\n");
+    // The new one (path12) should be added.
+    assertThat(content).contains("path12");
+    // Other items should remain.
+    assertThat(content).contains("path2");
+    assertThat(content).contains("path11");
+
+    // Total lines should be 11.
+    long lineCount = Files.lines(metadataFile.toPath()).count();
+    assertThat(lineCount).isEqualTo(11);
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testTrim_doesNotTrimIfSizeIsTenOrLess() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    // Add 10 uploads.
+    for (int i = 1; i <= 10; i++) {
+      store.addInProgressUpload("session" + i, ProfilingTrigger.TRIGGER_TYPE_OOM, "path" + i);
+    }
+
+    // Verify size is 10.
+    long lineCount = Files.lines(metadataFile.toPath()).count();
+    assertThat(lineCount).isEqualTo(10);
+
+    // Verify all are present.
+    String content = new String(Files.readAllBytes(metadataFile.toPath()), StandardCharsets.UTF_8);
+    assertThat(content).contains("path1");
+    assertThat(content).contains("path10");
+  }
+
+  @Test
   public void testAddInProgressUpload_returnsFalseForNonMainProcess()
       throws NoSuchFieldException, IllegalAccessException {
     ResumableUploadMetadataStore.InProgressUploadMetadata existing1 =
@@ -434,5 +562,68 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
 
     // Reset permissions so it can be deleted
     assertThat(metadataFile.setWritable(true)).isTrue();
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testGetUpload_emptyAfterRemoval() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    // Add and remove
+    store.addInProgressUpload("sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    store.removeInProgressUpload("path1");
+
+    // Now list should be empty
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> current = store.getUpload();
+    assertThat(current.isPresent()).isFalse();
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testConcurrentAccess() throws IOException, InterruptedException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+
+    int numThreads = 10;
+    int opsPerThread = 100;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch latch = new CountDownLatch(numThreads);
+
+    for (int i = 0; i < numThreads; i++) {
+      final int threadId = i;
+      executor.execute(
+          () -> {
+            try {
+              for (int j = 0; j < opsPerThread; j++) {
+                String sessionId = "session-" + threadId + "-" + j;
+                String path = "path-" + threadId + "-" + j;
+                store.addInProgressUpload(sessionId, ProfilingTrigger.TRIGGER_TYPE_OOM, path);
+                store.getUpload();
+                store.removeInProgressUpload(path);
+              }
+            } finally {
+              latch.countDown();
+            }
+          });
+    }
+
+    assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+    executor.shutdown();
+    assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+
+    // Verify no exceptions were thrown and state is consistent
+    Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> finalUpload = store.getUpload();
+    assertThat(finalUpload.isPresent()).isFalse();
   }
 }
