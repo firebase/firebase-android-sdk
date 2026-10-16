@@ -64,6 +64,12 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
     /** Adds a new [TextPart] with the provided [text] to [parts]. */
     @JvmName("addText") public fun text(text: String): Content.Builder = part(TextPart(text))
 
+    /** Adds a new [TextPart] with the provided [text] and [speechMetadata] to [parts]. */
+    @PublicPreviewAPI
+    @JvmName("addText")
+    public fun text(text: String, speechMetadata: SpeechMetadata): Content.Builder =
+      part(TextPart(text, speechMetadata))
+
     /**
      * Adds a new [InlineDataPart] with the provided [bytes], which should be interpreted by the
      * model based on the [mimeType], to [parts].
