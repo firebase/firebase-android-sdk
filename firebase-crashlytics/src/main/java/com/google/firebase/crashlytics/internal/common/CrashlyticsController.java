@@ -17,6 +17,7 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
@@ -577,6 +578,11 @@ class CrashlyticsController {
   }
 
   private void triggerHeapdumpUpload() {
+    if (isActiveNetworkMetered()) {
+      Logger.getLogger().i("Won't upload heap dump due to metered network, will try later");
+      return;
+    }
+
     resumableUploadMetadataStore
         .getUpload()
         .ifPresent(
@@ -1092,5 +1098,12 @@ class CrashlyticsController {
                       result.getTriggerType(), result.getResultFilePath()));
         });
   }
+
+  private boolean isActiveNetworkMetered() {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    return connectivityManager == null || connectivityManager.isActiveNetworkMetered();
+  }
+
   // endregion
 }
