@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -48,7 +47,6 @@ internal constructor(
       googleMaps = this.googleMaps?.toInternal(),
     )
 
-  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
@@ -123,8 +121,9 @@ internal constructor(
      * When using this feature, you are required to comply with the "Grounding with Google Search"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search)
-     * or Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms)
-     * section within the Service Specific Terms).
+     * or Agent Platform Gemini API (see
+     * [Service Terms](https://cloud.google.com/terms/service-terms) section within the Service
+     * Specific Terms).
      *
      * @param googleSearch An empty [GoogleSearch] object. The presence of this object in the list
      * of tools enables the model to use Google Search.
@@ -145,7 +144,7 @@ internal constructor(
      * When using this feature, you are required to comply with the "Grounding with Google Maps"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
-     * Gemini Enterprise API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
      * section within the Service Specific Terms).
      *
      * @return A [Tool] configured for Google Maps.

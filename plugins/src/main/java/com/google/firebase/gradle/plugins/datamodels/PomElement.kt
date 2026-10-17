@@ -188,6 +188,7 @@ data class PomElement(
     private val xml = XML {
       indent = 2
       xmlDeclMode = XmlDeclMode.None
+      defaultPolicy { ignoreUnknownChildren() }
     }
 
     /**

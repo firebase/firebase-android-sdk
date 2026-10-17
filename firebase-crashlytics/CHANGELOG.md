@@ -1,5 +1,9 @@
 # Unreleased
 
+- [feature] Enable heap dump uploads for OOM and MLK issues on API levels 37+ [#8661]
+
+# 21.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
   collection is enabled [#8549]

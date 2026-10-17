@@ -121,7 +121,7 @@ internal class CloudGenerativeModelProvider(
     when (generativeBackend.backend) {
       GenerativeBackendEnum.GOOGLE_AI ->
         CountTokensRequest.forGoogleAI(buildGenerateContentRequest(prompt))
-      GenerativeBackendEnum.ENTERPRISE ->
+      GenerativeBackendEnum.AGENT_PLATFORM ->
         CountTokensRequest.forVertexAI(buildGenerateContentRequest(prompt))
     }
 

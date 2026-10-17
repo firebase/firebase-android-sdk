@@ -1,6 +1,7 @@
 existing_api.txt
 .gradle/
 build/
+.kotlin/
 .idea/
 .run
 *.iml

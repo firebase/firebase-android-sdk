@@ -36,7 +36,14 @@ class DocumentService {
    *
    * It's the caller's responsibility to _close_ the stream when done.
    */
-  fun openStream(url: String): InputStream = URL(url).openStream()
+  fun openStream(url: String): InputStream =
+    URL(url)
+      .openConnection()
+      .apply {
+        connectTimeout = 10000
+        readTimeout = 10000
+      }
+      .getInputStream()
 
   /**
    * Downloads the [Document] from the specified [url], and saves it to a [file].
@@ -58,7 +65,7 @@ class DocumentService {
    */
   fun downloadDocument(url: String): Document? =
     try {
-      DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(openStream(url))
+      openStream(url).use { DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(it) }
     } catch (e: FileNotFoundException) {
       null
     }

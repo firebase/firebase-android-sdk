@@ -1,9 +1,19 @@
 # Unreleased
 
+- [feature] Added `SpeechMetadata` and the `TextPart.speechMetadata` property to
+  specify the speaker and vocal style (such as `"cheerful"`) for a piece of text
+  when generating speech. (#8690)
+- [feature] Added `enableThinking` to `OnDeviceConfig` to support
+  [thinking mode](https://firebase.google.com/docs/ai-logic/thinking) in
+  on-device and hybrid inference modes, with automatic cloud fallback when the
+  on-device model does not support thinking. (#8678)
+- [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
+
+# 18.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
-- [changed] Deprecated `GenerativeBackend.agentPlatform` in favor of
-  `GenerativeBackend.enterprise` to reflect the renaming of Gemini Agent
-  Platform to Gemini Enterprise API. (#8640)
+- [removed] **Breaking Change**: Removed deprecated
+  `GenerativeBackend.vertexAI` in favor of `GenerativeBackend.agentPlatform`. (#8437)
 - [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
   the cloud model when non-text response modalities, unsupported
   prompt part types, or multiple image parts are requested. (#8617)

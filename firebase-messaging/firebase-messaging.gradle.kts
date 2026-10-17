@@ -96,33 +96,24 @@ dependencies {
 
   api(libs.firebase.common)
   api(libs.firebase.components)
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-datatransport.
-  api(project(":firebase-datatransport")) {
+  api("com.google.firebase:firebase-datatransport:21.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
-  api(project(":encoders:firebase-encoders"))
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-json.
-  api(project(":encoders:firebase-encoders-json"))
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders-proto.
-  api(project(":encoders:firebase-encoders-proto"))
+  api("com.google.firebase:firebase-encoders:18.0.0")
+  api("com.google.firebase:firebase-encoders-json:19.0.0")
+  api("com.google.firebase:firebase-encoders-proto:17.0.0")
   api("com.google.firebase:firebase-iid-interop:17.1.0")
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations.
-  api(project(":firebase-installations")) {
+  api("com.google.firebase:firebase-installations:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-installations-interop.
-  api(project(":firebase-installations-interop"))
+  api("com.google.firebase:firebase-installations-interop:18.0.0")
   api("com.google.firebase:firebase-measurement-connector:19.0.0")
 
   implementation(libs.androidx.annotation)
-  // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-api.
-  implementation(project(":transport:transport-api"))
-  // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-backend-cct.
-  implementation(project(":transport:transport-backend-cct"))
-  // TODO(m187-repin): restore pin on com.google.android.datatransport:transport-runtime.
-  implementation(project(":transport:transport-runtime"))
+  implementation("com.google.android.datatransport:transport-api:5.0.0")
+  implementation("com.google.android.datatransport:transport-backend-cct:5.0.0")
+  implementation("com.google.android.datatransport:transport-runtime:5.0.0")
   implementation(libs.bundles.playservices)
   implementation(libs.play.services.cloud.messaging)
   implementation(libs.play.services.stats)

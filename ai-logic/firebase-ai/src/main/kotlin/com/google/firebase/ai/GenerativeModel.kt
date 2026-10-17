@@ -55,7 +55,6 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
@@ -264,7 +263,6 @@ internal constructor(
       .firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
     if (tools.isEmpty()) {
       throw RuntimeException("No registered tools")
@@ -280,7 +278,6 @@ internal constructor(
     )
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
     functionCall: FunctionCallPart,
     functionDeclaration: AutoFunctionDeclaration<I, O>,
@@ -374,7 +371,8 @@ internal constructor(
       onDeviceFactoryProvider?.let {
         OnDeviceGenerativeModelProvider(
           it.newGenerativeModel(modelOption?.toInterop()),
-          onDeviceConfig
+          onDeviceConfig,
+          systemInstruction
         )
       }
         ?: MissingOnDeviceGenerativeModelProvider()

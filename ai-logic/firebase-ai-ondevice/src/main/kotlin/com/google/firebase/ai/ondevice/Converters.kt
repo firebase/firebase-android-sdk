@@ -31,6 +31,7 @@ import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.ModelPreference
 import com.google.mlkit.genai.prompt.ModelReleaseStage
+import com.google.mlkit.genai.prompt.SystemInstruction
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generationConfig
 import com.google.mlkit.genai.prompt.modelConfig
@@ -39,6 +40,9 @@ import com.google.mlkit.genai.prompt.modelConfig
 // `Part` converter extension functions
 // ====================================
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKit(): TextPart = TextPart(text)
+
+internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKitSystemInstruction():
+  SystemInstruction = SystemInstruction(text)
 
 internal fun com.google.firebase.ai.ondevice.interop.ImagePart.toMlKit(): ImagePart =
   ImagePart(bitmap)
@@ -74,6 +78,8 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       candidateCount = this@toMlKit.candidateCount
       topK = this@toMlKit.topK
       seed = this@toMlKit.seed
+      systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
+      enableThinking = this@toMlKit.enableThinking ?: false
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)
@@ -82,7 +88,12 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
 
 internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop(
   modelName: String
-): GenerateContentResponse = GenerateContentResponse(candidates.map { it.toInterop() }, modelName)
+): GenerateContentResponse =
+  GenerateContentResponse(
+    candidates = candidates.map { it.toInterop() },
+    modelVersion = modelName,
+    thoughtProcess = thoughtProcess.map { it.toInterop() }
+  )
 
 // ================================================
 // `GenerationConfig` converter extension functions

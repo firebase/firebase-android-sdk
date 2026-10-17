@@ -15,13 +15,19 @@
  */
 package com.google.firebase.dataconnect.minimaldemo
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.CompoundButton.OnCheckedChangeListener
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -36,12 +42,23 @@ class MainActivity : AppCompatActivity() {
   private lateinit var viewBinding: ActivityMainBinding
   private val viewModel: MainViewModel by viewModels { MainViewModel.Factory }
 
+  private val requestLocalNetworkPermissionLauncher =
+    registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+      if (isGranted) {
+        Log.i(TAG, "Permission granted: ${Manifest.permission.ACCESS_LOCAL_NETWORK}")
+      } else {
+        Log.w(TAG, "WARNING: Permission denied: ${Manifest.permission.ACCESS_LOCAL_NETWORK}")
+      }
+    }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     myApplication = application as MyApplication
 
     viewBinding = ActivityMainBinding.inflate(layoutInflater)
     setContentView(viewBinding.root)
+
+    requestLocalNetworkPermissionIfNeeded()
 
     viewBinding.insertItemButton.setOnClickListener { viewModel.insertItem() }
     viewBinding.getItemButton.setOnClickListener { viewModel.getItem() }
@@ -100,10 +117,28 @@ class MainActivity : AppCompatActivity() {
     if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
       return@OnCheckedChangeListener
     }
+    if (isChecked) {
+      requestLocalNetworkPermissionIfNeeded()
+    }
     myApplication.coroutineScope.launch { myApplication.setUseDataConnectEmulator(isChecked) }
   }
 
+  private fun requestLocalNetworkPermissionIfNeeded() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+      return
+    }
+    if (
+      ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_LOCAL_NETWORK) ==
+        PackageManager.PERMISSION_GRANTED
+    ) {
+      return
+    }
+    Log.i(TAG, "Requesting permission: ${Manifest.permission.ACCESS_LOCAL_NETWORK}")
+    requestLocalNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+  }
+
   companion object {
+    private const val TAG = "MainActivity"
 
     private val MainViewModel.isInsertOperationInProgress: Boolean
       get() = insertState is OperationState.InProgress

@@ -50,6 +50,7 @@ android {
     minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    consumerProguardFiles("proguard-rules.pro")
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -105,10 +106,9 @@ protobuf {
 
 dependencies {
   api(libs.firebase.common)
+  api(libs.firebase.annotations)
 
-  api(project(":firebase-annotations"))
-  // TODO(m187-repin): restore pin on com.google.firebase:firebase-appcheck-interop.
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation(libs.firebase.components)
 

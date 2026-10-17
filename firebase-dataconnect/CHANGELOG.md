@@ -1,5 +1,11 @@
 # Unreleased
 
+- [fixed] Fixed an issue where `NoSuchFieldException` was thrown during query
+  and mutation execution in apps compiled with R8 or ProGuard optimizations
+  enabled. ([#8698](https://github.com/firebase/firebase-android-sdk/pull/8698))
+
+# 18.0.0
+
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
 - [feature] **Breaking change:** Added `AuthUserChangedException` to enable
   reliably detecting when a realtime streaming connection fails due to a change

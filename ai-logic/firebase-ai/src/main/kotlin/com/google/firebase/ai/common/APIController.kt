@@ -216,7 +216,7 @@ internal constructor(
 
   private fun getLiveEndpoint(location: String): String =
     when (backend?.backend) {
-      GenerativeBackendEnum.ENTERPRISE,
+      GenerativeBackendEnum.AGENT_PLATFORM,
       null ->
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
       GenerativeBackendEnum.GOOGLE_AI ->
