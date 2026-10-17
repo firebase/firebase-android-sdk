@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,7 +23,7 @@ import kotlinx.serialization.Serializable
  * to.
  */
 public class TemplateTool
-@OptIn(PublicPreviewAPI::class, InternalSerializationApi::class)
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   internal val functionDeclarations: List<TemplateFunctionDeclaration>?,
   internal val autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,

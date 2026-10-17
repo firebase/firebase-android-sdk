@@ -44,7 +44,6 @@ import io.ktor.websocket.readBytes
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -169,7 +168,6 @@ internal constructor(
       .firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
     if (tools.isEmpty()) {
       throw RuntimeException("No registered tools")
@@ -185,7 +183,6 @@ internal constructor(
     )
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
     functionCall: FunctionCallPart,
     functionDeclaration: AutoFunctionDeclaration<I, O>,
