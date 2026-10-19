@@ -16,6 +16,7 @@
 
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
 
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -63,7 +64,16 @@ android {
   }
 
   buildTypes {
-    release { signingConfig = signingConfigs["debug"] }
+    release {
+      signingConfig = signingConfigs["debug"]
+      isMinifyEnabled = true
+      isShrinkResources = true
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "multidex-config.pro")
+
+      // Explicitly enable automatic mapping upload for this variant
+      configure<CrashlyticsExtension> { mappingFileUploadEnabled = true }
+    }
+
     create("benchmark") {
       initWith(buildTypes["release"])
       signingConfig = signingConfigs["debug"]
