@@ -622,7 +622,7 @@ public class SessionReportingCoordinator {
                           + "] "
                           + heapDump.getName());
 
-              return !lastModifiedTime.isBefore(sessionStartTime);
+              return true; // !lastModifiedTime.isBefore(sessionStartTime);
             })
         .findFirst();
   }
