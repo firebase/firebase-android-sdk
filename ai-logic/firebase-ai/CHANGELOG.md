@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added `SpeechMetadata` and the `TextPart.speechMetadata` property to
+  specify the speaker and vocal style (such as `"cheerful"`) for a piece of text
+  when generating speech. (#8690)
 - [feature] Added `enableThinking` to `OnDeviceConfig` to support
   [thinking mode](https://firebase.google.com/docs/ai-logic/thinking) in
   on-device and hybrid inference modes, with automatic cloud fallback when the
