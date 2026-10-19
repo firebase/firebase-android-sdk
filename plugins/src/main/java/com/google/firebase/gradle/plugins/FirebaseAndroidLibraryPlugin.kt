@@ -111,7 +111,7 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupDefaults(project, firebaseLibrary)
     setupApiInformationAnalysis(project, android)
     setupStaticAnalysis(project, firebaseLibrary)
-    getIsPomValidTask(project, firebaseLibrary)
+    registerPomValidationTasks(project, firebaseLibrary)
     setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
   }

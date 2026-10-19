@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
 /**
@@ -39,7 +38,6 @@ internal constructor(
    * @throws RuntimeException if class is not @Serializable
    * @throws SerializationException if an error occurs during deserialization
    */
-  @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? =
     synchronized(this) {
       val insts = instances
