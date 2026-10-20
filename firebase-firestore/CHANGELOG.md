@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] Guard gRPC `call was cancelled exceptions` (#8608). Fixes #8601.
 - [fixed] Fixed an issue where test-only dependencies (`truth`, `junit`, `mockito-core`, and
   `jackson-databind`) were inadvertently included as runtime dependencies in the published Maven POM
   (#8696).
@@ -15,6 +16,7 @@
   `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
   and support for removing reserved fields such as `__name__` with `removeFields()`.
   ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+>>>>>>> main
 
 # 26.6.0
 

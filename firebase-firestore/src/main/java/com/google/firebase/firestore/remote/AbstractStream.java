@@ -409,7 +409,21 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
         System.identityHashCode(this),
         message);
     cancelIdleCheck();
-    call.sendMessage(message);
+    if (call != null) {
+      try {
+        call.sendMessage(message);
+      } catch (IllegalStateException e) {
+        if (e.getMessage() != null && e.getMessage().contains("call was cancelled")) {
+          Logger.debug(
+              getClass().getSimpleName(),
+              "(%x) Stream writeRequest failed because call was cancelled: [%s]",
+              System.identityHashCode(this),
+              e);
+        } else {
+          throw e;
+        }
+      }
+    }
   }
 
   /** Called by the idle timer when the stream should close due to inactivity. */

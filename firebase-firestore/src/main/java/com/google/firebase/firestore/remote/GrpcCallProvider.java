@@ -38,6 +38,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.android.AndroidChannelBuilder;
 import io.grpc.okhttp.OkHttpChannelBuilder;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /** Manages the gRPC channel and encapsulates all SSL and gRPC initialization. */
@@ -260,13 +261,35 @@ public class GrpcCallProvider {
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
               asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel));
+              // Ensure all callbacks and internal delayed call drains are issued on the worker
+              // queue. Intercept 'call was cancelled' IllegalStateException from gRPC's internal
+              // DelayedClientCall.drainPendingCalls() to prevent crashing the AsyncQueue.
+              // See: https://github.com/firebase/firebase-android-sdk/issues/8601.
+              Executor guardedGrpcExecutor =
+                  command ->
+                      asyncQueue
+                          .getExecutor()
+                          .execute(
+                              () -> {
+                                try {
+                                  command.run();
+                                } catch (IllegalStateException e) {
+                                  String message = e.getMessage();
+                                  if (message != null && message.contains("call was cancelled")) {
+                                    Logger.debug(
+                                        LOG_TAG,
+                                        "Suppressed gRPC 'call was cancelled' exception: %s",
+                                        e);
+                                  } else {
+                                    throw e;
+                                  }
+                                }
+                              });
+
               FirestoreGrpc.FirestoreStub firestoreStub =
                   FirestoreGrpc.newStub(channel)
                       .withCallCredentials(firestoreHeaders)
-                      // Ensure all callbacks are issued on the worker queue. If this call is
-                      // removed, all calls need to be audited to make sure they are executed on the
-                      // right thread.
-                      .withExecutor(asyncQueue.getExecutor());
+                      .withExecutor(guardedGrpcExecutor);
               callOptions = firestoreStub.getCallOptions();
               Logger.debug(LOG_TAG, "Channel successfully reset.");
               return channel;
