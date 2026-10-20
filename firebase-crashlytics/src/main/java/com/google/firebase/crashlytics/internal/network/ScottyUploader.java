@@ -253,7 +253,7 @@ public class ScottyUploader {
   }
 
   private String makeCanonicalFilename(String sessionId, int type) {
-    String trigger = type == ProfilingTrigger.TRIGGER_TYPE_OOM ? "oom" : "mlk";
+    String trigger = triggerAsString(type);
     return String.format("%s/%s.perfetto", trigger, sessionId);
   }
 
@@ -279,9 +279,9 @@ public class ScottyUploader {
   private static String triggerAsString(int type) {
     switch (type) {
       case ProfilingTrigger.TRIGGER_TYPE_ANOMALY:
-        return "mlk";
+        return "mlks";
       case ProfilingTrigger.TRIGGER_TYPE_OOM:
-        return "oom";
+        return "ooms";
       default:
         return "none";
     }
