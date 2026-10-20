@@ -21,8 +21,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ConfigRealtimeHandler {
@@ -52,7 +52,7 @@ public class ConfigRealtimeHandler {
       ConfigSharedPrefsClient sharedPrefsClient,
       ScheduledExecutorService scheduledExecutorService) {
 
-    this.listeners = new LinkedHashSet<>();
+    this.listeners = new CopyOnWriteArraySet<>();
     this.configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,

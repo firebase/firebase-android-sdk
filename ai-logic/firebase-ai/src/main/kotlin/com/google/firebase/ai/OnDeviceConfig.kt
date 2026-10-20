@@ -34,6 +34,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to `1`.
  * @property modelOption Configuration for the on-device model selection and performance.
+ * @property enableThinking Whether to enable thinking mode for the on-device model.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -45,7 +46,8 @@ constructor(
   public val topK: Int? = null,
   public val seed: Int? = null,
   public val candidateCount: Int = 1,
-  public val modelOption: OnDeviceModelOption? = null
+  public val modelOption: OnDeviceModelOption? = null,
+  public val enableThinking: Boolean? = null
 ) {
 
   public companion object {
@@ -184,33 +186,33 @@ public class OnDeviceModelStatus private constructor(private val value: String) 
 
 /** An abstract class representing the status of an on-device model download operation. */
 @PublicPreviewAPI
-public abstract class DownloadStatus {
+public abstract class DownloadStatus internal constructor() {
   /** Represents when a download has just started. */
-  public class DownloadStarted(public val bytesToDownload: Long) : DownloadStatus() {
+  public class DownloadStarted internal constructor(public val bytesToDownload: Long) :
+    DownloadStatus() {
     override fun equals(other: Any?): Boolean =
       other is DownloadStarted && bytesToDownload == other.bytesToDownload
     override fun hashCode(): Int = bytesToDownload.hashCode()
   }
 
   /** Represents when a download is actively in progress. */
-  public class DownloadInProgress(public val totalBytesDownloaded: Long) : DownloadStatus() {
+  public class DownloadInProgress internal constructor(public val totalBytesDownloaded: Long) :
+    DownloadStatus() {
     override fun equals(other: Any?): Boolean =
       other is DownloadInProgress && totalBytesDownloaded == other.totalBytesDownloaded
     override fun hashCode(): Int = totalBytesDownloaded.hashCode()
   }
 
   /** Represents when a download has failed. */
-  public class DownloadFailed(public val exception: FirebaseAIException) : DownloadStatus() {
+  public class DownloadFailed internal constructor(public val exception: FirebaseAIException) :
+    DownloadStatus() {
     override fun equals(other: Any?): Boolean =
       other is DownloadFailed && exception == other.exception
     override fun hashCode(): Int = exception.hashCode()
   }
 
   /** Represents when a download has successfully completed. */
-  public class DownloadCompleted : DownloadStatus() {
-    override fun equals(other: Any?): Boolean = other is DownloadCompleted
-    override fun hashCode(): Int = javaClass.hashCode()
-  }
+  public object DownloadCompleted : DownloadStatus()
 
   internal companion object {
     internal fun fromInterop(
@@ -222,7 +224,7 @@ public abstract class DownloadStatus {
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadInProgress ->
           DownloadInProgress(status.totalBytesDownloaded)
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadCompleted ->
-          DownloadCompleted()
+          DownloadCompleted
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadFailed ->
           DownloadFailed(FirebaseAIException.from(status.exception))
         else ->

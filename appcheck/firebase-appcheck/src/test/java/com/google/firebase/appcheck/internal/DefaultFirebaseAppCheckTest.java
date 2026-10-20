@@ -43,11 +43,12 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLooper;
 
 /** Tests for {@link DefaultFirebaseAppCheck}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class DefaultFirebaseAppCheckTest {
 
   private static final String EXCEPTION_TEXT = "exceptionText";
@@ -284,6 +285,7 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
 
     verify(mockAppCheckProvider).getToken();
     ArgumentCaptor<DefaultAppCheckTokenResult> tokenResultCaptor =
@@ -307,6 +309,7 @@ public class DefaultFirebaseAppCheckTest {
         .thenReturn(Tasks.forException(new Exception(EXCEPTION_TEXT)));
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
 
     verify(mockAppCheckProvider).getToken();
     verify(mockAppCheckTokenListener, never()).onAppCheckTokenChanged(any());
@@ -321,6 +324,7 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
     defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
 
     verify(mockAppCheckProvider).getToken();
     ArgumentCaptor<DefaultAppCheckTokenResult> tokenResultCaptor =
@@ -345,6 +349,7 @@ public class DefaultFirebaseAppCheckTest {
         .thenReturn(Tasks.forException(new Exception(EXCEPTION_TEXT)));
 
     defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
 
     verify(mockAppCheckProvider).getToken();
     verify(mockAppCheckTokenListener, never()).onAppCheckTokenChanged(any());
@@ -464,6 +469,7 @@ public class DefaultFirebaseAppCheckTest {
 
     Task<AppCheckTokenResult> tokenTask =
         defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
 
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.isSuccessful()).isTrue();

@@ -62,7 +62,6 @@ import com.google.firebase.ai.type.LiveServerMessage;
 import com.google.firebase.ai.type.LiveServerSetupComplete;
 import com.google.firebase.ai.type.LiveServerToolCall;
 import com.google.firebase.ai.type.LiveServerToolCallCancellation;
-import com.google.firebase.ai.type.MediaData;
 import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.MultiSpeakerVoiceConfig;
 import com.google.firebase.ai.type.Part;
@@ -314,10 +313,8 @@ public class JavaCompileTests {
 
   public void validateCountTokensResponse(CountTokensResponse response) {
     int tokens = response.getTotalTokens();
-    Integer billable = response.getTotalBillableCharacters();
     Assert.assertEquals(tokens, response.component1());
-    Assert.assertEquals(billable, response.component2());
-    Assert.assertEquals(response.getPromptTokensDetails(), response.component3());
+    Assert.assertEquals(response.getPromptTokensDetails(), response.component2());
     for (ModalityTokenCount count : response.getPromptTokensDetails()) {
       ContentModality modality = count.getModality();
       int tokenCount = count.getTokenCount();
@@ -461,7 +458,6 @@ public class JavaCompileTests {
     session.send(new Content.Builder().addText("Fake message").build());
 
     byte[] bytes = new byte[] {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
-    session.sendMediaStream(List.of(new MediaData(bytes, "image/jxl")));
     session.sendAudioRealtime(new InlineData(bytes, "audio/jxl", null));
     session.sendVideoRealtime(new InlineData(bytes, "image/jxl", null));
     session.sendTextRealtime("text");

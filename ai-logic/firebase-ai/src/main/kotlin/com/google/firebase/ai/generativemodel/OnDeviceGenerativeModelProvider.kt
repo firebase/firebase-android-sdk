@@ -19,6 +19,7 @@ package com.google.firebase.ai.generativemodel
 import android.util.Log
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
@@ -50,11 +51,13 @@ import kotlinx.coroutines.flow.map
  *
  * @property onDeviceModel The underlying on-device model to use for generation.
  * @property onDeviceConfig Configuration options for the on-device model.
+ * @property systemInstruction Optional instructions that direct the model to behave a certain way.
  */
 @PublicPreviewAPI
 internal class OnDeviceGenerativeModelProvider(
   private val onDeviceModel: OnDeviceGenerativeModel,
-  private val onDeviceConfig: OnDeviceConfig
+  private val onDeviceConfig: OnDeviceConfig,
+  internal val systemInstruction: Content? = null
 ) : GenerativeModelProvider {
 
   /**
@@ -71,13 +74,7 @@ internal class OnDeviceGenerativeModelProvider(
       val request = buildOnDeviceGenerateContentRequest(prompt)
 
       val response = onDeviceModel.generateContent(request)
-      GenerateContentResponse(
-        response.candidates.map { Candidate.fromInterop(it) },
-        InferenceSource.ON_DEVICE,
-        null,
-        null,
-        response.modelVersion
-      )
+      toPublicResponse(response)
     }
 
   /**
@@ -89,11 +86,7 @@ internal class OnDeviceGenerativeModelProvider(
    */
   override suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
     withFirebaseAIExceptionHandling {
-      if (!onDeviceModel.isAvailable()) {
-        throw FirebaseAIException.from(
-          FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-        )
-      }
+      ensureOnDeviceModelAvailable(checkThinkingMode = false)
 
       val request = buildOnDeviceGenerateContentRequest(prompt)
 
@@ -108,27 +101,19 @@ internal class OnDeviceGenerativeModelProvider(
    * @return A flow of generated responses.
    */
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> = flow {
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
-    }
-
-    val request = buildOnDeviceGenerateContentRequest(prompt)
+    val request =
+      try {
+        ensureOnDeviceModelAvailable()
+        buildOnDeviceGenerateContentRequest(prompt)
+      } catch (e: Throwable) {
+        throw FirebaseAIException.from(e)
+      }
 
     emitAll(
       onDeviceModel
         .generateContentStream(request)
         .catch { throw FirebaseAIException.from(it) }
-        .map {
-          GenerateContentResponse(
-            it.candidates.map { candidate -> Candidate.fromInterop(candidate) },
-            InferenceSource.ON_DEVICE,
-            null,
-            null,
-            it.modelVersion
-          )
-        }
+        .map { toPublicResponse(it) }
     )
   }
 
@@ -174,7 +159,7 @@ internal class OnDeviceGenerativeModelProvider(
    */
   override suspend fun warmUp() {
     withFirebaseAIExceptionHandling {
-      ensureOnDeviceModelAvailable()
+      ensureOnDeviceModelAvailable(checkThinkingMode = false)
       onDeviceModel.warmup()
     }
   }
@@ -187,19 +172,54 @@ internal class OnDeviceGenerativeModelProvider(
     }
   }
 
-  private suspend fun ensureOnDeviceModelAvailable() {
+  private suspend fun ensureOnDeviceModelAvailable(checkThinkingMode: Boolean = true) {
     if (!onDeviceModel.isAvailable()) {
       throw FirebaseAIException.from(
         FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
       )
     }
+    if (
+      checkThinkingMode &&
+        onDeviceConfig.enableThinking == true &&
+        !onDeviceModel.isThinkingModeAvailable()
+    ) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException(
+          "Thinking mode is not available on the on-device model"
+        )
+      )
+    }
+  }
+
+  private fun toPublicResponse(
+    response: com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+  ): GenerateContentResponse {
+    val candidates =
+      if (response.candidates.isNotEmpty()) {
+        response.candidates.map { candidate ->
+          Candidate.fromInterop(candidate, response.thoughtProcess)
+        }
+      } else if (response.thoughtProcess.isNotEmpty()) {
+        listOf(Candidate.fromInteropThought(response.thoughtProcess))
+      } else {
+        emptyList()
+      }
+    return GenerateContentResponse(
+      candidates,
+      InferenceSource.ON_DEVICE,
+      null,
+      null,
+      response.modelVersion
+    )
   }
 
   private fun buildOnDeviceGenerateContentRequest(
     prompt: List<Content>
   ): OnDeviceGenerateContentRequest {
     if (prompt.isEmpty()) {
-      throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
+      )
     }
     val parts =
       if (prompt.size == 1) {
@@ -208,6 +228,16 @@ internal class OnDeviceGenerativeModelProvider(
         Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
         prompt.flatMap { it.parts }
       }
+    val unsupportedParts = parts.filter { it !is TextPart && it !is ImagePart }
+    if (unsupportedParts.isNotEmpty()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException(
+            "On-device model does not support part types: ${unsupportedParts.map { it::class.java.simpleName }}"
+          )
+        )
+      )
+    }
     val textParts =
       parts.filterIsInstance<TextPart>().also {
         if (it.size > 1)
@@ -218,21 +248,43 @@ internal class OnDeviceGenerativeModelProvider(
       }
     if (textParts.isEmpty()) {
       throw FirebaseAIException.from(
-        IllegalArgumentException("On-device model requires text as part of the prompt")
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model requires text as part of the prompt")
+        )
       )
     }
-    val text = textParts.joinToString("") { it.text }
-    val image =
-      parts
-        .filterIsInstance<ImagePart>()
-        .also {
-          if (it.size > 1)
-            Log.w(
-              TAG,
-              "On-device model does not support multiple image parts, using only the first one"
+    val imageParts = parts.filterIsInstance<ImagePart>()
+    if (imageParts.size > 1) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(
+          IllegalArgumentException("On-device model does not support multiple image parts")
+        )
+      )
+    }
+    val onDeviceSystemInstruction =
+      systemInstruction?.let { instruction ->
+        val systemTextParts = instruction.parts.filterIsInstance<TextPart>()
+        if (systemTextParts.size < instruction.parts.size) {
+          val unsupportedSystemParts = instruction.parts.filter { it !is TextPart }
+          throw FirebaseAIException.from(
+            FirebaseAIOnDeviceInvalidRequestException(
+              IllegalArgumentException(
+                "On-device model does not support non-text parts in systemInstruction: ${unsupportedSystemParts.map { it::class.java.simpleName }}"
+              )
             )
+          )
         }
-        .firstOrNull()
+        if (systemTextParts.size > 1) {
+          Log.w(
+            TAG,
+            "On-device model does not support multiple text parts in systemInstruction, concatenating them instead"
+          )
+        }
+        if (systemTextParts.isEmpty()) null
+        else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
+      }
+    val text = textParts.joinToString("\n") { it.text }
+    val image = imageParts.firstOrNull()
     return OnDeviceGenerateContentRequest(
       text = OnDeviceTextPart(text),
       image = image?.let { OnDeviceImagePart(it.image) },
@@ -240,7 +292,9 @@ internal class OnDeviceGenerativeModelProvider(
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,
       candidateCount = onDeviceConfig.candidateCount,
-      maxOutputTokens = onDeviceConfig.maxOutputTokens
+      maxOutputTokens = onDeviceConfig.maxOutputTokens,
+      systemInstruction = onDeviceSystemInstruction,
+      enableThinking = onDeviceConfig.enableThinking
     )
   }
 

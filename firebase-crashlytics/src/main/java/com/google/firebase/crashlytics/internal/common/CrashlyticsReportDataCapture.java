@@ -128,7 +128,7 @@ public class CrashlyticsReportDataCapture {
 
     return Event.builder()
         .setType("anr")
-        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setTimestamp(getTimestampSeconds(applicationExitInfo.getTimestamp()))
         .setApp(populateEventApplicationData(orientation, addBuildIdInfo(applicationExitInfo)))
         .setDevice(populateEventDeviceData(orientation))
         .build();
@@ -490,5 +490,9 @@ public class CrashlyticsReportDataCapture {
         applicationExitInfo.getProcessName(),
         applicationExitInfo.getPid(),
         applicationExitInfo.getImportance());
+  }
+
+  private static long getTimestampSeconds(long timestampMillis) {
+    return timestampMillis / 1000L;
   }
 }

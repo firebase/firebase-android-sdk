@@ -21,7 +21,12 @@ package com.google.firebase.ai.ondevice.interop
  *
  * @property candidates The individual responses from the model.
  * @property modelVersion The version of the model that generated the response.
+ * @property thoughtProcess The reasoning process from the model, if thinking mode was enabled.
  */
 public class GenerateContentResponse
 @JvmOverloads
-constructor(public val candidates: List<Candidate>, public val modelVersion: String? = null) {}
+constructor(
+  public val candidates: List<Candidate>,
+  public val modelVersion: String? = null,
+  public val thoughtProcess: List<Candidate> = emptyList()
+) {}

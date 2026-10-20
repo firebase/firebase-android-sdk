@@ -28,6 +28,8 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
@@ -37,6 +39,7 @@ import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
 import com.google.firebase.crashlytics.internal.settings.Settings.SessionData;
@@ -67,6 +70,8 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
 
+  @Mock private FirebaseApp firebaseApp;
+
   private CrashlyticsWorkers crashlyticsWorkers;
 
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
@@ -86,6 +91,15 @@ public class CrashlyticsControllerRobolectricTest {
     testFileStore = new FileStore(testContext);
     crashlyticsWorkers =
         new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+
+    FirebaseOptions options =
+        new FirebaseOptions.Builder()
+            .setApiKey("api-key")
+            .setApplicationId("applicationId")
+            .setProjectId("projectId")
+            .build();
+
+    when(firebaseApp.getOptions()).thenReturn(options);
   }
 
   @Test
@@ -179,6 +193,9 @@ public class CrashlyticsControllerRobolectricTest {
             "versionName",
             mock(DevelopmentPlatformProvider.class));
 
+    ResumableUploadMetadataStore store =
+        new ResumableUploadMetadataStore(testContext, testFileStore);
+
     final CrashlyticsController controller =
         new CrashlyticsController(
             testContext,
@@ -193,7 +210,9 @@ public class CrashlyticsControllerRobolectricTest {
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
             mock(CrashlyticsAppQualitySessionsSubscriber.class),
-            crashlyticsWorkers);
+            crashlyticsWorkers,
+            store,
+            firebaseApp);
     controller.openSession(SESSION_ID);
     return controller;
   }

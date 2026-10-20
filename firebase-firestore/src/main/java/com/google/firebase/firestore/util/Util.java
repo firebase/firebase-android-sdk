@@ -25,6 +25,7 @@ import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.Quadruple;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -144,6 +145,15 @@ public class Util {
   private static String getUtf8SafeBytes(String str, int index) {
     int firstCodePoint = str.codePointAt(index);
     return str.substring(index, index + Character.charCount(firstCodePoint));
+  }
+
+  /** Utility function to compare Quadruples (using Firestore semantics for NaN).*/
+  public static int compareQuadruples(Quadruple left, Quadruple right) {
+    return NumberComparisonHelper.firestoreCompareQuadruples(left, right);
+  }
+
+  public static <T extends Comparable<T>> Comparator<T> comparator() {
+    return Comparable::compareTo;
   }
 
   public static FirebaseFirestoreException exceptionFromStatus(Status error) {
