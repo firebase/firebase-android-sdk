@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Internal improvements
+
 # 21.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
