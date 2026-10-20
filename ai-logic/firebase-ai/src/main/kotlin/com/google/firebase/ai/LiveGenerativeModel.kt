@@ -132,34 +132,34 @@ internal constructor(
             )
             .toInternal()
         val data: String = JSON.encodeToString(clientMessage)
-        val webSession = controller.getWebSocketSession(location)
-        webSession.send(Frame.Text(data))
-        val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-        val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
-        if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-          webSession
-        } else {
-          webSession.close()
-          throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+        var webSession: DefaultClientWebSocketSession? = null
+        try {
+          webSession = controller.getWebSocketSession(location)
+          webSession.send(Frame.Text(data))
+          val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+          val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+          if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+            webSession
+          } else {
+            webSession.close()
+            throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+          }
+        } catch (e: ClosedReceiveChannelException) {
+          val reason = webSession?.closeReason?.await()
+          val message =
+            "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
+          throw ServiceConnectionHandshakeFailedException(message, e)
         }
       }
-    var webSession: DefaultClientWebSocketSession? = null
-    try {
-      webSession = connectFactory(sessionResumption)
-      return LiveSession(
-        session = webSession,
-        blockingDispatcher = blockingDispatcher,
-        firebaseApp = firebaseApp,
-        connectionFactory = connectFactory,
-        hasFunction = ::hasFunction,
-        executeFunction = ::executeFunction
-      )
-    } catch (e: ClosedReceiveChannelException) {
-      val reason = webSession?.closeReason?.await()
-      val message =
-        "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
-      throw ServiceConnectionHandshakeFailedException(message, e)
-    }
+    val webSession = connectFactory(sessionResumption)
+    return LiveSession(
+      session = webSession,
+      blockingDispatcher = blockingDispatcher,
+      firebaseApp = firebaseApp,
+      connectionFactory = connectFactory,
+      hasFunction = ::hasFunction,
+      executeFunction = ::executeFunction
+    )
   }
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {

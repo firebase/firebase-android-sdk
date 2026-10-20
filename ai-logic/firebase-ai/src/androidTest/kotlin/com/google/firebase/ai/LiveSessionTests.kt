@@ -47,6 +47,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotBeEmpty
 import io.ktor.util.toLowerCasePreservingASCIIRules
 import java.io.ByteArrayOutputStream
 import kotlin.time.Duration.Companion.seconds
@@ -309,7 +310,7 @@ class LiveSessionTests {
         session.sendTextRealtime("Hello")
         val text =
           withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
-        text.shouldNotBeNull()
+        text.shouldNotBeEmpty()
       } finally {
         session.close()
       }
