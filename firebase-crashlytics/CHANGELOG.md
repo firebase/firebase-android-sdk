@@ -1,6 +1,6 @@
 # Unreleased
 
-- [feature] Internal improvements
+- [feature] Internal improvements.
 
 # 21.0.0
 
