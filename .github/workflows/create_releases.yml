@@ -15,18 +15,18 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create base branch
-        uses: peterjgrainger/action-create-branch@v2.2.0
+        uses: peterjgrainger/action-create-branch@08259812c8ebdbf1973747f9297e332fa078d3c1 # v2.4.0
         with:
           branch: 'releases/${{ inputs.name }}'
       - name: Create release branch
-        uses: peterjgrainger/action-create-branch@v2.2.0
+        uses: peterjgrainger/action-create-branch@08259812c8ebdbf1973747f9297e332fa078d3c1 # v2.4.0
         with:
           branch: 'releases/${{ inputs.name }}.release'
 
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
 
       - name: Create release configuration template
         run: |
@@ -42,7 +42,7 @@ jobs:
           git commit -a -m 'Create release config'
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54 # v4.2.4
         with:
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'

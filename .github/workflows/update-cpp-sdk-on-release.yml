@@ -23,7 +23,7 @@ jobs:
     outputs:
       released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
         with:
           # Check out the actual head commit, not any merge commit.
           ref: ${{ github.sha }}
@@ -51,18 +51,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@e9aba2c848f5ebd159c070c61ea2c4e2b122355e # v2.3.4
         with:
           python-version: 3.7
 
       - name: Check out firebase-cpp-sdk
-        uses: actions/checkout@v2.3.1
+        uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
         with:
           repository: firebase/firebase-cpp-sdk
           ref: main
 
       - name: Get firebase-workflow-trigger token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@32691ba7c9e7063bd457bd8f2a5703138591fa58 # v1.9.0
         id: generate-token
         with:
           app_id: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_ID }}
