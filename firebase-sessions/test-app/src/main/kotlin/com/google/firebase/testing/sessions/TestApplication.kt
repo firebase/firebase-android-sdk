@@ -24,13 +24,12 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.TextView
-import androidx.multidex.MultiDexApplication
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import java.io.File
 
-class TestApplication : MultiDexApplication() {
+class TestApplication : Application() {
   private val broadcastReceiver = CrashBroadcastReceiver()
 
   @SuppressLint("UnspecifiedRegisterReceiverFlag")
