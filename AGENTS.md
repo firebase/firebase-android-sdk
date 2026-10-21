@@ -146,6 +146,22 @@ By default, the `release` variant is published. To publish the `debug` variant i
 Using the `debug` variant has the advantage of including additional logging information. For example,
 the `ai-logic/firebase-ai` SDK logs the request/response information when the debug variant is used.
 
+## Gradle Plugins (`plugins/` Directory)
+
+All custom build, release, CI, and documentation logic lives in the `plugins/` composite build. Its
+internals (registered plugins, the `firebaseLibrary` DSL, the publishing pipeline, and Dackka
+reference documentation generation) are documented in `plugins/AGENTS.md`. Read that file before
+modifying anything under `plugins/`, or when debugging failures in publishing, release, `kotlindoc`,
+or Metalava tasks.
+
+The following pitfalls apply when editing the build file of any module:
+
+- Pure Java/Kotlin modules using `firebase-java-library` must set
+  `firebaseLibrary { publishJavadoc = false }`. `DackkaPlugin` assumes an Android library, so
+  configuring `generateDackkaDocumentation` or running `kotlindoc` fails otherwise.
+- `./gradlew :<project>:check` runs the Metalava `docStubs` task, so invalid Javadoc/KDoc syntax or
+  missing classpath references in doc comments fail `check`.
+
 ## Development Conventions
 
 ### Code Formatting

@@ -122,7 +122,7 @@ public class AIModels {
       modelName: String? = null,
       config: LiveGenerationConfig? = null
     ): LiveGenerativeModel {
-      return FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform())
+      return FirebaseAI.getInstance(app(), GenerativeBackend.agentPlatform("us-central1"))
         .liveModel(
           modelName = modelName ?: "gemini-live-2.5-flash-native-audio",
           generationConfig = config,
