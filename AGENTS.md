@@ -235,7 +235,16 @@ When reviewing code or preparing changes for review, ensure the following requir
   codebase change.
 
 * Add hyperlinks to relevant Firebase documentation, when possible.
-  These links can be for narrative guides or reference docs.
+  These links can be for narrative guides or reference docs. Only link to
+  documentation that directly and accurately applies to the specific feature,
+  API, or execution mode being described (for example, do not link to
+  cloud-model documentation when describing an on-device feature). If no
+  specific documentation exists for the exact feature, omit the link rather than
+  linking to a tangentially related page that could confuse developers.
+
+* Do not duplicate entries that were already included in a previous release
+  (such as a prior patch or hotfix release). Ensure that only new changes for
+  the current release are listed.
 
 #### **Structure and syntax**
 
@@ -250,8 +259,14 @@ When reviewing code or preparing changes for review, ensure the following requir
   * \[unchanged\]
 * For breaking changes, add **Breaking change:** at the beginning of the entry.
 * Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
-* End each sentence with a period.
-* Add the relevant PR \# or Issue \# to the end of each entry, after the period.
+* End every entry and sentence with a period, including short phrases (for
+  example, `Internal improvements.`).
+* Add the relevant PR \# or Issue \# to the end of each entry, after the period
+  (for example, `Fixed a crash. (#1234)`).
+* Wrap lines at 80 characters maximum, using a 2-space indent for continuation
+  lines. When writing `CHANGELOG.md` entries, keep the first line to at most 78
+  characters so that it remains within 80 characters when `- [<tag>]` is
+  converted to `* {{<tag>}}` in generated release notes.
 * For Firebase product brand names, use the appropriate standard names.
   * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
     * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
