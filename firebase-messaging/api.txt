@@ -1,6 +1,12 @@
 // Signature format: 3.0
 package com.google.firebase.messaging {
 
+  public class FcmNotificationManager {
+    method public void cancelNow(String?, int);
+    method public com.google.firebase.messaging.NotificationResponse finished();
+    method public void postNow(String?, int, android.app.Notification);
+  }
+
   public class FirebaseMessaging {
     method @Deprecated public com.google.android.gms.tasks.Task<java.lang.Void!> deleteToken();
     method public boolean deliveryMetricsExportToBigQueryEnabled();
@@ -21,11 +27,14 @@ package com.google.firebase.messaging {
 
   public class FirebaseMessagingService extends android.app.Service {
     ctor public FirebaseMessagingService();
+    method public com.google.firebase.messaging.FcmNotificationManager getFcmNotificationManager(com.google.firebase.messaging.RemoteMessage);
+    method @WorkerThread public void onBackgroundSyncReceived(com.google.firebase.messaging.RemoteMessage);
     method public final android.os.IBinder! onBind(android.content.Intent!);
     method @WorkerThread public void onDeletedMessages();
-    method @WorkerThread public void onMessageReceived(com.google.firebase.messaging.RemoteMessage);
+    method @Deprecated @WorkerThread public void onMessageReceived(com.google.firebase.messaging.RemoteMessage);
     method @Deprecated @WorkerThread public void onMessageSent(String);
     method @Deprecated @WorkerThread public void onNewToken(String);
+    method @WorkerThread public com.google.firebase.messaging.NotificationResponse onNotificationReceived(com.google.firebase.messaging.RemoteMessage);
     method @WorkerThread public void onRegistered(String);
     method @Deprecated @WorkerThread public void onSendError(String, Exception);
     method public final int onStartCommand(android.content.Intent!, int, int);
@@ -37,9 +46,18 @@ package com.google.firebase.messaging {
     method public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(String to, kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
   }
 
+  public final class NotificationResponse {
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public com.google.firebase.messaging.NotificationResponse add(String?, int, android.app.Notification);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public com.google.firebase.messaging.NotificationResponse addCancel(String?, int);
+    method public static com.google.firebase.messaging.NotificationResponse create(String?, int, android.app.Notification);
+    method public static com.google.firebase.messaging.NotificationResponse createCancel(String?, int);
+    method public static com.google.firebase.messaging.NotificationResponse suppress();
+  }
+
   @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Class(creator="RemoteMessageCreator") @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Reserved({1}) public final class RemoteMessage extends com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable {
     method public String? getCollapseKey();
     method public java.util.Map<java.lang.String!,java.lang.String!> getData();
+    method public long getElapsedRealtimeProcessingDeadlineMs();
     method public String? getFrom();
     method public String? getMessageId();
     method public String? getMessageType();

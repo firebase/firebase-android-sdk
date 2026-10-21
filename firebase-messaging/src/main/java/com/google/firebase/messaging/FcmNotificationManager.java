@@ -43,10 +43,8 @@ public class FcmNotificationManager {
   FcmNotificationManager(NotificationCallback callback, Context context, @Nullable Bundle payload) {
     this.callback = callback;
     this.context = context;
-    if (payload != null
-        && payload.containsKey(MessagePayloadKeys.TIMEOUT_TIMESTAMP_MS)) {
-      this.deadlineTimestampMs =
-          payload.getLong(MessagePayloadKeys.TIMEOUT_TIMESTAMP_MS);
+    if (payload != null && payload.containsKey(MessagePayloadKeys.TIMEOUT_TIMESTAMP_MS)) {
+      this.deadlineTimestampMs = payload.getLong(MessagePayloadKeys.TIMEOUT_TIMESTAMP_MS);
     } else {
       this.deadlineTimestampMs = Long.MAX_VALUE;
     }
