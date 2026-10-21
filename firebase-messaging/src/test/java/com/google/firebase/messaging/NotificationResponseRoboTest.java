@@ -17,13 +17,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Notification;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE, sdk = 26)
 public class NotificationResponseRoboTest {
 

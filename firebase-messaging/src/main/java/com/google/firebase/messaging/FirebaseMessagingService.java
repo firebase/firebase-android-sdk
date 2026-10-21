@@ -427,6 +427,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
 
   private final IBinder localBinder = new LocalBinder();
 
+  /** @hide */
   @Override
   public final synchronized IBinder onBind(Intent intent) {
     if (ACTION_BIND_LISTENER.equals(intent.getAction())) {

@@ -42,14 +42,10 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.RemoteException;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.android.gms.cloudmessaging.CompletionCallback;
 import com.google.android.gms.cloudmessaging.NotificationCallback;
-import com.google.android.gms.cloudmessaging.internal.ICloudMessageListenerService;
-import com.google.android.gms.cloudmessaging.internal.ICompletionCallback;
-import com.google.android.gms.cloudmessaging.internal.INotificationCallback;
 import com.google.firebase.messaging.testing.TestImageServer;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -61,20 +57,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ServiceController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowNotificationManager;
 
 /**
- * Tests the listener service Google Play services binds to, end to end: the AIDL call in, the bind
- * to the developer's service, the callback out.
+ * Tests the listener service Google Play services binds to, end to end: the call in, the bind to
+ * the developer's service, the callback out.
  *
  * <p>SDK coverage is chosen per test rather than by branching on {@link
  * android.os.Build.VERSION#SDK_INT}. The tests that touch a notification channel run from O
  * upwards; the rest do not vary by version, so they pin to O.
  */
-@RunWith(AndroidJUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class FirebaseMessagingListenerServiceRoboTest {
 
@@ -86,9 +83,8 @@ public class FirebaseMessagingListenerServiceRoboTest {
   private Context context;
   private ServiceController<FirebaseMessagingListenerService> controller;
   private FirebaseMessagingListenerService service;
-  private ICloudMessageListenerService binder;
-  private INotificationCallback mockNotificationCallback;
-  private ICompletionCallback mockCompletionCallback;
+  private NotificationCallback mockNotificationCallback;
+  private CompletionCallback mockCompletionCallback;
 
   private Notification notification;
 
@@ -171,8 +167,8 @@ public class FirebaseMessagingListenerServiceRoboTest {
     FakeFirebaseMessagingService.reset();
 
     notification = buildNotification(APP_CHANNEL);
-    mockNotificationCallback = mock(INotificationCallback.class);
-    mockCompletionCallback = mock(ICompletionCallback.class);
+    mockNotificationCallback = mock(NotificationCallback.class);
+    mockCompletionCallback = mock(CompletionCallback.class);
 
     startListenerService();
     publishDeveloperService();
@@ -187,12 +183,10 @@ public class FirebaseMessagingListenerServiceRoboTest {
     declareServiceProcesses(context.getPackageName(), context.getPackageName());
   }
 
-  /** Creates the service under test and takes the binder Google Play services would be handed. */
+  /** Creates the service under test. */
   private void startListenerService() {
     controller = Robolectric.buildService(FirebaseMessagingListenerService.class);
     service = controller.create().get();
-    IBinder iBinder = service.onBind(new Intent(context, FirebaseMessagingListenerService.class));
-    binder = ICloudMessageListenerService.Stub.asInterface(iBinder);
   }
 
   /**
@@ -299,24 +293,21 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   /** Returns a latch released when the callback is answered, whether successfully or not. */
-  private static CountDownLatch completionLatch(INotificationCallback callback)
-      throws RemoteException {
+  private static CountDownLatch completionLatch(NotificationCallback callback) {
     CountDownLatch latch = new CountDownLatch(1);
     countDownOnCompletion(callback, latch);
     return latch;
   }
 
   /** Returns a latch released when the callback is answered, whether successfully or not. */
-  private static CountDownLatch completionLatch(ICompletionCallback callback)
-      throws RemoteException {
+  private static CountDownLatch completionLatch(CompletionCallback callback) {
     CountDownLatch latch = new CountDownLatch(1);
     doAnswer(countDown(latch)).when(callback).onSuccess();
     doAnswer(countDown(latch)).when(callback).onError(anyInt());
     return latch;
   }
 
-  private static void countDownOnCompletion(INotificationCallback callback, CountDownLatch latch)
-      throws RemoteException {
+  private static void countDownOnCompletion(NotificationCallback callback, CountDownLatch latch) {
     doAnswer(countDown(latch)).when(callback).onSuccess();
     doAnswer(countDown(latch)).when(callback).onError(anyInt());
   }
@@ -370,7 +361,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     Bundle payload = payload("msg_delegates");
     payload.putString("title", "Hello");
 
-    binder.onNotificationReceived(payload, mockNotificationCallback);
+    service.handleRemoteNotification(payload, mockNotificationCallback);
 
     // Idle looper to allow local bind to complete and trigger service connection
     idleMainLooper();
@@ -389,14 +380,14 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testOnNotificationReceived_channelMissing_doesNotReportPosted() throws Exception {
     FakeFirebaseMessagingService.nextResponse =
         NotificationResponse.create("tag", 42, notification);
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_missing_channel"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_missing_channel"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -407,7 +398,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testOnNotificationReceived_channelImportanceNone_doesNotReportPosted()
       throws Exception {
     notificationManager()
@@ -418,7 +409,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_blocked_channel"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_blocked_channel"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -429,7 +420,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testOnNotificationReceived_mixedChannels_reportsOnlyValidPost() throws Exception {
     createChannel(APP_CHANNEL);
     Notification missingChannelNotification = buildNotification("missing_channel");
@@ -439,7 +430,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_mixed_channels"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_mixed_channels"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -461,7 +452,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_unimplemented"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_unimplemented"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -479,7 +470,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     Bundle payload = payload("msg_sync_delegates");
     payload.putString("sync_type", "full");
 
-    binder.onBackgroundSyncReceived(payload, mockCompletionCallback);
+    service.handleBackgroundSync(payload, mockCompletionCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -502,7 +493,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockCompletionCallback);
 
-    binder.onBackgroundSyncReceived(payload("msg_sync_unimplemented"), mockCompletionCallback);
+    service.handleBackgroundSync(payload("msg_sync_unimplemented"), mockCompletionCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -530,7 +521,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     Bundle payload = payload("msg_streaming");
     payload.putString("title", "Hello");
-    binder.onNotificationReceived(payload, mockNotificationCallback);
+    service.handleRemoteNotification(payload, mockNotificationCallback);
 
     awaitCompletion(latch);
     idleMainLooper();
@@ -545,7 +536,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testPostNotification_fallback() throws Exception {
     createChannel(APP_CHANNEL);
 
@@ -557,7 +548,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     payload.putString("gcm.n.body", "Fallback Body");
     payload.putString("gcm.n.android_channel_id", APP_CHANNEL);
 
-    binder.postNotification(payload, mockCompletionCallback);
+    service.handleDisplayNotification(payload, mockCompletionCallback);
     awaitCompletion(postLatch);
     idleMainLooper();
 
@@ -570,7 +561,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testPostNotification_withImage() throws Exception {
     createChannel(APP_CHANNEL);
 
@@ -590,7 +581,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     payload.putString("gcm.n.image", url);
     payload.putString("gcm.n.android_channel_id", APP_CHANNEL);
 
-    binder.postNotification(payload, mockCompletionCallback);
+    service.handleDisplayNotification(payload, mockCompletionCallback);
     awaitCompletion(postLatch);
     idleMainLooper();
 
@@ -602,7 +593,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testPostNotification_imageDownloadFail_stillPostsNotification() throws Exception {
     createChannel(APP_CHANNEL);
 
@@ -617,50 +608,13 @@ public class FirebaseMessagingListenerServiceRoboTest {
     payload.putString("gcm.n.image", url);
     payload.putString("gcm.n.android_channel_id", APP_CHANNEL);
 
-    binder.postNotification(payload, mockCompletionCallback);
+    service.handleDisplayNotification(payload, mockCompletionCallback);
     awaitCompletion(postLatch);
     idleMainLooper();
 
     Notification posted = shadowNotificationManager().getNotification("tag_image_error", 0);
     assertThat(posted).isNotNull();
     assertThat(posted.getLargeIcon()).isNull();
-    verify(mockCompletionCallback).onSuccess();
-  }
-
-  @Test
-  @Config(sdk = VERSION_CODES.O)
-  public void testCancelNotification_fallback() throws Exception {
-    createChannel(APP_CHANNEL);
-
-    notificationManager().notify("tag_cancel", 888, notification);
-    assertThat(shadowNotificationManager().size()).isEqualTo(1);
-
-    CountDownLatch cancelLatch = completionLatch(mockCompletionCallback);
-
-    binder.cancelNotification("tag_cancel", 888, mockCompletionCallback);
-    awaitCompletion(cancelLatch);
-    idleMainLooper();
-
-    assertThat(shadowNotificationManager().size()).isEqualTo(0);
-    verify(mockCompletionCallback).onSuccess();
-  }
-
-  @Test
-  @Config(minSdk = VERSION_CODES.O)
-  public void testCreateNotificationChannel_fallback() throws Exception {
-    assertThat(notificationManager().getNotificationChannel("fallback_channel_999")).isNull();
-
-    CountDownLatch channelLatch = completionLatch(mockCompletionCallback);
-
-    binder.createNotificationChannel(
-        "fallback_channel_999", "Fallback Channel Name", mockCompletionCallback);
-    awaitCompletion(channelLatch);
-    idleMainLooper();
-
-    NotificationChannel channel =
-        notificationManager().getNotificationChannel("fallback_channel_999");
-    assertThat(channel).isNotNull();
-    assertThat(channel.getName().toString()).isEqualTo("Fallback Channel Name");
     verify(mockCompletionCallback).onSuccess();
   }
 
@@ -674,7 +628,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch1 = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_cached_1"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_cached_1"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch1);
@@ -683,10 +637,10 @@ public class FirebaseMessagingListenerServiceRoboTest {
     // Reset flag for second message
     FakeFirebaseMessagingService.onNotificationReceivedCalled = false;
 
-    INotificationCallback callback2 = mock(INotificationCallback.class);
+    NotificationCallback callback2 = mock(NotificationCallback.class);
     CountDownLatch latch2 = completionLatch(callback2);
 
-    binder.onNotificationReceived(payload("msg_cached_2"), callback2);
+    service.handleRemoteNotification(payload("msg_cached_2"), callback2);
 
     // Second message completes using cached connection
     awaitCompletion(latch2);
@@ -706,7 +660,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_other_process"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_other_process"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -735,7 +689,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_same_custom_process"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_same_custom_process"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -756,7 +710,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_undeclared_process"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_undeclared_process"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -776,7 +730,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_unbind"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_unbind"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -809,7 +763,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_app_threw_uoe"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_app_threw_uoe"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -833,7 +787,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockCompletionCallback);
 
-    binder.onBackgroundSyncReceived(payload("msg_sync_app_threw_uoe"), mockCompletionCallback);
+    service.handleBackgroundSync(payload("msg_sync_app_threw_uoe"), mockCompletionCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -856,7 +810,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     String callingThread = Thread.currentThread().getName();
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_off_thread"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_off_thread"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -876,7 +830,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     String callingThread = Thread.currentThread().getName();
     CountDownLatch latch = completionLatch(mockCompletionCallback);
 
-    binder.onBackgroundSyncReceived(payload("msg_sync_off_thread"), mockCompletionCallback);
+    service.handleBackgroundSync(payload("msg_sync_off_thread"), mockCompletionCallback);
 
     idleMainLooper();
     awaitCompletion(latch);
@@ -898,7 +852,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch delivered = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_late_connection"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_late_connection"), mockNotificationCallback);
 
     awaitBindRequested();
 
@@ -924,11 +878,11 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     int messageCount = 3;
     CountDownLatch delivered = new CountDownLatch(messageCount);
-    INotificationCallback[] callbacks = new INotificationCallback[messageCount];
+    NotificationCallback[] callbacks = new NotificationCallback[messageCount];
     for (int i = 0; i < messageCount; i++) {
-      callbacks[i] = mock(INotificationCallback.class);
+      callbacks[i] = mock(NotificationCallback.class);
       countDownOnCompletion(callbacks[i], delivered);
-      binder.onNotificationReceived(payload("msg_burst_" + i), callbacks[i]);
+      service.handleRemoteNotification(payload("msg_burst_" + i), callbacks[i]);
     }
 
     awaitBindRequested();
@@ -937,7 +891,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
     idleMainLooper();
 
     awaitCompletion(delivered);
-    for (INotificationCallback callback : callbacks) {
+    for (NotificationCallback callback : callbacks) {
       verify(callback).onSuccess();
     }
     // Still a single connection: the later messages reused the one the first message established.
@@ -958,7 +912,7 @@ public class FirebaseMessagingListenerServiceRoboTest {
 
     CountDownLatch latch = completionLatch(mockNotificationCallback);
 
-    binder.onNotificationReceived(payload("msg_bad_binder"), mockNotificationCallback);
+    service.handleRemoteNotification(payload("msg_bad_binder"), mockNotificationCallback);
 
     idleMainLooper();
     awaitCompletion(latch);

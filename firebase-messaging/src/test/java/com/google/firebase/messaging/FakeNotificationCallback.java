@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
-import com.google.android.gms.cloudmessaging.internal.INotificationCallback;
+import com.google.android.gms.cloudmessaging.TestNotificationCallbacks;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,12 +23,20 @@ import java.util.List;
  * <p>Events are recorded as {@code tag/id} strings, the pair the callbacks are keyed on. The
  * timestamp is not recorded: it comes from {@code SystemClock}.
  */
-final class FakeNotificationCallback extends INotificationCallback.Stub {
+final class FakeNotificationCallback extends TestNotificationCallbacks {
 
   private final List<String> posted = new ArrayList<>();
   private final List<String> cancelled = new ArrayList<>();
   private final List<Integer> errorCodes = new ArrayList<>();
   private int successCount;
+
+  FakeNotificationCallback() {
+    this("msg_123");
+  }
+
+  FakeNotificationCallback(String messageId) {
+    super(messageId);
+  }
 
   @Override
   public void onNotificationPosted(String tag, int id, long elapsedRealtimeMs) {

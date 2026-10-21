@@ -13,22 +13,16 @@
 // limitations under the License.
 package com.google.android.gms.cloudmessaging;
 
-import com.google.android.gms.cloudmessaging.internal.INotificationCallback;
-
 /**
- * Hands tests outside this package a real {@link NotificationCallback}, whose constructor is
- * package private, so tests exercise the real wrapper and its binder error handling rather than a
- * mock.
+ * Exposes {@link NotificationCallback}'s package-private constructor to tests outside this package
+ * without referencing internal AIDL classes that are obfuscated in the published AAR.
  *
  * <p>This class is test-only and deliberately sits in the {@code cloudmessaging} package so that it
  * can reach the constructor. It is not part of the shipping SDK.
  */
-public final class TestNotificationCallbacks {
+public abstract class TestNotificationCallbacks extends NotificationCallback {
 
-  /** Returns a real {@link NotificationCallback} that reports to {@code callback}. */
-  public static NotificationCallback create(String messageId, INotificationCallback callback) {
-    return new NotificationCallback(messageId, callback);
+  protected TestNotificationCallbacks(String messageId) {
+    super(messageId, null);
   }
-
-  private TestNotificationCallbacks() {}
 }

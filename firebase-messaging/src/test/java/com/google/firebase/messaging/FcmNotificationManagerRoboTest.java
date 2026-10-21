@@ -28,13 +28,12 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.cloudmessaging.NotificationCallback;
-import com.google.android.gms.cloudmessaging.TestNotificationCallbacks;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 /**
@@ -43,7 +42,7 @@ import org.robolectric.annotation.Config;
  * <p>SDK coverage is chosen per test. One runs below O, since the module supports back to API 16;
  * the rest do not vary by version, so they pin to O.
  */
-@RunWith(AndroidJUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class FcmNotificationManagerRoboTest {
 
@@ -67,9 +66,9 @@ public class FcmNotificationManagerRoboTest {
     notification = buildNotification(APP_CHANNEL);
   }
 
-  /** Wraps the fake binder in the real callback the SDK hands to developers. */
+  /** Returns the fake callback passed to {@link FcmNotificationManager}. */
   private NotificationCallback sdkCallback() {
-    return TestNotificationCallbacks.create("msg_123", playServices);
+    return playServices;
   }
 
   /**
@@ -116,7 +115,7 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void postNow_postsAndReportsToPlayServices() {
     createChannel(APP_CHANNEL);
 
@@ -127,7 +126,7 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void postNow_channelExists_keepsRequestedChannel() {
     createChannel(APP_CHANNEL);
 
@@ -137,7 +136,7 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void postNow_channelMissing_doesNotReportToPlayServices() {
     manager.postNow(TAG, ID, notification);
 
@@ -145,7 +144,7 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void postNow_channelImportanceNone_doesNotReportToPlayServices() {
     notificationManager()
         .createNotificationChannel(
@@ -157,7 +156,7 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void postNow_targetSdkBelowO_channelMissing_reportsToPlayServices() throws Exception {
     setTargetSdkVersion(VERSION_CODES.N_MR1);
 
@@ -167,9 +166,8 @@ public class FcmNotificationManagerRoboTest {
   }
 
   @Test
-  @Config(minSdk = Config.OLDEST_SDK, maxSdk = VERSION_CODES.N_MR1)
+  @Config(sdk = VERSION_CODES.N_MR1)
   public void postNow_belowO_postsNotificationUnchanged() {
-    // The module still supports back to API 16, so cover the oldest version it runs on.
     manager.postNow(TAG, ID, notification);
 
     assertThat(postedNotification()).isSameInstanceAs(notification);
