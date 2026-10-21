@@ -219,7 +219,7 @@ public final class CommonNotificationBuilder {
 
     builder.setDefaults(getConsolidatedDefaults(params));
 
-    return new DisplayNotificationInfo(builder, getTag(params), /* id= */ 0);
+    return new DisplayNotificationInfo(builder, getTag(params), getId(params));
   }
 
   private static int getConsolidatedDefaults(NotificationParams params) {
@@ -575,15 +575,27 @@ public final class CommonNotificationBuilder {
     return params.getBoolean(Constants.AnalyticsKeys.ENABLED);
   }
 
+  @Nullable
   private static String getTag(NotificationParams params) {
     String tag = params.getString(MessageNotificationKeys.TAG);
     if (!TextUtils.isEmpty(tag)) {
       return tag;
     }
 
-    // No tag set - use a unique custom tag to avoid replacing any of the app's other
+    if (params.getInteger(MessageNotificationKeys.NOTIFICATION_ID) != null) {
+      // No tag set, but an ID was provided - use a null tag so notifications with the same ID
+      // replace each other.
+      return null;
+    }
+
+    // No tag or id set - use a unique custom tag to avoid replacing any of the app's other
     // notifications.
     return "FCM-Notification:" + SystemClock.uptimeMillis();
+  }
+
+  private static int getId(NotificationParams params) {
+    Integer id = params.getInteger(MessageNotificationKeys.NOTIFICATION_ID);
+    return id != null ? id : 0;
   }
 
   /**
@@ -594,10 +606,11 @@ public final class CommonNotificationBuilder {
   public static class DisplayNotificationInfo {
 
     public final NotificationCompat.Builder notificationBuilder;
-    public final String tag;
+    @Nullable public final String tag;
     public final int id;
 
-    DisplayNotificationInfo(NotificationCompat.Builder notificationBuilder, String tag, int id) {
+    DisplayNotificationInfo(
+        NotificationCompat.Builder notificationBuilder, @Nullable String tag, int id) {
       this.notificationBuilder = notificationBuilder;
       this.tag = tag;
       this.id = id;
