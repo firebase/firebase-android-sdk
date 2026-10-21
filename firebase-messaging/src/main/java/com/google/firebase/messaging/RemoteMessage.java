@@ -203,6 +203,21 @@ public final class RemoteMessage extends AbstractSafeParcelable {
   }
 
   /**
+   * Gets the deadline timestamp (in {@link android.os.SystemClock#elapsedRealtime()} milliseconds)
+   * by which the application must finish handling this message, or 0 if not set.
+   *
+   * @return The processing deadline in elapsedRealtime milliseconds, or 0 if unset
+   */
+  public long getElapsedRealtimeProcessingDeadlineMs() {
+    Object deadline = bundle.get(MessagePayloadKeys.TIMEOUT_TIMESTAMP_MS);
+    if (deadline instanceof Long) {
+      return (long) deadline;
+    }
+    Log.w(TAG, "Invalid processing deadline: " + deadline);
+    return 0; // Default if left unset or unexpected type
+  }
+
+  /**
    * Gets the message time to live (TTL) in seconds.
    *
    * @return The message TTL

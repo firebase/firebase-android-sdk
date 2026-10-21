@@ -50,7 +50,7 @@ public abstract class EnhancedIntentService extends Service {
 
   /** @hide */
   @Override
-  public final synchronized IBinder onBind(Intent intent) {
+  public synchronized IBinder onBind(Intent intent) {
     if (Log.isLoggable(TAG, Log.DEBUG)) {
       Log.d(TAG, "Service received bind request");
     }

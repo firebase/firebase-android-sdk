@@ -38,6 +38,7 @@ public class RemoteMessageBuilder {
   public static final String EXTRA_SENT_TIME = "google.sent_time";
   public static final String EXTRA_TTL = "google.ttl";
   public static final String EXTRA_SENDER_ID = "google.c.sender.id";
+  public static final String EXTRA_TIMEOUT_TIMESTAMP_MS = "google.c.timeout_timestamp_ms";
   public static final String EXTRA_ORIGINAL_PRIORITY = "google.original_priority";
   public static final String EXTRA_DELIVERED_PRIORITY = "google.delivered_priority";
   public static final String EXTRA_PRIORITY_V19 = "google.priority";
@@ -63,6 +64,8 @@ public class RemoteMessageBuilder {
         && Objects.equals(m1.getMessageType(), m2.getMessageType())
         && Objects.equals(m1.getSenderId(), m2.getSenderId())
         && m1.getSentTime() == m2.getSentTime()
+        && m1.getElapsedRealtimeProcessingDeadlineMs()
+            == m2.getElapsedRealtimeProcessingDeadlineMs()
         && m1.getTtl() == m2.getTtl()
         && m1.getOriginalPriority() == m2.getOriginalPriority()
         && m1.getPriority() == m2.getPriority();

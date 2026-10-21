@@ -17,7 +17,10 @@ import static com.google.firebase.messaging.Constants.TAG;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Process;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -28,7 +31,9 @@ import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
 import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -89,6 +94,13 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   private Rpc rpc;
 
   /**
+   * Managers for the RemoteNotifications currently being handled, keyed by message ID, so that
+   * {@link #getFcmNotificationManager} can return the one belonging to the message the developer's
+   * callback was invoked with. Entries live only for the duration of that callback.
+   */
+  private final Map<String, FcmNotificationManager> activeManagers = new ConcurrentHashMap<>();
+
+  /**
    * Called when a message is received.
    *
    * <p>This should complete within 20 seconds. Taking longer may interfere with your ability to
@@ -99,7 +111,11 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    * RemoteMessage#getNotification()}.
    *
    * @param message Remote message that has been received.
+   * @deprecated Use {@link #onNotificationReceived(RemoteMessage)} for user-visible remote
+   *     notifications or {@link #onBackgroundSyncReceived(RemoteMessage)} for background data sync
+   *     messages.
    */
+  @Deprecated
   @WorkerThread
   public void onMessageReceived(@NonNull RemoteMessage message) {}
 
@@ -347,5 +363,110 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @VisibleForTesting
   void setRpcForTesting(Rpc rpc) {
     this.rpc = rpc;
+  }
+
+  /**
+   * Hands {@code message} to the developer's {@link #onNotificationReceived} callback, publishing
+   * {@code manager} for the duration of the call and invalidating it afterwards so a reference the
+   * developer kept cannot outlive the callback.
+   *
+   * @return the response from the developer's callback, which {@link
+   *     FirebaseMessagingListenerService} applies.
+   */
+  NotificationResponse dispatchRemoteNotification(
+      RemoteMessage message, FcmNotificationManager manager) {
+    String messageId = message.getMessageId();
+    if (messageId != null) {
+      activeManagers.put(messageId, manager);
+    }
+    try {
+      return onNotificationReceived(message);
+    } finally {
+      if (messageId != null) {
+        activeManagers.remove(messageId);
+      }
+      manager.invalidate();
+    }
+  }
+
+  /**
+   * Returns the {@link FcmNotificationManager} for {@code message}, which must be the message
+   * {@link #onNotificationReceived} was called with.
+   *
+   * @throws IllegalStateException if called outside that callback.
+   */
+  @NonNull
+  public FcmNotificationManager getFcmNotificationManager(@NonNull RemoteMessage message) {
+    String messageId = message.getMessageId();
+    if (messageId == null) {
+      throw new IllegalStateException("RemoteMessage messageId is null");
+    }
+    FcmNotificationManager manager = activeManagers.get(messageId);
+    if (manager == null) {
+      throw new IllegalStateException(
+          "FcmNotificationManager can only be acquired during onNotificationReceived");
+    }
+    return manager;
+  }
+
+  /** Action {@link FirebaseMessagingListenerService} uses to bind to this service in-process. */
+  static final String ACTION_BIND_LISTENER = "com.google.firebase.messaging.BIND_LISTENER";
+
+  /**
+   * Hands {@link FirebaseMessagingListenerService} a direct reference to this service instance.
+   * Both run in the same process, so this avoids both IPC and a static registry.
+   */
+  class LocalBinder extends Binder {
+    FirebaseMessagingService getService() {
+      if (Binder.getCallingUid() != Process.myUid()) {
+        throw new SecurityException("Binding only allowed within the same application process");
+      }
+      return FirebaseMessagingService.this;
+    }
+  }
+
+  private final IBinder localBinder = new LocalBinder();
+
+  /** @hide */
+  @Override
+  public final synchronized IBinder onBind(Intent intent) {
+    if (ACTION_BIND_LISTENER.equals(intent.getAction())) {
+      return localBinder;
+    }
+    return super.onBind(intent);
+  }
+
+  /**
+   * Called when a user-visible RemoteNotification message is received. Override this to handle
+   * RemoteNotifications; the default implementation makes Google Play services fall back to the
+   * legacy broadcast path.
+   *
+   * <p>An override must not call {@code super}. Unlike the other callbacks on this class, whose
+   * default implementations do nothing, that reports the callback as unimplemented even though it
+   * was overridden.
+   *
+   * @param message The remote message that was received.
+   * @return The notification actions for Google Play services to execute.
+   */
+  @WorkerThread
+  @NonNull
+  public NotificationResponse onNotificationReceived(@NonNull RemoteMessage message) {
+    throw new UnimplementedException("onNotificationReceived is not implemented");
+  }
+
+  /**
+   * Called when a BackgroundSync message is received. Override this to handle them; the default
+   * implementation makes Google Play services fall back to the legacy broadcast path.
+   *
+   * <p>An override must not call {@code super}. Doing so reports the callback as unimplemented even
+   * though it was overridden, and because this method returns nothing an IDE-generated override
+   * that opens with {@code super.onBackgroundSyncReceived(message)} compiles and silently skips the
+   * rest of the override.
+   *
+   * @param message The remote message that was received.
+   */
+  @WorkerThread
+  public void onBackgroundSyncReceived(@NonNull RemoteMessage message) {
+    throw new UnimplementedException("onBackgroundSyncReceived is not implemented");
   }
 }

@@ -6,6 +6,7 @@
   ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
 
 # 27.0.1
+
 - [fixed] Fixed an issue where test-only dependencies (`truth`, `junit`, `mockito-core`, and
   `jackson-databind`) were inadvertently included as runtime dependencies in the published Maven POM
   (#8696).
