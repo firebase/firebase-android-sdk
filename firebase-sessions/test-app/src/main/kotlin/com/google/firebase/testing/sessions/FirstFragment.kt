@@ -77,15 +77,18 @@ class FirstFragment : Fragment() {
       Logger.getLogger().i("Max Java Heap: ${maxHeap / (1024 * 1024)} MB")
 
       val usedHeap = runtime.totalMemory() - runtime.freeMemory()
+
+      Logger.getLogger().i("Used Java Heap: ${usedHeap / (1024 * 1024)} MB")
+
       val usage = 1
 
       if (usedHeap >= maxHeap * usage) {
         return@thread
       }
 
-      val chunk = ByteArray(2 * 1024 * 1024)
+      val chunk = ByteArray(8 * 1024 * 1024)
 
-      for (i in chunk.indices step 4096) {
+      for (i in chunk.indices step 16 * 1024) {
         chunk[i] = (i and 0xFF).toByte()
       }
 
