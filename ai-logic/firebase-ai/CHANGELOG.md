@@ -1,5 +1,7 @@
 # Unreleased
 
+# 18.1.0
+
 - [feature] Added `SpeechMetadata` and the `TextPart.speechMetadata` property to
   specify the speaker and vocal style (such as `"cheerful"`) for a piece of text
   when generating speech. (#8690)
@@ -264,3 +266,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+
