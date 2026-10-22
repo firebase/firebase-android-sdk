@@ -14,7 +14,11 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import android.annotation.SuppressLint;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
@@ -35,10 +39,13 @@ import com.google.uploader.client.UploadClientImpl;
 import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ScottyUploader {
+
   private static final String URL_PREFIX =
       DataTransportCrashlyticsReportSender.mergeStrings(
           "hts/frbslgigp.ogepscmula/1frlglgc/pod", "tp:/ieaeogn-agolai.o/podv/ieo/eayula");
@@ -53,6 +60,7 @@ public class ScottyUploader {
   private volatile ListenableFuture<TransferExceptionOrHttpResponse> upload;
 
   public abstract static class Listener extends TransferListener {
+
     private volatile DataStream stream;
 
     public Listener() {}
@@ -96,8 +104,26 @@ public class ScottyUploader {
       closeStream();
       if (isSuccess(response) || !isRecoverable(response)) {
         Logger.getLogger()
-            .d(String.format("Scotty upload returned; status is: %s", response.getResponseCode()));
+            .d(
+                String.format(
+                    "Scotty upload returned; status %s, uploadId: %s: %s",
+                    response.getResponseCode(), getUploadId(response), getBody(response)));
         onDoneOrUnrecoverable();
+      }
+    }
+
+    private static String getUploadId(HttpResponse response) {
+      return response.getResponseHeaders().getHeaderValuesAsString("X-GUploader-UploadID");
+    }
+
+    private static String getBody(HttpResponse response) {
+      if (VERSION.SDK_INT < VERSION_CODES.TIRAMISU) {
+        return "";
+      }
+      try (InputStream is = response.getResponseBody()) {
+        return new String(is.readAllBytes(), UTF_8);
+      } catch (IOException e) {
+        return e.getMessage();
       }
     }
 
@@ -193,8 +219,8 @@ public class ScottyUploader {
       Logger.getLogger()
           .i(
               String.format(
-                  "Triggering a heap dump upload for: %s, uploaded as: %s",
-                  heapdump.getName(), canonicalFilename));
+                  "Triggering a heap dump upload for: %s, uploaded as: %s to %s",
+                  heapdump.getName(), canonicalFilename, url));
 
       upload = transfer.send();
     } catch (Exception e) {
