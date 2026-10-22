@@ -26,9 +26,11 @@ import java.io.FileInputStream
 import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.security.KeyStore
+import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.TrustManagerFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -81,6 +83,50 @@ class AuthenticatedHttpClientTest {
   }
 
   @Test
+  fun testHttpsRequest_withoutCustomTrustStore_usesDefaultJvmTrustStore() {
+    val password = "testpassword"
+    val keyStoreFile = generateLocalhostKeyStore(password)
+
+    System.clearProperty("javax.net.ssl.trustStore")
+    System.clearProperty("javax.net.ssl.trustStorePassword")
+
+    withDefaultSslSocketFactoryTrusting(keyStoreFile, password) {
+      withLocalHttpsServer(keyStoreFile, password) { serverUrl ->
+        val client = AuthenticatedHttpClient(HttpRequestInitializer {})
+        val response = client.newGetRequest(GenericUrl(serverUrl)).execute()
+        try {
+          assertEquals(200, response.statusCode)
+          assertEquals("ok", response.parseAsString())
+        } finally {
+          response.disconnect()
+        }
+      }
+    }
+  }
+
+  @Test
+  fun testHttpsRequest_withPasswordlessTrustStore_usesDefaultJvmTrustStore() {
+    val password = "testpassword"
+    val keyStoreFile = generateLocalhostKeyStore(password)
+
+    System.setProperty("javax.net.ssl.trustStore", keyStoreFile.absolutePath)
+    System.clearProperty("javax.net.ssl.trustStorePassword")
+
+    withDefaultSslSocketFactoryTrusting(keyStoreFile, password) {
+      withLocalHttpsServer(keyStoreFile, password) { serverUrl ->
+        val client = AuthenticatedHttpClient(HttpRequestInitializer {})
+        val response = client.newGetRequest(GenericUrl(serverUrl)).execute()
+        try {
+          assertEquals(200, response.statusCode)
+          assertEquals("ok", response.parseAsString())
+        } finally {
+          response.disconnect()
+        }
+      }
+    }
+  }
+
+  @Test
   fun testHttpsRequest_withCustomTrustStore_succeedsEndToEnd() {
     val password = "testpassword"
     val keyStoreFile = generateLocalhostKeyStore(password)
@@ -97,6 +143,29 @@ class AuthenticatedHttpClientTest {
       } finally {
         response.disconnect()
       }
+    }
+  }
+
+  private fun withDefaultSslSocketFactoryTrusting(
+    keyStoreFile: File,
+    password: String,
+    block: () -> Unit,
+  ) {
+    val keyStore = KeyStore.getInstance("JKS")
+    FileInputStream(keyStoreFile).use { input -> keyStore.load(input, password.toCharArray()) }
+
+    val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+    tmf.init(keyStore)
+
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(null, tmf.trustManagers, null)
+
+    val previousDefault = HttpsURLConnection.getDefaultSSLSocketFactory()
+    HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+    try {
+      block()
+    } finally {
+      HttpsURLConnection.setDefaultSSLSocketFactory(previousDefault)
     }
   }
 
