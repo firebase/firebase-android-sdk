@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Enable heap dump uploads for OOM and MLK issues on API levels 37+ [#8661]
+
 # 21.0.1
 
 - [feature] Internal improvements.
