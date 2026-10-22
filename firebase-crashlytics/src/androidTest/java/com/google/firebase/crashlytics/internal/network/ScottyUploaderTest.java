@@ -131,7 +131,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -158,7 +158,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -184,7 +184,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -210,7 +210,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -237,7 +237,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -264,7 +264,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     File nonExistentFile = new File("/path/to/non/existent/file");
     when(fileStore.getCommonFile(anyString())).thenReturn(nonExistentFile);
@@ -281,7 +281,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -306,7 +306,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -340,7 +340,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -375,7 +375,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -397,7 +397,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
 
-    ScottyUploader scottyUploader = new ScottyUploader("key", "uuid", fileStore, client);
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
 
     Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
     File heapdump = heapdumpPath.toFile();
@@ -423,6 +423,5 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     assertThat(url).contains("gmp_app_id=gmpAppId");
     assertThat(url).contains("trigger_type=oom");
     assertThat(url).contains("session_id=sessionId");
-    assertThat(url).contains("key=key");
   }
 }

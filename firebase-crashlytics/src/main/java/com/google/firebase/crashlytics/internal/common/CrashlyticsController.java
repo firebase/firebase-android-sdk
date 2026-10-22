@@ -167,7 +167,6 @@ class CrashlyticsController {
     this.resumableUploadMetadataStore = resumableUploadMetadataStore;
     this.scottyUploader =
         new ScottyUploader(
-            app.getOptions().getApiKey(),
             appData.buildId,
             fileStore,
             ScottyUploader.makeUploadClient(crashlyticsWorkers.network));

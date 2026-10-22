@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import static com.google.firebase.crashlytics.internal.common.CommonUtils.CRASHLYTICS_API_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.annotation.SuppressLint;
@@ -21,9 +22,9 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.uploader.client.DataStream;
 import com.google.uploader.client.FileDataStream;
 import com.google.uploader.client.HttpHeaders;
@@ -47,10 +48,8 @@ import java.util.stream.Collectors;
 public class ScottyUploader {
 
   private static final String URL_PREFIX =
-      DataTransportCrashlyticsReportSender.mergeStrings(
+      CommonUtils.mergeStrings(
           "hts/frbslgigp.ogepscmula/1frlglgc/pod", "tp:/ieaeogn-agolai.o/podv/ieo/eayula");
-
-  private final String key;
 
   private final String uuid;
   private final FileStore fileStore;
@@ -160,8 +159,7 @@ public class ScottyUploader {
     }
   }
 
-  public ScottyUploader(String key, String uuid, FileStore fileStore, UploadClient uploadClient) {
-    this.key = key;
+  public ScottyUploader(String uuid, FileStore fileStore, UploadClient uploadClient) {
     this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
@@ -201,7 +199,7 @@ public class ScottyUploader {
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
-      String url = getUrl(key, uuid, gmpAppId, sessionId, type);
+      String url = getUrl(uuid, gmpAppId, sessionId, type);
       String canonicalFilename = makeCanonicalFilename(sessionId, type);
 
       HttpHeaders headers = new HttpHeaders();
@@ -283,8 +281,7 @@ public class ScottyUploader {
     return String.format("%s/%s.perfetto", trigger, sessionId);
   }
 
-  private static String getUrl(
-      String key, String uuid, String gmpAppId, String sessionId, int type) {
+  private static String getUrl(String uuid, String gmpAppId, String sessionId, int type) {
     Map<String, String> params =
         Map.of(
             "uploadType", "media",
@@ -292,7 +289,7 @@ public class ScottyUploader {
             "uuid", uuid,
             "trigger_type", triggerAsString(type),
             "session_id", sessionId,
-            "key", key);
+            "key", CRASHLYTICS_API_KEY);
 
     return String.format(
         "%s?%s",
