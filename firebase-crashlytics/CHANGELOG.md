@@ -1,7 +1,7 @@
 # Unreleased
 
-- [feature] Enable heap dump uploads for OOM and MLK issues on API levels 37+ [#8661]
-- [feature] Prevent heap dump uploads on metered networks
+- [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
+- [feature] Prevent heap dump uploads on metered networks [#8712]
 
 # 21.0.0
 
