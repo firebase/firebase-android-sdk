@@ -34,15 +34,34 @@ public interface Part {
   public val isThought: Boolean
 }
 
-/** Represents text or string based data sent to and received from requests. */
+/**
+ * Represents text or string based data sent to and received from requests.
+ *
+ * @property text The text content of the part.
+ * @property isThought Indicates whether the response is a thought.
+ * @property thoughtSignature Optional A blob used to by the model to preserve state.
+ * @property speechMetadata Optional [SpeechMetadata] used to guide speech generation for this text,
+ * such as the speaker and vocal style.
+ */
+@OptIn(PublicPreviewAPI::class)
 public class TextPart
 internal constructor(
   public val text: String,
   public override val isThought: Boolean,
-  public val thoughtSignature: String?
+  public val thoughtSignature: String?,
+  @PublicPreviewAPI public val speechMetadata: SpeechMetadata? = null,
 ) : Part {
 
   public constructor(text: String) : this(text, false, null)
+
+  /**
+   * @param text The text content of the part.
+   * @param speechMetadata The [SpeechMetadata] used to guide speech generation for this text.
+   */
+  public constructor(
+    text: String,
+    speechMetadata: SpeechMetadata
+  ) : this(text, false, null, speechMetadata)
 
   public companion object {
     /**
@@ -65,7 +84,8 @@ internal constructor(
   internal data class Internal(
     val text: String,
     val thought: Boolean? = null,
-    val thoughtSignature: String? = null
+    val thoughtSignature: String? = null,
+    val speechMetadata: SpeechMetadataInternal? = null,
   ) : InternalPart
 }
 
@@ -82,9 +102,6 @@ internal constructor(
   public override val isThought: Boolean,
   public val thoughtSignature: String?
 ) : Part {
-
-  @Deprecated("Part of the model response. Do not instantiate directly.")
-  public constructor(outcome: String, output: String) : this(outcome, output, false, null)
 
   /** Indicates if the code execution was successful */
   public fun executionSucceeded(): Boolean = (outcome.lowercase() == "outcome_ok")
@@ -133,9 +150,6 @@ internal constructor(
   public override val isThought: Boolean,
   public val thoughtSignature: String?
 ) : Part {
-
-  @Deprecated("Part of the model response. Do not instantiate directly.")
-  public constructor(language: String, code: String) : this(language, code, false, null)
 
   public companion object {
     /**
@@ -531,10 +545,11 @@ internal object PartSerializer :
   }
 }
 
+@OptIn(PublicPreviewAPI::class)
 internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
   val thought = if (ignoreThoughtFlag) null else isThought
   return when (this) {
-    is TextPart -> TextPart.Internal(text, thought, thoughtSignature)
+    is TextPart -> TextPart.Internal(text, thought, thoughtSignature, speechMetadata?.toInternal())
     is ImagePart ->
       InlineDataPart.Internal(
         InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image), displayName),
@@ -600,9 +615,11 @@ private fun encodeBitmapToBase64Jpeg(input: Bitmap): String {
   }
 }
 
+@OptIn(PublicPreviewAPI::class)
 internal fun InternalPart.toPublic(): Part {
   return when (this) {
-    is TextPart.Internal -> TextPart(text, thought ?: false, thoughtSignature)
+    is TextPart.Internal ->
+      TextPart(text, thought ?: false, thoughtSignature, speechMetadata?.toPublic())
     is InlineDataPart.Internal -> {
       val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {

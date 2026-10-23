@@ -124,7 +124,7 @@ class KotlinxDatetimeLocalDateSerializerUnitTest {
       dayPadding: Int = 2,
     ): String {
       val yearString = year.toZeroPaddedString(yearPadding)
-      val monthString = month.value.toZeroPaddedString(monthPadding)
+      val monthString = monthNumber.toZeroPaddedString(monthPadding)
       val dayString = dayOfMonth.toZeroPaddedString(dayPadding)
       return "$yearString-$monthString-$dayString"
     }

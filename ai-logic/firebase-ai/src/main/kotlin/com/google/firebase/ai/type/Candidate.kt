@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-// Added to silence a spurious warning in Android Studio
-@file:OptIn(InternalSerializationApi::class)
-
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.common.util.FirstOrdinalSerializer
@@ -24,7 +21,6 @@ import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import java.util.Calendar
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -88,13 +84,40 @@ internal constructor(
     }
   }
 
+  @OptIn(PublicPreviewAPI::class)
   internal companion object {
-    fun fromInterop(candidate: OnDeviceCandidate) =
+    fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
-        content = content { text(candidate.text) },
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+            if (candidate.text.isNotEmpty() || nonEmptyThoughts.isEmpty()) {
+              text(candidate.text)
+            }
+          },
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
+        groundingMetadata = null,
+        urlContextMetadata = null
+      )
+
+    fun fromInteropThought(thoughts: List<OnDeviceCandidate>) =
+      Candidate(
+        content =
+          content {
+            val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
+            nonEmptyThoughts.forEach { thought ->
+              part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
+            }
+          },
+        safetyRatings = emptyList(),
+        citationMetadata = null,
+        finishReason = thoughts.lastOrNull()?.let { FinishReason.fromInterop(it.finishReason) },
         finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
@@ -395,14 +418,14 @@ public class FinishReason private constructor(public val name: String, public va
  * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
- * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
  * Maps" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
- * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
- * within the Service Specific Terms).
+ * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+ * section within the Service Specific Terms).
  *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
@@ -414,12 +437,11 @@ public class FinishReason private constructor(public val name: String, public va
  * @property groundingSupports The list of [GroundingSupport] objects. Each object details how
  * specific segments of the model's response are supported by the `groundingChunks`.
  */
-public class GroundingMetadata(
+public class GroundingMetadata
+internal constructor(
   public val webSearchQueries: List<String>,
   public val searchEntryPoint: SearchEntryPoint?,
   public val retrievalQueries: List<String>,
-  @Deprecated("Use groundingChunks instead")
-  public val groundingAttribution: List<GroundingAttribution>,
   public val groundingChunks: List<GroundingChunk>,
   public val groundingSupports: List<GroundingSupport>,
 ) {
@@ -428,8 +450,6 @@ public class GroundingMetadata(
     val webSearchQueries: List<String>?,
     val searchEntryPoint: SearchEntryPoint.Internal?,
     val retrievalQueries: List<String>?,
-    @Deprecated("Use groundingChunks instead")
-    val groundingAttribution: List<GroundingAttribution.Internal>?,
     val groundingChunks: List<GroundingChunk.Internal>?,
     val groundingSupports: List<GroundingSupport.Internal>?,
   ) {
@@ -438,7 +458,6 @@ public class GroundingMetadata(
         webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
         retrievalQueries = retrievalQueries.orEmpty(),
-        groundingAttribution = groundingAttribution?.map { it.toPublic(content) }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
         groundingSupports =
           groundingSupports?.map { it.toPublic(content) }.orEmpty().filterNotNull()
@@ -453,7 +472,8 @@ public class GroundingMetadata(
  * rendering, it's recommended to display this content within a `WebView`.
  * @property sdkBlob A blob of data for the client SDK to render the search entry point.
  */
-public class SearchEntryPoint(
+public class SearchEntryPoint
+internal constructor(
   public val renderedContent: String,
   public val sdkBlob: String?,
 ) {
@@ -480,8 +500,7 @@ public class SearchEntryPoint(
  * @property maps Contains details if the grounding chunk is from a Google Maps source.
  */
 public class GroundingChunk
-@JvmOverloads
-constructor(
+internal constructor(
   public val web: WebGroundingChunk? = null,
   public val maps: GoogleMapsGroundingChunk? = null,
 ) {
@@ -503,7 +522,8 @@ constructor(
  * @property placeId This Place's resource name, in `places/{place_id}` format. This can be used to
  * look up the place using the Google Maps API.
  */
-public class GoogleMapsGroundingChunk(
+public class GoogleMapsGroundingChunk
+internal constructor(
   public val uri: String?,
   public val title: String?,
   public val placeId: String?,
@@ -520,9 +540,10 @@ public class GoogleMapsGroundingChunk(
  * @property uri The URI of the retrieved web page.
  * @property title The title of the retrieved web page.
  * @property domain The domain of the original URI from which the content was retrieved. This is
- * only populated when using the Vertex AI Gemini API.
+ * only populated when using the Agent Platform Gemini API.
  */
-public class WebGroundingChunk(
+public class WebGroundingChunk
+internal constructor(
   public val uri: String?,
   public val title: String?,
   public val domain: String?
@@ -545,7 +566,8 @@ public class WebGroundingChunk(
  * `[1, 3, 4]` means that `groundingChunks[1]`, `groundingChunks[3]`, `groundingChunks[4]` are the
  * retrieved content supporting this part of the response.
  */
-public class GroundingSupport(
+public class GroundingSupport
+internal constructor(
   public val segment: Segment,
   public val groundingChunkIndices: List<Int>,
 ) {
@@ -566,22 +588,6 @@ public class GroundingSupport(
   }
 }
 
-@Deprecated("Use GroundingChunk instead")
-public class GroundingAttribution(
-  public val segment: Segment,
-  public val confidenceScore: Float?,
-) {
-  @Deprecated("Use GroundingChunk instead")
-  @Serializable
-  internal data class Internal(
-    val segment: Segment.Internal,
-    val confidenceScore: Float?,
-  ) {
-    internal fun toPublic(content: Content) =
-      GroundingAttribution(segment = segment.toPublic(content), confidenceScore = confidenceScore)
-  }
-}
-
 /**
  * Represents a specific segment within a [Content] object, often used to pinpoint the exact
  * location of text or data that grounding information refers to.
@@ -596,7 +602,8 @@ public class GroundingAttribution(
  * included in the segment.
  * @property text The text corresponding to the segment from the response.
  */
-public class Segment(
+public class Segment
+internal constructor(
   public val startIndex: Int,
   public val endIndex: Int,
   public val partIndex: Int,

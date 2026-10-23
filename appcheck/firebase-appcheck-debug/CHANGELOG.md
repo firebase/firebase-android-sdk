@@ -1,5 +1,9 @@
 # Unreleased
 
+# 20.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 19.4.1
 
 - [changed] Updated [app_check] debug token log message to include Firebase CLI

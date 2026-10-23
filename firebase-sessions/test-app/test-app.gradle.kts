@@ -16,6 +16,7 @@
 
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
 
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -35,6 +36,7 @@ android {
   val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.testing.sessions"
+  ndkVersion = "27.2.12479018"
   compileSdk = compileSdkVersion
 
   defaultConfig {
@@ -44,8 +46,6 @@ android {
     targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
-    multiDexEnabled = true
-    multiDexKeepProguard = file("multidex-config.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     // We only want to actually crash the app on specific runs.
@@ -64,7 +64,16 @@ android {
   }
 
   buildTypes {
-    release { signingConfig = signingConfigs["debug"] }
+    release {
+      signingConfig = signingConfigs["debug"]
+      isMinifyEnabled = true
+      isShrinkResources = true
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "multidex-config.pro")
+
+      // Explicitly enable automatic mapping upload for this variant
+      configure<CrashlyticsExtension> { mappingFileUploadEnabled = true }
+    }
+
     create("benchmark") {
       initWith(buildTypes["release"])
       signingConfig = signingConfigs["debug"]
@@ -104,13 +113,12 @@ dependencies {
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.core:core-ktx:1.7.0")
-  implementation("androidx.multidex:multidex:2.0.1")
-  implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
-  implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
+  implementation(libs.androidx.core.ktx)
+  implementation("androidx.navigation:navigation-fragment-ktx:2.8.8")
+  implementation("androidx.navigation:navigation-ui-ktx:2.8.8")
   implementation("com.google.android.material:material:1.9.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
-  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
+  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
   implementation(libs.androidx.core)
 
   androidTestImplementation("com.google.firebase:firebase-common:22.0.0")

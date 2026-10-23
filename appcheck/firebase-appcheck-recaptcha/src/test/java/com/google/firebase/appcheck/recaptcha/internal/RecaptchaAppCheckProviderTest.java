@@ -52,7 +52,7 @@ import org.robolectric.annotation.LooperMode;
 /** Tests for {@link RecaptchaAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class RecaptchaAppCheckProviderTest {
   private static final String APP_CHECK_TOKEN = "appCheckToken";
   private static final String RECAPTCHA_TOKEN = "recaptchaToken";

@@ -1,5 +1,9 @@
 # Unreleased
 
+# 17.0.0
+
+- [changed] Bumped internal dependencies.
+
 # 16.0.2
 
 - [feature] Added support for on-device structured output generation using `generateObject` (#8395)

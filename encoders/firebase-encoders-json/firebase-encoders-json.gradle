@@ -50,7 +50,7 @@ android {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
-    api 'com.google.firebase:firebase-encoders:17.0.0'
+    api "com.google.firebase:firebase-encoders:18.0.0"
 
     implementation libs.androidx.annotation
 
@@ -63,5 +63,6 @@ dependencies {
 }
 
 tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
+    // TODO(m187): Reenable post m187
+    // options.compilerArgs << "-Werror"
 }

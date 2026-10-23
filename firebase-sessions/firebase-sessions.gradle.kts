@@ -76,16 +76,16 @@ dependencies {
   api(libs.firebase.common)
 
   api(libs.firebase.components)
-  api("com.google.firebase:firebase-installations-interop:17.2.0") {
+  api("com.google.firebase:firebase-installations-interop:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
   api(libs.firebase.annotations)
-  api("com.google.firebase:firebase-encoders:17.0.0")
-  api("com.google.firebase:firebase-encoders-json:18.0.1")
+  api("com.google.firebase:firebase-encoders:18.0.0")
+  api("com.google.firebase:firebase-encoders-json:19.0.0")
 
-  implementation("com.google.android.datatransport:transport-api:3.2.0")
+  implementation("com.google.android.datatransport:transport-api:5.0.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
   implementation(libs.androidx.datastore)
@@ -95,12 +95,12 @@ dependencies {
 
   compileOnly(libs.errorprone.annotations)
 
-  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
+  runtimeOnly("com.google.firebase:firebase-installations:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {
+  runtimeOnly("com.google.firebase:firebase-datatransport:21.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }

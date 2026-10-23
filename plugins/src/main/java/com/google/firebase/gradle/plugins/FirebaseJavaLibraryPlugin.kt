@@ -72,7 +72,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupDefaults(project, firebaseLibrary)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
-    getIsPomValidTask(project, firebaseLibrary)
+    registerPomValidationTasks(project, firebaseLibrary)
     setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }

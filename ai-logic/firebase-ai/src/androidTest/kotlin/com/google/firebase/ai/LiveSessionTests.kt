@@ -47,6 +47,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotBeEmpty
 import io.ktor.util.toLowerCasePreservingASCIIRules
 import java.io.ByteArrayOutputStream
 import kotlin.time.Duration.Companion.seconds
@@ -268,6 +269,7 @@ class LiveSessionTests {
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
+    var handle: String? = null
     var gotTurnComplete = false
     withTimeout(30.seconds) {
       session
@@ -275,17 +277,19 @@ class LiveSessionTests {
         .takeWhile {
           if (it is LiveSessionResumptionUpdate) {
             lastResumptionUpdate = it
+            if (it.newHandle != null) {
+              handle = it.newHandle
+            }
           }
           if (it is LiveServerContent && it.turnComplete) {
             gotTurnComplete = true
           }
           // Stop when we've seen a turn complete and we have a new handle
-          !(gotTurnComplete && lastResumptionUpdate?.newHandle != null)
+          !(gotTurnComplete && handle != null)
         }
         .collect {}
     }
     lastResumptionUpdate shouldNotBe null
-    val handle = lastResumptionUpdate?.newHandle
     handle.shouldNotBeNull()
     session.resumeSession(SessionResumptionConfig(handle))
     session.send("What is my favorite color?")
@@ -306,7 +310,7 @@ class LiveSessionTests {
         session.sendTextRealtime("Hello")
         val text =
           withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
-        text.shouldNotBeNull()
+        text.shouldNotBeEmpty()
       } finally {
         session.close()
       }

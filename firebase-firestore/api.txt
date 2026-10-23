@@ -43,8 +43,22 @@ package com.google.firebase.firestore {
 
   public class Blob implements java.lang.Comparable<com.google.firebase.firestore.Blob!> {
     method public int compareTo(com.google.firebase.firestore.Blob);
+    method public static com.google.firebase.firestore.Blob createBsonBinary(byte[]);
+    method public static com.google.firebase.firestore.Blob createBsonBinary(int, byte[]);
     method public static com.google.firebase.firestore.Blob fromBytes(byte[]);
+    method public int getSubType();
     method public byte[] toBytes();
+  }
+
+  public final class BsonObjectId {
+    ctor public BsonObjectId(String);
+    field public final String! value;
+  }
+
+  public final class BsonTimestamp {
+    ctor public BsonTimestamp(long, long);
+    field public final long increment;
+    field public final long seconds;
   }
 
   public class CollectionReference extends com.google.firebase.firestore.Query {
@@ -54,6 +68,11 @@ package com.google.firebase.firestore {
     method public String getId();
     method public com.google.firebase.firestore.DocumentReference? getParent();
     method public String getPath();
+  }
+
+  public final class Decimal128Value {
+    ctor public Decimal128Value(String);
+    field public final String! stringValue;
   }
 
   public class DocumentChange {
@@ -110,17 +129,24 @@ package com.google.firebase.firestore {
     method public <T> T? get(String, Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public com.google.firebase.firestore.Blob? getBlob(String);
     method public Boolean? getBoolean(String);
+    method public com.google.firebase.firestore.BsonObjectId? getBsonObjectId(String);
+    method public com.google.firebase.firestore.BsonTimestamp? getBsonTimestamp(String);
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData();
     method public java.util.Map<java.lang.String!,java.lang.Object!>? getData(com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method public java.util.Date? getDate(String);
     method public java.util.Date? getDate(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method public com.google.firebase.firestore.Decimal128Value? getDecimal128Value(String);
     method public com.google.firebase.firestore.DocumentReference? getDocumentReference(String);
     method public Double? getDouble(String);
     method public com.google.firebase.firestore.GeoPoint? getGeoPoint(String);
     method public String getId();
+    method public com.google.firebase.firestore.Int32Value? getInt32Value(String);
     method public Long? getLong(String);
+    method public com.google.firebase.firestore.MaxKey? getMaxKey(String);
     method public com.google.firebase.firestore.SnapshotMetadata getMetadata();
+    method public com.google.firebase.firestore.MinKey? getMinKey(String);
     method public com.google.firebase.firestore.DocumentReference getReference();
+    method public com.google.firebase.firestore.RegexValue? getRegexValue(String);
     method public String? getString(String);
     method public com.google.firebase.Timestamp? getTimestamp(String);
     method public com.google.firebase.Timestamp? getTimestamp(String, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
@@ -314,6 +340,11 @@ package com.google.firebase.firestore {
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
+  public final class Int32Value {
+    ctor public Int32Value(int);
+    field public final int value;
+  }
+
   public enum ListenSource {
     enum_constant public static final com.google.firebase.firestore.ListenSource CACHE;
     enum_constant public static final com.google.firebase.firestore.ListenSource DEFAULT;
@@ -371,6 +402,10 @@ package com.google.firebase.firestore {
   public interface LocalCacheSettings {
   }
 
+  public final class MaxKey {
+    method public static com.google.firebase.firestore.MaxKey instance();
+  }
+
   public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
     method public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
@@ -407,6 +442,10 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
   }
 
+  public final class MinKey {
+    method public static com.google.firebase.firestore.MinKey instance();
+  }
+
   public interface OnProgressListener<ProgressT> {
     method public void onProgress(ProgressT);
   }
@@ -437,6 +476,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage, com.google.firebase.firestore.pipeline.AggregateOptions options);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AliasedAggregate accumulator, com.google.firebase.firestore.pipeline.AliasedAggregate... additionalAccumulators);
     method public com.google.firebase.firestore.Pipeline define(com.google.firebase.firestore.pipeline.AliasedExpression aliasedExpression, com.google.firebase.firestore.pipeline.AliasedExpression... additionalExpressions);
+    method public com.google.firebase.firestore.Pipeline delete();
     method public com.google.firebase.firestore.Pipeline distinct(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
     method public com.google.firebase.firestore.Pipeline distinct(String groupField, java.lang.Object... additionalGroups);
     method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Pipeline.Snapshot> execute();
@@ -444,6 +484,12 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline findNearest(com.google.firebase.firestore.pipeline.Field vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, com.google.firebase.firestore.pipeline.Expression vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure, com.google.firebase.firestore.pipeline.FindNearestOptions options);
     method public com.google.firebase.firestore.Pipeline findNearest(String vectorField, double[] vectorValue, com.google.firebase.firestore.pipeline.FindNearestStage.DistanceMeasure distanceMeasure);
+    method public com.google.firebase.firestore.Pipeline insert();
+    method public com.google.firebase.firestore.Pipeline insert(com.google.firebase.firestore.CollectionReference collection);
+    method public com.google.firebase.firestore.Pipeline insert(com.google.firebase.firestore.CollectionReference collection, com.google.firebase.firestore.pipeline.Expression documentIdExpression);
+    method public com.google.firebase.firestore.Pipeline insert(com.google.firebase.firestore.pipeline.Expression documentIdExpression);
+    method public com.google.firebase.firestore.Pipeline insert(String collectionPath);
+    method public com.google.firebase.firestore.Pipeline insert(String collectionPath, com.google.firebase.firestore.pipeline.Expression documentIdExpression);
     method public com.google.firebase.firestore.Pipeline limit(int limit);
     method public com.google.firebase.firestore.Pipeline offset(int offset);
     method public com.google.firebase.firestore.Pipeline rawStage(com.google.firebase.firestore.pipeline.RawStage rawStage);
@@ -464,11 +510,18 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias, com.google.firebase.firestore.pipeline.UnnestOptions options);
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.UnnestStage unnestStage);
     method public com.google.firebase.firestore.Pipeline unnest(String arrayField, String alias);
+    method public com.google.firebase.firestore.Pipeline update(com.google.firebase.firestore.pipeline.Selectable... fields);
+    method public com.google.firebase.firestore.Pipeline upsert(com.google.firebase.firestore.CollectionReference collection);
+    method public com.google.firebase.firestore.Pipeline upsert(com.google.firebase.firestore.CollectionReference collection, com.google.firebase.firestore.pipeline.Expression documentIdExpression);
+    method public com.google.firebase.firestore.Pipeline upsert(com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath);
+    method public com.google.firebase.firestore.Pipeline upsert(String collectionPath, com.google.firebase.firestore.pipeline.Expression documentIdExpression);
     method public com.google.firebase.firestore.Pipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
   }
 
   public static final class Pipeline.ExecuteOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.Pipeline.ExecuteOptions> {
     ctor public Pipeline.ExecuteOptions();
+    method public com.google.firebase.firestore.Pipeline.ExecuteOptions withAtomic(boolean atomic);
     method public com.google.firebase.firestore.Pipeline.ExecuteOptions withIndexMode(com.google.firebase.firestore.Pipeline.ExecuteOptions.IndexMode indexMode);
   }
 
@@ -512,6 +565,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline database();
     method public com.google.firebase.firestore.Pipeline documents(com.google.firebase.firestore.DocumentReference... documents);
     method public com.google.firebase.firestore.Pipeline documents(java.lang.String... documents);
+    method public com.google.firebase.firestore.Pipeline literals(java.util.Map<java.lang.String,? extends java.lang.Object?>... data);
     method public static com.google.firebase.firestore.Pipeline subcollection(com.google.firebase.firestore.pipeline.SubcollectionSource source);
     method public static com.google.firebase.firestore.Pipeline subcollection(String path);
     field public static final com.google.firebase.firestore.PipelineSource.Companion Companion;
@@ -595,6 +649,12 @@ package com.google.firebase.firestore {
     method public int size();
     method public <T> java.util.List<T!> toObjects(Class<T!>);
     method public <T> java.util.List<T!> toObjects(Class<T!>, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+  }
+
+  public final class RegexValue {
+    ctor public RegexValue(String, String);
+    field public final String! options;
+    field public final String! pattern;
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface ServerTimestamp {
@@ -1955,6 +2015,9 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public class FunctionExpression extends com.google.firebase.firestore.pipeline.Expression {
+  }
+
+  public final class LiteralsSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.LiteralsSource> {
   }
 
   public final class Ordering {

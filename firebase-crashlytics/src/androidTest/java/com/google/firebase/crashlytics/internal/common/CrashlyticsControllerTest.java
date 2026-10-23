@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -49,12 +50,12 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -165,6 +166,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       CrashlyticsFileMarker crashMarker =
           new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore);
 
+      ResumableUploadMetadataStore resumableUploadMetadataStore =
+          new ResumableUploadMetadataStore(testContext, testFileStore);
+
       List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
       buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
       AppData appData =
@@ -177,6 +181,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "versionCode",
               "versionName",
               mock(DevelopmentPlatformProvider.class));
+
+      FirebaseApp firebaseApp = mock(FirebaseApp.class);
+      FirebaseOptions options =
+          new FirebaseOptions.Builder()
+              .setApiKey("api-key")
+              .setApplicationId("applicationId")
+              .setProjectId("projectId")
+              .build();
+
+      when(firebaseApp.getOptions()).thenReturn(options);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
@@ -192,7 +206,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               analyticsEventLogger,
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
-              crashlyticsWorkers);
+              crashlyticsWorkers,
+              resumableUploadMetadataStore,
+              firebaseApp);
       return controller;
     }
   }
@@ -568,40 +584,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingManager
-  @Test
-  public void testWritingProfilingManagerTriggerHeapDumpEnabledMarker() {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerHeapDumpCollectionEnabledMarker("sessionId", true);
-
-    List<File> markers =
-        testFileStore.getSessionFiles(
-            "sessionId", (dir, name) -> name.contains("trigger-heap-dump-collection-enabled"));
-
-    assertFalse(markers.isEmpty());
-    assertEquals(1, markers.size());
-    assertEquals("trigger-heap-dump-collection-enabled", markers.get(0).getName());
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingTrigger
-  @Test
-  public void testWritingProfilingManagerTriggerHeapDumpMarker() throws IOException {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerHeapDumpGeneratedMarker("sessionId", "path/to/heap");
-
-    List<File> markers =
-        testFileStore.getSessionFiles(
-            "sessionId", (dir, name) -> name.contains("trigger-heap-dump-generated"));
-
-    assertFalse(markers.isEmpty());
-    assertEquals(1, markers.size());
-    assertEquals("trigger-heap-dump-generated", markers.get(0).getName());
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo

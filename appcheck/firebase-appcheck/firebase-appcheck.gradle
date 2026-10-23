@@ -57,7 +57,7 @@ dependencies {
 
     api libs.playservices.tasks
     api libs.firebase.annotations
-    api "com.google.firebase:firebase-appcheck-interop:17.1.0"
+    api "com.google.firebase:firebase-appcheck-interop:18.0.0"
     api(libs.firebase.common)
     api(libs.firebase.components)
 
@@ -89,4 +89,12 @@ dependencies {
     androidTestImplementation libs.truth
     androidTestImplementation libs.junit
     androidTestImplementation libs.mockito.core
+}
+
+tasks.named("kotlindoc") {
+    dependsOn(
+        ":appcheck:firebase-appcheck-debug:kotlindoc",
+        ":appcheck:firebase-appcheck-playintegrity:kotlindoc",
+        ":appcheck:firebase-appcheck-recaptcha:kotlindoc"
+    )
 }

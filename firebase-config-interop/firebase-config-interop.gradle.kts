@@ -45,8 +45,10 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-encoders-json:18.0.1")
-  api("com.google.firebase:firebase-encoders:17.0.0")
+  api("com.google.firebase:firebase-encoders-json:19.0.0")
+  api("com.google.firebase:firebase-encoders:18.0.0")
+
+  implementation(libs.androidx.annotation)
 
   compileOnly(libs.autovalue.annotations)
 

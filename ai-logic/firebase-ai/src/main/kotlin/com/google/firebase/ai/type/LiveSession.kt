@@ -389,8 +389,7 @@ internal constructor(
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
     sendFrame(
-      BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
-        .toInternal()
+      LiveClientToolResponse(functionList.map { it.toInternalFunctionResponse() }).toInternal()
     )
   }
 
@@ -405,7 +404,7 @@ internal constructor(
    * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
+    sendFrame(LiveRealtimeInput(audio = audio).toInternal())
   }
 
   /**
@@ -420,10 +419,10 @@ internal constructor(
    *
    * @param video Encoded image data extracted from a frame of the video, used to update the model
    * on the client's conversation, with the corresponding IANA standard MIME type of the video frame
-   * data (for example, `image/png`, `image/jpeg`, etc.).
+   * data (for example, `image/png`, `image/jpeg`, and so on).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
+    sendFrame(LiveRealtimeInput(video = video).toInternal())
   }
 
   /**
@@ -432,7 +431,7 @@ internal constructor(
    * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
+    sendFrame(LiveRealtimeInput(text = text).toInternal())
   }
 
   /**
@@ -448,7 +447,7 @@ internal constructor(
    * Only required when automatic activity detection is disabled via [RealtimeInputConfig].
    */
   public suspend fun sendStartActivityRealtime() {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(activityStart = true).toInternal())
+    sendFrame(LiveRealtimeInput(activityStart = true).toInternal())
   }
 
   /**
@@ -462,24 +461,7 @@ internal constructor(
    * Only required when automatic activity detection is disabled via [RealtimeInputConfig].
    */
   public suspend fun sendStopActivityRealtime() {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(activityEnd = true).toInternal())
-  }
-
-  /**
-   * Streams client data to the model.
-   *
-   * Calling this after [startAudioConversation] will play the response audio immediately.
-   *
-   * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
-   */
-  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
-  public suspend fun sendMediaStream(
-    mediaChunks: List<MediaData>,
-  ) {
-    sendFrame(
-      BidiGenerateContentRealtimeInputSetup(mediaChunks.map { InlineData(it.data, it.mimeType) })
-        .toInternal()
-    )
+    sendFrame(LiveRealtimeInput(activityEnd = true).toInternal())
   }
 
   /**
@@ -492,9 +474,7 @@ internal constructor(
    */
   @JvmOverloads
   public suspend fun send(content: Content, turnComplete: Boolean = true) {
-    sendFrame(
-      BidiGenerateContentClientContentSetup(listOf(content.toInternal()), turnComplete).toInternal()
-    )
+    sendFrame(LiveClientContent(listOf(content.toInternal()), turnComplete).toInternal())
   }
 
   /**
@@ -709,44 +689,40 @@ internal constructor(
    *
    * Effectively, a message from the client to the model.
    */
-  internal class BidiGenerateContentClientContentSetup(
-    val turns: List<Content.Internal>,
-    val turnComplete: Boolean
-  ) {
+  internal class LiveClientContent(val turns: List<Content.Internal>, val turnComplete: Boolean) {
     @Serializable
-    internal class Internal(val clientContent: BidiGenerateContentClientContent) {
+    internal class Internal(val clientContent: LiveClientContentData) {
       @Serializable
-      internal data class BidiGenerateContentClientContent(
+      internal data class LiveClientContentData(
         val turns: List<Content.Internal>,
         val turnComplete: Boolean
       )
     }
 
-    fun toInternal() = Internal(Internal.BidiGenerateContentClientContent(turns, turnComplete))
+    fun toInternal() = Internal(Internal.LiveClientContentData(turns, turnComplete))
   }
 
   /** Client generated responses to a [LiveServerToolCall]. */
-  internal class BidiGenerateContentToolResponseSetup(
+  internal class LiveClientToolResponse(
     val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
   ) {
     @Serializable
-    internal data class Internal(val toolResponse: BidiGenerateContentToolResponse) {
+    internal data class Internal(val toolResponse: LiveClientToolResponseData) {
       @Serializable
-      internal data class BidiGenerateContentToolResponse(
+      internal data class LiveClientToolResponseData(
         val functionResponses: List<FunctionResponsePart.Internal.FunctionResponse>
       )
     }
 
-    fun toInternal() = Internal(Internal.BidiGenerateContentToolResponse(functionResponses))
+    fun toInternal() = Internal(Internal.LiveClientToolResponseData(functionResponses))
   }
 
   /**
    * User input that is sent to the model in real time.
    *
-   * End of turn is derived from user activity (eg; end of speech).
+   * End of turn is derived from user activity (for example, end of speech).
    */
-  internal class BidiGenerateContentRealtimeInputSetup(
-    val mediaChunks: List<InlineData>? = null,
+  internal class LiveRealtimeInput(
     val audio: InlineData? = null,
     val video: InlineData? = null,
     val text: String? = null,
@@ -757,21 +733,19 @@ internal constructor(
     @Serializable internal class ActivityEnd
 
     @Serializable
-    internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
+    internal class Internal(val realtimeInput: LiveRealtimeInputData) {
       @Serializable
-      internal data class BidiGenerateContentRealtimeInput(
-        val mediaChunks: List<InlineData.Internal>?,
-        val audio: InlineData.Internal?,
-        val video: InlineData.Internal?,
-        val text: String?,
+      internal data class LiveRealtimeInputData(
+        val audio: InlineData.Internal? = null,
+        val video: InlineData.Internal? = null,
+        val text: String? = null,
         val activityStart: ActivityStart? = null,
         val activityEnd: ActivityEnd? = null
       )
     }
     fun toInternal() =
       Internal(
-        Internal.BidiGenerateContentRealtimeInput(
-          mediaChunks?.map { it.toInternal() },
+        Internal.LiveRealtimeInputData(
           audio?.toInternal(),
           video?.toInternal(),
           text,

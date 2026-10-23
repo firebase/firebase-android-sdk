@@ -1,5 +1,17 @@
 # Unreleased
 
+- [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
+- [fixed] Restored token request deduplication with FirebaseInstanceId during auto-init and token fetches. (#8732)
+
+# 26.0.1
+
+- [fixed] Fixed topic subscription and unsubscription for topic names containing `%`. (#8620)
+- [fixed] Fixed topic operation queue stalling on non-retryable errors. (#8620)
+
+# 26.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 25.1.3
 
 - [changed] Internal improvements for legacy infrastructure (#8551)

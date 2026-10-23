@@ -50,10 +50,11 @@ dependencies {
   api(libs.firebase.components)
 
   implementation(libs.androidx.annotation)
-  implementation("com.google.android.datatransport:transport-api:3.1.0")
-  implementation("com.google.android.datatransport:transport-backend-cct:3.2.0")
-  implementation("com.google.android.datatransport:transport-runtime:3.2.0")
+  implementation("com.google.android.datatransport:transport-api:5.0.0")
+  implementation("com.google.android.datatransport:transport-backend-cct:5.0.0")
+  implementation("com.google.android.datatransport:transport-runtime:5.0.0")
   implementation(libs.kotlin.stdlib.jdk8)
+  implementation(libs.javax.inject)
 
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.runner)

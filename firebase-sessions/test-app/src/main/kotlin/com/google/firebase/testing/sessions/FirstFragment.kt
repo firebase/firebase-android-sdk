@@ -65,6 +65,45 @@ class FirstFragment : Fragment() {
     return binding.root
   }
 
+  fun doStuff(pinnedMemory: MutableList<ByteArray>, stringMemory: MutableList<String>) {
+    doStuff(pinnedMemory, stringMemory, 0)
+  }
+
+  fun doStuff(pinnedMemory: MutableList<ByteArray>, stringMemory: MutableList<String>, i: Int) {
+    thread(name = "lmk-filler-thread_$i") {
+      val runtime = Runtime.getRuntime()
+      val maxHeap = runtime.maxMemory()
+
+      Logger.getLogger().i("Max Java Heap: ${maxHeap / (1024 * 1024)} MB")
+
+      val usedHeap = runtime.totalMemory() - runtime.freeMemory()
+
+      Logger.getLogger().i("Used Java Heap: ${usedHeap / (1024 * 1024)} MB")
+
+      val usage = 1
+
+      if (usedHeap >= maxHeap * usage) {
+        return@thread
+      }
+
+      val chunk = ByteArray(8 * 1024 * 1024)
+
+      for (i in chunk.indices step 16 * 1024) {
+        chunk[i] = (i and 0xFF).toByte()
+      }
+
+      val builder = StringBuilder()
+      for (b in chunk) {
+        builder.append(String.format("%02x", b))
+      }
+
+      pinnedMemory.add(chunk)
+      stringMemory.add(String.format("Byte is: %s", builder.toString()))
+
+      doStuff(pinnedMemory, stringMemory, i + 1)
+    }
+  }
+
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
@@ -78,32 +117,11 @@ class FirstFragment : Fragment() {
       }
     }
     val pinnedMemory = mutableListOf<ByteArray>()
+    val stringMemory = mutableListOf<String>()
     binding.buttonOom.setOnClickListener {
       Logger.getLogger().i("OOM clicked")
 
-      thread(name = "lmk-filler-thread") {
-        val runtime = Runtime.getRuntime()
-        val maxHeap = runtime.maxMemory()
-
-        Logger.getLogger().i("Max Java Heap: ${maxHeap / (1024 * 1024)} MB")
-
-        while (true) {
-          val usedHeap = runtime.totalMemory() - runtime.freeMemory()
-          val usage = 1
-
-          if (usedHeap >= maxHeap * usage) {
-            break
-          }
-
-          val chunk = ByteArray(2 * 1024 * 1024)
-
-          for (i in chunk.indices step 4096) {
-            chunk[i] = (i and 0xFF).toByte()
-          }
-
-          pinnedMemory.add(chunk)
-        }
-      }
+      doStuff(pinnedMemory, stringMemory)
     }
     binding.buttonMlk.setOnClickListener {
       thread {

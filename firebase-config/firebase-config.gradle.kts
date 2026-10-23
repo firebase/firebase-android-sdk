@@ -62,10 +62,10 @@ kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   // Firebase
-  api("com.google.firebase:firebase-config-interop:16.0.1")
+  api("com.google.firebase:firebase-config-interop:17.0.0")
   api(libs.firebase.annotations)
-  api("com.google.firebase:firebase-installations-interop:17.1.0")
-  api("com.google.firebase:firebase-abt:21.1.1") {
+  api("com.google.firebase:firebase-installations-interop:18.0.0")
+  api("com.google.firebase:firebase-abt:24.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
@@ -75,7 +75,7 @@ dependencies {
   }
   api(libs.firebase.common)
   api(libs.firebase.components)
-  api("com.google.firebase:firebase-installations:18.0.0") {
+  api("com.google.firebase:firebase-installations:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
 

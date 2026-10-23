@@ -19,3 +19,4 @@
 # classpath android.jar. Suppress R8 missing class warnings
 -dontwarn android.os.ProfilingManager
 -dontwarn android.os.ProfilingTrigger**
+-dontwarn android.os.ProfilingResult

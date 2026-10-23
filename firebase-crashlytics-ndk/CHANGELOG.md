@@ -1,5 +1,15 @@
 # Unreleased
 
+# 21.0.1
+
+- [fixed] Fixed a file descriptor leak when reading the native crash trace from
+  `ApplicationExitInfo`, which could trigger a StrictMode `CloseGuard` violation on the app start
+  following a native crash. (#8510)
+
+# 21.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 20.1.1
 
 - [changed] Enabled the Relocation Read-Only (RELRO) flag across Crashlytics NDK shared libraries,

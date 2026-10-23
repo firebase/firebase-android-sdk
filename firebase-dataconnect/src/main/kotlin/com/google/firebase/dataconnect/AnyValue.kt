@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.firebase.dataconnect.AnyValue.Companion.serializer
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
@@ -199,10 +198,10 @@ public fun <T> AnyValue.decode(
 
 /**
  * Decodes the encapsulated value using the _default_ serializer for the return type, as computed by
- * [serializer].
+ * [kotlinx.serialization.serializer].
  *
  * @return the object of type `T` created by decoding the encapsulated value using the _default_
- * serializer for the return type, as computed by [serializer].
+ * serializer for the return type, as computed by [kotlinx.serialization.serializer].
  */
 public inline fun <reified T> AnyValue.decode(): T = decode(serializer<T>())
 
@@ -225,11 +224,12 @@ public fun <T> AnyValue.Companion.encode(
 
 /**
  * Encodes the given value using the given _default_ serializer for the given object, as computed by
- * [serializer].
+ * [kotlinx.serialization.serializer].
  *
  * @param value the value to serialize.
  * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value when
- * decoded with the _default_ serializer for the given object, as computed by [serializer].
+ * decoded with the _default_ serializer for the given object, as computed by
+ * [kotlinx.serialization.serializer].
  */
 public inline fun <reified T> AnyValue.Companion.encode(value: T): AnyValue =
   encode(value, serializer<T>())
