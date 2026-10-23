@@ -10,8 +10,8 @@
 # 21.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
-- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
-  collection is enabled [#8549]
+- [feature] Decorate OOM and Memory Limiter issues with whether a heap dump was generated and
+  heap dump collection is enabled [#8549]
 - [fixed] Fixed event timestamps on ANR events [#8612]
 
 # 20.1.1

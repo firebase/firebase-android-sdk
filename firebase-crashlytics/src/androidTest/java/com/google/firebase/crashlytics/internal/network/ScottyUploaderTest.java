@@ -463,7 +463,7 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     assertThat(url).contains("uploadType=media");
     assertThat(url).contains("gmp_app_id=gmpAppId");
     assertThat(url).contains("uuid=uuid");
-    assertThat(url).contains("trigger_type=oom");
+    assertThat(url).contains("trigger_type=out-of-memory");
     assertThat(url).contains("session_id=sessionId");
   }
 
@@ -499,38 +499,6 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     assertThat(headers.getHeaderValuesAsString("Content-Type"))
         .isEqualTo("application/octet-stream");
     assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
-        .isEqualTo("oom/sessionId.perfetto");
-  }
-
-  @Test
-  public void testHeadersSetCorrectly_Anomaly() throws IOException {
-    UploadClient client = mock(UploadClient.class);
-    FileStore fileStore = mock(FileStore.class);
-
-    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
-
-    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
-    File heapdump = heapdumpPath.toFile();
-    heapdump.deleteOnExit();
-
-    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
-
-    HttpResponse httpResponse = new HttpResponse(200, null, null);
-    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
-
-    org.mockito.ArgumentCaptor<HttpHeaders> headersCaptor =
-        org.mockito.ArgumentCaptor.forClass(HttpHeaders.class);
-
-    when(client.createTransfer(
-            anyString(), anyString(), headersCaptor.capture(), any(), anyString(), any()))
-        .thenReturn(fakeTransfer);
-
-    TestListener listener = new TestListener();
-    // Use ProfilingTrigger.TRIGGER_TYPE_ANOMALY (1)
-    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
-
-    HttpHeaders headers = headersCaptor.getValue();
-    assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
-        .isEqualTo("mlk/sessionId.perfetto");
+        .isEqualTo("sessionId.perfetto");
   }
 }

@@ -1089,7 +1089,7 @@ class CrashlyticsController {
             return;
           }
 
-          // No-op, we determine oom or mlk on restart.
+          // No-op, we determine oom or memory limiter on restart.
           Logger.getLogger()
               .d(
                   String.format(

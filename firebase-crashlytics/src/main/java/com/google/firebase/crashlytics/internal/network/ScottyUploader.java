@@ -200,7 +200,7 @@ public class ScottyUploader {
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
       String url = getUrl(uuid, gmpAppId, sessionId, type);
-      String canonicalFilename = makeCanonicalFilename(sessionId, type);
+      String canonicalFilename = sessionId + ".perfetto";
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/octet-stream");
@@ -276,11 +276,6 @@ public class ScottyUploader {
     return fileStore.getCommonFile(String.format("../../profiling/%s", filename));
   }
 
-  private String makeCanonicalFilename(String sessionId, int type) {
-    String trigger = type == ProfilingTrigger.TRIGGER_TYPE_OOM ? "oom" : "mlk";
-    return String.format("%s/%s.perfetto", trigger, sessionId);
-  }
-
   private static String getUrl(String uuid, String gmpAppId, String sessionId, int type) {
     Map<String, String> params =
         Map.of(
@@ -302,9 +297,11 @@ public class ScottyUploader {
   private static String triggerAsString(int type) {
     switch (type) {
       case ProfilingTrigger.TRIGGER_TYPE_ANOMALY:
-        return "mlk";
+        // we currently only process TRIGGER_TYPE_ANOMALY for due to memory limiter kills;
+        // see SessionReportingCoordinator.isMemoryLimiterKill()
+        return "memory-limiter-kill";
       case ProfilingTrigger.TRIGGER_TYPE_OOM:
-        return "oom";
+        return "out-of-memory";
       default:
         return "none";
     }
