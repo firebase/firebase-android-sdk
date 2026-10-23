@@ -3,6 +3,10 @@
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 
+# 21.0.1
+
+- [feature] Internal improvements.
+
 # 21.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
