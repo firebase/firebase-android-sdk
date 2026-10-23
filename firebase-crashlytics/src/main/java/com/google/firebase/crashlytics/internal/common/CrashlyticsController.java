@@ -1099,9 +1099,15 @@ class CrashlyticsController {
   }
 
   private boolean isActiveNetworkMetered() {
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    return connectivityManager == null || connectivityManager.isActiveNetworkMetered();
+    try {
+      ConnectivityManager connectivityManager =
+          (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+      return connectivityManager == null || connectivityManager.isActiveNetworkMetered();
+    } catch (Exception e) {
+      Logger.getLogger().d("Can't figure out if network is metered, defaulting to yes; ", e);
+    }
+
+    return true;
   }
 
   // endregion
