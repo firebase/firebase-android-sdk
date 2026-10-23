@@ -1,5 +1,9 @@
 # Unreleased
 
+# 4.0.1
+
+- [unchanged] Updated to keep SDK versions aligned.
+
 # 4.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
