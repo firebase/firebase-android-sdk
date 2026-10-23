@@ -125,6 +125,27 @@ public class FirstDrawDoneListenerTest {
     assertThat(mOnDrawListeners.size()).isEqualTo(0);
   }
 
+  @Test
+  @Config(sdk = 26)
+  public void onDraw_removesOnGlobalLayoutListenerAfterCleanup()
+      throws NoSuchFieldException, IllegalAccessException {
+    ArrayList<OnDrawListener> mOnDrawListeners =
+        initViewTreeObserverWithListener(testView.getViewTreeObserver());
+    ArrayList<?> mOnGlobalLayoutListeners =
+        initViewTreeObserverGlobalLayoutListeners(testView.getViewTreeObserver());
+
+    FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
+
+    // onDraw registers a cleanup OnGlobalLayoutListener
+    testView.getViewTreeObserver().dispatchOnDraw();
+    assertThat(mOnGlobalLayoutListeners.size()).isGreaterThan(0);
+
+    // onGlobalLayout fires the cleanup, which removes both listeners
+    testView.getViewTreeObserver().dispatchOnGlobalLayout();
+    assertThat(mOnGlobalLayoutListeners).isEmpty();
+    assertThat(mOnDrawListeners).isEmpty();
+  }
+
   /**
    * Returns ViewTreeObserver.mOnDrawListeners field through reflection. Since reflections are
    * employed, prefer to be used in tests with fixed API level using @Config(sdk = X).
@@ -145,6 +166,30 @@ public class FirstDrawDoneListenerTest {
     ArrayList<OnDrawListener> listeners = (ArrayList<OnDrawListener>) mOnDrawListeners.get(vto);
     assertThat(listeners).isNotNull();
     assertThat(listeners.size()).isEqualTo(0);
+    return listeners;
+  }
+
+  /**
+   * Returns the internal ArrayList backing ViewTreeObserver.mOnGlobalLayoutListeners through
+   * reflection. The field is a CopyOnWriteArray, so we read its mData field.
+   */
+  private static ArrayList<?> initViewTreeObserverGlobalLayoutListeners(ViewTreeObserver vto)
+      throws NoSuchFieldException, IllegalAccessException {
+    ViewTreeObserver.OnGlobalLayoutListener placeHolder = () -> {};
+    vto.addOnGlobalLayoutListener(placeHolder);
+    vto.removeOnGlobalLayoutListener(placeHolder);
+
+    Field mOnGlobalLayoutListeners =
+        ViewTreeObserver.class.getDeclaredField("mOnGlobalLayoutListeners");
+    mOnGlobalLayoutListeners.setAccessible(true);
+    Object copyOnWriteArray = mOnGlobalLayoutListeners.get(vto);
+    assertThat(copyOnWriteArray).isNotNull();
+
+    Field mData = copyOnWriteArray.getClass().getDeclaredField("mData");
+    mData.setAccessible(true);
+    ArrayList<?> listeners = (ArrayList<?>) mData.get(copyOnWriteArray);
+    assertThat(listeners).isNotNull();
+    assertThat(listeners).isEmpty();
     return listeners;
   }
 
