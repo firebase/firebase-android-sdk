@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.uploader.client.DataStream;
+import com.google.uploader.client.HttpHeaders;
 import com.google.uploader.client.HttpResponse;
 import com.google.uploader.client.Transfer;
 import com.google.uploader.client.TransferException;
@@ -393,6 +394,46 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
   }
 
   @Test
+  public void testStreamManagedByListener() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    // Capture the DataStream
+    org.mockito.ArgumentCaptor<DataStream> streamCaptor =
+        org.mockito.ArgumentCaptor.forClass(DataStream.class);
+
+    when(client.createTransfer(
+            anyString(), anyString(), any(), streamCaptor.capture(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    AtomicBoolean withManagedStreamCalled = new AtomicBoolean(false);
+    ScottyUploader.Listener listener =
+        new ScottyUploader.Listener() {
+          @Override
+          public com.google.uploader.client.FileDataStream withManagedStream(File file) {
+            withManagedStreamCalled.set(true);
+            return super.withManagedStream(file);
+          }
+        };
+
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    assertThat(withManagedStreamCalled.get()).isTrue();
+    assertThat(streamCaptor.getValue()).isNotNull();
+  }
+
+  @Test
   public void testUrlParameters() throws IOException {
     UploadClient client = mock(UploadClient.class);
     FileStore fileStore = mock(FileStore.class);
@@ -421,7 +462,75 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     String url = urlCaptor.getValue();
     assertThat(url).contains("uploadType=media");
     assertThat(url).contains("gmp_app_id=gmpAppId");
+    assertThat(url).contains("uuid=uuid");
     assertThat(url).contains("trigger_type=oom");
     assertThat(url).contains("session_id=sessionId");
+  }
+
+  @Test
+  public void testHeadersSetCorrectly() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    // Capture the Headers
+    org.mockito.ArgumentCaptor<HttpHeaders> headersCaptor =
+        org.mockito.ArgumentCaptor.forClass(HttpHeaders.class);
+
+    when(client.createTransfer(
+            anyString(), anyString(), headersCaptor.capture(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    TestListener listener = new TestListener();
+    // Use a known type to verify filename, e.g., ProfilingTrigger.TRIGGER_TYPE_OOM (7)
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 7, "heapdump.perfetto", listener);
+
+    HttpHeaders headers = headersCaptor.getValue();
+    assertThat(headers.getHeaderValuesAsString("Content-Type"))
+        .isEqualTo("application/octet-stream");
+    assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
+        .isEqualTo("oom/sessionId.perfetto");
+  }
+
+  @Test
+  public void testHeadersSetCorrectly_Anomaly() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    org.mockito.ArgumentCaptor<HttpHeaders> headersCaptor =
+        org.mockito.ArgumentCaptor.forClass(HttpHeaders.class);
+
+    when(client.createTransfer(
+            anyString(), anyString(), headersCaptor.capture(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    TestListener listener = new TestListener();
+    // Use ProfilingTrigger.TRIGGER_TYPE_ANOMALY (1)
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 1, "heapdump.perfetto", listener);
+
+    HttpHeaders headers = headersCaptor.getValue();
+    assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
+        .isEqualTo("mlk/sessionId.perfetto");
   }
 }
