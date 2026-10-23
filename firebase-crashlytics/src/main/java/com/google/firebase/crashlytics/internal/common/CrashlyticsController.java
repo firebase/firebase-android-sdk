@@ -578,7 +578,7 @@ class CrashlyticsController {
 
   private void triggerHeapdumpUpload() {
     if (isActiveNetworkMetered()) {
-      Logger.getLogger().i("Won't upload heap dump due to metered network, will try later");
+      Logger.getLogger().i("Won't upload heap dumps due to metered network");
       return;
     }
 
