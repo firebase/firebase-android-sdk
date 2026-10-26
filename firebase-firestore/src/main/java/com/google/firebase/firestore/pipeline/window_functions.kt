@@ -60,7 +60,7 @@ private constructor(
 
   companion object {
     /**
-     * Creates a window function that assigns a unique rank to each row based on the sort order.
+     * Returns the rank of each document within its partition according to the window's sort order. Documents with equal sort values receive the same rank, and the following rank is skipped.
      *
      * @return A new [WindowFunction] representing the rank window function.
      */
