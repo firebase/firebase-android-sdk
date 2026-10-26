@@ -17,28 +17,29 @@
 package com.google.firebase.crashlytics.telemetry
 
 import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.api.logs.LoggerProvider
+import io.opentelemetry.api.metrics.MeterProvider
+import io.opentelemetry.api.trace.TracerProvider
+import io.opentelemetry.context.propagation.ContextPropagators
 
 /**
- * A delegate wrapper around OpenTelemetry. Use this to wrap OpenTelemetry to add Crashlytics'
- * functionality.
+ * A delegate wrapper around [OpenTelemetry] that wraps tracers in Crashlytics delegates.
  *
- * @note
- * -
- * https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation
- * indicates that if a method isn't implemented, Kotlin calls the delegate object by default.
+ * Most [OpenTelemetry] methods are Java `default` methods that return no-op providers, and Kotlin
+ * `by` delegation does not forward them, so each one is overridden explicitly.
  */
 internal class CrashlyticsOpenTelemetryDelegate(
   private val delegate: OpenTelemetry,
   private val crashlyticsSpanProcessor: CrashlyticsSpanProcessor,
-) : OpenTelemetry by delegate {
-  override fun getTracer(
-    instrumentationScopeName: String,
-    instrumentationScopeVersion: String,
-  ): Tracer {
-    return CrashlyticsTracerDelegate(
-      delegate.getTracer(instrumentationScopeName, instrumentationScopeVersion),
-      crashlyticsSpanProcessor,
-    )
-  }
+) : OpenTelemetry {
+  private val tracerProvider =
+    CrashlyticsTracerProviderDelegate(delegate.tracerProvider, crashlyticsSpanProcessor)
+
+  override fun getTracerProvider(): TracerProvider = tracerProvider
+
+  override fun getLogsBridge(): LoggerProvider = delegate.logsBridge
+
+  override fun getMeterProvider(): MeterProvider = delegate.meterProvider
+
+  override fun getPropagators(): ContextPropagators = delegate.propagators
 }
