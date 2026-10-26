@@ -1,8 +1,8 @@
 # Unreleased
 
-- [feature] Added the `addWindowFields` stage to Pipelines for computing window functions, such as
-  running totals and moving averages, over partitioned and sorted frames of documents, and added
-  `over()` for framing individual aggregates.
+- [feature] Added support for window functions in Pipelines, with the `addWindowFields` stage for
+  computing aggregates such as running totals and moving averages over partitioned and sorted frames
+  of documents, and `over()` for framing individual aggregates.
   ([#8639](https://github.com/firebase/firebase-android-sdk/pull/8639))
 
 # 27.1.0
