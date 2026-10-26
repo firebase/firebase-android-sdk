@@ -1,12 +1,17 @@
 # Unreleased
 
-- [feature] Enable heap dump uploads for OOM and MLK issues on API levels 37+ [#8661]
+- [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
+- [feature] Prevent heap dump uploads on metered networks [#8712]
+
+# 21.0.1
+
+- [feature] Internal improvements.
 
 # 21.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
-- [feature] Decorate OOM and MLK events with whether a heap dump was generated and heap dump
-  collection is enabled [#8549]
+- [feature] Decorate OOM and Memory Limiter issues with whether a heap dump was generated and
+  heap dump collection is enabled [#8549]
 - [fixed] Fixed event timestamps on ANR events [#8612]
 
 # 20.1.1

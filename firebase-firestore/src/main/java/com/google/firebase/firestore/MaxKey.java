@@ -28,10 +28,10 @@ public final class MaxKey {
   }
 
   /**
-   * Returns true if this MaxKey is equal to the provided object.
+   * Returns true if this {@code MaxKey} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this MaxKey is equal to the provided object.
+   * @return Whether this {@code MaxKey} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

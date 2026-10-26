@@ -1,5 +1,7 @@
 # Unreleased
 
+# 24.0.1
+
 - [fixed] Fixed a `ConcurrentModificationException` crash when a config update listener is removed from inside its own callback. (#8686)
 
 # 24.0.0

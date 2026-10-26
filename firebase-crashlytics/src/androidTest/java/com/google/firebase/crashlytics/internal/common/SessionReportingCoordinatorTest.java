@@ -53,6 +53,7 @@ import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetad
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -638,12 +639,10 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   @SdkSuppress(minSdkVersion = 37)
   @Test
   public void testIsMemoryLimiterKill() {
-    ApplicationExitInfo mlk =
+    ApplicationExitInfo exitInfo =
         makeApplicationExitInfo(ApplicationExitInfo.REASON_OTHER, 0, 0, "MemoryLimiter:AnonSwap");
 
-    boolean isMlk = reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(mlk));
-
-    assertTrue(isMlk);
+    assertTrue(reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(exitInfo)));
   }
 
   @SdkSuppress(minSdkVersion = 37)
@@ -661,8 +660,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
             "profiling/com.google.firebase.crashlytics.test.trigger-type-7.hprof");
     assertTrue(heapDump.createNewFile());
 
-    long sessionTime = heapDump.lastModified();
-
+    Instant sessionTime = Instant.ofEpochMilli(heapDump.lastModified());
     boolean generated =
         SessionReportingCoordinator.wasHeapDumpGeneratedViaFile(context.getFilesDir(), sessionTime);
 
@@ -682,7 +680,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
         new File(context.getFilesDir(), "profiling/com.google.firebase.crashlytics.test.hprof");
     assertTrue(heapDump.createNewFile());
 
-    long sessionTime = heapDump.lastModified() + 100;
+    Instant sessionTime = Instant.ofEpochMilli(heapDump.lastModified()).plusMillis(100);
 
     boolean generated =
         SessionReportingCoordinator.wasHeapDumpGeneratedViaFile(context.getFilesDir(), sessionTime);
