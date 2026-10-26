@@ -60,7 +60,9 @@ private constructor(
 
   companion object {
     /**
-     * Returns the rank of each document within its partition according to the window's sort order. Documents with equal sort values receive the same rank, and the following rank is skipped.
+     * Returns the rank of each document within its partition according to the window's sort order.
+     * Documents with equal sort values receive the same rank, and the following rank is skipped.
+     * The window must specify exactly one sort ordering.
      *
      * @return A new [WindowFunction] representing the rank window function.
      */

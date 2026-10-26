@@ -270,6 +270,28 @@ public class PipelineWindowTest {
   }
 
   @Test
+  public void testWindowFieldsComputesRank() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(windowTestCollection())
+            .addWindowFields(
+                new WindowSpec().sort(ascending("salesPrice")),
+                WindowFunction.rank().alias("priceRank"))
+            .sort(ascending("date"))
+            .select("salesPrice", "priceRank")
+            .execute();
+    expectResults(
+        waitFor(execute).getResults(),
+        Arrays.asList(
+            mapOfEntries(entry("salesPrice", 12L), entry("priceRank", 1L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("priceRank", 2L)),
+            mapOfEntries(entry("salesPrice", 30L), entry("priceRank", 2L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("priceRank", 4L)),
+            mapOfEntries(entry("salesPrice", 60L), entry("priceRank", 4L))));
+  }
+
+  @Test
   public void testWindowFieldsRejectsARangeFrameWithoutASort() {
     CollectionReference salesCol = windowTestCollection();
     RuntimeException exception =
@@ -1706,30 +1728,5 @@ public class PipelineWindowTest {
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 3L)),
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 2L)),
             mapOfEntries(entry("product", "tablet"), entry("windowCount", 1L))));
-  }
-
-  // --- ranking -------------------------------------------------------------------------------
-
-  @Test
-  @Ignore("Pending backend support for rank")
-  public void testWindowFieldsComputesRank() {
-    Task<Pipeline.Snapshot> execute =
-        firestore
-            .pipeline()
-            .collection(windowTestCollection())
-            .addWindowFields(
-                new WindowSpec().sort(ascending("salesPrice")),
-                WindowFunction.rank().alias("priceRank"))
-            .sort(ascending("date"))
-            .select("salesPrice", "priceRank")
-            .execute();
-    expectResults(
-        waitFor(execute).getResults(),
-        Arrays.asList(
-            mapOfEntries(entry("salesPrice", 12L), entry("priceRank", 1L)),
-            mapOfEntries(entry("salesPrice", 30L), entry("priceRank", 2L)),
-            mapOfEntries(entry("salesPrice", 30L), entry("priceRank", 2L)),
-            mapOfEntries(entry("salesPrice", 60L), entry("priceRank", 4L)),
-            mapOfEntries(entry("salesPrice", 60L), entry("priceRank", 4L))));
   }
 }
