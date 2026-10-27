@@ -14,12 +14,17 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import static com.google.firebase.crashlytics.internal.common.CommonUtils.CRASHLYTICS_API_KEY;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import android.annotation.SuppressLint;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.ProfilingTrigger;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.uploader.client.DataStream;
 import com.google.uploader.client.FileDataStream;
 import com.google.uploader.client.HttpHeaders;
@@ -35,15 +40,16 @@ import com.google.uploader.client.UploadClientImpl;
 import com.google.uploader.shaded.guava.util.concurrent.Futures;
 import com.google.uploader.shaded.guava.util.concurrent.ListenableFuture;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ScottyUploader {
-  private static final String URL_PREFIX =
-      DataTransportCrashlyticsReportSender.mergeStrings(
-          "hts/frbslgigp.ogepscmula/1frlglgc/pod", "tp:/ieaeogn-agolai.o/podv/ieo/eayula");
 
-  private final String key;
+  private static final String URL_PREFIX =
+      CommonUtils.mergeStrings(
+          "hts/frbslgigp.ogepscmula/1frlglgc/pod", "tp:/ieaeogn-agolai.o/podv/ieo/eayula");
 
   private final String uuid;
   private final FileStore fileStore;
@@ -53,6 +59,7 @@ public class ScottyUploader {
   private volatile ListenableFuture<TransferExceptionOrHttpResponse> upload;
 
   public abstract static class Listener extends TransferListener {
+
     private volatile DataStream stream;
 
     public Listener() {}
@@ -96,8 +103,26 @@ public class ScottyUploader {
       closeStream();
       if (isSuccess(response) || !isRecoverable(response)) {
         Logger.getLogger()
-            .d(String.format("Scotty upload returned; status is: %s", response.getResponseCode()));
+            .d(
+                String.format(
+                    "Scotty upload returned; status %s, uploadId: %s: %s",
+                    response.getResponseCode(), getUploadId(response), getBody(response)));
         onDoneOrUnrecoverable();
+      }
+    }
+
+    private static String getUploadId(HttpResponse response) {
+      return response.getResponseHeaders().getHeaderValuesAsString("X-GUploader-UploadID");
+    }
+
+    private static String getBody(HttpResponse response) {
+      if (VERSION.SDK_INT < VERSION_CODES.TIRAMISU) {
+        return "";
+      }
+      try (InputStream is = response.getResponseBody()) {
+        return new String(is.readAllBytes(), UTF_8);
+      } catch (IOException e) {
+        return e.getMessage();
       }
     }
 
@@ -134,8 +159,7 @@ public class ScottyUploader {
     }
   }
 
-  public ScottyUploader(String key, String uuid, FileStore fileStore, UploadClient uploadClient) {
-    this.key = key;
+  public ScottyUploader(String uuid, FileStore fileStore, UploadClient uploadClient) {
     this.uuid = uuid;
     this.fileStore = fileStore;
     this.uploadClient = uploadClient;
@@ -175,8 +199,8 @@ public class ScottyUploader {
   private void triggerNewUpload(
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
-      String url = getUrl(key, uuid, gmpAppId, sessionId, type);
-      String canonicalFilename = makeCanonicalFilename(sessionId, type);
+      String url = getUrl(uuid, gmpAppId, sessionId, type);
+      String canonicalFilename = sessionId + ".perfetto";
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/octet-stream");
@@ -193,8 +217,8 @@ public class ScottyUploader {
       Logger.getLogger()
           .i(
               String.format(
-                  "Triggering a heap dump upload for: %s, uploaded as: %s",
-                  heapdump.getName(), canonicalFilename));
+                  "Triggering a heap dump upload for: %s, uploaded as: %s to %s",
+                  heapdump.getName(), canonicalFilename, url));
 
       upload = transfer.send();
     } catch (Exception e) {
@@ -252,13 +276,7 @@ public class ScottyUploader {
     return fileStore.getCommonFile(String.format("../../profiling/%s", filename));
   }
 
-  private String makeCanonicalFilename(String sessionId, int type) {
-    String trigger = type == ProfilingTrigger.TRIGGER_TYPE_OOM ? "oom" : "mlk";
-    return String.format("%s/%s.perfetto", trigger, sessionId);
-  }
-
-  private static String getUrl(
-      String key, String uuid, String gmpAppId, String sessionId, int type) {
+  private static String getUrl(String uuid, String gmpAppId, String sessionId, int type) {
     Map<String, String> params =
         Map.of(
             "uploadType", "media",
@@ -266,7 +284,7 @@ public class ScottyUploader {
             "uuid", uuid,
             "trigger_type", triggerAsString(type),
             "session_id", sessionId,
-            "key", key);
+            "key", CRASHLYTICS_API_KEY);
 
     return String.format(
         "%s?%s",
@@ -279,9 +297,11 @@ public class ScottyUploader {
   private static String triggerAsString(int type) {
     switch (type) {
       case ProfilingTrigger.TRIGGER_TYPE_ANOMALY:
-        return "mlk";
+        // we currently only process TRIGGER_TYPE_ANOMALY for due to memory limiter kills;
+        // see SessionReportingCoordinator.isMemoryLimiterKill()
+        return "memory-limiter-kill";
       case ProfilingTrigger.TRIGGER_TYPE_OOM:
-        return "oom";
+        return "out-of-memory";
       default:
         return "none";
     }

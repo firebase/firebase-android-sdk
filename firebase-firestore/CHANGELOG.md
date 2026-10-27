@@ -1,5 +1,7 @@
 # Unreleased
 
+# 27.1.0
+
 - [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
   `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
   and support for removing reserved fields such as `__name__` with `removeFields()`.
@@ -17,7 +19,9 @@
 - [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
   Protocol Buffers to `4.36.1`.
   ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
-- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
+- [feature] Added support for the following new types: `MinKey`, `MaxKey`,
+  `RegexValue`, `Int32Value`, `BsonObjectId`, `BsonTimestamp`, and subtype for
+  `Blob`. ([#8147](https://github.com/firebase/firebase-android-sdk/pull/8147))
 
 # 26.6.0
 
