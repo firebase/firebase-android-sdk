@@ -28,10 +28,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(AndroidJUnit4.class)
 @Config(sdk = 25)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class DataCollectionPostNDefaultDisabledTest {
 
   @Test
@@ -100,21 +101,27 @@ public class DataCollectionPostNDefaultDisabledTest {
           assertThat(changeListener.changes).isEmpty();
 
           app.setDataCollectionDefaultEnabled(false);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).isEmpty();
 
           app.setDataCollectionDefaultEnabled(true);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).containsExactly(true);
 
           app.setDataCollectionDefaultEnabled(false);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).containsExactly(true, false).inOrder();
 
           app.setDataCollectionDefaultEnabled(null);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).containsExactly(true, false).inOrder();
 
           app.setDataCollectionDefaultEnabled(true);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).containsExactly(true, false, true).inOrder();
 
           app.setDataCollectionDefaultEnabled(null);
+          ShadowLooper.idleMainLooper();
           assertThat(changeListener.changes).containsExactly(true, false, true, false).inOrder();
         });
   }
