@@ -1,10 +1,14 @@
 # Unreleased
 
+- [changed] Updated `GenerateContentRequest` to accept a `List<Part>`
+  instead of a single `TextPart` and optional `ImagePart`.
+
 # 16.0.0-beta07
 
 - [feature] Added `enableThinking` to `GenerateContentRequest`,
   `thoughtProcess` to `GenerateContentResponse`, and `isThinkingModeAvailable`
   to `GenerativeModel` to support thinking mode. (#8678)
+
 - [feature] Added `systemInstruction` property to `GenerateContentRequest`. (#8663)
 
 # 16.0.0-beta06
@@ -26,4 +30,3 @@
 # 16.0.0-beta01
 
 - [feature] Initial release.
-

@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for multiple `TextPart` and `ImagePart` instances in
+  on-device content generation requests.
+
 # 16.0.0-beta07
 
 - [feature] Added support for thinking mode in on-device content generation
@@ -29,4 +32,3 @@
 # 16.0.0-beta01
 
 - [feature] Initial release.
-

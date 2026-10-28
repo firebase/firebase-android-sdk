@@ -144,13 +144,13 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateContent throws when prompt has no text parts`(): Unit = runBlocking {
+  fun `generateContent throws when prompt has no parts`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
-    val promptNoText = listOf(Content(parts = emptyList()))
+    val promptNoParts = listOf(Content(parts = emptyList()))
 
     val exception =
       shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
-        provider.generateContent(promptNoText)
+        provider.generateContent(promptNoParts)
       }
     exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
   }
@@ -172,18 +172,28 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateContent throws when prompt has multiple images`(): Unit = runBlocking {
+  fun `generateContent passes multiple text and image parts in order`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
-    val image1 = com.google.firebase.ai.type.ImagePart(mockk<android.graphics.Bitmap>())
-    val image2 = com.google.firebase.ai.type.ImagePart(mockk<android.graphics.Bitmap>())
-    val promptWithMultipleImages =
-      listOf(Content(parts = listOf(TextPart("hello"), image1, image2)))
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+      )
+    val bitmap1 = mockk<android.graphics.Bitmap>()
+    val bitmap2 = mockk<android.graphics.Bitmap>()
+    val image1 = com.google.firebase.ai.type.ImagePart(bitmap1)
+    val image2 = com.google.firebase.ai.type.ImagePart(bitmap2)
+    val promptWithMultipleParts =
+      listOf(Content(parts = listOf(TextPart("hello"), image1, TextPart("world"), image2)))
 
-    val exception =
-      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
-        provider.generateContent(promptWithMultipleImages)
-      }
-    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+    provider.generateContent(promptWithMultipleParts)
+
+    val parts = capturedRequest.captured.parts
+    parts.size shouldBe 4
+    (parts[0] as com.google.firebase.ai.ondevice.interop.TextPart).text shouldBe "hello"
+    (parts[1] as com.google.firebase.ai.ondevice.interop.ImagePart).bitmap shouldBe bitmap1
+    (parts[2] as com.google.firebase.ai.ondevice.interop.TextPart).text shouldBe "world"
+    (parts[3] as com.google.firebase.ai.ondevice.interop.ImagePart).bitmap shouldBe bitmap2
   }
 
   @Test
@@ -209,7 +219,7 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateContent concatenates multiple prompts with newline for chat history`(): Unit =
+  fun `generateContent flattens parts from multiple prompts for chat history`(): Unit =
     runBlocking {
       coEvery { onDeviceModel.isAvailable() } returns true
       val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
@@ -227,7 +237,10 @@ internal class OnDeviceGenerativeModelProviderTests {
 
       provider.generateContent(multiPrompt)
 
-      capturedRequest.captured.text.text shouldBe "hello\nhi there\nhow are you?"
+      val parts = capturedRequest.captured.parts
+      parts.size shouldBe 3
+      parts.map { (it as com.google.firebase.ai.ondevice.interop.TextPart).text } shouldBe
+        listOf("hello", "hi there", "how are you?")
     }
 
   @Test

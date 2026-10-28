@@ -228,6 +228,11 @@ internal class OnDeviceGenerativeModelProvider(
         Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
         prompt.flatMap { it.parts }
       }
+    if (parts.isEmpty()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
+      )
+    }
     val unsupportedParts = parts.filter { it !is TextPart && it !is ImagePart }
     if (unsupportedParts.isNotEmpty()) {
       throw FirebaseAIException.from(
@@ -238,29 +243,21 @@ internal class OnDeviceGenerativeModelProvider(
         )
       )
     }
-    val textParts =
-      parts.filterIsInstance<TextPart>().also {
-        if (it.size > 1)
-          Log.w(
-            TAG,
-            "On-device model does not support multiple text parts, concatenating them instead"
-          )
+    val onDeviceParts =
+      parts.map { part ->
+        when (part) {
+          is TextPart -> OnDeviceTextPart(part.text)
+          is ImagePart -> OnDeviceImagePart(part.image)
+          else ->
+            throw FirebaseAIException.from(
+              FirebaseAIOnDeviceInvalidRequestException(
+                IllegalArgumentException(
+                  "On-device model does not support part type: ${part::class.java.simpleName}"
+                )
+              )
+            )
+        }
       }
-    if (textParts.isEmpty()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceInvalidRequestException(
-          IllegalArgumentException("On-device model requires text as part of the prompt")
-        )
-      )
-    }
-    val imageParts = parts.filterIsInstance<ImagePart>()
-    if (imageParts.size > 1) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceInvalidRequestException(
-          IllegalArgumentException("On-device model does not support multiple image parts")
-        )
-      )
-    }
     val onDeviceSystemInstruction =
       systemInstruction?.let { instruction ->
         val systemTextParts = instruction.parts.filterIsInstance<TextPart>()
@@ -283,11 +280,8 @@ internal class OnDeviceGenerativeModelProvider(
         if (systemTextParts.isEmpty()) null
         else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
       }
-    val text = textParts.joinToString("\n") { it.text }
-    val image = imageParts.firstOrNull()
     return OnDeviceGenerateContentRequest(
-      text = OnDeviceTextPart(text),
-      image = image?.let { OnDeviceImagePart(it.image) },
+      parts = onDeviceParts,
       temperature = onDeviceConfig.temperature,
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,

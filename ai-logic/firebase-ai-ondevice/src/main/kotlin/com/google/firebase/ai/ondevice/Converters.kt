@@ -31,14 +31,27 @@ import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.ModelPreference
 import com.google.mlkit.genai.prompt.ModelReleaseStage
+import com.google.mlkit.genai.prompt.Part
 import com.google.mlkit.genai.prompt.SystemInstruction
 import com.google.mlkit.genai.prompt.TextPart
+import com.google.mlkit.genai.prompt.content
+import com.google.mlkit.genai.prompt.generateContentRequest
 import com.google.mlkit.genai.prompt.generationConfig
 import com.google.mlkit.genai.prompt.modelConfig
 
 // ====================================
 // `Part` converter extension functions
 // ====================================
+internal fun com.google.firebase.ai.ondevice.interop.Part.toMlKit(): Part =
+  when (this) {
+    is com.google.firebase.ai.ondevice.interop.TextPart -> toMlKit()
+    is com.google.firebase.ai.ondevice.interop.ImagePart -> toMlKit()
+    else ->
+      throw FirebaseAIOnDeviceInvalidRequestException(
+        IllegalArgumentException("Unsupported part type: ${this::class.java.simpleName}")
+      )
+  }
+
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKit(): TextPart = TextPart(text)
 
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKitSystemInstruction():
@@ -72,7 +85,9 @@ private fun Int.toInterop(): FinishReason =
 internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMlKit():
   GenerateContentRequest {
   try {
-    return generateContentRequest(text, image) {
+    return generateContentRequest(
+      content { this@toMlKit.parts.forEach { addPart(it.toMlKit()) } }
+    ) {
       temperature = this@toMlKit.temperature
       maxOutputTokens = this@toMlKit.maxOutputTokens
       candidateCount = this@toMlKit.candidateCount
@@ -122,21 +137,6 @@ private fun com.google.firebase.ai.ondevice.interop.ModelPreference.toMlKit(): I
     com.google.firebase.ai.ondevice.interop.ModelPreference.FULL -> ModelPreference.FULL
     com.google.firebase.ai.ondevice.interop.ModelPreference.FAST -> ModelPreference.FAST
   }
-
-private fun generateContentRequest(
-  text: com.google.firebase.ai.ondevice.interop.TextPart,
-  image: com.google.firebase.ai.ondevice.interop.ImagePart? = null,
-  init: GenerateContentRequest.Builder.() -> Unit
-): GenerateContentRequest {
-  val builder =
-    if (image == null) {
-      GenerateContentRequest.builder(text.toMlKit())
-    } else {
-      GenerateContentRequest.builder(text = text.toMlKit(), image = image.toMlKit())
-    }
-  builder.init()
-  return builder.build()
-}
 
 // ========================================================================
 // `DownloadStatus` and `OnDeviceModelStatus` converter extension functions
