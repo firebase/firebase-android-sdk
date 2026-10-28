@@ -55,6 +55,9 @@ public class PipelineWindowTest {
     assumeTrue(
         "Skip PipelineWindowTest on standard backend",
         IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE);
+    // Window functions are in preview until the backend feature launches; skip against prod until
+    // then.
+    assumeTrue(IntegrationTestUtil.getTargetBackend() != IntegrationTestUtil.TargetBackend.PROD);
     firestore = IntegrationTestUtil.testFirestore();
   }
 

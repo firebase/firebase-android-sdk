@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.Value
@@ -267,6 +268,9 @@ private constructor(
   /**
    * Applies a window frame to this aggregate, turning it into a window function.
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * Use this to give a single accumulator its own framing, independent of the frame declared on the
    * enclosing `addWindowFields` stage. Only `documents` or `range` window frames (created via
    * [WindowSpec.documents] or [WindowSpec.range]) are supported on individual accumulators; other
@@ -276,7 +280,7 @@ private constructor(
    * @param window The window frame specification to evaluate this aggregate over.
    * @return A new [WindowFunction] wrapping this aggregate.
    */
-  fun over(window: WindowSpec): WindowFunction = WindowFunction.fromAggregate(this, window)
+  @Beta fun over(window: WindowSpec): WindowFunction = WindowFunction.fromAggregate(this, window)
 
   internal fun canonicalId(): String = "$name(${params.joinToString(",") { it.canonicalId() }})"
 

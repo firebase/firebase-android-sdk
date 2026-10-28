@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.model.Values.encodeValue
@@ -22,6 +23,9 @@ import com.google.firestore.v1.Value
 /**
  * Specification defining how documents are partitioned, ordered, and bounded for window functions
  * in [com.google.firebase.firestore.Pipeline.addWindowFields].
+ *
+ * Window Functions SDK features are in preview until the backend feature launches. Look for launch
+ * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
  *
  * **Sorting and Window Frames:**
  * - For document-based ([documents]) window frames, [sort] is optional; if no sort expressions are
@@ -38,6 +42,7 @@ import com.google.firestore.v1.Value
  * frame to `documents(WindowBound.UNBOUNDED, WindowBound.UNBOUNDED)`, whereas specifying [sort]
  * changes the default window frame to `range(WindowBound.UNBOUNDED, WindowBound.CURRENT)`.
  */
+@Beta
 class WindowSpec
 internal constructor(
   internal val partition: List<Expression>,

@@ -14,10 +14,18 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.Value
 
+/**
+ * A [WindowFunction] associated with an alias name.
+ *
+ * Window Functions SDK features are in preview until the backend feature launches. Look for launch
+ * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ */
+@Beta
 class AliasedWindowFunction
 internal constructor(internal val alias: String, internal val expr: WindowFunction) {
   internal fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
@@ -48,7 +56,13 @@ internal constructor(internal val alias: String, internal val expr: WindowFuncti
   }
 }
 
-/** A class that represents a window function. */
+/**
+ * A class that represents a window function.
+ *
+ * Window Functions SDK features are in preview until the backend feature launches. Look for launch
+ * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ */
+@Beta
 class WindowFunction
 private constructor(
   internal val name: String,
@@ -64,9 +78,12 @@ private constructor(
      * Documents with equal sort values receive the same rank, and the following rank is skipped.
      * The window must specify exactly one sort ordering.
      *
+     * Window Functions SDK features are in preview until the backend feature launches. Look for
+     * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+     *
      * @return A new [WindowFunction] representing the rank window function.
      */
-    @JvmStatic fun rank() = WindowFunction("rank")
+    @Beta @JvmStatic fun rank() = WindowFunction("rank")
 
     /**
      * Lifts an [AggregateFunction] into a window function, preserving its name, arguments and
@@ -79,14 +96,20 @@ private constructor(
   /**
    * Assigns an alias to this window function.
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * @param alias The alias to assign to this window function.
    * @return A new [AliasedWindowFunction] that wraps this window function and associates it with
    * the provided alias.
    */
-  fun alias(alias: String) = AliasedWindowFunction(alias, this)
+  @Beta fun alias(alias: String) = AliasedWindowFunction(alias, this)
 
   /**
    * Evaluates this function over an explicit window frame.
+   *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
    *
    * The returned function carries its own framing, overriding the window declared on the enclosing
    * `addWindowFields` stage. Only `documents` or `range` window frames (created via
@@ -97,7 +120,7 @@ private constructor(
    * @param window The window frame specification to evaluate this function over.
    * @return A new [WindowFunction] with the given framing.
    */
-  fun over(window: WindowSpec) = WindowFunction(name, params, options, window)
+  @Beta fun over(window: WindowSpec) = WindowFunction(name, params, options, window)
 
   internal fun canonicalId(): String {
     val base = "$name(${params.joinToString(",") { it.canonicalId() }})"

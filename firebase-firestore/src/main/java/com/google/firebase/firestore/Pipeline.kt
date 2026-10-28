@@ -320,11 +320,15 @@ internal constructor(
   /**
    * Adds window function results to the output documents of the pipeline.
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * @param window The specification defining how documents are partitioned, ordered, and bounded.
    * @param field The first window field to add, specified as an [AliasedWindowFunction].
    * @param additionalFields Optional additional window fields to add to the documents.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
+  @Beta
   fun addWindowFields(
     window: WindowSpec,
     field: AliasedWindowFunction,
@@ -335,11 +339,15 @@ internal constructor(
    * Adds aggregate results to the output documents of the pipeline, evaluated over the given
    * [WindowSpec].
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * @param window The specification defining how documents are partitioned, ordered, and bounded.
    * @param field The first window field to add, specified as an [AliasedAggregate].
    * @param additionalFields Optional additional window fields to add to the documents.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
+  @Beta
   fun addWindowFields(
     window: WindowSpec,
     field: AliasedAggregate,
@@ -350,10 +358,14 @@ internal constructor(
    * Adds window function results to the output documents of the pipeline, over a single global
    * window covering the entire result set.
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * @param field The first window field to add, specified as an [AliasedWindowFunction].
    * @param additionalFields Optional additional window fields to add to the documents.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
+  @Beta
   fun addWindowFields(field: AliasedWindowFunction, vararg additionalFields: Any): Pipeline =
     append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
 
@@ -361,10 +373,14 @@ internal constructor(
    * Adds aggregate results to the output documents of the pipeline, over a single global window
    * covering the entire result set.
    *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
    * @param field The first window field to add, specified as an [AliasedAggregate].
    * @param additionalFields Optional additional window fields to add to the documents.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
+  @Beta
   fun addWindowFields(field: AliasedAggregate, vararg additionalFields: Any): Pipeline =
     append(AddWindowFieldsStage.of(WindowSpec(), field, *additionalFields))
 
