@@ -159,7 +159,7 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
   /** Returns the value for the key if it is a finite, non-negative number, or the default value. */
   private static double getNonNegativeDouble(JSONObject json, String key, double defaultValue) {
     double value = json.optDouble(key, defaultValue);
-    if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+    if (!Double.isFinite(value) || value < 0) {
       logIgnoredValue(key, value);
       return defaultValue;
     }
