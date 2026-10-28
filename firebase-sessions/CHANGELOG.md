@@ -1,8 +1,8 @@
 # Unreleased
 
-- [fixed] Fixed a crash with an uncaught `IOException` when the SDK can't read
-  its settings from disk, for example when its storage directory can't be
-  created. (#8117)
+- [fixed] Fixed a crash with an uncaught `IOException` when the SDK
+  can't read its settings from disk, for example when its storage
+  directory can't be created. (#8117)
 
 # 4.0.1
 
