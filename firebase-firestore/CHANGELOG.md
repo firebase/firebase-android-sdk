@@ -3,7 +3,7 @@
 - [fixed] Fixed a crash in snapshot listeners when the backend sends a listen
   response that this SDK version does not recognize, for example one with a
   new response type or target change type. Such responses are now ignored and
-  a warning is logged. (#PR_NUMBER)
+  a warning is logged. (#8760)
 
 # 27.1.0
 
