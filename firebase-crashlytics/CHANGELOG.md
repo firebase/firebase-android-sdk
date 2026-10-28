@@ -4,7 +4,7 @@
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed a `NullPointerException` thrown by `checkForUnsentReports()`,
   `sendUnsentReports()`, and `deleteUnsentReports()` when Crashlytics failed to
-  initialize. (#PR_NUMBER)
+  initialize. (#8757)
 
 # 21.0.1
 
