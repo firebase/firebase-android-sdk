@@ -17,6 +17,7 @@ package com.google.firebase.appcheck.internal;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.util.Base64;
 import androidx.annotation.NonNull;
@@ -158,6 +159,22 @@ public class StorageHelperTest {
     assertThat(token).isNull();
     assertThat(sharedPreferences.contains(StorageHelper.TOKEN_KEY)).isFalse();
     assertThat(sharedPreferences.contains(StorageHelper.TOKEN_TYPE_KEY)).isFalse();
+  }
+
+  @Test
+  public void testRetrieveToken_storageUnavailable_expectReturnsNull() {
+    // For example, before the user unlocks the device in direct boot mode.
+    Context contextWithoutStorage =
+        new ContextWrapper(ApplicationProvider.getApplicationContext()) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            throw new IllegalStateException("Storage is not available");
+          }
+        };
+    StorageHelper storageHelperWithoutStorage =
+        new StorageHelper(contextWithoutStorage, PERSISTENCE_KEY);
+
+    assertThat(storageHelperWithoutStorage.retrieveAppCheckToken()).isNull();
   }
 
   private String constructFakeRawToken() throws Exception {

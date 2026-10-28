@@ -107,7 +107,14 @@ public class StorageHelper {
               + tokenType
               + "] with exception: "
               + e.getClass().getName());
-      clearSharedPrefs();
+      try {
+        clearSharedPrefs();
+      } catch (RuntimeException clearException) {
+        // SharedPreferences itself can be unavailable, for example before the user unlocks the
+        // device in direct boot mode. Return null instead of throwing to the caller.
+        logger.e(
+            "Failed to clear stored token with exception: " + clearException.getClass().getName());
+      }
       return null;
     }
     // Should be unreachable, but needed by the compiler:

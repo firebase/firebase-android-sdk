@@ -546,7 +546,7 @@ public class DefaultFirebaseAppCheckTest {
   }
 
   @Test
-  public void testGetToken_retrievingStoredTokenThrows_doesNotHang() {
+  public void testGetToken_storageUnavailable_doesNotThrowOrHang() {
     Context contextWithoutStorage =
         new ContextWrapper(ApplicationProvider.getApplicationContext()) {
           @Override
@@ -576,7 +576,9 @@ public class DefaultFirebaseAppCheckTest {
             TestOnlyExecutors.blocking());
     Task<AppCheckTokenResult> tokenTask = firebaseAppCheck.getToken(/* forceRefresh= */ false);
 
-    assertThat(backgroundExceptions).hasSize(1);
+    // Restoring the stored token fails without throwing, and the token request still completes
+    // (with an error, because no provider is installed).
+    assertThat(backgroundExceptions).isEmpty();
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.getResult().getError()).isNotNull();
   }
