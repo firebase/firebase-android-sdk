@@ -382,6 +382,7 @@ private fun Schema.toInterop(): OnDeviceFunctionSchema =
     properties = properties?.mapValues { it.value.toInterop() },
     required = required,
     enum = enum,
+    nullable = nullable,
     items = items?.toInterop()
   )
 
