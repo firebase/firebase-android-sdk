@@ -108,7 +108,7 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val generateContentResponse = model.generateContent(generateContentRequest)
 
     generateContentResponse.apply {
@@ -133,7 +133,7 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val countTokensResponse = model.countTokens(generateContentRequest)
 
     countTokensResponse.apply { totalTokens shouldBe 10 }
@@ -160,7 +160,7 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val generateContentResponseFlow = model.generateContentStream(generateContentRequest)
 
     generateContentResponseFlow.first().apply {
@@ -216,7 +216,7 @@ class GenerativeModelImplTest {
 
     // TODO: Use an image part. There's a bug preventing us from testing this using actual bitmaps.
     // Since we are testing the exception handlers, it doesn't make much of a difference.
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val exception =
       shouldThrow<FirebaseAIOnDeviceInvalidRequestException> {
         model.generateContent(generateContentRequest)
