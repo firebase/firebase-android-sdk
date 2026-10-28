@@ -69,7 +69,10 @@ constructor(
   init {
     CoroutineScope(backgroundDispatcher).launch {
       sessionConfigsDataStore.data
-        .catch { ex -> Log.w(TAG, "Failed to read config values: $ex") }
+        .catch { ex ->
+          Log.w(TAG, "Failed to read config values: $ex")
+          emit(SessionConfigsSerializer.defaultValue)
+        }
         .collect(sessionConfigsAtomicReference::set)
     }
   }

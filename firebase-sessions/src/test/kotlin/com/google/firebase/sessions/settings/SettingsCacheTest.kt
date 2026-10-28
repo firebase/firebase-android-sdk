@@ -310,24 +310,35 @@ class SettingsCacheTest {
   fun settingsCache_dataStoreFailsToLoad_doesNotCrash() = runTest {
     // The data store fails like this when its directory can't be created, see
     // https://github.com/firebase/firebase-android-sdk/issues/8117
+    var readCount = 0
+    val backingDataStore =
+      FakeDataStore(
+        firstValue = SessionConfigsSerializer.defaultValue,
+        firstThrowable = IOException("Failed to create directory"),
+      )
+    val countingDataStore =
+      object : androidx.datastore.core.DataStore<SessionConfigs> by backingDataStore {
+        override val data =
+          kotlinx.coroutines.flow.flow {
+            readCount++
+            backingDataStore.data.collect { emit(it) }
+          }
+      }
     val settingsCache =
       SettingsCacheImpl(
         backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
         timeProvider = FakeTimeProvider(),
-        sessionConfigsDataStore =
-          FakeDataStore(
-            firstValue = SessionConfigsSerializer.defaultValue,
-            firstThrowable = IOException("Failed to create directory"),
-          ),
+        sessionConfigsDataStore = countingDataStore,
       )
 
-    // Run the background collection of the data store, which fails.
+    // Run the background collection of the data store, which fails and emits defaultValue.
     runCurrent()
 
     assertThat(settingsCache.sessionSamplingRate()).isNull()
     assertThat(settingsCache.sessionsEnabled()).isNull()
     assertThat(settingsCache.sessionRestartTimeout()).isNull()
     assertThat(settingsCache.hasCacheExpired()).isTrue()
+    assertThat(readCount).isEqualTo(1)
   }
 
   @Test
