@@ -272,7 +272,7 @@ internal constructor(
           val code = fromHttpStatus(response.code)
           val bodyAsString =
             try {
-              response.body!!.string()
+              response.body?.string() ?: throw IOException("Response body is null")
             } catch (ioe: IOException) {
               // Reading the body can still fail, for example on a timeout. OkHttp does not call
               // onFailure after onResponse, so report the failure here to complete the task.
