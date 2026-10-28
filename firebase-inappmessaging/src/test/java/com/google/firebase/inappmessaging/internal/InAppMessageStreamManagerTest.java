@@ -23,6 +23,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_S
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.ON_FOREGROUND_EVENT_NAME;
 import static com.google.firebase.inappmessaging.testutil.TestProtos.BANNER_MESSAGE_PROTO;
+import static com.google.firebase.inappmessaging.testutil.TestProtos.MODAL_MESSAGE_PROTO;
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -39,6 +41,7 @@ import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.ExperimentPayloadProto;
+import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
@@ -72,6 +75,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 
 // TODO: Refactor and clean this logic
 @RunWith(RobolectricTestRunner.class)
@@ -114,6 +118,19 @@ public class InAppMessageStreamManagerTest {
       thickContentBuilder
           .clearVanillaPayload()
           .setExperimentalPayload(experimentalCampaign)
+          .build();
+
+  private static final String MALFORMED_CAMPAIGN_ID = "malformed_campaign_id";
+  private static final String HIGH_PRIORITY_CAMPAIGN_ID = "high_priority_campaign_id";
+  // Proto3 cannot tell a missing string field from an empty one, so these model campaigns where the
+  // backend omits a field that the message models require.
+  private static final MessagesProto.Content BANNER_WITHOUT_BACKGROUND_COLOR_PROTO =
+      MessagesProto.Content.newBuilder()
+          .setBanner(BANNER_MESSAGE_PROTO.getBanner().toBuilder().clearBackgroundHexColor())
+          .build();
+  private static final MessagesProto.Content MODAL_WITHOUT_TITLE_PROTO =
+      MessagesProto.Content.newBuilder()
+          .setModal(MODAL_MESSAGE_PROTO.getModal().toBuilder().clearTitle())
           .build();
 
   private static final TriggeredInAppMessage onForegroundTriggered =
@@ -981,6 +998,173 @@ public class InAppMessageStreamManagerTest {
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_onCampaignsMissingRequiredFields_skipsThemAndKeepsStreamOpen()
+      throws InterruptedException {
+    FetchEligibleCampaignsResponse malformedResponse =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(
+                ThickContent.newBuilder(thickContent)
+                    .setContent(BANNER_WITHOUT_BACKGROUND_COLOR_PROTO))
+            .addMessages(
+                ThickContent.newBuilder(thickContent).setContent(MODAL_WITHOUT_TITLE_PROTO))
+            .build();
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(malformedResponse, campaignsResponse);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    subscriber.assertNoErrors();
+    subscriber.assertNotComplete();
+    subscriber.assertNoValues();
+
+    // The stream keeps working, so a later valid campaign is still delivered.
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    subscriber.assertNoErrors();
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_whenHighestPriorityCampaignIsMalformed_triggersNextEligibleCampaign()
+      throws InterruptedException {
+    ThickContent malformedHighPriorityContent =
+        ThickContent.newBuilder(thickContent)
+            .setPriority(Priority.newBuilder().setValue(1))
+            .setVanillaPayload(
+                thickContent.getVanillaPayload().toBuilder().setCampaignId(MALFORMED_CAMPAIGN_ID))
+            .setContent(BANNER_WITHOUT_BACKGROUND_COLOR_PROTO)
+            .build();
+    FetchEligibleCampaignsResponse response =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(thickContent)
+            .addMessages(malformedHighPriorityContent)
+            .build();
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(response);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    subscriber.assertNoErrors();
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+    assertThat(triggeredCampaignId(subscriber)).isEqualTo(CAMPAIGN_ID_STRING);
+    assertThat(hasWarningLogContaining(MALFORMED_CAMPAIGN_ID)).isTrue();
+  }
+
+  @Test
+  public void stream_onMalformedExperiment_doesNotSetExperimentActive()
+      throws InterruptedException {
+    ThickContent malformedExperiment =
+        ThickContent.newBuilder(experimentalContent)
+            .setContent(BANNER_WITHOUT_BACKGROUND_COLOR_PROTO)
+            .build();
+    FetchEligibleCampaignsResponse response =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(malformedExperiment)
+            .build();
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(response);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    subscriber.assertNoErrors();
+    subscriber.assertNoValues();
+    verify(abtIntegrationHelper, never()).setExperimentActive(any());
+  }
+
+  @Test
+  public void stream_onMultipleValidExperiments_setsOnlyTriggeredExperimentActive()
+      throws InterruptedException {
+    ExperimentPayloadProto.ExperimentPayload highPriorityExperiment =
+        ExperimentPayloadProto.ExperimentPayload.newBuilder()
+            .setExperimentId("high_priority_experiment")
+            .build();
+    ExperimentPayloadProto.ExperimentPayload lowPriorityExperiment =
+        ExperimentPayloadProto.ExperimentPayload.newBuilder()
+            .setExperimentId("low_priority_experiment")
+            .build();
+    ThickContent highPriorityContent =
+        ThickContent.newBuilder(experimentalContent)
+            .setPriority(Priority.newBuilder().setValue(1))
+            .setExperimentalPayload(
+                experimentalContent.getExperimentalPayload().toBuilder()
+                    .setCampaignId(HIGH_PRIORITY_CAMPAIGN_ID)
+                    .setExperimentPayload(highPriorityExperiment))
+            .build();
+    ThickContent lowPriorityContent =
+        ThickContent.newBuilder(experimentalContent)
+            .setExperimentalPayload(
+                experimentalContent.getExperimentalPayload().toBuilder()
+                    .setExperimentPayload(lowPriorityExperiment))
+            .build();
+    FetchEligibleCampaignsResponse response =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(lowPriorityContent)
+            .addMessages(highPriorityContent)
+            .build();
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(response);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+    assertThat(triggeredCampaignId(subscriber)).isEqualTo(HIGH_PRIORITY_CAMPAIGN_ID);
+    verify(abtIntegrationHelper).setExperimentActive(highPriorityExperiment);
+    verify(abtIntegrationHelper, never()).setExperimentActive(lowPriorityExperiment);
+  }
+
+  @Test
+  public void stream_onMalformedCachedCampaign_skipsCampaignOnEveryTrigger()
+      throws InterruptedException {
+    FetchEligibleCampaignsResponse malformedResponse =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(
+                ThickContent.newBuilder(thickContent)
+                    .setContent(BANNER_WITHOUT_BACKGROUND_COLOR_PROTO))
+            .build();
+    when(campaignCacheClient.get()).thenReturn(Maybe.just(malformedResponse));
+
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
+
+    subscriber.assertNoErrors();
+    subscriber.assertNotComplete();
+    subscriber.assertNoValues();
+  }
+
+  private static String triggeredCampaignId(TestSubscriber<TriggeredInAppMessage> subscriber) {
+    return getPlainValues(subscriber)
+        .get(0)
+        .getInAppMessage()
+        .getCampaignMetadata()
+        .getCampaignId();
+  }
+
+  private static boolean hasWarningLogContaining(String text) {
+    return ShadowLog.getLogsForTag(Logging.TAG).stream()
+        .anyMatch(log -> log.type == Log.WARN && log.msg.contains(text));
   }
 
   private static void waitForBlockingExecutor() throws InterruptedException {
