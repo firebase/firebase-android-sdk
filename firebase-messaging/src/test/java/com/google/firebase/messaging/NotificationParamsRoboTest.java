@@ -482,6 +482,16 @@ public class NotificationParamsRoboTest {
   }
 
   @Test
+  public void getLightSettings_emptyColor() {
+    // Color.parseColor("") throws StringIndexOutOfBoundsException, not IllegalArgumentException.
+    NotificationParams params =
+        new NotificationParams(
+            Bundles.of(MessageNotificationKeys.LIGHT_SETTINGS, "[\"\", \"1000\", \"1000\"]"));
+
+    assertThat(params.getLightSettings()).isNull();
+  }
+
+  @Test
   public void getLightSettings_validArray() {
     NotificationParams params =
         new NotificationParams(
