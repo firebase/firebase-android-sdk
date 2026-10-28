@@ -93,6 +93,17 @@ public class MessagingAnalyticsRoboTest {
 
   @Before
   public void setUp() {
+    initFirebaseApp();
+    analyticsValidator.reset();
+
+    // Create and Initialize Firelog service components
+    context = ApplicationProvider.getApplicationContext();
+
+    // Reset sharedpreferences for bigquery delivery metrics export before every test.
+    resetPreferencesField(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF);
+  }
+
+  private static void initFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
     FirebaseMessaging.transportFactory = null;
     // Create a test FirebaseApp instance
@@ -104,13 +115,6 @@ public class MessagingAnalyticsRoboTest {
             .setGcmSenderId(MessagingTestHelper.SENDER);
     FirebaseApp.initializeApp(
         ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
-    analyticsValidator.reset();
-
-    // Create and Initialize Firelog service components
-    context = ApplicationProvider.getApplicationContext();
-
-    // Reset sharedpreferences for bigquery delivery metrics export before every test.
-    resetPreferencesField(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF);
   }
 
   @After
@@ -133,7 +137,7 @@ public class MessagingAnalyticsRoboTest {
         .clear();
 
     // Re Init Firebase
-    setUp();
+    initFirebaseApp();
 
     // Confirm that Analytics and Firelog are NOT available
     assertThat(FirebaseApp.getInstance().get(TransportFactory.class)).isNull();
@@ -169,7 +173,7 @@ public class MessagingAnalyticsRoboTest {
     metaData.putString(
         "com.google.firebase.components:" + MissingAnalyticsConnectorRegistrar.class.getName(),
         "com.google.firebase.components.ComponentRegistrar");
-    setUp();
+    initFirebaseApp();
 
     Intent intent = new Intent(FirebaseMessagingService.ACTION_REMOTE_INTENT);
     intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
