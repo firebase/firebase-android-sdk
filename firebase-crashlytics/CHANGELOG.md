@@ -2,6 +2,9 @@
 
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
+- [fixed] Fixed crashes and silently disabled crash reporting caused by
+  out-of-range on-demand upload settings from the server, including settings
+  already cached on the device. (#PR_NUMBER)
 
 # 21.0.1
 
