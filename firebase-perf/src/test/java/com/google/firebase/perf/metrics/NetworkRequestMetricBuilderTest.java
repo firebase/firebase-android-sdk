@@ -28,10 +28,18 @@ import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -339,5 +347,51 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     assertThat(networkMetricBuilder.getSessions()).hasSize(1);
     networkMetricBuilder.updateSession(null);
     assertThat(networkMetricBuilder.getSessions()).hasSize(1);
+  }
+
+  /**
+   * An app can call {@code HttpURLConnection.disconnect()} from a network callback while the
+   * request thread is still finishing the request, so the same metric can be built on several
+   * threads at once. See https://github.com/firebase/firebase-android-sdk/issues/8642.
+   */
+  @Test
+  public void testConcurrentBuildsDoNotThrowAndLogMetricOnce() throws Exception {
+    int threadCount = 4;
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    try {
+      for (int iteration = 0; iteration < 200; iteration++) {
+        TransportManager transportManager = mock(TransportManager.class);
+        NetworkRequestMetricBuilder builder =
+            new NetworkRequestMetricBuilder(
+                transportManager, mockAppStateMonitor, mockGaugeManager);
+        builder.setRequestStartTimeMicros(/* time= */ 2000);
+        for (int i = 0; i < 100; i++) {
+          builder.updateSession(PerfSession.createWithId("testSessionId" + i));
+        }
+
+        CountDownLatch startSignal = new CountDownLatch(1);
+        List<Future<NetworkRequestMetric>> builds = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+          builds.add(
+              executor.submit(
+                  () -> {
+                    startSignal.await();
+                    return builder.build();
+                  }));
+        }
+        startSignal.countDown();
+
+        for (Future<NetworkRequestMetric> build : builds) {
+          // Rethrows any exception thrown by build(), wrapped in an ExecutionException.
+          build.get(10, TimeUnit.SECONDS);
+        }
+        verify(transportManager)
+            .log(
+                ArgumentMatchers.any(NetworkRequestMetric.class),
+                ArgumentMatchers.nullable(ApplicationProcessState.class));
+      }
+    } finally {
+      executor.shutdownNow();
+    }
   }
 }

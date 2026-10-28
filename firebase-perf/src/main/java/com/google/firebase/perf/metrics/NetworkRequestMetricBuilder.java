@@ -307,8 +307,15 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     return this;
   }
 
-  /** Builds the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetric build() {
+  /**
+   * Builds the current {@link NetworkRequestMetric}.
+   *
+   * <p>This is synchronized because it can be called on more than one thread for the same request.
+   * For example, an app can call {@code HttpURLConnection.disconnect()} from a network callback
+   * while the request thread is still reading the response. Concurrent calls would otherwise mutate
+   * the underlying protobuf builder at the same time and could log the metric more than once.
+   */
+  public synchronized NetworkRequestMetric build() {
     SessionManager.getInstance().unregisterForSessionUpdates(weakReference);
     unregisterForAppState();
 

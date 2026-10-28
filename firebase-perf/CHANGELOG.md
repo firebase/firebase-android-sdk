@@ -3,6 +3,10 @@
 - [fixed] Fixed an issue where `NoSuchFieldException` was thrown at runtime in
   apps compiled with R8 or ProGuard optimizations enabled.
   ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))
+- [fixed] Fixed an `UnsupportedOperationException` crash that could occur when
+  a network request was completed on two threads at the same time, for example
+  when an SDK calls `HttpURLConnection.disconnect()` from a network callback.
+  (#8642)
 
 # 23.0.0
 
