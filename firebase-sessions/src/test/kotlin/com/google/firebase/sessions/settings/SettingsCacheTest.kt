@@ -22,7 +22,9 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.testing.FakeDataStore
 import com.google.firebase.sessions.testing.FakeTimeProvider
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -303,6 +305,55 @@ class SettingsCacheTest {
 
     settingsCache.removeConfigs()
   }
+
+  @Test
+  fun settingsCache_dataStoreFailsToLoad_doesNotCrash() = runTest {
+    // The data store fails like this when its directory can't be created, see
+    // https://github.com/firebase/firebase-android-sdk/issues/8117
+    val settingsCache =
+      SettingsCacheImpl(
+        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+        timeProvider = FakeTimeProvider(),
+        sessionConfigsDataStore =
+          FakeDataStore(
+            firstValue = SessionConfigsSerializer.defaultValue,
+            firstThrowable = IOException("Failed to create directory"),
+          ),
+      )
+
+    // Run the background collection of the data store, which fails.
+    runCurrent()
+
+    assertThat(settingsCache.sessionSamplingRate()).isNull()
+    assertThat(settingsCache.sessionsEnabled()).isNull()
+    assertThat(settingsCache.sessionRestartTimeout()).isNull()
+    assertThat(settingsCache.hasCacheExpired()).isTrue()
+  }
+
+  @Test
+  fun settingsCache_dataStoreFailsToLoad_readBeforeBackgroundCollection_returnsDefaults() =
+    runTest {
+      val settingsCache =
+        SettingsCacheImpl(
+          backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
+          timeProvider = FakeTimeProvider(),
+          sessionConfigsDataStore =
+            FakeDataStore(
+              firstValue = SessionConfigsSerializer.defaultValue,
+              firstThrowable = IOException("Failed to create directory"),
+            ),
+        )
+
+      // Read before the background collection runs, so the read loads the data store itself.
+      assertThat(settingsCache.sessionSamplingRate()).isNull()
+      assertThat(settingsCache.sessionsEnabled()).isNull()
+      assertThat(settingsCache.sessionRestartTimeout()).isNull()
+      assertThat(settingsCache.hasCacheExpired()).isTrue()
+
+      runCurrent()
+
+      assertThat(settingsCache.sessionsEnabled()).isNull()
+    }
 
   @After
   fun cleanUp() {

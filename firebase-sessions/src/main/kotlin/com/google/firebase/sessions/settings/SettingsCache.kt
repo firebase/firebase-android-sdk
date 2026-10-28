@@ -28,6 +28,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -59,10 +60,7 @@ constructor(
       // Ensure configs are loaded from disk before the first access
       if (sessionConfigsAtomicReference.get() == null) {
         // Double check to avoid the `runBlocking` unless necessary
-        sessionConfigsAtomicReference.compareAndSet(
-          null,
-          runBlocking { sessionConfigsDataStore.data.first() },
-        )
+        sessionConfigsAtomicReference.compareAndSet(null, readConfigs())
       }
 
       return sessionConfigsAtomicReference.get()
@@ -70,9 +68,20 @@ constructor(
 
   init {
     CoroutineScope(backgroundDispatcher).launch {
-      sessionConfigsDataStore.data.collect(sessionConfigsAtomicReference::set)
+      sessionConfigsDataStore.data
+        .catch { ex -> Log.w(TAG, "Failed to read config values: $ex") }
+        .collect(sessionConfigsAtomicReference::set)
     }
   }
+
+  /** Reads the configs from disk, or returns the default configs if they can't be read. */
+  private fun readConfigs(): SessionConfigs =
+    try {
+      runBlocking { sessionConfigsDataStore.data.first() }
+    } catch (ex: IOException) {
+      Log.w(TAG, "Failed to read config values: $ex")
+      SessionConfigsSerializer.defaultValue
+    }
 
   override fun hasCacheExpired(): Boolean {
     val cacheUpdatedTimeSeconds = sessionConfigs.cacheUpdatedTimeSeconds
