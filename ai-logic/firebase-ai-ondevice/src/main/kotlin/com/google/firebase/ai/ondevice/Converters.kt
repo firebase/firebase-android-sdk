@@ -85,6 +85,7 @@ private fun Int.toInterop(): FinishReason =
 internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMlKit():
   GenerateContentRequest {
   try {
+    require(parts.isNotEmpty()) { "parts must not be empty" }
     return generateContentRequest(
       content { this@toMlKit.parts.forEach { addPart(it.toMlKit()) } }
     ) {

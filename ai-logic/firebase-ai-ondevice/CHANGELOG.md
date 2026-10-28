@@ -1,7 +1,7 @@
 # Unreleased
 
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
-  on-device content generation requests.
+  on-device content generation requests. (#8754)
 
 # 16.0.0-beta07
 

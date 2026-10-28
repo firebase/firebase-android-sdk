@@ -1,7 +1,7 @@
 # Unreleased
 
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
-  on-device and hybrid inference modes.
+  on-device and hybrid inference modes. (#8754)
 
 # 18.1.0
 

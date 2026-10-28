@@ -233,16 +233,6 @@ internal class OnDeviceGenerativeModelProvider(
         FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
       )
     }
-    val unsupportedParts = parts.filter { it !is TextPart && it !is ImagePart }
-    if (unsupportedParts.isNotEmpty()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceInvalidRequestException(
-          IllegalArgumentException(
-            "On-device model does not support part types: ${unsupportedParts.map { it::class.java.simpleName }}"
-          )
-        )
-      )
-    }
     val onDeviceParts =
       parts.map { part ->
         when (part) {
