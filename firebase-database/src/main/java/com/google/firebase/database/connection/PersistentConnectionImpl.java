@@ -428,7 +428,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                 Object body = response.get(SERVER_DATA_UPDATE_BODY);
                 source.setResult(body);
               } else {
-                source.setException(new Exception(getString(response, SERVER_DATA_UPDATE_BODY)));
+                String errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
+                source.setException(
+                    new Exception(
+                        errorMessage != null
+                            ? errorMessage
+                            : "Get request failed with status: " + status));
               }
             });
     outstandingGets.put(readId, outstandingGet);
@@ -1000,7 +1005,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   /**
    * Returns whether a push from the server has the fields that {@link #onDataPush} reads without
-   * further checks: an action, a body, and a path for pushes about a location.
+   * further checks: an action, a body, a path for pushes about a location, and data of the expected
+   * type for merges and range merges.
    */
   private static boolean isWellFormedPush(String action, Map<String, Object> body) {
     if (action == null || body == null) {
@@ -1011,7 +1017,16 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             || action.equals(SERVER_ASYNC_DATA_MERGE)
             || action.equals(SERVER_ASYNC_DATA_RANGE_MERGE)
             || action.equals(SERVER_ASYNC_LISTEN_CANCELLED);
-    return !requiresPath || body.get(SERVER_DATA_UPDATE_PATH) instanceof String;
+    if (requiresPath && !(body.get(SERVER_DATA_UPDATE_PATH) instanceof String)) {
+      return false;
+    }
+    if (action.equals(SERVER_ASYNC_DATA_MERGE)) {
+      return body.get(SERVER_DATA_UPDATE_BODY) instanceof Map;
+    }
+    if (action.equals(SERVER_ASYNC_DATA_RANGE_MERGE)) {
+      return body.get(SERVER_DATA_UPDATE_BODY) instanceof List;
+    }
+    return true;
   }
 
   private void onListenRevoked(List<String> path) {

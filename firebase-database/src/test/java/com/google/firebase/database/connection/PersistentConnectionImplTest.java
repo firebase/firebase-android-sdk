@@ -326,6 +326,59 @@ public class PersistentConnectionImplTest {
     verify(delegate).onDataUpdate(PATH, "value", /* isMerge= */ false, /* optTag= */ null);
   }
 
+  @Test
+  public void getResponseWithErrorStatusAndNoMessage_failsGetWithStatus() {
+    connect();
+    Task<Object> task = persistentConnection.get(PATH, DEFAULT_QUERY);
+
+    respond(lastRequestNumber("g"), new MapBuilder().put("s", "permission_denied").build());
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.getException()).hasMessageThat().contains("permission_denied");
+  }
+
+  @Test
+  public void mergePushWithDataThatIsNotAMap_isIgnored() {
+    connect();
+
+    persistentConnection.onDataMessage(
+        new MapBuilder()
+            .put("a", "m")
+            .put("b", new MapBuilder().put("p", "a/b").put("d", "not a map").build())
+            .build());
+
+    verifyNoDataUpdates();
+    verify(realtime, never()).close();
+  }
+
+  @Test
+  public void mergePushWithMap_updatesData() {
+    connect();
+    Map<String, Object> data = new MapBuilder().put("key", "value").build();
+
+    persistentConnection.onDataMessage(
+        new MapBuilder()
+            .put("a", "m")
+            .put("b", new MapBuilder().put("p", "a/b").put("d", data).build())
+            .build());
+
+    verify(delegate).onDataUpdate(PATH, data, /* isMerge= */ true, /* optTag= */ null);
+  }
+
+  @Test
+  public void rangeMergePushWithDataThatIsNotAList_isIgnored() {
+    connect();
+
+    persistentConnection.onDataMessage(
+        new MapBuilder()
+            .put("a", "rm")
+            .put("b", new MapBuilder().put("p", "a/b").put("d", "not a list").build())
+            .build());
+
+    verifyNoDataUpdates();
+    verify(realtime, never()).close();
+  }
+
   private void connect() {
     connect(/* authToken= */ null, /* appCheckToken= */ null);
   }
