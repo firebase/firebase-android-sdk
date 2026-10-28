@@ -2,7 +2,7 @@
 
 - [fixed] Fixed a crash when the Realtime Database server sent a message with
   a missing or malformed field. The SDK now fails the affected request, ignores
-  the message, or reconnects instead. (#PR_NUMBER)
+  the message, or reconnects instead. (#8764)
 
 # 23.0.0
 
