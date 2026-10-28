@@ -77,6 +77,7 @@ import com.google.firestore.v1.DocumentRemove;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.DocumentTransform.FieldTransform.ServerValue;
 import com.google.firestore.v1.ListenResponse;
+import com.google.firestore.v1.ListenResponse.ResponseTypeCase;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Precondition;
 import com.google.firestore.v1.StructuredQuery;
@@ -96,6 +97,7 @@ import com.google.firestore.v1.TargetChange.TargetChangeType;
 import com.google.firestore.v1.Value;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.Int32Value;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
@@ -1614,5 +1616,41 @@ public final class RemoteSerializerTest {
                             .addRemovedTargetIds(2))
                     .build());
     assertEquals(expected, actual);
+  }
+
+  @Test
+  public void testIgnoresTargetChangeWithUnknownTargetChangeType() {
+    // A target change type that was added to the backend after this SDK version was released.
+    ListenResponse response =
+        ListenResponse.newBuilder()
+            .setTargetChange(
+                TargetChange.newBuilder()
+                    .setTargetChangeTypeValue(99)
+                    .addTargetIds(1)
+                    .setResumeToken(ByteString.copyFrom(new byte[] {0, 1, 2})))
+            .build();
+    assertEquals(TargetChangeType.UNRECOGNIZED, response.getTargetChange().getTargetChangeType());
+
+    assertNull(serializer.decodeWatchChange(response));
+  }
+
+  @Test
+  public void testIgnoresListenResponseWithUnknownResponseType() throws Exception {
+    // A response type that was added to the backend after this SDK version was released is a new
+    // field in the `response_type` oneof. Protobuf parses it as an unknown field, so the response
+    // looks like a response without a response type.
+    ByteString.Output output = ByteString.newOutput();
+    CodedOutputStream codedOutput = CodedOutputStream.newInstance(output);
+    codedOutput.writeBytes(/* fieldNumber= */ 99, ByteString.EMPTY);
+    codedOutput.flush();
+    ListenResponse response = ListenResponse.parseFrom(output.toByteString());
+    assertEquals(ResponseTypeCase.RESPONSETYPE_NOT_SET, response.getResponseTypeCase());
+
+    assertNull(serializer.decodeWatchChange(response));
+  }
+
+  @Test
+  public void testIgnoresListenResponseWithoutResponseType() {
+    assertNull(serializer.decodeWatchChange(ListenResponse.getDefaultInstance()));
   }
 }

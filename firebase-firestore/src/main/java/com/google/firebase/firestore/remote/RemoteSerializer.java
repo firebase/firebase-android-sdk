@@ -1115,6 +1115,15 @@ public final class RemoteSerializer {
 
   // Watch changes
 
+  /**
+   * Decodes a response from the watch stream.
+   *
+   * <p>Returns {@code null} if the response uses a response type or target change type that this
+   * SDK version does not recognize, for example one that was added to the backend later. Protobuf
+   * reports an unknown response type as {@code RESPONSETYPE_NOT_SET} and an unknown target change
+   * type as {@code UNRECOGNIZED}. Like unknown protobuf fields, such responses should be ignored.
+   */
+  @Nullable
   public WatchChange decodeWatchChange(ListenResponse protoChange) {
     WatchChange watchChange;
 
@@ -1142,7 +1151,8 @@ public final class RemoteSerializer {
             break;
           case UNRECOGNIZED:
           default:
-            throw new IllegalArgumentException("Unknown target change type");
+            // A target change type that this SDK version does not know about.
+            return null;
         }
         watchChange =
             new WatchTargetChange(
@@ -1185,7 +1195,9 @@ public final class RemoteSerializer {
         break;
       case RESPONSETYPE_NOT_SET:
       default:
-        throw new IllegalArgumentException("Unknown change type set");
+        // Either no response type is set, or the response type is a field that this SDK version
+        // does not know about, which protobuf parses as an unknown field.
+        return null;
     }
 
     return watchChange;
