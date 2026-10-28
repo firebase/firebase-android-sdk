@@ -2,7 +2,7 @@
 
 - [fixed] Fixed an app crash when a campaign was missing a required field,
   such as a background color or title. Such campaigns are now skipped, and the
-  next eligible campaign is displayed instead. (#PR_NUMBER)
+  next eligible campaign is displayed instead. (#8759)
 
 # 23.0.0
 
