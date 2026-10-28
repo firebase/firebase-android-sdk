@@ -4,7 +4,7 @@
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed crashes and silently disabled crash reporting caused by
   out-of-range on-demand upload settings from the server, including settings
-  already cached on the device. (#PR_NUMBER)
+  already cached on the device. (#8761)
 
 # 21.0.1
 
