@@ -58,6 +58,10 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   private final GaugeManager gaugeManager;
   private final TransportManager transportManager;
 
+  // A request can be completed on more than one thread, for example when an app calls
+  // HttpURLConnection.disconnect() from a network callback while the request thread is still
+  // reading the response. So the methods that access the protobuf builder, userAgent,
+  // isReportSent, or isManualNetworkRequestMetric are synchronized on this object.
   private final NetworkRequestMetric.Builder builder = NetworkRequestMetric.newBuilder();
   private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
 
@@ -67,7 +71,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   private boolean isManualNetworkRequestMetric;
 
   @Override
-  public void updateSession(PerfSession session) {
+  public synchronized void updateSession(PerfSession session) {
     // Note(b/152218504): Being defensive to fix the NPE
     if (session == null) {
       logger.warn("Unable to add new SessionId to the Network Trace. Continuing without it.");
@@ -116,12 +120,12 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * @see HttpMetric#start()
    * @see HttpMetric#stop()
    */
-  public void setManualNetworkRequestMetric() {
+  public synchronized void setManualNetworkRequestMetric() {
     isManualNetworkRequestMetric = true;
   }
 
   /** Sets the url for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setUrl(@Nullable String url) {
+  public synchronized NetworkRequestMetricBuilder setUrl(@Nullable String url) {
     if (url != null) {
       // Strips query parameters/user info if any
       url = Utils.stripSensitiveInfo(url);
@@ -134,18 +138,18 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   /** Gets the url for the current {@link NetworkRequestMetric}. */
-  public String getUrl() {
+  public synchronized String getUrl() {
     return builder.getUrl();
   }
 
   /** Sets the user-agent for the current network request. */
-  public NetworkRequestMetricBuilder setUserAgent(@Nullable String userAgent) {
+  public synchronized NetworkRequestMetricBuilder setUserAgent(@Nullable String userAgent) {
     this.userAgent = userAgent;
     return this;
   }
 
   /** Sets the httpMethod for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setHttpMethod(@Nullable String method) {
+  public synchronized NetworkRequestMetricBuilder setHttpMethod(@Nullable String method) {
     if (method != null) {
       HttpMethod httpMethod = HttpMethod.HTTP_METHOD_UNKNOWN;
       switch (method.toUpperCase()) {
@@ -195,24 +199,25 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   /** Sets the httpResponseCode for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setHttpResponseCode(int code) {
+  public synchronized NetworkRequestMetricBuilder setHttpResponseCode(int code) {
     builder.setHttpResponseCode(code);
     return this;
   }
 
   /** Answers whether the builder has an HttpResponseCode. */
-  public boolean hasHttpResponseCode() {
+  public synchronized boolean hasHttpResponseCode() {
     return builder.hasHttpResponseCode();
   }
 
   /** Sets the requestPayloadBytes for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setRequestPayloadBytes(long bytes) {
+  public synchronized NetworkRequestMetricBuilder setRequestPayloadBytes(long bytes) {
     builder.setRequestPayloadBytes(bytes);
     return this;
   }
 
   /** Sets the customAttributes for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setCustomAttributes(Map<String, String> attributes) {
+  public synchronized NetworkRequestMetricBuilder setCustomAttributes(
+      Map<String, String> attributes) {
     builder.clearCustomAttributes().putAllCustomAttributes(attributes);
     return this;
   }
@@ -231,8 +236,10 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     PerfSession perfSession = sessionManager.perfSession();
     SessionManager.getInstance().registerForSessionUpdates(weakReference);
 
-    builder.setClientStartTimeUs(time);
-    updateSession(perfSession);
+    synchronized (this) {
+      builder.setClientStartTimeUs(time);
+      updateSession(perfSession);
+    }
 
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.collectGaugeMetricOnce(perfSession.getTimer());
@@ -242,19 +249,19 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   /** Sets the timeToRequestCompletedUs for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setTimeToRequestCompletedMicros(long time) {
+  public synchronized NetworkRequestMetricBuilder setTimeToRequestCompletedMicros(long time) {
     builder.setTimeToRequestCompletedUs(time);
     return this;
   }
 
   /** Sets the timeToResponseInitiatedUs for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setTimeToResponseInitiatedMicros(long time) {
+  public synchronized NetworkRequestMetricBuilder setTimeToResponseInitiatedMicros(long time) {
     builder.setTimeToResponseInitiatedUs(time);
     return this;
   }
 
   /** Gets the timeToResponseInitiatedUs for the current {@link NetworkRequestMetric}. */
-  public long getTimeToResponseInitiatedMicros() {
+  public synchronized long getTimeToResponseInitiatedMicros() {
     return builder.getTimeToResponseInitiatedUs();
   }
 
@@ -268,7 +275,9 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * @see PerfSession#isGaugeAndEventCollectionEnabled()
    */
   public NetworkRequestMetricBuilder setTimeToResponseCompletedMicros(long time) {
-    builder.setTimeToResponseCompletedUs(time);
+    synchronized (this) {
+      builder.setTimeToResponseCompletedUs(time);
+    }
 
     if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
       gaugeManager.collectGaugeMetricOnce(SessionManager.getInstance().perfSession().getTimer());
@@ -278,13 +287,14 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   /** Sets the responsePayloadBytes for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setResponsePayloadBytes(long bytes) {
+  public synchronized NetworkRequestMetricBuilder setResponsePayloadBytes(long bytes) {
     builder.setResponsePayloadBytes(bytes);
     return this;
   }
 
   /** Sets the responseContentType for the current {@link NetworkRequestMetric}. */
-  public NetworkRequestMetricBuilder setResponseContentType(@Nullable String contentType) {
+  public synchronized NetworkRequestMetricBuilder setResponseContentType(
+      @Nullable String contentType) {
     if (contentType == null) {
       builder.clearResponseContentType();
       return this;
@@ -302,7 +312,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * Sets the networkClientErrorReason to {@link NetworkClientErrorReason#GENERIC_CLIENT_ERROR} for
    * the current {@link NetworkRequestMetric}.
    */
-  public NetworkRequestMetricBuilder setNetworkClientErrorReason() {
+  public synchronized NetworkRequestMetricBuilder setNetworkClientErrorReason() {
     builder.setNetworkClientErrorReason(NetworkClientErrorReason.GENERIC_CLIENT_ERROR);
     return this;
   }
@@ -315,36 +325,38 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * while the request thread is still reading the response. Concurrent calls would otherwise mutate
    * the underlying protobuf builder at the same time and could log the metric more than once.
    */
-  public synchronized NetworkRequestMetric build() {
+  public NetworkRequestMetric build() {
     SessionManager.getInstance().unregisterForSessionUpdates(weakReference);
     unregisterForAppState();
 
-    com.google.firebase.perf.v1.PerfSession[] perfSessions =
-        PerfSession.buildAndSort(getSessions());
-    if (perfSessions != null) {
-      builder.addAllPerfSessions(Arrays.asList(perfSessions));
-    }
+    synchronized (this) {
+      com.google.firebase.perf.v1.PerfSession[] perfSessions =
+          PerfSession.buildAndSort(getSessions());
+      if (perfSessions != null) {
+        builder.addAllPerfSessions(Arrays.asList(perfSessions));
+      }
 
-    NetworkRequestMetric metric = builder.build();
+      NetworkRequestMetric metric = builder.build();
 
-    if (!isAllowedUserAgent(userAgent)) {
-      logger.debug("Dropping network request from a 'User-Agent' that is not allowed");
+      if (!isAllowedUserAgent(userAgent)) {
+        logger.debug("Dropping network request from a 'User-Agent' that is not allowed");
+        return metric;
+      }
+
+      if (!isReportSent) {
+        transportManager.log(metric, getAppState());
+        isReportSent = true;
+        return metric;
+      }
+
+      if (isManualNetworkRequestMetric) {
+        logger.debug(
+            "This metric has already been queued for transmission.  "
+                + "Please create a new HttpMetric for each request/response");
+      }
+
       return metric;
     }
-
-    if (!isReportSent) {
-      transportManager.log(metric, getAppState());
-      isReportSent = true;
-      return metric;
-    }
-
-    if (isManualNetworkRequestMetric) {
-      logger.debug(
-          "This metric has already been queued for transmission.  "
-              + "Please create a new HttpMetric for each request/response");
-    }
-
-    return metric;
   }
 
   /** Checks if the network request has stopped. */
@@ -373,17 +385,17 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   @VisibleForTesting
-  boolean isReportSent() {
+  synchronized boolean isReportSent() {
     return isReportSent;
   }
 
   @VisibleForTesting
-  void setReportSent() {
+  synchronized void setReportSent() {
     isReportSent = true;
   }
 
   @VisibleForTesting
-  void clearBuilderFields() {
+  synchronized void clearBuilderFields() {
     builder.clear();
   }
 

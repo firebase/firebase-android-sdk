@@ -34,7 +34,9 @@ import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -389,6 +391,67 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
             .log(
                 ArgumentMatchers.any(NetworkRequestMetric.class),
                 ArgumentMatchers.nullable(ApplicationProcessState.class));
+      }
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  /**
+   * The request thread can still be setting fields on the builder while another thread builds the
+   * metric, for example when an app calls {@code HttpURLConnection.disconnect()} from a network
+   * callback.
+   */
+  @Test
+  public void testConcurrentSettersAndBuildDoNotThrow() throws Exception {
+    Map<String, String> attributes = new HashMap<>();
+    for (int i = 0; i < 20; i++) {
+      attributes.put("key" + i, "value" + i);
+    }
+    ExecutorService executor = Executors.newFixedThreadPool(3);
+    try {
+      for (int iteration = 0; iteration < 300; iteration++) {
+        NetworkRequestMetricBuilder builder =
+            new NetworkRequestMetricBuilder(
+                mock(TransportManager.class), mockAppStateMonitor, mockGaugeManager);
+
+        CountDownLatch startSignal = new CountDownLatch(1);
+        Future<?> setters =
+            executor.submit(
+                () -> {
+                  startSignal.await();
+                  for (int i = 0; i < 50; i++) {
+                    builder.setRequestStartTimeMicros(i);
+                    builder.setCustomAttributes(attributes);
+                    builder.setResponsePayloadBytes(i);
+                  }
+                  return null;
+                });
+        Future<?> sessionUpdates =
+            executor.submit(
+                () -> {
+                  startSignal.await();
+                  for (int i = 0; i < 50; i++) {
+                    SessionManager.getInstance()
+                        .updatePerfSession(PerfSession.createWithId("session-" + i));
+                  }
+                  return null;
+                });
+        Future<?> builds =
+            executor.submit(
+                () -> {
+                  startSignal.await();
+                  for (int i = 0; i < 50; i++) {
+                    builder.build();
+                  }
+                  return null;
+                });
+        startSignal.countDown();
+
+        // Rethrows any exception thrown on the other threads, wrapped in an ExecutionException.
+        setters.get(10, TimeUnit.SECONDS);
+        sessionUpdates.get(10, TimeUnit.SECONDS);
+        builds.get(10, TimeUnit.SECONDS);
       }
     } finally {
       executor.shutdownNow();
