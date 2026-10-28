@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -60,6 +61,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS = 50;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_BG_MS = 120;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS = 60;
+  // The smallest collection frequency for which the flush period (frequency multiplied by
+  // APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC) does not fit in a long.
+  private static final long SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS =
+      Long.MAX_VALUE / APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC + 1;
 
   private GaugeManager testGaugeManager = null;
   private FakeScheduledExecutorService fakeScheduledExecutorService = null;
@@ -71,7 +76,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Before
   public void setUp() {
-    fakeScheduledExecutorService = new FakeScheduledExecutorService();
+    fakeScheduledExecutorService = spy(new FakeScheduledExecutorService());
     mockTransportManager = mock(TransportManager.class);
     mockConfigResolver = mock(ConfigResolver.class);
     fakeGaugeMetadataManager =
@@ -353,6 +358,105 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(fakeScheduledExecutorService.isEmpty()).isFalse();
     assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
         .isEqualTo(15L * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC);
+  }
+
+  @Test
+  public void
+      startCollectingGauges_maxGaugeCollectionFrequency_appInForeground_saturatesFlushPeriod() {
+    doReturn(Long.MAX_VALUE).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
+    doReturn(Long.MAX_VALUE)
+        .when(mockConfigResolver)
+        .getSessionsMemoryCaptureFrequencyForegroundMs();
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
+
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+  }
+
+  @Test
+  public void
+      startCollectingGauges_maxGaugeCollectionFrequency_appInBackground_saturatesFlushPeriod() {
+    doReturn(Long.MAX_VALUE).when(mockConfigResolver).getSessionsCpuCaptureFrequencyBackgroundMs();
+    doReturn(Long.MAX_VALUE)
+        .when(mockConfigResolver)
+        .getSessionsMemoryCaptureFrequencyBackgroundMs();
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
+
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+  }
+
+  @Test
+  public void
+      startCollectingGauges_smallestOverflowingFrequency_appInForeground_saturatesFlushPeriod() {
+    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+        .when(mockConfigResolver)
+        .getSessionsCpuCaptureFrequencyForegroundMs();
+    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+        .when(mockConfigResolver)
+        .getSessionsMemoryCaptureFrequencyForegroundMs();
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
+
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+  }
+
+  @Test
+  public void
+      startCollectingGauges_smallestOverflowingFrequency_appInBackground_saturatesFlushPeriod() {
+    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+        .when(mockConfigResolver)
+        .getSessionsCpuCaptureFrequencyBackgroundMs();
+    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+        .when(mockConfigResolver)
+        .getSessionsMemoryCaptureFrequencyBackgroundMs();
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
+
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+  }
+
+  @Test
+  public void startCollectingGauges_largestNonOverflowingFrequency_flushPeriodIsNotSaturated() {
+    long collectionFrequencyMs = SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS - 1;
+    doReturn(collectionFrequencyMs)
+        .when(mockConfigResolver)
+        .getSessionsCpuCaptureFrequencyForegroundMs();
+    doReturn(collectionFrequencyMs)
+        .when(mockConfigResolver)
+        .getSessionsMemoryCaptureFrequencyForegroundMs();
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
+
+    verifyFlushJobScheduledAtFixedRate(
+        /* periodMs= */ collectionFrequencyMs * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC);
+  }
+
+  @Test
+  public void startCollectingGauges_flushJobRejectedWithIllegalArgumentException_doesNotThrow() {
+    doThrow(new IllegalArgumentException())
+        .when(fakeScheduledExecutorService)
+        .scheduleAtFixedRate(
+            ArgumentMatchers.any(Runnable.class),
+            ArgumentMatchers.anyLong(),
+            ArgumentMatchers.anyLong(),
+            ArgumentMatchers.any(TimeUnit.class));
+
+    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
+    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
+
+    // The gauges that were collected are still flushed when the collection stops.
+    testGaugeManager.stopCollectingGauges();
+    verify(fakeCpuGaugeCollector).stopCollecting();
+    verify(fakeMemoryGaugeCollector).stopCollecting();
+    assertThat(fakeScheduledExecutorService.getDelayToNextTask(TimeUnit.MILLISECONDS))
+        .isEqualTo(TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS);
   }
 
   @Test
@@ -714,6 +818,19 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   /** @return The minimum background collection frequency of all the Gauges. */
   private long getMinimumBackgroundCollectionFrequency() {
     return DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS;
+  }
+
+  /**
+   * Verifies that the job that flushes the collected gauges was scheduled once, with {@code
+   * periodMs} as both its initial delay and its period.
+   */
+  private void verifyFlushJobScheduledAtFixedRate(long periodMs) {
+    verify(fakeScheduledExecutorService)
+        .scheduleAtFixedRate(
+            ArgumentMatchers.any(Runnable.class),
+            /* initialDelay= */ eq(periodMs),
+            /* period= */ eq(periodMs),
+            eq(TimeUnit.MILLISECONDS));
   }
 
   private CpuMetricReading createFakeCpuMetricReading(long userTimeUs, long systemTimeUs) {
