@@ -4,7 +4,7 @@
   apps compiled with R8 or ProGuard optimizations enabled.
   ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))
 - [fixed] Fixed an `IllegalArgumentException` crash that could occur when the
-  CPU or memory gauge capture frequency was very large. (#PR_NUMBER)
+  CPU or memory gauge capture frequency was very large. (#8755)
 
 # 23.0.0
 
