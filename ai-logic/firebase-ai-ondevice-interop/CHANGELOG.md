@@ -1,7 +1,7 @@
 # Unreleased
 
 - [changed] Updated `GenerateContentRequest` to accept a `List<Part>`
-  instead of a single `TextPart` and optional `ImagePart`.
+  instead of a single `TextPart` and optional `ImagePart`. (#8754)
 
 # 16.0.0-beta07
 
