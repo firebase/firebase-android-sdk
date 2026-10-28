@@ -30,7 +30,11 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -145,5 +149,62 @@ class LiveSessionTest {
       // But the session should be considered closed because closeReason is completed
       liveSession.isClosed() shouldBe true
     }
+  }
+
+  @Test(timeout = 10000)
+  fun testReceive_whileIdle_canBeCancelled() {
+    runBlocking {
+      val liveSession = createLiveSession(Channel(Channel.UNLIMITED))
+      val receiveJob = launch(Dispatchers.Default) { liveSession.receive().collect {} }
+      // Let receive() start polling the empty incoming channel.
+      delay(100)
+
+      // receive() must suspend while it waits for frames, so that it can be cancelled.
+      receiveJob.cancelAndJoin()
+
+      receiveJob.isCancelled shouldBe true
+    }
+  }
+
+  @Test(timeout = 10000)
+  fun testReceive_afterIdle_emitsMessage() {
+    runBlocking {
+      val incomingChannel = Channel<Frame>(Channel.UNLIMITED)
+      val liveSession = createLiveSession(incomingChannel)
+      val firstMessage = async(Dispatchers.Default) { liveSession.receive().first() }
+      // Let receive() start polling the empty incoming channel.
+      delay(100)
+
+      incomingChannel.send(Frame.Text("""{"setupComplete": {}}"""))
+
+      firstMessage.await() shouldBe LiveServerSetupComplete
+    }
+  }
+
+  @Test(timeout = 10000)
+  fun testStopReceiving_whileIdle_completesReceive() {
+    runBlocking {
+      val liveSession = createLiveSession(Channel(Channel.UNLIMITED))
+      val receiveJob = launch(Dispatchers.Default) { liveSession.receive().collect {} }
+      // Let receive() start polling the empty incoming channel.
+      delay(100)
+
+      liveSession.stopReceiving()
+
+      receiveJob.join()
+      receiveJob.isCancelled shouldBe false
+    }
+  }
+
+  private fun createLiveSession(incomingChannel: Channel<Frame>): LiveSession {
+    val mockSession = mockk<DefaultClientWebSocketSession>()
+    every { mockSession.coroutineContext } returns EmptyCoroutineContext + Job()
+    every { mockSession.incoming } returns incomingChannel
+    every { mockSession.closeReason } returns CompletableDeferred()
+    return LiveSession(
+      session = mockSession,
+      blockingDispatcher = Dispatchers.Unconfined,
+      firebaseApp = mockk<FirebaseApp>()
+    )
   }
 }

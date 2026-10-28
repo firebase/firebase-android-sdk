@@ -332,6 +332,12 @@ internal constructor(
                 continue
               }
             }
+            if (response.isFailure) {
+              // No frame is buffered yet. delay(0) returns immediately without suspending, so wait
+              // before polling again instead of spinning a thread at 100% CPU.
+              delay(IDLE_POLL_INTERVAL_MS)
+              continue
+            }
             response
               .getOrNull()
               ?.let {
@@ -667,8 +673,9 @@ internal constructor(
             audioHelper?.resumeRecording()
           }
           // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
-          // when compared to yield.
-          delay(0)
+          // when compared to yield. delay(0) returns immediately without suspending, so wait
+          // before polling again instead of spinning a thread at 100% CPU.
+          delay(IDLE_POLL_INTERVAL_MS)
         } else {
           /**
            * We pause the recording while the model is speaking to avoid interrupting it because of
@@ -766,6 +773,14 @@ internal constructor(
     @SuppressLint("ThreadPoolCreation")
     val audioDispatcher =
       Executors.newCachedThreadPool(AudioThreadFactory()).asCoroutineDispatcher()
+
+    /**
+     * How long to wait before polling again when there is nothing to process.
+     *
+     * This must be positive: `delay(0)` returns immediately without suspending, so a polling loop
+     * that uses it never yields its thread and can't be cancelled while it's idle.
+     */
+    const val IDLE_POLL_INTERVAL_MS = 10L
   }
 }
 
