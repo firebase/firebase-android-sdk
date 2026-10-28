@@ -33,7 +33,9 @@ import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscoveryService;
+import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.Constants.AnalyticsKeys;
@@ -49,10 +51,12 @@ import com.google.firebase.messaging.testing.AnalyticsValidator.LoggedEvent;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,6 +93,17 @@ public class MessagingAnalyticsRoboTest {
 
   @Before
   public void setUp() {
+    initFirebaseApp();
+    analyticsValidator.reset();
+
+    // Create and Initialize Firelog service components
+    context = ApplicationProvider.getApplicationContext();
+
+    // Reset sharedpreferences for bigquery delivery metrics export before every test.
+    resetPreferencesField(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF);
+  }
+
+  private static void initFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
     FirebaseMessaging.transportFactory = null;
     // Create a test FirebaseApp instance
@@ -100,13 +115,12 @@ public class MessagingAnalyticsRoboTest {
             .setGcmSenderId(MessagingTestHelper.SENDER);
     FirebaseApp.initializeApp(
         ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
-    analyticsValidator.reset();
+  }
 
-    // Create and Initialize Firelog service components
-    context = ApplicationProvider.getApplicationContext();
-
-    // Reset sharedpreferences for bigquery delivery metrics export before every test.
-    resetPreferencesField(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF);
+  @After
+  public void tearDown() {
+    // Don't leave the default app initialized for test classes that run later in the same JVM.
+    FirebaseApp.clearInstancesForTest();
   }
 
   /** If the developer didn't include Analytics and Firelog, we should not crash. */
@@ -123,7 +137,7 @@ public class MessagingAnalyticsRoboTest {
         .clear();
 
     // Re Init Firebase
-    setUp();
+    initFirebaseApp();
 
     // Confirm that Analytics and Firelog are NOT available
     assertThat(FirebaseApp.getInstance().get(TransportFactory.class)).isNull();
@@ -137,6 +151,40 @@ public class MessagingAnalyticsRoboTest {
     MessagingAnalytics.logNotificationOpen(intent.getExtras());
     MessagingAnalytics.logNotificationDismiss(intent);
     // No Exception is thrown = no crash, yeah
+  }
+
+  /**
+   * If the app excludes firebase-measurement-connector, which contains AnalyticsConnector, looking
+   * up AnalyticsConnector throws NoClassDefFoundError. Logging should be skipped instead of crashing
+   * the app. See https://github.com/firebase/firebase-android-sdk/issues/8281.
+   */
+  @Test
+  public void testNoCrashIfAnalyticsConnectorClassIsMissing() throws Exception {
+    // Replace the Firebase components with one whose AnalyticsConnector lookup throws.
+    Bundle metaData =
+        context
+            .getPackageManager()
+            .getServiceInfo(
+                new ComponentName(
+                    ApplicationProvider.getApplicationContext(), ComponentDiscoveryService.class),
+                PackageManager.GET_META_DATA)
+            .metaData;
+    metaData.clear();
+    metaData.putString(
+        "com.google.firebase.components:" + MissingAnalyticsConnectorRegistrar.class.getName(),
+        "com.google.firebase.components.ComponentRegistrar");
+    initFirebaseApp();
+
+    Intent intent = new Intent(FirebaseMessagingService.ACTION_REMOTE_INTENT);
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    intent.putExtra(ANALYTICS_TRACK_CONVERSIONS, "1");
+    intent.putExtra(ANALYTICS_COMPOSER_ID, "composer_key");
+
+    // None of these should throw.
+    MessagingAnalytics.logNotificationReceived(intent);
+    MessagingAnalytics.logNotificationOpen(intent.getExtras());
+    MessagingAnalytics.logNotificationDismiss(intent);
+    MessagingAnalytics.logNotificationForeground(intent);
   }
 
   /** Test that a message with analytics enabled should upload scion metrics. */
@@ -1188,6 +1236,25 @@ public class MessagingAnalyticsRoboTest {
     @Override
     public void schedule(Event<T> event, TransportScheduleCallback callback) {
       throw new IllegalStateException("unimplemented");
+    }
+  }
+
+  /**
+   * Registers an {@link AnalyticsConnector} whose lookup throws the {@link NoClassDefFoundError}
+   * that apps get when firebase-measurement-connector is excluded.
+   */
+  public static final class MissingAnalyticsConnectorRegistrar implements ComponentRegistrar {
+    @Override
+    public List<Component<?>> getComponents() {
+      return Collections.singletonList(
+          Component.builder(AnalyticsConnector.class)
+              .factory(
+                  container -> {
+                    throw new NoClassDefFoundError(
+                        "Failed resolution of: "
+                            + "Lcom/google/firebase/analytics/connector/AnalyticsConnector;");
+                  })
+              .build());
     }
   }
 }

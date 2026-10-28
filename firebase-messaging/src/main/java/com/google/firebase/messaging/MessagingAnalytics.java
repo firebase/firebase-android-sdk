@@ -197,9 +197,7 @@ public class MessagingAnalytics {
     // If the user requested to track conversions, set the user property.
     String shouldTrackConversions = extras.getString(Constants.AnalyticsKeys.TRACK_CONVERSIONS);
     if ("1".equals(shouldTrackConversions)) {
-      // TODO(b/78465387) Use components dependency framework to get analyticsConnector obj
-      @SuppressWarnings("FirebaseUseExplicitDependencies")
-      AnalyticsConnector analytics = FirebaseApp.getInstance().get(AnalyticsConnector.class);
+      AnalyticsConnector analytics = getAnalyticsConnector(FirebaseApp.getInstance());
       if (Log.isLoggable(TAG, Log.DEBUG)) {
         Log.d(
             TAG,
@@ -308,14 +306,31 @@ public class MessagingAnalytics {
       Log.d(TAG, "Logging to scion event=" + event + " scionPayload=" + scionPayload);
     }
 
-    // TODO(b/78465387) Use components dependency framework to get analyticsConnector obj
-    @SuppressWarnings("FirebaseUseExplicitDependencies")
-    AnalyticsConnector analytics = FirebaseApp.getInstance().get(AnalyticsConnector.class);
+    AnalyticsConnector analytics = getAnalyticsConnector(FirebaseApp.getInstance());
     if (analytics != null) {
       analytics.logEvent(ScionAnalytics.ORIGIN_FCM, event, scionPayload);
     } else {
       // Client did not include the measurement library
       Log.w(TAG, "Unable to log event: analytics library is missing");
+    }
+  }
+
+  /**
+   * Returns the {@link AnalyticsConnector}, or {@code null} if Analytics is not available.
+   *
+   * <p>{@code AnalyticsConnector} is in firebase-measurement-connector. Apps that exclude that
+   * library, for example to remove all analytics code, don't have the class at all, so looking it
+   * up throws {@link NoClassDefFoundError}. This is handled the same as Analytics not being
+   * included in the app.
+   */
+  @Nullable
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
+  static AnalyticsConnector getAnalyticsConnector(@NonNull FirebaseApp app) {
+    try {
+      // TODO(b/78465387) Use components dependency framework to get analyticsConnector obj
+      return app.get(AnalyticsConnector.class);
+    } catch (NoClassDefFoundError e) {
+      return null;
     }
   }
 
