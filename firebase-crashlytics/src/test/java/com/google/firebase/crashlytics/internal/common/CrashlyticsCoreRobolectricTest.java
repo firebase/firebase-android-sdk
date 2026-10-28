@@ -62,6 +62,8 @@ public class CrashlyticsCoreRobolectricTest {
 
   @Before
   public void setUp() {
+    // ShadowLog accumulates entries across tests, and some tests assert that nothing was logged.
+    ShadowLog.clear();
     context = ApplicationProvider.getApplicationContext();
     crashlyticsWorkers =
         new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
