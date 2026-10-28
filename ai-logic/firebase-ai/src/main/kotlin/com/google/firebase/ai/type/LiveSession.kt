@@ -780,7 +780,7 @@ internal constructor(
      * This must be positive: `delay(0)` returns immediately without suspending, so a polling loop
      * that uses it never yields its thread and can't be cancelled while it's idle.
      */
-    const val IDLE_POLL_INTERVAL_MS = 10L
+    private const val IDLE_POLL_INTERVAL_MS = 10L
   }
 }
 
