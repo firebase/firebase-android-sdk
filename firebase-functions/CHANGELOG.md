@@ -4,8 +4,8 @@
   `Int64Value` or `UInt64Value` that cannot be decoded as a `Long`, such as a
   `UInt64Value` above `Long.MAX_VALUE`. The call now fails with a
   `FirebaseFunctionsException` whose code is `INTERNAL`. (#8763)
-- [fixed] Fixed an issue where a callable function call never completed if the
-  connection failed or timed out while the response was being read. (#8763)
+- [fixed] Fixed an issue where a callable function call never completed if
+  the connection failed or timed out while the response was being read. (#8763)
 
 # 23.0.0
 

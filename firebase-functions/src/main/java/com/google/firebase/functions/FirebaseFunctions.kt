@@ -268,7 +268,7 @@ internal constructor(
         }
 
         @Throws(IOException::class)
-        override fun onResponse(ignored: Call, response: Response) {
+        override fun onResponse(call: Call, response: Response) {
           val code = fromHttpStatus(response.code)
           val bodyAsString =
             try {
@@ -276,7 +276,7 @@ internal constructor(
             } catch (ioe: IOException) {
               // Reading the body can still fail, for example on a timeout. OkHttp does not call
               // onFailure after onResponse, so report the failure here to complete the task.
-              onFailure(ignored, ioe)
+              onFailure(call, ioe)
               return
             }
           val exception = fromResponse(code, bodyAsString, serializer)
