@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a crash on every app launch after a custom `AppCheckProvider`
+  returned a token whose `iat` or `exp` claim was not a 32-bit integer, for
+  example a token that expires after 2038-01-19. (#PR_NUMBER)
+
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

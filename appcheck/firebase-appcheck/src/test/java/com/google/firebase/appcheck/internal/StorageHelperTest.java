@@ -40,6 +40,9 @@ public class StorageHelperTest {
   private static final long RECEIVED_AT_TIMESTAMP = 10L;
   private static final long IAT = 10L;
   private static final long EXP = 30L;
+  // 2040-01-01T00:00:00Z and one hour earlier, in seconds. Both are larger than Integer.MAX_VALUE.
+  private static final long IAT_AFTER_2038 = 2208985200L;
+  private static final long EXP_AFTER_2038 = 2208988800L;
   private static final long ONE_SECOND_MILLIS = 1000L;
   private static final String TOKEN_PREFIX = "prefix";
   private static final String TOKEN_SUFFIX = "suffix";
@@ -124,10 +127,47 @@ public class StorageHelperTest {
     assertThat(token).isNull();
   }
 
+  @Test
+  public void testSaveAndRetrieveToken_rawTokenWithClaimsAfter2038_expectEquivalentToken()
+      throws Exception {
+    String rawToken = constructFakeRawToken(IAT_AFTER_2038, EXP_AFTER_2038);
+    TestAppCheckToken testAppCheckToken = new TestAppCheckToken(rawToken);
+    storageHelper.saveAppCheckToken(testAppCheckToken);
+    DefaultAppCheckToken retrievedToken =
+        (DefaultAppCheckToken) storageHelper.retrieveAppCheckToken();
+    assertThat(retrievedToken).isNotNull();
+    assertThat(retrievedToken.getToken()).isEqualTo(rawToken);
+    assertThat(retrievedToken.getExpiresInMillis())
+        .isEqualTo((EXP_AFTER_2038 - IAT_AFTER_2038) * ONE_SECOND_MILLIS);
+    assertThat(retrievedToken.getReceivedAtTimestamp())
+        .isEqualTo(IAT_AFTER_2038 * ONE_SECOND_MILLIS);
+  }
+
+  @Test
+  public void testRetrieveToken_unreadableTokenSaved_expectClearsStorageAndReturnsNull() {
+    // Reading a long value as a String throws a ClassCastException.
+    sharedPreferences
+        .edit()
+        .putLong(StorageHelper.TOKEN_KEY, EXP)
+        .putString(
+            StorageHelper.TOKEN_TYPE_KEY, StorageHelper.TokenType.UNKNOWN_APP_CHECK_TOKEN.name())
+        .commit();
+
+    AppCheckToken token = storageHelper.retrieveAppCheckToken();
+
+    assertThat(token).isNull();
+    assertThat(sharedPreferences.contains(StorageHelper.TOKEN_KEY)).isFalse();
+    assertThat(sharedPreferences.contains(StorageHelper.TOKEN_TYPE_KEY)).isFalse();
+  }
+
   private String constructFakeRawToken() throws Exception {
+    return constructFakeRawToken(IAT, EXP);
+  }
+
+  private String constructFakeRawToken(long iat, long exp) throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(DefaultAppCheckToken.ISSUED_AT_KEY, IAT);
-    jsonObject.put(DefaultAppCheckToken.EXPIRATION_TIME_KEY, EXP);
+    jsonObject.put(DefaultAppCheckToken.ISSUED_AT_KEY, iat);
+    jsonObject.put(DefaultAppCheckToken.EXPIRATION_TIME_KEY, exp);
     String tokenValue = jsonObject.toString();
     // Raw tokens are JWTs with 3 parts which are split by '.'; we attach a prefix and suffix so
     // it can be parsed properly

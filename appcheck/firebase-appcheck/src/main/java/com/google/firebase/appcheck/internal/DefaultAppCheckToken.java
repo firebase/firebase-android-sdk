@@ -149,7 +149,9 @@ public final class DefaultAppCheckToken extends AppCheckToken {
       @NonNull Map<String, Object> claimsMap, @NonNull String key) {
     checkNotNull(claimsMap);
     checkNotEmpty(key);
-    Integer result = ((Integer) claimsMap.get(key));
-    return result == null ? 0L : result.longValue();
+    Object value = claimsMap.get(key);
+    // NumericDate claims are JSON numbers that may be fractional or exceed the int range, so
+    // org.json can return an Integer, a Long or a Double. Treat other types like a missing claim.
+    return value instanceof Number ? ((Number) value).longValue() : 0L;
   }
 }
