@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for function calling in on-device content generation
+  requests and responses.
 - [changed] **Breaking Change**: Updated `GenerateContentRequest` to accept a
   `List<Part>` instead of a single `TextPart` and optional `ImagePart`. (#8754)
 

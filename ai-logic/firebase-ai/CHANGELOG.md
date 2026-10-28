@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for function calling in on-device and hybrid
+  inference modes, with automatic cloud fallback when the on-device model does
+  not support function calling.
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
   on-device and hybrid inference modes. (#8754)
 

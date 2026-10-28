@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for function calling in on-device content generation
+  requests and responses.
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
   on-device content generation requests. (#8754)
 

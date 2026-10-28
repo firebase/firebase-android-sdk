@@ -18,6 +18,7 @@ package com.google.firebase.ai
 
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.Tool
 
 /**
  * Configuration for on-device AI model inference.
@@ -35,6 +36,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * more detail. By default it's set to `1`.
  * @property modelOption Configuration for the on-device model selection and performance.
  * @property enableThinking Whether to enable thinking mode for the on-device model.
+ * @property tools The tools (such as function declarations) that the on-device model has access to.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -47,7 +49,8 @@ constructor(
   public val seed: Int? = null,
   public val candidateCount: Int = 1,
   public val modelOption: OnDeviceModelOption? = null,
-  public val enableThinking: Boolean? = null
+  public val enableThinking: Boolean? = null,
+  public val tools: List<Tool>? = null
 ) {
 
   public companion object {
