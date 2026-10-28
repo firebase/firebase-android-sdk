@@ -33,7 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -155,9 +154,8 @@ class LiveSessionTest {
   fun testReceive_whileIdle_canBeCancelled() {
     runBlocking {
       val liveSession = createLiveSession(Channel(Channel.UNLIMITED))
-      val receiveJob = launch(Dispatchers.Default) { liveSession.receive().collect {} }
-      // Let receive() start polling the empty incoming channel.
-      delay(100)
+      // Dispatchers.Unconfined runs receive() synchronously up to its idle poll suspension point.
+      val receiveJob = launch(Dispatchers.Unconfined) { liveSession.receive().collect {} }
 
       // receive() must suspend while it waits for frames, so that it can be cancelled.
       receiveJob.cancelAndJoin()
@@ -171,9 +169,7 @@ class LiveSessionTest {
     runBlocking {
       val incomingChannel = Channel<Frame>(Channel.UNLIMITED)
       val liveSession = createLiveSession(incomingChannel)
-      val firstMessage = async(Dispatchers.Default) { liveSession.receive().first() }
-      // Let receive() start polling the empty incoming channel.
-      delay(100)
+      val firstMessage = async(Dispatchers.Unconfined) { liveSession.receive().first() }
 
       incomingChannel.send(Frame.Text("""{"setupComplete": {}}"""))
 
@@ -185,9 +181,7 @@ class LiveSessionTest {
   fun testStopReceiving_whileIdle_completesReceive() {
     runBlocking {
       val liveSession = createLiveSession(Channel(Channel.UNLIMITED))
-      val receiveJob = launch(Dispatchers.Default) { liveSession.receive().collect {} }
-      // Let receive() start polling the empty incoming channel.
-      delay(100)
+      val receiveJob = launch(Dispatchers.Unconfined) { liveSession.receive().collect {} }
 
       liveSession.stopReceiving()
 
