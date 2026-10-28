@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
@@ -377,6 +378,84 @@ public class PersistentConnectionImplTest {
 
     verifyNoDataUpdates();
     verify(realtime, never()).close();
+  }
+
+  @Test
+  public void rangeMergePushWithMalformedRangeEntry_isIgnored() {
+    connect();
+    List<Object> badEntries =
+        Arrays.asList(
+            "not a map",
+            new MapBuilder().put("s", 123).put("e", "z").build(),
+            new MapBuilder().put("s", "a").put("e", 123).build());
+
+    for (Object entry : badEntries) {
+      persistentConnection.onDataMessage(
+          new MapBuilder()
+              .put("a", "rm")
+              .put(
+                  "b",
+                  new MapBuilder()
+                      .put("p", "a/b")
+                      .put("d", Collections.singletonList(entry))
+                      .build())
+              .build());
+    }
+
+    verifyNoDataUpdates();
+    verify(realtime, never()).close();
+  }
+
+  @Test
+  public void rangeMergePushWithValidRanges_updatesData() {
+    connect();
+    Map<String, Object> range =
+        new MapBuilder()
+            .put("s", null)
+            .put("e", "k2")
+            .put("m", new MapBuilder().put("k1", "v1").build())
+            .build();
+
+    persistentConnection.onDataMessage(
+        new MapBuilder()
+            .put("a", "rm")
+            .put(
+                "b",
+                new MapBuilder().put("p", "a/b").put("d", Collections.singletonList(range)).build())
+            .build());
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<RangeMerge>> merges = ArgumentCaptor.forClass(List.class);
+    verify(delegate).onRangeMergeUpdate(eq(PATH), merges.capture(), isNull());
+    assertThat(merges.getValue()).hasSize(1);
+    assertThat(merges.getValue().get(0).getOptExclusiveStart()).isNull();
+    assertThat(merges.getValue().get(0).getOptInclusiveEnd()).containsExactly("k2");
+  }
+
+  @Test
+  public void controlPushesWithNonStringFields_areIgnored() {
+    connect();
+    clearInvocations(delegate);
+
+    for (String action : Arrays.asList("ac", "apc")) {
+      persistentConnection.onDataMessage(
+          new MapBuilder()
+              .put("a", action)
+              .put("b", new MapBuilder().put("s", 123).put("d", "reason").build())
+              .build());
+      persistentConnection.onDataMessage(
+          new MapBuilder()
+              .put("a", action)
+              .put("b", new MapBuilder().put("s", "expired_token").put("d", 123).build())
+              .build());
+    }
+    persistentConnection.onDataMessage(
+        new MapBuilder().put("a", "sd").put("b", new MapBuilder().put("msg", 123).build()).build());
+
+    verify(realtime, never()).close();
+    verify(delegate, never()).onConnectionStatus(false);
+    verify(logger, never())
+        .onLogMessage(eq(Logger.Level.INFO), anyString(), anyString(), anyLong());
   }
 
   private void connect() {

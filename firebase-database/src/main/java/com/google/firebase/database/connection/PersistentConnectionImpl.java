@@ -1004,9 +1004,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   /**
-   * Returns whether a push from the server has the fields that {@link #onDataPush} reads without
-   * further checks: an action, a body, a path for pushes about a location, and data of the expected
-   * type for merges and range merges.
+   * Returns whether a push from the server has the fields and field types that {@link #onDataPush}
+   * casts without further checks.
    */
   private static boolean isWellFormedPush(String action, Map<String, Object> body) {
     if (action == null || body == null) {
@@ -1024,7 +1023,35 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       return body.get(SERVER_DATA_UPDATE_BODY) instanceof Map;
     }
     if (action.equals(SERVER_ASYNC_DATA_RANGE_MERGE)) {
-      return body.get(SERVER_DATA_UPDATE_BODY) instanceof List;
+      Object payload = body.get(SERVER_DATA_UPDATE_BODY);
+      if (!(payload instanceof List)) {
+        return false;
+      }
+      for (Object item : (List<?>) payload) {
+        if (!(item instanceof Map)) {
+          return false;
+        }
+        Map<?, ?> range = (Map<?, ?>) item;
+        Object start = range.get(SERVER_DATA_START_PATH);
+        if (start != null && !(start instanceof String)) {
+          return false;
+        }
+        Object end = range.get(SERVER_DATA_END_PATH);
+        if (end != null && !(end instanceof String)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (action.equals(SERVER_ASYNC_AUTH_REVOKED) || action.equals(SERVER_ASYNC_APP_CHECK_REVOKED)) {
+      Object status = body.get(REQUEST_STATUS);
+      Object reason = body.get(SERVER_DATA_UPDATE_BODY);
+      return (status == null || status instanceof String)
+          && (reason == null || reason instanceof String);
+    }
+    if (action.equals(SERVER_ASYNC_SECURITY_DEBUG)) {
+      Object msg = body.get("msg");
+      return msg == null || msg instanceof String;
     }
     return true;
   }
