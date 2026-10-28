@@ -2,7 +2,7 @@
 
 - [fixed] Fixed a crash on every app launch after a custom `AppCheckProvider`
   returned a token whose `iat` or `exp` claim was not a 32-bit integer, for
-  example a token that expires after 2038-01-19. (#PR_NUMBER)
+  example a token that expires after 2038-01-19. (#8762)
 
 # 20.0.0
 
