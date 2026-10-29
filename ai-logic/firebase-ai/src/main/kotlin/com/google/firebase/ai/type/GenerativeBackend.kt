@@ -23,7 +23,7 @@ public class GenerativeBackend
 internal constructor(internal val location: String, internal val backend: GenerativeBackendEnum) {
   public companion object {
 
-    /** References the Google Developer API backend. */
+    /** References the Gemini Developer API backend. */
     @JvmStatic
     public fun googleAI(): GenerativeBackend =
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)

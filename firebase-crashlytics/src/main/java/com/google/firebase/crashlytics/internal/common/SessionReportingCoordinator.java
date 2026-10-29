@@ -634,7 +634,8 @@ public class SessionReportingCoordinator {
             || filename.toLowerCase().endsWith(".perfetto-java-heap-dump");
 
     // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
-    // MLK heap dumps from ones that were requested manually. On API 37, it is not possible.
+    // memory limiter heap dumps from ones that were requested manually. On API 37, this
+    // differentiation  is not possible.
     if (android.os.Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2) {
       return isHeapdump && filename.contains("trigger-type-");
     }
