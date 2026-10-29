@@ -151,15 +151,24 @@ dependencies {
     implementation libs.androidx.annotation
     implementation libs.playservices.base
     implementation libs.playservices.basement
-    implementation libs.grpc.android
-    implementation libs.grpc.okhttp
-    implementation libs.grpc.protobuf.lite
-    implementation libs.grpc.stub
+    implementation(libs.grpc.android) {
+        exclude group: "com.google.errorprone", module: "error_prone_annotations"
+    }
+    implementation(libs.grpc.okhttp) {
+        exclude group: "com.google.errorprone", module: "error_prone_annotations"
+    }
+    implementation(libs.grpc.protobuf.lite) {
+        exclude group: "com.google.errorprone", module: "error_prone_annotations"
+    }
+    implementation(libs.grpc.stub) {
+        exclude group: "com.google.errorprone", module: "error_prone_annotations"
+    }
     implementation libs.kotlin.stdlib
     implementation libs.kotlinx.coroutines.core
     implementation 'com.google.re2j:re2j:1.6'
 
     compileOnly libs.autovalue.annotations
+    compileOnly libs.errorprone.annotations
     compileOnly libs.javax.annotation.jsr250
 
     annotationProcessor libs.autovalue

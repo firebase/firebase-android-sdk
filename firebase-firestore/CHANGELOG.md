@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Removed the transitive runtime dependency on
+  `error_prone_annotations` from the `io.grpc` dependencies.
+
 # 27.1.0
 
 - [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
