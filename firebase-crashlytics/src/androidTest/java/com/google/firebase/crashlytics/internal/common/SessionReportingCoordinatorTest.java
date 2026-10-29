@@ -639,12 +639,10 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   @SdkSuppress(minSdkVersion = 37)
   @Test
   public void testIsMemoryLimiterKill() {
-    ApplicationExitInfo mlk =
+    ApplicationExitInfo exitInfo =
         makeApplicationExitInfo(ApplicationExitInfo.REASON_OTHER, 0, 0, "MemoryLimiter:AnonSwap");
 
-    boolean isMlk = reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(mlk));
-
-    assertTrue(isMlk);
+    assertTrue(reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(exitInfo)));
   }
 
   @SdkSuppress(minSdkVersion = 37)
