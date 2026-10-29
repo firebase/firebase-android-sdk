@@ -1517,6 +1517,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   /** Returns the value for {@code key} if it is a string, or null otherwise. */
   private static String getString(Map<String, Object> message, String key) {
+    if (message == null) {
+      return null;
+    }
     Object value = message.get(key);
     return value instanceof String ? (String) value : null;
   }
