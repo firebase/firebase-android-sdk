@@ -60,13 +60,16 @@ sourceSets {
 // Refer: https://docs.gradle.org/current/userguide/test_kit.html#sub:test-kit-classpath-injection
 task createClasspathManifest {
   def outputDir = file("$buildDir/$name")
+  // Exclude the host Gradle runtime JARs (for example gradle-api-8.14.5.jar) so TestKit builds
+  // running older Gradle versions do not fail analyzing newer host class files.
+  def pluginClasspath = pluginUnderTestMetadata.pluginClasspath
 
-  inputs.files sourceSets.main.runtimeClasspath
+  inputs.files pluginClasspath
   outputs.dir outputDir
 
   doLast {
     outputDir.mkdirs()
-    file("$outputDir/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join("\n")
+    file("$outputDir/plugin-classpath.txt").text = pluginClasspath.join("\n")
   }
 }
 
