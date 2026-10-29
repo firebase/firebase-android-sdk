@@ -127,6 +127,17 @@ public class ConnectionTest {
   }
 
   @Test
+  public void handshakeWithNonStringHostAndSessionId_isAccepted() {
+    connection.onMessage(
+        handshake(
+            new MapBuilder().put("ts", SERVER_TIMESTAMP).put("h", 123).put("s", 456).build()));
+
+    verify(delegate).onCacheHost(null);
+    verify(delegate).onReady(SERVER_TIMESTAMP, null);
+    verify(delegate, never()).onDisconnect(any());
+  }
+
+  @Test
   public void shutdownWithoutReason_killsConnection() {
     connection.onMessage(controlMessage(new MapBuilder().put("t", "s").build()));
 

@@ -214,9 +214,11 @@ class Connection implements WebsocketConnection.Delegate {
       handshake = Collections.emptyMap();
     }
     long timestamp = getServerTimestamp(handshake);
-    String host = (String) handshake.get(SERVER_HELLO_HOST);
+    Object hostObj = handshake.get(SERVER_HELLO_HOST);
+    String host = hostObj instanceof String ? (String) hostObj : null;
     delegate.onCacheHost(host);
-    String sessionId = (String) handshake.get(SERVER_HELLO_SESSION_ID);
+    Object sessionIdObj = handshake.get(SERVER_HELLO_SESSION_ID);
+    String sessionId = sessionIdObj instanceof String ? (String) sessionIdObj : null;
 
     if (state == State.REALTIME_CONNECTING) {
       conn.start();
