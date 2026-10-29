@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.core.UserData
@@ -875,7 +874,6 @@ class FindNearestOptions private constructor(options: InternalOptions) :
  * )
  * ```
  */
-@Beta
 class SearchStage
 internal constructor(
   private val query: BooleanExpression,
@@ -1033,7 +1031,6 @@ internal constructor(
   // to
   //   * perform matching of synonyms, misspellings, lemmatization, stemming.
   //   */
-  //  @Beta
   //  class QueryEnhancement private constructor(internal val proto: Value) {
   //    private constructor(protoString: String) : this(encodeValue(protoString))
   //

@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Graduate Pipeline Search from Public Preview to GA.
+  ([#8751](https://github.com/firebase/firebase-android-sdk/pull/8751))
+
 # 27.1.0
 
 - [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
