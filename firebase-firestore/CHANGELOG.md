@@ -1,7 +1,7 @@
 # Unreleased
 
-- [changed] Removed the transitive runtime dependency on
-  `error_prone_annotations` from the `io.grpc` dependencies.
+- [fixed] Removed the unnecessary transitive runtime dependency on
+  `error_prone_annotations` from the `io.grpc` dependencies. (#8772)
 
 # 27.1.0
 
