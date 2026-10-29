@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
 import kotlinx.coroutines.flow.*
 
 /**
@@ -65,6 +66,7 @@ import kotlinx.coroutines.flow.*
  * The [QuerySubscription] interface is _not_ stable for inheritance in third-party libraries, as
  * new methods might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QuerySubscription<Data, Variables> {
 
   /** The query whose results this object subscribes. */
@@ -126,6 +128,7 @@ public interface QuerySubscription<Data, Variables> {
  * as new methods might be added to this interface or contracts of the existing methods can be
  * changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QuerySubscriptionResult<Data, Variables> {
 
   /** The query that was executed, whose result is captured in this object. */

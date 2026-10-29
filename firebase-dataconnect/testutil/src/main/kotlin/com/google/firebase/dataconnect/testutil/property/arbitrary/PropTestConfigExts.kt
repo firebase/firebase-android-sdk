@@ -17,8 +17,16 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.common.ExperimentalKotest
+import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 
 fun PropTestConfig.withIterations(iterations: Int): PropTestConfig {
   @OptIn(ExperimentalKotest::class) return copy(iterations = iterations)
 }
+
+fun PropTestConfig.withEdgeConfig(edgeConfig: EdgeConfig): PropTestConfig {
+  @OptIn(ExperimentalKotest::class) return copy(edgeConfig = edgeConfig)
+}
+
+fun PropTestConfig.withEdgeConfigEdgeCasesOnly(): PropTestConfig =
+  withEdgeConfig(EdgeConfig(edgecasesGenerationProbability = 1.0))

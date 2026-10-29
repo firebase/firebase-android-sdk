@@ -1,5 +1,9 @@
 # Unreleased
 
+# 16.0.0-beta21
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
 # 16.0.0-beta20
 
 - [fixed] Fixed a potential crash in `InstallActivity`.

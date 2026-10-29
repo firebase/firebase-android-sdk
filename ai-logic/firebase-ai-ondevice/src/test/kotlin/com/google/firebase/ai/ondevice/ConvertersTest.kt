@@ -18,10 +18,13 @@ package com.google.firebase.ai.ondevice
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.ai.ondevice.interop.FinishReason as InteropFinishReason
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as InteropGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.TextPart as InteropTextPart
 import com.google.mlkit.genai.prompt.Candidate
 import com.google.mlkit.genai.prompt.CountTokensResponse
+import com.google.mlkit.genai.prompt.TextPart
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -73,31 +76,48 @@ internal class ConvertersTest {
   fun `GenerateContentRequest toMlKit should convert correctly and cover all fields`() {
     val interopRequest =
       InteropGenerateContentRequest(
-        text = InteropTextPart("prompt"),
+        parts = listOf(InteropTextPart("prompt 1"), InteropTextPart("prompt 2")),
         temperature = 0.7f,
         topK = 20,
         seed = 42,
         candidateCount = 1,
-        maxOutputTokens = 250
+        maxOutputTokens = 250,
+        systemInstruction = InteropTextPart("system instruction"),
+        enableThinking = true
       )
     val mlKitRequest = interopRequest.toMlKit()
 
-    assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
+    assertThat(mlKitRequest.contents).hasSize(1)
+    assertThat(mlKitRequest.contents[0].parts)
+      .containsExactly(TextPart("prompt 1"), TextPart("prompt 2"))
+      .inOrder()
     assertThat(mlKitRequest.temperature).isEqualTo(0.7f)
     assertThat(mlKitRequest.topK).isEqualTo(20)
     assertThat(mlKitRequest.seed).isEqualTo(42)
     assertThat(mlKitRequest.candidateCount).isEqualTo(1)
     assertThat(mlKitRequest.maxOutputTokens).isEqualTo(250)
+    assertThat(mlKitRequest.systemInstruction?.textString).isEqualTo("system instruction")
+    assertThat(mlKitRequest.enableThinking).isTrue()
   }
 
   @Test
   fun `GenerateContentRequest toMlKit should convert correctly optional fields`() {
-    val interopRequest = InteropGenerateContentRequest(text = InteropTextPart("prompt"))
+    val interopRequest = InteropGenerateContentRequest(parts = listOf(InteropTextPart("prompt")))
     val mlKitRequest = interopRequest.toMlKit()
 
     // We only assert the fields we explicitly set,
     // as ML Kit's internal defaults may vary by version or environment.
-    assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
+    assertThat(mlKitRequest.contents).hasSize(1)
+    assertThat(mlKitRequest.contents[0].parts).containsExactly(TextPart("prompt"))
+    assertThat(mlKitRequest.systemInstruction).isNull()
+    assertThat(mlKitRequest.enableThinking).isFalse()
+  }
+
+  @Test
+  fun `GenerateContentRequest toMlKit should throw when parts is empty`() {
+    val interopRequest = InteropGenerateContentRequest(parts = emptyList())
+
+    assertThrows(FirebaseAIOnDeviceInvalidRequestException::class.java) { interopRequest.toMlKit() }
   }
 
   @Test
@@ -107,14 +127,22 @@ internal class ConvertersTest {
         `when`(text).thenReturn("hello")
         `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
       }
+    val mlKitThoughtCandidate =
+      mock(Candidate::class.java).apply {
+        `when`(text).thenReturn("reasoning step")
+        `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
+      }
     val mlKitResponse =
       mock(com.google.mlkit.genai.prompt.GenerateContentResponse::class.java).apply {
         `when`(candidates).thenReturn(listOf(mlKitCandidate))
+        `when`(thoughtProcess).thenReturn(listOf(mlKitThoughtCandidate))
       }
     val interopResponse = mlKitResponse.toInterop("gemini-3.1-flash-lite")
 
     assertThat(interopResponse.candidates.size).isEqualTo(1)
     assertThat(interopResponse.candidates[0].text).isEqualTo("hello")
+    assertThat(interopResponse.thoughtProcess.size).isEqualTo(1)
+    assertThat(interopResponse.thoughtProcess[0].text).isEqualTo("reasoning step")
     assertThat(interopResponse.modelVersion).isEqualTo("gemini-3.1-flash-lite")
   }
 }

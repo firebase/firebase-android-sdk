@@ -74,7 +74,15 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
     val builder: DocumentBuilder = factory.newDocumentBuilder()
     try {
-      val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
+      val doc: Document =
+        URL(mavenMetadataUrl)
+          .openConnection()
+          .apply {
+            connectTimeout = 10000
+            readTimeout = 10000
+          }
+          .getInputStream()
+          .use { builder.parse(it) }
       doc.documentElement.normalize()
       return doc
     } catch (e: FileNotFoundException) {

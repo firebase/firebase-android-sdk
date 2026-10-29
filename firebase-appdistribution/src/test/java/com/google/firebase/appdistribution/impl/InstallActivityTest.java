@@ -41,9 +41,9 @@ import org.robolectric.shadows.ShadowPackageManager;
 @RunWith(RobolectricTestRunner.class)
 @Config(
     sdk = {
-      Build.VERSION_CODES.M,
+      Build.VERSION_CODES.N,
       Build.VERSION_CODES.P
-    }) // Test on both pre-Oreo (M) and post-Oreo (P) to cover both code paths
+    }) // Test on both pre-Oreo (N) and post-Oreo (P) to cover both code paths
 public class InstallActivityTest {
 
   private ShadowPackageManager shadowPackageManager;

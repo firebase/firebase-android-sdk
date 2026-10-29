@@ -84,10 +84,10 @@ dependencies {
   implementation(libs.ktor.client.logging)
 
   api(libs.firebase.common)
-  api("com.google.firebase:firebase-appcheck:19.2.0")
+  api("com.google.firebase:firebase-appcheck:20.0.0")
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
@@ -95,9 +95,10 @@ dependencies {
   implementation(libs.kotlinx.coroutines.reactive)
   implementation(libs.reactive.streams)
   implementation("com.google.guava:listenablefuture:1.0")
-  implementation("androidx.concurrent:concurrent-futures:1.2.0")
-  implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+  implementation("androidx.concurrent:concurrent-futures:1.3.0")
+  implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
+  // TODO(m188-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
   implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
 
   // Use different logging libraries depending on the variant
@@ -127,3 +128,5 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
+
+tasks.named("kotlindoc") { dependsOn(":ai-logic:firebase-ai-ondevice:kotlindoc") }

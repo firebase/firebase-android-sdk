@@ -439,10 +439,10 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a Blob.
+   * Returns the value of the field as a {@code Blob}.
    *
    * @param field The path to the field.
-   * @throws RuntimeException if the value is not a Blob.
+   * @throws RuntimeException if the value is not a {@code Blob}.
    * @return The value of the field
    */
   @Nullable
@@ -495,6 +495,90 @@ public class DocumentSnapshot {
   @Nullable
   public VectorValue getVectorValue(@NonNull String field) {
     return (VectorValue) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a {@code MinKey}.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code MinKey}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public MinKey getMinKey(@NonNull String field) {
+    return (MinKey) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a {@code MaxKey}.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code MaxKey}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public MaxKey getMaxKey(@NonNull String field) {
+    return (MaxKey) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a {@code RegexValue}.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code RegexValue}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public RegexValue getRegexValue(@NonNull String field) {
+    return (RegexValue) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a 32-bit integer.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code Int32Value}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public Int32Value getInt32Value(@NonNull String field) {
+    return (Int32Value) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a 128-bit decimal.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code Decimal128Value}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public Decimal128Value getDecimal128Value(@NonNull String field) {
+    return (Decimal128Value) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a {@code BsonObjectId}.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code BsonObjectId}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public BsonObjectId getBsonObjectId(@NonNull String field) {
+    return (BsonObjectId) get(field);
+  }
+
+  /**
+   * Returns the value of the field as a {@code BsonTimestamp}.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code BsonTimestamp}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public BsonTimestamp getBsonTimestamp(@NonNull String field) {
+    return (BsonTimestamp) get(field);
   }
 
   @Nullable

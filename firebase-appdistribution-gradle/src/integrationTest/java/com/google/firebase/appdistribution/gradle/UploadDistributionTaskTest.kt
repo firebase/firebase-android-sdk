@@ -567,13 +567,10 @@ class UploadDistributionTaskTest {
 
     val AGP_BLEEDING_EDGE_VERSION = VersionUtils.fetchLatestAgpVersion(BLEEDING_EDGE)
 
-    private val LOGGER =
-      java.util.logging.Logger.getLogger(UploadDistributionTaskTest::class.java.name)
-
     @org.junit.BeforeClass
     @JvmStatic
     fun logVersions() {
-      LOGGER.info(
+      println(
         "Integration tests using versions:\n" +
           "Gradle (stable: $LATEST_STABLE_GRADLE_VERSION, rc: $LATEST_GRADLE_RC_VERSION)\n" +
           "AGP (stable: $LATEST_STABLE_AGP_VERSION, rc: $LATEST_AGP_RC_VERSION, bleeding edge: $AGP_BLEEDING_EDGE_VERSION)\n" +

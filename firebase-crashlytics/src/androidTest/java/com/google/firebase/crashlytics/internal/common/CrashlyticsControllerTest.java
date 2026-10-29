@@ -32,12 +32,12 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.ProfilingTrigger;
 import androidx.test.filters.SdkSuppress;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -50,6 +50,7 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.persistence.ResumableUploadMetadataStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettings;
@@ -63,7 +64,6 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -166,6 +166,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       CrashlyticsFileMarker crashMarker =
           new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore);
 
+      ResumableUploadMetadataStore resumableUploadMetadataStore =
+          new ResumableUploadMetadataStore(testContext, testFileStore);
+
       List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
       buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
       AppData appData =
@@ -178,6 +181,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "versionCode",
               "versionName",
               mock(DevelopmentPlatformProvider.class));
+
+      FirebaseApp firebaseApp = mock(FirebaseApp.class);
+      FirebaseOptions options =
+          new FirebaseOptions.Builder()
+              .setApiKey("api-key")
+              .setApplicationId("applicationId")
+              .setProjectId("projectId")
+              .build();
+
+      when(firebaseApp.getOptions()).thenReturn(options);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
@@ -193,7 +206,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               analyticsEventLogger,
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
-              crashlyticsWorkers);
+              crashlyticsWorkers,
+              resumableUploadMetadataStore,
+              firebaseApp);
       return controller;
     }
   }
@@ -569,70 +584,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingManager
-  @Test
-  public void testWritingProfilingManagerTriggerAnomaly() {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_ANOMALY);
-
-    List<Integer> triggers =
-        testFileStore
-            .getSessionFiles(
-                "sessionId",
-                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
-            .stream()
-            .map(
-                triggerFile -> {
-                  switch (triggerFile.getName()) {
-                    case "trigger-type-anomaly":
-                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
-                    case "trigger-type-oom":
-                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
-                  }
-
-                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
-                })
-            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
-            .collect(Collectors.toList());
-
-    assertFalse(triggers.isEmpty());
-    assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_ANOMALY));
-  }
-
-  @SdkSuppress(minSdkVersion = 37) // ProfilingTrigger
-  @Test
-  public void testWritingProfilingManagerTriggerOom() {
-    LogFileManager logFileManager = new LogFileManager(testFileStore);
-    CrashlyticsController controller = builder().setLogFileManager(logFileManager).build();
-
-    controller.writeTriggerTypeFile("sessionId", ProfilingTrigger.TRIGGER_TYPE_OOM);
-
-    List<Integer> triggers =
-        testFileStore
-            .getSessionFiles(
-                "sessionId",
-                (dir, name) -> List.of("trigger-type-anomaly", "trigger-type-oom").contains(name))
-            .stream()
-            .map(
-                triggerFile -> {
-                  switch (triggerFile.getName()) {
-                    case "trigger-type-anomaly":
-                      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
-                    case "trigger-type-oom":
-                      return ProfilingTrigger.TRIGGER_TYPE_OOM;
-                  }
-
-                  return ProfilingTrigger.TRIGGER_TYPE_NONE;
-                })
-            .filter(trigger -> trigger != ProfilingTrigger.TRIGGER_TYPE_NONE)
-            .collect(Collectors.toList());
-
-    assertFalse(triggers.isEmpty());
-    assertEquals(triggers, List.of(ProfilingTrigger.TRIGGER_TYPE_OOM));
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo

@@ -24,6 +24,7 @@ import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -113,5 +114,81 @@ internal class GenerativeModelBuilderTests {
 
     val apiClient = controller.apiClient
     apiClient shouldNotContain " hybrid"
+  }
+
+  @Test
+  fun `getModelProvider falls back to cloud when non-text response modalities are requested in PREFER_ON_DEVICE mode`() {
+    val builder =
+      GenerativeModel.Builder(
+          modelName = TEST_MODEL_NAME,
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply {
+          onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
+          generationConfig =
+            com.google.firebase.ai.type.generationConfig {
+              responseModalities = listOf(com.google.firebase.ai.type.ResponseModality.IMAGE)
+            }
+        }
+
+    val provider = builder.getModelProvider()
+
+    provider.shouldBeInstanceOf<CloudGenerativeModelProvider>()
+  }
+
+  @Test
+  fun `getModelProvider uses fallback provider when only text response modality is requested in PREFER_ON_DEVICE mode`() {
+    val builder =
+      GenerativeModel.Builder(
+          modelName = TEST_MODEL_NAME,
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply {
+          onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
+          generationConfig =
+            com.google.firebase.ai.type.generationConfig {
+              responseModalities = listOf(com.google.firebase.ai.type.ResponseModality.TEXT)
+            }
+        }
+
+    val provider = builder.getModelProvider()
+
+    provider.shouldBeInstanceOf<FallbackGenerativeModelProvider>()
+  }
+
+  @Test
+  fun `buildOnDeviceModelProvider passes systemInstruction to OnDeviceGenerativeModelProvider`() {
+    val expectedInstruction =
+      com.google.firebase.ai.type.content { text("You are a helpful assistant.") }
+    val mockFactory =
+      mockk<com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory>(
+        relaxed = true
+      )
+    val builder =
+      GenerativeModel.Builder(
+          modelName = TEST_MODEL_NAME,
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply {
+          onDeviceConfig = OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE)
+          onDeviceFactoryProvider = mockFactory
+          systemInstruction = expectedInstruction
+        }
+
+    val provider = builder.getModelProvider()
+
+    provider.shouldBeInstanceOf<
+      com.google.firebase.ai.generativemodel.OnDeviceGenerativeModelProvider
+    >()
+    provider.systemInstruction shouldBe expectedInstruction
   }
 }

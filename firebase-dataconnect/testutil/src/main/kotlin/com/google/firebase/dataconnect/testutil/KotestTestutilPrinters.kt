@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.protobuf.Duration as DurationProto
 import io.kotest.assertions.print.Print
 import io.kotest.assertions.print.Printed
@@ -33,6 +34,7 @@ fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(Triple::class, TriplePrint)
   Printers.add(Quadruple::class, QuadruplePrint)
   Printers.add(Quintuple::class, QuintuplePrint)
+  Printers.add(OptionalVariable::class, OptionalVariablePrint)
 
   try {
     Printers.add(SignificanceResult::class, SignificanceResultPrint)
@@ -99,6 +101,19 @@ private object QuintuplePrint : Print<Quintuple<*, *, *, *, *>> {
     get() =
       "Quintuple(${first.print().value}, ${second.print().value}, " +
         "${third.print().value}, ${fourth.print().value}, ${fifth.print().value})"
+}
+
+private object OptionalVariablePrint : Print<OptionalVariable<*>> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: OptionalVariable<*>): Printed = a.printString.printed()
+
+  private val OptionalVariable<*>.printString: String
+    get() =
+      when (this) {
+        OptionalVariable.Undefined -> "OptionalVariable.Undefined"
+        is OptionalVariable.Value<*> -> "OptionalVariable.Value(${value.print().value})"
+      }
 }
 
 private object SignificanceResultPrint : Print<SignificanceResult> {

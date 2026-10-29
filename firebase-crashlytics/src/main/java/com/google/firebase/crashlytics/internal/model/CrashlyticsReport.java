@@ -1376,15 +1376,22 @@ public abstract class CrashlyticsReport {
         return new AutoValue_CrashlyticsReport_ProfilingManagerInfo_ProfilingTrigger.Builder();
       }
 
-      @NonNull
       public abstract int getTrigger();
+
+      public abstract boolean getIsHeapDumpCollectionEnabled();
+
+      public abstract boolean getWasHeapDumpGenerated();
 
       @AutoValue.Builder
       public abstract static class Builder {
-        @NonNull
-        public abstract ProfilingTrigger.Builder setTrigger(@NonNull int value);
+        public abstract ProfilingTrigger.Builder setTrigger(int value);
 
         @NonNull
+        public abstract ProfilingTrigger.Builder setIsHeapDumpCollectionEnabled(boolean value);
+
+        @NonNull
+        public abstract ProfilingTrigger.Builder setWasHeapDumpGenerated(boolean value);
+
         public abstract ProfilingTrigger build();
       }
     }

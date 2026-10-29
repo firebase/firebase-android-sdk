@@ -16,9 +16,12 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
+
 // Googlers see go/dataconnect:sdk:partial-errors for design details.
 
 /** The data and errors provided by the backend in the response message. */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface DataConnectOperationFailureResponse<Data> {
 
   /**
@@ -73,6 +76,7 @@ public interface DataConnectOperationFailureResponse<Data> {
    * See [https://spec.graphql.org/draft/#sec-Errors](https://spec.graphql.org/draft/#sec-Errors)
    * for details.
    */
+  @SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
   public interface ErrorInfo {
     /** The error's message. */
     public val message: String

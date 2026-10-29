@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,7 +23,7 @@ import kotlinx.serialization.Serializable
  * to.
  */
 public class TemplateTool
-@OptIn(PublicPreviewAPI::class, InternalSerializationApi::class)
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   internal val functionDeclarations: List<TemplateFunctionDeclaration>?,
   internal val autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
@@ -72,7 +71,7 @@ internal constructor(
      * When using this feature, you are required to comply with the "Grounding with Google Maps"
      * usage requirements for your chosen API provider:
      * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
-     * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * Agent Platform Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
      * section within the Service Specific Terms).
      *
      * @return A [TemplateTool] configured for Google Maps.

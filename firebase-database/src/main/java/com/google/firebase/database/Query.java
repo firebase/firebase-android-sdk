@@ -19,7 +19,6 @@ import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.core.ChildEventRegistration;
 import com.google.firebase.database.core.EventRegistration;
@@ -43,6 +42,7 @@ import com.google.firebase.database.snapshot.PriorityIndex;
 import com.google.firebase.database.snapshot.PriorityUtilities;
 import com.google.firebase.database.snapshot.StringNode;
 import com.google.firebase.database.snapshot.ValueIndex;
+import java.util.Objects;
 
 /**
  * The Query class (and its subclass, {@link DatabaseReference}) are used for reading data.
@@ -93,7 +93,7 @@ public class Query {
       if (params.hasStart()) {
         Node startNode = params.getIndexStartValue();
         ChildKey startName = params.getIndexStartName();
-        if (!Objects.equal(startName, ChildKey.getMinName())
+        if (!Objects.equals(startName, ChildKey.getMinName())
             || !(startNode instanceof StringNode)) {
           throw new IllegalArgumentException(message);
         }

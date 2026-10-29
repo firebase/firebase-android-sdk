@@ -44,7 +44,6 @@ import io.ktor.websocket.readBytes
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -92,7 +91,10 @@ internal constructor(
       apiKey,
       modelName,
       requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
+      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}".let { base ->
+        if (requestOptions.customApiClientHeader.isNullOrEmpty()) base
+        else "$base ${requestOptions.customApiClientHeader}"
+      },
       firebaseApp,
       AppCheckHeaderProvider(
         TAG,
@@ -130,34 +132,34 @@ internal constructor(
             )
             .toInternal()
         val data: String = JSON.encodeToString(clientMessage)
-        val webSession = controller.getWebSocketSession(location)
-        webSession.send(Frame.Text(data))
-        val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-        val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
-        if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-          webSession
-        } else {
-          webSession.close()
-          throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+        var webSession: DefaultClientWebSocketSession? = null
+        try {
+          webSession = controller.getWebSocketSession(location)
+          webSession.send(Frame.Text(data))
+          val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+          val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+          if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+            webSession
+          } else {
+            webSession.close()
+            throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+          }
+        } catch (e: ClosedReceiveChannelException) {
+          val reason = webSession?.closeReason?.await()
+          val message =
+            "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
+          throw ServiceConnectionHandshakeFailedException(message, e)
         }
       }
-    var webSession: DefaultClientWebSocketSession? = null
-    try {
-      webSession = connectFactory(sessionResumption)
-      return LiveSession(
-        session = webSession,
-        blockingDispatcher = blockingDispatcher,
-        firebaseApp = firebaseApp,
-        connectionFactory = connectFactory,
-        hasFunction = ::hasFunction,
-        executeFunction = ::executeFunction
-      )
-    } catch (e: ClosedReceiveChannelException) {
-      val reason = webSession?.closeReason?.await()
-      val message =
-        "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
-      throw ServiceConnectionHandshakeFailedException(message, e)
-    }
+    val webSession = connectFactory(sessionResumption)
+    return LiveSession(
+      session = webSession,
+      blockingDispatcher = blockingDispatcher,
+      firebaseApp = firebaseApp,
+      connectionFactory = connectFactory,
+      hasFunction = ::hasFunction,
+      executeFunction = ::executeFunction
+    )
   }
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
@@ -166,7 +168,6 @@ internal constructor(
       .firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
     if (tools.isEmpty()) {
       throw RuntimeException("No registered tools")
@@ -182,7 +183,6 @@ internal constructor(
     )
   }
 
-  @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
     functionCall: FunctionCallPart,
     functionDeclaration: AutoFunctionDeclaration<I, O>,

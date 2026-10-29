@@ -205,7 +205,7 @@ class GenerateContentTests {
           )
         } catch (e: Exception) {
           assertThat(e).isInstanceOf(ServerException::class.java)
-          assertThat(e.message).contains("the number of enabled_voices must equal 2")
+          assertThat(e.message).contains("the number of speaker_voice_configs must equal 2")
         }
       }
     }

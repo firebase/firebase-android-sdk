@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.AuthUserChangedException
 import com.google.firebase.dataconnect.CachedDataNotFoundException
-import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -444,7 +444,10 @@ internal class DataConnectGrpcRPCs(
 
       val uidFromToken = token.ref?.authUid
       if (uidFromToken != authUid) {
-        throw FirebaseUserChangedException("ytd7yf2geh", authUid, uidFromToken)
+        throw AuthUserChangedException(
+          "Firebase user changed from uid=${authUid?.string} " +
+            "to uid=${uidFromToken?.string} [b5aqrgbvyd]"
+        )
       }
 
       return token
@@ -511,7 +514,7 @@ internal class DataConnectGrpcRPCs(
       )
 
     val shouldRetry: suspend (Throwable) -> RetryStrategy = { exception ->
-      if (exception is FirebaseUserChangedException) {
+      if (exception is AuthUserChangedException) {
         throw exception
       } else if (isUnauthenticatedFailure(exception)) {
         if (tokenManager.forceRefresh()) {
@@ -928,16 +931,6 @@ internal fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntity
 
   return ::getEntityIdForPathFunction
 }
-
-internal class FirebaseUserChangedException(
-  errorCode: String,
-  currentAuthUid: AuthUid?,
-  newAuthUid: AuthUid?,
-) :
-  DataConnectException(
-    "Firebase user changed from uid=${currentAuthUid?.string} " +
-      "to uid=${newAuthUid?.string} [$errorCode]"
-  )
 
 private fun isUnauthenticatedFailure(e: Throwable): Boolean =
   when (e) {

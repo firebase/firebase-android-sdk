@@ -21,10 +21,10 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
-import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -112,7 +112,7 @@ public final class Bundles {
               return false;
             }
           } else {
-            if (!Objects.equal(expectedValue, actualValue)) {
+            if (!Objects.equals(expectedValue, actualValue)) {
               return false;
             }
           }

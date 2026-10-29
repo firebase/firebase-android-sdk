@@ -1,5 +1,21 @@
 # Unreleased
 
+# 26.0.1
+
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 26.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
+# 25.1.3
+
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 25.1.2
+
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
 # 25.1.1
 
 - [changed] Fixed re-registration invocation with FID change (#8338)

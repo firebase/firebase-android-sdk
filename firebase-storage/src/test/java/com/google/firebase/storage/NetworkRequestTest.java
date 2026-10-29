@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage;
 
-import android.os.Build;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
@@ -30,7 +29,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.M)
+@Config(sdk = Config.OLDEST_SDK)
 public class NetworkRequestTest {
 
   private FirebaseApp app;

@@ -23,6 +23,8 @@
   <string name="crash_button_text">Crash!</string>
   <string name="non_fatal_button_text">Non Fatal</string>
   <string name="button_anr_text">ANR</string>
+  <string name="button_oom_text">OOM</string>
+  <string name="button_mlk_text">Native Slow Leak</string>
   <string name="create_trace">Create New Trace: test_trace</string>
   <string name="create_trace_2">Create New Trace: test_trace_2</string>
   <string name="create_network_trace">Create network trace</string>

@@ -19,8 +19,7 @@ package com.google.firebase.ai.ondevice.interop
 /**
  * A request to generate content from the model.
  *
- * @property text The text prompt to generate content from.
- * @property image The image prompt to generate content from.
+ * @property parts The list of parts that make up the prompt to generate content from.
  * @property temperature A parameter controlling the degree of randomness in token selection.
  * @property topK The `topK` parameter changes how the model selects tokens for output. A `topK` of
  * 1 means the selected token is the most probable among all the tokens in the model's vocabulary,
@@ -30,13 +29,16 @@ package com.google.firebase.ai.ondevice.interop
  * @property candidateCount The number of candidates to generate.
  * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
  * response.
+ * @property systemInstruction Instructions that direct the model to behave a certain way.
+ * @property enableThinking Whether to enable thinking mode for the model.
  */
 public class GenerateContentRequest(
-  public val text: TextPart,
-  public val image: ImagePart? = null,
+  public val parts: List<Part>,
   public val temperature: Float? = null,
   public val topK: Int? = null,
   public val seed: Int? = null,
   public val candidateCount: Int? = null,
   public val maxOutputTokens: Int? = null,
+  public val systemInstruction: TextPart? = null,
+  public val enableThinking: Boolean? = null,
 ) {}

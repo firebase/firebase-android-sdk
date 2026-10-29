@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.gradle.testkit.runner.BuildResult;
@@ -63,10 +62,8 @@ class BeePlusGradleProject extends ExternalResource {
   static final String LATEST_STABLE_GRADLE_VERSION =
       VersionUtils.INSTANCE.fetchLatestGradleVersion(STABLE);
 
-  private static final Logger LOGGER = Logger.getLogger(BeePlusGradleProject.class.getName());
-
   static {
-    LOGGER.info(
+    System.out.println(
         "Production compat tests using versions:\n"
             + "Latest stable Gradle Version: "
             + LATEST_STABLE_GRADLE_VERSION

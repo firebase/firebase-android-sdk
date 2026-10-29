@@ -96,24 +96,24 @@ dependencies {
 
   api(libs.firebase.common)
   api(libs.firebase.components)
-  api("com.google.firebase:firebase-datatransport:18.2.0") {
+  api("com.google.firebase:firebase-datatransport:21.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  api("com.google.firebase:firebase-encoders:17.0.0")
-  api("com.google.firebase:firebase-encoders-json:18.0.0")
-  api("com.google.firebase:firebase-encoders-proto:16.0.0")
+  api("com.google.firebase:firebase-encoders:18.0.0")
+  api("com.google.firebase:firebase-encoders-json:19.0.0")
+  api("com.google.firebase:firebase-encoders-proto:17.0.0")
   api("com.google.firebase:firebase-iid-interop:17.1.0")
-  api("com.google.firebase:firebase-installations:19.1.1") {
+  api("com.google.firebase:firebase-installations:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
-  api("com.google.firebase:firebase-installations-interop:17.1.0")
+  api("com.google.firebase:firebase-installations-interop:18.0.0")
   api("com.google.firebase:firebase-measurement-connector:19.0.0")
 
   implementation(libs.androidx.annotation)
-  implementation("com.google.android.datatransport:transport-api:3.1.0")
-  implementation("com.google.android.datatransport:transport-backend-cct:3.1.8")
-  implementation("com.google.android.datatransport:transport-runtime:3.1.8")
+  implementation("com.google.android.datatransport:transport-api:5.0.0")
+  implementation("com.google.android.datatransport:transport-backend-cct:5.0.0")
+  implementation("com.google.android.datatransport:transport-runtime:5.0.0")
   implementation(libs.bundles.playservices)
   implementation(libs.play.services.cloud.messaging)
   implementation(libs.play.services.stats)

@@ -1,5 +1,13 @@
 # Unreleased
 
+# 23.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
+# 22.0.2
+
+- [changed] Internal improvements for legacy infrastructure (#8551)
+
 # 22.0.1
 
 - [changed] Bumped internal dependencies.
@@ -186,8 +194,7 @@ Kotlin extensions library has no additional updates.
 
 # 19.0.1
 
-- [fixed]
-  [`StorageReference.listAll()`](</docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll()>)
+- [fixed] [`StorageReference.listAll()`](</docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll()>)
   now propagates the error messages if the List operation was denied by a Security Rule.
 
 # 19.0.0

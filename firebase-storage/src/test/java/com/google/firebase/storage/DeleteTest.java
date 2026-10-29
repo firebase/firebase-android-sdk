@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage;
 
-import android.os.Build;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.internal.MockClockHelper;
@@ -32,7 +31,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.M)
+@Config(sdk = Config.OLDEST_SDK)
 public class DeleteTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);

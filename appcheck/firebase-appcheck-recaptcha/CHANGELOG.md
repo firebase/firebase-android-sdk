@@ -1,5 +1,13 @@
 # Unreleased
 
+# 20.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+
+# 19.2.1
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 19.2.0
 
 - [changed] Initialization now requires the site key to be passed as a parameter. (#8457)

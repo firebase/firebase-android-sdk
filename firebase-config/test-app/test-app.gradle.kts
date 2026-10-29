@@ -62,22 +62,22 @@ dependencies {
   // remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation(libs.firebase.common)
   implementation(libs.firebase.components)
 
-  implementation("com.google.firebase:firebase-installations-interop:17.1.0")
+  implementation("com.google.firebase:firebase-installations-interop:17.2.0")
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }
 
-  implementation("com.google.android.gms:play-services-basement:18.1.0")
-  implementation("com.google.android.gms:play-services-tasks:18.0.1")
+  implementation(libs.playservices.basement)
+  implementation(libs.playservices.tasks)
   // End RC `project` transitive dependencies
 
-  implementation("androidx.appcompat:appcompat:1.6.1")
-  implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.core:core-ktx:1.9.0")
-  implementation("com.google.android.material:material:1.8.0")
+  implementation(libs.androidx.appcompat)
+  implementation(libs.androidx.constraintlayout)
+  implementation(libs.androidx.core.ktx)
+  implementation(libs.material)
 
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

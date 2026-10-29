@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.settings;
 
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
+import com.google.firebase.crashlytics.internal.settings.Settings.Profiling;
 import org.json.JSONObject;
 
 /**
@@ -52,6 +53,9 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
     long expiresAtMillis =
         currentTimeProvider.getCurrentTimeMillis() + (cacheDurationSeconds * 1000);
 
+    Profiling profiling =
+        new Profiling(SettingsJsonConstants.PROFILING_HEAP_DUMP_COLLECTION_ENABLED_DEFAULT);
+
     return new Settings(
         expiresAtMillis,
         sessionData,
@@ -60,6 +64,7 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
         cacheDurationSeconds,
         onDemandUploadRatePerMinute,
         onDemandBackoffBase,
-        onDemandBackoffStepDurationSeconds);
+        onDemandBackoffStepDurationSeconds,
+        profiling);
   }
 }

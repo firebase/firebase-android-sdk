@@ -111,11 +111,9 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
 
   private static StrictMode.ThreadPolicy bgPolicy() {
     StrictMode.ThreadPolicy.Builder builder = new StrictMode.ThreadPolicy.Builder().detectNetwork();
-    if (Build.VERSION.SDK_INT >= 23) {
-      builder.detectResourceMismatches();
-      if (Build.VERSION.SDK_INT >= 26) {
-        builder.detectUnbufferedIo();
-      }
+    builder.detectResourceMismatches();
+    if (Build.VERSION.SDK_INT >= 26) {
+      builder.detectUnbufferedIo();
     }
     if (BuildConfig.DEBUG) {
       builder.penaltyDeath();

@@ -1,9 +1,66 @@
 # Unreleased
 
+- [feature] Added support for multiple `TextPart` and `ImagePart` instances in
+  on-device and hybrid inference modes. (#8754)
+
+# 18.1.0
+
+- [feature] Added `SpeechMetadata` and the `TextPart.speechMetadata` property to
+  specify the speaker and vocal style (such as `"cheerful"`) for a piece of text
+  when generating speech. (#8690)
+- [feature] Added `enableThinking` to `OnDeviceConfig` to support
+  [thinking mode](https://firebase.google.com/docs/ai-logic/thinking) in
+  on-device and hybrid inference modes, with automatic cloud fallback when the
+  on-device model does not support thinking. (#8678)
+- [feature] Added support for `systemInstruction` in on-device and hybrid inference modes. (#8663)
+
+# 18.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [removed] **Breaking Change**: Removed deprecated
+  `GenerativeBackend.vertexAI` in favor of `GenerativeBackend.agentPlatform`. (#8437)
+- [fixed] Fixed hybrid inference (`PREFER_ON_DEVICE`) to fall back to
+  the cloud model when non-text response modalities, unsupported
+  prompt part types, or multiple image parts are requested. (#8617)
+- [changed] Updated on-device inference to throw
+  `FirebaseAIOnDeviceInvalidRequestException` when unsupported prompt
+  part types or multiple image parts are provided, instead of ignoring
+  them. (#8617)
+- [deprecated] Deprecated the `temperature`, `topK`, `topP`, `candidateCount`,
+  `presencePenalty`, and `frequencyPenalty` parameters and setter methods in
+  `GenerationConfig.Builder` and the `generationConfig` DSL, as they are
+  unsupported in Gemini 3.x and later models. (#8621)
+- [removed] **Breaking change:** Removed the deprecated `GenerativeBackend.vertexAI` backend in
+  favor of [`GenerativeBackend.agentPlatform`](https://firebase.google.com/docs/ai-logic/locations?api=vertex).
+  Note that `GenerativeBackend.agentPlatform` defaults to the `global` location rather than
+  `us-central1`. (#8563)
+- [removed] **Breaking change:** Removed the deprecated `MediaData` class along with
+  `LiveSession.sendMediaStream` and `LiveSessionFutures.sendMediaStream`. Use `sendAudioRealtime`,
+  `sendVideoRealtime`, or `sendTextRealtime` with `InlineData` instead for streaming realtime input
+  during live sessions. (#8563)
+- [removed] **Breaking change:** Removed deprecated classes and properties, including `Voices`
+  (use `Voice` instead), `GroundingAttribution` (use `GroundingChunk` instead),
+  `GenerativeModel.warmUp` (use `onDeviceExtension?.warmUp()` instead), and
+  `CountTokensResponse.totalBillableCharacters`. (#8563)
+- [changed] **Breaking change:** Restricted public constructors on SDK-emitted response and status
+  models to `internal`, and converted stateless status classes `DownloadStatus.DownloadCompleted`
+  and `LiveServerSetupComplete` into singletons (`object`). These classes are provided by the SDK
+  and are not intended for direct instantiation by client applications. (#8563)
+
+# 17.17.0
+
+- [changed] Added `turnComplete` support in the `LiveSessionFutures` Java API. (#8550)
+
+# 17.16.0
+
 - [feature] Added support for on-device structured output generation using `generateObject` (#8395)
-- [changed] **Breaking Change**: Removed deprecated Imagen methods and types due to Imagen models being shut down in August 2026. As a replacement, you can [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
-- [changed] Adjusts `LiveSession.isClosed` to better reflect underlying connection closure state and not consume frames (#8511)
-- [changed] Replaced the `"function"` conversational role with `"user"` for function response content. (#8508)
+- [changed] **Breaking Change**: Removed deprecated Imagen methods and types due
+  to Imagen models being shut down in August 2026. As a replacement, you can
+  [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
+- [changed] Adjusted `LiveSession.isClosed` to better reflect underlying
+  connection closure state and not consume frames (#8511)
+- [changed] Replaced the `"function"` conversational role with `"user"` for
+  function response content. (#8508)
 
 # 17.15.0
 
@@ -212,4 +269,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

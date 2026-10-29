@@ -59,7 +59,7 @@ import org.robolectric.shadows.ShadowLog;
 /** Tests for {@link DebugAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class DebugAppCheckProviderTest {
 
   private static final String DEBUG_SECRET = "debugSecret";

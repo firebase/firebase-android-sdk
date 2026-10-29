@@ -1,5 +1,33 @@
 # Unreleased
 
+# 27.1.0
+
+- [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
+  `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
+  and support for removing reserved fields such as `__name__` with `removeFields()`.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+
+# 27.0.1
+
+- [fixed] Fixed an issue where test-only dependencies (`truth`, `junit`, `mockito-core`, and
+  `jackson-databind`) were inadvertently included as runtime dependencies in the published Maven POM
+  (#8696).
+
+# 27.0.0
+
+- [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
+- [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
+  Protocol Buffers to `4.36.1`.
+  ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
+- [feature] Added support for the following new types: `MinKey`, `MaxKey`,
+  `RegexValue`, `Int32Value`, `BsonObjectId`, `BsonTimestamp`, and subtype for
+  `Blob`. ([#8147](https://github.com/firebase/firebase-android-sdk/pull/8147))
+
+# 26.6.0
+
+- [feature] Implemented support for retrieving documents up to 16MB over gRPC (#8363)
+- [feature] Increases the gRPC max inbound message size to 17MB, to support 16MB documents. (#8363)
+
 # 26.5.0
 
 - [changed] Increased the default gRPC flow control window size from 64KB to 256KB to speed up large document reads, and added support for configuring this window size via `FirebaseFirestoreSettings.Builder.setGrpcFlowControlWindow()`.

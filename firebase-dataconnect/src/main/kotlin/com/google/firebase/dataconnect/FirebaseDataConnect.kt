@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect
 import android.annotation.SuppressLint
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
 import com.google.firebase.app
 import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
 import com.google.firebase.dataconnect.core.LoggerGlobals
@@ -93,6 +94,7 @@ import kotlinx.serialization.modules.SerializersModule
  * The [FirebaseDataConnect] interface is _not_ stable for inheritance in third-party libraries, as
  * new methods might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface FirebaseDataConnect : AutoCloseable {
 
   /**
@@ -143,6 +145,7 @@ public interface FirebaseDataConnect : AutoCloseable {
   public fun useEmulator(host: String = "10.0.2.2", port: Int = 9399)
 
   /** Options that can be specified when creating a [QueryRef] via the [query] method. */
+  @SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
   public interface QueryRefOptionsBuilder<Data, Variables> {
 
     /**
@@ -183,6 +186,7 @@ public interface FirebaseDataConnect : AutoCloseable {
   ): QueryRef<Data, Variables>
 
   /** Options that can be specified when creating a [MutationRef] via the [mutation] method. */
+  @SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
   public interface MutationRefOptionsBuilder<Data, Variables> {
 
     /**

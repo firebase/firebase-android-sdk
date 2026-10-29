@@ -57,7 +57,7 @@ dependencies {
     api libs.firebase.annotations
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api("com.google.firebase:firebase-installations-interop:17.3.0")
+    api("com.google.firebase:firebase-installations-interop:18.0.0")
 
     implementation(libs.androidx.datastore.preferences)
     implementation libs.kotlin.stdlib

@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -33,15 +34,15 @@ import kotlinx.serialization.modules.SerializersModule
  * The [QueryRef] interface is _not_ stable for inheritance in third-party libraries, as new methods
  * might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
 
   /**
    * Executes this operation with the fetch policy [FetchPolicy.PREFER_CACHE] and returns the
    * result.
    */
-  // TODO(BreakingChange) Implement the method here to call execute(PREFER_CACHE) instead of
-  //  having QueryRefImpl do it.
-  public override suspend fun execute(): QueryResult<Data, Variables>
+  public override suspend fun execute(): QueryResult<Data, Variables> =
+    execute(FetchPolicy.PREFER_CACHE)
 
   /** Executes this operation with the given fetch policy, and returns the result. */
   public suspend fun execute(fetchPolicy: FetchPolicy): QueryResult<Data, Variables>
@@ -128,6 +129,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
  * The [QueryResult] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.
  */
+@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: QueryRef<Data, Variables>
 

@@ -28,6 +28,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.internal.Logger
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.trace
 import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
@@ -36,6 +37,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Date
 import java.util.Locale
+import kotlin.concurrent.thread
+import kotlin.jvm.java
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -62,6 +65,45 @@ class FirstFragment : Fragment() {
     return binding.root
   }
 
+  fun doStuff(pinnedMemory: MutableList<ByteArray>, stringMemory: MutableList<String>) {
+    doStuff(pinnedMemory, stringMemory, 0)
+  }
+
+  fun doStuff(pinnedMemory: MutableList<ByteArray>, stringMemory: MutableList<String>, i: Int) {
+    thread(name = "lmk-filler-thread_$i") {
+      val runtime = Runtime.getRuntime()
+      val maxHeap = runtime.maxMemory()
+
+      Logger.getLogger().i("Max Java Heap: ${maxHeap / (1024 * 1024)} MB")
+
+      val usedHeap = runtime.totalMemory() - runtime.freeMemory()
+
+      Logger.getLogger().i("Used Java Heap: ${usedHeap / (1024 * 1024)} MB")
+
+      val usage = 1
+
+      if (usedHeap >= maxHeap * usage) {
+        return@thread
+      }
+
+      val chunk = ByteArray(8 * 1024 * 1024)
+
+      for (i in chunk.indices step 16 * 1024) {
+        chunk[i] = (i and 0xFF).toByte()
+      }
+
+      val builder = StringBuilder()
+      for (b in chunk) {
+        builder.append(String.format("%02x", b))
+      }
+
+      pinnedMemory.add(chunk)
+      stringMemory.add(String.format("Byte is: %s", builder.toString()))
+
+      doStuff(pinnedMemory, stringMemory, i + 1)
+    }
+  }
+
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
@@ -72,6 +114,21 @@ class FirstFragment : Fragment() {
     binding.buttonAnr.setOnClickListener {
       while (true) {
         Thread.sleep(1_000)
+      }
+    }
+    val pinnedMemory = mutableListOf<ByteArray>()
+    val stringMemory = mutableListOf<String>()
+    binding.buttonOom.setOnClickListener {
+      Logger.getLogger().i("OOM clicked")
+
+      doStuff(pinnedMemory, stringMemory)
+    }
+    binding.buttonMlk.setOnClickListener {
+      thread {
+        Logger.getLogger().i("Waiting 5 seconds....")
+        Thread.sleep(5000)
+
+        createNativeLeak()
       }
     }
     binding.createTrace.setOnClickListener {
@@ -146,7 +203,13 @@ class FirstFragment : Fragment() {
     _binding = null
   }
 
+  private external fun createNativeLeak()
+
   companion object {
+    init {
+      System.loadLibrary("native-lib")
+    }
+
     fun getDateText(): String =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())

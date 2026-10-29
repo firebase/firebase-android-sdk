@@ -2,6 +2,15 @@
 
 This guide provides essential information for working within the `firebase-android-sdk` repository.
 
+## Working Agreement
+
+As an agent executing prompts in the repository, it is necessary to execute the following steps first.
+If a step fails or can't otherwise be completed, ask the user how to proceed.
+Do not ignore these instructions or failures without prompting the user.
+
+* If it exists, run `.firebase-sdk-skills/setup-firebase-sdk-skills.sh`, if the file does not exist, you can ignore this step
+* Before continuing further, ensure that the set of skills you have access to is up to date based on updates caused by the script
+
 ## Project Overview
 
 This repository contains the source code for the Firebase Android SDKs. It is a large, multi-module
@@ -58,9 +67,9 @@ tool for this purpose.
    - Place this file in the root of the repository.
 5. **Install NDK for specific projects**:
    - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
-     You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
-     would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
-     exact version required.
+     You can install it using `sdkmanager`. For example, to install NDK version 27.2.12479018, you
+     would run `sdkmanager "ndk;27.2.12479018"`. Always refer to the `ndkVersion` declared in the
+     project's build file for the exact version required.
 
 ## Building and Running
 
@@ -94,7 +103,7 @@ Unit tests run on the local JVM. They can be executed with the following command
 
 #### Running Specific Unit Tests
 
-To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android   
+To run a specific test class or method, use the `--tests` filter with the appropriate test task (usually `testDebugUnitTest` for Android
 library modules, or `test` for Java library modules):
 
 ```bash
@@ -137,6 +146,22 @@ By default, the `release` variant is published. To publish the `debug` variant i
 Using the `debug` variant has the advantage of including additional logging information. For example,
 the `ai-logic/firebase-ai` SDK logs the request/response information when the debug variant is used.
 
+## Gradle Plugins (`plugins/` Directory)
+
+All custom build, release, CI, and documentation logic lives in the `plugins/` composite build. Its
+internals (registered plugins, the `firebaseLibrary` DSL, the publishing pipeline, and Dackka
+reference documentation generation) are documented in `plugins/AGENTS.md`. Read that file before
+modifying anything under `plugins/`, or when debugging failures in publishing, release, `kotlindoc`,
+or Metalava tasks.
+
+The following pitfalls apply when editing the build file of any module:
+
+- Pure Java/Kotlin modules using `firebase-java-library` must set
+  `firebaseLibrary { publishJavadoc = false }`. `DackkaPlugin` assumes an Android library, so
+  configuring `generateDackkaDocumentation` or running `kotlindoc` fails otherwise.
+- `./gradlew :<project>:check` runs the Metalava `docStubs` task, so invalid Javadoc/KDoc syntax or
+  missing classpath references in doc comments fail `check`.
+
 ## Development Conventions
 
 ### Code Formatting
@@ -155,13 +180,19 @@ To format a specific project, run:
 
 ### API Surface
 
-The public API of the Firebase SDKs is managed using a set of annotations:
+The public API surface of each SDK is determined by standard Java and Kotlin visibility rules and
+tracked with Metalava in the project's `api.txt` file. There is no marker annotation for public
+APIs; instead, the following annotations and tags control what is exposed:
 
-- `@PublicApi`: Marks APIs that are intended for public consumption by developers.
+- `@hide` (doc comment tag): Excludes a `public` or `protected` member from the public API surface.
 - `@KeepForSdk`: Marks APIs that are intended for use by other Firebase SDKs. These APIs will
-  trigger a linter error if used by developers outside of a Firebase package.
+  trigger a linter error if used by developers outside of a Firebase package. They must also carry
+  an `@hide` tag, otherwise they are reported as public API.
 - `@Keep`: Marks APIs that need to be preserved at runtime, usually due to reflection. This
   annotation should be used sparingly as it prevents Proguard from removing or renaming the code.
+
+After changing a public API, regenerate `api.txt` with
+`./gradlew :<firebase-project>:generateApiTxtFile`.
 
 ### Common Patterns
 
@@ -178,8 +209,8 @@ This repository uses a combination of dependency injection frameworks:
 
 ### Proguarding
 
-The project supports Proguarding. Proguard rules are defined in `proguard.txt` files within each
-project.
+The project supports Proguarding. Projects that need consumer Proguard rules declare them in a file
+(conventionally `proguard.txt`) registered via `consumerProguardFiles` in the project's build file.
 
 ## Code Review
 
@@ -189,6 +220,84 @@ When reviewing code or preparing changes for review, ensure the following requir
 - **API File Updates**: When code modifies the public API, the corresponding `api.txt` file must be updated.
 - **Changelog Updates**: When changes to a subproject are non-trivial and user-visible, the corresponding `CHANGELOG.md` file must be updated.
 - **API Documentation**: All public APIs must be documented properly using standard doc comments (Javadoc or KDoc).
+
+### Write a helpful and well-structured CHANGELOG entry
+
+#### **Content**
+
+* Focus on developer impact over technical implementation. Instead of
+  "Refactored `AuthManager.kt` observer closure", write "Fixed
+  memory leak when detaching authentication listeners."
+
+* For feature releases, include the common terminology that a
+  developer might use to describe the feature and/or its use
+  case. This helps with discovery of the feature and its related
+  codebase change.
+
+* Add hyperlinks to relevant Firebase documentation, when possible.
+  These links can be for narrative guides or reference docs. Only link to
+  documentation that directly and accurately applies to the specific feature,
+  API, or execution mode being described (for example, do not link to
+  cloud-model documentation when describing an on-device feature). If no
+  specific documentation exists for the exact feature, omit the link rather than
+  linking to a tangentially related page that could confuse developers.
+
+* Do not duplicate entries that were already included in a previous release
+  (such as a prior patch or hotfix release). Ensure that only new changes for
+  the current release are listed.
+
+#### **Structure and syntax**
+
+* Use standardized prefix tags from the following list:
+  * \[changed\]
+  * \[feature\]
+  * \[fixed\]
+  * \[deprecated\]
+  * \[removed\]
+  * \[important\]
+  * \[issue\]
+  * \[unchanged\]
+* For breaking changes, add **Breaking change:** at the beginning of the entry.
+* Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
+* End every entry and sentence with a period, including short phrases (for
+  example, `Internal improvements.`).
+* Add the relevant PR \# or Issue \# to the end of each entry, after the period
+  (for example, `Fixed a crash. (#1234)`).
+* Wrap lines at 80 characters maximum, using a 2-space indent for continuation
+  lines. When writing `CHANGELOG.md` entries, keep the first line to at most 78
+  characters so that it remains within 80 characters when `- [<tag>]` is
+  converted to `* {{<tag>}}` in generated release notes.
+* For Firebase product brand names, use the appropriate standard names.
+  * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
+    * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
+* Capitalize with care.
+  * Use sentence case.
+    * Capitalize the following: the first letter of each sentence, proper nouns/code identifiers, official product and brand names, and abbreviations / initialisms.
+    * Do not capitalize the following: every word or feature names
+* Wrap in backticks all strings that are code-like elements, including the following (this list is _not_ exhaustive):
+  * API names
+  * attribute names and values
+  * class names
+  * CLI commands and CLI flags
+  * code symbols
+  * command output
+  * data types
+  * database elements
+  * defined (constant) values for an element or attribute
+  * enum names
+  * filenames and file paths
+  * folder and directory names
+  * HTTP status codes
+  * HTTP verbs
+  * IP addresses
+  * language keywords
+  * method and function names
+  * package names
+  * parameters
+  * port numbers
+  * URL strings or domain names
+  * text input or output
+* Use ISO 8601 date formatting (YYYY-MM-DD).
 
 ## External Dependencies
 

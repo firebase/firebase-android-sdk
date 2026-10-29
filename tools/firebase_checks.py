@@ -24,37 +24,20 @@ def get_git_root():
 
 def get_modified_files(repo_root):
     res = subprocess.run(
-        ["git", "status", "--porcelain", "-z"],
+        ["git", "diff", "--name-only", "-z", "main...HEAD"],
         cwd=repo_root,
         capture_output=True,
         text=True,
         check=True
     )
-    files = []
-    entries = res.stdout.split("\0")
-    i = 0
-    # Each line follows the format defined in
-    # https://git-scm.com/docs/git-status#_short_format, for example
-    # "M README.md" for a change to the README.md file
-    while i < len(entries):
-        entry = entries[i]
-        if not entry:
-            i += 1
-            continue
-        status = entry[:2]
-        path = entry[3:]
-        # For renames (R) or copies (C), the entry for the old name
-        # and the new name are one after the other, for example (with
-        # newline rather than NUL for readability)
-        # R  agent-new.md
-        # agents.md
-        if "R" in status or "C" in status:
-            i += 1
-            if i < len(entries):
-                path = entries[i]
-        files.append(path)
-        i += 1
-    return files
+    return [f for f in res.stdout.split("\0") if f]
+
+# Set of SDK subprojects that do not run generateApiTxtFile, for example because
+# they do not apply the Firebase library plugin.
+IGNORED_GENERATE_API_TXT_SDKS = {
+    "encoders:protoc-gen-firebase-encoders",
+    "encoders:firebase-encoders-processor"
+}
 
 def get_subprojects_info(repo_root):
     cfg_path = os.path.join(repo_root, "subprojects.cfg")
@@ -76,13 +59,15 @@ def get_subprojects_info(repo_root):
                 dir_path = proj.replace(":", os.sep)
                 subproject_types[dir_path] = comment
                 all_subprojects.add(dir_path)
-                if comment == "sdk":
+                if comment == "sdk" and proj not in IGNORED_GENERATE_API_TXT_SDKS:
                     sdk_subprojects.add(dir_path)
             else:
-                dir_path = line.strip().replace(":", os.sep)
+                proj = line.strip()
+                dir_path = proj.replace(":", os.sep)
                 all_subprojects.add(dir_path)
                 subproject_types[dir_path] = "sdk"
-                sdk_subprojects.add(dir_path)
+                if proj not in IGNORED_GENERATE_API_TXT_SDKS:
+                    sdk_subprojects.add(dir_path)
     return sdk_subprojects, subproject_types, all_subprojects
 
 def is_test_app(dir_path, subproject_types):

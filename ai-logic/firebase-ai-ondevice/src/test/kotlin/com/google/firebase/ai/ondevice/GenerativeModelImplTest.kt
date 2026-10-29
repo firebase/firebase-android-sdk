@@ -65,6 +65,25 @@ class GenerativeModelImplTest {
   }
 
   @Test
+  fun `isThinkingModeAvailable returns true when MLKit supports thinking mode`() = runTest {
+    val mlkitModel =
+      mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns true }
+    val model = GenerativeModelImpl(mlkitModel)
+
+    model.isThinkingModeAvailable().shouldBeTrue()
+  }
+
+  @Test
+  fun `isThinkingModeAvailable returns false when MLKit does not support thinking mode`() =
+    runTest {
+      val mlkitModel =
+        mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns false }
+      val model = GenerativeModelImpl(mlkitModel)
+
+      model.isThinkingModeAvailable().shouldBeFalse()
+    }
+
+  @Test
   fun `generateContent should return converted response`() = runTest {
     val mlkitModel =
       mockk<MlKitGenerativeModel> {
@@ -78,11 +97,18 @@ class GenerativeModelImplTest {
                   every { finishReason } returns MlKitCandidate.FinishReason.MAX_TOKENS
                 }
               )
+            every { thoughtProcess } returns
+              listOf(
+                mockk {
+                  every { text } returns "thought text"
+                  every { finishReason } returns MlKitCandidate.FinishReason.STOP
+                }
+              )
           }
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val generateContentResponse = model.generateContent(generateContentRequest)
 
     generateContentResponse.apply {
@@ -90,6 +116,11 @@ class GenerativeModelImplTest {
       candidates.first().apply {
         text shouldBe "response text"
         finishReason shouldBe FinishReason.MAX_TOKENS
+      }
+      thoughtProcess shouldHaveSize 1
+      thoughtProcess.first().apply {
+        text shouldBe "thought text"
+        finishReason shouldBe FinishReason.STOP
       }
     }
   }
@@ -102,7 +133,7 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val countTokensResponse = model.countTokens(generateContentRequest)
 
     countTokensResponse.apply { totalTokens shouldBe 10 }
@@ -123,12 +154,13 @@ class GenerativeModelImplTest {
                     every { finishReason } returns MlKitCandidate.FinishReason.STOP
                   }
                 )
+              every { thoughtProcess } returns emptyList()
             }
           )
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val generateContentResponseFlow = model.generateContentStream(generateContentRequest)
 
     generateContentResponseFlow.first().apply {
@@ -184,7 +216,7 @@ class GenerativeModelImplTest {
 
     // TODO: Use an image part. There's a bug preventing us from testing this using actual bitmaps.
     // Since we are testing the exception handlers, it doesn't make much of a difference.
-    val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
     val exception =
       shouldThrow<FirebaseAIOnDeviceInvalidRequestException> {
         model.generateContent(generateContentRequest)
