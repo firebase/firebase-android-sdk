@@ -29,8 +29,8 @@ firebaseAnnotations = "18.0.0"
 firebaseCommon = "23.0.0"
 firebaseComponents = "20.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
-genaiPrompt = "1.0.0-beta4"
-genaiSchema = "1.0.0-alpha1"
+genaiPrompt = "1.0.0-beta5"
+genaiSchema = "1.0.0-alpha2"
 glide = "5.0.5"
 googleApiClient = "2.8.1"
 googleServices = "4.3.15"
@@ -106,7 +106,7 @@ androidx-legacy-support-v4 = { module = "androidx.legacy:legacy-support-v4", ver
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-test-orchestrator = { module = "androidx.test:orchestrator", version.ref = "androidx-test-orchestrator" }
 androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "testServices" }
-auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
+auth0-jwt = { module = "com.auth0:java-jwt", version = "4.6.2" }
 auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", version.ref = "autoValueParcel" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }

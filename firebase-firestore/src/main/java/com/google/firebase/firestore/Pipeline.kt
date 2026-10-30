@@ -16,7 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
-import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -1139,7 +1138,7 @@ internal constructor(
    * @param searchStage An object that specifies how search is performed.
    * @return A new `Pipeline` object with this stage appended to the stage list.
    */
-  @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
+  fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 
   /**
    * Deletes each document produced by the previous stages from the database.
