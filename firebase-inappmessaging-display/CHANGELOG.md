@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a crash when a campaign's text or button text color wasn't
+  a valid color. The message now uses the default text color. (#8776)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
