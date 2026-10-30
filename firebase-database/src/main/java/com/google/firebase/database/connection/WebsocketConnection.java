@@ -181,10 +181,7 @@ class WebsocketConnection {
 
   private WSClient createConnection(
       HostInfo hostInfo, String optCachedHost, String appCheckToken, String optLastSessionId) {
-    String host = (optCachedHost != null) ? optCachedHost : hostInfo.getHost();
-    URI uri =
-        HostInfo.getConnectionUrl(
-            host, hostInfo.isSecure(), hostInfo.getNamespace(), optLastSessionId);
+    URI uri = hostInfo.getConnectionUrl(optCachedHost, optLastSessionId, logger);
     Map<String, String> extraHeaders = new HashMap<String, String>();
     extraHeaders.put("User-Agent", connectionContext.getUserAgent());
     extraHeaders.put("X-Firebase-GMPID", connectionContext.getApplicationId());

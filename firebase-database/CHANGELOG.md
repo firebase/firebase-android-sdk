@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a crash when the Realtime Database server sent a host or
+  session ID that wasn't valid in a URL. The SDK now ignores the value.
+  (#PR_NUMBER)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
