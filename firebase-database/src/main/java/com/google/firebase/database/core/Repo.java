@@ -554,7 +554,21 @@ public class Repo implements PersistentConnection.Delegate {
                          * we need to create a new eventRegistration, register it with a view and then
                          * overwrite the data at that location, and then remove the view.
                          */
-                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        Node serverNode;
+                        try {
+                          serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        } catch (DatabaseException e) {
+                          // The server sent data that can't be parsed, for example an invalid
+                          // priority. Handle it like a failed request, before anything is
+                          // registered, instead of throwing on the run loop, which crashes the app.
+                          operationLogger.error("Failed to parse server response for get()", e);
+                          if (persisted.exists()) {
+                            source.setResult(persisted);
+                          } else {
+                            source.setException(e);
+                          }
+                          return;
+                        }
                         QuerySpec spec = query.getSpec();
                         // EventRegistrations require a listener to be attached, so a dummy
                         // ValueEventListener was created.
