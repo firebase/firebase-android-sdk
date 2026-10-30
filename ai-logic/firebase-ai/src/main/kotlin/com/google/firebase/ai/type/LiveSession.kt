@@ -32,7 +32,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
-import com.google.firebase.ai.common.util.childJob
+import com.google.firebase.ai.common.util.childSupervisorJob
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -44,6 +44,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -95,6 +96,19 @@ internal constructor(
    * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
    */
   private var audioScope = CancelledCoroutineScope
+
+  /**
+   * Handles an exception thrown by a coroutine in [networkScope] or [audioScope], for example
+   * because the server sent a message that couldn't be processed.
+   *
+   * Both scopes use a [kotlinx.coroutines.SupervisorJob], so the exception doesn't fail the
+   * coroutine that called [startAudioConversation], which would crash the app if that coroutine has
+   * no exception handler. Instead, the exception is logged and the conversation is stopped.
+   */
+  private val audioConversationExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+    Log.e(TAG, "Stopping the audio conversation because of an unexpected error.", throwable)
+    stopAudioConversation()
+  }
 
   /**
    * Playback audio data sent from the model.
@@ -259,8 +273,19 @@ internal constructor(
         return@catchAsync
       }
       networkScope =
-        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
-      audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
+        CoroutineScope(
+          blockingDispatcher +
+            childSupervisorJob() +
+            audioConversationExceptionHandler +
+            CoroutineName("LiveSession Network")
+        )
+      audioScope =
+        CoroutineScope(
+          audioDispatcher +
+            childSupervisorJob() +
+            audioConversationExceptionHandler +
+            CoroutineName("LiveSession Audio")
+        )
       audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
