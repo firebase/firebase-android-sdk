@@ -2,7 +2,7 @@
 
 - [fixed] Fixed a crash when the Realtime Database server sent a host or
   session ID that wasn't valid in a URL. The SDK now ignores the value.
-  (#PR_NUMBER)
+  (#8780)
 
 # 23.0.0
 
