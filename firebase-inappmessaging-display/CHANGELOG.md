@@ -1,7 +1,7 @@
 # Unreleased
 
 - [fixed] Fixed a crash when a campaign's text or button text color wasn't
-  a valid color. The message now uses the default text color. (#PR_NUMBER)
+  a valid color. The message now uses the default text color. (#8776)
 
 # 23.0.0
 
