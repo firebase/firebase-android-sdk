@@ -42,7 +42,6 @@ import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
@@ -446,9 +445,8 @@ internal class OnDeviceGenerativeModelProviderTests {
 
     val response = functionProvider.generateContent(prompt)
 
-    capturedRequest.captured.tools.shouldNotBeNull()
-    capturedRequest.captured.tools!!.shouldHaveSize(1)
-    val tool = capturedRequest.captured.tools!!.first()
+    capturedRequest.captured.tools.shouldHaveSize(1)
+    val tool = capturedRequest.captured.tools.first()
     tool.name shouldBe "fetchWeather"
     tool.description shouldBe "Fetches weather for a city"
     tool.parameters?.type shouldBe "OBJECT"

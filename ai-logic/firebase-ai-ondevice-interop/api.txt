@@ -147,7 +147,7 @@ package com.google.firebase.ai.ondevice.interop {
     ctor public GenerateContentRequest(java.util.List<? extends com.google.firebase.ai.ondevice.interop.Part> parts, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null);
     ctor public GenerateContentRequest(java.util.List<? extends com.google.firebase.ai.ondevice.interop.Part> parts, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null, com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction = null);
     ctor public GenerateContentRequest(java.util.List<? extends com.google.firebase.ai.ondevice.interop.Part> parts, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null, com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction = null, Boolean? enableThinking = null);
-    ctor public GenerateContentRequest(java.util.List<? extends com.google.firebase.ai.ondevice.interop.Part> parts, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null, com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction = null, Boolean? enableThinking = null, java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration>? tools = null);
+    ctor public GenerateContentRequest(java.util.List<? extends com.google.firebase.ai.ondevice.interop.Part> parts, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null, com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction = null, Boolean? enableThinking = null, java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration> tools = emptyList());
     method public Integer? getCandidateCount();
     method public Boolean? getEnableThinking();
     method public Integer? getMaxOutputTokens();
@@ -155,7 +155,7 @@ package com.google.firebase.ai.ondevice.interop {
     method public Integer? getSeed();
     method public com.google.firebase.ai.ondevice.interop.TextPart? getSystemInstruction();
     method public Float? getTemperature();
-    method public java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration>? getTools();
+    method public java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration> getTools();
     method public Integer? getTopK();
     property public final Integer? candidateCount;
     property public final Boolean? enableThinking;
@@ -164,7 +164,7 @@ package com.google.firebase.ai.ondevice.interop {
     property public final Integer? seed;
     property public final com.google.firebase.ai.ondevice.interop.TextPart? systemInstruction;
     property public final Float? temperature;
-    property public final java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration>? tools;
+    property public final java.util.List<com.google.firebase.ai.ondevice.interop.FunctionDeclaration> tools;
     property public final Integer? topK;
   }
 

@@ -196,7 +196,9 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       seed = this@toMlKit.seed
       systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
       enableThinking = this@toMlKit.enableThinking ?: false
-      this@toMlKit.tools?.let { tools -> setTools(tools.map { it.toMlKit() }) }
+      if (this@toMlKit.tools.isNotEmpty()) {
+        setTools(this@toMlKit.tools.map { it.toMlKit() })
+      }
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)

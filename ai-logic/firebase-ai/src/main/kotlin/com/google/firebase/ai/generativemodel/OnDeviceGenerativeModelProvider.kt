@@ -334,16 +334,10 @@ internal class OnDeviceGenerativeModelProvider(
         else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
       }
     val onDeviceTools =
-      if (tools.isNotEmpty()) {
-        tools
-          .flatMap { tool ->
-            val normal = tool.functionDeclarations?.map { it.toInterop() } ?: emptyList()
-            val auto = tool.autoFunctionDeclarations?.map { it.toInterop() } ?: emptyList()
-            normal + auto
-          }
-          .ifEmpty { null }
-      } else {
-        null
+      tools.flatMap { tool ->
+        val normal = tool.functionDeclarations?.map { it.toInterop() } ?: emptyList()
+        val auto = tool.autoFunctionDeclarations?.map { it.toInterop() } ?: emptyList()
+        normal + auto
       }
     return OnDeviceGenerateContentRequest(
       parts = onDeviceParts,

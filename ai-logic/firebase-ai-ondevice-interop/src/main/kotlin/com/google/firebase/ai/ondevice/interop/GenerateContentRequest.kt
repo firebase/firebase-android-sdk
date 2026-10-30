@@ -44,5 +44,5 @@ constructor(
   public val maxOutputTokens: Int? = null,
   public val systemInstruction: TextPart? = null,
   public val enableThinking: Boolean? = null,
-  public val tools: List<FunctionDeclaration>? = null,
+  public val tools: List<FunctionDeclaration> = emptyList(),
 ) {}
