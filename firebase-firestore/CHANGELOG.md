@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Removed the unnecessary transitive runtime dependency on
+  `error_prone_annotations` from the `io.grpc` dependencies. (#8772)
 - [feature] Graduate Pipeline Search from Public Preview to GA.
   ([#8751](https://github.com/firebase/firebase-android-sdk/pull/8751))
 
