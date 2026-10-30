@@ -1,9 +1,9 @@
 # Unreleased
 
 - [fixed] Fixed a crash when Realtime Database data from the server had a
-  priority that wasn't a string or number, or contained an unresolved server
-  value. With persistence enabled, this could crash the app at every launch.
-  (#8782)
+  priority that wasn't a `string` or `number`, or contained an unresolved
+  server value. With persistence enabled, this could crash the app at every
+  launch. (#8782)
 
 # 23.0.0
 
