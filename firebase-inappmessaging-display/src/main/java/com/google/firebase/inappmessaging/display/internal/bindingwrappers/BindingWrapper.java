@@ -112,7 +112,7 @@ public abstract class BindingWrapper {
       view.setTextColor(Color.parseColor(hexColor));
     } catch (IllegalArgumentException e) {
       // If the color didn't parse correctly, fail 'open', with the default text color
-      Logging.loge("Error parsing text color: " + e.toString());
+      Logging.loge("Error parsing text color: " + e.toString() + " color: " + hexColor);
     }
   }
 
