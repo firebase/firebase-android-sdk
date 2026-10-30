@@ -36,7 +36,13 @@ internal class FakeDataStore<T>(
 
   private var throwOnUpdateData: Throwable? = null
 
+  /** The number of times [data] has been collected. */
+  var dataCollectionCount = 0
+    private set
+
   override val data: Flow<T> = flow {
+    dataCollectionCount++
+
     // If a first throwable is set, simply throw it
     // This is intended to simulate a failure on init
     if (firstThrowable != null) {
