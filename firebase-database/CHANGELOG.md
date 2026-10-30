@@ -1,5 +1,10 @@
 # Unreleased
 
+- [fixed] Fixed a crash when Realtime Database data from the server had a
+  priority that wasn't a string or number, or contained an unresolved server
+  value. With persistence enabled, this could crash the app at every launch.
+  (#PR_NUMBER)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
