@@ -221,6 +221,15 @@ class Connection implements WebsocketConnection.Delegate {
   }
 
   private void onReset(String host) {
+    if (host != null && !hostInfo.isUsableHost(host)) {
+      // Ignore the host and keep the current one. The server is likely to reset the next
+      // connection the same way, so close with OTHER instead of SERVER_RESET: the persistent
+      // connection then reconnects with its usual backoff instead of immediately, which avoids a
+      // tight reconnect loop.
+      logger.warn("Got a reset with a host that can't be used in a URL, ignoring the host");
+      close(DisconnectReason.OTHER);
+      return;
+    }
     if (logger.logsDebug())
       logger.debug(
           "Got a reset; killing connection to "
