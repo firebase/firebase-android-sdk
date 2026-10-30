@@ -179,9 +179,14 @@ public class FirebaseInstallationServiceClient {
         if (isSuccessfulResponseCode(httpResponseCode)) {
           try {
             return readCreateResponse(httpURLConnection);
-          } catch (IllegalArgumentException | IllegalStateException ignored) {
+          } catch (IllegalArgumentException | IllegalStateException e) {
             // A value in the response has an unexpected type or format, for example an
             // "expiresIn" that isn't a number of seconds. Handle it like an unreadable response.
+            Log.w(
+                FIS_TAG,
+                "Firebase Installations Service returned an invalid createFirebaseInstallation"
+                    + " response.",
+                e);
             continue;
           }
         }
@@ -421,9 +426,13 @@ public class FirebaseInstallationServiceClient {
         if (isSuccessfulResponseCode(httpResponseCode)) {
           try {
             return readGenerateAuthTokenResponse(httpURLConnection);
-          } catch (IllegalArgumentException | IllegalStateException ignored) {
+          } catch (IllegalArgumentException | IllegalStateException e) {
             // A value in the response has an unexpected type or format, for example an
             // "expiresIn" that isn't a number of seconds. Handle it like an unreadable response.
+            Log.w(
+                FIS_TAG,
+                "Firebase Installations Service returned an invalid generateAuthToken response.",
+                e);
             continue;
           }
         }
