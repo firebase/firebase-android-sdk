@@ -14,7 +14,6 @@
 
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -144,7 +143,7 @@ public class CardBindingWrapper extends BindingWrapper {
   private void setMessage(CardMessage message) {
     // We can assume we have a title because the CardMessage model enforces it.
     messageTitle.setText(message.getTitle().getText());
-    messageTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
+    setTextColorFromHex(messageTitle, message.getTitle().getHexColor());
 
     // Right now we need to check for null, eventually we will make an API change to have hasBody()
     // Additionally right now we have to check for getText. this will be fixed soon.
@@ -152,7 +151,7 @@ public class CardBindingWrapper extends BindingWrapper {
       bodyScroll.setVisibility(View.VISIBLE);
       messageBody.setVisibility(View.VISIBLE);
       messageBody.setText(message.getBody().getText());
-      messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
+      setTextColorFromHex(messageBody, message.getBody().getHexColor());
     } else {
       bodyScroll.setVisibility(View.GONE);
       messageBody.setVisibility(View.GONE);
