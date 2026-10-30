@@ -211,7 +211,7 @@ public class SettingsControllerRobolectricTest {
   }
 
   @Test
-  public void loadSettingsData_markerPresentAndCacheNotDeletable_doesNotApplyCachedSettings()
+  public void loadSettingsData_markerPresentAndCacheNotDeletable_skipsItAndFetchOverwritesIt()
       throws Exception {
     writeCachedSettings(UNEXPIRED_MILLIS);
     // The previous launch applied the cached settings and didn't finish initialization.
@@ -231,12 +231,14 @@ public class SettingsControllerRobolectricTest {
         newLaunch(/* buildInstanceIdentifierChanged= */ false, fileStoreWithUndeletableCache);
     Settings defaultSettings = controller.getSettingsSync();
 
-    controller.loadSettingsData(crashlyticsWorkers);
+    Task<Void> loadTask = controller.loadSettingsData(crashlyticsWorkers);
 
     assertThat(controller.getSettingsSync()).isSameInstanceAs(defaultSettings);
     assertThat(controller.getSettingsAsync().isComplete()).isFalse();
     assertThat(cachedSettingsFile().exists()).isTrue();
     assertThat(markerFile().exists()).isFalse();
+    // The fetch overwrites the cached settings file that couldn't be deleted.
+    assertFetchesAndAppliesNewSettings(controller, loadTask);
   }
 
   @Test
