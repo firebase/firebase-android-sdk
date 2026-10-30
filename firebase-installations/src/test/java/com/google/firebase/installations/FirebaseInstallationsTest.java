@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -130,6 +131,14 @@ public class FirebaseInstallationsTest {
       TokenResult.builder()
           .setToken(TEST_AUTH_TOKEN_2)
           .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+          .setResponseCode(TokenResult.ResponseCode.OK)
+          .build();
+
+  /** A token that expires in 30 minutes, which is within the SDK's one hour refresh buffer. */
+  private static final TokenResult SHORT_LIVED_TOKEN_RESULT =
+      TokenResult.builder()
+          .setToken(TEST_AUTH_TOKEN_3)
+          .setTokenExpirationTimestamp(TimeUnit.MINUTES.toSeconds(30))
           .setResponseCode(TokenResult.ResponseCode.OK)
           .build();
 
@@ -1027,6 +1036,195 @@ public class FirebaseInstallationsTest {
           .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
           .isEqualTo(Status.BAD_CONFIG);
     }
+  }
+
+  /**
+   * The server returns a token that expires within {@link
+   * Utils#AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}, so the SDK can't use it. getToken() must fail
+   * instead of never completing.
+   */
+  @Test
+  public void testGetAuthToken_serverReturnsShortLivedToken_fails() throws Exception {
+    persistRegisteredFidWithTokenDueForRefresh();
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(SHORT_LIVED_TOKEN_RESULT);
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+
+    // The FID stays registered, and the stored token counts as expired so that the next call
+    // fetches a new one.
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertTrue("the entry doesn't have a registered fid: " + entry, entry.isRegistered());
+    assertTrue("the stored token should count as expired", utils.isAuthTokenExpired(entry));
+  }
+
+  @Test
+  public void testGetAuthToken_serverReturnsEmptyToken_fails() throws Exception {
+    persistRegisteredFidWithTokenDueForRefresh();
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(TEST_TOKEN_RESULT.toBuilder().setToken("").build());
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+  }
+
+  @Test
+  public void testGetAuthToken_serverReturnsNoToken_fails() throws Exception {
+    persistRegisteredFidWithTokenDueForRefresh();
+    // A successful response without a "token" field.
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            TokenResult.builder()
+                .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
+                .setResponseCode(TokenResult.ResponseCode.OK)
+                .build());
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+  }
+
+  @Test
+  public void testGetAuthToken_serverReturnsOverflowingExpiration_fails() throws Exception {
+    persistRegisteredFidWithTokenDueForRefresh();
+    // "9223372036854775807s" parses, but the creation time plus expiresIn overflows to a negative
+    // expiration time.
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            TEST_TOKEN_RESULT.toBuilder().setTokenExpirationTimestamp(Long.MAX_VALUE).build());
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+  }
+
+  @Test
+  public void testGetAuthToken_forceRefresh_serverReturnsShortLivedToken_fails() throws Exception {
+    // Start with a registered FID and a valid auth token.
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            utils.currentTimeInSecs(),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(SHORT_LIVED_TOKEN_RESULT);
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(true));
+  }
+
+  /**
+   * The server registers the FID but returns an unusable token. getId() still succeeds, and
+   * getToken() fails instead of never completing.
+   */
+  @Test
+  public void testGetToken_registrationReturnsShortLivedToken_getIdSucceedsGetTokenFails()
+      throws Exception {
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(
+            TEST_INSTALLATION_RESPONSE.toBuilder().setAuthToken(SHORT_LIVED_TOKEN_RESULT).build());
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> getIdTask = firebaseInstallations.getId();
+    getIdTask.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+    assertWithMessage("getId Task failed.").that(onCompleteListener.await()).isEqualTo(TEST_FID_1);
+
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_FID_1);
+    assertTrue("the entry doesn't have a registered fid: " + entry, entry.isRegistered());
+  }
+
+  /**
+   * The server registers the FID but the response has no auth token. getId() still succeeds,
+   * getToken() fails instead of never completing, and the next getToken() call fetches a token.
+   */
+  @Test
+  public void testGetToken_registrationReturnsNoAuthToken_getIdSucceedsGetTokenFails()
+      throws Exception {
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(
+            InstallationResponse.builder()
+                .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_1)
+                .setFid(TEST_FID_1)
+                .setRefreshToken(TEST_REFRESH_TOKEN)
+                .setResponseCode(ResponseCode.OK)
+                .build());
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(TEST_TOKEN_RESULT);
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> getIdTask = firebaseInstallations.getId();
+    getIdTask.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+    assertWithMessage("getId Task failed.").that(onCompleteListener.await()).isEqualTo(TEST_FID_1);
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertTrue("the entry doesn't have a registered fid: " + entry, entry.isRegistered());
+
+    TestOnCompleteListener<InstallationTokenResult> tokenListener = new TestOnCompleteListener<>();
+    Task<InstallationTokenResult> tokenTask = firebaseInstallations.getToken(false);
+    tokenTask.addOnCompleteListener(backgroundExecutor, tokenListener);
+    assertWithMessage("auth token is not what is expected after the refresh")
+        .that(tokenListener.await().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+  }
+
+  /** After an unusable token, the next call fetches a new token and succeeds if it's valid. */
+  @Test
+  public void testGetAuthToken_unusableTokenThenValidToken_nextCallSucceeds() throws Exception {
+    persistRegisteredFidWithTokenDueForRefresh();
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(SHORT_LIVED_TOKEN_RESULT)
+        .thenReturn(TEST_TOKEN_RESULT);
+
+    assertGetTokenFailsWithUnusableToken(firebaseInstallations.getToken(false));
+
+    TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+    InstallationTokenResult installationTokenResult = onCompleteListener.await();
+
+    assertWithMessage("auth token is not what is expected after the refresh")
+        .that(installationTokenResult.getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+    verify(mockBackend, times(2))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
+  }
+
+  /** Persists a registered FID whose auth token expires in 30 minutes and must be refreshed. */
+  private void persistRegisteredFidWithTokenDueForRefresh() {
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+  }
+
+  /**
+   * Waits for a getToken() task and asserts that it failed because the server returned an auth
+   * token that can't be used. Fails, instead of hanging, if the task doesn't complete within the
+   * timeout of {@link TestOnCompleteListener#await()}.
+   */
+  private void assertGetTokenFailsWithUnusableToken(Task<InstallationTokenResult> task) {
+    TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
+        new TestOnCompleteListener<>();
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
+
+    ExecutionException expected = assertThrows(ExecutionException.class, onCompleteListener::await);
+
+    assertThat(task.isComplete()).isTrue();
+    assertThat(expected).hasCauseThat().isInstanceOf(FirebaseInstallationsException.class);
+    assertThat(((FirebaseInstallationsException) expected.getCause()).getStatus())
+        .isEqualTo(Status.UNAVAILABLE);
   }
 
   @Test

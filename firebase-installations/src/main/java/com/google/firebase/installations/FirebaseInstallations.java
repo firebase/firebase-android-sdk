@@ -428,6 +428,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       triggerOnException(new IOException(AUTH_ERROR_MSG));
     } else {
       triggerOnStateReached(prefs);
+      // getToken() listeners only complete with an auth token that isn't expired or about to
+      // expire. If the server just returned a token that already counts as expired (for example,
+      // an empty token or one that expires within AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS), fail
+      // those listeners instead of leaving their Tasks pending forever. The stored token also
+      // counts as expired, so the next call fetches a new one.
+      if (prefs.isRegistered() && utils.isAuthTokenExpired(prefs)) {
+        triggerOnException(
+            new FirebaseInstallationsException(
+                "Firebase Installations Service returned an auth token that is empty, expired, or "
+                    + "about to expire. Please try again later.",
+                Status.UNAVAILABLE));
+      }
     }
   }
 
@@ -562,12 +574,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     switch (response.getResponseCode()) {
       case OK:
+        // A successful response can still lack an auth token. Register the FID without one: the
+        // missing token counts as expired, so getToken() fails and the next call fetches a token.
+        TokenResult authToken = response.getAuthToken();
         return prefs.withRegisteredFid(
             response.getFid(),
             response.getRefreshToken(),
             utils.currentTimeInSecs(),
-            response.getAuthToken().getToken(),
-            response.getAuthToken().getTokenExpirationTimestamp());
+            authToken == null ? null : authToken.getToken(),
+            authToken == null ? 0 : authToken.getTokenExpirationTimestamp());
       case BAD_CONFIG:
         return prefs.withFisError("BAD CONFIG");
       default:
