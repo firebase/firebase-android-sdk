@@ -117,24 +117,24 @@ package com.google.firebase.ai.ondevice.interop {
   public final class FunctionSchema {
     ctor public FunctionSchema(String type);
     ctor public FunctionSchema(String type, String? description = null);
-    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties = null);
-    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties = null, java.util.List<java.lang.String>? required = null);
-    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties = null, java.util.List<java.lang.String>? required = null, java.util.List<java.lang.String>? enum = null);
-    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties = null, java.util.List<java.lang.String>? required = null, java.util.List<java.lang.String>? enum = null, Boolean? nullable = null);
-    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties = null, java.util.List<java.lang.String>? required = null, java.util.List<java.lang.String>? enum = null, Boolean? nullable = null, com.google.firebase.ai.ondevice.interop.FunctionSchema? items = null);
+    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties = emptyMap());
+    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties = emptyMap(), java.util.List<java.lang.String> required = emptyList());
+    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties = emptyMap(), java.util.List<java.lang.String> required = emptyList(), java.util.List<java.lang.String>? enum = null);
+    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties = emptyMap(), java.util.List<java.lang.String> required = emptyList(), java.util.List<java.lang.String>? enum = null, Boolean? nullable = null);
+    ctor public FunctionSchema(String type, String? description = null, java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties = emptyMap(), java.util.List<java.lang.String> required = emptyList(), java.util.List<java.lang.String>? enum = null, Boolean? nullable = null, com.google.firebase.ai.ondevice.interop.FunctionSchema? items = null);
     method public String? getDescription();
     method public java.util.List<java.lang.String>? getEnum();
     method public com.google.firebase.ai.ondevice.interop.FunctionSchema? getItems();
     method public Boolean? getNullable();
-    method public java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? getProperties();
-    method public java.util.List<java.lang.String>? getRequired();
+    method public java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> getProperties();
+    method public java.util.List<java.lang.String> getRequired();
     method public String getType();
     property public final String? description;
     property public final java.util.List<java.lang.String>? enum;
     property public final com.google.firebase.ai.ondevice.interop.FunctionSchema? items;
     property public final Boolean? nullable;
-    property public final java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema>? properties;
-    property public final java.util.List<java.lang.String>? required;
+    property public final java.util.Map<java.lang.String,com.google.firebase.ai.ondevice.interop.FunctionSchema> properties;
+    property public final java.util.List<java.lang.String> required;
     property public final String type;
   }
 

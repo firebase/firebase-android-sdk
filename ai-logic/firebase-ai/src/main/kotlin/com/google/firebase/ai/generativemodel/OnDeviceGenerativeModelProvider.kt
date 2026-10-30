@@ -379,8 +379,8 @@ private fun Schema.toInterop(): OnDeviceFunctionSchema =
   OnDeviceFunctionSchema(
     type = type,
     description = description,
-    properties = properties?.mapValues { it.value.toInterop() },
-    required = required,
+    properties = properties?.mapValues { it.value.toInterop() } ?: emptyMap(),
+    required = required ?: emptyList(),
     enum = enum,
     nullable = nullable,
     items = items?.toInterop()
@@ -397,8 +397,8 @@ private fun JsonSchema<*>.toInterop(): OnDeviceFunctionSchema =
   OnDeviceFunctionSchema(
     type = type,
     description = description,
-    properties = properties?.mapValues { it.value.toInterop() },
-    required = required,
+    properties = properties?.mapValues { it.value.toInterop() } ?: emptyMap(),
+    required = required ?: emptyList(),
     enum = enum,
     nullable = nullable,
     items = items?.toInterop()

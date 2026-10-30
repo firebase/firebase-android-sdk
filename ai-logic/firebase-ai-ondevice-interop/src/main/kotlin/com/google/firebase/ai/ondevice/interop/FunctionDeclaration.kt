@@ -48,8 +48,8 @@ public class FunctionSchema
 constructor(
   public val type: String,
   public val description: String? = null,
-  public val properties: Map<String, FunctionSchema>? = null,
-  public val required: List<String>? = null,
+  public val properties: Map<String, FunctionSchema> = emptyMap(),
+  public val required: List<String> = emptyList(),
   public val enum: List<String>? = null,
   public val nullable: Boolean? = null,
   public val items: FunctionSchema? = null

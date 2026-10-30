@@ -172,8 +172,8 @@ internal fun com.google.firebase.ai.ondevice.interop.FunctionSchema.toMlKit():
         else -> FunctionType.UNSPECIFIED
       },
     description = description,
-    properties = properties?.mapValues { it.value.toMlKit() },
-    required = required,
+    properties = properties.mapValues { it.value.toMlKit() }.ifEmpty { null },
+    required = required.ifEmpty { null },
     enum = enum,
     nullable = nullable,
     items = items?.toMlKit()
