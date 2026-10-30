@@ -60,7 +60,17 @@ constructor(
       // Ensure configs are loaded from disk before the first access
       if (sessionConfigsAtomicReference.get() == null) {
         // Double check to avoid the `runBlocking` unless necessary
-        sessionConfigsAtomicReference.compareAndSet(null, readConfigs())
+        sessionConfigsAtomicReference.compareAndSet(
+          null,
+          runBlocking {
+            sessionConfigsDataStore.data
+              .catch { ex ->
+                Log.w(TAG, "Failed to read config values: $ex")
+                emit(SessionConfigsSerializer.defaultValue)
+              }
+              .first()
+          },
+        )
       }
 
       return sessionConfigsAtomicReference.get()
@@ -76,15 +86,6 @@ constructor(
         .collect(sessionConfigsAtomicReference::set)
     }
   }
-
-  /** Reads the configs from disk, or returns the default configs if they can't be read. */
-  private fun readConfigs(): SessionConfigs =
-    try {
-      runBlocking { sessionConfigsDataStore.data.first() }
-    } catch (ex: IOException) {
-      Log.w(TAG, "Failed to read config values: $ex")
-      SessionConfigsSerializer.defaultValue
-    }
 
   override fun hasCacheExpired(): Boolean {
     val cacheUpdatedTimeSeconds = sessionConfigs.cacheUpdatedTimeSeconds
