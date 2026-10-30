@@ -19,11 +19,20 @@ package com.google.firebase.ai.ondevice
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.ai.ondevice.interop.FinishReason as InteropFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
+import com.google.firebase.ai.ondevice.interop.FunctionCallPart as InteropFunctionCallPart
+import com.google.firebase.ai.ondevice.interop.FunctionDeclaration as InteropFunctionDeclaration
+import com.google.firebase.ai.ondevice.interop.FunctionResponsePart as InteropFunctionResponsePart
+import com.google.firebase.ai.ondevice.interop.FunctionSchema as InteropFunctionSchema
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as InteropGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.TextPart as InteropTextPart
+import com.google.mlkit.genai.common.FunctionArgValue
+import com.google.mlkit.genai.common.FunctionCall
 import com.google.mlkit.genai.prompt.Candidate
 import com.google.mlkit.genai.prompt.CountTokensResponse
+import com.google.mlkit.genai.prompt.FunctionCallPart
+import com.google.mlkit.genai.prompt.FunctionResponsePart
 import com.google.mlkit.genai.prompt.TextPart
+import com.google.mlkit.genai.schema.tools.FunctionType
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -39,6 +48,59 @@ internal class ConvertersTest {
     val interopTextPart = InteropTextPart("hello")
     val mlKitTextPart = interopTextPart.toMlKit()
     assertThat(mlKitTextPart.textString).isEqualTo("hello")
+  }
+
+  @Test
+  fun `InteropParts toMlKit should convert function call parts correctly`() {
+    val interopPart =
+      InteropFunctionCallPart("fetchWeather", mapOf("city" to "London", "temp" to 20L), "id-123")
+    val mlKitPart = interopPart.toMlKit()
+    assertThat(mlKitPart.functionCall.name).isEqualTo("fetchWeather")
+    assertThat(mlKitPart.functionCall.id).isEqualTo("id-123")
+    assertThat((mlKitPart.functionCall.arguments["city"] as FunctionArgValue.StringValue).value)
+      .isEqualTo("London")
+    assertThat((mlKitPart.functionCall.arguments["temp"] as FunctionArgValue.LongValue).value)
+      .isEqualTo(20L)
+  }
+
+  @Test
+  fun `MlKit FunctionCallPart toInterop should convert correctly`() {
+    val mlKitPart =
+      FunctionCallPart(
+        FunctionCall(
+          name = "fetchWeather",
+          arguments = mapOf("city" to FunctionArgValue.StringValue("London")),
+          id = "id-123"
+        )
+      )
+    val interopPart = mlKitPart.toInterop()
+    assertThat(interopPart.name).isEqualTo("fetchWeather")
+    assertThat(interopPart.id).isEqualTo("id-123")
+    assertThat(interopPart.args).isEqualTo(mapOf("city" to "London"))
+  }
+
+  @Test
+  fun `InteropParts toMlKit should convert function response parts correctly`() {
+    val interopPart =
+      InteropFunctionResponsePart("fetchWeather", mapOf("result" to "sunny"), "id-123")
+    val mlKitPart = interopPart.toMlKit()
+    assertThat(mlKitPart.name).isEqualTo("fetchWeather")
+    assertThat(mlKitPart.id).isEqualTo("id-123")
+    assertThat(mlKitPart.response).isEqualTo(mapOf("result" to "sunny"))
+  }
+
+  @Test
+  fun `MlKit FunctionResponsePart toInterop should convert correctly`() {
+    val mlKitPart =
+      FunctionResponsePart(
+        id = "id-123",
+        name = "fetchWeather",
+        response = mapOf("result" to "sunny")
+      )
+    val interopPart = mlKitPart.toInterop()
+    assertThat(interopPart.name).isEqualTo("fetchWeather")
+    assertThat(interopPart.id).isEqualTo("id-123")
+    assertThat(interopPart.response).isEqualTo(mapOf("result" to "sunny"))
   }
 
   @Test
@@ -70,6 +132,59 @@ internal class ConvertersTest {
       }
     val interopCandidate = mlKitCandidate.toInterop()
     assertThat(interopCandidate.finishReason).isEqualTo(InteropFinishReason.OTHER)
+  }
+
+  @Test
+  fun `Candidate toInterop should convert functionCalls correctly`() {
+    val mlKitFunctionCall =
+      FunctionCall(
+        name = "fetchWeather",
+        arguments = mapOf("city" to FunctionArgValue.StringValue("London")),
+        id = "id-123"
+      )
+    val mlKitCandidate =
+      mock(Candidate::class.java).apply {
+        `when`(text).thenReturn("")
+        `when`(finishReason).thenReturn(Candidate.FinishReason.STOP)
+        `when`(functionCalls).thenReturn(listOf(mlKitFunctionCall))
+      }
+    val interopCandidate = mlKitCandidate.toInterop()
+    assertThat(interopCandidate.functionCalls).hasSize(1)
+    val call = interopCandidate.functionCalls[0]
+    assertThat(call.name).isEqualTo("fetchWeather")
+    assertThat(call.args).isEqualTo(mapOf("city" to "London"))
+    assertThat(call.id).isEqualTo("id-123")
+  }
+
+  @Test
+  fun `GenerateContentRequest toMlKit should convert tools correctly`() {
+    val schema =
+      InteropFunctionSchema(
+        type = "OBJECT",
+        description = "weather params",
+        properties =
+          mapOf("city" to InteropFunctionSchema(type = "STRING", description = "city name")),
+        required = listOf("city")
+      )
+    val declaration =
+      InteropFunctionDeclaration(
+        name = "fetchWeather",
+        description = "Fetches the weather for a city",
+        parameters = schema
+      )
+    val interopRequest =
+      InteropGenerateContentRequest(
+        parts = listOf(InteropTextPart("What is the weather?")),
+        tools = listOf(declaration)
+      )
+    val mlKitRequest = interopRequest.toMlKit()
+
+    assertThat(mlKitRequest.dynamicTools).isNotNull()
+    assertThat(mlKitRequest.dynamicTools).hasSize(1)
+    val mlKitTool = mlKitRequest.dynamicTools!!.first()
+    assertThat(mlKitTool.name).isEqualTo("fetchWeather")
+    assertThat(mlKitTool.description).isEqualTo("Fetches the weather for a city")
+    assertThat(mlKitTool.parameters?.type).isEqualTo(FunctionType.OBJECT)
   }
 
   @Test

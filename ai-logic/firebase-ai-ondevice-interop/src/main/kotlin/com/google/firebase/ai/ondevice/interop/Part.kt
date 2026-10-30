@@ -26,3 +26,50 @@ public class TextPart(public val text: String) : Part
 
 /** Represents image data. */
 public class ImagePart(public val bitmap: Bitmap) : Part
+
+/**
+ * Represents function call name and parameters emitted by the model or sent in conversation
+ * history.
+ */
+public class FunctionCallPart
+@JvmOverloads
+constructor(
+  public val name: String,
+  public val args: Map<String, Any?>,
+  public val id: String? = null
+) : Part {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is FunctionCallPart) return false
+    return name == other.name && args == other.args && id == other.id
+  }
+
+  override fun hashCode(): Int {
+    var result = name.hashCode()
+    result = 31 * result + args.hashCode()
+    result = 31 * result + (id?.hashCode() ?: 0)
+    return result
+  }
+}
+
+/** Represents function call output to be returned to the model. */
+public class FunctionResponsePart
+@JvmOverloads
+constructor(
+  public val name: String,
+  public val response: Map<String, Any?>,
+  public val id: String? = null
+) : Part {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is FunctionResponsePart) return false
+    return name == other.name && response == other.response && id == other.id
+  }
+
+  override fun hashCode(): Int {
+    var result = name.hashCode()
+    result = 31 * result + response.hashCode()
+    result = 31 * result + (id?.hashCode() ?: 0)
+    return result
+  }
+}
