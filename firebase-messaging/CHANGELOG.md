@@ -1,5 +1,6 @@
 # Unreleased
 
+- [changed] Added support for setting notification ID from the notification payload.
 - [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
 - [fixed] Restored token request deduplication with FirebaseInstanceId during auto-init and token fetches. (#8732)
 
