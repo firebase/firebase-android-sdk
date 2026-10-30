@@ -213,10 +213,9 @@ internal class OnDeviceGenerativeModelProvider(
         )
       )
     }
-    val effectiveTools = onDeviceConfig.tools ?: tools
-    if (checkFunctionCalling && effectiveTools.isNotEmpty()) {
+    if (checkFunctionCalling && tools.isNotEmpty()) {
       val hasNonFunctionTools =
-        effectiveTools.any {
+        tools.any {
           it.googleSearch != null ||
             it.codeExecution != null ||
             it.urlContext != null ||
@@ -230,7 +229,7 @@ internal class OnDeviceGenerativeModelProvider(
         )
       }
       val hasFunctionDeclarations =
-        effectiveTools.any {
+        tools.any {
           !it.functionDeclarations.isNullOrEmpty() || !it.autoFunctionDeclarations.isNullOrEmpty()
         }
       if (hasFunctionDeclarations && !onDeviceModel.isFunctionCallingAvailable()) {
@@ -334,10 +333,9 @@ internal class OnDeviceGenerativeModelProvider(
         if (systemTextParts.isEmpty()) null
         else OnDeviceTextPart(systemTextParts.joinToString("\n") { it.text })
       }
-    val effectiveTools = onDeviceConfig.tools ?: tools
     val onDeviceTools =
-      if (effectiveTools.isNotEmpty()) {
-        effectiveTools
+      if (tools.isNotEmpty()) {
+        tools
           .flatMap { tool ->
             val normal = tool.functionDeclarations?.map { it.toInterop() } ?: emptyList()
             val auto = tool.autoFunctionDeclarations?.map { it.toInterop() } ?: emptyList()
