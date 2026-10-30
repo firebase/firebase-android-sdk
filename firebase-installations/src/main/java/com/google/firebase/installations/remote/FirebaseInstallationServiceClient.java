@@ -177,7 +177,13 @@ public class FirebaseInstallationServiceClient {
         requestLimiter.setNextRequestTime(httpResponseCode);
 
         if (isSuccessfulResponseCode(httpResponseCode)) {
-          return readCreateResponse(httpURLConnection);
+          try {
+            return readCreateResponse(httpURLConnection);
+          } catch (IllegalArgumentException | IllegalStateException ignored) {
+            // A value in the response has an unexpected type or format, for example an
+            // "expiresIn" that isn't a number of seconds. Handle it like an unreadable response.
+            continue;
+          }
         }
 
         logFisCommunicationError(httpURLConnection, appId, apiKey, projectID);
@@ -413,7 +419,13 @@ public class FirebaseInstallationServiceClient {
         requestLimiter.setNextRequestTime(httpResponseCode);
 
         if (isSuccessfulResponseCode(httpResponseCode)) {
-          return readGenerateAuthTokenResponse(httpURLConnection);
+          try {
+            return readGenerateAuthTokenResponse(httpURLConnection);
+          } catch (IllegalArgumentException | IllegalStateException ignored) {
+            // A value in the response has an unexpected type or format, for example an
+            // "expiresIn" that isn't a number of seconds. Handle it like an unreadable response.
+            continue;
+          }
         }
 
         logFisCommunicationError(httpURLConnection, null, apiKey, projectID);
@@ -466,7 +478,7 @@ public class FirebaseInstallationServiceClient {
       throws FirebaseInstallationsException {
     HttpURLConnection httpURLConnection;
     try {
-      httpURLConnection = (HttpURLConnection) url.openConnection();
+      httpURLConnection = openConnection(url);
     } catch (IOException ignored) {
       throw new FirebaseInstallationsException(
           "Firebase Installations Service is unavailable. Please try again later.",
@@ -495,6 +507,12 @@ public class FirebaseInstallationServiceClient {
     httpURLConnection.addRequestProperty(X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
     httpURLConnection.addRequestProperty(API_KEY_HEADER, apiKey);
     return httpURLConnection;
+  }
+
+  /** Opens the connection to the FIS servers. Tests override this to fake server responses. */
+  @VisibleForTesting
+  HttpURLConnection openConnection(URL url) throws IOException {
+    return (HttpURLConnection) url.openConnection();
   }
 
   // Read the response from the createFirebaseInstallation API.
