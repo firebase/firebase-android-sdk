@@ -4,7 +4,7 @@
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed an issue where cached settings that crashed the app during
   Crashlytics initialization caused a crash on every launch. Crashlytics now
-  discards those settings on the next launch and fetches new ones. (#PR_NUMBER)
+  discards those settings on the next launch and fetches new ones. (#8779)
 
 # 21.0.1
 
