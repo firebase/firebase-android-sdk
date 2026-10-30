@@ -3,7 +3,7 @@
 - [fixed] Fixed an issue where `getToken()` never completed if the server
   returned an auth token that was missing, empty, expired, or about to expire,
   or that had an invalid expiration time. The task now fails with an error.
-  (#PR_NUMBER)
+  (#8781)
 
 # 20.0.0
 
