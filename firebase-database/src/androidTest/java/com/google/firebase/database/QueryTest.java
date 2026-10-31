@@ -5049,6 +5049,32 @@ public class QueryTest {
   }
 
   @Test
+  public void testGetPreservesKeepSyncedState()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    FirebaseDatabase writerDb = getNewDatabase();
+    FirebaseDatabase readerDb = getNewDatabase();
+    readerDb.setPersistenceEnabled(false);
+    DatabaseReference writer = writerDb.getReference().push();
+    DatabaseReference reader = translateReference(writer, readerDb);
+
+    await(writer.setValue(42L));
+
+    try {
+      reader.keepSynced(true);
+      assertEquals(42L, await(reader.get()).getValue());
+
+      reader.keepSynced(true);
+      assertEquals(42L, await(reader.get()).getValue());
+
+      DatabaseReference equivalentReader = translateReference(writer, readerDb);
+      equivalentReader.keepSynced(true);
+      assertEquals(42L, await(equivalentReader.get()).getValue());
+    } finally {
+      reader.keepSynced(false);
+    }
+  }
+
+  @Test
   public void testGetProbesInMemoryCacheForActiveListenerWhenOffline()
       throws DatabaseException,
           InterruptedException,
