@@ -46,14 +46,16 @@ public class NodeSizeEstimator {
     } else if (node instanceof StringNode) {
       valueSize = 2L + ((String) node.getValue()).length(); // add 2 for quotes
     } else {
-      throw new IllegalArgumentException("Unknown leaf node type: " + node.getClass());
+      // An unresolved server value (DeferredValueNode), which the server should have resolved.
+      // Estimate it like a number, which is what server values usually resolve to.
+      valueSize = 8;
     }
     if (node.getPriority().isEmpty()) {
       return valueSize;
     } else {
-      return LEAF_PRIORITY_OVERHEAD
-          + valueSize
-          + estimateLeafNodeSize((LeafNode<?>) node.getPriority());
+      // Valid priorities are leaf nodes, but a server update can set a priority to an object or an
+      // array, so estimate the priority like any other node.
+      return LEAF_PRIORITY_OVERHEAD + valueSize + estimateSerializedNodeSize(node.getPriority());
     }
   }
 
@@ -72,7 +74,7 @@ public class NodeSizeEstimator {
       }
       if (!node.getPriority().isEmpty()) {
         sum += 12; // "overhead for ".priority", key and colon and comma
-        sum += estimateLeafNodeSize((LeafNode<?>) node.getPriority());
+        sum += estimateSerializedNodeSize(node.getPriority());
       }
       return sum;
     }
