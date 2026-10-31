@@ -136,6 +136,8 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
+    final long flushPeriodMs = getGaugeFlushPeriodMs(collectionFrequency);
+
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
@@ -144,14 +146,29 @@ public class GaugeManager {
                   () -> {
                     syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
-                  /* initialDelay= */ collectionFrequency
-                      * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-                  /* period= */ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  /* initialDelay= */ flushPeriodMs,
+                  /* period= */ flushPeriodMs,
                   TimeUnit.MILLISECONDS);
 
-    } catch (RejectedExecutionException e) {
+    } catch (RejectedExecutionException | IllegalArgumentException e) {
       logger.warn("Unable to start collecting Gauges: " + e.getMessage());
     }
+  }
+
+  /**
+   * Returns the period (in milliseconds) at which the collected gauges are flushed when they are
+   * collected every {@code collectionFrequencyMs} milliseconds.
+   *
+   * <p>The collection frequency comes from config and can be very large, so the result saturates
+   * at {@link Long#MAX_VALUE} instead of overflowing to a negative or zero period, which {@link
+   * ScheduledExecutorService#scheduleAtFixedRate} rejects. A saturated period means that the
+   * gauges are only flushed when the collection stops.
+   */
+  private static long getGaugeFlushPeriodMs(long collectionFrequencyMs) {
+    if (collectionFrequencyMs > Long.MAX_VALUE / APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC) {
+      return Long.MAX_VALUE;
+    }
+    return collectionFrequencyMs * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC;
   }
 
   /**
