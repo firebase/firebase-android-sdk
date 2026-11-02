@@ -90,6 +90,15 @@ android {
         def targetDatabaseId = findProperty('targetDatabaseId') ?: "enterprise"
         buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
 
+        def runComprehensiveProp = findProperty("runComprehensiveTests")
+        def runComprehensiveEnv = System.getenv("FIRESTORE_RUN_COMPREHENSIVE_TESTS")
+        def runComprehensiveTests = runComprehensiveProp != null
+                ? (runComprehensiveProp.toString().isEmpty()
+                    || runComprehensiveProp.toString().equalsIgnoreCase("true")
+                    || runComprehensiveProp.toString() == "YES")
+                : (runComprehensiveEnv == "true" || runComprehensiveEnv == "YES")
+        buildConfigField("boolean", "RUN_COMPREHENSIVE_TESTS", "$runComprehensiveTests")
+
         def localProps = new Properties()
 
         try {
