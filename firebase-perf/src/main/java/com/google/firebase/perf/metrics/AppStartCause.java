@@ -31,6 +31,11 @@ import androidx.annotation.VisibleForTesting;
  * API < 34: returns {@link Cause#UNKNOWN}; legacy logic in {@link AppStartTrace} owns
  *   the decision on these versions.
  *
+ * Note that the importance read itself is NOT version-gated — {@code getMyMemoryState} is
+ * available since API 16 and {@link #importance} is recorded on every API level. Only the
+ * classification is gated; see {@link #capture} for why. See
+ * https://github.com/firebase/firebase-android-sdk/issues/8509.
+ *
  * @hide
  */
 final class AppStartCause {
@@ -63,6 +68,35 @@ final class AppStartCause {
    * Capture the cause for the current process. Call as early as possible (during
    * {@code AppStartTrace.registerActivityLifecycleCallbacks}) so the OS-set values still
    * reflect the original fork reason rather than transient state mid-init.
+   *
+   * <p>{@link #importance} is read on every API level, but only API 34+ classifies on it.
+   * The gate is a deliberate scoping of risk, not an API-availability limit:
+   *
+   * <ul>
+   *   <li>There is no pre-API-34 defect to fix. The bug in #8103 is an API-34+ ordering
+   *       change (the OS drains the posted main-thread runnable before delivering the
+   *       activity-launch transaction); below 34 the legacy ordering check in
+   *       {@link AppStartTrace} still classifies correctly.
+   *   <li>The two signals are not equivalent. The legacy check is a relative ordering
+   *       evaluated at the first {@code onActivityCreated}; this one is a single sample
+   *       taken during ContentProvider init. {@code PROCESS_STATE_BOUND_TOP} maps to
+   *       {@code IMPORTANCE_FOREGROUND}, so a process forked because a foreground app
+   *       bound one of its services samples FOREGROUND here — and a warm start that
+   *       follows would be admitted as {@code _app_start}, which the pre-34 path
+   *       suppresses today.
+   *   <li>Suppression driven by this signal fails silently. A wrong sample on a genuine
+   *       launcher tap drops {@code _app_start} with no error surface; the legacy check
+   *       fails the other way (ambiguity keeps the trace). On API 34+ that trade beat a
+   *       total loss of the trace, which is not the situation below 34.
+   *   <li>The procState-to-importance mapping is not one function across the pre-34 range:
+   *       {@code procStateToImportanceForTargetSdk} returns the {@code *_PRE_26} /
+   *       {@code *_PRE_28} constants for apps targeting below API 26, and pre-Oreo devices
+   *       predate the background-execution limits. minSdk here is 23.
+   *   <li>No production data backs the swap on that population. Extending the signal
+   *       downward warrants shadow-comparing it against the legacy decision across the
+   *       pre-34 fleet first, which is why {@link #importance} is recorded even where it
+   *       is not acted on.
+   * </ul>
    */
   static @NonNull AppStartCause capture(@Nullable Context appContext) {
     final int apiLevel = Build.VERSION.SDK_INT;
@@ -86,7 +120,8 @@ final class AppStartCause {
       return new AppStartCause(cause, importance, apiLevel);
     }
 
-    // API < 34: legacy AppStartTrace logic owns the decision.
+    // API < 34: legacy AppStartTrace logic owns the decision. `importance` is still
+    // recorded above so the two signals can be compared before any future tier flip.
     return new AppStartCause(Cause.UNKNOWN, importance, apiLevel);
   }
 
