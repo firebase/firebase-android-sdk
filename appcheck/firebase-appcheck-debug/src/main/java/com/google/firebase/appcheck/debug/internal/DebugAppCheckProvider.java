@@ -16,6 +16,8 @@ package com.google.firebase.appcheck.debug.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,6 +35,7 @@ import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.appcheck.internal.util.Logger;
 import com.google.firebase.inject.Provider;
 import java.util.UUID;
 import java.util.concurrent.Executor;
@@ -40,7 +43,38 @@ import java.util.concurrent.Executor;
 public class DebugAppCheckProvider implements AppCheckProvider {
 
   private static final String TAG = DebugAppCheckProvider.class.getName();
+  private static final Logger logger = new Logger(TAG);
   private static final String UTF_8 = "UTF-8";
+
+  @VisibleForTesting
+  static final String ENV_FIREBASE_APPCHECK_DEBUG_TOKEN = "FIREBASE_APPCHECK_DEBUG_TOKEN";
+
+  @VisibleForTesting static final String ENV_APP_CHECK_DEBUG_TOKEN = "AppCheckDebugToken";
+
+  @VisibleForTesting
+  static final String DEBUG_TOKEN_RESOURCE_NAME = "firebase_app_check_debug_token";
+
+  @VisibleForTesting
+  interface EnvReader {
+    @Nullable
+    String getEnv(@NonNull String name);
+  }
+
+  private static final EnvReader DEFAULT_ENV_READER =
+      name -> {
+        String value = System.getenv(name);
+        if (!isNullOrEmpty(value)) {
+          return value;
+        }
+        return System.getProperty(name);
+      };
+
+  private static EnvReader envReader = DEFAULT_ENV_READER;
+
+  @VisibleForTesting
+  static void setEnvReader(@Nullable EnvReader reader) {
+    envReader = reader != null ? reader : DEFAULT_ENV_READER;
+  }
 
   private final NetworkClient networkClient;
   private final Executor liteExecutor;
@@ -60,14 +94,8 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     this.blockingExecutor = blockingExecutor;
     this.retryManager = new RetryManager();
 
-    String debugSecret = null;
-    if (debugSecretProvider.get() != null) {
-      debugSecret = debugSecretProvider.get().getDebugSecret();
-    }
     this.debugSecretTask =
-        debugSecret == null
-            ? determineDebugSecret(firebaseApp, backgroundExecutor)
-            : Tasks.forResult(debugSecret);
+        determineDebugSecret(firebaseApp, debugSecretProvider, backgroundExecutor, envReader);
     this.debugSecretTask.addOnSuccessListener(liteExecutor, this::logDebugSecret);
   }
 
@@ -110,16 +138,72 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   @NonNull
   static Task<String> determineDebugSecret(
       @NonNull FirebaseApp firebaseApp, @NonNull Executor executor) {
+    return determineDebugSecret(firebaseApp, /* debugSecretProvider= */ null, executor, envReader);
+  }
+
+  @VisibleForTesting
+  @NonNull
+  static Task<String> determineDebugSecret(
+      @NonNull FirebaseApp firebaseApp,
+      @Nullable Provider<InternalDebugSecretProvider> debugSecretProvider,
+      @NonNull Executor executor,
+      @NonNull EnvReader envReader) {
+    if (debugSecretProvider != null && debugSecretProvider.get() != null) {
+      String providerSecret = debugSecretProvider.get().getDebugSecret();
+      if (!isNullOrEmpty(providerSecret)) {
+        logger.i("[FirebaseAppCheck] Debug token loaded from InternalDebugSecretProvider.");
+        return Tasks.forResult(providerSecret);
+      }
+    }
+
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
+          String envToken = envReader.getEnv(ENV_FIREBASE_APPCHECK_DEBUG_TOKEN);
+          if (isNullOrEmpty(envToken)) {
+            envToken = envReader.getEnv(ENV_APP_CHECK_DEBUG_TOKEN);
+          }
+          if (!isNullOrEmpty(envToken)) {
+            logger.i("[FirebaseAppCheck] Debug token loaded from environment variable.");
+            taskCompletionSource.setResult(envToken);
+            return;
+          }
+
+          Context context = firebaseApp.getApplicationContext();
+          if (context != null && context.getResources() != null) {
+            int resId =
+                context
+                    .getResources()
+                    .getIdentifier(DEBUG_TOKEN_RESOURCE_NAME, "string", context.getPackageName());
+            if (resId != 0) {
+              String resourceToken = context.getString(resId);
+              if (!isNullOrEmpty(resourceToken)) {
+                ApplicationInfo appInfo = context.getApplicationInfo();
+                boolean isDebuggable =
+                    (appInfo != null) && ((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+                if (!isDebuggable) {
+                  logger.e(
+                      "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token.");
+                } else {
+                  logger.i(
+                      "[FirebaseAppCheck] Debug token loaded from R.string.firebase_app_check_debug_token.");
+                  taskCompletionSource.setResult(resourceToken);
+                  return;
+                }
+              }
+            }
+          }
+
           StorageHelper storageHelper =
               new StorageHelper(
                   firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
           String debugSecret = storageHelper.retrieveDebugSecret();
-          if (debugSecret == null) {
+          if (!isNullOrEmpty(debugSecret)) {
+            logger.i("[FirebaseAppCheck] Debug token loaded from SharedPreferences.");
+          } else {
             debugSecret = UUID.randomUUID().toString();
             storageHelper.saveDebugSecret(debugSecret);
+            logger.i("[FirebaseAppCheck] Debug token loaded from auto-generated UUID.");
           }
           taskCompletionSource.setResult(debugSecret);
         });
@@ -152,7 +236,8 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                               request.toJsonString().getBytes(UTF_8),
                               NetworkClient.DEBUG,
                               retryManager))
-                  .addOnFailureListener(liteExecutor, e -> logDebugTokenExchangeError(debugSecret));
+                  .addOnFailureListener(
+                      liteExecutor, e -> logDebugTokenExchangeError(debugSecret, e));
             })
         .onSuccessTask(
             liteExecutor,
@@ -160,11 +245,16 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                 Tasks.forResult(DefaultAppCheckToken.constructFromAppCheckTokenResponse(response)));
   }
 
-  private void logDebugTokenExchangeError(String debugSecret) {
+  private void logDebugTokenExchangeError(String debugSecret, @Nullable Exception e) {
+    if (e != null
+        && e.getMessage() != null
+        && (e.getMessage().contains("code: 403") || e.getMessage().contains("403"))) {
+      logger.w(
+          "[FirebaseAppCheck] Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token.");
+    }
     String consoleUrl = getConsoleUrl();
     if (consoleUrl != null) {
-      Log.w(
-          TAG,
+      logger.w(
           "Failed to exchange debug token ("
               + debugSecret
               + "). If you haven't registered it, you can do so in the Firebase Console: "
