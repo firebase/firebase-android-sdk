@@ -2,6 +2,9 @@
 
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
+- [fixed] Fixed a `NullPointerException` thrown by `checkForUnsentReports()`,
+  `sendUnsentReports()`, and `deleteUnsentReports()` when Crashlytics failed to
+  initialize. (#8757)
 
 # 21.0.1
 
