@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for loading the App Check debug token from the
+  `firebase_app_check_debug_token` string resource in debuggable builds. (#8791)
+
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
