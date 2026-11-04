@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.Value
@@ -24,9 +25,9 @@ internal constructor(internal val alias: String, internal val expr: AggregateFun
 /** A class that represents an aggregate function. */
 class AggregateFunction
 private constructor(
-  private val name: String,
-  private val params: Array<out Expression>,
-  private val options: InternalOptions = InternalOptions.EMPTY
+  internal val name: String,
+  internal val params: Array<out Expression>,
+  internal val options: InternalOptions = InternalOptions.EMPTY
 ) {
   private constructor(name: String) : this(name, emptyArray())
   private constructor(name: String, expr: Expression) : this(name, arrayOf(expr))
@@ -263,6 +264,25 @@ private constructor(
    * alias.
    */
   fun alias(alias: String) = AliasedAggregate(alias, this)
+
+  /**
+   * Applies a window frame to this aggregate, turning it into a window function.
+   *
+   * Window Functions SDK features are in preview until the backend feature launches. Look for
+   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   *
+   * Use this to give a single accumulator its own framing, independent of the frame declared on the
+   * enclosing `addWindowFields` stage. Only `documents` or `range` window frames (created via
+   * [WindowSpec.documents] or [WindowSpec.range]) are supported on individual accumulators; other
+   * window parameters such as [WindowSpec.partition] or [WindowSpec.sort] are not supported on
+   * accumulator-level `over()` and must be specified on the enclosing `addWindowFields` stage.
+   *
+   * @param window The window frame specification to evaluate this aggregate over.
+   * @return A new [WindowFunction] wrapping this aggregate.
+   */
+  @Beta fun over(window: WindowSpec): WindowFunction = WindowFunction.fromAggregate(this, window)
+
+  internal fun canonicalId(): String = "$name(${params.joinToString(",") { it.canonicalId() }})"
 
   internal fun toProto(userDataReader: UserDataReader): Value {
     val builder = ProtoFunction.newBuilder()
