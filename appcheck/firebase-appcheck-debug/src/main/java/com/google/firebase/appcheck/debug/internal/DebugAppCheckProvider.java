@@ -123,7 +123,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     if (debugSecretProvider != null && debugSecretProvider.get() != null) {
       String providerSecret = debugSecretProvider.get().getDebugSecret();
       if (!isNullOrEmpty(providerSecret)) {
-        logger.i("[FirebaseAppCheck] Debug token loaded from InternalDebugSecretProvider.");
+        logger.i("Debug token loaded from InternalDebugSecretProvider.");
         return Tasks.forResult(providerSecret);
       }
     }
@@ -147,8 +147,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                   logger.e(
                       "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token.");
                 } else {
-                  logger.i(
-                      "[FirebaseAppCheck] Debug token loaded from R.string.firebase_app_check_debug_token.");
+                  logger.i("Debug token loaded from R.string.firebase_app_check_debug_token.");
                   taskCompletionSource.setResult(resourceToken);
                   return;
                 }
@@ -161,11 +160,11 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                   firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
           String debugSecret = storageHelper.retrieveDebugSecret();
           if (!isNullOrEmpty(debugSecret)) {
-            logger.i("[FirebaseAppCheck] Debug token loaded from SharedPreferences.");
+            logger.i("Debug token loaded from SharedPreferences.");
           } else {
             debugSecret = UUID.randomUUID().toString();
             storageHelper.saveDebugSecret(debugSecret);
-            logger.i("[FirebaseAppCheck] Debug token loaded from auto-generated UUID.");
+            logger.i("Debug token loaded from auto-generated UUID.");
           }
           taskCompletionSource.setResult(debugSecret);
         });
@@ -208,11 +207,9 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   }
 
   private void logDebugTokenExchangeError(String debugSecret, @Nullable Exception e) {
-    if (e != null
-        && e.getMessage() != null
-        && (e.getMessage().contains("code: 403") || e.getMessage().contains("403"))) {
+    if (e != null && e.getMessage() != null && e.getMessage().contains("code: 403")) {
       logger.w(
-          "[FirebaseAppCheck] Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token.");
+          "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token.");
     }
     String consoleUrl = getConsoleUrl();
     if (consoleUrl != null) {

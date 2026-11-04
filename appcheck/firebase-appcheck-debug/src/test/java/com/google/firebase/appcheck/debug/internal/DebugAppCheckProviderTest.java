@@ -223,8 +223,7 @@ public class DebugAppCheckProviderTest {
         DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
     assertThat(debugSecretTask.getResult()).isEqualTo(DEBUG_SECRET);
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
-    assertThat(hasLogMessage("[FirebaseAppCheck] Debug token loaded from SharedPreferences."))
-        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from SharedPreferences.")).isTrue();
   }
 
   @Test
@@ -242,10 +241,7 @@ public class DebugAppCheckProviderTest {
 
     assertThat(debugSecretTask.getResult()).isEqualTo(providerSecret);
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
-    assertThat(
-            hasLogMessage(
-                "[FirebaseAppCheck] Debug token loaded from InternalDebugSecretProvider."))
-        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from InternalDebugSecretProvider.")).isTrue();
   }
 
   @Test
@@ -260,9 +256,7 @@ public class DebugAppCheckProviderTest {
 
     assertThat(debugSecretTask.getResult()).isEqualTo(resourceSecret);
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
-    assertThat(
-            hasLogMessage(
-                "[FirebaseAppCheck] Debug token loaded from R.string.firebase_app_check_debug_token."))
+    assertThat(hasLogMessage("Debug token loaded from R.string.firebase_app_check_debug_token."))
         .isTrue();
   }
 
@@ -282,8 +276,7 @@ public class DebugAppCheckProviderTest {
             hasLogMessage(
                 "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token."))
         .isTrue();
-    assertThat(hasLogMessage("[FirebaseAppCheck] Debug token loaded from SharedPreferences."))
-        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from SharedPreferences.")).isTrue();
   }
 
   @Test
@@ -302,8 +295,7 @@ public class DebugAppCheckProviderTest {
             hasLogMessage(
                 "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token."))
         .isTrue();
-    assertThat(hasLogMessage("[FirebaseAppCheck] Debug token loaded from auto-generated UUID."))
-        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from auto-generated UUID.")).isTrue();
   }
 
   @Test
@@ -327,8 +319,34 @@ public class DebugAppCheckProviderTest {
     assertThat(task.getException()).isEqualTo(forbiddenException);
     assertThat(
             hasLogMessage(
-                "[FirebaseAppCheck] Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token."))
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token."))
         .isTrue();
+  }
+
+  @Test
+  public void exchangeDebugToken_onNon403FailureWith403InBody_doesNotLogRejectionRecoveryHint()
+      throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException badRequestException =
+        new FirebaseException(
+            "Error returned from API. code: 400 body: Invalid request for app 1:4035551234:android:abc.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(badRequestException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(badRequestException);
+    assertThat(
+            hasLogMessage(
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token."))
+        .isFalse();
   }
 
   private void configureMockResourceToken(String resourceToken, boolean isDebuggable) {
