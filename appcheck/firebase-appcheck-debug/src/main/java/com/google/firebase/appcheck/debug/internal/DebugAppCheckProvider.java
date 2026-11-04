@@ -18,6 +18,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Resources;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -32,6 +33,7 @@ import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
+import com.google.firebase.appcheck.debug.R;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
@@ -45,9 +47,6 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   private static final String TAG = DebugAppCheckProvider.class.getName();
   private static final Logger logger = Logger.getLogger();
   private static final String UTF_8 = "UTF-8";
-
-  @VisibleForTesting
-  static final String DEBUG_TOKEN_RESOURCE_NAME = "firebase_app_check_debug_token";
 
   private final NetworkClient networkClient;
   private final Executor liteExecutor;
@@ -133,24 +132,23 @@ public class DebugAppCheckProvider implements AppCheckProvider {
         () -> {
           Context context = firebaseApp.getApplicationContext();
           if (context != null && context.getResources() != null) {
-            int resId =
-                context
-                    .getResources()
-                    .getIdentifier(DEBUG_TOKEN_RESOURCE_NAME, "string", context.getPackageName());
-            if (resId != 0) {
-              String resourceToken = context.getString(resId);
-              if (!isNullOrEmpty(resourceToken)) {
-                ApplicationInfo appInfo = context.getApplicationInfo();
-                boolean isDebuggable =
-                    (appInfo != null) && ((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
-                if (!isDebuggable) {
-                  logger.e(
-                      "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token.");
-                } else {
-                  logger.i("Debug token loaded from R.string.firebase_app_check_debug_token.");
-                  taskCompletionSource.setResult(resourceToken);
-                  return;
-                }
+            String resourceToken = null;
+            try {
+              resourceToken = context.getString(R.string.firebase_app_check_debug_token);
+            } catch (Resources.NotFoundException ignored) {
+              // Treat missing resource as unconfigured.
+            }
+            if (!isNullOrEmpty(resourceToken)) {
+              ApplicationInfo appInfo = context.getApplicationInfo();
+              boolean isDebuggable =
+                  (appInfo != null) && ((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+              if (!isDebuggable) {
+                logger.e(
+                    "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token.");
+              } else {
+                logger.i("Debug token loaded from R.string.firebase_app_check_debug_token.");
+                taskCompletionSource.setResult(resourceToken);
+                return;
               }
             }
           }

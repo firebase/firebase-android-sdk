@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.content.res.Resources;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -37,6 +36,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
+import com.google.firebase.appcheck.debug.R;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
@@ -58,13 +58,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowLog;
 
 /** Tests for {@link DebugAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
 @LooperMode(LooperMode.Mode.PAUSED)
 public class DebugAppCheckProviderTest {
 
@@ -352,8 +350,6 @@ public class DebugAppCheckProviderTest {
   private void configureMockResourceToken(String resourceToken, boolean isDebuggable) {
     Context baseContext = ApplicationProvider.getApplicationContext();
     Context spyContext = spy(baseContext);
-    Resources spyResources = spy(baseContext.getResources());
-    int fakeResId = 0x7f110001;
 
     ApplicationInfo appInfo = new ApplicationInfo(baseContext.getApplicationInfo());
     if (isDebuggable) {
@@ -362,15 +358,8 @@ public class DebugAppCheckProviderTest {
       appInfo.flags &= ~ApplicationInfo.FLAG_DEBUGGABLE;
     }
 
-    doReturn(spyResources).when(spyContext).getResources();
     doReturn(appInfo).when(spyContext).getApplicationInfo();
-    doReturn(fakeResId)
-        .when(spyResources)
-        .getIdentifier(
-            DebugAppCheckProvider.DEBUG_TOKEN_RESOURCE_NAME,
-            "string",
-            baseContext.getPackageName());
-    doReturn(resourceToken).when(spyContext).getString(fakeResId);
+    doReturn(resourceToken).when(spyContext).getString(R.string.firebase_app_check_debug_token);
     when(mockFirebaseApp.getApplicationContext()).thenReturn(spyContext);
   }
 
