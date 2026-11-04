@@ -42,6 +42,7 @@ import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.appcheck.internal.util.Logger;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inject.Provider;
 import java.io.IOException;
@@ -356,7 +357,7 @@ public class DebugAppCheckProviderTest {
   }
 
   private static boolean hasLogMessage(String expectedMessage) {
-    return ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
+    return ShadowLog.getLogsForTag(Logger.TAG).stream()
         .anyMatch(log -> expectedMessage.equals(log.msg));
   }
 
@@ -417,17 +418,14 @@ public class DebugAppCheckProviderTest {
     assertThat(task.isSuccessful()).isFalse();
 
     boolean foundLog =
-        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
-            .anyMatch(
-                log ->
-                    log.msg.equals(
-                        "Failed to exchange debug token ("
-                            + DEBUG_SECRET
-                            + "). If you haven't registered it, "
-                            + "you can do so in the Firebase Console: "
-                            + String.format(
-                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
-                                PROJECT_ID, APP_ID)));
+        hasLogMessage(
+            "Failed to exchange debug token ("
+                + DEBUG_SECRET
+                + "). If you haven't registered it, "
+                + "you can do so in the Firebase Console: "
+                + String.format(
+                    "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                    PROJECT_ID, APP_ID));
     assertThat(foundLog).isTrue();
   }
 

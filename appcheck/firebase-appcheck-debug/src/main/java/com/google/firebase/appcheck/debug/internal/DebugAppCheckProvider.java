@@ -43,7 +43,7 @@ import java.util.concurrent.Executor;
 public class DebugAppCheckProvider implements AppCheckProvider {
 
   private static final String TAG = DebugAppCheckProvider.class.getName();
-  private static final Logger logger = new Logger(TAG);
+  private static final Logger logger = Logger.getLogger();
   private static final String UTF_8 = "UTF-8";
 
   @VisibleForTesting
