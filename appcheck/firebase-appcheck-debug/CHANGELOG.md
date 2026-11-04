@@ -1,10 +1,7 @@
 # Unreleased
 
 - [feature] Added support for loading the App Check debug token from the
-  `firebase_app_check_debug_token` string resource in debuggable builds, so tokens
-  provisioned with the Firebase CLI (`firebase appcheck:debugtokens:create`) are
-  picked up automatically. The resolved token source is now logged, and a recovery
-  hint is logged when the server rejects the debug token. (#8791)
+  `firebase_app_check_debug_token` string resource in debuggable builds. (#8791)
 
 # 20.0.0
 
