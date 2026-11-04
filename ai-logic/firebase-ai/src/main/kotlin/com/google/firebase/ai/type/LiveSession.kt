@@ -643,6 +643,7 @@ internal constructor(
             // Notify the application
             goAwayHandler?.invoke(it)
           }
+          is LiveServerVoiceActivity -> {} // Ignore during managed audio conversation
           is LiveServerUnknownMessage -> {} // Ignore. Logging happens at de-serialization time
         }
       }

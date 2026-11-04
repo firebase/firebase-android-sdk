@@ -37,6 +37,7 @@ import kotlinx.serialization.json.jsonObject
  * @see LiveServerSetupComplete
  * @see LiveServerGoAway
  * @see LiveSessionResumptionUpdate
+ * @see LiveServerVoiceActivity
  */
 @PublicPreviewAPI public interface LiveServerMessage
 
@@ -214,11 +215,7 @@ public class LiveServerGoAway internal constructor(public val timeLeft: Duration
   @Serializable
   internal data class InternalWrapper(val goAway: Internal) : InternalLiveServerMessage {
     override fun toPublic(): LiveServerGoAway {
-      val timeLeftTrimmed = goAway.timeLeft?.trim()
-      // Protobuf Duration format: always ends with 's' (seconds)
-      val parsedDuration =
-        timeLeftTrimmed?.takeIf { it.endsWith("s") }?.dropLast(1)?.toDoubleOrNull()?.seconds
-      return LiveServerGoAway(parsedDuration)
+      return LiveServerGoAway(parseProtoDuration(goAway.timeLeft))
     }
   }
 }
@@ -261,6 +258,43 @@ internal constructor(
   }
 }
 
+/**
+ * Server notification indicating voice activity was detected in the input audio stream.
+ *
+ * @property type Whether speech started or ended.
+ * @property audioOffset The time voice activity was detected relative to the start of the audio
+ * stream.
+ */
+@PublicPreviewAPI
+public class LiveServerVoiceActivity
+internal constructor(
+  public val type: VoiceActivityType,
+  @get:JvmName("getAudioOffset") public val audioOffset: Duration?,
+) : LiveServerMessage {
+  @Serializable
+  internal data class Internal(val type: String? = null, val audioOffset: String? = null)
+
+  @Serializable
+  internal data class InternalWrapper(val voiceActivity: Internal) : InternalLiveServerMessage {
+    override fun toPublic(): LiveServerVoiceActivity {
+      return LiveServerVoiceActivity(
+        type = VoiceActivityType.fromValue(voiceActivity.type),
+        audioOffset = parseProtoDuration(voiceActivity.audioOffset)
+      )
+    }
+  }
+}
+
+// Protobuf Duration format: always ends with 's' (seconds), for example "2.520s".
+private fun parseProtoDuration(duration: String?): Duration? =
+  duration
+    ?.trim()
+    ?.takeIf { it.endsWith("s") }
+    ?.dropLast(1)
+    ?.toDoubleOrNull()
+    ?.takeIf { it.isFinite() }
+    ?.seconds
+
 @PublicPreviewAPI
 @Serializable(LiveServerMessageSerializer::class)
 internal sealed interface InternalLiveServerMessage {
@@ -284,6 +318,7 @@ internal object LiveServerMessageSerializer :
       "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
       "sessionResumptionUpdate" in jsonObject ->
         LiveSessionResumptionUpdate.InternalWrapper.serializer()
+      "voiceActivity" in jsonObject -> LiveServerVoiceActivity.InternalWrapper.serializer()
       else -> {
         Log.w(
           "LiveServerMsgSerializer",
