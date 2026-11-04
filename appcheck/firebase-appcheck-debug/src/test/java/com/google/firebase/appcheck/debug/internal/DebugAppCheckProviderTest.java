@@ -297,8 +297,9 @@ public class DebugAppCheckProviderTest {
   }
 
   @Test
-  public void exchangeDebugToken_onHttp403Failure_logsRejectionRecoveryHintAndFailsTask()
-      throws Exception {
+  public void
+      exchangeDebugToken_onHttp403FailureWithResourceSource_logsForceRecoveryHintAndFailsTask()
+          throws Exception {
     ShadowLog.clear();
     when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
     when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
@@ -310,14 +311,86 @@ public class DebugAppCheckProviderTest {
 
     DebugAppCheckProvider provider =
         new DebugAppCheckProvider(
-            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.RESOURCE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isEqualTo(forbiddenException);
     assertThat(
             hasLogMessage(
-                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token."))
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create"
+                    + " --force' to provision a new token, then rebuild the app."))
+        .isTrue();
+  }
+
+  @Test
+  public void
+      exchangeDebugToken_onHttp403FailureWithProviderSource_logsProviderRecoveryHintAndFailsTask()
+          throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException forbiddenException =
+        new FirebaseException("Error returned from API. code: 403 body: Permission denied.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(forbiddenException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.PROVIDER,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(forbiddenException);
+    assertThat(
+            hasLogMessage(
+                "Debug token from InternalDebugSecretProvider was rejected by server. Update or"
+                    + " register the configured secret."))
+        .isTrue();
+  }
+
+  @Test
+  public void
+      exchangeDebugToken_onHttp403FailureWithStorageSource_logsRegisterRecoveryHintAndFailsTask()
+          throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException forbiddenException =
+        new FirebaseException("Error returned from API. code: 403 body: Permission denied.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(forbiddenException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.STORAGE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(forbiddenException);
+    assertThat(
+            hasLogMessage(
+                String.format(
+                    "Debug token was rejected by server. Register it with: firebase"
+                        + " appcheck:debugtokens:create %s --project %s --app %s",
+                    DEBUG_SECRET, PROJECT_ID, APP_ID)))
         .isTrue();
   }
 
@@ -336,14 +409,20 @@ public class DebugAppCheckProviderTest {
 
     DebugAppCheckProvider provider =
         new DebugAppCheckProvider(
-            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.RESOURCE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isEqualTo(badRequestException);
     assertThat(
             hasLogMessage(
-                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token."))
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create"
+                    + " --force' to provision a new token, then rebuild the app."))
         .isFalse();
   }
 

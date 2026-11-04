@@ -48,11 +48,28 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   private static final Logger logger = Logger.getLogger();
   private static final String UTF_8 = "UTF-8";
 
+  @VisibleForTesting
+  enum SecretSource {
+    PROVIDER,
+    RESOURCE,
+    STORAGE
+  }
+
+  private static final class ResolvedSecret {
+    final String secret;
+    final SecretSource source;
+
+    ResolvedSecret(String secret, SecretSource source) {
+      this.secret = secret;
+      this.source = source;
+    }
+  }
+
   private final NetworkClient networkClient;
   private final Executor liteExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
-  private final Task<String> debugSecretTask;
+  private final Task<ResolvedSecret> debugSecretTask;
 
   public DebugAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
@@ -66,9 +83,9 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     this.blockingExecutor = blockingExecutor;
     this.retryManager = new RetryManager();
 
-    this.debugSecretTask =
-        determineDebugSecret(firebaseApp, debugSecretProvider, backgroundExecutor);
-    this.debugSecretTask.addOnSuccessListener(liteExecutor, this::logDebugSecret);
+    this.debugSecretTask = resolveDebugSecret(firebaseApp, debugSecretProvider, backgroundExecutor);
+    this.debugSecretTask.addOnSuccessListener(
+        liteExecutor, resolved -> logDebugSecret(resolved.secret));
   }
 
   private void logDebugSecret(String secret) {
@@ -99,11 +116,28 @@ public class DebugAppCheckProvider implements AppCheckProvider {
       @NonNull Executor liteExecutor,
       @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
+    this(
+        debugSecret,
+        SecretSource.STORAGE,
+        networkClient,
+        liteExecutor,
+        blockingExecutor,
+        retryManager);
+  }
+
+  @VisibleForTesting
+  DebugAppCheckProvider(
+      @NonNull String debugSecret,
+      @NonNull SecretSource source,
+      @NonNull NetworkClient networkClient,
+      @NonNull Executor liteExecutor,
+      @NonNull Executor blockingExecutor,
+      @NonNull RetryManager retryManager) {
     this.networkClient = networkClient;
     this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
-    this.debugSecretTask = Tasks.forResult(debugSecret);
+    this.debugSecretTask = Tasks.forResult(new ResolvedSecret(debugSecret, source));
   }
 
   @VisibleForTesting
@@ -119,15 +153,24 @@ public class DebugAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @Nullable Provider<InternalDebugSecretProvider> debugSecretProvider,
       @NonNull Executor executor) {
+    return resolveDebugSecret(firebaseApp, debugSecretProvider, executor)
+        .continueWith(executor, task -> task.getResult().secret);
+  }
+
+  @NonNull
+  private static Task<ResolvedSecret> resolveDebugSecret(
+      @NonNull FirebaseApp firebaseApp,
+      @Nullable Provider<InternalDebugSecretProvider> debugSecretProvider,
+      @NonNull Executor executor) {
     if (debugSecretProvider != null && debugSecretProvider.get() != null) {
       String providerSecret = debugSecretProvider.get().getDebugSecret();
       if (!isNullOrEmpty(providerSecret)) {
         logger.i("Debug token loaded from InternalDebugSecretProvider.");
-        return Tasks.forResult(providerSecret);
+        return Tasks.forResult(new ResolvedSecret(providerSecret, SecretSource.PROVIDER));
       }
     }
 
-    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    TaskCompletionSource<ResolvedSecret> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
           Context context = firebaseApp.getApplicationContext();
@@ -147,7 +190,8 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                     "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token.");
               } else {
                 logger.i("Debug token loaded from R.string.firebase_app_check_debug_token.");
-                taskCompletionSource.setResult(resourceToken);
+                taskCompletionSource.setResult(
+                    new ResolvedSecret(resourceToken, SecretSource.RESOURCE));
                 return;
               }
             }
@@ -164,7 +208,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
             storageHelper.saveDebugSecret(debugSecret);
             logger.i("Debug token loaded from auto-generated UUID.");
           }
-          taskCompletionSource.setResult(debugSecret);
+          taskCompletionSource.setResult(new ResolvedSecret(debugSecret, SecretSource.STORAGE));
         });
     return taskCompletionSource.getTask();
   }
@@ -185,9 +229,9 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     return debugSecretTask
         .onSuccessTask(
             liteExecutor,
-            debugSecret -> {
+            resolved -> {
               ExchangeDebugTokenRequest request =
-                  new ExchangeDebugTokenRequest(debugSecret, isLimitedUseToken);
+                  new ExchangeDebugTokenRequest(resolved.secret, isLimitedUseToken);
               return Tasks.call(
                       blockingExecutor,
                       () ->
@@ -195,8 +239,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                               request.toJsonString().getBytes(UTF_8),
                               NetworkClient.DEBUG,
                               retryManager))
-                  .addOnFailureListener(
-                      liteExecutor, e -> logDebugTokenExchangeError(debugSecret, e));
+                  .addOnFailureListener(liteExecutor, e -> logDebugTokenExchangeError(resolved, e));
             })
         .onSuccessTask(
             liteExecutor,
@@ -204,16 +247,37 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                 Tasks.forResult(DefaultAppCheckToken.constructFromAppCheckTokenResponse(response)));
   }
 
-  private void logDebugTokenExchangeError(String debugSecret, @Nullable Exception e) {
+  private void logDebugTokenExchangeError(ResolvedSecret resolved, @Nullable Exception e) {
     if (e != null && e.getMessage() != null && e.getMessage().contains("code: 403")) {
-      logger.w(
-          "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create --force' to provision a new token.");
+      switch (resolved.source) {
+        case RESOURCE:
+          logger.w(
+              "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create"
+                  + " --force' to provision a new token, then rebuild the app.");
+          break;
+        case PROVIDER:
+          logger.w(
+              "Debug token from InternalDebugSecretProvider was rejected by server. Update or"
+                  + " register the configured secret.");
+          break;
+        case STORAGE:
+          String projectId = networkClient.getProjectId();
+          String appId = networkClient.getAppId();
+          if (!isNullOrEmpty(projectId) && !isNullOrEmpty(appId)) {
+            logger.w(
+                String.format(
+                    "Debug token was rejected by server. Register it with: firebase"
+                        + " appcheck:debugtokens:create %s --project %s --app %s",
+                    resolved.secret, projectId, appId));
+          }
+          break;
+      }
     }
     String consoleUrl = getConsoleUrl();
     if (consoleUrl != null) {
       logger.w(
           "Failed to exchange debug token ("
-              + debugSecret
+              + resolved.secret
               + "). If you haven't registered it, you can do so in the Firebase Console: "
               + consoleUrl);
     }
