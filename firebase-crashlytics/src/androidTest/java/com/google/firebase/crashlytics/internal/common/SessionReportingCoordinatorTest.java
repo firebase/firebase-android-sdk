@@ -688,6 +688,18 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     assertFalse(generated);
   }
 
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testCorrectFilenames() {
+    assertTrue(
+        SessionReportingCoordinator.isProfilingTriggerHeapdump(
+            "profile_trigger-anomaly_memorylimit_2026-11-03-15-19-47-390_uid-10531.perfetto-java-heap-dump-metadata.zip"));
+    assertTrue(
+        SessionReportingCoordinator.isProfilingTriggerHeapdump(
+            "profile_trigger-type-7_2026-10-21-16-30-31-270_uid-10531.perfetto-java-heap-dump"));
+    assertFalse(SessionReportingCoordinator.isProfilingTriggerHeapdump("some-other-filename"));
+  }
+
   private ApplicationExitInfo makeApplicationExitInfo(int reason, int subreason, int status) {
     return makeApplicationExitInfo(reason, subreason, status, "");
   }
