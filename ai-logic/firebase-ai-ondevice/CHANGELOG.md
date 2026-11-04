@@ -1,5 +1,12 @@
 # Unreleased
 
+- [feature] Added support for function calling in on-device content generation
+  requests and responses. (#8758)
+- [feature] Added support for multiple `TextPart` and `ImagePart` instances in
+  on-device content generation requests. (#8754)
+
+# 16.0.0-beta07
+
 - [feature] Added support for thinking mode in on-device content generation
   requests and responses. (#8678)
 - [feature] Added support for `systemInstruction` in on-device content generation requests. (#8663)

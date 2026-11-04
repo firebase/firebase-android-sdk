@@ -48,6 +48,8 @@ import java.util.Map;
 
 public class CommonUtils {
 
+  public static final String CRASHLYTICS_API_KEY =
+      mergeStrings("AzSBpY4F0rHiHFdinTvM", "IayrSTFL9eJ69YeSUO2");
   private static final String SHA1_INSTANCE = "SHA-1";
   private static final String GOLDFISH = "goldfish";
   private static final String RANCHU = "ranchu";
@@ -89,6 +91,24 @@ public class CommonUtils {
    */
   public static int getCpuArchitectureInt() {
     return Architecture.getValue().ordinal();
+  }
+
+  public static String mergeStrings(String part1, String part2) {
+    int sizeDiff = part1.length() - part2.length();
+    if (sizeDiff < 0 || sizeDiff > 1) {
+      throw new IllegalArgumentException("Invalid input received");
+    }
+
+    StringBuilder url = new StringBuilder(part1.length() + part2.length());
+
+    for (int i = 0; i < part1.length(); i++) {
+      url.append(part1.charAt(i));
+      if (part2.length() > i) {
+        url.append(part2.charAt(i));
+      }
+    }
+
+    return url.toString();
   }
 
   /**

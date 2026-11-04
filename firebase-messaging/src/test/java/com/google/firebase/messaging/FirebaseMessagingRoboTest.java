@@ -343,6 +343,60 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
+  public void blockingRegister_withFiid_delegatesToFiid() throws Exception {
+    resetForTokenTests();
+    FirebaseInstanceIdInternal mockFiid = mock(FirebaseInstanceIdInternal.class);
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    FirebaseInstallationsApi mockInstallationsApi = mock(FirebaseInstallationsApi.class);
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            mockFiid,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockInstallationsApi,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+    when(mockFiid.getTokenTask()).thenReturn(Tasks.forResult("fake_token"));
+
+    assertThat(messaging.blockingRegister(false)).isEqualTo("fake_token");
+    verify(mockFiid).getTokenTask();
+    verifyNoInteractions(mockGmsRpc);
+  }
+
+  @Test
+  @SuppressWarnings("GuardedBy")
+  public void autoInit_withFiid_delegatesToFiid() throws Exception {
+    resetForTokenTests();
+    editManifestApplicationMetadata().putBoolean("firebase_messaging_auto_init_enabled", true);
+
+    FirebaseMessaging.syncExecutor = fakeScheduledExecutorService;
+
+    FirebaseInstanceIdInternal mockFiid = mock(FirebaseInstanceIdInternal.class);
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    FirebaseInstallationsApi mockInstallationsApi = mock(FirebaseInstallationsApi.class);
+    FirebaseMessaging messaging =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            mockFiid,
+            EMPTY_TRANSPORT_FACTORY,
+            mock(Subscriber.class),
+            new Metadata(context),
+            mockGmsRpc,
+            mockInstallationsApi,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    assertThat(messaging.isAutoInitEnabled()).isTrue();
+    verify(mockFiid).getToken();
+    verifyNoInteractions(mockGmsRpc);
+  }
+
+  @Test
   public void testDeleteToken() throws Exception {
     resetForTokenTests();
     GmsRpc mockGmsRpc = mock(GmsRpc.class);

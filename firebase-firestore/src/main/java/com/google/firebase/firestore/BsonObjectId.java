@@ -16,24 +16,24 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 
-/** Represents a BSON ObjectId type in Firestore documents. */
+/** Represents a BSON {@code ObjectId} type in Firestore documents. */
 public final class BsonObjectId {
   public final String value;
 
   /**
-   * Constructor that creates a new BSON ObjectId value with the given value.
+   * Constructor that creates a new BSON {@code ObjectId} value with the given value.
    *
-   * @param oid The 24-character hex string representing the ObjectId.
+   * @param oid The 24-character hex string representing the {@code ObjectId}.
    */
   public BsonObjectId(@NonNull String oid) {
     this.value = oid;
   }
 
   /**
-   * Returns true if this BsonObjectId is equal to the provided object.
+   * Returns true if this {@code BsonObjectId} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this BsonObjectId is equal to the provided object.
+   * @return Whether this {@code BsonObjectId} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {

@@ -16,7 +16,6 @@
 
 package com.google.firebase.appdistribution.gradle
 
-import com.google.api.client.googleapis.GoogleUtils
 import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.HttpContent
 import com.google.api.client.http.HttpRequestFactory
@@ -53,9 +52,6 @@ private constructor(
     @Throws(IOException::class, GeneralSecurityException::class)
     fun newGoogleHttpTransport(): HttpTransport {
       val builder = NetHttpTransport.Builder()
-
-      // Trust Google cert
-      builder.trustCertificates(GoogleUtils.getCertificateTrustStore())
 
       // Trust customer CA cert, if exists
       val trustStorePath = System.getProperty("javax.net.ssl.trustStore")

@@ -132,6 +132,10 @@ public class ResumableUploadMetadataStore {
             if (uploads.stream().noneMatch(upload -> upload.path.equals(path))) {
               InProgressUploadMetadata newUpload =
                   new InProgressUploadMetadata(sessionId, type, path);
+              // Prevent the file from growing unbounded, especially if the device is always on
+              // a metered network
+              trim(uploads);
+
               // Add to front (oldest first logic in getUpload expects this order)
               uploads.add(0, newUpload);
 
@@ -192,6 +196,23 @@ public class ResumableUploadMetadataStore {
     }
 
     return false;
+  }
+
+  @RequiresApi(api = 37)
+  private static void trim(List<InProgressUploadMetadata> uploads) {
+    if (uploads.size() <= 10) {
+      return;
+    }
+
+    uploads.reversed().stream()
+        .filter(InProgressUploadMetadata::isNew)
+        .findFirst()
+        .or(
+            () ->
+                uploads.reversed().stream()
+                    .filter(InProgressUploadMetadata::isInProgress)
+                    .findFirst())
+        .ifPresent(uploads::remove);
   }
 
   @RequiresApi(api = 37)

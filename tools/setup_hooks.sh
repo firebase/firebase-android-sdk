@@ -27,13 +27,31 @@ set -e
 
 echo "Running pre-push hook: formatting and API generation..."
 
+PRE_TRACKED_STATUS="\$(git status --porcelain --untracked-files=no)"
+if [ -n "\$PRE_TRACKED_STATUS" ]; then
+    echo ""
+    echo "=========================================================================="
+    echo "ERROR: You have uncommitted changes to tracked files in your working tree."
+    echo "Formatting (sApp) and API generation (generateApiTxtFile) run against the"
+    echo "working tree rather than HEAD, so uncommitted changes can mask unformatted"
+    echo "commits."
+    echo "The push has been ABORTED. Please commit or stash your changes and try again."
+    echo "=========================================================================="
+    echo ""
+    git status --short --untracked-files=no
+    echo ""
+    exit 1
+fi
+
 PRE_STATUS="\$(git status --porcelain)"
+PRE_DIFF="\$(git diff HEAD)"
 
 python3 "$REPO_ROOT/tools/firebase_checks.py"
 
 POST_STATUS="\$(git status --porcelain)"
+POST_DIFF="\$(git diff HEAD)"
 
-if [ "\$PRE_STATUS" != "\$POST_STATUS" ]; then
+if [ "\$PRE_STATUS" != "\$POST_STATUS" ] || [ "\$PRE_DIFF" != "\$POST_DIFF" ]; then
     echo ""
     echo "=========================================================================="
     echo "ERROR: Code formatting (sApp) or API generation (generateApiTxtFile)"

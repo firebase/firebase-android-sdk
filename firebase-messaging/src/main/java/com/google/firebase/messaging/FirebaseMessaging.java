@@ -780,6 +780,12 @@ public class FirebaseMessaging {
   }
 
   private void startSyncIfNecessary() {
+    if (iid != null && !gmsRegistrationClient.isV1RegistrationEnabled()) {
+      // This calls FirebaseInstanceId.startSync() if necessary, ignore the result since it isn't
+      // needed here.
+      iid.getToken();
+      return;
+    }
     Store.Token token = getTokenWithoutTriggeringSync();
     // Start a sync if we don't have a token, the token needs refresh, or there is a pending topic
     // operation
@@ -806,6 +812,14 @@ public class FirebaseMessaging {
    */
   @CanIgnoreReturnValue
   String blockingRegister(boolean shouldInvokeCallback) throws IOException {
+    if (iid != null && !gmsRegistrationClient.isV1RegistrationEnabled()) {
+      try {
+        return Tasks.await(iid.getTokenTask());
+      } catch (ExecutionException | InterruptedException e) {
+        throw new IOException(e);
+      }
+    }
+
     Store.Token cachedToken = getTokenWithoutTriggeringSync();
     if (!tokenNeedsRefresh(cachedToken)) {
       assert cachedToken != null;

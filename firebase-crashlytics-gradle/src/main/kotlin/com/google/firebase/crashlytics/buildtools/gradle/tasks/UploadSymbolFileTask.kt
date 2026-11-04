@@ -91,7 +91,7 @@ abstract class UploadSymbolFileTask : DefaultTask() {
 
   private fun printDebugProperties() {
     logger.debug("UploadSymbolFileTask:")
-    logger.debug("  mergedMappingFile: ${symbolFileDirectory.orNull?.asFile?.path}")
+    logger.debug("  symbolFileDirectory: ${symbolFileDirectory.orNull?.asFile?.path}")
     logger.debug("  appIdFile: ${appIdFile.orNull?.asFile?.path}")
     logger.debug("  symbolGeneratorType: ${symbolGeneratorType.orNull?.toString()}")
   }

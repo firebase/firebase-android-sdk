@@ -14,6 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.send;
 
+import static com.google.firebase.crashlytics.internal.common.CommonUtils.CRASHLYTICS_API_KEY;
+import static com.google.firebase.crashlytics.internal.common.CommonUtils.mergeStrings;
+
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
@@ -39,14 +42,11 @@ public class DataTransportCrashlyticsReportSender {
       new CrashlyticsReportJsonTransform();
   private static final String CRASHLYTICS_ENDPOINT =
       mergeStrings("hts/cahyiseot-agolai.o/1frlglgc/aclg", "tp:/rsltcrprsp.ogepscmv/ieo/eaybtho");
-  private static final String CRASHLYTICS_API_KEY =
-      mergeStrings("AzSBpY4F0rHiHFdinTvM", "IayrSTFL9eJ69YeSUO2");
   private static final String CRASHLYTICS_TRANSPORT_NAME = "FIREBASE_CRASHLYTICS_REPORT";
   private static final Transformer<CrashlyticsReport, byte[]> DEFAULT_TRANSFORM =
       (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
 
   private final ReportQueue reportQueue;
-  private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(
       Context context, SettingsProvider settingsProvider, OnDemandCounter onDemandCounter) {
@@ -61,36 +61,16 @@ public class DataTransportCrashlyticsReportSender {
                 DEFAULT_TRANSFORM);
     ReportQueue reportQueue =
         new ReportQueue(transport, settingsProvider.getSettingsSync(), onDemandCounter);
-    return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
+    return new DataTransportCrashlyticsReportSender(reportQueue);
   }
 
-  DataTransportCrashlyticsReportSender(
-      ReportQueue reportQueue, Transformer<CrashlyticsReport, byte[]> transportTransform) {
+  DataTransportCrashlyticsReportSender(ReportQueue reportQueue) {
     this.reportQueue = reportQueue;
-    this.transportTransform = transportTransform;
   }
 
   @NonNull
   public Task<CrashlyticsReportWithSessionId> enqueueReport(
       @NonNull CrashlyticsReportWithSessionId reportWithSessionId, boolean isOnDemand) {
     return reportQueue.enqueueReport(reportWithSessionId, isOnDemand).getTask();
-  }
-
-  public static String mergeStrings(String part1, String part2) {
-    int sizeDiff = part1.length() - part2.length();
-    if (sizeDiff < 0 || sizeDiff > 1) {
-      throw new IllegalArgumentException("Invalid input received");
-    }
-
-    StringBuilder url = new StringBuilder(part1.length() + part2.length());
-
-    for (int i = 0; i < part1.length(); i++) {
-      url.append(part1.charAt(i));
-      if (part2.length() > i) {
-        url.append(part2.charAt(i));
-      }
-    }
-
-    return url.toString();
   }
 }

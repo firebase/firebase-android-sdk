@@ -1,5 +1,13 @@
 # Unreleased
 
+- [feature] Added support for function calling in on-device and hybrid
+  inference modes, with automatic cloud fallback when the on-device model does
+  not support function calling. (#8758)
+- [feature] Added support for multiple `TextPart` and `ImagePart` instances in
+  on-device and hybrid inference modes. (#8754)
+
+# 18.1.0
+
 - [feature] Added `SpeechMetadata` and the `TextPart.speechMetadata` property to
   specify the speaker and vocal style (such as `"cheerful"`) for a piece of text
   when generating speech. (#8690)

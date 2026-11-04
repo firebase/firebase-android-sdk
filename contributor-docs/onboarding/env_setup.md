@@ -11,19 +11,20 @@ This page describes software and configuration required to work on code in the
 
 ## JDK
 
-The currently required version of the JDK is `11`. Any other versions are unsupported and using them
+The currently required version of the JDK is `17`. Any other versions are unsupported and using them
 could result in build failures.
 
 ## Android Studio
 
-In general, the most recent version of Android Studio should work. The version that is tested at the
-time of this writing is `Dolphin | 2021.3.1`.
+Install the latest stable Android Studio. The minimum supported version is dictated by the
+`androidGradlePlugin` version in `gradle/libs.versions.toml` (currently AGP 8.13, which requires
+`Narwhal 3 Feature Drop | 2025.1.3` or later).
 
 Download it here: [Download Android Studio](https://developer.android.com/studio)
 
 ## Emulators
 
-If you plan to run tests on emulators(you should), you should be able to install them directly from
+If you plan to run tests on emulators (you should), you should be able to install them directly from
 Android Studio's AVD manager.
 
 ## Github (Googlers Only)

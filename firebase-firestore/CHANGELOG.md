@@ -1,5 +1,23 @@
 # Unreleased
 
+- [feature] Added support for window functions in Pipelines. Window functions are in preview
+  until the backend launch is announced in the
+  [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
+  ([#8639](https://github.com/firebase/firebase-android-sdk/pull/8639))
+- [fixed] Removed the unnecessary transitive runtime dependency on
+  `error_prone_annotations` from the `io.grpc` dependencies. (#8772)
+- [feature] Graduate Pipeline Search from Public Preview to GA.
+  ([#8751](https://github.com/firebase/firebase-android-sdk/pull/8751))
+
+# 27.1.0
+
+- [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
+  `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
+  and support for removing reserved fields such as `__name__` with `removeFields()`.
+  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+
+# 27.0.1
+
 - [fixed] Fixed an issue where test-only dependencies (`truth`, `junit`, `mockito-core`, and
   `jackson-databind`) were inadvertently included as runtime dependencies in the published Maven POM
   (#8696).
@@ -10,11 +28,9 @@
 - [changed] **Breaking change:** Updated gRPC dependency to `1.84.0` and
   Protocol Buffers to `4.36.1`.
   ([#8580](https://github.com/firebase/firebase-android-sdk/pull/8580))
-- [feature] Add support for the following new types: MinKey, MaxKey, RegexValue, Int32Value, BsonObjectId, BsonTimestamp, and subtype for Blob. [#8147](//github.com/firebase/firebase-android-sdk/pull/8147)
-- [feature] Added pipeline DML stages (`delete()`, `update()`, `insert()`, `upsert()`), the
-  `PipelineSource.literals()` source, atomic execution via `Pipeline.ExecuteOptions.withAtomic()`,
-  and support for removing reserved fields such as `__name__` with `removeFields()`.
-  ([#8524](https://github.com/firebase/firebase-android-sdk/pull/8524))
+- [feature] Added support for the following new types: `MinKey`, `MaxKey`,
+  `RegexValue`, `Int32Value`, `BsonObjectId`, `BsonTimestamp`, and subtype for
+  `Blob`. ([#8147](https://github.com/firebase/firebase-android-sdk/pull/8147))
 
 # 26.6.0
 

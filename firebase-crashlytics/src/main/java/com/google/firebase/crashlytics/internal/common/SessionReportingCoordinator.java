@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -199,7 +200,8 @@ public class SessionReportingCoordinator {
     }
 
     Optional<File> heapDump =
-        heapDumpForSessionTime(filesDir, reportPersistence.getStartTimestampMillis(sessionId));
+        heapDumpForSessionTime(
+            filesDir, Instant.ofEpochMilli(reportPersistence.getStartTimestampMillis(sessionId)));
 
     if (isHeapDumpCollectionEnabled) {
       heapDump
@@ -278,8 +280,8 @@ public class SessionReportingCoordinator {
   /**
    * Send all finalized reports.
    *
-   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
-   *     sent.
+   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report
+   *     is sent.
    */
   public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
     return sendReports(reportSendCompleteExecutor, /* sessionId= */ null);
@@ -508,7 +510,9 @@ public class SessionReportingCoordinator {
     }
   }
 
-  /** Finds the first ANR ApplicationExitInfo within the session. */
+  /**
+   * Finds the first ANR ApplicationExitInfo within the session.
+   */
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
       String sessionId,
@@ -583,12 +587,12 @@ public class SessionReportingCoordinator {
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
-  static boolean wasHeapDumpGeneratedViaFile(File filesDir, long sessionStartTime) {
+  static boolean wasHeapDumpGeneratedViaFile(File filesDir, Instant sessionStartTime) {
     return heapDumpForSessionTime(filesDir, sessionStartTime).isPresent();
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  static Optional<File> heapDumpForSessionTime(File filesDir, long sessionStartTime) {
+  static Optional<File> heapDumpForSessionTime(File filesDir, Instant sessionStartTime) {
     File heapDumpRoot = new File(filesDir, "profiling");
     if (!heapDumpRoot.exists() || !heapDumpRoot.isDirectory()) {
       Logger.getLogger().d("Directory profiling/ doesn't exit");
@@ -607,7 +611,7 @@ public class SessionReportingCoordinator {
         // Android apps)
         .filter(
             heapDump -> {
-              long lastModifiedTime = heapDump.lastModified();
+              Instant lastModifiedTime = Instant.ofEpochMilli(heapDump.lastModified());
 
               Logger.getLogger()
                   .d(
@@ -618,7 +622,7 @@ public class SessionReportingCoordinator {
                           + "] "
                           + heapDump.getName());
 
-              return lastModifiedTime >= sessionStartTime;
+              return !lastModifiedTime.isBefore(sessionStartTime);
             })
         .findFirst();
   }
@@ -630,7 +634,8 @@ public class SessionReportingCoordinator {
             || filename.toLowerCase().endsWith(".perfetto-java-heap-dump");
 
     // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
-    // MLK heap dumps from ones that were requested manually. On API 37, it is not possible.
+    // memory limiter heap dumps from ones that were requested manually. On API 37, this
+    // differentiation  is not possible.
     if (android.os.Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2) {
       return isHeapdump && filename.contains("trigger-type-");
     }

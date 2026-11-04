@@ -28,10 +28,10 @@ public final class MinKey {
   }
 
   /**
-   * Returns true if this MinKey is equal to the provided object.
+   * Returns true if this {@code MinKey} is equal to the provided object.
    *
    * @param obj The object to compare against.
-   * @return Whether this MinKey is equal to the provided object.
+   * @return Whether this {@code MinKey} is equal to the provided object.
    */
   @Override
   public boolean equals(Object obj) {
