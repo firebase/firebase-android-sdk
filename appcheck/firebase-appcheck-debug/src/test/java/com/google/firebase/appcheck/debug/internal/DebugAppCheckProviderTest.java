@@ -110,7 +110,6 @@ public class DebugAppCheckProviderTest {
 
   @After
   public void tearDown() {
-    DebugAppCheckProvider.setEnvReader(null);
     sharedPreferences =
         ApplicationProvider.getApplicationContext()
             .getSharedPreferences(
@@ -228,59 +227,23 @@ public class DebugAppCheckProviderTest {
   }
 
   @Test
-  public void testDetermineDebugSecret_providerTakesPriorityOverEnvVar() {
+  public void testDetermineDebugSecret_providerTakesPriorityOverResourceAndStorage() {
     ShadowLog.clear();
     String providerSecret = "providerDebugSecret";
-    String envSecret = "envDebugSecret";
+    String resourceSecret = "resourceDebugSecret";
+    storageHelper.saveDebugSecret(DEBUG_SECRET);
+    configureMockResourceToken(resourceSecret, /* isDebuggable= */ true);
     Provider<InternalDebugSecretProvider> debugSecretProvider = () -> () -> providerSecret;
 
     Task<String> debugSecretTask =
         DebugAppCheckProvider.determineDebugSecret(
-            mockFirebaseApp, debugSecretProvider, backgroundExecutor, name -> envSecret);
+            mockFirebaseApp, debugSecretProvider, backgroundExecutor);
 
     assertThat(debugSecretTask.getResult()).isEqualTo(providerSecret);
-    assertThat(storageHelper.retrieveDebugSecret()).isNull();
+    assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
     assertThat(
             hasLogMessage(
                 "[FirebaseAppCheck] Debug token loaded from InternalDebugSecretProvider."))
-        .isTrue();
-  }
-
-  @Test
-  public void testDetermineDebugSecret_envVar_takesPriorityOverResourceAndStorage() {
-    ShadowLog.clear();
-    String envSecret = "envDebugSecret";
-    String resourceSecret = "resourceDebugSecret";
-    storageHelper.saveDebugSecret(DEBUG_SECRET);
-    configureMockResourceToken(resourceSecret, /* isDebuggable= */ true);
-    DebugAppCheckProvider.setEnvReader(
-        name ->
-            DebugAppCheckProvider.ENV_FIREBASE_APPCHECK_DEBUG_TOKEN.equals(name)
-                ? envSecret
-                : null);
-
-    Task<String> debugSecretTask =
-        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
-
-    assertThat(debugSecretTask.getResult()).isEqualTo(envSecret);
-    assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
-    assertThat(hasLogMessage("[FirebaseAppCheck] Debug token loaded from environment variable."))
-        .isTrue();
-  }
-
-  @Test
-  public void testDetermineDebugSecret_fallbackEnvVar_resolvesToken() {
-    ShadowLog.clear();
-    String envSecret = "fallbackEnvSecret";
-    DebugAppCheckProvider.setEnvReader(
-        name -> DebugAppCheckProvider.ENV_APP_CHECK_DEBUG_TOKEN.equals(name) ? envSecret : null);
-
-    Task<String> debugSecretTask =
-        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
-
-    assertThat(debugSecretTask.getResult()).isEqualTo(envSecret);
-    assertThat(storageHelper.retrieveDebugSecret()).isNull();
-    assertThat(hasLogMessage("[FirebaseAppCheck] Debug token loaded from environment variable."))
         .isTrue();
   }
 

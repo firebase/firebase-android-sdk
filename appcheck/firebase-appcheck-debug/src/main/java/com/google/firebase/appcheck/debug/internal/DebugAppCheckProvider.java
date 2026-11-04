@@ -47,34 +47,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   private static final String UTF_8 = "UTF-8";
 
   @VisibleForTesting
-  static final String ENV_FIREBASE_APPCHECK_DEBUG_TOKEN = "FIREBASE_APPCHECK_DEBUG_TOKEN";
-
-  @VisibleForTesting static final String ENV_APP_CHECK_DEBUG_TOKEN = "AppCheckDebugToken";
-
-  @VisibleForTesting
   static final String DEBUG_TOKEN_RESOURCE_NAME = "firebase_app_check_debug_token";
-
-  @VisibleForTesting
-  interface EnvReader {
-    @Nullable
-    String getEnv(@NonNull String name);
-  }
-
-  private static final EnvReader DEFAULT_ENV_READER =
-      name -> {
-        String value = System.getenv(name);
-        if (!isNullOrEmpty(value)) {
-          return value;
-        }
-        return System.getProperty(name);
-      };
-
-  private static EnvReader envReader = DEFAULT_ENV_READER;
-
-  @VisibleForTesting
-  static void setEnvReader(@Nullable EnvReader reader) {
-    envReader = reader != null ? reader : DEFAULT_ENV_READER;
-  }
 
   private final NetworkClient networkClient;
   private final Executor liteExecutor;
@@ -95,7 +68,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     this.retryManager = new RetryManager();
 
     this.debugSecretTask =
-        determineDebugSecret(firebaseApp, debugSecretProvider, backgroundExecutor, envReader);
+        determineDebugSecret(firebaseApp, debugSecretProvider, backgroundExecutor);
     this.debugSecretTask.addOnSuccessListener(liteExecutor, this::logDebugSecret);
   }
 
@@ -138,7 +111,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   @NonNull
   static Task<String> determineDebugSecret(
       @NonNull FirebaseApp firebaseApp, @NonNull Executor executor) {
-    return determineDebugSecret(firebaseApp, /* debugSecretProvider= */ null, executor, envReader);
+    return determineDebugSecret(firebaseApp, /* debugSecretProvider= */ null, executor);
   }
 
   @VisibleForTesting
@@ -146,8 +119,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   static Task<String> determineDebugSecret(
       @NonNull FirebaseApp firebaseApp,
       @Nullable Provider<InternalDebugSecretProvider> debugSecretProvider,
-      @NonNull Executor executor,
-      @NonNull EnvReader envReader) {
+      @NonNull Executor executor) {
     if (debugSecretProvider != null && debugSecretProvider.get() != null) {
       String providerSecret = debugSecretProvider.get().getDebugSecret();
       if (!isNullOrEmpty(providerSecret)) {
@@ -159,16 +131,6 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
-          String envToken = envReader.getEnv(ENV_FIREBASE_APPCHECK_DEBUG_TOKEN);
-          if (isNullOrEmpty(envToken)) {
-            envToken = envReader.getEnv(ENV_APP_CHECK_DEBUG_TOKEN);
-          }
-          if (!isNullOrEmpty(envToken)) {
-            logger.i("[FirebaseAppCheck] Debug token loaded from environment variable.");
-            taskCompletionSource.setResult(envToken);
-            return;
-          }
-
           Context context = firebaseApp.getApplicationContext();
           if (context != null && context.getResources() != null) {
             int resId =
