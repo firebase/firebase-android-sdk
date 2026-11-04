@@ -57,6 +57,10 @@ class SettingsJsonConstants {
   static final int SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_DEFAULT = 8;
   static final int SETTINGS_MAX_COMPLETE_SESSIONS_COUNT_DEFAULT = 4;
   static final double SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT = 10;
+  // The report queue allocates one slot per report allowed per minute up front, so larger rates
+  // from the server are clamped to this value. It is 100 times the default and far above any
+  // realistic per-app override, and a queue of this size takes only a few kilobytes.
+  static final double SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_MAX = 1000;
   static final double SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT = 1.2;
   static final int SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT = 60;
 }

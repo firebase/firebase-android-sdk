@@ -473,6 +473,8 @@ public class CommonNotificationBuilderRoboTest {
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().getChannelId()).isEqualTo("channelId");
+    assertThat(notificationInfo.id).isEqualTo(0);
+    assertThat(notificationInfo.tag).startsWith("FCM-Notification:");
   }
 
   @Test
@@ -802,5 +804,43 @@ public class CommonNotificationBuilderRoboTest {
     Intent dismissIntent = deleteIntent.getParcelableExtra(IntentKeys.WRAPPED_INTENT);
     assertThat(dismissIntent).isNotNull();
     assertThat(dismissIntent.getAction()).isEqualTo(IntentActionKeys.NOTIFICATION_DISMISS);
+  }
+
+  @Test
+  public void createNotificationInfo_withNotificationId_setsIdAndNullTag() {
+    Bundle data = Bundles.of(MessageNotificationKeys.NOTIFICATION_ID, "12345");
+
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
+
+    assertThat(notificationInfo.id).isEqualTo(12345);
+    assertThat(notificationInfo.tag).isNull();
+  }
+
+  @Test
+  public void createNotificationInfo_withNotificationIdAndTag_setsIdAndTag() {
+    Bundle data =
+        Bundles.of(
+            MessageNotificationKeys.NOTIFICATION_ID,
+            "12345",
+            MessageNotificationKeys.TAG,
+            "custom_tag");
+
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
+
+    assertThat(notificationInfo.id).isEqualTo(12345);
+    assertThat(notificationInfo.tag).isEqualTo("custom_tag");
+  }
+
+  @Test
+  public void createNotificationInfo_withInvalidNotificationId_defaultsIdToZeroAndGeneratesTag() {
+    Bundle data = Bundles.of(MessageNotificationKeys.NOTIFICATION_ID, "not_an_int");
+
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
+
+    assertThat(notificationInfo.id).isEqualTo(0);
+    assertThat(notificationInfo.tag).startsWith("FCM-Notification:");
   }
 }
