@@ -61,10 +61,10 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   private static final long DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_FG_MS = 50;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_BG_MS = 120;
   private static final long DEFAULT_MEMORY_GAUGE_COLLECTION_FREQUENCY_FG_MS = 60;
-  // The smallest collection frequency for which the flush period (frequency multiplied by
-  // APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC) does not fit in a long.
-  private static final long SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS =
-      Long.MAX_VALUE / APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC + 1;
+  private static final long MAX_GAUGE_COLLECTION_FREQUENCY_MS = TimeUnit.HOURS.toMillis(1);
+  // The flush period for any collection frequency at or above MAX_GAUGE_COLLECTION_FREQUENCY_MS.
+  private static final long MAX_GAUGE_FLUSH_PERIOD_MS =
+      MAX_GAUGE_COLLECTION_FREQUENCY_MS * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC;
 
   private GaugeManager testGaugeManager = null;
   private FakeScheduledExecutorService fakeScheduledExecutorService = null;
@@ -361,8 +361,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void
-      startCollectingGauges_maxGaugeCollectionFrequency_appInForeground_saturatesFlushPeriod() {
+  public void startCollectingGauges_longMaxValueFrequency_appInForeground_capsFlushPeriod() {
     doReturn(Long.MAX_VALUE).when(mockConfigResolver).getSessionsCpuCaptureFrequencyForegroundMs();
     doReturn(Long.MAX_VALUE)
         .when(mockConfigResolver)
@@ -371,12 +370,11 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     PerfSession fakeSession = new PerfSession("sessionId", new Clock());
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
 
-    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ MAX_GAUGE_FLUSH_PERIOD_MS);
   }
 
   @Test
-  public void
-      startCollectingGauges_maxGaugeCollectionFrequency_appInBackground_saturatesFlushPeriod() {
+  public void startCollectingGauges_longMaxValueFrequency_appInBackground_capsFlushPeriod() {
     doReturn(Long.MAX_VALUE).when(mockConfigResolver).getSessionsCpuCaptureFrequencyBackgroundMs();
     doReturn(Long.MAX_VALUE)
         .when(mockConfigResolver)
@@ -385,44 +383,28 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     PerfSession fakeSession = new PerfSession("sessionId", new Clock());
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
 
-    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ MAX_GAUGE_FLUSH_PERIOD_MS);
   }
 
   @Test
-  public void
-      startCollectingGauges_smallestOverflowingFrequency_appInForeground_saturatesFlushPeriod() {
-    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+  public void startCollectingGauges_frequencyAboveCap_capsFlushPeriod() {
+    long collectionFrequencyMs = MAX_GAUGE_COLLECTION_FREQUENCY_MS + 1;
+    doReturn(collectionFrequencyMs)
         .when(mockConfigResolver)
         .getSessionsCpuCaptureFrequencyForegroundMs();
-    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
+    doReturn(collectionFrequencyMs)
         .when(mockConfigResolver)
         .getSessionsMemoryCaptureFrequencyForegroundMs();
 
     PerfSession fakeSession = new PerfSession("sessionId", new Clock());
     testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.FOREGROUND);
 
-    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
+    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ MAX_GAUGE_FLUSH_PERIOD_MS);
   }
 
   @Test
-  public void
-      startCollectingGauges_smallestOverflowingFrequency_appInBackground_saturatesFlushPeriod() {
-    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
-        .when(mockConfigResolver)
-        .getSessionsCpuCaptureFrequencyBackgroundMs();
-    doReturn(SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS)
-        .when(mockConfigResolver)
-        .getSessionsMemoryCaptureFrequencyBackgroundMs();
-
-    PerfSession fakeSession = new PerfSession("sessionId", new Clock());
-    testGaugeManager.startCollectingGauges(fakeSession, ApplicationProcessState.BACKGROUND);
-
-    verifyFlushJobScheduledAtFixedRate(/* periodMs= */ Long.MAX_VALUE);
-  }
-
-  @Test
-  public void startCollectingGauges_largestNonOverflowingFrequency_flushPeriodIsNotSaturated() {
-    long collectionFrequencyMs = SMALLEST_OVERFLOWING_GAUGE_COLLECTION_FREQUENCY_MS - 1;
+  public void startCollectingGauges_frequencyBelowCap_doesNotCapFlushPeriod() {
+    long collectionFrequencyMs = MAX_GAUGE_COLLECTION_FREQUENCY_MS - 1;
     doReturn(collectionFrequencyMs)
         .when(mockConfigResolver)
         .getSessionsCpuCaptureFrequencyForegroundMs();
