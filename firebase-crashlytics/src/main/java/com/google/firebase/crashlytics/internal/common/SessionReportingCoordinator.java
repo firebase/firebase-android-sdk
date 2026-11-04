@@ -628,16 +628,17 @@ public class SessionReportingCoordinator {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private static boolean isProfilingTriggerHeapdump(String filename) {
+  @VisibleForTesting
+  static boolean isProfilingTriggerHeapdump(String filename) {
     boolean isHeapdump =
         filename.toLowerCase().endsWith(".hprof")
-            || filename.toLowerCase().endsWith(".perfetto-java-heap-dump");
+            || filename.toLowerCase().contains(".perfetto-java-heap-dump");
 
     // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
     // memory limiter heap dumps from ones that were requested manually. On API 37, this
     // differentiation  is not possible.
     if (android.os.Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2) {
-      return isHeapdump && filename.contains("trigger-type-");
+      return isHeapdump && filename.contains("profile_trigger-");
     }
 
     return isHeapdump;
