@@ -5,6 +5,8 @@
   not support function calling. (#8758)
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
   on-device and hybrid inference modes. (#8754)
+- [fixed] Fixed high CPU usage and battery drain while a `LiveSession` is
+  waiting for responses from the model or for audio to play. (#8637)
 
 # 18.1.0
 
