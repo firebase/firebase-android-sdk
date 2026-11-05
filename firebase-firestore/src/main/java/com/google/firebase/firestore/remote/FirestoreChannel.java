@@ -58,6 +58,8 @@ public class FirestoreChannel {
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
   private static final Metadata.Key<String> X_GOOG_REQUEST_PARAMS_HEADER =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Metadata.Key<String> X_GOOG_IS_TRANSACTION_HEADER =
+      Metadata.Key.of("x-goog-is-transaction", Metadata.ASCII_STRING_MARSHALLER);
 
   /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
   // Note: there is no good way to get the Java language version on Android
@@ -217,6 +219,15 @@ public class FirestoreChannel {
       MethodDescriptor<ReqT, RespT> method,
       ReqT request,
       FirestoreChannel.StreamingListener<RespT> callback) {
+    runStreamingResponseRpc(method, request, /* isTransaction= */ false, callback);
+  }
+
+  /** Creates and starts a streaming response RPC. */
+  <ReqT, RespT> void runStreamingResponseRpc(
+      MethodDescriptor<ReqT, RespT> method,
+      ReqT request,
+      boolean isTransaction,
+      FirestoreChannel.StreamingListener<RespT> callback) {
     callProvider
         .createClientCall(method)
         .addOnCompleteListener(
@@ -237,7 +248,7 @@ public class FirestoreChannel {
                       callback.onClose(status);
                     }
                   },
-                  requestHeaders());
+                  requestHeaders(isTransaction));
 
               // Make sure to allow the first incoming message, all subsequent messages
               call.request(1);
@@ -249,6 +260,12 @@ public class FirestoreChannel {
 
   /** Creates and starts a single response RPC. */
   <ReqT, RespT> Task<RespT> runRpc(MethodDescriptor<ReqT, RespT> method, ReqT request) {
+    return runRpc(method, request, /* isTransaction= */ false);
+  }
+
+  /** Creates and starts a single response RPC. */
+  <ReqT, RespT> Task<RespT> runRpc(
+      MethodDescriptor<ReqT, RespT> method, ReqT request, boolean isTransaction) {
     TaskCompletionSource<RespT> tcs = new TaskCompletionSource<>();
 
     callProvider
@@ -280,7 +297,7 @@ public class FirestoreChannel {
                       }
                     }
                   },
-                  requestHeaders());
+                  requestHeaders(isTransaction));
 
               // Make sure to allow the first incoming message. Set to 2 so if there there is a
               // second message the client will fail fast (by setting the result of the
@@ -320,6 +337,11 @@ public class FirestoreChannel {
 
   /** Returns the default headers for requests to the backend. */
   private Metadata requestHeaders() {
+    return requestHeaders(false);
+  }
+
+  /** Returns the default headers for requests to the backend. */
+  private Metadata requestHeaders(boolean isTransaction) {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
     // These headers are used to improve routing and project isolation by the backend.
@@ -328,6 +350,7 @@ public class FirestoreChannel {
     // Google3.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
     headers.put(X_GOOG_REQUEST_PARAMS_HEADER, this.resourcePrefixValue);
+    headers.put(X_GOOG_IS_TRANSACTION_HEADER, Boolean.toString(isTransaction));
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }
