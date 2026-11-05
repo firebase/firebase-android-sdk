@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import static android.content.pm.PackageManager.GET_SHARED_LIBRARY_FILES;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -108,16 +110,10 @@ class JniNativeApi implements NativeApi {
     }
   }
 
-  private static int getPackageInfoFlags() {
-    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N
-        ? PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES
-        : PackageManager.GET_SHARED_LIBRARY_FILES;
-  }
-
   public String[] makePackagePaths(String arch) {
     try {
       PackageManager pm = context.getPackageManager();
-      PackageInfo pi = pm.getPackageInfo(context.getPackageName(), getPackageInfoFlags());
+      PackageInfo pi = pm.getPackageInfo(context.getPackageName(), GET_SHARED_LIBRARY_FILES);
 
       List<String> zipPaths = new ArrayList<>(10);
       zipPaths.add(pi.applicationInfo.sourceDir);

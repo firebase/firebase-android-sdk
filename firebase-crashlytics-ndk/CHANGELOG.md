@@ -1,5 +1,9 @@
 # Unreleased
 
+- [changed] Stopped passing the redundant `MATCH_UNINSTALLED_PACKAGES` flag when looking up the
+  app's own `PackageInfo` to configure the native crash handler, ahead of a behaviour change to that
+  flag in a future Android release. (#8795)
+
 # 21.0.1
 
 - [fixed] Fixed a file descriptor leak when reading the native crash trace from
