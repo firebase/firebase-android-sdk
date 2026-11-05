@@ -90,10 +90,14 @@ public class FirebaseInAppMessaging {
               Logging.logi("Starting InAppMessaging runtime with Installation ID " + id);
             });
 
+    // Log stream errors instead of letting RxJava crash the app with
+    // OnErrorNotImplementedException.
     Disposable unused =
         inAppMessageStreamManager
             .createFirebaseInAppMessageStream()
-            .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
+            .subscribe(
+                FirebaseInAppMessaging.this::triggerInAppMessage,
+                e -> Logging.loge("In-App Messaging stream stopped because of an error: " + e));
   }
 
   /**
