@@ -261,9 +261,10 @@ internal constructor(
 /**
  * Server notification indicating voice activity was detected in the input audio stream.
  *
- * @property type Whether speech started or ended.
+ * @property type Whether speech started or ended. This is [VoiceActivityType.UNKNOWN] if the server
+ * sends a value that this version of the SDK does not recognize.
  * @property audioOffset The time voice activity was detected relative to the start of the audio
- * stream.
+ * stream, or `null` if the server did not provide it.
  */
 @PublicPreviewAPI
 public class LiveServerVoiceActivity

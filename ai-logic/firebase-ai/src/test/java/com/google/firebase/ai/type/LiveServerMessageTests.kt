@@ -248,6 +248,33 @@ internal class LiveServerMessageTests {
   }
 
   @Test
+  fun `LiveServerVoiceActivity with non-finite audioOffset returns null audioOffset`() {
+    for (raw in listOf("NaNs", "Infinitys", "-Infinitys")) {
+      val json = """{"voiceActivity": {"type": "ACTIVITY_START", "audioOffset": "$raw"}}"""
+
+      val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+      val voiceActivity = message.toPublic()
+
+      voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+      voiceActivity.type shouldBe VoiceActivityType.ACTIVITY_START
+      voiceActivity.audioOffset.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `LiveServerGoAway with non-finite timeLeft returns null timeLeft`() {
+    for (raw in listOf("NaNs", "Infinitys")) {
+      val json = """{"goAway": {"timeLeft": "$raw"}}"""
+
+      val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+      val goAway = message.toPublic()
+
+      goAway.shouldBeInstanceOf<LiveServerGoAway>()
+      goAway.timeLeft.shouldBeNull()
+    }
+  }
+
+  @Test
   fun `VoiceActivityType equals hashCode and toString behave as expected`() {
     VoiceActivityType.ACTIVITY_START shouldBe VoiceActivityType.ACTIVITY_START
     VoiceActivityType.ACTIVITY_START shouldNotBe VoiceActivityType.ACTIVITY_END
