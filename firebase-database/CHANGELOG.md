@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a crash when calling `keepSynced(true)` and `get()` on the
+  same query. (#8544)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

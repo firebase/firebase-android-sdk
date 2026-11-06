@@ -558,7 +558,8 @@ public class Repo implements PersistentConnection.Delegate {
                         QuerySpec spec = query.getSpec();
                         // EventRegistrations require a listener to be attached, so a dummy
                         // ValueEventListener was created.
-                        keepSynced(spec, /* keep= */ true, /* skipDedup= */ true);
+                        boolean addedKeepSyncedRegistration =
+                            keepSynced(spec, /* keep= */ true, /* skipDedup= */ true);
                         List<? extends Event> events;
                         if (spec.loadsAllData()) {
                           events = serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
@@ -576,7 +577,9 @@ public class Repo implements PersistentConnection.Delegate {
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        keepSynced(spec, /* keep= */ false, /* skipDedup= */ true);
+                        if (addedKeepSyncedRegistration) {
+                          keepSynced(spec, /* keep= */ false, /* skipDedup= */ true);
+                        }
                       }
                     });
           }
@@ -767,9 +770,9 @@ public class Repo implements PersistentConnection.Delegate {
     keepSynced(query, keep, /* skipDedup= */ false);
   }
 
-  public void keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
+  public boolean keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
     hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
-    serverSyncTree.keepSynced(query, keep, skipDedup);
+    return serverSyncTree.keepSynced(query, keep, skipDedup);
   }
 
   PersistentConnection getConnection() {
