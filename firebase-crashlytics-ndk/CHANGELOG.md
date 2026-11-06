@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Updated `firebase-crashlytics` dependency to 21.2.0
+
 # 21.0.1
 
 - [fixed] Fixed a file descriptor leak when reading the native crash trace from
