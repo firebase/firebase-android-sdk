@@ -1,7 +1,6 @@
 {
     "name": "m189",
     "libraries": [
-        ":firebase-config",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
