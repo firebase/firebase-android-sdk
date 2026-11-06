@@ -1,5 +1,8 @@
 ### Unreleased
 
+- [fixed] Sort generated native build ID entries to keep Crashlytics resources deterministic across
+  filesystem enumeration orders. [#8789]
+
 ### Crashlytics Gradle plugin version 3.0.8
 
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects
@@ -55,4 +58,5 @@ native apps and customized builds. This release includes the following API chang
   * Gradle 8
   * Android Gradle plugin 8.1
   * Google-Services plugin 4.4.1
+
 

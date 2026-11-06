@@ -28,17 +28,28 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.elf.ElfSymbol;
 import com.google.firebase.crashlytics.buildtools.utils.FileUtils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 public class BuildIdInfoCollector {
 
   public List<BuildIdInfo> collect(File mergedNativeLibsPath) {
+    return collectFiles(FileUtils.listFiles(mergedNativeLibsPath));
+  }
+
+  // Package-private so tests can supply a controlled file enumeration order.
+  List<BuildIdInfo> collectFiles(Collection<File> files) {
     List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
-    for (File file : FileUtils.listFiles(mergedNativeLibsPath)) {
+    for (File file : files) {
       Optional<BuildIdInfo> buildIdInfo = getBuildIdInfo(file);
       buildIdInfo.ifPresent(buildIdInfoList::add);
     }
+    buildIdInfoList.sort(
+        Comparator.comparing(BuildIdInfo::getLibraryName)
+            .thenComparing(BuildIdInfo::getArch)
+            .thenComparing(BuildIdInfo::getBuildId));
     return buildIdInfoList;
   }
 
@@ -109,3 +120,4 @@ public class BuildIdInfoCollector {
     return sb.toString();
   }
 }
+
