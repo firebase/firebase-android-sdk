@@ -271,6 +271,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String SERVER_RESPONSE_DATA = "d";
   private static final String INVALID_APP_CHECK_TOKEN = "Invalid appcheck token";
 
+  /**
+   * Status used for a server response that does not include a valid status. It is not a status the
+   * server sends, so it is reported to callers as an unknown error.
+   */
+  private static final String INVALID_RESPONSE_STATUS = "invalid_response";
+
   /** Delay after which a established connection is considered successful */
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
 
@@ -417,12 +423,17 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             REQUEST_ACTION_GET,
             request,
             response -> {
-              String status = (String) response.get(REQUEST_STATUS);
-              if (status.equals("ok")) {
+              String status = getResponseStatus(response);
+              if ("ok".equals(status)) {
                 Object body = response.get(SERVER_DATA_UPDATE_BODY);
                 source.setResult(body);
               } else {
-                source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+                String errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
+                source.setException(
+                    new Exception(
+                        errorMessage != null
+                            ? errorMessage
+                            : "Get request failed with status: " + status));
               }
             });
     outstandingGets.put(readId, outstandingGet);
@@ -491,8 +502,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       ConnectionRequestCallback responseListener = requestCBHash.remove(rn);
       if (responseListener != null) {
         // jackson gives up Map<String, Object> for json objects
+        Object body = message.get(RESPONSE_FOR_REQUEST);
+        // A response without a valid body is handled like an empty one, which the request
+        // callbacks treat as a failed request.
         @SuppressWarnings("unchecked")
-        Map<String, Object> response = (Map<String, Object>) message.get(RESPONSE_FOR_REQUEST);
+        Map<String, Object> response =
+            body instanceof Map ? (Map<String, Object>) body : Collections.emptyMap();
         responseListener.onResponse(response);
       }
     } else if (message.containsKey(REQUEST_ERROR)) {
@@ -537,7 +552,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void onKill(String reason) {
-    if (reason.equals(INVALID_APP_CHECK_TOKEN)
+    if (INVALID_APP_CHECK_TOKEN.equals(reason)
         && invalidAppCheckTokenCount < INVALID_TOKEN_THRESHOLD) {
       invalidAppCheckTokenCount++;
       logger.warn(
@@ -847,12 +862,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         new ConnectionRequestCallback() {
           @Override
           public void onResponse(Map<String, Object> response) {
-            String status = (String) response.get(REQUEST_STATUS);
+            String status = getResponseStatus(response);
             String errorMessage = null;
             String errorCode = null;
-            if (!status.equals("ok")) {
+            if (!"ok".equals(status)) {
               errorCode = status;
-              errorMessage = (String) response.get(SERVER_DATA_UPDATE_BODY);
+              errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
             }
             if (onComplete != null) {
               onComplete.onRequestResult(errorCode, errorMessage);
@@ -931,6 +946,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   private void onDataPush(String action, Map<String, Object> body) {
     if (logger.logsDebug()) logger.debug("handleServerMessage: " + action + " " + body);
+    if (!isWellFormedPush(action, body)) {
+      logger.warn("Ignoring malformed server push for action: " + action);
+      return;
+    }
     if (action.equals(SERVER_ASYNC_DATA_UPDATE) || action.equals(SERVER_ASYNC_DATA_MERGE)) {
       boolean isMerge = action.equals(SERVER_ASYNC_DATA_MERGE);
 
@@ -982,6 +1001,59 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     } else {
       if (logger.logsDebug()) logger.debug("Unrecognized action from server: " + action);
     }
+  }
+
+  /**
+   * Returns whether a push from the server has the fields and field types that {@link #onDataPush}
+   * casts without further checks.
+   */
+  private static boolean isWellFormedPush(String action, Map<String, Object> body) {
+    if (action == null || body == null) {
+      return false;
+    }
+    boolean requiresPath =
+        action.equals(SERVER_ASYNC_DATA_UPDATE)
+            || action.equals(SERVER_ASYNC_DATA_MERGE)
+            || action.equals(SERVER_ASYNC_DATA_RANGE_MERGE)
+            || action.equals(SERVER_ASYNC_LISTEN_CANCELLED);
+    if (requiresPath && !(body.get(SERVER_DATA_UPDATE_PATH) instanceof String)) {
+      return false;
+    }
+    if (action.equals(SERVER_ASYNC_DATA_MERGE)) {
+      return body.get(SERVER_DATA_UPDATE_BODY) instanceof Map;
+    }
+    if (action.equals(SERVER_ASYNC_DATA_RANGE_MERGE)) {
+      Object payload = body.get(SERVER_DATA_UPDATE_BODY);
+      if (!(payload instanceof List)) {
+        return false;
+      }
+      for (Object item : (List<?>) payload) {
+        if (!(item instanceof Map)) {
+          return false;
+        }
+        Map<?, ?> range = (Map<?, ?>) item;
+        Object start = range.get(SERVER_DATA_START_PATH);
+        if (start != null && !(start instanceof String)) {
+          return false;
+        }
+        Object end = range.get(SERVER_DATA_END_PATH);
+        if (end != null && !(end instanceof String)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (action.equals(SERVER_ASYNC_AUTH_REVOKED) || action.equals(SERVER_ASYNC_APP_CHECK_REVOKED)) {
+      Object status = body.get(REQUEST_STATUS);
+      Object reason = body.get(SERVER_DATA_UPDATE_BODY);
+      return (status == null || status instanceof String)
+          && (reason == null || reason instanceof String);
+    }
+    if (action.equals(SERVER_ASYNC_SECURITY_DEBUG)) {
+      Object msg = body.get("msg");
+      return msg == null || msg instanceof String;
+    }
+    return true;
   }
 
   private void onListenRevoked(List<String> path) {
@@ -1039,8 +1111,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         new ConnectionRequestCallback() {
           @Override
           public void onResponse(Map<String, Object> response) {
-            String status = (String) response.get(REQUEST_STATUS);
-            if (status.equals("ok")) {
+            String status = getResponseStatus(response);
+            if ("ok".equals(status)) {
               connectionState = ConnectionState.Connected;
               invalidAuthTokenCount = 0;
               sendAppCheckTokenHelper(restoreStateAfterComplete);
@@ -1048,11 +1120,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
               authToken = null;
               forceAuthTokenRefresh = true;
               delegate.onConnectionStatus(false);
-              String reason = (String) response.get(SERVER_RESPONSE_DATA);
+              String reason = getString(response, SERVER_RESPONSE_DATA);
               logger.debug("Authentication failed: " + status + " (" + reason + ")");
               realtime.close();
 
-              if (status.equals("invalid_token")) {
+              if ("invalid_token".equals(status)) {
                 // We'll wait a couple times before logging the warning / increasing the
                 // retry period since oauth tokens will report as "invalid" if they're
                 // just expired. Plus there may be transient issues that resolve themselves.
@@ -1098,13 +1170,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
     ConnectionRequestCallback onComplete =
         response -> {
-          String status = (String) response.get(REQUEST_STATUS);
-          if (status.equals("ok")) {
+          String status = getResponseStatus(response);
+          if ("ok".equals(status)) {
             invalidAppCheckTokenCount = 0;
           } else {
             appCheckToken = null;
             forceAppCheckTokenRefresh = true;
-            String reason = (String) response.get(SERVER_RESPONSE_DATA);
+            String reason = getString(response, SERVER_RESPONSE_DATA);
             logger.debug("App check failed: " + status + " (" + reason + ")");
             // Note: We don't close the connection as the developer may not have
             // enforcement enabled. The backend closes connections with enforcements.
@@ -1253,11 +1325,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
               outstandingPuts.remove(putId);
 
               if (onComplete != null) {
-                String status = (String) response.get(REQUEST_STATUS);
-                if (status.equals("ok")) {
+                String status = getResponseStatus(response);
+                if ("ok".equals(status)) {
                   onComplete.onRequestResult(null, null);
                 } else {
-                  String errorMessage = (String) response.get(SERVER_DATA_UPDATE_BODY);
+                  String errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
                   onComplete.onRequestResult(status, errorMessage);
                 }
               }
@@ -1331,25 +1403,27 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
           @Override
           public void onResponse(Map<String, Object> response) {
-            String status = (String) response.get(REQUEST_STATUS);
+            String status = getResponseStatus(response);
             // log warnings in any case, even if listener was already removed
-            if (status.equals("ok")) {
-              @SuppressWarnings("unchecked")
-              Map<String, Object> serverBody =
-                  (Map<String, Object>) response.get(SERVER_DATA_UPDATE_BODY);
-              if (serverBody.containsKey(SERVER_DATA_WARNINGS)) {
-                @SuppressWarnings("unchecked")
-                List<String> warnings = (List<String>) serverBody.get(SERVER_DATA_WARNINGS);
-                warnOnListenerWarnings(warnings, listen.query);
+            if ("ok".equals(status)) {
+              // The body and the warnings in it are optional.
+              Object serverBody = response.get(SERVER_DATA_UPDATE_BODY);
+              if (serverBody instanceof Map) {
+                Object warnings = ((Map<?, ?>) serverBody).get(SERVER_DATA_WARNINGS);
+                if (warnings instanceof List) {
+                  @SuppressWarnings("unchecked")
+                  List<String> warningList = (List<String>) warnings;
+                  warnOnListenerWarnings(warningList, listen.query);
+                }
               }
             }
 
             OutstandingListen currentListen = listens.get(listen.getQuery());
             // only trigger actions if the listen hasn't been removed (and maybe readded)
             if (currentListen == listen) {
-              if (!status.equals("ok")) {
+              if (!"ok".equals(status)) {
                 removeListen(listen.getQuery());
-                String errorMessage = (String) response.get(SERVER_DATA_UPDATE_BODY);
+                String errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
                 listen.resultCallback.onRequestResult(status, errorMessage);
               } else {
                 listen.resultCallback.onRequestResult(null, null);
@@ -1369,9 +1443,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           new ConnectionRequestCallback() {
             @Override
             public void onResponse(Map<String, Object> response) {
-              String status = (String) response.get(REQUEST_STATUS);
-              if (!status.equals("ok")) {
-                String errorMessage = (String) response.get(SERVER_DATA_UPDATE_BODY);
+              String status = getResponseStatus(response);
+              if (!"ok".equals(status)) {
+                String errorMessage = getString(response, SERVER_DATA_UPDATE_BODY);
                 if (logger.logsDebug()) {
                   logger.debug(
                       "Failed to send stats: " + status + " (message: " + errorMessage + ")");
@@ -1426,6 +1500,28 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     request.put(REQUEST_PAYLOAD, message);
     realtime.sendRequest(request, isSensitive);
     requestCBHash.put(rn, onResponse);
+  }
+
+  /**
+   * Returns the status of a response from the server. A response without a valid status is treated
+   * as a failed request, so this never returns null.
+   */
+  private String getResponseStatus(Map<String, Object> response) {
+    String status = getString(response, REQUEST_STATUS);
+    if (status == null) {
+      logger.warn("Server response did not include a valid status, treating the request as failed");
+      return INVALID_RESPONSE_STATUS;
+    }
+    return status;
+  }
+
+  /** Returns the value for {@code key} if it is a string, or null otherwise. */
+  private static String getString(Map<String, Object> message, String key) {
+    if (message == null) {
+      return null;
+    }
+    Object value = message.get(key);
+    return value instanceof String ? (String) value : null;
   }
 
   private long nextRequestNumber() {
