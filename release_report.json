@@ -1,0 +1,317 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "f71ec348f8fe73abe630a7813a94e5636eb81983",
+                "prId": "8717",
+                "author": "Vinay Guthal",
+                "message": "Update change log correctly to reflect changes. (#8717)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f71ec348f8fe73abe630a7813a94e5636eb81983",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8717"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "1bc5b9e192e18218a885548ec7cb03381e603aa5",
+                "prId": "8750",
+                "author": "Kai Bolay",
+                "message": "Use long-form string for `trigger_type` parameter (#8750)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1bc5b9e192e18218a885548ec7cb03381e603aa5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8750"
+            },
+            {
+                "commitId": "8751525a554060f29670b31e654263be8173943d",
+                "prId": "8712",
+                "author": "Konstantin Mandrika",
+                "message": "Only send heap dumps on non-metered networks (#8712)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8751525a554060f29670b31e654263be8173943d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8712"
+            },
+            {
+                "commitId": "3bc9a12eebd921b7b4be152ac619a7726d0a33b2",
+                "prId": "8744",
+                "author": "Kai Bolay",
+                "message": "Use hard-coded, shared Crashlytics API key for heapdump uploads (#8744)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3bc9a12eebd921b7b4be152ac619a7726d0a33b2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8744"
+            },
+            {
+                "commitId": "dc0ce88130e7f9621506471af919054cb2453aae",
+                "prId": "8738",
+                "author": "Kai Bolay",
+                "message": "Better logging (#8738)\n\n- upload URL\n- upload ID and response body\n- human readable timestamps",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dc0ce88130e7f9621506471af919054cb2453aae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8738"
+            },
+            {
+                "commitId": "aedf423dd48a353cab50777e715e1a644e8b15f8",
+                "prId": "8661",
+                "author": "Konstantin Mandrika",
+                "message": "Implement out-of-band heap dump uploads (#8661)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/aedf423dd48a353cab50777e715e1a644e8b15f8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8661"
+            }
+        ],
+        "firebase-crashlytics-ndk": [],
+        "firebase-sessions": [
+            {
+                "commitId": "bfde87a6d214c31d2adf238e926d4ecc3187c39f",
+                "prId": "8767",
+                "author": "Paul Beusterien",
+                "message": "fix(sessions): handle settings data store read failures (#8767)\n\n## Summary\n\nFirebase Sessions no longer crashes the app with an uncaught\n`IOException` when\nit can't read its settings from disk, for example when its DataStore\ndirectory\ncan't be created.\n\nFixes #8117\n\n## Problem\n\n`FirebaseSessionsComponent.prepDataStoreFile()` throws `IOException`\nwhen it\ncan't create the `firebaseSessions` directory, as its doc comment says.\nOn some\ndevices `mkdir` fails with `EINVAL`; the issue reports this mostly on\nRedmi A2\nwith Android 13. The reported stack trace goes through the session\nconfigs\nDataStore: `sessionConfigsDataStore$lambda$2` at\n`FirebaseSessionsComponent.kt:154`.\n\nThat DataStore is read by `SettingsCacheImpl`, which doesn't handle read\nerrors:\n\n- Its `init` block collects `sessionConfigsDataStore.data` in\n`CoroutineScope(backgroundDispatcher).launch {}` with no error handling,\nso\nthe `IOException` reaches the default uncaught exception handler and\nkills\n  the process. This matches the reported trace:\n`DataStoreImpl$readState$2` → `handleCoroutineException` → uncaught\nexception\n  handler.\n- Its lazy `sessionConfigs` getter reads the DataStore with\n  `runBlocking { data.first() }`, also with no error handling. The first\n  settings read would throw the same exception on the calling thread.\n\nThe session data DataStore, which `SharedSessionRepository` reads,\nalready\nhandles failures with `.catch { ... }` and a fallback session.\n`SettingsCacheImpl.updateConfigs()` already catches `IOException` for\nwrites.\n\n## Fix\n\n- The background collector and the getter's first read both use\n`.catch { ... }` on the data store's `data` flow. It logs a warning and\nemits\n`SessionConfigsSerializer.defaultValue`, where every setting is `null`.\nThat\nis the same as having no cached settings, so callers use their other\nsettings\nsources or the defaults, as on a fresh install. The fallback is cached,\nso\n  the getter doesn't retry disk I/O on every call.\n\n## Testing\n\nTwo new tests in `SettingsCacheTest` use the existing `FakeDataStore`\nwith\n`firstThrowable = IOException(\"Failed to create directory\")`:\n\n- `settingsCache_dataStoreFailsToLoad_doesNotCrash` runs the background\ncollection first, then checks with `FakeDataStore.dataCollectionCount`\nthat\nlater reads use the cached defaults instead of reading the data store\nagain.\n-\n`settingsCache_dataStoreFailsToLoad_readBeforeBackgroundCollection_returnsDefaults`\n  reads the settings before the background collection runs.\n\nBoth tests failed with `java.io.IOException: Failed to create directory`\nbefore\nthe fix and pass after it. All 69 Sessions unit tests pass.\n\nCommands (JDK 17):\n\n```bash\n./gradlew :firebase-sessions:spotlessApply\n# BUILD SUCCESSFUL, no formatting changes\n\n./gradlew :firebase-sessions:testDebugUnitTest\n\n./gradlew :firebase-sessions:check\n# BUILD SUCCESSFUL: lint, spotlessCheck, docStubs, and all 69 unit tests in testDebugUnitTest and testReleaseUnitTest\n```",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bfde87a6d214c31d2adf238e926d4ecc3187c39f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8767"
+            },
+            {
+                "commitId": "cd2ed058249e8371063d6a8889ccb35c1322f835",
+                "prId": "8727",
+                "author": "Kai Bolay",
+                "message": "Make app usable for Crashlytics OOM heapdump testing. (#8727)\n\n- Turn on R8 obfuscation, minification, optimization. \n- Upload Proguard mapping files to Crashlytics.\n- Allocate more memory to reach OOM faster.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cd2ed058249e8371063d6a8889ccb35c1322f835",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8727"
+            },
+            {
+                "commitId": "a43f74a913974c7ea9e19487eb5928f1410fc9cb",
+                "prId": "8731",
+                "author": "Matthew Robertson",
+                "message": "Remove multidex config from sessions test app (#8731)\n\nThis removes the multidex config and application. That was from back\nwhen min api level was 16. Now it's 24, which does not need it. We\ndidn't need it since api level 21, see\nhttps://developer.android.com/build/multidex#mdex-on-l\n\nTested on an emulator with api level 24",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a43f74a913974c7ea9e19487eb5928f1410fc9cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8731"
+            },
+            {
+                "commitId": "aedf423dd48a353cab50777e715e1a644e8b15f8",
+                "prId": "8661",
+                "author": "Konstantin Mandrika",
+                "message": "Implement out-of-band heap dump uploads (#8661)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/aedf423dd48a353cab50777e715e1a644e8b15f8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8661"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "5f2d6602ecdf84a2e4adec9d11eeaede7f194998",
+                "prId": "8639",
+                "author": "Mark Duckworth",
+                "message": "feat(firestore): pipeline window functions (#8639)\n\nCo-authored-by: Daniel La Rocque <dlarocque@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f2d6602ecdf84a2e4adec9d11eeaede7f194998",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8639"
+            },
+            {
+                "commitId": "a878c85b5d8965b338aa2332392ee4232be290ce",
+                "prId": "8772",
+                "author": "Rodrigo Lazo",
+                "message": "[Firestore] Make errorprone annotations compileOnly (#8772)\n\nExclude `error_prone_annotations` from transitive gRPC dependencies\n(`grpc-android`, `grpc-okhttp`, `grpc-protobuf-lite`, and `grpc-stub`):\nand include them as `compileOnly` instead.\n\nInternal b/579468503",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a878c85b5d8965b338aa2332392ee4232be290ce",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8772"
+            },
+            {
+                "commitId": "750d47ab98b5f205b18c88d9c57e230d84caeaeb",
+                "prId": "8751",
+                "author": "Mark Duckworth",
+                "message": "fix(firestore): graduate pipeline search from preview to GA (#8751)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/750d47ab98b5f205b18c88d9c57e230d84caeaeb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8751"
+            },
+            {
+                "commitId": "ee683fe3d43aff8b0eab6f5ca342ec7280a3fdd3",
+                "prId": "8746",
+                "author": "Rodrigo Lazo",
+                "message": "[Docs] Update documentation and Javadocs across Firebase AI and Firestore (#8746)\n\n- Clarify deprecation messages and model behavior for generation\nparameters in `GenerationConfig` for Gemini 3.x and later models.\n- Update troubleshooting URLs pointing to the error codes documentation.\n- Refine structured output notes in `JsonSchema` and backend naming in\n`GenerativeBackend`.\n- Wrap type names in `{@code}` tags across Firestore BSON type Javadocs\nand format changelog entries.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ee683fe3d43aff8b0eab6f5ca342ec7280a3fdd3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8746"
+            },
+            {
+                "commitId": "133a7b95816277e26b4279bb85f1b4fdb37d99c3",
+                "prId": "8736",
+                "author": "Rodrigo Lazo",
+                "message": "[Firestore] Fix format (#8736)\n\nFixed CHANGELOG.md file in Firestore",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/133a7b95816277e26b4279bb85f1b4fdb37d99c3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8736"
+            },
+            {
+                "commitId": "0bb74f5e25a354f843d4afdf5dc298fc1d00fe5b",
+                "prId": "8724",
+                "author": "Vinay Guthal",
+                "message": "Add change log to firestore (#8724)\n\nMove changelog entry mentioning the addition of full DML stages (Delete,\nUpdate, Insert, Upsert), Literals source, and atomic execution option to\nthe Android SDK (firebase-android-sdk) Firestore Pipelines subsystem.\n\nThe entries were mistakenly placed in the already released section\ninstead of \"Unreleased\" by the mergeback mechanism.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0bb74f5e25a354f843d4afdf5dc298fc1d00fe5b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8724"
+            },
+            {
+                "commitId": "a67daaecc8e86d727e308ea135f50dc100580ffe",
+                "prId": "8705",
+                "author": "Daniel La Rocque",
+                "message": "fix(firestore): revert testFixtures change (#8705)\n\nFixes #8696 \n\nFixes to this issue are non-trivial. For quick resolution, I chose to\nsimply revert the culprit #8525.\n\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a67daaecc8e86d727e308ea135f50dc100580ffe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8705"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "ac604a0d02da2096dcb876e1b65ac88f4166a5c1",
+                "prId": "8732",
+                "author": "welishr",
+                "message": "Restore FirebaseInstanceId token request deduplication in legacy mode (#8732)\n\n### Description\nFixes b/568594637.\n\nIn PR #8087, `FirebaseMessaging` inadvertently removed\n`FirebaseInstanceId` delegation from `startSyncIfNecessary()` and\n`blockingRegister()`.\n\nWhen apps still integrate `FirebaseInstanceId` (such as Google Maps or\nGNP) alongside FCM and have FCM auto-init enabled, both\n`FirebaseInstanceId` and `FirebaseMessaging` trigger concurrent\n`/c2dm/register3` calls on startup. This hits a race condition on the\nregistration backend where the subsequent token invalidates the earlier\ntoken, causing `404 UNREGISTERED` errors.\n\nThis change restores the `iid != null &&\n!gmsRegistrationClient.isV1RegistrationEnabled()` check in\n`startSyncIfNecessary()` and `blockingRegister()`, properly\ndeduplicating registration requests in legacy mode.\n\n### Testing\n- Added unit tests in `FirebaseMessagingRoboTest.java`:\n  - `blockingRegister_withFiid_delegatesToFiid`\n  - `autoInit_withFiid_delegatesToFiid`\n- Passed all 49 `FirebaseMessagingRoboTest` tests locally with\n`./gradlew :firebase-messaging:testReleaseUnitTest`.\n- Code formatted with `./gradlew :firebase-messaging:spotlessApply`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ac604a0d02da2096dcb876e1b65ac88f4166a5c1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8732"
+            },
+            {
+                "commitId": "b462e1b9120ede2c92f9bc68b41fdd544cb9d4b1",
+                "prId": "8676",
+                "author": "Vick Wang",
+                "message": "Retry operations on HTTP 429 in TopicsSubscriber (#8676)\n\nRestore exponential backoff retries for HTTP 429 (TOO_MANY_SUBSCRIBERS)\ntopic operations.\n\n- Map HTTP 429 responses in TopicSubscriptionClient to\nTOO_MANY_SUBSCRIBERS and treat it as a retryable error in\nTopicsSubscriber.\n- Add unit tests in TopicSubscriptionClientRoboTest and\nTopicsSubscriberRoboTest.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b462e1b9120ede2c92f9bc68b41fdd544cb9d4b1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8676"
+            }
+        ],
+        "firebase-messaging-directboot": [],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "59a1d584e447e561041dc037f7933f90ba934f9f",
+                "prId": "8800",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add server-side voice activity detection support to LiveSession (#8800)\n\nAdded `LiveServerVoiceActivity` and `VoiceActivityType` to represent\nserver notifications when user speech starts or ends during a\n`LiveSession`. Added corresponding unit and serialization tests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/59a1d584e447e561041dc037f7933f90ba934f9f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8800"
+            },
+            {
+                "commitId": "752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prId": "8758",
+                "author": "Vinay Guthal",
+                "message": "Function calling support for on device sdk. (#8758)\n\nTested at https://github.com/firebase/quickstart-android/pull/2855\n### Description\nAdds support for function calling when generating content using\non-device and hybrid (`PREFER_ON_DEVICE`) inference modes, following the\nML Kit GenAI Prompt APIs.\n\nWhen function calling tools are supplied,\n`OnDeviceGenerativeModelProvider` verifies that the underlying on-device\nmodel supports function calling via `isFunctionCallingAvailable()`. If\nfunction calling is not supported by the on-device model or if\nunsupported non-function tools (such as Google Search or Code Execution)\nare configured, a `FirebaseAIOnDeviceNotAvailableException` is raised,\ntriggering automatic fallback to cloud inference in `PREFER_ON_DEVICE`\nmode.\n\n### Summary of Changes\n\n- **`gradle/libs.versions.toml`**:\n- Updated `genaiPrompt` to `1.0.0-beta5` and `genaiSchema` to\n`1.0.0-alpha2`.\n\n- **`ai-logic/firebase-ai-ondevice-interop`**:\n- Added `FunctionDeclaration` and `FunctionSchema` interop data\nstructures.\n  - Added `FunctionCallPart` and `FunctionResponsePart` to `Part.kt`.\n  - Added `functionCalls: List<FunctionCallPart>` to `Candidate`.\n- Added `tools: List<FunctionDeclaration>?` to `GenerateContentRequest`.\n- Added `suspend fun isFunctionCallingAvailable(): Boolean` to\n`GenerativeModel`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n\n- **`ai-logic/firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isFunctionCallingAvailable()`\ndelegating to ML Kit's\n`getAvailableFeatures().contains(Feature.FUNCTION_CALLING)`.\n- Added converters in `Converters.kt` for `FunctionCallPart`,\n`FunctionResponsePart`, `FunctionDeclaration`, and `FunctionSchema`\nto/from ML Kit equivalents.\n- Mapped candidate function calls in\n`GenerateContentResponse.toInterop()`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit test coverage in `GenerativeModelImplTest` and\n`ConvertersTest`.\n\n- **`ai-logic/firebase-ai`**:\n- Added `tools: List<Tool>? = null` to `OnDeviceConfig` to allow\nconfiguring tools for on-device inference, defaulting to model-level\ntools when omitted.\n- Forwarded tools configuration in `GenerativeModel` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `Candidate.fromInterop` to convert interop function calls into\n`FunctionCallPart` instances.\n  - In `OnDeviceGenerativeModelProvider`:\n- Checks `onDeviceModel.isFunctionCallingAvailable()` when function\ndeclarations are provided.\n- Throws `FirebaseAIOnDeviceNotAvailableException` if non-function tools\nare passed to on-device inference or if function calling is unsupported.\n- Converts `FunctionCallPart` and `FunctionResponsePart` in conversation\nhistory.\n- Maps function declarations and auto-function declarations into interop\nschemas.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit tests in `OnDeviceGenerativeModelProviderTests` covering\ntool execution, candidate mapping, multi-turn history with function\nresponses, streaming support, and cloud fallback behavior.\n\n### Testing\n- `./gradlew :ai-logic:firebase-ai-ondevice-interop:check`\n- `./gradlew :ai-logic:firebase-ai-ondevice:check`\n- `./gradlew :ai-logic:firebase-ai:check`\n- `./gradlew spotlessCheck`\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8758"
+            },
+            {
+                "commitId": "a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prId": "8754",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Support multiple parts in on-device content generation requests  (#8754)\n\nUpdate `GenerateContentRequest` in `firebase-ai-ondevice-interop` to\naccept a `List<Part>` instead of a single `TextPart` and optional\n`ImagePart`.\n\nUpdate `firebase-ai-ondevice` converters to map all input parts into\nML Kit's content structure, and remove restrictions in\n`OnDeviceGenerativeModelProvider` that limited prompts to a single\ntext and image part. Update relevant tests and documentation across\nmodules.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8754"
+            },
+            {
+                "commitId": "ee683fe3d43aff8b0eab6f5ca342ec7280a3fdd3",
+                "prId": "8746",
+                "author": "Rodrigo Lazo",
+                "message": "[Docs] Update documentation and Javadocs across Firebase AI and Firestore (#8746)\n\n- Clarify deprecation messages and model behavior for generation\nparameters in `GenerationConfig` for Gemini 3.x and later models.\n- Update troubleshooting URLs pointing to the error codes documentation.\n- Refine structured output notes in `JsonSchema` and backend naming in\n`GenerativeBackend`.\n- Wrap type names in `{@code}` tags across Firestore BSON type Javadocs\nand format changelog entries.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ee683fe3d43aff8b0eab6f5ca342ec7280a3fdd3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8746"
+            },
+            {
+                "commitId": "dcc8d0eb52ea95d7822bb8e0fb2f45c161804e90",
+                "prId": "8714",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Fix `testRealtime_speechConfig` integration test in firebase-ai (#8714)\n\nPass \"us-central1\" to GenerativeBackend.agentPlatform in\n`AIModels.getVertexLiveModel` since the Live API is not supported in\n\"global\", assert that the audio transcript is non-empty, and fix\nwebSession variable shadowing in LiveGenerativeModel.connect.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dcc8d0eb52ea95d7822bb8e0fb2f45c161804e90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8714"
+            },
+            {
+                "commitId": "805f8654f4595b958454995108e124dcd3dce76f",
+                "prId": "8713",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove unused InternalSerializationApi opt-ins (#8713)\n\nClean up unused `kotlinx.serialization.InternalSerializationApi` imports\nand redundant `@OptIn(InternalSerializationApi::class)` annotations\nacross multiple generative model and type declaration classes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/805f8654f4595b958454995108e124dcd3dce76f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8713"
+            },
+            {
+                "commitId": "e4ea07128cc23e8991c20febc7d393a497305bf2",
+                "prId": "8690",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add SpeechMetadata support to TextPart (#8690)\n\nAdds `SpeechMetadata` (annotated with `@PublicPreviewAPI`) and attaches\nit to `TextPart` to allow specifying structured speech generation\nmetadata—such as the speaker and vocal style—for a given piece of text.\n\n### Summary of Changes\n- **New `SpeechMetadata` model**: Added `SpeechMetadata(speaker: String?\n= null, style: String? = null)` and its internal serializable\ncounterpart `SpeechMetadataInternal`.\n- **`TextPart` integration**:\n- Added the `speechMetadata: SpeechMetadata?` property and a secondary\nconstructor `TextPart(text: String, speechMetadata: SpeechMetadata)`.\n- Updated `Part.toInternal()` and `InternalPart.toPublic()` to serialize\nand deserialize `speechMetadata`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e4ea07128cc23e8991c20febc7d393a497305bf2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8690"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prId": "8758",
+                "author": "Vinay Guthal",
+                "message": "Function calling support for on device sdk. (#8758)\n\nTested at https://github.com/firebase/quickstart-android/pull/2855\n### Description\nAdds support for function calling when generating content using\non-device and hybrid (`PREFER_ON_DEVICE`) inference modes, following the\nML Kit GenAI Prompt APIs.\n\nWhen function calling tools are supplied,\n`OnDeviceGenerativeModelProvider` verifies that the underlying on-device\nmodel supports function calling via `isFunctionCallingAvailable()`. If\nfunction calling is not supported by the on-device model or if\nunsupported non-function tools (such as Google Search or Code Execution)\nare configured, a `FirebaseAIOnDeviceNotAvailableException` is raised,\ntriggering automatic fallback to cloud inference in `PREFER_ON_DEVICE`\nmode.\n\n### Summary of Changes\n\n- **`gradle/libs.versions.toml`**:\n- Updated `genaiPrompt` to `1.0.0-beta5` and `genaiSchema` to\n`1.0.0-alpha2`.\n\n- **`ai-logic/firebase-ai-ondevice-interop`**:\n- Added `FunctionDeclaration` and `FunctionSchema` interop data\nstructures.\n  - Added `FunctionCallPart` and `FunctionResponsePart` to `Part.kt`.\n  - Added `functionCalls: List<FunctionCallPart>` to `Candidate`.\n- Added `tools: List<FunctionDeclaration>?` to `GenerateContentRequest`.\n- Added `suspend fun isFunctionCallingAvailable(): Boolean` to\n`GenerativeModel`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n\n- **`ai-logic/firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isFunctionCallingAvailable()`\ndelegating to ML Kit's\n`getAvailableFeatures().contains(Feature.FUNCTION_CALLING)`.\n- Added converters in `Converters.kt` for `FunctionCallPart`,\n`FunctionResponsePart`, `FunctionDeclaration`, and `FunctionSchema`\nto/from ML Kit equivalents.\n- Mapped candidate function calls in\n`GenerateContentResponse.toInterop()`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit test coverage in `GenerativeModelImplTest` and\n`ConvertersTest`.\n\n- **`ai-logic/firebase-ai`**:\n- Added `tools: List<Tool>? = null` to `OnDeviceConfig` to allow\nconfiguring tools for on-device inference, defaulting to model-level\ntools when omitted.\n- Forwarded tools configuration in `GenerativeModel` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `Candidate.fromInterop` to convert interop function calls into\n`FunctionCallPart` instances.\n  - In `OnDeviceGenerativeModelProvider`:\n- Checks `onDeviceModel.isFunctionCallingAvailable()` when function\ndeclarations are provided.\n- Throws `FirebaseAIOnDeviceNotAvailableException` if non-function tools\nare passed to on-device inference or if function calling is unsupported.\n- Converts `FunctionCallPart` and `FunctionResponsePart` in conversation\nhistory.\n- Maps function declarations and auto-function declarations into interop\nschemas.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit tests in `OnDeviceGenerativeModelProviderTests` covering\ntool execution, candidate mapping, multi-turn history with function\nresponses, streaming support, and cloud fallback behavior.\n\n### Testing\n- `./gradlew :ai-logic:firebase-ai-ondevice-interop:check`\n- `./gradlew :ai-logic:firebase-ai-ondevice:check`\n- `./gradlew :ai-logic:firebase-ai:check`\n- `./gradlew spotlessCheck`\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8758"
+            },
+            {
+                "commitId": "a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prId": "8754",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Support multiple parts in on-device content generation requests  (#8754)\n\nUpdate `GenerateContentRequest` in `firebase-ai-ondevice-interop` to\naccept a `List<Part>` instead of a single `TextPart` and optional\n`ImagePart`.\n\nUpdate `firebase-ai-ondevice` converters to map all input parts into\nML Kit's content structure, and remove restrictions in\n`OnDeviceGenerativeModelProvider` that limited prompts to a single\ntext and image part. Update relevant tests and documentation across\nmodules.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8754"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prId": "8758",
+                "author": "Vinay Guthal",
+                "message": "Function calling support for on device sdk. (#8758)\n\nTested at https://github.com/firebase/quickstart-android/pull/2855\n### Description\nAdds support for function calling when generating content using\non-device and hybrid (`PREFER_ON_DEVICE`) inference modes, following the\nML Kit GenAI Prompt APIs.\n\nWhen function calling tools are supplied,\n`OnDeviceGenerativeModelProvider` verifies that the underlying on-device\nmodel supports function calling via `isFunctionCallingAvailable()`. If\nfunction calling is not supported by the on-device model or if\nunsupported non-function tools (such as Google Search or Code Execution)\nare configured, a `FirebaseAIOnDeviceNotAvailableException` is raised,\ntriggering automatic fallback to cloud inference in `PREFER_ON_DEVICE`\nmode.\n\n### Summary of Changes\n\n- **`gradle/libs.versions.toml`**:\n- Updated `genaiPrompt` to `1.0.0-beta5` and `genaiSchema` to\n`1.0.0-alpha2`.\n\n- **`ai-logic/firebase-ai-ondevice-interop`**:\n- Added `FunctionDeclaration` and `FunctionSchema` interop data\nstructures.\n  - Added `FunctionCallPart` and `FunctionResponsePart` to `Part.kt`.\n  - Added `functionCalls: List<FunctionCallPart>` to `Candidate`.\n- Added `tools: List<FunctionDeclaration>?` to `GenerateContentRequest`.\n- Added `suspend fun isFunctionCallingAvailable(): Boolean` to\n`GenerativeModel`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n\n- **`ai-logic/firebase-ai-ondevice`**:\n- Implemented `GenerativeModelImpl.isFunctionCallingAvailable()`\ndelegating to ML Kit's\n`getAvailableFeatures().contains(Feature.FUNCTION_CALLING)`.\n- Added converters in `Converters.kt` for `FunctionCallPart`,\n`FunctionResponsePart`, `FunctionDeclaration`, and `FunctionSchema`\nto/from ML Kit equivalents.\n- Mapped candidate function calls in\n`GenerateContentResponse.toInterop()`.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit test coverage in `GenerativeModelImplTest` and\n`ConvertersTest`.\n\n- **`ai-logic/firebase-ai`**:\n- Added `tools: List<Tool>? = null` to `OnDeviceConfig` to allow\nconfiguring tools for on-device inference, defaulting to model-level\ntools when omitted.\n- Forwarded tools configuration in `GenerativeModel` to\n`OnDeviceGenerativeModelProvider`.\n- Updated `Candidate.fromInterop` to convert interop function calls into\n`FunctionCallPart` instances.\n  - In `OnDeviceGenerativeModelProvider`:\n- Checks `onDeviceModel.isFunctionCallingAvailable()` when function\ndeclarations are provided.\n- Throws `FirebaseAIOnDeviceNotAvailableException` if non-function tools\nare passed to on-device inference or if function calling is unsupported.\n- Converts `FunctionCallPart` and `FunctionResponsePart` in conversation\nhistory.\n- Maps function declarations and auto-function declarations into interop\nschemas.\n  - Updated `api.txt` and `CHANGELOG.md`.\n- Added unit tests in `OnDeviceGenerativeModelProviderTests` covering\ntool execution, candidate mapping, multi-turn history with function\nresponses, streaming support, and cloud fallback behavior.\n\n### Testing\n- `./gradlew :ai-logic:firebase-ai-ondevice-interop:check`\n- `./gradlew :ai-logic:firebase-ai-ondevice:check`\n- `./gradlew :ai-logic:firebase-ai:check`\n- `./gradlew spotlessCheck`\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/752de105d517bd0ef4b87be64020a1b2cadfa32c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8758"
+            },
+            {
+                "commitId": "a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prId": "8754",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Support multiple parts in on-device content generation requests  (#8754)\n\nUpdate `GenerateContentRequest` in `firebase-ai-ondevice-interop` to\naccept a `List<Part>` instead of a single `TextPart` and optional\n`ImagePart`.\n\nUpdate `firebase-ai-ondevice` converters to map all input parts into\nML Kit's content structure, and remove restrictions in\n`OnDeviceGenerativeModelProvider` that limited prompts to a single\ntext and image part. Update relevant tests and documentation across\nmodules.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a34288c65c52be4394541d59f262b7f98fce6b9a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8754"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prId": "8791",
+                "author": "Austin Benoit",
+                "message": "feat(appcheck): support CLI-provisioned debug tokens and 403 recovery hints (#8791)\n\n## Summary\nImplements the Android runtime SDK portion of **SDK/CLI Seamless Debug\nTokens** (`go/firebase-api-sdk-cli-seamless-debug-tokens`):\n\n1. **4-Step Token Resolution Order in `DebugAppCheckProvider`:**\n   - `InternalDebugSecretProvider` (programmatic secret)\n- Build-time injected string resource\n`R.string.firebase_app_check_debug_token` (with runtime\n`ApplicationInfo.FLAG_DEBUGGABLE` safeguard that logs an error and\nignores the token if ever present in a non-debuggable release build)\n   - Cached secret in `SharedPreferences`\n   - Auto-generated UUID persisted to `SharedPreferences`\n2. **Source Attribution & Actionable 403 Recovery Hint:**\n- Logs `[FirebaseAppCheck] Debug token loaded from <source>.` when\nresolving the debug secret.\n- Logs `[FirebaseAppCheck] Debug token was rejected by server. Run\n'firebase appcheck:debugtokens:create --force' to provision a new\ntoken.` when the backend returns HTTP 403 during debug token exchange.\n\n> [!NOTE]\n> An environment variable / system property source\n(`FIREBASE_APPCHECK_DEBUG_TOKEN`, `AppCheckDebugToken`) was initially\nincluded but has been removed. Android app processes are forked from\nzygote and do not inherit a developer's shell environment, so that\nresolution step was unreachable on device.\n\n## Testing\n- `./gradlew :appcheck:firebase-appcheck-debug:spotlessApply`\n- `./gradlew :appcheck:firebase-appcheck-debug:check` (21/21 unit tests\npassing)\n- `./gradlew :appcheck:firebase-appcheck-debug:apiInformation`\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8791"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prId": "8791",
+                "author": "Austin Benoit",
+                "message": "feat(appcheck): support CLI-provisioned debug tokens and 403 recovery hints (#8791)\n\n## Summary\nImplements the Android runtime SDK portion of **SDK/CLI Seamless Debug\nTokens** (`go/firebase-api-sdk-cli-seamless-debug-tokens`):\n\n1. **4-Step Token Resolution Order in `DebugAppCheckProvider`:**\n   - `InternalDebugSecretProvider` (programmatic secret)\n- Build-time injected string resource\n`R.string.firebase_app_check_debug_token` (with runtime\n`ApplicationInfo.FLAG_DEBUGGABLE` safeguard that logs an error and\nignores the token if ever present in a non-debuggable release build)\n   - Cached secret in `SharedPreferences`\n   - Auto-generated UUID persisted to `SharedPreferences`\n2. **Source Attribution & Actionable 403 Recovery Hint:**\n- Logs `[FirebaseAppCheck] Debug token loaded from <source>.` when\nresolving the debug secret.\n- Logs `[FirebaseAppCheck] Debug token was rejected by server. Run\n'firebase appcheck:debugtokens:create --force' to provision a new\ntoken.` when the backend returns HTTP 403 during debug token exchange.\n\n> [!NOTE]\n> An environment variable / system property source\n(`FIREBASE_APPCHECK_DEBUG_TOKEN`, `AppCheckDebugToken`) was initially\nincluded but has been removed. Android app processes are forked from\nzygote and do not inherit a developer's shell environment, so that\nresolution step was unreachable on device.\n\n## Testing\n- `./gradlew :appcheck:firebase-appcheck-debug:spotlessApply`\n- `./gradlew :appcheck:firebase-appcheck-debug:check` (21/21 unit tests\npassing)\n- `./gradlew :appcheck:firebase-appcheck-debug:apiInformation`\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8791"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prId": "8791",
+                "author": "Austin Benoit",
+                "message": "feat(appcheck): support CLI-provisioned debug tokens and 403 recovery hints (#8791)\n\n## Summary\nImplements the Android runtime SDK portion of **SDK/CLI Seamless Debug\nTokens** (`go/firebase-api-sdk-cli-seamless-debug-tokens`):\n\n1. **4-Step Token Resolution Order in `DebugAppCheckProvider`:**\n   - `InternalDebugSecretProvider` (programmatic secret)\n- Build-time injected string resource\n`R.string.firebase_app_check_debug_token` (with runtime\n`ApplicationInfo.FLAG_DEBUGGABLE` safeguard that logs an error and\nignores the token if ever present in a non-debuggable release build)\n   - Cached secret in `SharedPreferences`\n   - Auto-generated UUID persisted to `SharedPreferences`\n2. **Source Attribution & Actionable 403 Recovery Hint:**\n- Logs `[FirebaseAppCheck] Debug token loaded from <source>.` when\nresolving the debug secret.\n- Logs `[FirebaseAppCheck] Debug token was rejected by server. Run\n'firebase appcheck:debugtokens:create --force' to provision a new\ntoken.` when the backend returns HTTP 403 during debug token exchange.\n\n> [!NOTE]\n> An environment variable / system property source\n(`FIREBASE_APPCHECK_DEBUG_TOKEN`, `AppCheckDebugToken`) was initially\nincluded but has been removed. Android app processes are forked from\nzygote and do not inherit a developer's shell environment, so that\nresolution step was unreachable on device.\n\n## Testing\n- `./gradlew :appcheck:firebase-appcheck-debug:spotlessApply`\n- `./gradlew :appcheck:firebase-appcheck-debug:check` (21/21 unit tests\npassing)\n- `./gradlew :appcheck:firebase-appcheck-debug:apiInformation`\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8791"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prId": "8791",
+                "author": "Austin Benoit",
+                "message": "feat(appcheck): support CLI-provisioned debug tokens and 403 recovery hints (#8791)\n\n## Summary\nImplements the Android runtime SDK portion of **SDK/CLI Seamless Debug\nTokens** (`go/firebase-api-sdk-cli-seamless-debug-tokens`):\n\n1. **4-Step Token Resolution Order in `DebugAppCheckProvider`:**\n   - `InternalDebugSecretProvider` (programmatic secret)\n- Build-time injected string resource\n`R.string.firebase_app_check_debug_token` (with runtime\n`ApplicationInfo.FLAG_DEBUGGABLE` safeguard that logs an error and\nignores the token if ever present in a non-debuggable release build)\n   - Cached secret in `SharedPreferences`\n   - Auto-generated UUID persisted to `SharedPreferences`\n2. **Source Attribution & Actionable 403 Recovery Hint:**\n- Logs `[FirebaseAppCheck] Debug token loaded from <source>.` when\nresolving the debug secret.\n- Logs `[FirebaseAppCheck] Debug token was rejected by server. Run\n'firebase appcheck:debugtokens:create --force' to provision a new\ntoken.` when the backend returns HTTP 403 during debug token exchange.\n\n> [!NOTE]\n> An environment variable / system property source\n(`FIREBASE_APPCHECK_DEBUG_TOKEN`, `AppCheckDebugToken`) was initially\nincluded but has been removed. Android app processes are forked from\nzygote and do not inherit a developer's shell environment, so that\nresolution step was unreachable on device.\n\n## Testing\n- `./gradlew :appcheck:firebase-appcheck-debug:spotlessApply`\n- `./gradlew :appcheck:firebase-appcheck-debug:check` (21/21 unit tests\npassing)\n- `./gradlew :appcheck:firebase-appcheck-debug:apiInformation`\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8791"
+            }
+        ],
+        "appcheck/firebase-appcheck-recaptcha": [
+            {
+                "commitId": "b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prId": "8791",
+                "author": "Austin Benoit",
+                "message": "feat(appcheck): support CLI-provisioned debug tokens and 403 recovery hints (#8791)\n\n## Summary\nImplements the Android runtime SDK portion of **SDK/CLI Seamless Debug\nTokens** (`go/firebase-api-sdk-cli-seamless-debug-tokens`):\n\n1. **4-Step Token Resolution Order in `DebugAppCheckProvider`:**\n   - `InternalDebugSecretProvider` (programmatic secret)\n- Build-time injected string resource\n`R.string.firebase_app_check_debug_token` (with runtime\n`ApplicationInfo.FLAG_DEBUGGABLE` safeguard that logs an error and\nignores the token if ever present in a non-debuggable release build)\n   - Cached secret in `SharedPreferences`\n   - Auto-generated UUID persisted to `SharedPreferences`\n2. **Source Attribution & Actionable 403 Recovery Hint:**\n- Logs `[FirebaseAppCheck] Debug token loaded from <source>.` when\nresolving the debug secret.\n- Logs `[FirebaseAppCheck] Debug token was rejected by server. Run\n'firebase appcheck:debugtokens:create --force' to provision a new\ntoken.` when the backend returns HTTP 403 during debug token exchange.\n\n> [!NOTE]\n> An environment variable / system property source\n(`FIREBASE_APPCHECK_DEBUG_TOKEN`, `AppCheckDebugToken`) was initially\nincluded but has been removed. Android app processes are forked from\nzygote and do not inherit a developer's shell environment, so that\nresolution step was unreachable on device.\n\n## Testing\n- `./gradlew :appcheck:firebase-appcheck-debug:spotlessApply`\n- `./gradlew :appcheck:firebase-appcheck-debug:check` (21/21 unit tests\npassing)\n- `./gradlew :appcheck:firebase-appcheck-debug:apiInformation`\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5fb81375d0c57da83e23aea645d50729e6bec77",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8791"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-dataconnect",
+        ":protolite-well-known-types"
+    ]
+}
