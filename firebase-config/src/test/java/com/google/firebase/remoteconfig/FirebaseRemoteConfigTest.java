@@ -40,6 +40,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -1582,6 +1583,27 @@ public final class FirebaseRemoteConfigTest {
 
     verify(sharedPrefsClient, times(1))
         .setRealtimeBackoffEndTime(argThat(backoffEndTimeWithinTolerance));
+  }
+
+  @Test
+  public void realtime_streamStartedDuringBackoff_connectsWhenBackoffEnds() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(Tasks.forResult(mockHttpURLConnection))
+        .when(configRealtimeHttpClientSpy)
+        .createRealtimeConnection();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
+    when(mockHttpURLConnection.getErrorStream())
+        .thenReturn(
+            new ByteArrayInputStream(FORBIDDEN_ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(403);
+    realtimeSharedPrefsClient.setRealtimeBackoffEndTime(
+        new Date(clock.currentTimeMillis() + 200));
+
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+
+    verify(configRealtimeHttpClientSpy, timeout(2000)).createRealtimeConnection();
   }
 
   @Test
