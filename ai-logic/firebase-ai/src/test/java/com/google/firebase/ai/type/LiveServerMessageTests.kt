@@ -20,6 +20,7 @@ import com.google.firebase.ai.common.JSON
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
 
@@ -155,5 +156,138 @@ internal class LiveServerMessageTests {
 
     val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
     message.toPublic().shouldBeInstanceOf<LiveServerToolCallCancellation>()
+  }
+
+  // ===== LiveServerVoiceActivity & VoiceActivityType Tests =====
+
+  @Test
+  fun `LiveServerVoiceActivity with ACTIVITY_START and fractional audioOffset`() {
+    val json = """{"voiceActivity": {"type": "ACTIVITY_START", "audioOffset": "2.520s"}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.ACTIVITY_START
+    voiceActivity.audioOffset.shouldNotBeNull()
+    voiceActivity.audioOffset?.inWholeMilliseconds shouldBe 2520
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with ACTIVITY_END and fractional audioOffset`() {
+    val json = """{"voiceActivity": {"type": "ACTIVITY_END", "audioOffset": "3.640s"}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.ACTIVITY_END
+    voiceActivity.audioOffset.shouldNotBeNull()
+    voiceActivity.audioOffset?.inWholeMilliseconds shouldBe 3640
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with TYPE_UNSPECIFIED maps to UNKNOWN`() {
+    val json = """{"voiceActivity": {"type": "TYPE_UNSPECIFIED", "audioOffset": "0s"}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.UNKNOWN
+    voiceActivity.audioOffset.shouldNotBeNull()
+    voiceActivity.audioOffset?.inWholeMilliseconds shouldBe 0
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with unrecognized type maps to UNKNOWN`() {
+    val json = """{"voiceActivity": {"type": "FUTURE_ACTIVITY_TYPE", "audioOffset": "1s"}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.UNKNOWN
+    voiceActivity.audioOffset?.inWholeSeconds shouldBe 1
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with missing fields defaults to UNKNOWN and null audioOffset`() {
+    val json = """{"voiceActivity": {}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.UNKNOWN
+    voiceActivity.audioOffset.shouldBeNull()
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with null fields defaults to UNKNOWN and null audioOffset`() {
+    val json = """{"voiceActivity": {"type": null, "audioOffset": null}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.UNKNOWN
+    voiceActivity.audioOffset.shouldBeNull()
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with malformed audioOffset returns null audioOffset`() {
+    val json = """{"voiceActivity": {"type": "ACTIVITY_START", "audioOffset": "invalid"}}"""
+
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    val voiceActivity = message.toPublic()
+
+    voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+    voiceActivity.type shouldBe VoiceActivityType.ACTIVITY_START
+    voiceActivity.audioOffset.shouldBeNull()
+  }
+
+  @Test
+  fun `LiveServerVoiceActivity with non-finite audioOffset returns null audioOffset`() {
+    for (raw in listOf("NaNs", "Infinitys", "-Infinitys")) {
+      val json = """{"voiceActivity": {"type": "ACTIVITY_START", "audioOffset": "$raw"}}"""
+
+      val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+      val voiceActivity = message.toPublic()
+
+      voiceActivity.shouldBeInstanceOf<LiveServerVoiceActivity>()
+      voiceActivity.type shouldBe VoiceActivityType.ACTIVITY_START
+      voiceActivity.audioOffset.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `LiveServerGoAway with non-finite timeLeft returns null timeLeft`() {
+    for (raw in listOf("NaNs", "Infinitys")) {
+      val json = """{"goAway": {"timeLeft": "$raw"}}"""
+
+      val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+      val goAway = message.toPublic()
+
+      goAway.shouldBeInstanceOf<LiveServerGoAway>()
+      goAway.timeLeft.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `VoiceActivityType equals hashCode and toString behave as expected`() {
+    VoiceActivityType.ACTIVITY_START shouldBe VoiceActivityType.ACTIVITY_START
+    VoiceActivityType.ACTIVITY_START shouldNotBe VoiceActivityType.ACTIVITY_END
+    VoiceActivityType.ACTIVITY_START shouldNotBe VoiceActivityType.UNKNOWN
+    VoiceActivityType.ACTIVITY_START.equals("ACTIVITY_START") shouldBe false
+    VoiceActivityType.ACTIVITY_START.equals(null) shouldBe false
+
+    VoiceActivityType.ACTIVITY_START.hashCode() shouldBe "ACTIVITY_START".hashCode()
+    VoiceActivityType.ACTIVITY_END.hashCode() shouldBe "ACTIVITY_END".hashCode()
+    VoiceActivityType.UNKNOWN.hashCode() shouldBe "TYPE_UNSPECIFIED".hashCode()
+
+    VoiceActivityType.ACTIVITY_START.toString() shouldBe "VoiceActivityType(ACTIVITY_START)"
+    VoiceActivityType.ACTIVITY_END.toString() shouldBe "VoiceActivityType(ACTIVITY_END)"
+    VoiceActivityType.UNKNOWN.toString() shouldBe "VoiceActivityType(TYPE_UNSPECIFIED)"
   }
 }
