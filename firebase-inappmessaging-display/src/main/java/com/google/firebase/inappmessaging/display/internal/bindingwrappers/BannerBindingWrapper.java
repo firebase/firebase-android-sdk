@@ -14,7 +14,6 @@
 
 package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
 
-import android.graphics.Color;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -96,9 +95,7 @@ public class BannerBindingWrapper extends BindingWrapper {
         bannerTitle.setText(message.getTitle().getText());
       }
 
-      if (!TextUtils.isEmpty(message.getTitle().getHexColor())) {
-        bannerTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
-      }
+      setTextColorFromHex(bannerTitle, message.getTitle().getHexColor());
     }
 
     if (message.getBody() != null) {
@@ -106,9 +103,7 @@ public class BannerBindingWrapper extends BindingWrapper {
         bannerBody.setText(message.getBody().getText());
       }
 
-      if (!TextUtils.isEmpty(message.getBody().getHexColor())) {
-        bannerBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
-      }
+      setTextColorFromHex(bannerBody, message.getBody().getHexColor());
     }
   }
 
