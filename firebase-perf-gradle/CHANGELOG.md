@@ -15,6 +15,12 @@ Refer to [GMaven](https://maven.google.com/web/index.html?q=perf-plug#com.google
 * {{changed}} You need to do _this_ instead of _that_.
 ```
 
+### Unreleased
+
+* {{fixed}} Fixed `@AddTrace` traces being recorded twice for methods that
+  implement or override a generic method, such as `Initializer.create()`.
+  Compiler-generated bridge methods are no longer instrumented. (#8579)
+
 ### v2.0.2
 
 * {{fixed}} Fixed compatibility with AGP 9.0.0. [#7293]
