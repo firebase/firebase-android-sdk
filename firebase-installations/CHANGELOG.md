@@ -1,5 +1,10 @@
 # Unreleased
 
+- [fixed] Fixed an issue where `getToken()` never completed if the server
+  returned an auth token that was missing, empty, expired, or about to expire,
+  or that had an invalid expiration time. The task now fails with an error.
+  (#8781)
+
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
