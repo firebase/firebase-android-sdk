@@ -34,20 +34,23 @@ public class CrashlyticsPluginsTest {
   private static final String API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY";
   private static final String PROJECT_ID = "PROJECT-ID";
 
+  private FirebaseApp firebaseApp;
+
   @Before
   public void setUp() {
-    FirebaseApp.initializeApp(
-        ApplicationProvider.getApplicationContext(),
-        new FirebaseOptions.Builder()
-            .setApplicationId(APP_ID)
-            .setApiKey(API_KEY)
-            .setProjectId(PROJECT_ID)
-            .build());
+    firebaseApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(),
+            new FirebaseOptions.Builder()
+                .setApplicationId(APP_ID)
+                .setApiKey(API_KEY)
+                .setProjectId(PROJECT_ID)
+                .build());
   }
 
   @After
   public void tearDown() {
-    FirebaseApp.clearInstancesForTest();
+    firebaseApp.delete();
   }
 
   @Test
