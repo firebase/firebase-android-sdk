@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed an issue where an upload could be finalized before all of its data was sent,
+  leaving a truncated file that was reported as a successful upload. This happened when the last
+  chunk of a resumable upload failed and was retried.
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

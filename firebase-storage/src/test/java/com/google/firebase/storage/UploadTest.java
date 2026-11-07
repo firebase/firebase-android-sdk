@@ -492,6 +492,29 @@ public class UploadTest {
   }
 
   @Test
+  public void fileUploadRecoveryOfFinalChunk() throws Exception {
+    System.out.println("Starting test fileUploadRecoveryOfFinalChunk.");
+
+    MockConnectionFactory factory =
+        NetworkLayerMock.ensureNetworkMock("fileUploadRecoveryOfFinalChunk", true);
+
+    String filename = TEST_ASSET_ROOT + "image.jpg";
+    ClassLoader classLoader = UploadTest.class.getClassLoader();
+    InputStream imageStream = classLoader.getResourceAsStream(filename);
+    Uri sourceFile = Uri.parse("file://" + filename);
+
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
+    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
+
+    Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
+
+    TestUtil.await(task, 1, TimeUnit.MINUTES);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadRecoveryOfFinalChunk", task.getResult().toString());
+  }
+
+  @Test
   public void fileUploadNoRecovery() throws Exception {
     System.out.println("Starting test fileUploadNoRecovery.");
 
