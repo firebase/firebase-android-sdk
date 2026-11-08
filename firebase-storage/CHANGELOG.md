@@ -1,8 +1,8 @@
 # Unreleased
 
-- [fixed] Fixed an issue where an upload could be finalized before all of its data was sent,
-  leaving a truncated file that was reported as a successful upload. This happened when the last
-  chunk of a resumable upload failed and was retried.
+- [fixed] Fixed truncated uploads that were reported as successful. When the
+  last chunk of a resumable upload failed and was retried, the upload was
+  finalized before all of its data had been sent. (#8810)
 
 # 23.0.0
 
