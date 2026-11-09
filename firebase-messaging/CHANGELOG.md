@@ -1,5 +1,6 @@
 # Unreleased
 
+- [fixed] Fixed a crash when the connectivity change receiver was already unregistered. (#8803)
 - [changed] Added support for setting notification ID from the notification payload.
 - [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
 - [fixed] Restored token request deduplication with FirebaseInstanceId during auto-init and token fetches. (#8732)

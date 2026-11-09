@@ -196,7 +196,14 @@ class SyncTask implements Runnable {
       }
       task.firebaseMessaging.enqueueTaskWithDelaySeconds(task, 0);
       if (receiverContext != null) {
-        receiverContext.unregisterReceiver(this);
+        try {
+          receiverContext.unregisterReceiver(this);
+        } catch (IllegalArgumentException e) {
+          // The system may have already removed the registration (observed on Android 16 and
+          // some OEM builds), in which case unregistering again throws. The sync has already
+          // been enqueued above, so log and continue rather than crashing the app.
+          Log.w(TAG, "Failed to unregister connectivity change receiver", e);
+        }
       }
       task = null;
     }

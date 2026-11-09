@@ -15,12 +15,14 @@ package com.google.firebase.messaging;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import androidx.test.core.app.ApplicationProvider;
@@ -52,6 +54,32 @@ public class SyncTaskConnectivityChangeReceveiverRoboTest {
     receiver = new SyncTask.ConnectivityChangeReceiver(syncTask);
 
     FirebaseIidRoboTestHelper.addGmsCorePackageInfo();
+  }
+
+  @Test
+  public void testReceviverRun_unregisterAlreadyUnregistered_doesNotThrow() {
+    FirebaseMessaging firebaseMessaging = mock(FirebaseMessaging.class);
+    doReturn(context).when(firebaseMessaging).getApplicationContext();
+    SyncTask syncTask =
+        new SyncTask(firebaseMessaging, /* nextDelaySeconds= */ 0) {
+          @Override
+          boolean isDeviceConnected() {
+            return true;
+          }
+        };
+    SyncTask.ConnectivityChangeReceiver receiver =
+        new SyncTask.ConnectivityChangeReceiver(syncTask);
+    receiver.registerReceiver();
+
+    // Simulate the system having already dropped the registration, which makes
+    // Context#unregisterReceiver throw IllegalArgumentException.
+    doThrow(new IllegalArgumentException("Receiver not registered"))
+        .when(context)
+        .unregisterReceiver(receiver);
+
+    receiver.onReceive(context, new Intent());
+
+    verify(firebaseMessaging).enqueueTaskWithDelaySeconds(syncTask, 0);
   }
 
   @Test
