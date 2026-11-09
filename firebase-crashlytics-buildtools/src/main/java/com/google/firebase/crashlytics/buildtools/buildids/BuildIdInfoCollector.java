@@ -18,6 +18,9 @@ package com.google.firebase.crashlytics.buildtools.buildids;
 
 import static com.google.firebase.crashlytics.buildtools.Buildtools.getLogger;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import com.google.firebase.crashlytics.buildtools.ndk.internal.dwarf.DebugLineEntry;
 import com.google.firebase.crashlytics.buildtools.ndk.internal.dwarf.NamedRanges;
 import com.google.firebase.crashlytics.buildtools.ndk.internal.elf.EMachine;
@@ -34,22 +37,28 @@ import java.util.List;
 import java.util.Optional;
 
 public class BuildIdInfoCollector {
+  @VisibleForTesting
+  static final Comparator<BuildIdInfo> BUILD_ID_INFO_ORDERING =
+      (left, right) ->
+          ComparisonChain.start()
+              .compare(
+                  left.getLibraryName(), right.getLibraryName(), Ordering.natural().nullsFirst())
+              .compare(left.getArch(), right.getArch(), Ordering.natural().nullsFirst())
+              .compare(left.getBuildId(), right.getBuildId(), Ordering.natural().nullsFirst())
+              .result();
 
   public List<BuildIdInfo> collect(File mergedNativeLibsPath) {
     return collectFiles(FileUtils.listFiles(mergedNativeLibsPath));
   }
 
-  // Package-private so tests can supply a controlled file enumeration order.
+  @VisibleForTesting
   List<BuildIdInfo> collectFiles(Collection<File> files) {
     List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
     for (File file : files) {
       Optional<BuildIdInfo> buildIdInfo = getBuildIdInfo(file);
       buildIdInfo.ifPresent(buildIdInfoList::add);
     }
-    buildIdInfoList.sort(
-        Comparator.comparing(BuildIdInfo::getLibraryName)
-            .thenComparing(BuildIdInfo::getArch)
-            .thenComparing(BuildIdInfo::getBuildId));
+    buildIdInfoList.sort(BUILD_ID_INFO_ORDERING);
     return buildIdInfoList;
   }
 
@@ -120,4 +129,3 @@ public class BuildIdInfoCollector {
     return sb.toString();
   }
 }
-

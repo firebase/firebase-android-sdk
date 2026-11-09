@@ -23,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -81,6 +83,27 @@ public class BuildIdInfoCollectorTest {
   }
 
   @Test
+  public void buildIdOrdering_sortsAllFieldsAndAcceptsNulls() {
+    List<BuildIdInfo> expected =
+        Arrays.asList(
+            new BuildIdInfo(null, null, null),
+            new BuildIdInfo(null, null, "a"),
+            new BuildIdInfo(null, "a", null),
+            new BuildIdInfo("a", null, null),
+            new BuildIdInfo("a", "a", null),
+            new BuildIdInfo("a", "a", "a"),
+            new BuildIdInfo("a", "a", "b"),
+            new BuildIdInfo("a", "b", "a"),
+            new BuildIdInfo("b", "a", "a"));
+    List<BuildIdInfo> actual = new ArrayList<>(expected);
+    Collections.reverse(actual);
+
+    actual.sort(BuildIdInfoCollector.BUILD_ID_INFO_ORDERING);
+
+    assertEquals(expected, actual);
+  }
+
+  @Test
   public void collect_noBuildId_producesTextHash() throws IOException, URISyntaxException {
     BuildIdInfoCollector buildIdInfoCollector = new BuildIdInfoCollector();
     File inputDir =
@@ -100,4 +123,3 @@ public class BuildIdInfoCollectorTest {
     assertEquals(buildId, buildIdInfo.getBuildId());
   }
 }
-

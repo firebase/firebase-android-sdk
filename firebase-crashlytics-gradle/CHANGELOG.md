@@ -1,7 +1,6 @@
 ### Unreleased
 
-- [fixed] Sort generated native build ID entries to keep Crashlytics resources deterministic across
-  filesystem enumeration orders. [#8789]
+- [fixed] Fixed nondeterministic ordering of native build ID resources. [#8789]
 
 ### Crashlytics Gradle plugin version 3.0.8
 
@@ -58,5 +57,4 @@ native apps and customized builds. This release includes the following API chang
   * Gradle 8
   * Android Gradle plugin 8.1
   * Google-Services plugin 4.4.1
-
 

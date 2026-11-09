@@ -23,9 +23,13 @@ jobs:
 
     - name: Filter paths
       id: filter
+      env:
+        PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: |
-        MERGE_BASE=$(git merge-base origin/${GITHUB_BASE_REF} origin/${GITHUB_HEAD_REF})
-        FILES=$(git diff --name-only $MERGE_BASE origin/${GITHUB_HEAD_REF})
+        git fetch --no-tags "https://github.com/${PR_HEAD_REPOSITORY}.git" "$PR_HEAD_SHA"
+        MERGE_BASE=$(git merge-base "origin/${GITHUB_BASE_REF}" FETCH_HEAD)
+        FILES=$(git diff --name-only "$MERGE_BASE" FETCH_HEAD)
         IGNORE=true
         for FILE in $FILES; do
           if [[ $FILE != plugins/* && $FILE != .github/* ]]; then
