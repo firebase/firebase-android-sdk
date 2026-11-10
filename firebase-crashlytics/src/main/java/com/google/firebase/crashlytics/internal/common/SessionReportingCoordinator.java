@@ -173,17 +173,11 @@ public class SessionReportingCoordinator {
       return;
     }
 
-    final CrashlyticsReport.Session.Event capturedEvent =
+    CrashlyticsReport.Session.Event event =
         dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-
-    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
-        addLogsAndCustomKeysToEvent(
-            capturedEvent, logFileManagerForSession, userMetadataForSession);
-    CrashlyticsReport.Session.Event eventWithRolloutsState =
-        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
-    reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
+    decorateAndPersistEvent(sessionId, event, logFileManagerForSession, userMetadataForSession);
   }
 
   @SuppressLint("DefaultLocale")
@@ -191,10 +185,13 @@ public class SessionReportingCoordinator {
   public void persistProfilingManagerInfo(
       File filesDir,
       String sessionId,
+      LogFileManager logFileManagerForSession,
+      UserMetadata userMetadataForSession,
       List<ApplicationExitInfo> applicationExitInfoList,
       boolean isHeapDumpCollectionEnabled) {
-    int trigger = getTrigger(sessionId, applicationExitInfoList);
-    if (trigger == ProfilingTrigger.TRIGGER_TYPE_NONE) {
+    TriggerReasonPair triggerReason = getTriggerAndReason(sessionId, applicationExitInfoList);
+
+    if (triggerReason.trigger == ProfilingTrigger.TRIGGER_TYPE_NONE) {
       Logger.getLogger().d(String.format("No trigger present for session: %s", sessionId));
       return;
     }
@@ -212,7 +209,8 @@ public class SessionReportingCoordinator {
                     .i(
                         String.format(
                             "Queueing %s for upload for session: %s", filename, sessionId));
-                resumableUploadMetadataStore.addInProgressUpload(sessionId, trigger, filename);
+                resumableUploadMetadataStore.addInProgressUpload(
+                    sessionId, triggerReason.trigger, filename);
               });
     }
 
@@ -220,15 +218,23 @@ public class SessionReportingCoordinator {
         .d(
             String.format(
                 "Trigger present; %d, heap dump collection enabled? %s, heap dump generated? %s",
-                trigger,
+                triggerReason.trigger,
                 (isHeapDumpCollectionEnabled ? "yes" : "no"),
                 (heapDump.isPresent() ? "yes" : "no")));
+
+    if (triggerReason.trigger == ProfilingTrigger.TRIGGER_TYPE_ANOMALY
+        && triggerReason.applicationExitInfo != null) {
+      CrashlyticsReport.Session.Event event =
+          dataCapture.captureTriggerEventData(
+              convertApplicationExitInfo(triggerReason.applicationExitInfo));
+      decorateAndPersistEvent(sessionId, event, logFileManagerForSession, userMetadataForSession);
+    }
 
     reportPersistence.persistProfilingManagerInfo(
         ProfilingManagerInfo.builder()
             .setProfilingTrigger(
                 ProfilingManagerInfo.ProfilingTrigger.builder()
-                    .setTrigger(trigger)
+                    .setTrigger(triggerReason.trigger)
                     .setIsHeapDumpCollectionEnabled(isHeapDumpCollectionEnabled)
                     .setWasHeapDumpGenerated(heapDump.isPresent())
                     .build())
@@ -431,6 +437,20 @@ public class SessionReportingCoordinator {
     reportPersistence.persistEvent(finallizedEvent, eventMetadata.getSessionId(), isHighPriority);
   }
 
+  private void decorateAndPersistEvent(
+      String sessionId,
+      CrashlyticsReport.Session.Event event,
+      LogFileManager logFileManagerForSession,
+      UserMetadata userMetadataForSession) {
+    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
+        addLogsAndCustomKeysToEvent(event, logFileManagerForSession, userMetadataForSession);
+
+    CrashlyticsReport.Session.Event eventWithRolloutsState =
+        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
+
+    reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
+  }
+
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
     if (task.isSuccessful()) {
       CrashlyticsReportWithSessionId report = task.getResult();
@@ -534,55 +554,52 @@ public class SessionReportingCoordinator {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  int getTrigger(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
-    if (isOom(sessionId, applicationExitInfoList)) {
-      return ProfilingTrigger.TRIGGER_TYPE_OOM;
+  TriggerReasonPair getTriggerAndReason(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    ApplicationExitInfo applicationExitInfo;
+    if ((applicationExitInfo = isOom(sessionId, applicationExitInfoList)) != null) {
+      return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_OOM, applicationExitInfo);
     }
 
-    if (isMemoryLimiterKill(sessionId, applicationExitInfoList)) {
-      return ProfilingTrigger.TRIGGER_TYPE_ANOMALY;
+    if ((applicationExitInfo = isMemoryLimiterKill(sessionId, applicationExitInfoList)) != null) {
+      return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_ANOMALY, applicationExitInfo);
     }
 
-    return ProfilingTrigger.TRIGGER_TYPE_NONE;
+    return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_NONE, null);
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
-  boolean isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
-    ApplicationExitInfo relevant =
-        findRelevantApplicationExitInfo(
-            sessionId,
-            applicationExitInfoList,
-            aei ->
-                aei.getReason() == ApplicationExitInfo.REASON_CRASH
-                    && aei.getProcessStateSummary() != null
-                    && aei.getProcessStateSummary().length != 0
-                    && Arrays.equals(aei.getProcessStateSummary(), "OOM, Java Heap".getBytes()));
-
-    return relevant != null;
+  ApplicationExitInfo isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    return findRelevantApplicationExitInfo(
+        sessionId,
+        applicationExitInfoList,
+        aei ->
+            aei.getReason() == ApplicationExitInfo.REASON_CRASH
+                && aei.getProcessStateSummary() != null
+                && aei.getProcessStateSummary().length != 0
+                && Arrays.equals(aei.getProcessStateSummary(), "OOM, Java Heap".getBytes()));
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  boolean isMemoryLimiterKill(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
-    ApplicationExitInfo relevant =
-        findRelevantApplicationExitInfo(
-            sessionId,
-            applicationExitInfoList,
-            aei -> {
-              @SuppressLint("WrongConstant")
-              boolean viaMemoryLimiter =
-                  Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2
-                      && aei.getReason() == ApplicationExitInfo.REASON_MEMORY_LIMITER;
+  ApplicationExitInfo isMemoryLimiterKill(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    return findRelevantApplicationExitInfo(
+        sessionId,
+        applicationExitInfoList,
+        aei -> {
+          @SuppressLint("WrongConstant")
+          boolean viaMemoryLimiter =
+              Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2
+                  && aei.getReason() == ApplicationExitInfo.REASON_MEMORY_LIMITER;
 
-              boolean viaOther =
-                  aei.getReason() == ApplicationExitInfo.REASON_OTHER
-                      && aei.getDescription() != null
-                      && aei.getDescription().contains("MemoryLimiter:AnonSwap");
+          boolean viaOther =
+              aei.getReason() == ApplicationExitInfo.REASON_OTHER
+                  && aei.getDescription() != null
+                  && aei.getDescription().contains("MemoryLimiter:AnonSwap");
 
-              return viaOther || viaMemoryLimiter;
-            });
-
-    return relevant != null;
+          return viaOther || viaMemoryLimiter;
+        });
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
@@ -628,18 +645,29 @@ public class SessionReportingCoordinator {
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private static boolean isProfilingTriggerHeapdump(String filename) {
+  @VisibleForTesting
+  static boolean isProfilingTriggerHeapdump(String filename) {
     boolean isHeapdump =
         filename.toLowerCase().endsWith(".hprof")
-            || filename.toLowerCase().endsWith(".perfetto-java-heap-dump");
+            || filename.toLowerCase().contains(".perfetto-java-heap-dump");
 
     // On API 37.2, the filename will contain the trigger - this is used to differentiate OOM and
     // memory limiter heap dumps from ones that were requested manually. On API 37, this
     // differentiation  is not possible.
     if (android.os.Build.VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.CINNAMON_BUN_2) {
-      return isHeapdump && filename.contains("trigger-type-");
+      return isHeapdump && filename.contains("profile_trigger-");
     }
 
     return isHeapdump;
+  }
+
+  private static class TriggerReasonPair {
+    public final int trigger;
+    @Nullable public final ApplicationExitInfo applicationExitInfo;
+
+    public TriggerReasonPair(int trigger, @Nullable ApplicationExitInfo applicationExitInfo) {
+      this.trigger = trigger;
+      this.applicationExitInfo = applicationExitInfo;
+    }
   }
 }

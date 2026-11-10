@@ -200,7 +200,7 @@ public class ScottyUploader {
       String gmpAppId, String sessionId, int type, File heapdump, Listener listener) {
     try {
       String url = getUrl(uuid, gmpAppId, sessionId, type);
-      String canonicalFilename = sessionId + ".perfetto";
+      String canonicalFilename = makeCanonicalFilename(sessionId, heapdump);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/octet-stream");
@@ -274,6 +274,12 @@ public class ScottyUploader {
 
     Logger.getLogger().w("Could not find profiling directory, falling back to relative path");
     return fileStore.getCommonFile(String.format("../../profiling/%s", filename));
+  }
+
+  private static String makeCanonicalFilename(String sessionId, File heapdump) {
+    String filename = heapdump.getName();
+    return String.format(
+        "%s.%s", sessionId, filename.endsWith(".zip") ? "perfetto.zip" : "perfetto");
   }
 
   private static String getUrl(String uuid, String gmpAppId, String sessionId, int type) {
