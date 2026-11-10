@@ -45,21 +45,13 @@ android {
     minSdk = minSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    // CloudSqlEndToEndTest reads its service from the instrumentation arguments
-    // `firebaseSqlServiceId` and `firebaseSqlLocation`, which come from the environment variables
-    // FIREBASE_SQL_SERVICE_ID and FIREBASE_SQL_LOCATION of the build. See README.md.
-    mapOf(
-        "FIREBASE_SQL_SERVICE_ID" to "firebaseSqlServiceId",
-        "FIREBASE_SQL_LOCATION" to "firebaseSqlLocation",
-      )
-      .forEach { (variable, argument) ->
-        providers
-          .environmentVariable(variable)
-          .orNull
-          ?.trim()
-          ?.takeIf { it.isNotEmpty() }
-          ?.let { testInstrumentationRunnerArguments[argument] = it }
-      }
+    // CloudSqlEndToEndTest calls the service that these Gradle properties name, for example
+    // `./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service
+    // -PtargetLocation=us-east4`.
+    val targetServiceId = findProperty("targetServiceId") ?: ""
+    buildConfigField("String", "TARGET_SERVICE_ID", "\"$targetServiceId\"")
+    val targetLocation = findProperty("targetLocation") ?: ""
+    buildConfigField("String", "TARGET_LOCATION", "\"$targetLocation\"")
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8

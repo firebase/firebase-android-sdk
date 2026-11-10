@@ -73,7 +73,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CloudSqlEndToEndTest {
 
-  private val service = SqlTestService.fromArguments()
+  private val service = SqlTestService.fromBuildConfig()
   private lateinit var app: FirebaseApp
   private lateinit var fsql: FirebaseSql
 

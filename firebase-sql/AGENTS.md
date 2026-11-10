@@ -101,9 +101,9 @@ The test resources are not hard-coded:
   it into this directory with the package name of the module, so the file does not need to be
   edited. The copy is kept until it is deleted; `run_cloud_tests.sh` replaces it when
   `FIREBASE_GOOGLE_SERVICES_PATH` is set.
-- **The service** comes from the environment variables `FIREBASE_SQL_SERVICE_ID` and
-  `FIREBASE_SQL_LOCATION`. The Gradle build passes them to the tests as the instrumentation
-  arguments `firebaseSqlServiceId` and `firebaseSqlLocation`.
+- **The service** comes from the required Gradle properties `targetServiceId` and
+  `targetLocation`, which the build compiles into `BuildConfig`. `run_cloud_tests.sh` reads the
+  environment variables `FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION`, and passes them on.
 - **The Cloud SQL instance and database** of the service are looked up by `run_cloud_tests.sh` with
   `firebase dataconnect:services:list`.
 
@@ -113,7 +113,7 @@ When the test tables already exist in the database, run `connectedCheck` from th
 repository:
 
 ```bash
-FIREBASE_SQL_SERVICE_ID=my-service FIREBASE_SQL_LOCATION=us-east4 ./gradlew :firebase-sql:connectedCheck
+./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service -PtargetLocation=us-east4
 ```
 
 To create the test tables in the database first, or to create them and run `connectedCheck` in one
@@ -125,11 +125,16 @@ FIREBASE_SQL_SERVICE_ID=my-service FIREBASE_SQL_LOCATION=us-east4 ./firebase-sql
 
 ### Run the tests from Android Studio
 
-Click the run icon next to `CloudSqlEndToEndTest`. Android Studio creates an **Android Instrumented
-Tests** run configuration, and the first run fails because the configuration does not name the
-service yet. Open **Run > Edit Configurations**, select that configuration, and add the
-**Instrumentation arguments** `firebaseSqlServiceId` and `firebaseSqlLocation` with the ID and
-location of the service. The results then show up in the test tree of the **Run** window.
+Add the Gradle properties to your `~/.gradle/gradle.properties`, which is not part of the
+repository:
+
+```properties
+targetServiceId=my-service
+targetLocation=us-east4
+```
+
+Then click the run icon next to `CloudSqlEndToEndTest`. The results show up in the test tree of the
+**Run** window.
 
 If the test tables do not exist yet, create them once from the terminal with
 `RUN_TESTS=false ./firebase-sql/run_cloud_tests.sh`, with `FIREBASE_SQL_SERVICE_ID` and

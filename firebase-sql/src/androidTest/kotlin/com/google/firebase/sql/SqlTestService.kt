@@ -16,7 +16,6 @@
 
 package com.google.firebase.sql
 
-import android.os.Bundle
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -27,9 +26,9 @@ import com.google.firebase.FirebaseOptions
  * would.
  *
  * Like in an app, the project comes from the `google-services.json` file of the module. The
- * required `firebaseSqlServiceId` and `firebaseSqlLocation` instrumentation arguments name the
- * service. The Gradle build sets them from the environment variables `FIREBASE_SQL_SERVICE_ID` and
- * `FIREBASE_SQL_LOCATION`.
+ * required Gradle properties `targetServiceId` and `targetLocation` name the service, for example
+ * `./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service -PtargetLocation=us-east4`.
+ * The build compiles them into [BuildConfig.TARGET_SERVICE_ID] and [BuildConfig.TARGET_LOCATION].
  */
 internal class SqlTestService(val serviceId: String, val location: String) {
 
@@ -62,19 +61,18 @@ internal class SqlTestService(val serviceId: String, val location: String) {
     "Firebase SQL service $serviceId in $location of project ${options.projectId}"
 
   companion object {
-    /** The service that the instrumentation arguments name. */
-    fun fromArguments(arguments: Bundle = InstrumentationRegistry.getArguments()): SqlTestService =
+    /** The service that the Gradle properties `targetServiceId` and `targetLocation` name. */
+    fun fromBuildConfig(): SqlTestService =
       SqlTestService(
-        serviceId = arguments.requireString("firebaseSqlServiceId"),
-        location = arguments.requireString("firebaseSqlLocation")
+        serviceId = requireProperty("targetServiceId", BuildConfig.TARGET_SERVICE_ID),
+        location = requireProperty("targetLocation", BuildConfig.TARGET_LOCATION)
       )
 
-    private fun Bundle.requireString(name: String): String =
-      requireNotNull(getString(name)?.trim()?.takeIf { it.isNotEmpty() }) {
-        "The $name instrumentation argument is required. For Gradle, set the environment " +
-          "variables FIREBASE_SQL_SERVICE_ID and FIREBASE_SQL_LOCATION. In an Android Studio " +
-          "test run configuration, add the instrumentation arguments firebaseSqlServiceId and " +
-          "firebaseSqlLocation. See firebase-sql/README.md."
+    private fun requireProperty(name: String, value: String): String =
+      requireNotNull(value.trim().takeIf { it.isNotEmpty() }) {
+        "The $name Gradle property is required. Run the tests with " +
+          "-PtargetServiceId=<service ID> -PtargetLocation=<location>, or set both properties " +
+          "in ~/.gradle/gradle.properties. See firebase-sql/AGENTS.md."
       }
 
     private fun context() = InstrumentationRegistry.getInstrumentation().targetContext

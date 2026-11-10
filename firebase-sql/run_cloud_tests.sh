@@ -29,7 +29,8 @@
 #   firebase-sql/ with the package name of the module. When FIREBASE_GOOGLE_SERVICES_PATH is
 #   set, the script removes the copy of an earlier run first.
 # - The service comes from the environment variables FIREBASE_SQL_SERVICE_ID and
-#   FIREBASE_SQL_LOCATION, which the Gradle build passes to the tests as instrumentation arguments:
+#   FIREBASE_SQL_LOCATION of this script, which passes them to the build as the Gradle properties
+#   targetServiceId and targetLocation:
 #     FIREBASE_SQL_SERVICE_ID=my-service FIREBASE_SQL_LOCATION=us-east4 ./run_cloud_tests.sh
 # - The Cloud SQL instance and the database of the service are looked up with the Firebase CLI.
 #
@@ -92,8 +93,6 @@ wait_for() {
 
 [[ -n "$SERVICE_ID" && -n "$SERVICE_LOCATION" ]] ||
   fail "Set the environment variables FIREBASE_SQL_SERVICE_ID and FIREBASE_SQL_LOCATION."
-export FIREBASE_SQL_SERVICE_ID="$SERVICE_ID"
-export FIREBASE_SQL_LOCATION="$SERVICE_LOCATION"
 
 # The google-services.json file that the build uses, as the copy-google-services plugin picks it.
 MODULE_GOOGLE_SERVICES="$MODULE_DIR/google-services.json"
@@ -210,6 +209,8 @@ echo "=== Running E2E Tests ==="
 cd "$REPO_ROOT"
 ./gradlew :firebase-sql:connectedCheck \
   "-Pandroid.testInstrumentationRunnerArguments.class=$TEST_FILTER" \
+  "-PtargetServiceId=$SERVICE_ID" \
+  "-PtargetLocation=$SERVICE_LOCATION" \
   "$@"
 
 echo "=== Tests Finished Successfully! ==="
