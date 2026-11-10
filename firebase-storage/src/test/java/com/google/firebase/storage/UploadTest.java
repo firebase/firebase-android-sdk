@@ -491,6 +491,36 @@ public class UploadTest {
     TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
   }
 
+  /**
+   * Replays a failure of the last chunk after the end of the stream has been read: the
+   * 289,976-byte "upload, finalize" at offset 786432 returns 500 and the status query reports
+   * 786432 bytes received. The retry restarts at the 256 KiB chunk size, so it must send a
+   * non-finalizing 262,144-byte "upload" followed by a 27,832-byte "upload, finalize" rather than
+   * finalizing a truncated object. Relies on image.jpg being 1,076,408 bytes.
+   */
+  @Test
+  public void fileUploadRecoveryOfFinalChunk() throws Exception {
+    System.out.println("Starting test fileUploadRecoveryOfFinalChunk.");
+
+    MockConnectionFactory factory =
+        NetworkLayerMock.ensureNetworkMock("fileUploadRecoveryOfFinalChunk", true);
+
+    String filename = TEST_ASSET_ROOT + "image.jpg";
+    ClassLoader classLoader = UploadTest.class.getClassLoader();
+    InputStream imageStream = classLoader.getResourceAsStream(filename);
+    Uri sourceFile = Uri.parse("file://" + filename);
+
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
+    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
+
+    Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
+
+    TestUtil.await(task, 1, TimeUnit.MINUTES);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadRecoveryOfFinalChunk", task.getResult().toString());
+  }
+
   @Test
   public void fileUploadNoRecovery() throws Exception {
     System.out.println("Starting test fileUploadNoRecovery.");
