@@ -16,8 +16,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -92,17 +91,8 @@ public class Uploader {
   boolean isNetworkAvailable() {
     ConnectivityManager connectivityManager =
         (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    if (connectivityManager == null) {
-      return false;
-    }
-    Network activeNetwork = connectivityManager.getActiveNetwork();
-    if (activeNetwork == null) {
-      return false;
-    }
-    NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-    return capabilities != null
-        && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
   }
 
   public void upload(TransportContext transportContext, int attemptNumber, Runnable callback) {
@@ -217,7 +207,7 @@ public class Uploader {
                   transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
               return null;
             });
-        workScheduler.schedule(transportContext, attemptNumber + 1, true);
+        workScheduler.schedule(transportContext, attemptNumber + 1);
         return response;
       } else {
         guard.runCriticalSection(
@@ -266,7 +256,7 @@ public class Uploader {
         });
 
     if (eventStore.hasPendingEventsFor(transportContext)) {
-      workScheduler.schedule(transportContext, attemptNumber, true);
+      workScheduler.schedule(transportContext, 1, true);
     }
     return response;
   }
