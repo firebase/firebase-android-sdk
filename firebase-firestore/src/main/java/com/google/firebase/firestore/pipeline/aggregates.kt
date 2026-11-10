@@ -268,8 +268,9 @@ private constructor(
   /**
    * Applies a window frame to this aggregate, turning it into a window function.
    *
-   * Window Functions SDK features are in preview until the backend feature launches. Look for
-   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   * Window Functions SDK features are in preview until the backend feature launches. Look for a
+   * launch announcement in the
+   * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
    *
    * Use this to give a single accumulator its own framing, independent of the frame declared on the
    * enclosing `addWindowFields` stage. Only `documents` or `range` window frames (created via
