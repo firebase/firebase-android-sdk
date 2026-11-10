@@ -462,7 +462,10 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
 
   private void uploadChunk() {
     try {
-      mStreamBuffer.fill(mCurrentChunkSize);
+      if (!mStreamBuffer.isFinished()) {
+        // Everything left is already buffered; don't read the (possibly closed) source again.
+        mStreamBuffer.fill(mCurrentChunkSize);
+      }
       int bytesToUpload = Math.min(mCurrentChunkSize, mStreamBuffer.available());
       // The buffer can hold more than one chunk after a failed send resets the chunk size, so the
       // end of the stream alone does not make this the last chunk.
