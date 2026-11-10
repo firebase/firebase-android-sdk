@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.connection;
 
+import androidx.annotation.Nullable;
+import com.google.firebase.database.logging.LogWrapper;
 import java.net.URI;
 
 public class HostInfo {
@@ -53,6 +55,60 @@ public class HostInfo {
       url += "&" + LAST_SESSION_ID_PARAM + "=" + optLastSessionId;
     }
     return URI.create(url);
+  }
+
+  /**
+   * Returns the URL for a new connection to this database.
+   *
+   * <p>The cached host and the last session ID were sent by the server. If one of them can't be
+   * used in the URL, it is ignored with a warning: the connection goes to the configured host, or
+   * starts without a last session ID. Each value is checked on its own, so that a bad session ID
+   * doesn't also discard a good host. Otherwise, if the configured host reset the connection to
+   * that host, the client would reconnect in a tight loop.
+   */
+  URI getConnectionUrl(
+      @Nullable String optCachedHost, @Nullable String optLastSessionId, LogWrapper logger) {
+    String connectionHost = host;
+    if (optCachedHost != null) {
+      if (isUsableHost(optCachedHost)) {
+        connectionHost = optCachedHost;
+      } else {
+        logger.warn(
+            "Ignoring a host from the server that can't be used in a URL, connecting to the"
+                + " configured host instead");
+      }
+    }
+    if (optLastSessionId != null) {
+      URI url = tryGetConnectionUrl(connectionHost, optLastSessionId);
+      if (url != null) {
+        return url;
+      }
+      logger.warn("Ignoring a session ID from the server that can't be used in a URL");
+    }
+    return getConnectionUrl(connectionHost, secure, namespace, /* optLastSessionId= */ null);
+  }
+
+  /**
+   * Returns whether a host that the server sent can be used to connect to this database, that is,
+   * whether the connection URL for it is a valid URI that names a host. This only checks the
+   * syntax. It doesn't restrict which hosts the server can send.
+   */
+  boolean isUsableHost(String host) {
+    URI url = tryGetConnectionUrl(host, /* optLastSessionId= */ null);
+    // Without a host in the URL, the websocket would connect to the loopback address.
+    return url != null && url.getHost() != null;
+  }
+
+  /** Returns the connection URL, or null if it isn't a valid URI. */
+  @Nullable
+  private URI tryGetConnectionUrl(String host, @Nullable String optLastSessionId) {
+    try {
+      return getConnectionUrl(host, secure, namespace, optLastSessionId);
+    } catch (IllegalArgumentException e) {
+      // URI.create throws if the URL contains characters that aren't allowed in a URI, such as a
+      // space.
+      return null;
+    }
   }
 
   public String getHost() {
