@@ -1,469 +1,58 @@
-# Firebase SQL Android SDK (`firebase-sql`)
+# Working on the Firebase SQL Android SDK (`firebase-sql`)
 
-`firebase-sql` is the Android SDK of Firebase SQL. A Firebase SQL service serves a
-Cloud SQL for PostgreSQL database through a [PostgREST](https://docs.postgrest.org/en/stable/) API.
-The SDK builds PostgREST requests with a fluent Kotlin API, sends them with the Firebase
-Authentication and Firebase App Check tokens of the app, and returns an `OperationResult`, or
-throws a `FirebaseSqlException` when the server rejects the request.
+This guide is for AI agents and developers who change the code of this module. It adds the details
+of `firebase-sql` to the [repository guide](../AGENTS.md), which covers the setup, the build, and
+the conventions of every SDK in this repository. To write app code that uses the SDK, use the
+[`firebase-sql-android` skill](skills/firebase-sql-android/SKILL.md) instead.
 
-This guide is for AI agents and developers who write code with the SDK. Read it before you generate
-code. Every public class and method also has KDoc with examples: read it for the details of a
-method.
+## What the SDK does
 
-## How the SDK works
+A Firebase SQL service serves a Cloud SQL for PostgreSQL database through a
+[PostgREST](https://docs.postgrest.org/en/stable/references/api.html) API. In the SDK, a builder
+chain such as `sql.from("products").select().eq("id", 1)` describes one PostgREST request.
+`execute()` sends it with the Firebase Authentication and Firebase App Check tokens of the app,
+retries reads after transient failures, and returns an `OperationResult`, or throws a
+`FirebaseSqlException` when the server answers with an error.
 
-- **A chain describes one HTTP request.** It starts with `sql.from("table")` or
-  `sql.rpc("function")`, and ends with `execute()`. Nothing is sent before `execute()`.
-- **Each call adds one part of a PostgREST request.** For example,
-  `sql.from("products").select("id,name").eq("category_id", 1).order("price").limit(10)` sends
-  `GET /products?select=id,name&category_id=eq.1&order=price.asc&limit=10`. The
-  [PostgREST API reference](https://docs.postgrest.org/en/stable/references/api.html) describes how
-  the server handles each part.
-- **The API is Kotlin-only.** Write the code that uses it in Kotlin: it is built on coroutines and
-  kotlinx.serialization, and is not designed to be called from Java.
-- **`execute()` is a suspend function.** Call it from a coroutine, for example in
-  `viewModelScope.launch { }`.
-- **`execute()` throws when a request fails.** It returns an `OperationResult` for a successful
-  response. It throws a `FirebaseSqlException` when the server answers with an error, and an
-  `IOException` when no response arrives: catch both with `try` and `catch`.
-- **Builders are immutable.** Each call returns a new builder, so always use the returned value.
-- **Authentication is automatic.** When the app uses Firebase Authentication, each request carries
-  the ID token of the signed-in user. When the app uses Firebase App Check, each request carries an
-  App Check token. The server decides what each user can read and write.
-- **Every request goes to the server.** The SDK has no offline mode and no realtime updates.
+## Layout
 
-## Workflow
+- `src/main/kotlin/com/google/firebase/sql/`:
+  - The public API: `FirebaseSql`, `Firebase.sql()` in `Sql.kt`, `SqlServiceSettings`,
+    `OperationResult`, the exceptions, and the classes of constants.
+  - `FirebaseSqlComponent.kt`: creates and reuses the `FirebaseSql` instances of one `FirebaseApp`,
+    and closes them when that app is deleted. `FirebaseSqlRegistrar.kt` registers it.
+  - `builders/`: `QueryBuilder`, `FilterBuilder`, and `TransformBuilder`, which
+    `OperationBuilderImpl` implements. `PostgrestSyntax.kt` formats the values of the query string.
+  - `core/`: `OperationsExecutor` (headers, tokens, retries, timeouts, and cancellation),
+    `NetworkClient` (OkHttp and error responses), the token managers, `QueryRequest`, and the JSON
+    encoding of values.
+- `src/test/`: unit tests, which run with Robolectric. `MockServerEndToEndTest` runs the whole SDK
+  against a `MockWebServer`.
+- `src/androidTest/`: `CloudSqlEndToEndTest`, which runs against a live service, and the SQL of its
+  tables in `src/androidTest/sql/`.
+- `api.txt`: the public API, which the build checks.
 
-Follow these steps to add Firebase SQL to an app:
+## Checks
 
-1. [Create the tables](#step-1-create-the-tables)
-2. [Set up the Firebase project and `google-services.json`](#step-2-set-up-the-firebase-project)
-3. [Add the dependencies](#step-3-add-the-dependencies)
-4. [Create the Kotlin models](#step-4-create-the-kotlin-models)
-5. [Get the `FirebaseSql` instance](#step-5-get-the-firebasesql-instance)
-6. [Read and write data](#step-6-read-data), and [handle errors](#handle-errors)
-
-## Step 1: Create the tables
-
-The tables live in the PostgreSQL database of the service. The API serves the tables, views, and
-functions of the schema of the service, usually `public`.
-
-Create them as the owner role of the database, `firebaseowner_<database>_public`, so that the roles
-that run the API requests can access them. To get that role once, run this command in the
-directory that contains the `firebase.json` and `dataconnect.yaml` of the service:
+Run these commands from the root of the repository after a change:
 
 ```bash
-npx -y firebase-tools@latest dataconnect:sql:grant -R owner -E <your email> --service <service ID> --location <location>
+./gradlew :firebase-sql:spotlessApply
+./gradlew :firebase-sql:check
 ```
 
-Then run the SQL, for example in `npx -y firebase-tools@latest dataconnect:sql:shell`, or with `psql`
-through the Cloud SQL Auth Proxy:
-
-```sql
-SET ROLE "firebaseowner_<database>_public";
-
-CREATE TABLE IF NOT EXISTS categories (
-  id bigint PRIMARY KEY,
-  name text NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS products (
-  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  name text NOT NULL,
-  price numeric NOT NULL,
-  category_id bigint REFERENCES categories (id),
-  tags text[] NOT NULL DEFAULT '{}',
-  deleted_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
--- Makes the API see the new tables right away.
-NOTIFY pgrst, 'reload schema';
-```
-
-A request for a table that the API does not see fails with the code `PGRST205` and the status 404.
-
-## Step 2: Set up the Firebase project
-
-```bash
-npx -y firebase-tools@latest use <PROJECT_ID>
-# Lists the services of the project, with their service ID and location.
-npx -y firebase-tools@latest dataconnect:services:list
-# Prints the google-services.json of the Android app.
-npx -y firebase-tools@latest apps:sdkconfig ANDROID <APP_ID> --project <PROJECT_ID>
-```
-
-Save the output of `apps:sdkconfig` as `app/google-services.json`, and apply the
-`com.google.gms.google-services` plugin in the app. The SDK reads the project ID from it.
-
-## Step 3: Add the dependencies
-
-In the `build.gradle.kts` of the app:
-
-```kotlin
-plugins {
-  // Needed for @Serializable models. Use the same version as the Kotlin plugin.
-  id("org.jetbrains.kotlin.plugin.serialization")
-}
-
-dependencies {
-  // Inside this repository. Outside it: "com.google.firebase:firebase-sql:<version>".
-  implementation(project(":firebase-sql"))
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:<version>")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:<version>")
-}
-```
-
-To send the token of the signed-in user, also add Firebase Authentication. To send App Check tokens,
-also add Firebase App Check with a provider. The SDK uses them when they are present.
-
-## Step 4: Create the Kotlin models
-
-Decode rows into classes annotated with `@Serializable`. PostgREST returns the column names of the
-database, so map `snake_case` columns with `@SerialName`.
-
-```kotlin
-@Serializable
-data class Product(
-  val id: Long,
-  val name: String,
-  val price: Double,
-  @SerialName("category_id") val categoryId: Long? = null,
-  val tags: List<String> = emptyList(),
-)
-
-@Serializable data class Category(val id: Long, val name: String)
-```
-
-|              PostgreSQL type               |                        Kotlin type                         |
-|--------------------------------------------|------------------------------------------------------------|
-| `bigint`                                   | `Long`                                                     |
-| `integer`, `smallint`                      | `Int`                                                      |
-| `numeric`, `double precision`, `real`      | `Double`                                                   |
-| `text`, `varchar`, `uuid`                  | `String`                                                   |
-| `boolean`                                  | `Boolean`                                                  |
-| `timestamptz`, `timestamp`, `date`, `time` | `String`, in ISO 8601 format                               |
-| `json`, `jsonb`                            | a `@Serializable` class, or `JsonElement`                  |
-| arrays, for example `text[]`               | `List`, for example `List<String>`                         |
-| a column that can be `NULL`                | a nullable type with a default, for example `Long? = null` |
-
-- Decoding ignores JSON keys that the class does not declare, so a class can have fewer properties
-  than the columns that a query returns.
-- To write a `@Serializable` object, call the `insert`, `upsert`, and `update` extension functions
-  of `com.google.firebase.sql.builders`, and pass function arguments to the `rpc` extension function
-  of `com.google.firebase.sql`. Import them, for example
-  `import com.google.firebase.sql.builders.insert`. They pass the serializer of the type, which the
-  compiler finds, so writing does not depend on reflection, and minified release builds behave the
-  same as debug builds.
-- When a `@Serializable` object is written, the properties that keep their default value are left
-  out, so the database fills those columns, for example an identity `id` declared as
-  `val id: Long? = null`, or `created_at`. To write a property that keeps its default value, for
-  example to set a column back to `NULL`, write a `Map`, or annotate the property with
-  `@EncodeDefault`.
-- A `Map` holds plain values: strings, numbers, booleans, enums (sent by their name), `UUID`s,
-  `Date`s, lists, maps, and `JsonElement`s. Filter values are the same. Any other object throws an
-  `IllegalArgumentException`:
-  - Pass a `java.time` value as a `String`, for example `instant.toString()`. For a
-    `ZonedDateTime`, use `toOffsetDateTime().toString()`, because PostgreSQL rejects the zone ID
-    at the end of `ZonedDateTime.toString()`.
-  - Write a `@Serializable` object itself, or encode it with `Json.encodeToJsonElement()` first.
-  - For an enum whose database values differ from its names, for example with `@SerialName`,
-    filter with the value as a `String`.
-
-## Step 5: Get the `FirebaseSql` instance
-
-```kotlin
-import com.google.firebase.Firebase
-import com.google.firebase.sql.sql
-
-val sql =
-  Firebase.sql(SqlServiceSettings(serviceId = "my-service", location = "us-central1"))
-```
-
-Keep and reuse the instance: `Firebase.sql()` returns the same instance for the same app, service,
-and schema. It sends the requests to the production service of the project in
-`google-services.json`. `FirebaseSql.getInstance()` does the same.
-
-|   Setting    |               Default                |                          Description                           |
-|--------------|--------------------------------------|----------------------------------------------------------------|
-| `serviceId`  | Required                             | The ID of the service.                                         |
-| `location`   | Required                             | The region of the service, for example `us-central1`.          |
-| `schemaName` | `null`: the schema of the service    | The PostgreSQL schema to query.                                |
-| `headers`    | none                                 | HTTP headers to send with every request.                       |
-| `host`       | `firebasedataconnect.googleapis.com` | The host name of the service, without `http://` or `https://`. |
-| `port`       | the port of `host`, or of the scheme | The port of the service.                                       |
-| `sslEnabled` | `true`                               | `https` when `true`, `http` when `false`.                      |
-
-- **One instance for each app, service, and schema.** `Firebase.sql()` returns the instance that
-  already exists for the same app, service URL, and schema, with the settings that created it. To
-  change its `headers`, call `terminate()` on it first, then call `Firebase.sql()` again.
-- **Another schema:** call `Firebase.sql()` with the name of the schema in `schemaName`, for
-  example `Firebase.sql(settings.copy(schemaName = "inventory"))`. Each schema has its own instance.
-- **Another `FirebaseApp`:** call `Firebase.sql(app, settings)`.
-- **A server on the development machine, from the Android emulator:**
-  `SqlServiceSettings(serviceId = "my-service", location = "us-central1", host = "10.0.2.2", port = 9399, sslEnabled = false)`.
-
-## Step 6: Read data
-
-```kotlin
-import com.google.firebase.sql.Order
-
-// All the rows and columns.
-val products = sql.from("products").select().execute().decodeList<Product>()
-
-// Some columns, filters, order, and a limit.
-val cheapFruit =
-  sql
-    .from("products")
-    .select("id, name, price")
-    .eq("category_id", 1)
-    .lt("price", 2)
-    .order("price", Order.DESCENDING)
-    .limit(10)
-    .execute()
-    .decodeList<Product>()
-
-// Exactly one row: single() fails with PGRST116 when there are 0 or several rows.
-val product =
-  sql.from("products").select().eq("id", 42).single().execute().decodeSingle<Product>()
-
-// At most one row: null when there is none.
-val maybe =
-  sql.from("products").select().eq("name", "Kiwi").maybeSingle().execute()
-    .decodeSingleOrNull<Product>()
-```
-
-`decodeSingle()` and `decodeSingleOrNull()` read one row: the object that `single()` or
-`maybeSingle()` returns, or an array with exactly one row. They throw when the data has several
-rows, instead of taking the first.
-
-### Filters
-
-Chained filters are combined with `AND`. Filters come after `select()`, `update()`, or `delete()`.
-Write them before the modifiers, such as `order()` and `limit()`. A filter can still follow
-`order()`, `limit()`, `range()`, `setHeader()`, and the other modifiers that return a
-`FilterBuilder`, but not `single()`, `maybeSingle()`, `csv()`, `geojson()`, or `explain()`, which
-return a `TransformBuilder`.
-
-|                           Kotlin                           |           PostgREST            |              Meaning              |
-|------------------------------------------------------------|--------------------------------|-----------------------------------|
-| `eq("name", "Kiwi")`                                       | `name=eq.Kiwi`                 | equal                             |
-| `neq("name", "Kiwi")`                                      | `name=neq.Kiwi`                | not equal                         |
-| `gt("price", 10)`, `gte(...)`, `lt(...)`, `lte(...)`       | `price=gt.10`                  | greater, less                     |
-| `like("name", "%apple%")`, `ilike(...)`                    | `name=like.%apple%`            | pattern, `ilike` ignores case     |
-| `isIn("id", listOf(1, 2, 3))`                              | `id=in.(1,2,3)`                | in a list                         |
-| `exact("deleted_at", null)`                                | `deleted_at=is.null`           | is `NULL`, `true`, or `false`     |
-| `filterNot("deleted_at", FilterOperator.IS, null)`         | `deleted_at=not.is.null`       | negates an operator               |
-| `contains("tags", listOf("sale"))`                         | `tags=cs.{sale}`               | the array contains all the values |
-| `overlaps("tags", listOf("sale", "new"))`                  | `tags=ov.{sale,new}`           | the arrays have a common value    |
-| `textSearch("fts", "fresh fruit", TextSearchType.PLAINTO)` | `fts=plfts.fresh fruit`        | full-text search                  |
-| `or("price.lt.2,name.eq.Kiwi")`                            | `or=(price.lt.2,name.eq.Kiwi)` | any condition matches             |
-| `filter("price", FilterOperator.GTE, 10)`                  | `price=gte.10`                 | any PostgREST operator            |
-| `filter("price", FilterOperator.LT_ALL, listOf(2, 3))`     | `price=lt(all).{2,3}`          | less than every element of a list |
-
-To build a query step by step, keep it in one `var`:
-
-```kotlin
-suspend fun search(maxPrice: Double?, cheapFirst: Boolean): List<Product> {
-  var query = sql.from("products").select()
-  if (maxPrice != null) query = query.lte("price", maxPrice)
-  if (cheapFirst) query = query.order("price")
-  return query.limit(20).execute().decodeList<Product>()
-}
-```
-
-### Related tables
-
-Select the columns of a related table through a foreign key with `table(columns)`. Add `!inner` to
-keep only the rows that have a related row, and filter on its columns with `table.column`.
-
-```kotlin
-@Serializable data class ProductWithCategory(val id: Long, val name: String, val categories: Category?)
-
-val fruit =
-  sql
-    .from("products")
-    .select("id, name, categories!inner(id, name)")
-    .eq("categories.name", "Fruit")
-    .execute()
-    .decodeList<ProductWithCategory>()
-```
-
-Response: `[{"id": 1, "name": "Kiwi", "categories": {"id": 1, "name": "Fruit"}}]`
-
-### Count and pages
-
-```kotlin
-// The rows 0 to 19, and the total number of matching rows.
-val result =
-  sql.from("products").select(count = Count.EXACT).order("id").range(0, 19).execute()
-val page = result.decodeList<Product>()
-val total = result.countOrNull()
-
-// Only the count, without the rows.
-val count = sql.from("products").select(head = true, count = Count.EXACT).execute().countOrNull()
-```
-
-## Write data
-
-```kotlin
-// Insert one row, and get it back with the values that the database filled.
-val inserted =
-  sql
-    .from("products")
-    .insert(mapOf("name" to "Kiwi", "price" to 0.5, "category_id" to 1))
-    .select()
-    .single()
-    .execute()
-    .decodeSingle<Product>()
-
-// Insert several rows.
-sql
-  .from("products")
-  .insert(listOf(mapOf("name" to "Lime", "price" to 0.3), mapOf("name" to "Plum", "price" to 0.4)))
-  .execute()
-
-// Insert, or update the row with the same primary key.
-sql.from("categories").upsert(Category(id = 1, name = "Fruit")).execute()
-
-// Update the rows that match the filters, and get them back.
-val updated =
-  sql
-    .from("products")
-    .update(mapOf("price" to 0.6))
-    .eq("id", 42)
-    .select()
-    .execute()
-    .decodeList<Product>()
-
-// Delete the rows that match the filters.
-sql.from("products").delete().eq("id", 42).execute()
-```
-
-- **Always filter `update()` and `delete()`.** Without a filter, they change every row that the user
-  can access. Some filters match every row when their list is empty: `notIn()`, `likeAll()`,
-  `ilikeAll()`, `filter()` with an `_ALL` operator, and `filterNot()` with `IN` or an `_ANY`
-  operator.
-- `maxAffected(1)` makes an `update()` or `delete()` fail, and change nothing, when it would change
-  more than 1 row. `limit()` and `range()` do not limit the rows that an `update()` or a `delete()`
-  changes, so the SDK throws an `IllegalStateException` for them there.
-- A write does not return rows unless you add `select()`.
-
-## Call PostgreSQL functions
-
-```kotlin
-// CREATE FUNCTION add_numbers(a int, b int) RETURNS int ...
-val sum = sql.rpc("add_numbers", mapOf("a" to 1, "b" to 2)).execute().decodeAs<Int>()
-
-// A function that returns rows can be filtered and ordered like a table.
-// CREATE FUNCTION products_under(max_price numeric) RETURNS SETOF products ...
-val cheap =
-  sql
-    .rpc("products_under", mapOf("max_price" to 5))
-    .eq("category_id", 1)
-    .order("price")
-    .execute()
-    .decodeList<Product>()
-
-// A function that does not change data can be called with GET (RpcMethod.HEAD returns no body).
-val sumWithGet =
-  sql
-    .rpc("add_numbers", mapOf("a" to 1, "b" to 2), method = RpcMethod.GET)
-    .execute()
-    .decodeAs<Int>()
-```
-
-## Handle errors
-
-```kotlin
-try {
-  show(sql.from("products").select().execute().decodeList<Product>())
-} catch (e: FirebaseSqlException) {
-  // The server answered with an HTTP error.
-  Log.e(TAG, "HTTP ${e.status} ${e.code}: ${e.message} ${e.hint}")
-} catch (e: IOException) {
-  // No HTTP response: no network, or a timeout.
-  Log.e(TAG, "No response", e)
-}
-```
-
-- `FirebaseSqlException` is only for the errors of the server, and for the errors that the SDK finds
-  in a successful response. Other errors are thrown as they are:
-  - no HTTP response: the `IOException` of the network, or an `InterruptedIOException` for a
-    timeout;
-  - no Firebase Authentication token for the signed-in user: the error of Firebase Authentication,
-    and the request is not sent;
-  - data that does not fit the type: the `SerializationException` of kotlinx.serialization, from
-    `decodeList()`, `decodeSingle()`, `decodeSingleOrNull()`, and `decodeAs()`.
-- `decodeSingle()` throws a `NoSuchElementException` when there is no row. `decodeSingle()` and
-  `decodeSingleOrNull()` throw an `IllegalArgumentException` for several rows. `decodeList()`,
-  `decodeSingle()`, and `decodeSingleOrNull()` throw an `IllegalStateException` for a response
-  without body, for example a mutation without `select()`.
-- `FirebaseSqlException.category`, a `FirebaseSqlExceptionCategory`, tells where an error comes
-  from: `POSTGREST` (PostgREST or PostgreSQL), `PLATFORM` (the Firebase SQL service, for example an
-  invalid token), or `CLIENT` (the SDK found the error in a successful response, for example a
-  `dryRun()` whose rollback the server did not confirm). Later versions can add categories, so
-  give a `when` expression over the category an `else` branch.
-- `IllegalArgumentException` and `IllegalStateException` mean a programming error, for example
-  invalid settings, a reserved header (`ReservedHeaderException`), or a call on a terminated instance.
-
-|    Code    |   Status   |                                Meaning                                |
-|------------|------------|-----------------------------------------------------------------------|
-| `PGRST205` | 404        | The table does not exist, or the API does not see it yet.             |
-| `42703`    | 400        | A column does not exist.                                              |
-| `23505`    | 409        | A unique constraint is violated, for example a duplicate primary key. |
-| `23503`    | 409        | A foreign key constraint is violated.                                 |
-| `42501`    | 401 or 403 | The user has no permission for the table.                             |
-| `PGRST116` | 406        | `single()` found 0 or several rows.                                   |
-| `PGRST124` | 400        | A write would change more rows than `maxAffected()` allows.           |
-
-## Retries, timeouts, and cancellation
-
-- **Retries:** a `GET` or `HEAD` request, for example `select()`, is sent again up to 3 times, after
-  about 1, 2, and 4 seconds (25% more or less at random), when the network fails or the server
-  answers 502 or 503. The other errors, such as 429 or 504, are not retried, and the `Retry-After`
-  header is ignored. Requests that can change data are never retried. Call `noRetry()` to send one
-  request only once.
-- **Rejected tokens:** when the server answers `401` because it rejects the Firebase Authentication
-  or App Check token of a request, the SDK refreshes the tokens and sends the request once more,
-  whatever its method, even with `noRetry()`. Do not add your own retry for `401`. A `401` for a
-  database permission error, `42501`, is returned as it is: sign the user in, or allow the access
-  to the table in the database.
-- **Timeouts:** each attempt of a request can take up to 100 seconds, longer than the 90 seconds
-  after which the server cancels a request. A request that times out is not sent again, and throws
-  an `InterruptedIOException`, which is an `IOException`. To give up sooner, wrap the call in
-  `withTimeoutOrNull`, for example
-  `withTimeoutOrNull(5_000) { sql.from("products").select().execute() }`.
-- **Cancellation:** cancel the coroutine that calls `execute()` to cancel the request. The server
-  may still have applied a write that timed out or was cancelled, so read the data again before you
-  repeat the write.
-
-## Rules for generated code
-
-- End every chain with `execute()`, in a coroutine. Do not block the main thread.
-- Call `select()`, `insert()`, `upsert()`, `update()`, or `delete()` before the filters.
-- Write the filters before the modifiers. Call `single()`, `maybeSingle()`, `csv()`, `geojson()`,
-  and `explain()` after the last filter: they return a `TransformBuilder`, which has no filters.
-- Add a filter to every `update()` and `delete()`.
-- Catch `FirebaseSqlException` and `IOException` around `execute()`.
-- Map `snake_case` columns with `@SerialName`.
-- Reuse the `FirebaseSql` instance. Do not terminate it after each request.
-- Choose the schema with `schemaName`. The SDK sets `Accept-Profile`, `Content-Profile`,
-  `x-firebase-auth-token`, `X-Firebase-AppCheck`, `x-goog-api-client`, `x-client-version`,
-  `x-firebase-gmpid`, and `X-Retry-Count` itself. `headers` and `setHeader()` reject them,
-  `Authorization`, and the routing and heartbeat headers that Firebase reserves
-  (`x-firebase-sqlconnect-affinity`, `x-goog-request-params`, `x-firebase-client`, and
-  `x-firebase-client-log-type`) with a `ReservedHeaderException`.
-- Use only the methods of the SDK. When you are not sure that a method exists, check its KDoc.
-- Do not implement `FirebaseSql`, `QueryBuilder`, `FilterBuilder`, or `TransformBuilder`: later
-  versions can add methods to them. In tests, mock them instead.
-
-## Work on this SDK
+- When the public API changes, update `api.txt` with `./gradlew :firebase-sql:generateApiTxtFile`.
+- When a change is visible to developers, add an entry to [CHANGELOG.md](CHANGELOG.md), as the
+  repository guide describes.
+
+## Conventions
 
 - **Public API:** `FirebaseSql`, `SqlServiceSettings`, `OperationResult`, `FirebaseSqlException`,
   `FirebaseSqlExceptionCategory`, `ReservedHeaderException`, `Count`, `Order`, `TextSearchType`,
   `RpcMethod`, `FilterOperator`, `ExplainFormat`, `builders/QueryBuilder`, `builders/FilterBuilder`,
   and `builders/TransformBuilder`. The other classes are internal.
+- **Kotlin only:** the API is built on coroutines and kotlinx.serialization, and is not designed to
+  be called from Java. `execute()` is a suspend function.
 - **Public interfaces:** `FirebaseSql` and the three builders are marked
   `@SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)`, so that apps can't implement
   them without an opt-in, and minor versions can add methods to them. The module opts in for its
@@ -477,9 +66,71 @@ try {
 - **Documentation:** every public declaration has KDoc that a reader can use without other
   documentation: what it does, the PostgREST request that it produces, its errors, and examples
   that compile. KDoc and comments describe the behavior itself, and do not refer to other SDKs;
-  PostgREST and PostgreSQL are fine.
-- **Checks:** update `api.txt` with `./gradlew :firebase-sql:generateApiTxtFile` when the public
-  API changes, then run `./gradlew :firebase-sql:spotlessApply` and
-  `./gradlew :firebase-sql:check`.
-- **Tests against a live service:** see [README.md](README.md#run-the-tests-against-a-live-service).
+  PostgREST and PostgreSQL are fine. When a change affects how apps use the SDK, update the
+  [`firebase-sql-android` skill](skills/firebase-sql-android/SKILL.md) too.
 
+## Run the tests against a live service
+
+`CloudSqlEndToEndTest` runs the SDK on a device or emulator against a Firebase SQL service in
+production, through `Firebase.sql()` like an app. The service must not enforce App Check, because
+the tests send no App Check token. `testMultipleSchemas` and `testExplain` are ignored: the service
+exposes only its own schema, and does not return execution plans.
+
+### Prerequisites
+
+```bash
+brew install cloud-sql-proxy libpq
+gcloud auth login
+firebase login
+```
+
+`run_cloud_tests.sh` creates the test tables as your Google account, which needs the owner role of
+the database of the service once. Run this from a directory with the `firebase.json` and
+`dataconnect.yaml` of the service:
+
+```bash
+firebase dataconnect:sql:grant -R owner -E <your email> --service <service ID> --location <location>
+```
+
+### Configuration
+
+The test resources are not hard-coded:
+
+- **The project** comes from a `google-services.json` file. Set `FIREBASE_GOOGLE_SERVICES_PATH` to
+  the file of the project of the service, or put it at the root of the repository. The build copies
+  it into this directory with the package name of the module, so the file does not need to be
+  edited. The copy is kept until it is deleted; `run_cloud_tests.sh` replaces it when
+  `FIREBASE_GOOGLE_SERVICES_PATH` is set.
+- **The service** comes from the environment variables `FIREBASE_SQL_SERVICE_ID` and
+  `FIREBASE_SQL_LOCATION`. The Gradle build passes them to the tests as the instrumentation
+  arguments `firebaseSqlServiceId` and `firebaseSqlLocation`.
+- **The Cloud SQL instance and database** of the service are looked up by `run_cloud_tests.sh` with
+  `firebase dataconnect:services:list`.
+
+### Run the tests
+
+When the test tables already exist in the database, run `connectedCheck` from the root of the
+repository:
+
+```bash
+FIREBASE_SQL_SERVICE_ID=my-service FIREBASE_SQL_LOCATION=us-east4 ./gradlew :firebase-sql:connectedCheck
+```
+
+To create the test tables in the database first, or to create them and run `connectedCheck` in one
+step, run [`run_cloud_tests.sh`](run_cloud_tests.sh):
+
+```bash
+FIREBASE_SQL_SERVICE_ID=my-service FIREBASE_SQL_LOCATION=us-east4 ./firebase-sql/run_cloud_tests.sh
+```
+
+### Run the tests from Android Studio
+
+Click the run icon next to `CloudSqlEndToEndTest`. Android Studio creates an **Android Instrumented
+Tests** run configuration, and the first run fails because the configuration does not name the
+service yet. Open **Run > Edit Configurations**, select that configuration, and add the
+**Instrumentation arguments** `firebaseSqlServiceId` and `firebaseSqlLocation` with the ID and
+location of the service. The results then show up in the test tree of the **Run** window.
+
+If the test tables do not exist yet, create them once from the terminal with
+`RUN_TESTS=false ./firebase-sql/run_cloud_tests.sh`, with `FIREBASE_SQL_SERVICE_ID` and
+`FIREBASE_SQL_LOCATION` set.
