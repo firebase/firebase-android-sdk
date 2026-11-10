@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed an issue where network errors while sending log batches were
+  treated as invalid payload errors instead of transient network errors.
+
 # 5.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

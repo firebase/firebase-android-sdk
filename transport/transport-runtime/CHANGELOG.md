@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Updated network availability checks before uploading events to
+  require validated internet connectivity (`NET_CAPABILITY_INTERNET` and
+  `NET_CAPABILITY_VALIDATED`).
+
 # 5.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

@@ -16,7 +16,8 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -91,8 +92,17 @@ public class Uploader {
   boolean isNetworkAvailable() {
     ConnectivityManager connectivityManager =
         (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-    return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    if (connectivityManager == null) {
+      return false;
+    }
+    Network activeNetwork = connectivityManager.getActiveNetwork();
+    if (activeNetwork == null) {
+      return false;
+    }
+    NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
+    return capabilities != null
+        && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
   }
 
   public void upload(TransportContext transportContext, int attemptNumber, Runnable callback) {

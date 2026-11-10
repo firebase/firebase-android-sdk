@@ -16,14 +16,18 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.PseudonymousIdUpdateReceiver;
@@ -51,7 +55,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.AdditionalAnswers;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.Shadows;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowNetworkCapabilities;
 
 @Config(sdk = Config.OLDEST_SDK)
 @RunWith(RobolectricTestRunner.class)
@@ -144,6 +150,21 @@ public class UploaderTest {
   @Before
   public void setUp() {
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
+    setActiveNetworkCapabilities(
+        NetworkCapabilities.NET_CAPABILITY_INTERNET, NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+  }
+
+  private void setActiveNetworkCapabilities(int... capabilities) {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager)
+            ApplicationProvider.getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkCapabilities networkCapabilities = ShadowNetworkCapabilities.newInstance();
+    for (int capability : capabilities) {
+      Shadows.shadowOf(networkCapabilities).addCapability(capability);
+    }
+    Shadows.shadowOf(connectivityManager)
+        .setNetworkCapabilities(connectivityManager.getActiveNetwork(), networkCapabilities);
   }
 
   @After
@@ -158,6 +179,44 @@ public class UploaderTest {
     uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     // Scheduler must be called with the attempt number incremented.
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
+    verify(mockRunnable, times(1)).run();
+  }
+
+  @Test
+  public void isNetworkAvailable_whenNetworkIsValidatedAndHasInternet_returnsTrue() {
+    setActiveNetworkCapabilities(
+        NetworkCapabilities.NET_CAPABILITY_INTERNET, NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    assertThat(uploader.isNetworkAvailable()).isTrue();
+  }
+
+  @Test
+  public void isNetworkAvailable_whenNetworkIsNotValidated_returnsFalse() {
+    setActiveNetworkCapabilities(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+    assertThat(uploader.isNetworkAvailable()).isFalse();
+  }
+
+  @Test
+  public void isNetworkAvailable_whenNetworkLacksInternetCapability_returnsFalse() {
+    setActiveNetworkCapabilities(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    assertThat(uploader.isNetworkAvailable()).isFalse();
+  }
+
+  @Test
+  public void isNetworkAvailable_whenNoActiveNetwork_returnsFalse() {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager)
+            ApplicationProvider.getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+    Shadows.shadowOf(connectivityManager).setDefaultNetworkActive(false);
+    assertThat(uploader.isNetworkAvailable()).isFalse();
+  }
+
+  @Test
+  public void upload_whenNetworkIsNotValidated_reschedulesWithoutSending() {
+    setActiveNetworkCapabilities(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
+    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
+    verify(uploader, never()).logAndUpdateState(any(), anyInt());
     verify(mockRunnable, times(1)).run();
   }
 
