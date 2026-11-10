@@ -1,7 +1,7 @@
 # Unreleased
 
 - [fixed] Fixed an issue where network errors while sending log batches were
-  treated as invalid payload errors instead of transient network errors.
+  treated as invalid payload errors instead of transient network errors. (#8815)
 
 # 5.0.0
 

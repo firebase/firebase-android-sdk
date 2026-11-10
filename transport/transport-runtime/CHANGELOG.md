@@ -2,7 +2,7 @@
 
 - [fixed] Updated network availability checks before uploading events to
   require validated internet connectivity (`NET_CAPABILITY_INTERNET` and
-  `NET_CAPABILITY_VALIDATED`).
+  `NET_CAPABILITY_VALIDATED`). (#8815)
 
 # 5.0.0
 

@@ -394,7 +394,7 @@ final class CctTransportBackend implements TransportBackend {
       Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
       return new HttpResponse(400, null, 0, null);
     } catch (IOException e) {
-      Logging.e(LOG_TAG, "Couldn't open connection, returning with 500", e);
+      Logging.e(LOG_TAG, "Couldn't send request, returning with 500", e);
       return new HttpResponse(500, null, 0, null);
     }
 
