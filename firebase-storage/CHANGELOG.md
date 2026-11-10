@@ -1,8 +1,8 @@
 # Unreleased
 
-- [fixed] Fixed truncated uploads that were reported as successful. When the
-  last chunk of a resumable upload failed and was retried, the upload was
-  finalized before all of its data had been sent. (#8810)
+- [fixed] Fixed truncated uploads that were reported as successful. This could
+  happen for uploads larger than 512 KiB when the last chunk failed and was
+  retried, because the upload was finalized before all data was sent. (#8810)
 
 # 23.0.0
 
