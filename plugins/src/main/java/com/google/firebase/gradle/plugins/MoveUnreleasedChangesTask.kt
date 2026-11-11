@@ -23,6 +23,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.provideDelegate
@@ -36,6 +37,7 @@ import org.gradle.kotlin.dsl.provideDelegate
  *
  * @property changelogFile A [File] to use as the [Changelog]. Defaults to the `CHANGELOG.md` file
  *   at the project's root.
+ * @property outputFile A [File] to write the updated [Changelog] to. Defaults to [changelogFile].
  * @property releaseVersion A [ModuleVersion] of what to set the version to. Defaults to the
  *   project's current version.
  * @see PostReleasePlugin
@@ -43,6 +45,9 @@ import org.gradle.kotlin.dsl.provideDelegate
 abstract class MoveUnreleasedChangesTask : DefaultTask() {
   @get:[Optional InputFile]
   abstract val changelogFile: RegularFileProperty
+
+  @get:[Optional OutputFile]
+  abstract val outputFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releaseVersion: Property<ModuleVersion>
@@ -63,7 +68,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
 
     val newChangelog = Changelog(releases)
 
-    file.writeText(newChangelog.toString())
+    outputFile.get().asFile.writeText(newChangelog.toString())
   }
 
   /**
@@ -83,6 +88,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
 
   private fun configure() {
     changelogFile.convention(project.layout.projectDirectory.file("CHANGELOG.md"))
+    outputFile.convention(changelogFile)
     releaseVersion.convention(computeReleaseVersion())
   }
 
