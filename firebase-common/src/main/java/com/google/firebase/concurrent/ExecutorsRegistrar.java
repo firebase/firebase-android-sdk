@@ -18,6 +18,7 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Process;
 import android.os.StrictMode;
+import androidx.annotation.Keep;
 import com.google.firebase.BuildConfig;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
@@ -35,6 +36,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
+/** @hide */
+@Keep
 @SuppressLint("ThreadPoolCreation")
 public class ExecutorsRegistrar implements ComponentRegistrar {
   static final Lazy<ScheduledExecutorService> BG_EXECUTOR =
