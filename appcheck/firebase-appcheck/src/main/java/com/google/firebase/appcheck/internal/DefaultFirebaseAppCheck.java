@@ -95,11 +95,15 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
-          AppCheckToken token = storageHelper.retrieveAppCheckToken();
-          if (token != null) {
-            setCachedToken(token);
+          try {
+            AppCheckToken token = storageHelper.retrieveAppCheckToken();
+            if (token != null) {
+              setCachedToken(token);
+            }
+          } finally {
+            // Complete the task even if retrieval throws, so that token requests do not hang.
+            taskCompletionSource.setResult(null);
           }
-          taskCompletionSource.setResult(null);
         });
     return taskCompletionSource.getTask();
   }

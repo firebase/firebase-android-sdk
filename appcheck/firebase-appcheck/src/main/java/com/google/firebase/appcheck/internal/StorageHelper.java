@@ -78,12 +78,13 @@ public class StorageHelper {
 
   @Nullable
   public AppCheckToken retrieveAppCheckToken() {
-    String tokenType = sharedPreferences.get().getString(TOKEN_TYPE_KEY, null);
-    String serializedToken = sharedPreferences.get().getString(TOKEN_KEY, null);
-    if (tokenType == null || serializedToken == null) {
-      return null;
-    }
+    String tokenType = null;
     try {
+      tokenType = sharedPreferences.get().getString(TOKEN_TYPE_KEY, null);
+      String serializedToken = sharedPreferences.get().getString(TOKEN_KEY, null);
+      if (tokenType == null || serializedToken == null) {
+        return null;
+      }
       switch (TokenType.valueOf(tokenType)) {
         case DEFAULT_APP_CHECK_TOKEN:
           return DefaultAppCheckToken.deserializeTokenFromJsonString(serializedToken);
@@ -97,6 +98,23 @@ public class StorageHelper {
               + "] with exception: "
               + e.getMessage());
       clearSharedPrefs();
+      return null;
+    } catch (RuntimeException e) {
+      // Clear a stored token that cannot be read, so that it does not fail again at every launch.
+      // Only the exception type is logged, because its message could contain parts of the token.
+      logger.e(
+          "Failed to read stored token with type ["
+              + tokenType
+              + "] with exception: "
+              + e.getClass().getName());
+      try {
+        clearSharedPrefs();
+      } catch (RuntimeException clearException) {
+        // SharedPreferences itself can be unavailable, for example before the user unlocks the
+        // device in direct boot mode. Return null instead of throwing to the caller.
+        logger.e(
+            "Failed to clear stored token with exception: " + clearException.getClass().getName());
+      }
       return null;
     }
     // Should be unreachable, but needed by the compiler:
