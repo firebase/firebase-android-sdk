@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added support for setting notification ID from the notification payload. (#8737)
+
 # 26.0.2
 
 - [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
