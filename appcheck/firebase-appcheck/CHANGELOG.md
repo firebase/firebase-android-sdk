@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed a crash on every app launch after a custom `AppCheckProvider`
+  returned a token whose `iat` or `exp` claim was not a 32-bit integer, for
+  example a token that expires after 2038-01-19. (#8762)
+
 # 20.1.0
 
 - [unchanged] Updated to keep [app_check] SDK versions aligned. (#8791)
