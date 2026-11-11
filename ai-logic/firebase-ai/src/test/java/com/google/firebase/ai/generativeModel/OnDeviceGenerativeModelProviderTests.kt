@@ -25,15 +25,23 @@ import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCo
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
+import com.google.firebase.ai.ondevice.interop.FunctionCallPart as OnDeviceFunctionCallPart
+import com.google.firebase.ai.ondevice.interop.FunctionResponsePart as OnDeviceFunctionResponsePart
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse as OnDeviceGenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
 import com.google.firebase.ai.toInterop
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionDeclaration
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.Tool
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
@@ -42,6 +50,9 @@ import io.mockk.slot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Before
 import org.junit.Test
 
@@ -388,4 +399,235 @@ internal class OnDeviceGenerativeModelProviderTests {
       emissions[1].thoughtSummary shouldBe "done thinking"
       emissions[1].text shouldBe "streamed answer"
     }
+
+  @Test
+  fun `generateContent includes tools and maps functionCalls to response`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    coEvery { onDeviceModel.isFunctionCallingAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        candidates =
+          listOf(
+            OnDeviceCandidate(
+              text = "",
+              finishReason = OnDeviceFinishReason.STOP,
+              functionCalls =
+                listOf(
+                  OnDeviceFunctionCallPart(
+                    name = "fetchWeather",
+                    args = mapOf("city" to "London"),
+                    id = "call-123"
+                  )
+                )
+            )
+          ),
+        modelVersion = "gemini-nano"
+      )
+
+    val weatherTool =
+      Tool.functionDeclarations(
+        listOf(
+          FunctionDeclaration(
+            name = "fetchWeather",
+            description = "Fetches weather for a city",
+            parameters = mapOf("city" to Schema.string("City name"))
+          )
+        )
+      )
+
+    val functionProvider =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel = onDeviceModel,
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE),
+        tools = listOf(weatherTool)
+      )
+
+    val response = functionProvider.generateContent(prompt)
+
+    capturedRequest.captured.tools.shouldHaveSize(1)
+    val tool = capturedRequest.captured.tools.first()
+    tool.name shouldBe "fetchWeather"
+    tool.description shouldBe "Fetches weather for a city"
+    tool.parameters?.type shouldBe "OBJECT"
+
+    response.functionCalls shouldHaveSize 1
+    val functionCall = response.functionCalls.first()
+    functionCall.name shouldBe "fetchWeather"
+    functionCall.args["city"] shouldBe JsonPrimitive("London")
+    functionCall.id shouldBe "call-123"
+  }
+
+  @Test
+  fun `generateContent throws when function calling is not available`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    coEvery { onDeviceModel.isFunctionCallingAvailable() } returns false
+
+    val weatherTool =
+      Tool.functionDeclarations(
+        listOf(
+          FunctionDeclaration(
+            name = "fetchWeather",
+            description = "Fetches weather",
+            parameters = mapOf("city" to Schema.string("City name"))
+          )
+        )
+      )
+
+    val functionProvider =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel = onDeviceModel,
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE),
+        tools = listOf(weatherTool)
+      )
+
+    val exception = shouldThrow<FirebaseAIException> { functionProvider.generateContent(prompt) }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceNotAvailableException::class
+  }
+
+  @Test
+  fun `generateContent throws when tools contain unsupported non-function tools`(): Unit =
+    runBlocking {
+      coEvery { onDeviceModel.isAvailable() } returns true
+
+      val searchTool = Tool.googleSearch()
+
+      val functionProvider =
+        OnDeviceGenerativeModelProvider(
+          onDeviceModel = onDeviceModel,
+          onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE),
+          tools = listOf(searchTool)
+        )
+
+      val exception = shouldThrow<FirebaseAIException> { functionProvider.generateContent(prompt) }
+      exception.cause!!::class shouldBe FirebaseAIOnDeviceNotAvailableException::class
+    }
+
+  @Test
+  fun `generateContent with multi-turn prompt containing FunctionCallPart and FunctionResponsePart`():
+    Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    coEvery { onDeviceModel.isFunctionCallingAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        candidates = listOf(OnDeviceCandidate("The weather is sunny", OnDeviceFinishReason.STOP)),
+        modelVersion = "gemini-nano"
+      )
+
+    val multiTurnPrompt =
+      listOf(
+        Content(
+          role = "model",
+          parts =
+            listOf(
+              FunctionCallPart(
+                name = "fetchWeather",
+                args = mapOf("city" to JsonPrimitive("London")),
+                id = "call-123"
+              )
+            )
+        ),
+        Content(
+          role = "user",
+          parts =
+            listOf(
+              FunctionResponsePart(
+                name = "fetchWeather",
+                response = buildJsonObject { put("condition", "sunny") },
+                id = "call-123"
+              )
+            )
+        )
+      )
+
+    val weatherTool =
+      Tool.functionDeclarations(
+        listOf(
+          FunctionDeclaration(
+            name = "fetchWeather",
+            description = "Fetches weather",
+            parameters = mapOf("city" to Schema.string("City name"))
+          )
+        )
+      )
+
+    val functionProvider =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel = onDeviceModel,
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE),
+        tools = listOf(weatherTool)
+      )
+
+    val response = functionProvider.generateContent(multiTurnPrompt)
+
+    capturedRequest.captured.parts shouldHaveSize 2
+    val callPart = capturedRequest.captured.parts[0] as OnDeviceFunctionCallPart
+    callPart.name shouldBe "fetchWeather"
+    callPart.args shouldBe mapOf("city" to "London")
+    callPart.id shouldBe "call-123"
+
+    val responsePart = capturedRequest.captured.parts[1] as OnDeviceFunctionResponsePart
+    responsePart.name shouldBe "fetchWeather"
+    responsePart.response shouldBe mapOf("condition" to "sunny")
+    responsePart.id shouldBe "call-123"
+
+    response.text shouldBe "The weather is sunny"
+  }
+
+  @Test
+  fun `generateContentStream maps functionCalls in streamed response`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    coEvery { onDeviceModel.isFunctionCallingAvailable() } returns true
+
+    val functionCallChunk =
+      OnDeviceGenerateContentResponse(
+        candidates =
+          listOf(
+            OnDeviceCandidate(
+              text = "",
+              finishReason = OnDeviceFinishReason.STOP,
+              functionCalls =
+                listOf(
+                  OnDeviceFunctionCallPart(
+                    name = "fetchWeather",
+                    args = mapOf("city" to "London"),
+                    id = "call-123"
+                  )
+                )
+            )
+          ),
+        modelVersion = "gemini-nano"
+      )
+
+    every { onDeviceModel.generateContentStream(any()) } returns flowOf(functionCallChunk)
+
+    val weatherTool =
+      Tool.functionDeclarations(
+        listOf(
+          FunctionDeclaration(
+            name = "fetchWeather",
+            description = "Fetches weather",
+            parameters = mapOf("city" to Schema.string("City name"))
+          )
+        )
+      )
+
+    val functionProvider =
+      OnDeviceGenerativeModelProvider(
+        onDeviceModel = onDeviceModel,
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE),
+        tools = listOf(weatherTool)
+      )
+
+    val emissions = mutableListOf<com.google.firebase.ai.type.GenerateContentResponse>()
+    functionProvider.generateContentStream(prompt).collect { emissions.add(it) }
+
+    emissions shouldHaveSize 1
+    emissions[0].functionCalls shouldHaveSize 1
+    val call = emissions[0].functionCalls.first()
+    call.name shouldBe "fetchWeather"
+    call.args["city"] shouldBe JsonPrimitive("London")
+    call.id shouldBe "call-123"
+  }
 }

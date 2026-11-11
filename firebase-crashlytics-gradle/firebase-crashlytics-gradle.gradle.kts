@@ -108,7 +108,7 @@ tasks {
 
 dependencies {
   compileOnly("com.android.tools.build:gradle-api:8.1.4")
-  compileOnly("com.google.gms:google-services:4.4.1")
+  compileOnly("com.google.gms:google-services:4.6.0")
   implementation(gradleKotlinDsl())
   implementation(project(":firebase-crashlytics-buildtools"))
 

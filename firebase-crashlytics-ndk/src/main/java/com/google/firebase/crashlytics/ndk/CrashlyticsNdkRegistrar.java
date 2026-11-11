@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.Context;
+import androidx.annotation.Keep;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -25,6 +26,8 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
+/** @hide */
+@Keep
 public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-cls-ndk";
 

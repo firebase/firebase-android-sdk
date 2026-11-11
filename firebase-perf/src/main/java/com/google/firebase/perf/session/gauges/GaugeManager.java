@@ -50,6 +50,13 @@ public class GaugeManager {
   // might take.
   private static final long TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS = 20;
   private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
+  // Collection frequencies come from config and have no upper bound, so the frequency is capped at
+  // this value when computing the flush period. Otherwise a very large frequency would overflow the
+  // period to a negative or zero value, which scheduleAtFixedRate rejects. One hour is far above
+  // any
+  // realistic frequency (the default is 100 ms), and the resulting 20-hour flush period is longer
+  // than the default maximum session duration (4 hours).
+  private static final long MAX_GAUGE_COLLECTION_FREQUENCY_MS = TimeUnit.HOURS.toMillis(1);
   private static final long INVALID_GAUGE_COLLECTION_FREQUENCY = -1;
 
   private final Lazy<ScheduledExecutorService> gaugeManagerExecutor;
@@ -136,6 +143,10 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
+    final long flushPeriodMs =
+        Math.min(collectionFrequency, MAX_GAUGE_COLLECTION_FREQUENCY_MS)
+            * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC;
+
     try {
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor
@@ -144,12 +155,11 @@ public class GaugeManager {
                   () -> {
                     syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
                   },
-                  /* initialDelay= */ collectionFrequency
-                      * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-                  /* period= */ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  /* initialDelay= */ flushPeriodMs,
+                  /* period= */ flushPeriodMs,
                   TimeUnit.MILLISECONDS);
 
-    } catch (RejectedExecutionException e) {
+    } catch (RejectedExecutionException | IllegalArgumentException e) {
       logger.warn("Unable to start collecting Gauges: " + e.getMessage());
     }
   }

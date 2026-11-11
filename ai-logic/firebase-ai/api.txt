@@ -1264,6 +1264,13 @@ package com.google.firebase.ai.type {
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerUnknownMessage implements com.google.firebase.ai.type.LiveServerMessage {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerVoiceActivity implements com.google.firebase.ai.type.LiveServerMessage {
+    method public kotlin.time.Duration? getAudioOffset();
+    method public com.google.firebase.ai.type.VoiceActivityType getType();
+    property public final kotlin.time.Duration? audioOffset;
+    property public final com.google.firebase.ai.type.VoiceActivityType type;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public boolean isAudioConversationActive();
@@ -1873,6 +1880,16 @@ package com.google.firebase.ai.type {
     ctor public Voice(String voiceName);
     method public String getVoiceName();
     property public final String voiceName;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class VoiceActivityType {
+    field public static final com.google.firebase.ai.type.VoiceActivityType ACTIVITY_END;
+    field public static final com.google.firebase.ai.type.VoiceActivityType ACTIVITY_START;
+    field public static final com.google.firebase.ai.type.VoiceActivityType.Companion Companion;
+    field public static final com.google.firebase.ai.type.VoiceActivityType UNKNOWN;
+  }
+
+  public static final class VoiceActivityType.Companion {
   }
 
   public final class WebGroundingChunk {
