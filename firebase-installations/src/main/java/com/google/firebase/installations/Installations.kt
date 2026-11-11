@@ -16,6 +16,7 @@
 
 package com.google.firebase.installations
 
+import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
@@ -30,6 +31,7 @@ fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
   FirebaseInstallations.getInstance(app)
 
 /** @suppress */
+@Keep
 class FirebaseInstallationsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()
 }
