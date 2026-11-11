@@ -143,11 +143,13 @@ If the test tables do not exist yet, create them once from the terminal with
 
 ### Run the tests on CI
 
-[`firebase_sql_ci_tests.yml`](../.github/workflows/firebase_sql_ci_tests.yml) runs `connectedCheck`
-on an emulator for every pull request that affects this module, and after every merge to `main`,
-like the Firestore integration tests. Pull requests from forks skip it, because they cannot read
-the secrets. The project comes from the `INTEG_TESTS_GOOGLE_SERVICES` secret, and the service from
-the `FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION` secrets.
+The **Instrumentation Tests (:firebase-sql)** job of [`ci_tests.yml`](../.github/workflows/ci_tests.yml)
+runs `deviceCheck` for every pull request that affects this module, and after every merge to
+`main`. This module enables `testLab`, so `deviceCheck` runs `CloudSqlEndToEndTest` on a Firebase
+Test Lab device. Pull requests from forks skip the job, because they cannot read the secrets. The
+project comes from the `INTEG_TESTS_GOOGLE_SERVICES` secret, and the service from the
+`FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION` secrets, which the job passes as the
+`targetServiceId` and `targetLocation` Gradle properties.
 
 CI does not create the test tables. When a change adds to `src/androidTest/sql/`, apply it to the
 database of the CI service with `RUN_TESTS=false ./firebase-sql/run_cloud_tests.sh`, so that CI

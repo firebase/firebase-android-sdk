@@ -25,7 +25,8 @@ plugins {
 
 firebaseLibrary {
   libraryGroup = "sql"
-  testLab.enabled = false
+  // CI runs CloudSqlEndToEndTest on Firebase Test Lab with `deviceCheck`. See AGENTS.md.
+  testLab.enabled = true
   publishJavadoc = true
   onlyPublishKotlindoc = true
   // No release notes before the launch. At launch, replace `enabled = false` with the `name` and
