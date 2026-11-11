@@ -22,8 +22,9 @@ import com.google.firestore.v1.Value
 /**
  * A [WindowFunction] associated with an alias name.
  *
- * Window Functions SDK features are in preview until the backend feature launches. Look for launch
- * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ * Window Functions SDK features are in preview until the backend feature launches. Look for a
+ * launch announcement in the
+ * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
  */
 @Beta
 class AliasedWindowFunction
@@ -59,8 +60,9 @@ internal constructor(internal val alias: String, internal val expr: WindowFuncti
 /**
  * A class that represents a window function.
  *
- * Window Functions SDK features are in preview until the backend feature launches. Look for launch
- * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ * Window Functions SDK features are in preview until the backend feature launches. Look for a
+ * launch announcement in the
+ * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
  */
 @Beta
 class WindowFunction
@@ -78,8 +80,9 @@ private constructor(
      * Documents with equal sort values receive the same rank, and the following rank is skipped.
      * The window must specify exactly one sort ordering.
      *
-     * Window Functions SDK features are in preview until the backend feature launches. Look for
-     * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+     * Window Functions SDK features are in preview until the backend feature launches. Look for a
+     * launch announcement in the
+     * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
      *
      * @return A new [WindowFunction] representing the rank window function.
      */
@@ -96,8 +99,9 @@ private constructor(
   /**
    * Assigns an alias to this window function.
    *
-   * Window Functions SDK features are in preview until the backend feature launches. Look for
-   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   * Window Functions SDK features are in preview until the backend feature launches. Look for a
+   * launch announcement in the
+   * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
    *
    * @param alias The alias to assign to this window function.
    * @return A new [AliasedWindowFunction] that wraps this window function and associates it with
@@ -108,8 +112,9 @@ private constructor(
   /**
    * Evaluates this function over an explicit window frame.
    *
-   * Window Functions SDK features are in preview until the backend feature launches. Look for
-   * launch announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+   * Window Functions SDK features are in preview until the backend feature launches. Look for a
+   * launch announcement in the
+   * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
    *
    * The returned function carries its own framing, overriding the window declared on the enclosing
    * `addWindowFields` stage. Only `documents` or `range` window frames (created via
