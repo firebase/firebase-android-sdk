@@ -175,6 +175,7 @@ public final class Constants {
     public static final String ICON = NOTIFICATION_PREFIX + "icon";
     public static final String IMAGE_URL = NOTIFICATION_PREFIX + "image";
     public static final String TAG = NOTIFICATION_PREFIX + "tag";
+    public static final String NOTIFICATION_ID = NOTIFICATION_PREFIX + "id";
     public static final String COLOR = NOTIFICATION_PREFIX + "color";
     public static final String TICKER = NOTIFICATION_PREFIX + "ticker";
     public static final String LOCAL_ONLY = NOTIFICATION_PREFIX + "local_only";
