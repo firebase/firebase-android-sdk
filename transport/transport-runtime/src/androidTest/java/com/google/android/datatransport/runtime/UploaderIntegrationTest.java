@@ -16,7 +16,6 @@ package com.google.android.datatransport.runtime;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -158,7 +157,7 @@ public class UploaderIntegrationTest {
     transport.send(stringEvent);
     verify(mockBackend, times(2))
         .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
-    verify(spyScheduler, times(1)).schedule(any(), eq(2), anyBoolean());
+    verify(spyScheduler, times(1)).schedule(any(), eq(2));
     Iterable<PersistedEvent> eventList = store.loadBatch(transportContext);
     assertThat(eventList).isNotEmpty();
     for (PersistedEvent persistedEvent : eventList) {
