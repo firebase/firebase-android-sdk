@@ -1,5 +1,7 @@
 # Unreleased
 
+# 21.1.0
+
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed crashes and silently disabled crash reporting caused by
