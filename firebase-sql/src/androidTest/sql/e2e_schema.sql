@@ -56,3 +56,8 @@ BEGIN
 END;
 $$;
 
+-- The tests send no Firebase Authentication token, so they run as `anon`. New services make only
+-- `service_role` a member of the writer role, so `anon` cannot use a table that is not granted to
+-- it. Functions can be called by every role by default.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.categories, public.products TO anon;
+

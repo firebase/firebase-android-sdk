@@ -17,11 +17,11 @@
 -- has the owner role of the database (`firebase dataconnect:sql:grant -R owner -E <email>`), and
 -- sets the psql variable `owner_role` to the name of that role, `firebaseowner_<database>_public`.
 --
--- Firebase SQL sends the requests as the `anon`, `authenticated`, and `service_role` roles, which
--- are members of the writer role. The default privileges of the database give the writer and reader
--- roles access to what the owner role creates in `public`, so everything is created as the owner
--- role. The owner role cannot create schemas, so the `inventory` schema of the ignored
--- testMultipleSchemas is not created here. Every statement is idempotent.
+-- Firebase SQL sends the requests as the `anon`, `authenticated`, and `service_role` roles. The
+-- default privileges of the database give the writer and reader roles access to what the owner role
+-- creates in `public`, so everything is created as the owner role, and e2e_schema.sql grants the
+-- tables to `anon`, the role of the tests. The owner role cannot create schemas, so the `inventory`
+-- schema of the ignored testMultipleSchemas is not created here. Every statement is idempotent.
 \set ON_ERROR_STOP on
 SET ROLE :"owner_role";
 \ir e2e_schema.sql
