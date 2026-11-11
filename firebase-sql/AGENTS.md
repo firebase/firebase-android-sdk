@@ -73,8 +73,9 @@ Run these commands from the root of the repository after a change:
 
 `CloudSqlEndToEndTest` runs the SDK on a device or emulator against a Firebase SQL service in
 production, through `Firebase.sql()` like an app. The service must not enforce App Check, because
-the tests send no App Check token. `testMultipleSchemas` and `testExplain` are ignored: the service
-exposes only its own schema, and does not return execution plans.
+the tests send no App Check token. `testMultipleSchemas` is ignored, because the service exposes
+only its own schema. The dry-run tests and `testExplain` need the settings that `e2e_setup.sql`
+puts in `postgrest.pre_config()`.
 
 ### Prerequisites
 
@@ -139,3 +140,15 @@ Then click the run icon next to `CloudSqlEndToEndTest`. The results show up in t
 If the test tables do not exist yet, create them once from the terminal with
 `RUN_TESTS=false ./firebase-sql/run_cloud_tests.sh`, with `FIREBASE_SQL_SERVICE_ID` and
 `FIREBASE_SQL_LOCATION` set.
+
+### Run the tests on CI
+
+[`firebase_sql_ci_tests.yml`](../.github/workflows/firebase_sql_ci_tests.yml) runs `connectedCheck`
+on an emulator for every pull request that affects this module, and after every merge to `main`,
+like the Firestore integration tests. Pull requests from forks skip it, because they cannot read
+the secrets. The project comes from the `INTEG_TESTS_GOOGLE_SERVICES` secret, and the service from
+the `FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION` secrets.
+
+CI does not create the test tables. When a change adds to `src/androidTest/sql/`, apply it to the
+database of the CI service with `RUN_TESTS=false ./firebase-sql/run_cloud_tests.sh`, so that CI
+passes.
