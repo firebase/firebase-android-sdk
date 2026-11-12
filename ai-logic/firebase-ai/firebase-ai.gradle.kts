@@ -44,6 +44,9 @@ android {
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET")
+      ?.takeIf { it.isNotEmpty() }
+      ?.let { token -> testInstrumentationRunnerArguments["firebaseAppCheckDebugSecret"] = token }
   }
   buildTypes {
     release {
@@ -120,6 +123,8 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockk)
 
+  androidTestImplementation(project(":appcheck:firebase-appcheck-debug"))
+  androidTestImplementation(project(":appcheck:firebase-appcheck-debug-testing"))
   androidTestImplementation(libs.kotest.assertions.core)
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.assertions.json)
