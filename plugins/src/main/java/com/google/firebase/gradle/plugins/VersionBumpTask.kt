@@ -81,7 +81,9 @@ abstract class VersionBumpTask : DefaultTask() {
           else -> it
         }
       }
-    outputFile.get().asFile.writeText(newLines.joinToString("\n") + "\n")
+    val output = outputFile.get().asFile
+    output.parentFile?.mkdirs()
+    output.writeText(newLines.joinToString("\n") + "\n")
   }
 
   fun configure() {

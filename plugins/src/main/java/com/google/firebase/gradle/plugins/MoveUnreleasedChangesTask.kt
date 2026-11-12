@@ -68,7 +68,9 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
 
     val newChangelog = Changelog(releases)
 
-    outputFile.get().asFile.writeText(newChangelog.toString())
+    val output = outputFile.get().asFile
+    output.parentFile?.mkdirs()
+    output.writeText(newChangelog.toString())
   }
 
   /**
