@@ -402,6 +402,42 @@ class PersistenceContextTest {
   }
 
   @Test
+  fun addSpan_beyondMaxSpans_evictsOldestToStayWithinCapacity() {
+    val maxSpans = MmapSize.SMALL.config.maxSpans
+
+    for (i in 0 until maxSpans) {
+      mutationContext.addSpan(createThreadSafeTestSpan(0, i))
+    }
+    assertThat(mutationContext.countSpans()).isEqualTo(maxSpans.toLong())
+
+    mutationContext.addSpan(createThreadSafeTestSpan(1, 0))
+    assertThat(mutationContext.countSpans()).isEqualTo(maxSpans.toLong())
+  }
+
+  @Test
+  fun addSpan_beyondMaxAttributes_dropsExcessAttributes() {
+    val maxAttributes = MmapSize.SMALL.config.maxAttributes
+    val oversizedAttributes = (0..maxAttributes).associate { "key$it" to "value$it" }
+    val span = createTestSpan("TooManyAttrsSpan", oversizedAttributes)
+    assertThat(span.attributes).hasSize(maxAttributes + 1)
+    mutationContext.addSpan(span)
+
+    PersistenceContext.shutdown()
+
+    val latch = CountDownLatch(1)
+    var recoveredSpans: List<CrashlyticsSpan>? = null
+    PersistenceContext.initialize(testMmapFile.absolutePath, MmapSize.SMALL) { recovered ->
+      recoveredSpans = recovered
+      latch.countDown()
+    }
+
+    assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue()
+    val spans = requireNotNull(recoveredSpans)
+    assertThat(spans).hasSize(1)
+    assertThat(spans[0].attributes).hasSize(maxAttributes)
+  }
+
+  @Test
   fun addSpan_afterShutdown_isNoOp() {
     PersistenceContext.shutdown()
     mutationContext.addSpan(createTestSpan("AfterShutdown"))

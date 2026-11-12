@@ -163,13 +163,13 @@ internal sealed class MmapConfig {
   abstract val maxSpans: Int
   abstract val maxAttributes: Int
 
-  data class Small(override val maxSpans: Int = 128, override val maxAttributes: Int = 16) :
+  data class Small(override val maxSpans: Int = 100, override val maxAttributes: Int = 16) :
     MmapConfig()
 
-  data class Medium(override val maxSpans: Int = 1024, override val maxAttributes: Int = 64) :
+  data class Medium(override val maxSpans: Int = 500, override val maxAttributes: Int = 64) :
     MmapConfig()
 
-  data class Large(override val maxSpans: Int = 2048, override val maxAttributes: Int = 128) :
+  data class Large(override val maxSpans: Int = 1000, override val maxAttributes: Int = 128) :
     MmapConfig()
 }
 
