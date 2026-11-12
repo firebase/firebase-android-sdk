@@ -146,7 +146,11 @@ public abstract class LeafNode<T extends LeafNode> implements Node {
         if (priority.isEmpty()) {
           return "";
         } else {
-          return "priority:" + priority.getHashRepresentation(version) + ":";
+          // Valid priorities are leaf nodes, but a server update can set a priority to an object
+          // or an array. Children nodes only support V1 hashes, so use V1 for them instead of
+          // failing. If the hash then doesn't match the server's, the server sends the data again.
+          HashVersion priorityVersion = priority.isLeafNode() ? version : HashVersion.V1;
+          return "priority:" + priority.getHashRepresentation(priorityVersion) + ":";
         }
       default:
         throw new IllegalArgumentException("Unknown hash version: " + version);
