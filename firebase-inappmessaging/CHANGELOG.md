@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed an app crash when a campaign was missing a required field,
+  such as a background color or title. Such campaigns are now skipped, and the
+  next eligible campaign is displayed instead. (#8759)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
