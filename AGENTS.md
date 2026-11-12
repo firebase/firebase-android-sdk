@@ -247,6 +247,7 @@ When reviewing code or preparing changes for review, ensure the following requir
   the current release are listed.
 
 #### **Structure and syntax**
+
 * Use the appropriate change type tag/badge for each entry:
   * \[feature\]: New features, public APIs, or capabilities.
   * \[changed\]: Behavior changes or enhancements to existing functionality.
