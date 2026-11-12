@@ -248,17 +248,19 @@ When reviewing code or preparing changes for review, ensure the following requir
 
 #### **Structure and syntax**
 
-* Use standardized prefix tags from the following list:
-  * \[changed\]
-  * \[feature\]
-  * \[fixed\]
-  * \[deprecated\]
-  * \[removed\]
-  * \[important\]
-  * \[issue\]
-  * \[unchanged\]
-* For breaking changes, add **Breaking change:** at the beginning of the entry.
-* Start each entry with a past-tense verb.  For example, "Fixed", "Added", "Updated", "Replaced", "Increased", "Set", etc.
+* Use the appropriate change type tag/badge for each entry:
+  * \[feature\]: New features, public APIs, or capabilities.
+  * \[changed\]: Behavior changes or enhancements to existing functionality.
+  * \[fixed\]: Bug fixes.
+  * \[deprecated\]: Deprecated APIs, methods, or products (do not use `changed`).
+  * \[removed\]: Removed APIs, classes, or dependencies (do not use `changed`).
+  * \[unchanged\]: Internal updates or version alignment with no user-facing changes.
+* For breaking changes, add **Breaking change:** at the beginning of the entry
+  (after the change type tag), and confirm with engineering whether dependency
+  or subtle behavior changes truly qualify as breaking changes.
+* Start each entry with a past-tense verb. For example, "Fixed", "Added",
+  "Updated", "Replaced", "Increased", "Set", "Enabled", "Prevented",
+  "Graduated", etc.
 * End every entry and sentence with a period, including short phrases (for
   example, `Internal improvements.`).
 * Add the relevant PR \# or Issue \# to the end of each entry, after the period
@@ -267,17 +269,33 @@ When reviewing code or preparing changes for review, ensure the following requir
   lines. When writing `CHANGELOG.md` entries, keep the first line to at most 78
   characters so that it remains within 80 characters when `- [<tag>]` is
   converted to `* {{<tag>}}` in generated release notes.
-* For Firebase product brand names, use the appropriate standard names.
-  * For an entry that's for the product's own library, use the "short" form of the name (e.g., Crashlytics, instead of Firebase Crashlytics).
-    * For an entry that's for another product's library, use the "long" form of the name (e.g., Firebase Crashlytics, instead of Crashlytics).
+  * Exceptions to the 80-character limit:
+    * Hyperlinks and GitHub reference lines: Never split a hyperlink's anchor
+      text or URL across lines. If a hyperlink does not fit on the current line
+      within 80 characters, place it on its own continuation line (where it may
+      exceed 80 characters).
+    * Code in a command or a code block.
+* Separate bullet entries with a single blank line (no extra consecutive blank
+  lines).
+* For Firebase and Google product/tool brand names, use the appropriate standard
+  names:
+  * For an entry that's for the product's own library, use the "short" form of
+    the name (e.g., Crashlytics, instead of Firebase Crashlytics).
+  * For an entry that's for another product's library, use the "long" form of
+    the name (e.g., Firebase Crashlytics, instead of Crashlytics).
 * Capitalize with care.
   * Use sentence case.
-    * Capitalize the following: the first letter of each sentence, proper nouns/code identifiers, official product and brand names, and abbreviations / initialisms.
-    * Do not capitalize the following: every word or feature names
-* Wrap in backticks all strings that are code-like elements, including the following (this list is _not_ exhaustive):
+    * Capitalize the following: the first letter of each sentence, proper
+      nouns/code identifiers, official product and brand names (e.g.,
+      Cloud Monitoring), and abbreviations/initialisms (e.g., `SDK`, `gRPC`,
+      `GA`, `OOM`, `ANR`, `HTTP`).
+    * Do not capitalize the following: every word, feature names, or generic
+      release stages (e.g., write `preview`, not `Public Preview`).
+* Wrap in backticks all strings that are code-like elements, including the
+  following (this list is _not_ exhaustive):
   * API names
   * attribute names and values
-  * class names
+  * class names (e.g., `FirebaseInstanceId`, `LiveSession`)
   * CLI commands and CLI flags
   * code symbols
   * command output
@@ -287,17 +305,36 @@ When reviewing code or preparing changes for review, ensure the following requir
   * enum names
   * filenames and file paths
   * folder and directory names
-  * HTTP status codes
+  * Gradle property names (e.g., `minSdkVersion`, `compileSdk`)
+  * HTTP status codes / constants (e.g., `TOO_MANY_REQUESTS`)
   * HTTP verbs
   * IP addresses
   * language keywords
   * method and function names
-  * package names
+  * package and artifact names (e.g., `firebase-crashlytics`, `io.grpc`)
   * parameters
   * port numbers
+  * resource names (e.g., `firebase_app_check_debug_token`)
   * URL strings or domain names
   * text input or output
 * Use ISO 8601 date formatting (YYYY-MM-DD).
+* Use consistent phrasing and prepositions across related entries (for example,
+  use "for on-device and hybrid inference modes" rather than "in on-device and
+  hybrid inference modes", and "in the Live API" rather than "in Live API").
+* Verify semantic versioning and companion library alignment:
+  * New features (`feature`) or deprecations (`deprecated`) require at least a
+    minor version bump (`x.Y.0`); breaking changes require a major version bump
+    (`X.0.0`); bug fixes and internal changes use a patch bump (`x.y.Z`).
+  * Companion libraries (such as `firebase-crashlytics-ndk`,
+    `firebase-messaging-directboot`, and `firebase-appcheck-*`) must have
+    aligned versions when released together.
+* Verify documentation links and data disclosures:
+  * Ensure any linked documentation page applies to the exact feature/mode
+    described (e.g., do not link cloud-only documentation for an on-device
+    feature).
+  * If an entry introduces new data collection, telemetry, or uploads (e.g.,
+    Crashlytics heap dump uploads), check whether the Google Play data
+    disclosure documentation needs to be updated.
 
 ## External Dependencies
 
