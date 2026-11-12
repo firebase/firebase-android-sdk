@@ -46,7 +46,7 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET")
       ?.takeIf { it.isNotEmpty() }
-      ?.let { token -> testInstrumentationRunnerArguments["firebaseAppCheckDebugSecret"] = token }
+      ?.let { token -> testInstrumentationRunnerArgument("firebaseAppCheckDebugSecret", token) }
   }
   buildTypes {
     release {
