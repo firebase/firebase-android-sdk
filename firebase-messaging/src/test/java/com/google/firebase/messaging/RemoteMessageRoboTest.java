@@ -533,4 +533,18 @@ public class RemoteMessageRoboTest {
     RemoteMessage message = new RemoteMessage(bundle);
     assertThat(message.getNotification().getImageUrl()).isNull();
   }
+
+  @Test
+  public void testNotification_emptyLightSettingsColor() {
+    Bundle bundle = new Bundle();
+    bundle.putString(KEY_ENABLE, "1");
+    bundle.putString(KEY_TITLE, "a_title");
+    bundle.putString(KEY_LIGHT_SETTINGS, "[\"\",\"1000\",\"1000\"]");
+
+    RemoteMessage message = new RemoteMessage(bundle);
+    RemoteMessage.Notification n = message.getNotification();
+    assertThat(n).isNotNull();
+    assertThat(n.getTitle()).isEqualTo("a_title");
+    assertThat(n.getLightSettings()).isNull();
+  }
 }
