@@ -95,16 +95,19 @@ class CallTests {
   fun testCustomHeaders() {
     val functions = Firebase.functions(app)
 
-    val options = HttpsCallableOptions.Builder()
-      .addHeader("Header1", "value1")
-      .addHeader("Header2", "value2")
-      .build()
+    val options =
+      HttpsCallableOptions.Builder()
+        .addHeader("Header1", "value1")
+        .addHeader("Header2", "value2")
+        .build()
 
-    val function = functions.getHttpsCallable("headersTest", options)
-      .addHeader("Header2", "value3")
-      .addHeader("Header3", "value4")
-      .addHeader("Header4", "value5")
-      .addHeaders(mapOf("Header4" to "value6"))
+    val function =
+      functions
+        .getHttpsCallable("headersTest", options)
+        .addHeader("Header2", "value3")
+        .addHeader("Header3", "value4")
+        .addHeader("Header4", "value5")
+        .addHeaders(mapOf("Header4" to "value6"))
 
     val actual = Tasks.await(function.call()).getData() as? Map<*, *>
 
