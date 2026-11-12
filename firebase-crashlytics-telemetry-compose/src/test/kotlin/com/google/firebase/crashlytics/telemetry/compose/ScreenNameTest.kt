@@ -22,13 +22,12 @@ import org.junit.jupiter.api.Test
 class ScreenNameTest {
   @Test
   fun destinationWithRoute_usesRoutePattern() {
-    assertThat(screenName(route = "profile/{userId}", displayName = "com.example:id/profile"))
+    assertThat(screenName(route = "profile/{userId}", id = 0x7f080001))
       .isEqualTo("profile/{userId}")
   }
 
   @Test
-  fun destinationWithoutRoute_usesDisplayName() {
-    assertThat(screenName(route = null, displayName = "com.example:id/home"))
-      .isEqualTo("com.example:id/home")
+  fun destinationWithoutRoute_usesId() {
+    assertThat(screenName(route = null, id = 0x7f080001)).isEqualTo("2131230721")
   }
 }

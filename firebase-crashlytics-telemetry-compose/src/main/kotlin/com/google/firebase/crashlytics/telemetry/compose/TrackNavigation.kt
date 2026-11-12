@@ -33,7 +33,7 @@ public fun NavHostController.trackNavigation(): NavHostController {
   DisposableEffect(this) {
     val listener =
       NavController.OnDestinationChangedListener { _, destination, _ ->
-        val name = screenName(destination.route, destination.displayName)
+        val name = screenName(destination.route, destination.id)
         FirebaseCrashlyticsTelemetry.instance.recordScreenAppear(name)
       }
     addOnDestinationChangedListener(listener)
@@ -46,4 +46,4 @@ public fun NavHostController.trackNavigation(): NavHostController {
  * Names a destination by its route pattern, such as `profile/{userId}`, so argument values are
  * never recorded.
  */
-internal fun screenName(route: String?, displayName: String): String = route ?: displayName
+internal fun screenName(route: String?, id: Int): String = route ?: id.toString()
