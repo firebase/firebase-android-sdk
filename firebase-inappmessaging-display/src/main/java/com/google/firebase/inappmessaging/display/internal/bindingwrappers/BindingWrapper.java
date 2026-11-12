@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -100,13 +101,28 @@ public abstract class BindingWrapper {
     }
   }
 
+  /**
+   * Sets the text color of the view from a hex color string. If the string is empty or isn't a
+   * color that {@link Color#parseColor} accepts, the view keeps its current text color.
+   */
+  protected static void setTextColorFromHex(@NonNull TextView view, @Nullable String hexColor) {
+    // Color.parseColor throws StringIndexOutOfBoundsException for an empty string.
+    if (TextUtils.isEmpty(hexColor)) return;
+    try {
+      view.setTextColor(Color.parseColor(hexColor));
+    } catch (IllegalArgumentException e) {
+      // If the color didn't parse correctly, fail 'open', with the default text color
+      Logging.loge("Error parsing text color: " + e.toString() + " color: " + hexColor);
+    }
+  }
+
   // Worth changing the API allow for building a UI model from a data model. Future change.
   public static void setupViewButtonFromModel(
       Button viewButton, com.google.firebase.inappmessaging.model.Button modelButton) {
     String buttonTextHexColor = modelButton.getText().getHexColor();
     setButtonBgColorFromHex(viewButton, modelButton.getButtonHexColor());
     viewButton.setText(modelButton.getText().getText());
-    viewButton.setTextColor(Color.parseColor(buttonTextHexColor));
+    setTextColorFromHex(viewButton, buttonTextHexColor);
   }
 
   protected void setButtonActionListener(

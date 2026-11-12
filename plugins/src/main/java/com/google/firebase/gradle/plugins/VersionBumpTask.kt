@@ -23,6 +23,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.provideDelegate
 
@@ -36,6 +37,8 @@ import org.gradle.kotlin.dsl.provideDelegate
  *
  * @property versionFile A [File] that contains the `version` property. Defaults to the
  *   `gradle.properties` file at the project's root.
+ * @property outputFile A [File] to write the updated version properties to. Defaults to
+ *   [versionFile].
  * @property releasedVersion A [ModuleVersion] of what to bump from. Defaults to the project
  *   version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
@@ -47,6 +50,9 @@ import org.gradle.kotlin.dsl.provideDelegate
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]
   abstract val versionFile: RegularFileProperty
+
+  @get:[Optional OutputFile]
+  abstract val outputFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releasedVersion: Property<ModuleVersion>
@@ -67,17 +73,22 @@ abstract class VersionBumpTask : DefaultTask() {
     val version =
       newVersion.orNull ?: if (bumpVersion.get()) latestVersion.bump() else latestVersion
 
-    versionFile.get().asFile.rewriteLines {
-      when {
-        it.startsWith("version=") -> "version=${version}"
-        it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${latestVersion}"
-        else -> it
+    val newLines =
+      versionFile.get().asFile.readLines().map {
+        when {
+          it.startsWith("version=") -> "version=${version}"
+          it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${latestVersion}"
+          else -> it
+        }
       }
-    }
+    val output = outputFile.get().asFile
+    output.parentFile?.mkdirs()
+    output.writeText(newLines.joinToString("\n") + "\n")
   }
 
   fun configure() {
     versionFile.convention(project.layout.projectDirectory.file("gradle.properties"))
+    outputFile.convention(versionFile)
     releasedVersion.convention(computeReleasedVersion())
     bumpVersion.convention(true)
   }

@@ -17,6 +17,8 @@ package com.google.firebase.crashlytics.internal.common;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -631,9 +633,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     ApplicationExitInfo nonOom3 =
         makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, 0);
 
-    boolean isOom = reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3));
-
-    assertFalse(isOom);
+    assertNull(reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3)));
   }
 
   @SdkSuppress(minSdkVersion = 37)
@@ -642,7 +642,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     ApplicationExitInfo exitInfo =
         makeApplicationExitInfo(ApplicationExitInfo.REASON_OTHER, 0, 0, "MemoryLimiter:AnonSwap");
 
-    assertTrue(reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(exitInfo)));
+    assertNotNull(reportingCoordinator.isMemoryLimiterKill("sessionId", List.of(exitInfo)));
   }
 
   @SdkSuppress(minSdkVersion = 37)
@@ -654,10 +654,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     File profilingDir = new File(context.getFilesDir(), "profiling");
     assertTrue(profilingDir.mkdir());
 
-    File heapDump =
-        new File(
-            context.getFilesDir(),
-            "profiling/com.google.firebase.crashlytics.test.trigger-type-7.hprof");
+    File heapDump = new File(context.getFilesDir(), "profiling/profile_trigger-type-7.hprof");
     assertTrue(heapDump.createNewFile());
 
     Instant sessionTime = Instant.ofEpochMilli(heapDump.lastModified());
@@ -686,6 +683,18 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
         SessionReportingCoordinator.wasHeapDumpGeneratedViaFile(context.getFilesDir(), sessionTime);
 
     assertFalse(generated);
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testCorrectFilenames() {
+    assertTrue(
+        SessionReportingCoordinator.isProfilingTriggerHeapdump(
+            "profile_trigger-anomaly_memorylimit_2026-11-03-15-19-47-390_uid-10531.perfetto-java-heap-dump-metadata.zip"));
+    assertTrue(
+        SessionReportingCoordinator.isProfilingTriggerHeapdump(
+            "profile_trigger-type-7_2026-10-21-16-30-31-270_uid-10531.perfetto-java-heap-dump"));
+    assertFalse(SessionReportingCoordinator.isProfilingTriggerHeapdump("some-other-filename"));
   }
 
   private ApplicationExitInfo makeApplicationExitInfo(int reason, int subreason, int status) {

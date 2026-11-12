@@ -29,6 +29,7 @@ import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.common.GenAiException.ErrorCode
+import com.google.mlkit.genai.prompt.Feature
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -47,7 +48,14 @@ internal class GenerativeModelImpl(
 
   override suspend fun isThinkingModeAvailable(): Boolean =
     try {
-      mlkitModel.isThinkingModeAvailable()
+      mlkitModel.getAvailableFeatures().contains(Feature.THINKING_MODE)
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
+
+  override suspend fun isFunctionCallingAvailable(): Boolean =
+    try {
+      mlkitModel.getAvailableFeatures().contains(Feature.FUNCTION_CALLING)
     } catch (e: GenAiException) {
       throw getMappingException(e)
     }

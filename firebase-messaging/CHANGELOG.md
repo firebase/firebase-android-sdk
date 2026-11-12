@@ -1,9 +1,17 @@
 # Unreleased
 
+- [changed] Added support for setting notification ID from the notification payload. (#8737)
+
+# 26.0.2
+
 - [fixed] Retry topic subscription operations on HTTP 429 (`TOO_MANY_REQUESTS`).
-- [fixed] Restored token request deduplication with FirebaseInstanceId during auto-init and token fetches. (#8732)
+- [fixed] Restored token request deduplication with FirebaseInstanceId during 
+  auto-init and token fetches. (#8732)
 - [fixed] Fixed a crash when a notification message contained an empty light
   settings color. The invalid light settings are now ignored. (#8756)
+- [fixed] Fixed a `NoClassDefFoundError` crash for `AnalyticsConnector` when
+  receiving or opening a notification in apps that exclude
+  `firebase-measurement-connector`. (#8281)
 
 # 26.0.1
 
