@@ -21,6 +21,7 @@ import java.lang.reflect.Field
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
@@ -85,15 +86,20 @@ internal fun Flow<ByteArray>.accumulateUntil(
 }
 
 /**
- * Create a [Job] that is a child of the [currentCoroutineContext], if any.
+ * Create a [SupervisorJob] that is a child of the [currentCoroutineContext], if any.
  *
  * This is useful when you want a coroutine scope to be canceled when its parent scope is canceled,
- * and you don't have full control over the parent scope, but you don't want the cancellation of the
- * child to impact the parent.
+ * and you don't have full control over the parent scope, but you don't want the cancellation or the
+ * failure of the child to impact the parent.
+ *
+ * A [SupervisorJob] doesn't propagate the failure of one of its children, so a scope that uses it
+ * needs an exception handler. Otherwise, the exception goes to the uncaught exception handler of
+ * the thread, which crashes an Android app.
  *
  * If the parent coroutine context does not have a job, an empty one will be created.
  */
-internal suspend inline fun childJob() = Job(currentCoroutineContext()[Job] ?: Job())
+internal suspend inline fun childSupervisorJob() =
+  SupervisorJob(currentCoroutineContext()[Job] ?: Job())
 
 /**
  * A constant value pointing to a cancelled [CoroutineScope].
