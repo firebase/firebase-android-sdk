@@ -28,6 +28,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /** Responsible for initializing AQS */
@@ -35,7 +36,7 @@ import kotlinx.coroutines.launch
 internal class FirebaseSessions
 @Inject
 constructor(
-  private val firebaseApp: FirebaseApp,
+  firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   @Background backgroundDispatcher: CoroutineContext,
   sessionsActivityLifecycleCallbacks: SessionsActivityLifecycleCallbacks,
@@ -47,7 +48,14 @@ constructor(
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionsActivityLifecycleCallbacks)
 
-      CoroutineScope(backgroundDispatcher).launch {
+      val initScope = CoroutineScope(backgroundDispatcher)
+      firebaseApp.addLifecycleEventListener { _, _ ->
+        Log.w(TAG, "FirebaseApp instance deleted. Sessions library will stop.")
+        initScope.cancel()
+        sessionsActivityLifecycleCallbacks.onAppDelete()
+      }
+
+      initScope.launch {
         val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
         if (subscribers.values.none { it.isDataCollectionEnabled }) {
           Log.d(TAG, "No Sessions subscribers. Not listening to lifecycle events.")
@@ -55,14 +63,6 @@ constructor(
           settings.updateSettings()
           if (!settings.sessionsEnabled) {
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
-          } else {
-            firebaseApp.addLifecycleEventListener { _, _ ->
-              Log.w(
-                TAG,
-                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
-              )
-              sessionsActivityLifecycleCallbacks.onAppDelete()
-            }
           }
         }
       }
