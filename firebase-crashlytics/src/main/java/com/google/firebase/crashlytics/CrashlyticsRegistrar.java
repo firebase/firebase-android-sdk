@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics;
 
+import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 /** @hide */
+@Keep
 public class CrashlyticsRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-cls";
   private final Qualified<ExecutorService> backgroundExecutorService =

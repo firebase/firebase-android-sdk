@@ -269,4 +269,26 @@ public class JobInfoSchedulerTest {
 
     assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(1);
   }
+
+  @Test
+  public void schedule_onRetryAttemptWithPendingEvents_shouldKeepPriorityDelta() {
+    EventInternal event =
+        EventInternal.builder()
+            .setEventMillis(1)
+            .setUptimeMillis(1)
+            .setTransportName("")
+            .setEncodedPayload(
+                new EncodedPayload(
+                    Encoding.of("proto"), "World".getBytes(Charset.defaultCharset())))
+            .build();
+
+    store.persist(TRANSPORT_CONTEXT, event);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1);
+    scheduler.schedule(TRANSPORT_CONTEXT, 2);
+
+    assertThat(jobScheduler.getAllPendingJobs()).hasSize(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    assertThat(jobInfo.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(2);
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(3 * THIRTY_SECONDS);
+  }
 }

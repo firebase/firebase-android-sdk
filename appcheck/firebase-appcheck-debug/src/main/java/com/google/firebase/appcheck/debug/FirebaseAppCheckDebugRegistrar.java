@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck.debug;
 
+import androidx.annotation.Keep;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
@@ -36,6 +37,7 @@ import java.util.concurrent.Executor;
  * @hide
  */
 @KeepForSdk
+@Keep
 public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-app-check-debug";
 

@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.settings.Settings.Profiling;
 import org.json.JSONException;
@@ -31,16 +32,16 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         json.optInt(
             SettingsJsonConstants.CACHE_DURATION_KEY,
             SettingsJsonConstants.SETTINGS_CACHE_DURATION_DEFAULT);
-    double onDemandUploadRatePerMinute =
-        json.optDouble(
-            SettingsJsonConstants.ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY,
-            SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT);
+    double onDemandUploadRatePerMinute = getOnDemandUploadRatePerMinute(json);
     double onDemandBackoffBase =
-        json.optDouble(
+        getNonNegativeDouble(
+            json,
             SettingsJsonConstants.ON_DEMAND_BACKOFF_BASE_KEY,
             SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT);
+    // The step duration is a divisor when calculating the backoff, so it must be positive.
     int onDemandBackoffStepDurationSeconds =
-        json.optInt(
+        getPositiveInt(
+            json,
             SettingsJsonConstants.ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_KEY,
             SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT);
 
@@ -123,5 +124,59 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
       expiresAtMillis = currentTimeProvider.getCurrentTimeMillis() + (cacheDurationSeconds * 1000);
     }
     return expiresAtMillis;
+  }
+
+  // Settings are downloaded from the server, cached on disk, and read at every launch before
+  // Crashlytics can report crashes. Out-of-range values are ignored in favor of the defaults so
+  // that a malformed payload can't crash the app or disable Crashlytics. The optDouble and optInt
+  // getters already fall back to the defaults for missing and non-numeric values, but optDouble
+  // also parses strings such as "NaN" and "Infinity".
+
+  /**
+   * Returns the on-demand upload rate, clamped to the maximum. A rate of 0 or a fractional rate is
+   * valid. With a rate of 0, every on-demand report is dropped.
+   */
+  private static double getOnDemandUploadRatePerMinute(JSONObject json) {
+    double ratePerMinute =
+        getNonNegativeDouble(
+            json,
+            SettingsJsonConstants.ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY,
+            SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT);
+    if (ratePerMinute > SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_MAX) {
+      Logger.getLogger()
+          .d(
+              "Clamping "
+                  + SettingsJsonConstants.ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY
+                  + " from "
+                  + ratePerMinute
+                  + " to "
+                  + SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_MAX);
+      return SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_MAX;
+    }
+    return ratePerMinute;
+  }
+
+  /** Returns the value for the key if it is a finite, non-negative number, or the default value. */
+  private static double getNonNegativeDouble(JSONObject json, String key, double defaultValue) {
+    double value = json.optDouble(key, defaultValue);
+    if (!Double.isFinite(value) || value < 0) {
+      logIgnoredValue(key, value);
+      return defaultValue;
+    }
+    return value;
+  }
+
+  /** Returns the value for the key if it is a positive number, or the default value. */
+  private static int getPositiveInt(JSONObject json, String key, int defaultValue) {
+    int value = json.optInt(key, defaultValue);
+    if (value <= 0) {
+      logIgnoredValue(key, value);
+      return defaultValue;
+    }
+    return value;
+  }
+
+  private static void logIgnoredValue(String key, Object value) {
+    Logger.getLogger().d("Ignoring invalid value for " + key + ": " + value);
   }
 }

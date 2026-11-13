@@ -501,4 +501,39 @@ public class ScottyUploaderTest extends CrashlyticsTestCase {
     assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
         .isEqualTo("sessionId.perfetto");
   }
+
+  @Test
+  public void testHeadersSetCorrectlyForZip() throws IOException {
+    UploadClient client = mock(UploadClient.class);
+    FileStore fileStore = mock(FileStore.class);
+
+    ScottyUploader scottyUploader = new ScottyUploader("uuid", fileStore, client);
+
+    Path heapdumpPath = Files.createTempFile("heapdump", "perfetto.zip");
+    File heapdump = heapdumpPath.toFile();
+    heapdump.deleteOnExit();
+
+    when(fileStore.getCommonFile(anyString())).thenReturn(heapdump);
+
+    HttpResponse httpResponse = new HttpResponse(200, null, null);
+    FakeTransfer fakeTransfer = new FakeTransfer(httpResponse, null, "handle123");
+
+    // Capture the Headers
+    org.mockito.ArgumentCaptor<HttpHeaders> headersCaptor =
+        org.mockito.ArgumentCaptor.forClass(HttpHeaders.class);
+
+    when(client.createTransfer(
+            anyString(), anyString(), headersCaptor.capture(), any(), anyString(), any()))
+        .thenReturn(fakeTransfer);
+
+    TestListener listener = new TestListener();
+    // Use a known type to verify filename, e.g., ProfilingTrigger.TRIGGER_TYPE_OOM (7)
+    scottyUploader.triggerUpload("gmpAppId", "sessionId", 7, "heapdump.perfetto.zip", listener);
+
+    HttpHeaders headers = headersCaptor.getValue();
+    assertThat(headers.getHeaderValuesAsString("Content-Type"))
+        .isEqualTo("application/octet-stream");
+    assertThat(headers.getHeaderValuesAsString("X-Goog-Upload-File-Name"))
+        .isEqualTo("sessionId.perfetto.zip");
+  }
 }

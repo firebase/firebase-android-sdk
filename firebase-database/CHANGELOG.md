@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a crash when the server's response to a `get()` call
+  contained data that the SDK couldn't parse. The `Task` now fails instead,
+  or returns the locally cached value if there is one. (#8777)
 - [fixed] Fixed a crash when calling `keepSynced(true)` and `get()` on the
   same query. (#8544)
 

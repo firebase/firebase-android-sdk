@@ -16,6 +16,7 @@ package com.google.firebase.ml.modeldownloader;
 
 import android.content.Context;
 import android.os.Build.VERSION_CODES;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
@@ -39,6 +40,7 @@ import java.util.concurrent.Executor;
  *
  * @hide
  */
+@Keep
 public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "firebase-ml-modeldownloader";
 

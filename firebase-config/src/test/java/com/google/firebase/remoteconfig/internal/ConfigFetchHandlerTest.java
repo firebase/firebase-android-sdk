@@ -75,8 +75,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
@@ -92,6 +92,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLooper;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 /**
@@ -101,7 +102,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class ConfigFetchHandlerTest {
   private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
   private static final String INSTALLATION_AUTH_TOKEN =
@@ -804,12 +805,19 @@ public class ConfigFetchHandlerTest {
                 mockFetchedCache,
                 mockBackendFetchApiClient,
                 sharedPrefsClient,
-                /* customHttpHeaders= */ ImmutableMap.of()));
+                /* customHttpHeaders= */ ImmutableMap.of()) {
+              @Override
+              public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
+                Task<FetchResponse> task = super.fetch(minimumFetchIntervalInSeconds);
+                ShadowLooper.idleMainLooper();
+                return task;
+              }
+            });
     return fetchHandler;
   }
 
   private void setBackendResponseConfigsTo(ConfigContainer container) throws Exception {
-    Map<String, String> configEntries = new HashMap<>();
+    Map<String, String> configEntries = new LinkedHashMap<>();
 
     Iterator<String> keyIt = container.getConfigs().keys();
     while (keyIt.hasNext()) {
