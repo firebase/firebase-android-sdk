@@ -44,6 +44,9 @@ android {
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET")
+      ?.takeIf { it.isNotEmpty() }
+      ?.let { token -> testInstrumentationRunnerArgument("firebaseAppCheckDebugSecret", token) }
   }
   buildTypes {
     release {
@@ -99,7 +102,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
   // TODO(m188-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
-  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta08")
 
   // Use different logging libraries depending on the variant
   releaseImplementation(libs.slf4j.nop)
@@ -120,6 +123,8 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockk)
 
+  androidTestImplementation(project(":appcheck:firebase-appcheck-debug"))
+  androidTestImplementation(project(":appcheck:firebase-appcheck-debug-testing"))
   androidTestImplementation(libs.kotest.assertions.core)
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.assertions.json)

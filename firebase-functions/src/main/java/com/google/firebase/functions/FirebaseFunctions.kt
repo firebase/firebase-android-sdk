@@ -216,7 +216,8 @@ internal constructor(
    * @param context Metadata to supply with the function call.
    * @return A Task that will be completed when the request is complete.
    */
-  private fun call(
+  @VisibleForTesting
+  internal fun call(
     url: URL,
     data: Any?,
     context: HttpsCallableContext?,
@@ -267,9 +268,17 @@ internal constructor(
         }
 
         @Throws(IOException::class)
-        override fun onResponse(ignored: Call, response: Response) {
+        override fun onResponse(call: Call, response: Response) {
           val code = fromHttpStatus(response.code)
-          val bodyAsString = response.body!!.string()
+          val bodyAsString =
+            try {
+              response.body?.string() ?: throw IOException("Response body is null")
+            } catch (ioe: IOException) {
+              // Reading the body can still fail, for example on a timeout. OkHttp does not call
+              // onFailure after onResponse, so report the failure here to complete the task.
+              onFailure(call, ioe)
+              return
+            }
           val exception = fromResponse(code, bodyAsString, serializer)
           if (exception != null) {
             tcs.setException(exception)
@@ -304,7 +313,22 @@ internal constructor(
             tcs.setException(e)
             return
           }
-          val result = HttpsCallableResult(serializer.decode(dataJSON))
+          val result =
+            try {
+              HttpsCallableResult(serializer.decode(dataJSON))
+            } catch (iae: IllegalArgumentException) {
+              // For example, an Int64Value or UInt64Value wrapper whose value is not a valid Long.
+              // OkHttp rethrows unchecked exceptions from onResponse, which would crash the app.
+              val e: Exception =
+                FirebaseFunctionsException(
+                  "Response contains an invalid value.",
+                  FirebaseFunctionsException.Code.INTERNAL,
+                  null,
+                  iae
+                )
+              tcs.setException(e)
+              return
+            }
           tcs.setResult(result)
         }
       }

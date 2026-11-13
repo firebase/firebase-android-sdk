@@ -1,5 +1,7 @@
 # Unreleased
 
+# 18.2.0
+
 - [feature] Added `LiveServerVoiceActivity` and `VoiceActivityType` to
   detect when user speech starts or ends during a `LiveSession` using
   server-side voice activity detection.
@@ -275,3 +277,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

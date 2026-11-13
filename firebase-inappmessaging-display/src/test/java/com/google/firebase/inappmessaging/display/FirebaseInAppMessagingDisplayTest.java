@@ -17,11 +17,19 @@ package com.google.firebase.inappmessaging.display;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.inappmessaging.testutil.TestData.ACTION_URL_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.BODY_TEXT_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.BUTTON_HEX_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.BUTTON_TEXT_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_METADATA_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
+import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL_WITHOUT_ACTION;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_WEB_ACTION_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.MESSAGE_BACKGROUND_HEX_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.TITLE_TEXT_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.WEB_ACTION_URL_STRING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -73,6 +81,8 @@ import com.google.firebase.inappmessaging.display.internal.injection.modules.Inf
 import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.MessageType;
+import com.google.firebase.inappmessaging.model.ModalMessage;
+import com.google.firebase.inappmessaging.model.Text;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -362,6 +372,38 @@ public class FirebaseInAppMessagingDisplayTest {
     callbackArgCaptor.getValue().onSuccess();
 
     verify(windowManager).show(modalBindingWrapper, activity);
+  }
+
+  @Test
+  public void streamListener_onNotifiedModalWithInvalidTextColors_showsModalMessage() {
+    // Each text color is a non-empty string that Color.parseColor rejects.
+    com.google.firebase.inappmessaging.model.Button button =
+        com.google.firebase.inappmessaging.model.Button.builder()
+            .setText(Text.builder().setText(BUTTON_TEXT_STRING).setHexColor("FFFFFF").build())
+            .setButtonHexColor(BUTTON_HEX_STRING)
+            .build();
+    ModalMessage message =
+        ModalMessage.builder()
+            .setAction(Action.builder().setActionUrl(ACTION_URL_STRING).setButton(button).build())
+            .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
+            .setTitle(Text.builder().setText(TITLE_TEXT_STRING).setHexColor("#FFF").build())
+            .setBody(Text.builder().setText(BODY_TEXT_STRING).setHexColor("rgba(0,0,0,1)").build())
+            .setImageData(IMAGE_DATA)
+            .build(CAMPAIGN_METADATA_MODEL, DATA);
+    ModalBindingWrapper wrapper =
+        new ModalBindingWrapper(
+            modalLayoutConfig,
+            LayoutInflater.from(ApplicationProvider.getApplicationContext()),
+            message);
+    when(bindingClient.createModalBindingWrapper(eq(modalLayoutConfig), any(InAppMessage.class)))
+        .thenReturn(wrapper);
+    resumeActivity(activity);
+
+    listener.displayMessage(message, callbacks);
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    callbackArgCaptor.getValue().onSuccess();
+
+    verify(windowManager).show(wrapper, activity);
   }
 
   @Test

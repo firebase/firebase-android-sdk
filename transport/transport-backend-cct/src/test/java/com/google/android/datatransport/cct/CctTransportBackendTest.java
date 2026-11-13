@@ -33,6 +33,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import androidx.test.core.app.ApplicationProvider;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
@@ -47,6 +48,9 @@ import com.google.protobuf.ByteString;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -731,6 +735,43 @@ public class CctTransportBackendTest {
             ApplicationProvider.getApplicationContext(), wallClock, uptimeClock, 300);
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
     BackendResponse response = backend.send(getCCTBackendRequest());
+
+    assertEquals(BackendResponse.transientError(), response);
+  }
+
+  @Test
+  public void send_whenOutputStreamHandshakeTimesOut_shouldReturnTransientError()
+      throws IOException {
+    try (ServerSocket serverSocket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+      Thread acceptThread =
+          new Thread(
+              () -> {
+                try (Socket ignored = serverSocket.accept()) {
+                  Thread.sleep(300);
+                } catch (IOException | InterruptedException ignored) {
+                }
+              });
+      acceptThread.setDaemon(true);
+      acceptThread.start();
+
+      CctTransportBackend backend =
+          new CctTransportBackend(
+              ApplicationProvider.getApplicationContext(), wallClock, uptimeClock, 200);
+      String httpsEndpoint = "https://127.0.0.1:" + serverSocket.getLocalPort() + "/api";
+      BackendResponse response =
+          backend.send(
+              getCCTBackendRequest(CCT_TRANSPORT_NAME, new CCTDestination(httpsEndpoint, null)));
+
+      assertEquals(BackendResponse.transientError(), response);
+      acceptThread.interrupt();
+    }
+  }
+
+  @Test
+  public void send_whenConnectionResetByPeer_shouldReturnTransientError() {
+    stubFor(
+        post(urlEqualTo("/api")).willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+    BackendResponse response = BACKEND.send(getCCTBackendRequest());
 
     assertEquals(BackendResponse.transientError(), response);
   }
