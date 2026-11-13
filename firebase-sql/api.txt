@@ -1,0 +1,344 @@
+// Signature format: 3.0
+package com.google.firebase.sql {
+
+  public final class Count {
+    field public static final com.google.firebase.sql.Count.Companion Companion;
+  }
+
+  public static final class Count.Companion {
+    method public com.google.firebase.sql.Count getESTIMATED();
+    method public com.google.firebase.sql.Count getEXACT();
+    method public com.google.firebase.sql.Count getPLANNED();
+    property public final com.google.firebase.sql.Count ESTIMATED;
+    property public final com.google.firebase.sql.Count EXACT;
+    property public final com.google.firebase.sql.Count PLANNED;
+  }
+
+  public final class ExplainFormat {
+    field public static final com.google.firebase.sql.ExplainFormat.Companion Companion;
+  }
+
+  public static final class ExplainFormat.Companion {
+    method public com.google.firebase.sql.ExplainFormat getJSON();
+    method public com.google.firebase.sql.ExplainFormat getTEXT();
+    property public final com.google.firebase.sql.ExplainFormat JSON;
+    property public final com.google.firebase.sql.ExplainFormat TEXT;
+  }
+
+  public final class FilterOperator {
+    field public static final com.google.firebase.sql.FilterOperator.Companion Companion;
+  }
+
+  public static final class FilterOperator.Companion {
+    method public com.google.firebase.sql.FilterOperator getADJ();
+    method public com.google.firebase.sql.FilterOperator getCD();
+    method public com.google.firebase.sql.FilterOperator getCS();
+    method public com.google.firebase.sql.FilterOperator getEQ();
+    method public com.google.firebase.sql.FilterOperator getEQ_ALL();
+    method public com.google.firebase.sql.FilterOperator getEQ_ANY();
+    method public com.google.firebase.sql.FilterOperator getFTS();
+    method public com.google.firebase.sql.FilterOperator getGT();
+    method public com.google.firebase.sql.FilterOperator getGTE();
+    method public com.google.firebase.sql.FilterOperator getGTE_ALL();
+    method public com.google.firebase.sql.FilterOperator getGTE_ANY();
+    method public com.google.firebase.sql.FilterOperator getGT_ALL();
+    method public com.google.firebase.sql.FilterOperator getGT_ANY();
+    method public com.google.firebase.sql.FilterOperator getILIKE();
+    method public com.google.firebase.sql.FilterOperator getILIKE_ALL();
+    method public com.google.firebase.sql.FilterOperator getILIKE_ANY();
+    method public com.google.firebase.sql.FilterOperator getIMATCH();
+    method public com.google.firebase.sql.FilterOperator getIMATCH_ALL();
+    method public com.google.firebase.sql.FilterOperator getIMATCH_ANY();
+    method public com.google.firebase.sql.FilterOperator getIN();
+    method public com.google.firebase.sql.FilterOperator getIS();
+    method public com.google.firebase.sql.FilterOperator getISDISTINCT();
+    method public com.google.firebase.sql.FilterOperator getLIKE();
+    method public com.google.firebase.sql.FilterOperator getLIKE_ALL();
+    method public com.google.firebase.sql.FilterOperator getLIKE_ANY();
+    method public com.google.firebase.sql.FilterOperator getLT();
+    method public com.google.firebase.sql.FilterOperator getLTE();
+    method public com.google.firebase.sql.FilterOperator getLTE_ALL();
+    method public com.google.firebase.sql.FilterOperator getLTE_ANY();
+    method public com.google.firebase.sql.FilterOperator getLT_ALL();
+    method public com.google.firebase.sql.FilterOperator getLT_ANY();
+    method public com.google.firebase.sql.FilterOperator getMATCH();
+    method public com.google.firebase.sql.FilterOperator getMATCH_ALL();
+    method public com.google.firebase.sql.FilterOperator getMATCH_ANY();
+    method public com.google.firebase.sql.FilterOperator getNEQ();
+    method public com.google.firebase.sql.FilterOperator getNXL();
+    method public com.google.firebase.sql.FilterOperator getNXR();
+    method public com.google.firebase.sql.FilterOperator getOV();
+    method public com.google.firebase.sql.FilterOperator getPHFTS();
+    method public com.google.firebase.sql.FilterOperator getPLFTS();
+    method public com.google.firebase.sql.FilterOperator getSL();
+    method public com.google.firebase.sql.FilterOperator getSR();
+    method public com.google.firebase.sql.FilterOperator getWFTS();
+    property public final com.google.firebase.sql.FilterOperator ADJ;
+    property public final com.google.firebase.sql.FilterOperator CD;
+    property public final com.google.firebase.sql.FilterOperator CS;
+    property public final com.google.firebase.sql.FilterOperator EQ;
+    property public final com.google.firebase.sql.FilterOperator EQ_ALL;
+    property public final com.google.firebase.sql.FilterOperator EQ_ANY;
+    property public final com.google.firebase.sql.FilterOperator FTS;
+    property public final com.google.firebase.sql.FilterOperator GT;
+    property public final com.google.firebase.sql.FilterOperator GTE;
+    property public final com.google.firebase.sql.FilterOperator GTE_ALL;
+    property public final com.google.firebase.sql.FilterOperator GTE_ANY;
+    property public final com.google.firebase.sql.FilterOperator GT_ALL;
+    property public final com.google.firebase.sql.FilterOperator GT_ANY;
+    property public final com.google.firebase.sql.FilterOperator ILIKE;
+    property public final com.google.firebase.sql.FilterOperator ILIKE_ALL;
+    property public final com.google.firebase.sql.FilterOperator ILIKE_ANY;
+    property public final com.google.firebase.sql.FilterOperator IMATCH;
+    property public final com.google.firebase.sql.FilterOperator IMATCH_ALL;
+    property public final com.google.firebase.sql.FilterOperator IMATCH_ANY;
+    property public final com.google.firebase.sql.FilterOperator IN;
+    property public final com.google.firebase.sql.FilterOperator IS;
+    property public final com.google.firebase.sql.FilterOperator ISDISTINCT;
+    property public final com.google.firebase.sql.FilterOperator LIKE;
+    property public final com.google.firebase.sql.FilterOperator LIKE_ALL;
+    property public final com.google.firebase.sql.FilterOperator LIKE_ANY;
+    property public final com.google.firebase.sql.FilterOperator LT;
+    property public final com.google.firebase.sql.FilterOperator LTE;
+    property public final com.google.firebase.sql.FilterOperator LTE_ALL;
+    property public final com.google.firebase.sql.FilterOperator LTE_ANY;
+    property public final com.google.firebase.sql.FilterOperator LT_ALL;
+    property public final com.google.firebase.sql.FilterOperator LT_ANY;
+    property public final com.google.firebase.sql.FilterOperator MATCH;
+    property public final com.google.firebase.sql.FilterOperator MATCH_ALL;
+    property public final com.google.firebase.sql.FilterOperator MATCH_ANY;
+    property public final com.google.firebase.sql.FilterOperator NEQ;
+    property public final com.google.firebase.sql.FilterOperator NXL;
+    property public final com.google.firebase.sql.FilterOperator NXR;
+    property public final com.google.firebase.sql.FilterOperator OV;
+    property public final com.google.firebase.sql.FilterOperator PHFTS;
+    property public final com.google.firebase.sql.FilterOperator PLFTS;
+    property public final com.google.firebase.sql.FilterOperator SL;
+    property public final com.google.firebase.sql.FilterOperator SR;
+    property public final com.google.firebase.sql.FilterOperator WFTS;
+  }
+
+  @kotlin.SubclassOptInRequired public interface FirebaseSql {
+    method public com.google.firebase.sql.builders.QueryBuilder from(String table);
+    method public com.google.firebase.FirebaseApp getApp();
+    method public com.google.firebase.sql.SqlServiceSettings getSettings();
+    method public com.google.firebase.sql.builders.FilterBuilder rpc(String functionName, java.util.Map<java.lang.String,? extends java.lang.Object?> params = emptyMap(), com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
+    method public <T> com.google.firebase.sql.builders.FilterBuilder rpc(String functionName, T params, kotlinx.serialization.SerializationStrategy<? super T> serializer, com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
+    method public suspend Object? suspendingTerminate(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public void terminate();
+    property public abstract com.google.firebase.FirebaseApp app;
+    property public abstract com.google.firebase.sql.SqlServiceSettings settings;
+    field public static final com.google.firebase.sql.FirebaseSql.Companion Companion;
+  }
+
+  public static final class FirebaseSql.Companion {
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceSettings settings);
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.sql.SqlServiceSettings settings);
+  }
+
+  public final class FirebaseSqlException extends com.google.firebase.FirebaseException {
+    ctor public FirebaseSqlException(String message, com.google.firebase.sql.FirebaseSqlExceptionCategory category, String? code = null, Integer? status = null, String? details = null, String? hint = null, Throwable? cause = null);
+    method public com.google.firebase.sql.FirebaseSqlExceptionCategory getCategory();
+    method public String? getCode();
+    method public String? getDetails();
+    method public String? getHint();
+    method public Integer? getStatus();
+    property public final com.google.firebase.sql.FirebaseSqlExceptionCategory category;
+    property public final String? code;
+    property public final String? details;
+    property public final String? hint;
+    property public final Integer? status;
+  }
+
+  public final class FirebaseSqlExceptionCategory {
+    field public static final com.google.firebase.sql.FirebaseSqlExceptionCategory.Companion Companion;
+  }
+
+  public static final class FirebaseSqlExceptionCategory.Companion {
+    method public com.google.firebase.sql.FirebaseSqlExceptionCategory getCLIENT();
+    method public com.google.firebase.sql.FirebaseSqlExceptionCategory getPLATFORM();
+    method public com.google.firebase.sql.FirebaseSqlExceptionCategory getPOSTGREST();
+    property public final com.google.firebase.sql.FirebaseSqlExceptionCategory CLIENT;
+    property public final com.google.firebase.sql.FirebaseSqlExceptionCategory PLATFORM;
+    property public final com.google.firebase.sql.FirebaseSqlExceptionCategory POSTGREST;
+  }
+
+  public final class FirebaseSqlKt {
+    method public static inline <reified T> com.google.firebase.sql.builders.FilterBuilder rpc(com.google.firebase.sql.FirebaseSql, String functionName, T params, com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
+  }
+
+  public final class OperationResult {
+    method public Long? countOrNull();
+    method public inline <reified T> T decodeAs();
+    method public <T> T decodeAs(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public inline <reified T> T? decodeAsOrNull();
+    method public <T> T? decodeAsOrNull(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public inline <reified T> java.util.List<T> decodeList();
+    method public <T> java.util.List<T> decodeList(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public inline <reified T> T decodeSingle();
+    method public <T> T decodeSingle(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public inline <reified T> T? decodeSingleOrNull();
+    method public <T> T? decodeSingleOrNull(kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public String getData();
+    method public int getStatus();
+    method public String getStatusText();
+    method public kotlin.ranges.LongRange? rangeOrNull();
+    property public final String data;
+    property public final int status;
+    property public final String statusText;
+  }
+
+  public enum Order {
+    enum_constant public static final com.google.firebase.sql.Order ASCENDING;
+    enum_constant public static final com.google.firebase.sql.Order DESCENDING;
+  }
+
+  public final class ReservedHeaderException extends java.lang.IllegalArgumentException {
+    ctor public ReservedHeaderException(String headerName, String message);
+    method public String getHeaderName();
+    property public final String headerName;
+  }
+
+  public final class RpcMethod {
+    field public static final com.google.firebase.sql.RpcMethod.Companion Companion;
+  }
+
+  public static final class RpcMethod.Companion {
+    method public com.google.firebase.sql.RpcMethod getGET();
+    method public com.google.firebase.sql.RpcMethod getHEAD();
+    method public com.google.firebase.sql.RpcMethod getPOST();
+    property public final com.google.firebase.sql.RpcMethod GET;
+    property public final com.google.firebase.sql.RpcMethod HEAD;
+    property public final com.google.firebase.sql.RpcMethod POST;
+  }
+
+  public final class SqlKt {
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceSettings settings);
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.sql.SqlServiceSettings settings);
+  }
+
+  public final class SqlServiceSettings {
+    ctor public SqlServiceSettings(String serviceId, String location, String? schemaName = null, java.util.Map<java.lang.String,java.lang.String> headers = emptyMap(), String? host = null, Integer? port = null, Boolean? sslEnabled = null);
+    method public java.util.Map<java.lang.String,java.lang.String> getHeaders();
+    method public String? getHost();
+    method public String getLocation();
+    method public Integer? getPort();
+    method public String? getSchemaName();
+    method public String getServiceId();
+    method public Boolean? getSslEnabled();
+    property public final java.util.Map<java.lang.String,java.lang.String> headers;
+    property public final String? host;
+    property public final String location;
+    property public final Integer? port;
+    property public final String? schemaName;
+    property public final String serviceId;
+    property public final Boolean? sslEnabled;
+  }
+
+  public final class SqlServiceSettingsKt {
+    method public static com.google.firebase.sql.SqlServiceSettings copy(com.google.firebase.sql.SqlServiceSettings, String serviceId = serviceId, String location = location, String? schemaName = schemaName, java.util.Map<java.lang.String,java.lang.String> headers = this.headers, String? host = host, Integer? port = port, Boolean? sslEnabled = sslEnabled);
+  }
+
+  public final class TextSearchType {
+    field public static final com.google.firebase.sql.TextSearchType.Companion Companion;
+  }
+
+  public static final class TextSearchType.Companion {
+    method public com.google.firebase.sql.TextSearchType getNONE();
+    method public com.google.firebase.sql.TextSearchType getPHRASETO();
+    method public com.google.firebase.sql.TextSearchType getPLAINTO();
+    method public com.google.firebase.sql.TextSearchType getWEBSEARCH();
+    property public final com.google.firebase.sql.TextSearchType NONE;
+    property public final com.google.firebase.sql.TextSearchType PHRASETO;
+    property public final com.google.firebase.sql.TextSearchType PLAINTO;
+    property public final com.google.firebase.sql.TextSearchType WEBSEARCH;
+  }
+
+}
+
+package com.google.firebase.sql.builders {
+
+  @kotlin.SubclassOptInRequired public interface FilterBuilder extends com.google.firebase.sql.builders.TransformBuilder {
+    method public com.google.firebase.sql.builders.FilterBuilder adjacent(String column, String range);
+    method public com.google.firebase.sql.builders.FilterBuilder and(String expr, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.FilterBuilder contained(String column, java.util.List<?> values);
+    method public com.google.firebase.sql.builders.FilterBuilder contains(String column, java.util.List<?> values);
+    method public com.google.firebase.sql.builders.FilterBuilder dryRun();
+    method public com.google.firebase.sql.builders.FilterBuilder eq(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder exact(String column, Boolean? value);
+    method public com.google.firebase.sql.builders.FilterBuilder filter(String column, com.google.firebase.sql.FilterOperator operator, Object? value);
+    method public com.google.firebase.sql.builders.FilterBuilder filterNot(String column, com.google.firebase.sql.FilterOperator operator, Object? value);
+    method public com.google.firebase.sql.builders.FilterBuilder gt(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder gte(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder ilike(String column, String pattern);
+    method public com.google.firebase.sql.builders.FilterBuilder ilikeAll(String column, java.util.List<java.lang.String> patterns);
+    method public com.google.firebase.sql.builders.FilterBuilder ilikeAny(String column, java.util.List<java.lang.String> patterns);
+    method public com.google.firebase.sql.builders.FilterBuilder isDistinct(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder isIn(String column, java.util.List<?> values);
+    method public com.google.firebase.sql.builders.FilterBuilder like(String column, String pattern);
+    method public com.google.firebase.sql.builders.FilterBuilder likeAll(String column, java.util.List<java.lang.String> patterns);
+    method public com.google.firebase.sql.builders.FilterBuilder likeAny(String column, java.util.List<java.lang.String> patterns);
+    method public com.google.firebase.sql.builders.FilterBuilder limit(long count, String? referencedTable);
+    method public com.google.firebase.sql.builders.FilterBuilder lt(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder lte(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder match(java.util.Map<java.lang.String,?> query);
+    method public com.google.firebase.sql.builders.FilterBuilder maxAffected(long count);
+    method public com.google.firebase.sql.builders.FilterBuilder neq(String column, Object value);
+    method public com.google.firebase.sql.builders.FilterBuilder noRetry();
+    method public com.google.firebase.sql.builders.FilterBuilder notIn(String column, java.util.List<?> values);
+    method public com.google.firebase.sql.builders.FilterBuilder or(String expr, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.FilterBuilder order(String column, com.google.firebase.sql.Order order, Boolean? nullsFirst, String? referencedTable);
+    method public com.google.firebase.sql.builders.FilterBuilder overlaps(String column, java.util.List<?> values);
+    method public com.google.firebase.sql.builders.FilterBuilder range(kotlin.ranges.LongRange range, String? referencedTable);
+    method public com.google.firebase.sql.builders.FilterBuilder range(long from, long to, String? referencedTable);
+    method public com.google.firebase.sql.builders.FilterBuilder rangeGt(String column, String range);
+    method public com.google.firebase.sql.builders.FilterBuilder rangeGte(String column, String range);
+    method public com.google.firebase.sql.builders.FilterBuilder rangeLt(String column, String range);
+    method public com.google.firebase.sql.builders.FilterBuilder rangeLte(String column, String range);
+    method public com.google.firebase.sql.builders.FilterBuilder regexIMatch(String column, String pattern);
+    method public com.google.firebase.sql.builders.FilterBuilder regexMatch(String column, String pattern);
+    method public com.google.firebase.sql.builders.FilterBuilder setHeader(String name, String value);
+    method public com.google.firebase.sql.builders.FilterBuilder stripNulls();
+    method public com.google.firebase.sql.builders.FilterBuilder textSearch(String column, String query, com.google.firebase.sql.TextSearchType textSearchType, String? config = null);
+  }
+
+  @kotlin.SubclassOptInRequired public interface QueryBuilder {
+    method public com.google.firebase.sql.builders.FilterBuilder delete(com.google.firebase.sql.Count? count = null);
+    method public com.google.firebase.sql.builders.FilterBuilder insert(java.util.List<? extends java.util.Map<java.lang.String,? extends java.lang.Object?>> data, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public com.google.firebase.sql.builders.FilterBuilder insert(java.util.Map<java.lang.String,? extends java.lang.Object?> data, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public <T> com.google.firebase.sql.builders.FilterBuilder insert(T data, kotlinx.serialization.SerializationStrategy<? super T> serializer, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public com.google.firebase.sql.builders.FilterBuilder select(String columns = "*", boolean head = false, com.google.firebase.sql.Count? count = null);
+    method public com.google.firebase.sql.builders.FilterBuilder update(java.util.Map<java.lang.String,? extends java.lang.Object?> data, com.google.firebase.sql.Count? count = null);
+    method public <T> com.google.firebase.sql.builders.FilterBuilder update(T data, kotlinx.serialization.SerializationStrategy<? super T> serializer, com.google.firebase.sql.Count? count = null);
+    method public com.google.firebase.sql.builders.FilterBuilder upsert(java.util.List<? extends java.util.Map<java.lang.String,? extends java.lang.Object?>> data, String? onConflict = null, boolean ignoreDuplicates = false, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public com.google.firebase.sql.builders.FilterBuilder upsert(java.util.Map<java.lang.String,? extends java.lang.Object?> data, String? onConflict = null, boolean ignoreDuplicates = false, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public <T> com.google.firebase.sql.builders.FilterBuilder upsert(T data, kotlinx.serialization.SerializationStrategy<? super T> serializer, String? onConflict = null, boolean ignoreDuplicates = false, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+  }
+
+  public final class QueryBuilderKt {
+    method public static inline <reified T> com.google.firebase.sql.builders.FilterBuilder insert(com.google.firebase.sql.builders.QueryBuilder, T data, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+    method public static inline <reified T> com.google.firebase.sql.builders.FilterBuilder update(com.google.firebase.sql.builders.QueryBuilder, T data, com.google.firebase.sql.Count? count = null);
+    method public static inline <reified T> com.google.firebase.sql.builders.FilterBuilder upsert(com.google.firebase.sql.builders.QueryBuilder, T data, String? onConflict = null, boolean ignoreDuplicates = false, com.google.firebase.sql.Count? count = null, boolean defaultToNull = true);
+  }
+
+  @kotlin.SubclassOptInRequired public interface TransformBuilder {
+    method public com.google.firebase.sql.builders.TransformBuilder csv();
+    method public com.google.firebase.sql.builders.TransformBuilder dryRun();
+    method public suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.sql.OperationResult>);
+    method public com.google.firebase.sql.builders.TransformBuilder explain(boolean analyze = false, boolean verbose = false, boolean settings = false, boolean buffers = false, boolean wal = false, com.google.firebase.sql.ExplainFormat format = ExplainFormat.TEXT);
+    method public com.google.firebase.sql.builders.TransformBuilder geojson();
+    method public com.google.firebase.sql.builders.TransformBuilder limit(long count, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.TransformBuilder maxAffected(long count);
+    method public com.google.firebase.sql.builders.TransformBuilder maybeSingle();
+    method public com.google.firebase.sql.builders.TransformBuilder noRetry();
+    method public com.google.firebase.sql.builders.TransformBuilder order(String column, com.google.firebase.sql.Order order = com.google.firebase.sql.Order.ASCENDING, Boolean? nullsFirst = null, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.TransformBuilder range(kotlin.ranges.LongRange range, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.TransformBuilder range(long from, long to, String? referencedTable = null);
+    method public com.google.firebase.sql.builders.FilterBuilder select(String columns = "*");
+    method public com.google.firebase.sql.builders.TransformBuilder setHeader(String name, String value);
+    method public com.google.firebase.sql.builders.TransformBuilder single();
+    method public com.google.firebase.sql.builders.TransformBuilder stripNulls();
+  }
+
+}
+
