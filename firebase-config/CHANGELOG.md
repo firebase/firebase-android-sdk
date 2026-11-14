@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed the Realtime stream staying stopped, without calling `onError`, when it was
+  started while a persisted backoff was still in effect.
+
 # 24.0.1
 
 - [fixed] Fixed a `ConcurrentModificationException` crash when a config update listener is removed from inside its own callback. (#8686)

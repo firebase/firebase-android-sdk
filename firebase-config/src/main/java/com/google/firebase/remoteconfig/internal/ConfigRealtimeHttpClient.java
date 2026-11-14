@@ -520,6 +520,10 @@ public class ConfigRealtimeHttpClient {
         sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
+      // No connection was opened, so release the flag. While it is set,
+      // canMakeHttpStreamConnection() is false and the retry below would be dropped, leaving the
+      // stream stopped until the process dies.
+      setIsHttpConnectionRunning(false);
       retryHttpConnectionWhenBackoffEnds();
       return;
     }
