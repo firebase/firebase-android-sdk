@@ -10,6 +10,9 @@
   `error_prone_annotations` from the `io.grpc` dependencies. (#8772)
 - [feature] Graduate Pipeline Search from Public Preview to GA.
   ([#8751](https://github.com/firebase/firebase-android-sdk/pull/8751))
+- [fixed] Fixed a crash when the server closed a listen or write stream with
+  an `OK` status while it was still needed. Firestore now reconnects with
+  backoff. (#8778)
 
 # 27.1.0
 
