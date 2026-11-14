@@ -181,7 +181,7 @@ play-services-stats = { module = "com.google.android.gms:play-services-stats", v
 play-services-vision = { module = "com.google.android.gms:play-services-vision", version.ref = "playServicesVision" }
 playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.9.0" }
 playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.9.0" }
-playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.4.0" }
+playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.4.1" }
 proto-google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version.ref = "protoGoogleCommonProtos" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
 protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
