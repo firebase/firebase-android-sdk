@@ -27,7 +27,7 @@ import org.junit.Test
 class TestReportGeneratorTests {
 
   @Test
-  fun `parseTestReports aggregates unit and integration test workflows in parallel`() {
+  fun `parseTestReports aggregates reports from split unit and integration workflows`() {
     val generator = spyk(TestReportGenerator("test-token"))
 
     every { generator.request("actions/runs?head_sha=abc123") } returns

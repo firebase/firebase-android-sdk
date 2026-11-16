@@ -259,13 +259,10 @@ open class TestReportGenerator(private val apiToken: String) {
       val name =
         run["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find CI name")
       if (name in CI_TEST_WORKFLOW_NAMES && seenWorkflows.add(name)) {
-        reports.addAll(
-          parseCITests(
-            run["id"]?.jsonPrimitive?.content
-              ?: throw RuntimeException("Couldn't find run id for $commit run $name"),
-            commit,
-          )
-        )
+        val runId =
+          run["id"]?.jsonPrimitive?.content
+            ?: throw RuntimeException("Couldn't find run id for $commit run $name")
+        reports.addAll(parseCITests(runId, commit))
       }
     }
     return reports
