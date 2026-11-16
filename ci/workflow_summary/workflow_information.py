@@ -20,7 +20,7 @@ import logging
 import os 
 
 
-'''A utility collecting ci_test.yml workflow failure logs.
+'''A utility collecting CI workflow information (for example, ci_unit_tests.yml or ci_integration_tests.yml).
 
 Usage:
 
