@@ -20,48 +20,46 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 
 /**
- * Returns the [FirebaseSql] instance of the default [FirebaseApp] for the given [settings], and
+ * Returns the [FirebaseSql] instance of the default [FirebaseApp] for the given [config], and
  * creates it on the first call.
  *
- * It is a shorthand for [FirebaseSql.getInstance], which describes how the instances are cached.
+ * It is a shorthand for [FirebaseSql.getInstance], which describes how the instances are cached. To
+ * send custom headers with every request, call [FirebaseSql.setHeaders] on the instance before its
+ * first request.
  *
  * **Example: the production service**
  * ```kotlin
- * val sql =
- *   Firebase.sql(SqlServiceSettings(serviceId = "my-service", location = "us-central1"))
+ * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
  * ```
  *
- * @param settings The service, and how to send it the requests. See [SqlServiceSettings].
- * @return The cached instance for these settings, or a new instance.
- * @throws ReservedHeaderException When [SqlServiceSettings.headers] has a header that the SDK
- * reserves, such as `Authorization`.
- * @throws IllegalArgumentException When a property of [settings] breaks the constraint that
- * [SqlServiceSettings] documents for it, or when the options of the default app have no project ID.
+ * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+ * @return The cached instance for this config, or a new instance.
+ * @throws IllegalArgumentException When a property of [config] breaks the constraint that
+ * [SqlServiceConfig] documents for it, or when the options of the default app have no project ID.
  * @throws IllegalStateException When the default [FirebaseApp] is not initialized, or was deleted.
  */
-public fun Firebase.sql(settings: SqlServiceSettings): FirebaseSql =
-  FirebaseSql.getInstance(settings)
+public fun Firebase.sql(config: SqlServiceConfig): FirebaseSql = FirebaseSql.getInstance(config)
 
 /**
- * Returns the [FirebaseSql] instance of [app] for the given [settings], and creates it on the first
+ * Returns the [FirebaseSql] instance of [app] for the given [config], and creates it on the first
  * call.
  *
- * It is a shorthand for [FirebaseSql.getInstance], which describes how the instances are cached.
+ * It is a shorthand for [FirebaseSql.getInstance], which describes how the instances are cached. To
+ * send custom headers with every request, call [FirebaseSql.setHeaders] on the instance before its
+ * first request.
  *
  * **Example: an app other than the default app**
  * ```kotlin
  * val otherSql =
- *   Firebase.sql(otherApp, SqlServiceSettings(serviceId = "my-service", location = "us-central1"))
+ *   Firebase.sql(otherApp, SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
  * ```
  *
  * @param app The app whose project ID and tokens the instance uses.
- * @param settings The service, and how to send it the requests. See [SqlServiceSettings].
- * @return The cached instance for this app and these settings, or a new instance.
- * @throws ReservedHeaderException When [SqlServiceSettings.headers] has a header that the SDK
- * reserves, such as `Authorization`.
- * @throws IllegalArgumentException When a property of [settings] breaks the constraint that
- * [SqlServiceSettings] documents for it, or when the options of [app] have no project ID.
+ * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+ * @return The cached instance for this app and this config, or a new instance.
+ * @throws IllegalArgumentException When a property of [config] breaks the constraint that
+ * [SqlServiceConfig] documents for it, or when the options of [app] have no project ID.
  * @throws IllegalStateException When [app] was deleted.
  */
-public fun Firebase.sql(app: FirebaseApp, settings: SqlServiceSettings): FirebaseSql =
-  FirebaseSql.getInstance(app, settings)
+public fun Firebase.sql(app: FirebaseApp, config: SqlServiceConfig): FirebaseSql =
+  FirebaseSql.getInstance(app, config)

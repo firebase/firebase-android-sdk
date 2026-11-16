@@ -27,7 +27,8 @@ import kotlinx.serialization.serializer
  * The entry point of Firebase SQL: sends PostgREST requests to the Cloud SQL for PostgreSQL
  * database of a Firebase SQL service.
  *
- * Get an instance with `Firebase.sql(settings)`, or with [getInstance].
+ * Get an instance with `Firebase.sql(config)`, or with [getInstance]. To send custom headers with
+ * every request, call [setHeaders] before the first request.
  *
  * Start each request with [from] for a table or a view, or with [rpc] for a PostgreSQL function,
  * add filters and modifiers, then call `execute()`, which sends the request and returns an
@@ -67,8 +68,7 @@ import kotlinx.serialization.serializer
  *
  * **Example: read rows**
  * ```kotlin
- * val sql =
- *   Firebase.sql(SqlServiceSettings(serviceId = "my-service", location = "us-central1"))
+ * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
  *
  * try {
  *   val products = sql.from("products").select().lt("price", 10).execute().decodeList<Product>()
@@ -88,6 +88,19 @@ import kotlinx.serialization.serializer
  *
  * val sum = sql.rpc("add_numbers", mapOf("a" to 2, "b" to 3)).execute().decodeAs<Int>() // 5
  * ```
+ *
+ * **Example: send a custom header with every request**
+ * ```kotlin
+ * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ * // Before the first request. Setting the same headers again later has no effect.
+ * sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+ *
+ * val products = sql.from("products").select().execute().decodeList<Product>()
+ * ```
+ *
+ * When the headers can differ between the calls that get the instance, check [isMutable] before
+ * [setHeaders]: once the instance is in use, [setHeaders] throws a [FirebaseSqlMutationException]
+ * for other headers.
  */
 @SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface FirebaseSql {
@@ -99,15 +112,87 @@ public interface FirebaseSql {
   public val app: FirebaseApp
 
   /**
-   * The settings that created this instance, as they were given: a property that was not set stays
-   * `null`, for example [SqlServiceSettings.host] for the production host.
+   * The config that created this instance, as it was given: a property that was not set stays
+   * `null`, for example [SqlServiceConfig.host] for the production host.
    *
-   * When [getInstance] returns this instance for other settings that resolve to the same URL and
-   * schema, this property keeps the settings of the call that created the instance. The settings
-   * have no project ID: the project ID of the service is always the one in the options of the [app]
-   * .
+   * When [getInstance] returns this instance for another config that resolves to the same URL and
+   * schema, this property keeps the config of the call that created the instance. The config has no
+   * project ID: the project ID of the service is always the one in the options of the [app].
    */
-  public val settings: SqlServiceSettings
+  public val config: SqlServiceConfig
+
+  /**
+   * Whether [setHeaders] can still change the headers of this instance.
+   *
+   * It is `true` for a new instance, and becomes `false` on the first call of [from], [rpc],
+   * [terminate], or [suspendingTerminate]: from then on, the requests of the instance use its
+   * headers, or the instance is terminated. It never becomes `true` again. A call of [from] or
+   * [rpc] that throws because of its arguments, such as `from("")`, does not count.
+   *
+   * [getInstance] returns the same instance for equal configs, so another part of the app can have
+   * used it already, with its own headers. When the headers can differ between the calls that get
+   * the instance, check this property before [setHeaders], which throws a
+   * [FirebaseSqlMutationException] for other headers once the instance is in use. A call of
+   * [setHeaders] with the same headers never throws, so it needs no check.
+   *
+   * **Example: set the headers unless the instance is already in use**
+   * ```kotlin
+   * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+   * if (sql.isMutable) {
+   *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+   * }
+   * ```
+   */
+  public val isMutable: Boolean
+
+  /**
+   * Sets the custom headers that every request of this instance sends. Call it before the first
+   * request: the first call of [from], [rpc], [terminate], or [suspendingTerminate] freezes the
+   * headers, and [isMutable] becomes `false`.
+   *
+   * Each call replaces the headers of the earlier calls, and an empty map removes them. The map is
+   * copied, so later changes to it have no effect. Header names are compared ignoring case. A
+   * header that a request sets wins over the header with the same name here: a header set with
+   * `setHeader()`, and the `Accept` header that the SDK computes for a request, for example for
+   * `single()`. `Prefer` is merged instead: its preferences here are added after those of the
+   * request, which the SDK computes, for example for a count, or which `setHeader()` sets, so that
+   * the preferences of the request win.
+   *
+   * Once [isMutable] is `false`, a call with headers equal to the current headers has no effect, so
+   * code that runs again, such as `onCreate()` after a rotation, can set the same headers safely.
+   * Headers are equal when they have the same names, ignoring case, and the same values, ignoring
+   * the whitespace at their start and end. A call with other headers throws a
+   * [FirebaseSqlMutationException]. To send other headers, set a header for one request with
+   * `setHeader()`, or terminate this instance and set the headers on the new instance that
+   * [getInstance] returns.
+   *
+   * It can be called from any thread. When another thread calls [from] or [rpc] at the same time,
+   * the headers change either before the instance uses them, or not at all: [setHeaders] then
+   * throws for other headers, even right after [isMutable] returned `true`. The headers never
+   * change once the instance is in use.
+   *
+   * **Example: send a custom header with every request**
+   * ```kotlin
+   * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+   * sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+   *
+   * // GET /products?select=* with the header X-Request-Source: sync
+   * val products = sql.from("products").select().execute().decodeList<Product>()
+   * ```
+   *
+   * @param headers The custom headers, by name. `Authorization`, the headers that the SDK sets
+   * itself, and the headers that Firebase reserves are not allowed, in any case: the tokens
+   * (`x-firebase-auth-token` and `X-Firebase-AppCheck`), the schema (`Accept-Profile` and
+   * `Content-Profile`), the versions and the app ID (`x-goog-api-client`, `x-client-version`, and
+   * `x-firebase-gmpid`), `X-Retry-Count`, the routing headers (`x-firebase-sqlconnect-affinity` and
+   * `x-goog-request-params`), and the heartbeat headers (`x-firebase-client` and
+   * `x-firebase-client-log-type`). Choose the schema with [SqlServiceConfig.schemaName].
+   * @throws ReservedHeaderException If [headers] has a header that the SDK reserves, whether or not
+   * this instance is mutable. It is an `IllegalArgumentException`.
+   * @throws FirebaseSqlMutationException If [isMutable] is `false`, and [headers] are not equal to
+   * the current headers. It is an `IllegalStateException`.
+   */
+  public fun setHeaders(headers: Map<String, String>)
 
   /**
    * Starts a request on the table or view named [table].
@@ -116,9 +201,9 @@ public interface FirebaseSql {
    * [QueryBuilder.insert], [QueryBuilder.upsert], [QueryBuilder.update], or [QueryBuilder.delete]
    * to change them. Then add filters and modifiers, and call `execute()`.
    *
-   * The table must be in the schema of this instance (see [SqlServiceSettings.schemaName]). Its
-   * name is case-sensitive, and PostgreSQL stores unquoted names in lowercase. The name is sent as
-   * one segment of the URL path, so it can contain any character, for example a space or a `/`.
+   * The table must be in the schema of this instance (see [SqlServiceConfig.schemaName]). Its name
+   * is case-sensitive, and PostgreSQL stores unquoted names in lowercase. The name is sent as one
+   * segment of the URL path, so it can contain any character, for example a space or a `/`.
    *
    * PostgREST: `/<table>`, for example `GET /products?select=*`
    *
@@ -340,22 +425,22 @@ public interface FirebaseSql {
    * - A request in flight stops, whether it is getting its tokens, waiting for the server, or
    * waiting before a retry. Its `execute()` throws an [IllegalStateException] that says that the
    * instance is terminated.
-   * - [getInstance] with the same settings creates another instance, which works normally.
+   * - [isMutable] is `false`, so [setHeaders] throws a [FirebaseSqlMutationException] for headers
+   * that differ from the headers of this instance.
+   * - [getInstance] with the same config creates another instance, which works normally.
    *
    * Calling [terminate] again has no effect. Terminating an instance does not terminate the other
    * instances. Deleting the [app] terminates all its instances.
    *
-   * [getInstance] returns the cached instance with its own settings until it is terminated, so
-   * terminate an instance to change its headers.
+   * The headers of an instance can no longer change once it is in use, so terminate it to change
+   * them: the new instance that [getInstance] returns has no custom headers until [setHeaders] sets
+   * them.
    *
-   * **Example: change the headers of an instance**
+   * **Example: change the headers of an instance that is in use**
    * ```kotlin
    * sql.terminate()
-   * val withHeader =
-   *   Firebase.sql(
-   *     sql.app,
-   *     sql.settings.copy(headers = mapOf("X-Request-Source" to "sync")),
-   *   )
+   * val withHeader = Firebase.sql(sql.app, sql.config)
+   * withHeader.setHeaders(mapOf("X-Request-Source" to "sync"))
    * ```
    */
   public fun terminate()
@@ -370,20 +455,22 @@ public interface FirebaseSql {
   /** Gets the [FirebaseSql] instances with [getInstance], or its shorthand `Firebase.sql()`. */
   public companion object {
     /**
-     * Returns the [FirebaseSql] instance of the default [FirebaseApp] for the given [settings], and
+     * Returns the [FirebaseSql] instance of the default [FirebaseApp] for the given [config], and
      * creates it on the first call.
      *
-     * `Firebase.sql(settings)` is a shorthand for this call.
+     * `Firebase.sql(config)` is a shorthand for this call.
      *
-     * Instances are cached by app, by the PostgREST URL that the settings resolve to, and by
-     * schema:
-     * - A call whose settings resolve to the same URL and schema as an open instance returns that
-     * instance, which keeps the settings that created it. For example, settings without a host and
-     * settings with the production host resolve to the same URL. To use other headers, call
-     * [FirebaseSql.terminate] on that instance first, then call [getInstance] again.
-     * - Settings with `schemaName = null` and settings with `schemaName = "public"` give two
+     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema:
+     * - A call whose config resolves to the same URL and schema as an open instance returns that
+     * instance, which keeps the config that created it, and the headers that [setHeaders] set on
+     * it. For example, a config without a host and a config with the production host resolve to the
+     * same URL.
+     * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
-     * [getInstance] with its name in [SqlServiceSettings.schemaName].
+     * [getInstance] with its name in [SqlServiceConfig.schemaName].
+     *
+     * A new instance sends no custom header. To send custom headers with every request, call
+     * [setHeaders] on the instance before its first request.
      *
      * The project ID of the service is the one in the `FirebaseOptions` of the default app, which
      * come from the `google-services.json` file of the app. The default app is initialized
@@ -396,13 +483,13 @@ public interface FirebaseSql {
      * request that carried a token, the SDK sends that request once more with refreshed tokens,
      * even a write: the server does not run a request whose token it rejects. See [FirebaseSql].
      *
-     * The settings are checked on every call, also when the instance is cached.
+     * The config is checked on every call, also when the instance is cached.
      *
      * **Example: the production service**
      * ```kotlin
      * val sql =
      *   FirebaseSql.getInstance(
-     *     SqlServiceSettings(serviceId = "my-service", location = "us-central1")
+     *     SqlServiceConfig(serviceId = "my-service", location = "us-central1")
      *   )
      * ```
      *
@@ -411,7 +498,7 @@ public interface FirebaseSql {
      * // 10.0.2.2 is the address of the computer that runs the Android emulator.
      * val local =
      *   FirebaseSql.getInstance(
-     *     SqlServiceSettings(
+     *     SqlServiceConfig(
      *       serviceId = "my-service",
      *       location = "us-central1",
      *       host = "10.0.2.2",
@@ -421,44 +508,35 @@ public interface FirebaseSql {
      *   )
      * ```
      *
-     * **Example: the cache**
+     * **Example: the configs that share an instance**
      * ```kotlin
-     * val settings = SqlServiceSettings(serviceId = "my-service", location = "us-central1")
-     * val sql = FirebaseSql.getInstance(settings)
-     * val sync = mapOf("X-Request-Source" to "sync")
+     * val config = SqlServiceConfig(serviceId = "my-service", location = "us-central1")
+     * val sql = FirebaseSql.getInstance(config)
+     * sql.setHeaders(mapOf("X-Request-Source" to "sync"))
      *
-     * // The same URL and schema give the same instance, with its own settings.
-     * val same =
-     *   FirebaseSql.getInstance(settings.copy(host = "firebasedataconnect.googleapis.com"))
-     * // This instance still sends no custom header.
-     * val alsoSame = FirebaseSql.getInstance(settings.copy(headers = sync))
+     * // The same URL and schema give the same instance, which sends the same headers.
+     * val same = FirebaseSql.getInstance(config.copy(host = "firebasedataconnect.googleapis.com"))
      *
-     * // Another schema gives another instance.
-     * val inventory = FirebaseSql.getInstance(settings.copy(schemaName = "inventory"))
-     *
-     * // To change the headers, terminate the instance first.
-     * sql.terminate()
-     * val withHeader = FirebaseSql.getInstance(settings.copy(headers = sync))
+     * // Another schema gives another instance, without custom headers.
+     * val inventory = FirebaseSql.getInstance(config.copy(schemaName = "inventory"))
      * ```
      *
-     * @param settings The service, and how to send it the requests. See [SqlServiceSettings].
-     * @return The cached instance for these settings, or a new instance.
-     * @throws ReservedHeaderException When [SqlServiceSettings.headers] has a header that the SDK
-     * reserves, such as `Authorization`.
-     * @throws IllegalArgumentException When a property of [settings] breaks the constraint that
-     * [SqlServiceSettings] documents for it: an empty service ID, location, or schema name, or an
+     * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+     * @return The cached instance for this config, or a new instance.
+     * @throws IllegalArgumentException When a property of [config] breaks the constraint that
+     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, or an
      * invalid host or port. Also when the options of the default app have no project ID.
      * @throws IllegalStateException When the default [FirebaseApp] is not initialized, or was
      * deleted.
      */
-    public fun getInstance(settings: SqlServiceSettings): FirebaseSql =
-      getInstance(FirebaseApp.getInstance(), settings)
+    public fun getInstance(config: SqlServiceConfig): FirebaseSql =
+      getInstance(FirebaseApp.getInstance(), config)
 
     /**
-     * Returns the [FirebaseSql] instance of [app] for the given [settings], and creates it on the
+     * Returns the [FirebaseSql] instance of [app] for the given [config], and creates it on the
      * first call.
      *
-     * `Firebase.sql(app, settings)` is a shorthand for this call.
+     * `Firebase.sql(app, config)` is a shorthand for this call.
      *
      * Use it for a [FirebaseApp] other than the default app. Each app has its own instances. The
      * project ID of the service is the one in the `FirebaseOptions` of [app].
@@ -469,17 +547,19 @@ public interface FirebaseSql {
      * request that carried a token, the SDK sends that request once more with refreshed tokens,
      * even a write: the server does not run a request whose token it rejects. See [FirebaseSql].
      *
-     * Instances are cached by app, by the PostgREST URL that the settings resolve to, and by
-     * schema:
-     * - A call whose settings resolve to the same URL and schema as an open instance returns that
-     * instance, which keeps the settings that created it. For example, settings without a host and
-     * settings with the production host resolve to the same URL. To use other headers, call
-     * [FirebaseSql.terminate] on that instance first, then call [getInstance] again.
-     * - Settings with `schemaName = null` and settings with `schemaName = "public"` give two
+     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema:
+     * - A call whose config resolves to the same URL and schema as an open instance returns that
+     * instance, which keeps the config that created it, and the headers that [setHeaders] set on
+     * it. For example, a config without a host and a config with the production host resolve to the
+     * same URL.
+     * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
-     * [getInstance] with its name in [SqlServiceSettings.schemaName].
+     * [getInstance] with its name in [SqlServiceConfig.schemaName].
      *
-     * The settings are checked on every call, also when the instance is cached.
+     * A new instance sends no custom header. To send custom headers with every request, call
+     * [setHeaders] on the instance before its first request.
+     *
+     * The config is checked on every call, also when the instance is cached.
      *
      * **Example: an app other than the default app**
      * ```kotlin
@@ -487,23 +567,21 @@ public interface FirebaseSql {
      * val otherSql =
      *   FirebaseSql.getInstance(
      *     otherApp,
-     *     SqlServiceSettings(serviceId = "my-service", location = "us-central1"),
+     *     SqlServiceConfig(serviceId = "my-service", location = "us-central1"),
      *   )
      * ```
      *
      * @param app The app whose project ID and tokens the instance uses.
-     * @param settings The service, and how to send it the requests. See [SqlServiceSettings].
-     * @return The cached instance for this app and these settings, or a new instance.
-     * @throws ReservedHeaderException When [SqlServiceSettings.headers] has a header that the SDK
-     * reserves, such as `Authorization`.
-     * @throws IllegalArgumentException When a property of [settings] breaks the constraint that
-     * [SqlServiceSettings] documents for it: an empty service ID, location, or schema name, or an
+     * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+     * @return The cached instance for this app and this config, or a new instance.
+     * @throws IllegalArgumentException When a property of [config] breaks the constraint that
+     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, or an
      * invalid host or port. Also when the options of [app] have no project ID.
      * @throws IllegalStateException When [app] was deleted.
      */
     @android.annotation.SuppressLint("FirebaseUseExplicitDependencies")
-    public fun getInstance(app: FirebaseApp, settings: SqlServiceSettings): FirebaseSql =
-      app.get(FirebaseSqlComponent::class.java).get(settings)
+    public fun getInstance(app: FirebaseApp, config: SqlServiceConfig): FirebaseSql =
+      app.get(FirebaseSqlComponent::class.java).get(config)
   }
 }
 

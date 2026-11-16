@@ -1419,7 +1419,7 @@ class OperationsExecutorTest {
       authDeferred = auth?.let { deferred(it) },
       appCheckDeferred = appCheck?.let { deferred(it) },
       networkClient = client,
-      headers = headers,
+      headers = { headers },
       appId = appId,
       timeoutMillis = timeoutMillis,
       maxRetries = maxRetries,

@@ -1,0 +1,44 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.firebase.sql
+
+/**
+ * The error of a change to a [FirebaseSql] instance that can no longer change.
+ *
+ * [FirebaseSql.setHeaders] throws it when [FirebaseSql.isMutable] is `false`, that is after the
+ * first call of [FirebaseSql.from], [FirebaseSql.rpc], [FirebaseSql.terminate], or
+ * [FirebaseSql.suspendingTerminate], for headers that are not equal to the headers of the instance.
+ * It does not throw it for equal headers, so that code that runs again can set the same headers.
+ *
+ * It is about the instance, not about the data: the errors of an insert, an update, or a delete are
+ * [FirebaseSqlException]s.
+ *
+ * It is an [IllegalStateException], like the other errors of a call that the state of the instance
+ * does not allow, so code that catches `IllegalStateException` also catches it. Tests can create
+ * it, for example to check how an app handles it.
+ *
+ * **Example: set the headers only on an instance that is not in use yet**
+ * ```kotlin
+ * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ * if (sql.isMutable) {
+ *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+ * }
+ * ```
+ *
+ * @param message The message of the error.
+ */
+public class FirebaseSqlMutationException(message: String) : IllegalStateException(message)

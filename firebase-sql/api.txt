@@ -121,19 +121,22 @@ package com.google.firebase.sql {
   @kotlin.SubclassOptInRequired public interface FirebaseSql {
     method public com.google.firebase.sql.builders.QueryBuilder from(String table);
     method public com.google.firebase.FirebaseApp getApp();
-    method public com.google.firebase.sql.SqlServiceSettings getSettings();
+    method public com.google.firebase.sql.SqlServiceConfig getConfig();
+    method public boolean isMutable();
     method public com.google.firebase.sql.builders.FilterBuilder rpc(String functionName, java.util.Map<java.lang.String,? extends java.lang.Object?> params = emptyMap(), com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
     method public <T> com.google.firebase.sql.builders.FilterBuilder rpc(String functionName, T params, kotlinx.serialization.SerializationStrategy<? super T> serializer, com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
+    method public void setHeaders(java.util.Map<java.lang.String,java.lang.String> headers);
     method public suspend Object? suspendingTerminate(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void terminate();
     property public abstract com.google.firebase.FirebaseApp app;
-    property public abstract com.google.firebase.sql.SqlServiceSettings settings;
+    property public abstract com.google.firebase.sql.SqlServiceConfig config;
+    property public abstract boolean isMutable;
     field public static final com.google.firebase.sql.FirebaseSql.Companion Companion;
   }
 
   public static final class FirebaseSql.Companion {
-    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceSettings settings);
-    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.sql.SqlServiceSettings settings);
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceConfig config);
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.sql.SqlServiceConfig config);
   }
 
   public final class FirebaseSqlException extends com.google.firebase.FirebaseException {
@@ -165,6 +168,10 @@ package com.google.firebase.sql {
 
   public final class FirebaseSqlKt {
     method public static inline <reified T> com.google.firebase.sql.builders.FilterBuilder rpc(com.google.firebase.sql.FirebaseSql, String functionName, T params, com.google.firebase.sql.RpcMethod method = RpcMethod.POST, com.google.firebase.sql.Count? count = null);
+  }
+
+  public final class FirebaseSqlMutationException extends java.lang.IllegalStateException {
+    ctor public FirebaseSqlMutationException(String message);
   }
 
   public final class OperationResult {
@@ -213,20 +220,18 @@ package com.google.firebase.sql {
   }
 
   public final class SqlKt {
-    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceSettings settings);
-    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.sql.SqlServiceSettings settings);
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceConfig config);
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.sql.SqlServiceConfig config);
   }
 
-  public final class SqlServiceSettings {
-    ctor public SqlServiceSettings(String serviceId, String location, String? schemaName = null, java.util.Map<java.lang.String,java.lang.String> headers = emptyMap(), String? host = null, Integer? port = null, Boolean? sslEnabled = null);
-    method public java.util.Map<java.lang.String,java.lang.String> getHeaders();
+  public final class SqlServiceConfig {
+    ctor public SqlServiceConfig(String serviceId, String location, String? schemaName = null, String? host = null, Integer? port = null, Boolean? sslEnabled = null);
     method public String? getHost();
     method public String getLocation();
     method public Integer? getPort();
     method public String? getSchemaName();
     method public String getServiceId();
     method public Boolean? getSslEnabled();
-    property public final java.util.Map<java.lang.String,java.lang.String> headers;
     property public final String? host;
     property public final String location;
     property public final Integer? port;
@@ -235,8 +240,8 @@ package com.google.firebase.sql {
     property public final Boolean? sslEnabled;
   }
 
-  public final class SqlServiceSettingsKt {
-    method public static com.google.firebase.sql.SqlServiceSettings copy(com.google.firebase.sql.SqlServiceSettings, String serviceId = serviceId, String location = location, String? schemaName = schemaName, java.util.Map<java.lang.String,java.lang.String> headers = this.headers, String? host = host, Integer? port = port, Boolean? sslEnabled = sslEnabled);
+  public final class SqlServiceConfigKt {
+    method public static com.google.firebase.sql.SqlServiceConfig copy(com.google.firebase.sql.SqlServiceConfig, String serviceId = serviceId, String location = location, String? schemaName = schemaName, String? host = host, Integer? port = port, Boolean? sslEnabled = sslEnabled);
   }
 
   public final class TextSearchType {

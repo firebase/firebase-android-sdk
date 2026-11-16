@@ -20,10 +20,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Deferred
+import com.google.firebase.sql.core.InstanceHeaders
 import com.google.firebase.sql.core.OkHttpNetworkClient
 import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.newOkHttpClient
-import com.google.firebase.sql.core.requireNotReservedHeader
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -61,8 +61,8 @@ internal class FirebaseSqlComponent(
   }
 
   /**
-   * The key of a cached instance. [restUrl] is the URL that the settings resolve to, so that
-   * settings that name the same service in different ways share an instance.
+   * The key of a cached instance. [restUrl] is the URL that the config resolves to, so that configs
+   * that name the same service in different ways share an instance.
    */
   private data class FirebaseSqlInstanceKey(
     val appName: String,
@@ -108,37 +108,35 @@ internal class FirebaseSqlComponent(
     get() = (state.value as? State.Closing)?.shutdownJob
 
   /**
-   * Returns the instance for the given [settings], and creates it on the first call.
+   * Returns the instance for the given [config], and creates it on the first call.
    *
-   * The project ID of the service is always the one in the options of the [app]. Settings that
-   * resolve to the same URL and schema give the same instance, for example settings without a host
-   * and settings with the production host, even when their headers differ: the instance keeps the
-   * headers that it was created with until it is terminated.
+   * The project ID of the service is always the one in the options of the [app]. Configs that
+   * resolve to the same URL and schema give the same instance, for example a config without a host
+   * and a config with the production host. The instance keeps the config that created it, and the
+   * headers that `FirebaseSql.setHeaders()` sets on it.
    *
-   * @throws ReservedHeaderException When the headers of the settings have a reserved header.
-   * @throws IllegalArgumentException When the settings do not name a valid service, or have an
-   * empty schema name, or when the options of the [app] have no project ID.
+   * @throws IllegalArgumentException When the config does not name a valid service, or has an empty
+   * schema name, or when the options of the [app] have no project ID.
    * @throws IllegalStateException When the [app] was deleted.
    */
-  fun get(settings: SqlServiceSettings): FirebaseSqlImpl {
-    val schemaName = settings.schemaName
+  fun get(config: SqlServiceConfig): FirebaseSqlImpl {
+    val schemaName = config.schemaName
     require(schemaName == null || schemaName.isNotEmpty()) {
-      "SqlServiceSettings.schemaName must not be empty; use null to send no schema header"
+      "SqlServiceConfig.schemaName must not be empty; use null to send no schema header"
     }
-    settings.headers.keys.forEach { requireNotReservedHeader(it, "SqlServiceSettings.headers") }
-    val restUrl = serviceUrlOf(settings, projectIdOfApp())
+    val restUrl = serviceUrlOf(config, projectIdOfApp())
     val key = FirebaseSqlInstanceKey(app.name, schemaName, restUrl)
 
     while (true) {
       val current = state.value
       check(current is State.Open) { "FirebaseApp has been deleted" }
-      // The cached instance keeps the settings that it was created with.
+      // The cached instance keeps the config that created it, and its headers.
       current.instances[key]?.let {
         return it
       }
 
       val okHttpClient = current.okHttpClient ?: newOkHttpClient()
-      val newInstance = newInstance(settings, restUrl, okHttpClient)
+      val newInstance = newInstance(config, restUrl, okHttpClient)
       val newState = State.Open(current.instances + (key to newInstance), okHttpClient)
       if (state.compareAndSet(current, newState)) {
         return newInstance
@@ -151,27 +149,30 @@ internal class FirebaseSqlComponent(
   }
 
   private fun newInstance(
-    settings: SqlServiceSettings,
+    config: SqlServiceConfig,
     restUrl: HttpUrl,
     okHttpClient: OkHttpClient
   ): FirebaseSqlImpl {
+    // FirebaseSql.setHeaders() changes the headers until the instance is used, and the executor
+    // reads them when it sends a request.
+    val headers = InstanceHeaders()
     val executor =
       OperationsExecutor(
         // Without a schema, no Accept-Profile or Content-Profile header is sent.
-        schemaName = settings.schemaName,
+        schemaName = config.schemaName,
         serviceUrl = restUrl,
         authDeferred = authDeferred,
         appCheckDeferred = appCheckDeferred,
         networkClient = OkHttpNetworkClient(okHttpClient),
-        headers = settings.headers,
+        headers = headers::get,
         appId = app.options.applicationId,
         blockingDispatcher = blockingDispatcher,
         nonBlockingDispatcher = nonBlockingDispatcher
       )
-    return FirebaseSqlImpl(this, app, settings, executor)
+    return FirebaseSqlImpl(this, app, config, headers, executor)
   }
 
-  /** Removes [instance] from the cache, so that [get] creates another instance for its settings. */
+  /** Removes [instance] from the cache, so that [get] creates another instance for its config. */
   fun remove(instance: FirebaseSqlImpl) {
     state.update { current ->
       if (current !is State.Open) return@update current
@@ -250,28 +251,28 @@ internal class FirebaseSqlComponent(
 private const val PROD_HOST = "firebasedataconnect.googleapis.com"
 
 /**
- * Returns the URL of the service that the [settings] name in the project [projectId]:
+ * Returns the URL of the service that the [config] names in the project [projectId]:
  * `<scheme>://<host>[:<port>]` followed by
  * `/v1/projects/<projectId>/locations/<location>/services/<serviceId>/postgrest`.
  *
  * - Without a host, the production host is used. OkHttp parses `<scheme>://<host>`, and the host
  * must give only a host name or an IP address, with an optional port.
- * - The scheme is `http` when [SqlServiceSettings.sslEnabled] is `false`, and `https` otherwise.
+ * - The scheme is `http` when [SqlServiceConfig.sslEnabled] is `false`, and `https` otherwise.
  * - The port, when set, replaces the port of the host.
  *
  * Each ID is percent-encoded as one path segment.
  *
- * @throws IllegalArgumentException When the settings do not name a valid service.
+ * @throws IllegalArgumentException When the config does not name a valid service.
  */
-internal fun serviceUrlOf(settings: SqlServiceSettings, projectId: String): HttpUrl {
-  require(settings.serviceId.isNotEmpty()) { "SqlServiceSettings.serviceId must not be empty" }
-  require(settings.location.isNotEmpty()) { "SqlServiceSettings.location must not be empty" }
+internal fun serviceUrlOf(config: SqlServiceConfig, projectId: String): HttpUrl {
+  require(config.serviceId.isNotEmpty()) { "SqlServiceConfig.serviceId must not be empty" }
+  require(config.location.isNotEmpty()) { "SqlServiceConfig.location must not be empty" }
 
-  val host = settings.host ?: PROD_HOST
+  val host = config.host ?: PROD_HOST
   require(host.isNotEmpty()) {
-    "SqlServiceSettings.host must not be empty; use null for the production host"
+    "SqlServiceConfig.host must not be empty; use null for the production host"
   }
-  val scheme = if (settings.sslEnabled == false) "http" else "https"
+  val scheme = if (config.sslEnabled == false) "http" else "https"
   // OkHttp parses the host and its port. The parsed URL must have nothing else, because a URL
   // parser reads a scheme in the host as a host: `https://my.proxy` would be the host `https`.
   val base =
@@ -283,24 +284,24 @@ internal fun serviceUrlOf(settings: SqlServiceSettings, projectId: String): Http
         it.password.isEmpty()
     }
   requireNotNull(base) {
-    "SqlServiceSettings.host must be a host name or an IP address with an optional port, for " +
+    "SqlServiceConfig.host must be a host name or an IP address with an optional port, for " +
       "example $PROD_HOST or 10.0.2.2:9399, without a scheme, a path, a query, or a fragment, " +
-      "but is '$host'; SqlServiceSettings.sslEnabled chooses between https and http"
+      "but is '$host'; SqlServiceConfig.sslEnabled chooses between https and http"
   }
 
   // The backend serves the tables and functions of a service under its `postgrest` path.
   val builder = base.newBuilder()
   // OkHttp rejects a port that is not from 1 to 65535 with an IllegalArgumentException.
-  settings.port?.let { builder.port(it) }
+  config.port?.let { builder.port(it) }
   // addPathSegment() replaces the empty path segment of the base URL.
   return builder
     .addPathSegment("v1")
     .addPathSegment("projects")
     .addPathSegment(projectId)
     .addPathSegment("locations")
-    .addPathSegment(settings.location)
+    .addPathSegment(config.location)
     .addPathSegment("services")
-    .addPathSegment(settings.serviceId)
+    .addPathSegment(config.serviceId)
     .addPathSegment("postgrest")
     .build()
 }

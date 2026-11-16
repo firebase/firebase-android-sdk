@@ -73,9 +73,11 @@ import com.google.firebase.FirebaseException
  * throws the error of Firebase Authentication, and the request is not sent.
  * - When the data does not fit the requested type, the decode functions throw the
  * `SerializationException` of kotlinx.serialization.
- * - Programming errors, such as invalid settings or a call on a terminated instance, are thrown as
+ * - Programming errors, such as an invalid config or a call on a terminated instance, are thrown as
  * an [IllegalArgumentException] or an [IllegalStateException]. A header that the SDK reserves gives
- * a [ReservedHeaderException], which is an [IllegalArgumentException].
+ * a [ReservedHeaderException], which is an [IllegalArgumentException]. A change to the headers of
+ * an instance that is in use gives a [FirebaseSqlMutationException], which is an
+ * [IllegalStateException].
  *
  * **Example: react to each category**
  * ```kotlin

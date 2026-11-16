@@ -34,7 +34,8 @@ try {
   `dryRun()` whose rollback the server did not confirm). Later versions can add categories, so
   give a `when` expression over the category an `else` branch.
 - `IllegalArgumentException` and `IllegalStateException` mean a programming error, for example
-  invalid settings, a reserved header (`ReservedHeaderException`), or a call on a terminated instance.
+  an invalid `SqlServiceConfig`, a reserved header (`ReservedHeaderException`), other headers for
+  an instance in use (`FirebaseSqlMutationException`), or a call on a terminated instance.
 
 |    Code    |   Status   |                                Meaning                                |
 |------------|------------|-----------------------------------------------------------------------|

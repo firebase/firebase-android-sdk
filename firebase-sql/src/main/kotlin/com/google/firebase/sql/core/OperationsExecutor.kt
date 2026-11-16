@@ -47,10 +47,10 @@ import okhttp3.HttpUrl
  * Adds the headers that every request needs, and sends the request with the [NetworkClient].
  *
  * HTTP header names are case-insensitive, so a header is never sent twice in different cases. The
- * headers of a request win over the global [headers], which win over the default headers
- * (`Content-Type`, `Accept-Profile`, and `Content-Profile`). `Prefer` is the exception: it holds a
- * list of preferences, so a global `Prefer` is added after the preferences of the request, and
- * PostgREST, which uses the first value of each preference, applies those of the request first.
+ * headers of a request win over the global [headers] of the instance, which win over the default
+ * headers (`Content-Type`, `Accept-Profile`, and `Content-Profile`). `Prefer` is the exception: it
+ * holds a list of preferences, so a global `Prefer` is added after the preferences of the request,
+ * and PostgREST, which uses the first value of each preference, applies those of the request first.
  *
  * Every request also carries headers that only the SDK sets: `x-goog-api-client` with the versions
  * of Kotlin, Android, and the SDK, `x-client-version` with the platform and the version of the SDK,
@@ -93,8 +93,8 @@ import okhttp3.HttpUrl
  *
  * @param schemaName The schema of the requests. PostgREST reads the schema from the
  * `Content-Profile` header of POST, PUT, PATCH, and DELETE requests, and from the `Accept-Profile`
- * header of the other requests. `null`, the default of [SqlServiceSettings], sends no header, and
- * the server uses its first exposed schema: the schema of the service, which is the only one that
+ * header of the other requests. `null`, the default of [SqlServiceConfig], sends no header, and the
+ * server uses its first exposed schema: the schema of the service, which is the only one that
  * Firebase SQL exposes by default. A header that names a schema that the server does not expose
  * fails with a `PGRST106` error, so `public` is not a safe default.
  * @param serviceUrl The URL of the service, to which the path of each request is appended.
@@ -103,8 +103,9 @@ import okhttp3.HttpUrl
  * @param appCheckDeferred Provides the Firebase App Check token of the requests, or `null` to send
  * none.
  * @param networkClient Sends the requests.
- * @param headers Global headers that are sent with every request, unless the request sets the same
- * header.
+ * @param headers Returns the global headers, which are sent with every request, unless the request
+ * sets the same header: the [InstanceHeaders] of the instance, which `FirebaseSql.setHeaders()`
+ * sets. It is called each time a request is sent.
  * @param appId The Firebase app ID, which is sent in the `x-firebase-gmpid` header, or `null` to
  * send none.
  * @param timeoutMillis The longest time in milliseconds that each attempt can take on the network:
@@ -124,7 +125,7 @@ internal open class OperationsExecutor(
   authDeferred: Deferred<InternalAuthProvider>? = null,
   appCheckDeferred: Deferred<InteropAppCheckTokenProvider>? = null,
   private val networkClient: NetworkClient = OkHttpNetworkClient(),
-  private val headers: Map<String, String> = emptyMap(),
+  private val headers: () -> Map<String, String> = { emptyMap() },
   private val appId: String? = null,
   private val timeoutMillis: Long = ATTEMPT_TIMEOUT_MILLIS,
   private val maxRetries: Int = MAX_RETRIES,
@@ -312,7 +313,7 @@ internal open class OperationsExecutor(
   private fun requestHeaders(request: QueryRequest): TreeMap<String, String> {
     val finalHeaders = TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER)
     finalHeaders.putAll(request.headers)
-    headers.forEach { (name, value) ->
+    headers().forEach { (name, value) ->
       val requestValue = finalHeaders[name]
       if (requestValue == null) {
         finalHeaders[name] = value
@@ -474,7 +475,7 @@ internal const val CLOSED_MESSAGE =
  * The headers that the SDK reserves, in lowercase: the headers that it sets itself,
  * `Authorization`, which the server also reads as a credential, and the routing and heartbeat
  * headers that Firebase reserves. A developer cannot set them, so that the tokens and the schema of
- * a request always come from the app and the settings, the server records the real versions and app
+ * a request always come from the app and the config, the server records the real versions and app
  * ID, and a request reaches the service of its URL.
  */
 internal val RESERVED_HEADERS: Set<String> =
@@ -499,7 +500,7 @@ internal val RESERVED_HEADERS: Set<String> =
     "x-firebase-client-log-type"
   )
 
-/** The reserved headers that name the schema, which `SqlServiceSettings.schemaName` chooses. */
+/** The reserved headers that name the schema, which `SqlServiceConfig.schemaName` chooses. */
 private val SCHEMA_HEADERS: Set<String> = setOf("accept-profile", "content-profile")
 
 /**
@@ -512,7 +513,7 @@ internal fun requireNotReservedHeader(name: String, source: String) {
   val lowercaseName = name.lowercase(Locale.ROOT)
   if (lowercaseName !in RESERVED_HEADERS) return
   val schemaHint =
-    if (lowercaseName in SCHEMA_HEADERS) " Use SqlServiceSettings.schemaName to choose the schema."
+    if (lowercaseName in SCHEMA_HEADERS) " Use SqlServiceConfig.schemaName to choose the schema."
     else ""
   throw ReservedHeaderException(
     name,

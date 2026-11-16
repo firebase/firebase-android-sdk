@@ -46,8 +46,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Tests how [FirebaseSql] instances are created, cached, validated, and terminated, and the URLs
- * that their requests go to.
+ * Tests how [FirebaseSql] instances are created, cached, validated, and terminated, how their
+ * headers are set, and the URLs that their requests go to.
  *
  * Robolectric provides the Android `Context` that [FirebaseApp] needs.
  */
@@ -86,57 +86,56 @@ class FirebaseSqlTest {
   // --- Defaults and the URL of the service ---
 
   @Test
-  fun theInstanceKeepsTheGivenSettings() {
-    val settings = SqlServiceSettings(serviceId = SERVICE_ID, location = LOCATION)
+  fun theInstanceKeepsTheGivenConfig() {
+    val config = SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
 
-    val fsql = component.get(settings)
+    val fsql = component.get(config)
 
-    // The defaults are applied when the URL is built; the settings stay as they were given.
-    assertThat(fsql.settings).isEqualTo(settings)
-    assertThat(fsql.settings.host).isNull()
-    assertThat(fsql.settings.sslEnabled).isNull()
-    assertThat(fsql.settings.schemaName).isNull()
+    // The defaults are applied when the URL is built; the config stays as it was given.
+    assertThat(fsql.config).isEqualTo(config)
+    assertThat(fsql.config.host).isNull()
+    assertThat(fsql.config.sslEnabled).isNull()
+    assertThat(fsql.config.schemaName).isNull()
   }
 
   @Test
   fun theDefaultsNameTheProductionService() {
-    val url = serviceUrlOf(SqlServiceSettings(serviceId = SERVICE_ID, location = LOCATION), PROJECT)
+    val url = serviceUrlOf(SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION), PROJECT)
 
     assertThat(url.toString()).isEqualTo("https://firebasedataconnect.googleapis.com$PATH")
   }
 
   @Test
-  fun theHostPortAndSslSettingsGiveTheBaseUrl() {
+  fun theHostThePortAndSslGiveTheBaseUrl() {
     val baseUrls =
       mapOf(
-        settings(host = "127.0.0.1", port = 9399, sslEnabled = null) to "https://127.0.0.1:9399",
-        settings(host = "127.0.0.1", port = 9399, sslEnabled = false) to "http://127.0.0.1:9399",
-        settings(host = "127.0.0.1:9399", sslEnabled = true) to "https://127.0.0.1:9399",
-        settings(host = "localhost", sslEnabled = false) to "http://localhost",
+        config(host = "127.0.0.1", port = 9399, sslEnabled = null) to "https://127.0.0.1:9399",
+        config(host = "127.0.0.1", port = 9399, sslEnabled = false) to "http://127.0.0.1:9399",
+        config(host = "127.0.0.1:9399", sslEnabled = true) to "https://127.0.0.1:9399",
+        config(host = "localhost", sslEnabled = false) to "http://localhost",
         // Host names are case-insensitive, so the URL has them in lowercase.
-        settings(host = "Emulator.Local:8080", sslEnabled = null) to "https://emulator.local:8080",
-        settings(host = "[::1]", port = 9399, sslEnabled = null) to "https://[::1]:9399",
-        settings(host = "[::1]:9399", sslEnabled = false) to "http://[::1]:9399",
-        settings(host = null, port = 8443, sslEnabled = null) to
+        config(host = "Emulator.Local:8080", sslEnabled = null) to "https://emulator.local:8080",
+        config(host = "[::1]", port = 9399, sslEnabled = null) to "https://[::1]:9399",
+        config(host = "[::1]:9399", sslEnabled = false) to "http://[::1]:9399",
+        config(host = null, port = 8443, sslEnabled = null) to
           "https://firebasedataconnect.googleapis.com:8443",
-        settings(host = null, sslEnabled = false) to "http://firebasedataconnect.googleapis.com",
+        config(host = null, sslEnabled = false) to "http://firebasedataconnect.googleapis.com",
         // The port replaces the port of the host.
-        settings(host = "127.0.0.1:8080", port = 9399, sslEnabled = false) to
-          "http://127.0.0.1:9399"
+        config(host = "127.0.0.1:8080", port = 9399, sslEnabled = false) to "http://127.0.0.1:9399"
       )
 
-    for ((settings, baseUrl) in baseUrls) {
-      assertWithMessage("$settings")
-        .that(serviceUrlOf(settings, PROJECT).toString())
+    for ((config, baseUrl) in baseUrls) {
+      assertWithMessage("$config")
+        .that(serviceUrlOf(config, PROJECT).toString())
         .isEqualTo("$baseUrl$PATH")
     }
   }
 
   @Test
   fun theIdsAreEncodedAsPathSegments() {
-    val settings = SqlServiceSettings(serviceId = "my service", location = "us/central1")
+    val config = SqlServiceConfig(serviceId = "my service", location = "us/central1")
 
-    val url = serviceUrlOf(settings, "my project")
+    val url = serviceUrlOf(config, "my project")
 
     assertThat(url.pathSegments)
       .containsExactly(
@@ -155,9 +154,9 @@ class FirebaseSqlTest {
   // --- Caching ---
 
   @Test
-  fun settingsThatNameTheSameServiceShareAnInstance() {
-    // An unset setting and its default value give the same instance.
-    val base = SqlServiceSettings(serviceId = SERVICE_ID, location = LOCATION)
+  fun configsThatNameTheSameServiceShareAnInstance() {
+    // An unset property and its default value give the same instance.
+    val base = SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
     val instance = component.get(base)
     val equivalents =
       listOf(
@@ -165,7 +164,7 @@ class FirebaseSqlTest {
         base.copy(host = "firebasedataconnect.googleapis.com"),
         base.copy(host = "FirebaseDataConnect.googleapis.com"),
         base.copy(port = 443),
-        base.copy(headers = emptyMap())
+        base.copy()
       )
 
     for (equivalent in equivalents) {
@@ -174,16 +173,16 @@ class FirebaseSqlTest {
   }
 
   @Test
-  fun settingsThatDifferGiveDifferentInstances() {
-    val instance = component.get(settings())
+  fun configsThatDifferGiveDifferentInstances() {
+    val instance = component.get(config())
     val others =
       mapOf(
-        "schemaName" to settings(schemaName = "other_schema"),
-        "host" to settings(host = "other.url"),
-        "port" to settings(port = 8080),
-        "sslEnabled" to settings(sslEnabled = true),
-        "location" to settings(location = "europe-west1"),
-        "serviceId" to settings(serviceId = "other-service")
+        "schemaName" to config(schemaName = "other_schema"),
+        "host" to config(host = "other.url"),
+        "port" to config(port = 8080),
+        "sslEnabled" to config(sslEnabled = true),
+        "location" to config(location = "europe-west1"),
+        "serviceId" to config(serviceId = "other-service")
       )
 
     for ((property, other) in others) {
@@ -192,75 +191,29 @@ class FirebaseSqlTest {
   }
 
   @Test
-  fun otherHeadersGetTheInstanceWithItsFirstSettings() =
+  fun theCachedInstanceKeepsItsConfigAndItsHeaders() =
     runBlocking<Unit> {
-      // The headers are not part of the cache key.
+      // The headers are not part of the config, so a later call with an equal config gets the
+      // instance with the headers that were set on it.
       withServer { server, host ->
-        val first = settings(host = host, headers = mapOf("X-Custom" to "1"))
+        val first = config(host = host)
         val instance = component.get(first)
+        instance.setHeaders(mapOf("X-Custom" to "1"))
 
-        for (other in
-          listOf(
-            first.copy(headers = mapOf("X-Custom" to "2")),
-            first.copy(headers = emptyMap())
-          )) {
-          val cached = component.get(other)
-          assertWithMessage("$other").that(cached).isSameInstanceAs(instance)
-          assertWithMessage("$other").that(cached.settings).isEqualTo(first)
-        }
+        val cached = component.get(config(host = host))
+        cached.from("t").select().execute()
 
-        component.get(first.copy(headers = mapOf("X-Custom" to "2"))).from("t").select().execute()
+        assertThat(cached).isSameInstanceAs(instance)
+        assertThat(cached.config).isSameInstanceAs(first)
         assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isEqualTo("1")
       }
     }
-
-  @Test
-  fun theReservedHeadersAreRejected() {
-    // The names are compared ignoring case, like HTTP header names.
-    val reservedHeaders =
-      listOf(
-        "X-Firebase-Auth-Token",
-        "x-firebase-appcheck",
-        "X-Goog-Api-Client",
-        "x-client-version",
-        "X-FIREBASE-GMPID",
-        "Accept-Profile",
-        "CONTENT-PROFILE",
-        "authorization",
-        "x-retry-count",
-        "x-firebase-sqlconnect-affinity",
-        "X-Goog-Request-Params",
-        "x-firebase-client",
-        "X-Firebase-Client-Log-Type"
-      )
-
-    for (name in reservedHeaders) {
-      val error =
-        assertThrows(name, ReservedHeaderException::class.java) {
-          component.get(settings(headers = mapOf(name to "value")))
-        }
-      assertWithMessage(name).that(error.headerName).isEqualTo(name)
-      assertWithMessage(name).that(error).hasMessageThat().contains(name)
-      assertWithMessage(name).that(error).hasMessageThat().contains("SqlServiceSettings.headers")
-    }
-    // Other headers are allowed.
-    component.get(settings(headers = mapOf("X-Custom" to "1")))
-  }
-
-  @Test
-  fun aReservedHeaderIsAnIllegalArgument() {
-    // Code that catches IllegalArgumentException, the usual error of an invalid argument, still
-    // catches it.
-    assertThrows(IllegalArgumentException::class.java) {
-      component.get(settings(headers = mapOf("Authorization" to "Bearer token")))
-    }
-  }
 
   // --- terminate() ---
 
   @Test
   fun aTerminatedInstanceCannotStartARequest() {
-    val fsql = FirebaseSql.getInstance(app, settings())
+    val fsql = FirebaseSql.getInstance(app, config())
 
     fsql.terminate()
 
@@ -281,7 +234,7 @@ class FirebaseSqlTest {
   fun theBuildersOfATerminatedInstanceCannotBeExecuted() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val fsql = FirebaseSql.getInstance(app, settings(host = host))
+        val fsql = FirebaseSql.getInstance(app, config(host = host))
         // Builders of each kind, created before terminate().
         val builders =
           mapOf(
@@ -310,7 +263,7 @@ class FirebaseSqlTest {
   fun aBuilderThatWorkedStopsWorkingAfterTerminate() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val fsql = FirebaseSql.getInstance(app, settings(host = host))
+        val fsql = FirebaseSql.getInstance(app, config(host = host))
         val query = fsql.from("products").select()
         assertThat(query.execute().data).isEqualTo("[]")
 
@@ -323,7 +276,7 @@ class FirebaseSqlTest {
 
   @Test
   fun terminateCanBeCalledTwice() {
-    val fsql = FirebaseSql.getInstance(app, settings())
+    val fsql = FirebaseSql.getInstance(app, config())
 
     fsql.terminate()
     fsql.terminate()
@@ -335,10 +288,10 @@ class FirebaseSqlTest {
   fun getInstanceAfterTerminateReturnsANewInstanceThatWorks() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val terminated = FirebaseSql.getInstance(app, settings(host = host))
+        val terminated = FirebaseSql.getInstance(app, config(host = host))
         terminated.terminate()
 
-        val fsql = FirebaseSql.getInstance(app, settings(host = host))
+        val fsql = FirebaseSql.getInstance(app, config(host = host))
         val result = fsql.from("products").select().execute()
 
         assertThat(fsql).isNotSameInstanceAs(terminated)
@@ -349,14 +302,14 @@ class FirebaseSqlTest {
 
   @Test
   fun terminatingAnOldInstanceAgainKeepsItsReplacement() {
-    val old = FirebaseSql.getInstance(app, settings())
+    val old = FirebaseSql.getInstance(app, config())
     old.terminate()
-    val replacement = FirebaseSql.getInstance(app, settings())
+    val replacement = FirebaseSql.getInstance(app, config())
 
     // The cache removes an instance by identity, so the replacement is not removed.
     old.terminate()
 
-    assertThat(FirebaseSql.getInstance(app, settings())).isSameInstanceAs(replacement)
+    assertThat(FirebaseSql.getInstance(app, config())).isSameInstanceAs(replacement)
     replacement.from("products")
   }
 
@@ -364,9 +317,8 @@ class FirebaseSqlTest {
   fun terminatingAnInstanceDoesNotTerminateTheOthers() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val terminated =
-          FirebaseSql.getInstance(app, settings(host = host, schemaName = "inventory"))
-        val other = FirebaseSql.getInstance(app, settings(host = host))
+        val terminated = FirebaseSql.getInstance(app, config(host = host, schemaName = "inventory"))
+        val other = FirebaseSql.getInstance(app, config(host = host))
 
         terminated.terminate()
 
@@ -378,8 +330,7 @@ class FirebaseSqlTest {
 
   @Test
   fun appDeleteTerminatesAllInstances() {
-    val instances =
-      listOf("us-east1", "europe-west1").map { component.get(settings(location = it)) }
+    val instances = listOf("us-east1", "europe-west1").map { component.get(config(location = it)) }
     val queries = instances.map { it.from("products").select() }
     val okHttpClient = component.okHttpClient!!
 
@@ -394,7 +345,7 @@ class FirebaseSqlTest {
       assertThrows(IllegalStateException::class.java) { runBlocking { query.execute() } }
     }
     // Subsequent calls fail because the component is terminated.
-    assertThrows(IllegalStateException::class.java) { component.get(settings()) }
+    assertThrows(IllegalStateException::class.java) { component.get(config()) }
     // Once the requests of the instances have ended, the shared client stops its threads.
     runBlocking { component.shutdownJob?.join() }
     assertThat(okHttpClient.dispatcher.executorService.isShutdown).isTrue()
@@ -405,18 +356,17 @@ class FirebaseSqlTest {
     app.delete()
 
     assertThat(component.shutdownJob).isNull()
-    assertThrows(IllegalStateException::class.java) { component.get(settings()) }
+    assertThrows(IllegalStateException::class.java) { component.get(config()) }
   }
 
   @Test
-  fun concurrentCallsWithTheSameSettingsGetOneInstance() =
+  fun concurrentCallsWithTheSameConfigGetOneInstance() =
     runBlocking<Unit> {
-      val instances =
-        List(16) { async(Dispatchers.Default) { component.get(settings()) } }.awaitAll()
+      val instances = List(16) { async(Dispatchers.Default) { component.get(config()) } }.awaitAll()
 
       assertThat(instances.toSet()).hasSize(1)
       // The instances that lost the race were terminated, and the cache kept the one that won.
-      assertThat(component.get(settings())).isSameInstanceAs(instances.first())
+      assertThat(component.get(config())).isSameInstanceAs(instances.first())
     }
 
   @Test
@@ -424,7 +374,7 @@ class FirebaseSqlTest {
     runBlocking<Unit> {
       val threadsBefore = Thread.getAllStackTraces().keys
 
-      List(16) { async(Dispatchers.Default) { component.get(settings()) } }.awaitAll()
+      List(16) { async(Dispatchers.Default) { component.get(config()) } }.awaitAll()
 
       // Each call that found no client created one, and only the client of the instance that won
       // is kept. A client that sent no request has started no thread and opened no connection, so
@@ -437,20 +387,20 @@ class FirebaseSqlTest {
   @Test
   fun suspendingTerminateTerminatesTheInstance() =
     runBlocking<Unit> {
-      val fsql = component.get(settings())
+      val fsql = component.get(config())
 
       fsql.suspendingTerminate()
 
       assertThrows(IllegalStateException::class.java) { fsql.from("products") }
-      assertThat(component.get(settings())).isNotSameInstanceAs(fsql)
+      assertThat(component.get(config())).isNotSameInstanceAs(fsql)
     }
 
   @Test
   fun theInstancesShareOneHttpClient() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val first = component.get(settings(host = host))
-        val second = component.get(settings(host = host, schemaName = "inventory"))
+        val first = component.get(config(host = host))
+        val second = component.get(config(host = host, schemaName = "inventory"))
 
         first.from("products").select().execute()
         second.from("products").select().execute()
@@ -465,8 +415,8 @@ class FirebaseSqlTest {
   fun terminatingAnInstanceKeepsTheSharedClientForTheOthers() =
     runBlocking<Unit> {
       withServer { _, host ->
-        val terminated = component.get(settings(host = host, schemaName = "inventory"))
-        val other = component.get(settings(host = host))
+        val terminated = component.get(config(host = host, schemaName = "inventory"))
+        val other = component.get(config(host = host))
         terminated.suspendingTerminate()
 
         val result = other.from("products").select().execute()
@@ -480,7 +430,7 @@ class FirebaseSqlTest {
 
   @Test
   fun rpcEncodesAnObjectWithTheSerializerOfItsType() {
-    val fsql = component.get(settings())
+    val fsql = component.get(config())
     val limit = PriceLimit(maxPrice = 10.0)
 
     val post = request(fsql.rpc("products_under", limit))
@@ -493,7 +443,7 @@ class FirebaseSqlTest {
 
   @Test
   fun rpcWithANullObjectSendsNoArguments() {
-    val fsql = component.get(settings())
+    val fsql = component.get(config())
     val noLimit: PriceLimit? = null
 
     assertThat(request(fsql.rpc("products_under", noLimit)).body.toString()).isEqualTo("{}")
@@ -503,7 +453,7 @@ class FirebaseSqlTest {
 
   @Test
   fun rpcRejectsAnObjectThatIsNotEncodedAsAJsonObject() {
-    val fsql = component.get(settings())
+    val fsql = component.get(config())
 
     assertThrows(IllegalArgumentException::class.java) {
       fsql.rpc("products_under", listOf(PriceLimit(1.0), PriceLimit(2.0)))
@@ -512,7 +462,7 @@ class FirebaseSqlTest {
 
   @Test
   fun rpcRejectsAStringOrBytes() {
-    val fsql = component.get(settings())
+    val fsql = component.get(config())
 
     // The rpc extension function encodes them to a JSON string and to a list, so neither is an
     // object of arguments.
@@ -522,7 +472,7 @@ class FirebaseSqlTest {
 
   @Test
   fun rpcWithoutArgumentsSendsAnEmptyObject() {
-    val fsql = component.get(settings())
+    val fsql = component.get(config())
 
     assertThat(request(fsql.rpc("my_function")).body.toString()).isEqualTo("{}")
     assertThat(request(fsql.rpc("my_function", emptyMap())))
@@ -536,31 +486,321 @@ class FirebaseSqlTest {
   // --- Headers ---
 
   @Test
-  fun settingsHeadersAreSentWithEveryRequest() =
+  fun theHeadersOfSetHeadersAreSentWithEveryRequest() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val settings =
-          settings(
-            host = host,
-            schemaName = "inventory",
-            headers = mapOf("X-Custom-Header" to "custom-value")
-          )
+        val fsql = component.get(config(host = host, schemaName = "inventory"))
+        fsql.setHeaders(mapOf("X-Custom-Header" to "custom-value"))
 
-        component.get(settings).from("products").select().execute()
+        fsql.from("products").select().execute()
+        fsql.rpc("my_function").execute()
 
-        val request = server.takeRequestOrFail()
-        assertThat(request.path).isEqualTo("/${SERVICE_PATH.joinToString("/")}/products?select=*")
-        assertThat(request.getHeader("X-Custom-Header")).isEqualTo("custom-value")
-        assertThat(request.getHeader("Accept-Profile")).isEqualTo("inventory")
+        val read = server.takeRequestOrFail()
+        val call = server.takeRequestOrFail()
+        assertThat(read.path).isEqualTo("/${SERVICE_PATH.joinToString("/")}/products?select=*")
+        assertThat(read.getHeader("X-Custom-Header")).isEqualTo("custom-value")
+        assertThat(read.getHeader("Accept-Profile")).isEqualTo("inventory")
+        assertThat(call.getHeader("X-Custom-Header")).isEqualTo("custom-value")
+        assertThat(call.getHeader("Content-Profile")).isEqualTo("inventory")
       }
     }
+
+  @Test
+  fun aNewInstanceSendsNoCustomHeader() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        // An instance with the same URL in another schema, whose headers are set, is another
+        // instance with its own headers.
+        component.get(config(host = host, schemaName = "inventory")).setHeaders(CUSTOM)
+        val fsql = component.get(config(host = host))
+
+        fsql.from("products").select().execute()
+
+        assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isNull()
+      }
+    }
+
+  @Test
+  fun setHeadersReplacesTheHeadersOfTheEarlierCalls() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(mapOf("X-First" to "1", "X-Both" to "1"))
+        fsql.setHeaders(mapOf("X-Both" to "2", "X-Second" to "2"))
+
+        fsql.from("products").select().execute()
+
+        val request = server.takeRequestOrFail()
+        assertThat(request.getHeader("X-First")).isNull()
+        assertThat(request.getHeader("X-Both")).isEqualTo("2")
+        assertThat(request.getHeader("X-Second")).isEqualTo("2")
+      }
+    }
+
+  @Test
+  fun setHeadersWithAnEmptyMapRemovesTheHeaders() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(CUSTOM)
+        fsql.setHeaders(emptyMap())
+
+        fsql.from("products").select().execute()
+
+        assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isNull()
+      }
+    }
+
+  @Test
+  fun setHeadersCopiesTheMap() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        val headers = mutableMapOf("X-Custom" to "1")
+        fsql.setHeaders(headers)
+
+        headers["X-Custom"] = "2"
+        headers["X-Other"] = "3"
+        fsql.from("products").select().execute()
+
+        val request = server.takeRequestOrFail()
+        assertThat(request.getHeader("X-Custom")).isEqualTo("1")
+        assertThat(request.getHeader("X-Other")).isNull()
+      }
+    }
+
+  @Test
+  fun setHeadersRejectsTheReservedHeaders() {
+    // The names are compared ignoring case, like HTTP header names.
+    val reservedHeaders =
+      listOf(
+        "X-Firebase-Auth-Token",
+        "x-firebase-appcheck",
+        "X-Goog-Api-Client",
+        "x-client-version",
+        "X-FIREBASE-GMPID",
+        "Accept-Profile",
+        "CONTENT-PROFILE",
+        "authorization",
+        "x-retry-count",
+        "x-firebase-sqlconnect-affinity",
+        "X-Goog-Request-Params",
+        "x-firebase-client",
+        "X-Firebase-Client-Log-Type"
+      )
+    val fsql = component.get(config())
+
+    for (name in reservedHeaders) {
+      val error =
+        assertThrows(name, ReservedHeaderException::class.java) {
+          fsql.setHeaders(mapOf("X-Custom" to "1", name to "value"))
+        }
+      assertWithMessage(name).that(error.headerName).isEqualTo(name)
+      assertWithMessage(name).that(error).hasMessageThat().contains(name)
+      assertWithMessage(name).that(error).hasMessageThat().contains("setHeaders()")
+    }
+    // Other headers are allowed.
+    fsql.setHeaders(CUSTOM)
+  }
+
+  @Test
+  fun aReservedHeaderIsAnIllegalArgument() {
+    // Code that catches IllegalArgumentException, the usual error of an invalid argument, still
+    // catches it.
+    val fsql = component.get(config())
+
+    assertThrows(IllegalArgumentException::class.java) {
+      fsql.setHeaders(mapOf("Authorization" to "Bearer token"))
+    }
+  }
+
+  @Test
+  fun aRejectedCallOfSetHeadersKeepsTheHeaders() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(mapOf("X-Custom" to "1"))
+
+        assertThrows(ReservedHeaderException::class.java) {
+          fsql.setHeaders(mapOf("X-Custom" to "2", "Authorization" to "Bearer token"))
+        }
+        fsql.from("products").select().execute()
+
+        assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isEqualTo("1")
+      }
+    }
+
+  // --- isMutable, and setHeaders() on an instance in use ---
+
+  @Test
+  fun aNewInstanceIsMutable() {
+    val fsql = component.get(config())
+
+    assertThat(fsql.isMutable).isTrue()
+    // Setting the headers does not use the instance.
+    fsql.setHeaders(CUSTOM)
+    assertThat(fsql.isMutable).isTrue()
+  }
+
+  @Test
+  fun fromMakesTheInstanceImmutable() {
+    val fsql = component.get(config())
+
+    fsql.from("products")
+
+    assertThat(fsql.isMutable).isFalse()
+  }
+
+  @Test
+  fun rpcMakesTheInstanceImmutable() {
+    // Both rpc() functions: with a map of arguments, and with an object and its serializer.
+    val withMap = component.get(config())
+    val withObject = component.get(config(schemaName = "inventory"))
+
+    withMap.rpc("my_function")
+    withObject.rpc("products_under", PriceLimit(maxPrice = 10.0))
+
+    assertThat(withMap.isMutable).isFalse()
+    assertThat(withObject.isMutable).isFalse()
+  }
+
+  @Test
+  fun aCallWithInvalidArgumentsKeepsTheInstanceMutable() {
+    val fsql = component.get(config())
+
+    assertThrows(IllegalArgumentException::class.java) { fsql.from("") }
+
+    assertThat(fsql.isMutable).isTrue()
+  }
+
+  @Test
+  fun terminateMakesTheInstanceImmutable() =
+    runBlocking<Unit> {
+      val terminated = component.get(config())
+      val suspendingTerminated = component.get(config(schemaName = "inventory"))
+
+      terminated.terminate()
+      suspendingTerminated.suspendingTerminate()
+
+      assertThat(terminated.isMutable).isFalse()
+      assertThat(suspendingTerminated.isMutable).isFalse()
+      assertThrows(FirebaseSqlMutationException::class.java) { terminated.setHeaders(CUSTOM) }
+    }
+
+  @Test
+  fun theInstanceThatReplacesATerminatedInstanceIsMutable() {
+    val terminated = component.get(config())
+    terminated.from("products")
+    terminated.terminate()
+
+    val replacement = component.get(config())
+
+    assertThat(replacement.isMutable).isTrue()
+    replacement.setHeaders(CUSTOM)
+  }
+
+  @Test
+  fun setHeadersWithOtherHeadersThrowsOnceTheInstanceIsInUse() =
+    runBlocking<Unit> {
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(mapOf("X-Custom" to "1"))
+        val query = fsql.from("products").select()
+
+        val others =
+          listOf(
+            mapOf("X-Custom" to "2"),
+            mapOf("X-Custom" to "1", "X-Other" to "1"),
+            mapOf("X-Other" to "1"),
+            emptyMap()
+          )
+        for (other in others) {
+          val error =
+            assertThrows("$other", FirebaseSqlMutationException::class.java) {
+              fsql.setHeaders(other)
+            }
+          assertWithMessage("$other").that(error).hasMessageThat().contains("setHeaders()")
+        }
+
+        // The headers did not change.
+        query.execute()
+        assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isEqualTo("1")
+      }
+    }
+
+  @Test
+  fun aFirebaseSqlMutationExceptionIsAnIllegalState() {
+    // Code that catches IllegalStateException, the usual error of a call that the state does not
+    // allow, still catches it.
+    val fsql = component.get(config())
+    fsql.from("products")
+
+    assertThrows(IllegalStateException::class.java) { fsql.setHeaders(CUSTOM) }
+  }
+
+  @Test
+  fun setHeadersWithEqualHeadersHasNoEffectOnceTheInstanceIsInUse() =
+    runBlocking<Unit> {
+      // Code that runs again, such as onCreate() after a rotation, sets the same headers again.
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(mapOf("X-Custom" to "value", "X-Other" to "other"))
+        fsql.from("products").select().execute()
+
+        // HTTP ignores the case of the names, and the whitespace around the values.
+        fsql.setHeaders(mapOf("x-other" to "other", "X-CUSTOM" to " value\t"))
+        fsql.setHeaders(mapOf("X-Custom" to "value", "X-Other" to "other"))
+        fsql.from("products").select().execute()
+
+        for (request in listOf(server.takeRequestOrFail(), server.takeRequestOrFail())) {
+          // The instance keeps the headers as they were set first.
+          val names = (0 until request.headers.size).map { request.headers.name(it) }
+          assertThat(names).containsAtLeast("X-Custom", "X-Other")
+          assertThat(request.getHeader("X-Custom")).isEqualTo("value")
+          assertThat(request.getHeader("X-Other")).isEqualTo("other")
+        }
+        assertThat(fsql.isMutable).isFalse()
+      }
+    }
+
+  @Test
+  fun namesThatDifferOnlyInCaseAreOneHeader() =
+    runBlocking<Unit> {
+      // The last value wins, and the headers that are compared are the headers that are sent.
+      withServer { server, host ->
+        val fsql = component.get(config(host = host))
+        fsql.setHeaders(mapOf("X-Custom" to "1", "x-custom" to "2"))
+        fsql.from("products").select().execute()
+
+        fsql.setHeaders(mapOf("X-Custom" to "2"))
+        assertThrows(FirebaseSqlMutationException::class.java) {
+          fsql.setHeaders(mapOf("X-Custom" to "1"))
+        }
+        assertThat(server.takeRequestOrFail().headers.values("X-Custom")).containsExactly("2")
+      }
+    }
+
+  @Test
+  fun setHeadersRejectsAReservedHeaderAlsoOnceTheInstanceIsInUse() {
+    // A reserved header is an invalid argument, so it is reported before the state.
+    val fsql = component.get(config())
+    fsql.setHeaders(CUSTOM)
+    fsql.from("products")
+
+    val error =
+      assertThrows(ReservedHeaderException::class.java) {
+        fsql.setHeaders(CUSTOM + ("Authorization" to "Bearer token"))
+      }
+
+    assertThat(error.headerName).isEqualTo("Authorization")
+  }
 
   @Test
   fun noSchemaHeaderIsSentByDefault() =
     runBlocking<Unit> {
       // Without a schema header, the server uses its default schema.
       withServer { server, host ->
-        val fsql = component.get(settings(host = host))
+        val fsql = component.get(config(host = host))
 
         fsql.from("products").select().execute()
         fsql.from("products").insert(mapOf("id" to 1)).execute()
@@ -578,8 +818,8 @@ class FirebaseSqlTest {
       // Without a schema header, PostgREST uses the first schema that it exposes, which is not
       // always public, so naming public sends other requests.
       withServer { server, host ->
-        val noSchema = component.get(settings(host = host))
-        val publicSchema = component.get(settings(host = host, schemaName = "public"))
+        val noSchema = component.get(config(host = host))
+        val publicSchema = component.get(config(host = host, schemaName = "public"))
 
         noSchema.from("products").select().execute()
         publicSchema.from("products").select().execute()
@@ -590,23 +830,23 @@ class FirebaseSqlTest {
       }
     }
 
-  // --- Validation of the settings ---
+  // --- Validation of the config ---
 
   @Test
   fun theHostMustNameAHost() {
     val invalidHosts = listOf("", " ", "not a url", "custom.url:port", "[::1")
     for (host in invalidHosts) {
       val error =
-        assertThrows(IllegalArgumentException::class.java) { component.get(settings(host = host)) }
+        assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceSettings.host")
+      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.host")
     }
   }
 
   @Test
   fun anInvalidPortThrows() {
     for (port in listOf(0, -1, 65536)) {
-      assertThrows(IllegalArgumentException::class.java) { component.get(settings(port = port)) }
+      assertThrows(IllegalArgumentException::class.java) { component.get(config(port = port)) }
     }
   }
 
@@ -617,9 +857,9 @@ class FirebaseSqlTest {
       listOf("https://custom.url", "http://10.0.2.2:9399", "HTTP://localhost", "ftp://custom.url")
     for (host in withScheme) {
       val error =
-        assertThrows(IllegalArgumentException::class.java) { component.get(settings(host = host)) }
+        assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceSettings.sslEnabled")
+      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.sslEnabled")
     }
     val withMoreThanAHost =
       listOf(
@@ -631,43 +871,41 @@ class FirebaseSqlTest {
       )
     for (host in withMoreThanAHost) {
       val error =
-        assertThrows(IllegalArgumentException::class.java) { component.get(settings(host = host)) }
+        assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceSettings.host")
+      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.host")
     }
   }
 
   @Test
   fun theSchemaNameMustNotBeEmpty() {
     val error =
-      assertThrows(IllegalArgumentException::class.java) {
-        component.get(settings(schemaName = ""))
-      }
+      assertThrows(IllegalArgumentException::class.java) { component.get(config(schemaName = "")) }
 
-    assertThat(error).hasMessageThat().contains("SqlServiceSettings.schemaName")
+    assertThat(error).hasMessageThat().contains("SqlServiceConfig.schemaName")
   }
 
   @Test
   fun theLocationAndTheServiceIdMustNotBeEmpty() {
     val location =
-      assertThrows(IllegalArgumentException::class.java) { component.get(settings(location = "")) }
+      assertThrows(IllegalArgumentException::class.java) { component.get(config(location = "")) }
     val service =
-      assertThrows(IllegalArgumentException::class.java) { component.get(settings(serviceId = "")) }
+      assertThrows(IllegalArgumentException::class.java) { component.get(config(serviceId = "")) }
 
-    assertThat(location).hasMessageThat().contains("SqlServiceSettings.location")
-    assertThat(service).hasMessageThat().contains("SqlServiceSettings.serviceId")
+    assertThat(location).hasMessageThat().contains("SqlServiceConfig.location")
+    assertThat(service).hasMessageThat().contains("SqlServiceConfig.serviceId")
   }
 
   @Test
   fun whitespaceInTheNamesIsKept() {
     // Only empty names are rejected. The server answers with an error for a name that it does not
     // know.
-    val settings = settings(serviceId = "my service ", location = " us-central1", schemaName = " ")
+    val config = config(serviceId = "my service ", location = " us-central1", schemaName = " ")
 
-    val fsql = component.get(settings)
+    val fsql = component.get(config)
 
-    assertThat(fsql.settings.schemaName).isEqualTo(" ")
-    assertThat(serviceUrlOf(settings, PROJECT).pathSegments)
+    assertThat(fsql.config.schemaName).isEqualTo(" ")
+    assertThat(serviceUrlOf(config, PROJECT).pathSegments)
       .containsAtLeast(" us-central1", "my service ")
       .inOrder()
   }
@@ -691,7 +929,7 @@ class FirebaseSqlTest {
 
       val error =
         assertThrows(IllegalArgumentException::class.java) {
-          FirebaseSql.getInstance(appWithoutProject, settings())
+          FirebaseSql.getInstance(appWithoutProject, config())
         }
 
       assertWithMessage(name).that(error).hasMessageThat().contains("FirebaseOptions.projectId")
@@ -702,14 +940,15 @@ class FirebaseSqlTest {
   // --- FirebaseSql.getInstance(), which gets the component that FirebaseSqlRegistrar registers ---
 
   @Test
-  fun getInstanceReturnsOneInstancePerAppAndSettings() {
+  fun getInstanceReturnsOneInstancePerAppAndConfig() {
     val otherApp = FirebaseApp.initializeApp(app.applicationContext, app.options, "other")
 
-    val instance = FirebaseSql.getInstance(app, settings())
+    val instance = FirebaseSql.getInstance(app, config())
 
     assertThat(instance.app).isSameInstanceAs(app)
-    assertThat(FirebaseSql.getInstance(app, settings())).isSameInstanceAs(instance)
-    assertThat(FirebaseSql.getInstance(otherApp, settings())).isNotSameInstanceAs(instance)
+    // An equal config, which is another object, gets the same instance.
+    assertThat(FirebaseSql.getInstance(app, config())).isSameInstanceAs(instance)
+    assertThat(FirebaseSql.getInstance(otherApp, config())).isNotSameInstanceAs(instance)
   }
 
   @Test
@@ -720,7 +959,7 @@ class FirebaseSqlTest {
         val options = FirebaseOptions.Builder(app.options).setProjectId("other-project").build()
         val otherApp = FirebaseApp.initializeApp(app.applicationContext, options, "other")
 
-        FirebaseSql.getInstance(otherApp, settings(host = host)).from("products").select().execute()
+        FirebaseSql.getInstance(otherApp, config(host = host)).from("products").select().execute()
 
         assertThat(server.takeRequestOrFail().path)
           .isEqualTo(
@@ -734,33 +973,33 @@ class FirebaseSqlTest {
   fun theFirebaseSqlExtensionsReturnTheInstancesOfGetInstance() {
     val otherApp = FirebaseApp.initializeApp(app.applicationContext, app.options, "other")
 
-    assertThat(Firebase.sql(settings())).isSameInstanceAs(FirebaseSql.getInstance(settings()))
-    assertThat(Firebase.sql(otherApp, settings()))
-      .isSameInstanceAs(FirebaseSql.getInstance(otherApp, settings()))
-    assertThat(Firebase.sql(otherApp, settings())).isNotSameInstanceAs(Firebase.sql(settings()))
+    assertThat(Firebase.sql(config())).isSameInstanceAs(FirebaseSql.getInstance(config()))
+    assertThat(Firebase.sql(otherApp, config()))
+      .isSameInstanceAs(FirebaseSql.getInstance(otherApp, config()))
+    assertThat(Firebase.sql(otherApp, config())).isNotSameInstanceAs(Firebase.sql(config()))
   }
 
   @Test
   fun getInstanceWithoutAnAppUsesTheDefaultApp() {
-    val fsql = FirebaseSql.getInstance(settings())
+    val fsql = FirebaseSql.getInstance(config())
 
     assertThat(fsql.app).isSameInstanceAs(app)
-    assertThat(fsql).isSameInstanceAs(FirebaseSql.getInstance(app, settings()))
+    assertThat(fsql).isSameInstanceAs(FirebaseSql.getInstance(app, config()))
   }
 
   @Test
   fun getInstanceWithoutAnAppThrowsWhenThereIsNoDefaultApp() {
     FirebaseApp.clearInstancesForTest()
 
-    assertThrows(IllegalStateException::class.java) { FirebaseSql.getInstance(settings()) }
-    assertThrows(IllegalStateException::class.java) { Firebase.sql(settings()) }
+    assertThrows(IllegalStateException::class.java) { FirebaseSql.getInstance(config()) }
+    assertThrows(IllegalStateException::class.java) { Firebase.sql(config()) }
   }
 
   @Test
   fun getInstanceSendsTheRequestsToTheServiceOfTheProject() =
     runBlocking<Unit> {
       withServer { server, host ->
-        FirebaseSql.getInstance(app, settings(host = host)).from("products").select().execute()
+        FirebaseSql.getInstance(app, config(host = host)).from("products").select().execute()
 
         val request = server.takeRequestOrFail()
         assertThat(request.path).isEqualTo("/${SERVICE_PATH.joinToString("/")}/products?select=*")
@@ -784,7 +1023,7 @@ class FirebaseSqlTest {
   fun tableAndFunctionNamesAreSentAsOnePathSegment() =
     runBlocking<Unit> {
       withServer { server, host ->
-        val fsql = FirebaseSql.getInstance(app, settings(host = host))
+        val fsql = FirebaseSql.getInstance(app, config(host = host))
         for (name in NAMES_WITH_URL_CHARACTERS) {
           fsql.from(name).select().execute()
 
@@ -804,23 +1043,21 @@ class FirebaseSqlTest {
     }
 
   /**
-   * Returns settings for the service [SERVICE_ID] in [LOCATION], with the given values. SSL is off
+   * Returns a config for the service [SERVICE_ID] in [LOCATION], with the given values. SSL is off
    * by default, because [MockWebServer] serves plain http.
    */
-  private fun settings(
+  private fun config(
     host: String? = "custom.url",
     port: Int? = null,
     sslEnabled: Boolean? = false,
     location: String = LOCATION,
     serviceId: String = SERVICE_ID,
-    schemaName: String? = null,
-    headers: Map<String, String> = emptyMap()
+    schemaName: String? = null
   ) =
-    SqlServiceSettings(
+    SqlServiceConfig(
       serviceId = serviceId,
       location = location,
       schemaName = schemaName,
-      headers = headers,
       host = host,
       port = port,
       sslEnabled = sslEnabled
@@ -848,6 +1085,9 @@ class FirebaseSqlTest {
     const val LOCATION = "us-central1"
     const val SERVICE_ID = "my-service"
     const val PROJECT = "my-project"
+
+    /** Custom headers that are not reserved. */
+    val CUSTOM = mapOf("X-Custom" to "1")
 
     /** The path of the service of [PROJECT], which comes after the base URL. */
     const val PATH = "/v1/projects/$PROJECT/locations/$LOCATION/services/$SERVICE_ID/postgrest"

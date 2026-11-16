@@ -17,15 +17,16 @@ retries reads after transient failures, and returns an `OperationResult`, or thr
 ## Layout
 
 - `src/main/kotlin/com/google/firebase/sql/`:
-  - The public API: `FirebaseSql`, `Firebase.sql()` in `Sql.kt`, `SqlServiceSettings`,
+  - The public API: `FirebaseSql`, `Firebase.sql()` in `Sql.kt`, `SqlServiceConfig`,
     `OperationResult`, the exceptions, and the classes of constants.
   - `FirebaseSqlComponent.kt`: creates and reuses the `FirebaseSql` instances of one `FirebaseApp`,
     and closes them when that app is deleted. `FirebaseSqlRegistrar.kt` registers it.
   - `builders/`: `QueryBuilder`, `FilterBuilder`, and `TransformBuilder`, which
     `OperationBuilderImpl` implements. `PostgrestSyntax.kt` formats the values of the query string.
   - `core/`: `OperationsExecutor` (headers, tokens, retries, timeouts, and cancellation),
-    `NetworkClient` (OkHttp and error responses), the token managers, `QueryRequest`, and the JSON
-    encoding of values.
+    `InstanceHeaders` (the headers that `FirebaseSql.setHeaders()` sets, until the first use of the
+    instance freezes them), `NetworkClient` (OkHttp and error responses), the token managers,
+    `QueryRequest`, and the JSON encoding of values.
 - `src/test/`: unit tests, which run with Robolectric. `MockServerEndToEndTest` runs the whole SDK
   against a `MockWebServer`.
 - `src/androidTest/`: `CloudSqlEndToEndTest`, which runs against a live service, and the SQL of its
@@ -47,10 +48,16 @@ Run these commands from the root of the repository after a change:
 
 ## Conventions
 
-- **Public API:** `FirebaseSql`, `SqlServiceSettings`, `OperationResult`, `FirebaseSqlException`,
-  `FirebaseSqlExceptionCategory`, `ReservedHeaderException`, `Count`, `Order`, `TextSearchType`,
-  `RpcMethod`, `FilterOperator`, `ExplainFormat`, `builders/QueryBuilder`, `builders/FilterBuilder`,
-  and `builders/TransformBuilder`. The other classes are internal.
+- **Public API:** `FirebaseSql`, `SqlServiceConfig`, `OperationResult`, `FirebaseSqlException`,
+  `FirebaseSqlExceptionCategory`, `ReservedHeaderException`, `FirebaseSqlMutationException`,
+  `Count`, `Order`, `TextSearchType`, `RpcMethod`, `FilterOperator`, `ExplainFormat`,
+  `builders/QueryBuilder`, `builders/FilterBuilder`, and `builders/TransformBuilder`. The other
+  classes are internal.
+- **Instances:** `FirebaseSqlComponent` caches one instance for each app, PostgREST URL, and schema,
+  so every property of `SqlServiceConfig` identifies the instance. The custom headers are not part
+  of the config: `FirebaseSql.setHeaders()` sets them on the instance, until the first call of
+  `from()`, `rpc()`, `terminate()`, or `suspendingTerminate()` freezes them. After that, it accepts
+  only headers equal to the current ones.
 - **Kotlin only:** the API is built on coroutines and kotlinx.serialization, and is not designed to
   be called from Java. `execute()` is a suspend function.
 - **Public interfaces:** `FirebaseSql` and the three builders are marked

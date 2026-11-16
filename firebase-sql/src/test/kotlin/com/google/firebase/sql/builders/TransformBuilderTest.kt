@@ -428,8 +428,7 @@ class TransformBuilderTest {
   @Test
   fun setHeaderRejectsTheReservedHeaders() {
     // The tokens, the telemetry headers, and the schema headers are reserved, so a request always
-    // carries the tokens of the app and the schema of the settings. So are the routing and
-    // heartbeat
+    // carries the tokens of the app and the schema of the config. So are the routing and heartbeat
     // headers, which the SDK does not send.
     val reservedHeaders =
       listOf(
@@ -467,7 +466,7 @@ class TransformBuilderTest {
       assertThrows(ReservedHeaderException::class.java) {
         from().select().setHeader("Accept-Profile", "inventory")
       }
-    assertThat(schemaError).hasMessageThat().contains("SqlServiceSettings.schemaName")
+    assertThat(schemaError).hasMessageThat().contains("SqlServiceConfig.schemaName")
 
     val tokenError =
       assertThrows(ReservedHeaderException::class.java) {

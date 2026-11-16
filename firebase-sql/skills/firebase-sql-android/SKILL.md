@@ -188,34 +188,59 @@ data class Product(
 
 ```kotlin
 import com.google.firebase.Firebase
+import com.google.firebase.sql.SqlServiceConfig
 import com.google.firebase.sql.sql
 
-val sql =
-  Firebase.sql(SqlServiceSettings(serviceId = "my-service", location = "us-central1"))
+val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
 ```
 
 Keep and reuse the instance: `Firebase.sql()` returns the same instance for the same app, service,
 and schema. It sends the requests to the production service of the project in
 `google-services.json`. `FirebaseSql.getInstance()` does the same.
 
-|   Setting    |               Default                |                          Description                           |
+|   Property   |               Default                |                          Description                           |
 |--------------|--------------------------------------|----------------------------------------------------------------|
 | `serviceId`  | Required                             | The ID of the service.                                         |
 | `location`   | Required                             | The region of the service, for example `us-central1`.          |
 | `schemaName` | `null`: the schema of the service    | The PostgreSQL schema to query.                                |
-| `headers`    | none                                 | HTTP headers to send with every request.                       |
 | `host`       | `firebasedataconnect.googleapis.com` | The host name of the service, without `http://` or `https://`. |
 | `port`       | the port of `host`, or of the scheme | The port of the service.                                       |
 | `sslEnabled` | `true`                               | `https` when `true`, `http` when `false`.                      |
 
-- **One instance for each app, service, and schema.** `Firebase.sql()` returns the instance that
-  already exists for the same app, service URL, and schema, with the settings that created it. To
-  change its `headers`, call `terminate()` on it first, then call `Firebase.sql()` again.
+- **One instance for each app, service, and schema.** Every property of `SqlServiceConfig`
+  identifies the instance. `Firebase.sql()` returns the instance that already exists for the same
+  app, service URL, and schema, with the config that created it and the headers that were set on
+  it.
 - **Another schema:** call `Firebase.sql()` with the name of the schema in `schemaName`, for
-  example `Firebase.sql(settings.copy(schemaName = "inventory"))`. Each schema has its own instance.
-- **Another `FirebaseApp`:** call `Firebase.sql(app, settings)`.
+  example `Firebase.sql(config.copy(schemaName = "inventory"))`. Each schema has its own instance.
+- **Another `FirebaseApp`:** call `Firebase.sql(app, config)`.
 - **A server on the development machine, from the Android emulator:**
-  `SqlServiceSettings(serviceId = "my-service", location = "us-central1", host = "10.0.2.2", port = 9399, sslEnabled = false)`.
+  `SqlServiceConfig(serviceId = "my-service", location = "us-central1", host = "10.0.2.2", port = 9399, sslEnabled = false)`.
+
+### Custom headers
+
+To send custom HTTP headers with every request, call `setHeaders()` on the instance before its
+first request:
+
+```kotlin
+val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+
+val products = sql.from("products").select().execute().decodeList<Product>()
+```
+
+- **The first use freezes the headers.** The first call of `from()`, `rpc()`, `terminate()`, or
+  `suspendingTerminate()` makes `isMutable` `false`. After that, `setHeaders()` with the same
+  headers has no effect, so code that runs again, such as `onCreate()` after a rotation, can call
+  it safely. `setHeaders()` with other headers throws a `FirebaseSqlMutationException`.
+- **Headers that can differ between calls:** when the code that gets the instance can set other
+  headers than an earlier call, check `isMutable` first, for example
+  `if (sql.isMutable) sql.setHeaders(headers)`.
+- **A header for one request:** call `setHeader()` on the request, for example
+  `sql.from("products").select().setHeader("X-Request-Source", "sync")`. It wins over the header
+  with the same name that `setHeaders()` sets.
+- **Other headers for an instance in use:** call `terminate()` on it, then call `Firebase.sql()`
+  again, and call `setHeaders()` on the new instance.
 
 ## Step 6: Read and write data, and handle errors
 
@@ -278,9 +303,11 @@ For the rest of the API, read the reference that matches the task:
 - Catch `FirebaseSqlException` and `IOException` around `execute()`.
 - Map `snake_case` columns with `@SerialName`.
 - Reuse the `FirebaseSql` instance. Do not terminate it after each request.
+- Call `setHeaders()` before the first request of the instance. When the headers can differ between
+  the calls that get the instance, check `isMutable` first.
 - Choose the schema with `schemaName`. The SDK sets `Accept-Profile`, `Content-Profile`,
   `x-firebase-auth-token`, `X-Firebase-AppCheck`, `x-goog-api-client`, `x-client-version`,
-  `x-firebase-gmpid`, and `X-Retry-Count` itself. `headers` and `setHeader()` reject them,
+  `x-firebase-gmpid`, and `X-Retry-Count` itself. `setHeaders()` and `setHeader()` reject them,
   `Authorization`, and the routing and heartbeat headers that Firebase reserves
   (`x-firebase-sqlconnect-affinity`, `x-goog-request-params`, `x-firebase-client`, and
   `x-firebase-client-log-type`) with a `ReservedHeaderException`.

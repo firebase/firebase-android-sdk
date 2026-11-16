@@ -1198,7 +1198,7 @@ class CloudSqlEndToEndTest {
       // `fsql2` points to a second host where nothing listens, so its connection is refused
       // right away. Each instance must use its own host.
       val fsql2 =
-        Firebase.sql(app, service.settings().copy(host = "127.0.0.1", port = 1, sslEnabled = false))
+        Firebase.sql(app, service.config().copy(host = "127.0.0.1", port = 1, sslEnabled = false))
 
       // 1. The first instance reaches the real server.
       val (id1) = insertProducts(product("DB 1 Product", "is_active" to true))

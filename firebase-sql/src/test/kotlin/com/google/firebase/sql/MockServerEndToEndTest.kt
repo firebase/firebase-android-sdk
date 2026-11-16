@@ -317,7 +317,7 @@ class MockServerEndToEndTest {
   @Test
   fun aReservedHeaderNameWithWhitespaceIsNeverSent() {
     // HTTP does not allow whitespace in a header name, so these names are not the reserved headers:
-    // setHeader() and the settings accept them, and OkHttp then rejects the request before it is
+    // setHeader() and setHeaders() accept them, and OkHttp then rejects the request before it is
     // sent. Either way, the server never gets a second credential.
     val names = listOf(" Authorization", "x-firebase-auth-token ", "\tAuthorization\n")
     val plain = sql()
@@ -325,7 +325,8 @@ class MockServerEndToEndTest {
       val query = plain.from("products").select().setHeader(name, "Bearer token")
       assertThrows(name, IllegalArgumentException::class.java) { runBlocking { query.execute() } }
     }
-    // The instance keeps the settings that created it, so it is terminated before the next ones.
+    // The headers of an instance in use can no longer change, so each instance is terminated
+    // before the next one.
     runBlocking { plain.suspendingTerminate() }
     for (name in names) {
       val global = sql(headers = mapOf(name to "Bearer token"))
@@ -341,7 +342,7 @@ class MockServerEndToEndTest {
   fun aGlobalPreferIsSentAfterThePreferencesOfTheRequest() =
     runBlocking<Unit> {
       // The preferences of setHeader() come first, then those that the SDK computes, then those of
-      // the settings. PostgREST uses the first value of each preference.
+      // setHeaders(). PostgREST uses the first value of each preference.
       server.enqueue(MockResponse().setBody("[]"))
 
       sql(headers = mapOf("Prefer" to "timezone=UTC"))
@@ -356,25 +357,28 @@ class MockServerEndToEndTest {
 
   /**
    * Returns the instance for the service of the test project on [server], or on [host] and [port],
-   * with [headers].
+   * and sets its [headers] with `setHeaders()` when they are not empty.
    */
   private fun sql(
     schemaName: String? = null,
     host: String = server.hostName,
     port: Int = server.port,
     headers: Map<String, String> = emptyMap()
-  ): FirebaseSql =
-    component.get(
-      SqlServiceSettings(
-        serviceId = SERVICE_ID,
-        location = LOCATION,
-        schemaName = schemaName,
-        headers = headers,
-        host = host,
-        port = port,
-        sslEnabled = false
+  ): FirebaseSql {
+    val sql =
+      component.get(
+        SqlServiceConfig(
+          serviceId = SERVICE_ID,
+          location = LOCATION,
+          schemaName = schemaName,
+          host = host,
+          port = port,
+          sslEnabled = false
+        )
       )
-    )
+    if (headers.isNotEmpty()) sql.setHeaders(headers)
+    return sql
+  }
 
   /** Returns the `PGRST116` error that PostgREST sends when a result is not exactly one row. */
   private fun notSingular(details: String) =

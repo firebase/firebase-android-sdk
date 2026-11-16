@@ -642,8 +642,8 @@ public interface TransformBuilder {
    * `PGRST128`.
    *
    * It also sends `handling=strict`, so PostgREST rejects the request with the code `PGRST122` if
-   * its `Prefer` header, including a `Prefer` in `SqlServiceSettings.headers`, has a preference
-   * that PostgREST does not know.
+   * its `Prefer` header, including a `Prefer` that `FirebaseSql.setHeaders()` sets, has a
+   * preference that PostgREST does not know.
    *
    * PostgREST ignores the maximum for the other requests, so [maxAffected] throws an
    * [IllegalStateException] on a read, an insert, or an upsert, instead of letting them change more
@@ -673,11 +673,11 @@ public interface TransformBuilder {
    * Sets an HTTP header of this request.
    *
    * Header names are case-insensitive. The value replaces the header with the same name that the
-   * SDK computes, such as `Accept` or `Content-Type`, or that `SqlServiceSettings.headers` sets,
-   * and a later call with the same name replaces it again. A `Prefer` header is merged instead: its
-   * preferences are sent first, followed by the preferences that the SDK computes and then those of
-   * a `Prefer` in `SqlServiceSettings.headers`, and PostgREST uses the first value of each
-   * preference, so yours win.
+   * SDK computes, such as `Accept` or `Content-Type`, or that `FirebaseSql.setHeaders()` sets for
+   * every request of the instance, and a later call with the same name replaces it again. A
+   * `Prefer` header is merged instead: its preferences are sent first, followed by the preferences
+   * that the SDK computes and then those of a `Prefer` that `FirebaseSql.setHeaders()` sets, and
+   * PostgREST uses the first value of each preference, so yours win.
    *
    * A name or a value that HTTP does not allow, for example a value with a line break or a name
    * with a space, makes [execute] throw an `IllegalArgumentException`.
@@ -702,7 +702,7 @@ public interface TransformBuilder {
    * the app ID (`x-goog-api-client`, `x-client-version`, and `x-firebase-gmpid`), `X-Retry-Count`,
    * the routing headers (`x-firebase-sqlconnect-affinity` and `x-goog-request-params`), and the
    * heartbeat headers (`x-firebase-client` and `x-firebase-client-log-type`). To choose the schema,
-   * use `SqlServiceSettings.schemaName`. It is an `IllegalArgumentException`.
+   * use `SqlServiceConfig.schemaName`. It is an `IllegalArgumentException`.
    */
   public fun setHeader(name: String, value: String): TransformBuilder
 
