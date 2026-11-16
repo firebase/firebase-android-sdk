@@ -37,7 +37,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -112,6 +111,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLooper;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 /** Unit tests for the Firebase Remote Config API. */
@@ -119,7 +119,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @Config(
     manifest = Config.NONE,
     shadows = {ShadowPreconditions.class})
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
@@ -382,6 +382,7 @@ public final class FirebaseRemoteConfigTest {
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("FRC is initialized even though activated configs have not loaded!")
         .that(initStatus.isComplete())
@@ -396,6 +397,7 @@ public final class FirebaseRemoteConfigTest {
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("FRC is not initialized even though everything is loaded!")
         .that(initStatus.isComplete())
@@ -612,6 +614,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockActivatedCache, null);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() succeeded with no fetched values!")
         .that(activateTask.getResult())
@@ -627,6 +630,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockActivatedCache, null);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() succeeded with no fetched values!")
         .that(activateTask.getResult())
@@ -642,6 +646,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() succeeded with stale values!")
         .that(activateTask.getResult())
@@ -659,6 +664,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, firstFetchedContainer);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed with no activated values!")
         .that(activateTask.getResult())
@@ -676,6 +682,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, firstFetchedContainer);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed with no activated values!")
         .that(activateTask.getResult())
@@ -693,6 +700,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, secondFetchedContainer);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
 
@@ -709,6 +717,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forException(new IOException("Should have handled disk error.")));
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() succeeded even though file write failed!")
         .that(activateTask.getResult())
@@ -727,6 +736,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, containerWithNoAbtExperiments);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
 
@@ -746,6 +756,7 @@ public final class FirebaseRemoteConfigTest {
     doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
   }
@@ -761,6 +772,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
 
@@ -777,6 +789,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, configContainer);
 
     Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertThat(activateTask.getResult()).isTrue();
     verify(mockRolloutsStateSubscriptionsHandler).publishActiveRolloutsState(configContainer);
@@ -791,6 +804,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockFireperfActivatedCache, containerWithNoAbtExperiments);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
 
@@ -808,6 +822,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockFireperfActivatedCache, containerWithAbtExperiments);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
 
@@ -820,6 +835,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFireperfActivatedCache, /* container= */ null);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate(fireperf) succeeded with no fetched values!")
         .that(activateTask.getResult())
@@ -837,6 +853,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockFireperfActivatedCache, secondFetchedContainer);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
+    ShadowLooper.idleMainLooper();
 
     assertWithMessage("activate(fireperf) failed!").that(activateTask.getResult()).isTrue();
 
@@ -1126,27 +1143,26 @@ public final class FirebaseRemoteConfigTest {
 
     when(mockActivatedCache.getBlocking()).thenReturn(configContainer);
 
-    personalizationFrc
-        .fetchAndActivate()
-        .addOnCompleteListener(
-            success -> {
-              personalizationFrc.getString("key1");
-              personalizationFrc.getString("key2");
+    Task<Boolean> fetchAndActivateTask = personalizationFrc.fetchAndActivate();
+    ShadowLooper.idleMainLooper();
+    fetchAndActivateTask.addOnCompleteListener(
+        MoreExecutors.directExecutor(),
+        success -> {
+          personalizationFrc.getString("key1");
+          personalizationFrc.getString("key2");
 
-              // Since the first time we tried to get the Analytics connector we got `null` (not
-              // available) we should only get the values for the second `getString` call.
-              verify(mockAnalyticsConnector, times(1))
-                  .logEvent(
-                      eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
-                      eq(Personalization.EXTERNAL_EVENT),
-                      any(Bundle.class));
-              assertThat(fakeLogs).hasSize(1);
+          // Since the first time we tried to get the Analytics connector we got `null` (not
+          // available) we should only get the values for the second `getString` call.
+          verify(mockAnalyticsConnector, times(1))
+              .logEvent(
+                  eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
+                  eq(Personalization.EXTERNAL_EVENT),
+                  any(Bundle.class));
+          assertThat(fakeLogs).hasSize(1);
 
-              assertThat(fakeLogs.get(0))
-                  .string(EXTERNAL_PERSONALIZATION_ID_PARAM)
-                  .isEqualTo("id2");
-              assertThat(fakeLogs.get(0)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value2");
-            });
+          assertThat(fakeLogs.get(0)).string(EXTERNAL_PERSONALIZATION_ID_PARAM).isEqualTo("id2");
+          assertThat(fakeLogs.get(0)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value2");
+        });
   }
 
   @Test
@@ -1168,16 +1184,17 @@ public final class FirebaseRemoteConfigTest {
 
     when(mockActivatedCache.getBlocking()).thenReturn(configContainer);
 
-    personalizationFrc
-        .fetchAndActivate()
-        .addOnCompleteListener(
-            success -> {
-              personalizationFrc.getString("key1");
-              personalizationFrc.getString("key2");
-              verify(mockAnalyticsConnector, never())
-                  .logEvent(anyString(), anyString(), any(Bundle.class));
-              assertThat(fakeLogs).isEmpty();
-            });
+    Task<Boolean> fetchAndActivateTask = personalizationFrc.fetchAndActivate();
+    ShadowLooper.idleMainLooper();
+    fetchAndActivateTask.addOnCompleteListener(
+        MoreExecutors.directExecutor(),
+        success -> {
+          personalizationFrc.getString("key1");
+          personalizationFrc.getString("key2");
+          verify(mockAnalyticsConnector, never())
+              .logEvent(anyString(), anyString(), any(Bundle.class));
+          assertThat(fakeLogs).isEmpty();
+        });
   }
 
   @Test
@@ -1204,6 +1221,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
 
     frc.activate();
+    ShadowLooper.idleMainLooper();
 
     verify(mockActivatedCache).put(fetchedConfigContainer);
     verify(mockFetchedCache).clear();
@@ -1234,6 +1252,7 @@ public final class FirebaseRemoteConfigTest {
     cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
 
     frc.fetchAndActivate();
+    ShadowLooper.idleMainLooper();
 
     verify(mockActivatedCache).put(fetchedConfigContainer);
     verify(mockFetchedCache).clear();
@@ -1282,18 +1301,17 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_and_end_connection() throws Exception {
-    InputStream inputStream =
-        new ByteArrayInputStream(
+    CloseTrackingByteArrayInputStream inputStream =
+        new CloseTrackingByteArrayInputStream(
             "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8));
-    InputStream inputStreamSpy = spy(inputStream);
-    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStreamSpy);
+    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStream);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(inputStreamSpy, times(2)).close();
+    assertThat(inputStream.getCloseCount()).isEqualTo(2);
   }
 
   @Test
@@ -1586,28 +1604,25 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
-    InputStream inputStream = mock(InputStream.class);
+    FailingInputStream inputStream = new FailingInputStream();
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenReturn(inputStream);
-    when(inputStream.read()).thenThrow(IOException.class);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(inputStream).close();
+    assertThat(inputStream.getCloseCount()).isEqualTo(1);
   }
 
   @Test
   public void realtime_stream_listen_get_inputstream_exception_handling() throws Exception {
-    InputStream inputStream = mock(InputStream.class);
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
     configAutoFetch.listenForNotifications();
 
     verify(mockHttpURLConnection, times(1)).getInputStream();
-    verify(inputStream, never()).close();
   }
 
   @Test
@@ -1803,6 +1818,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   private <T> T getTaskResult(Task<T> task) {
+    ShadowLooper.idleMainLooper();
     assertThat(task.isComplete()).isTrue();
     assertThat(task.getResult()).isNotNull();
     return task.getResult();
@@ -1836,9 +1852,13 @@ public final class FirebaseRemoteConfigTest {
   private void flushScheduledTasks() throws InterruptedException {
     // Create a latch with a count of 1 and submit an execution request to countdown.
     // When the existing tasks have been executed, the countdown will execute and release the latch.
-    CountDownLatch latch = new CountDownLatch(1);
-    scheduledExecutorService.execute(latch::countDown);
-    assertTrue("Task didn't finish.", latch.await(1000, TimeUnit.MILLISECONDS));
+    for (int i = 0; i < 3; i++) {
+      ShadowLooper.idleMainLooper();
+      CountDownLatch latch = new CountDownLatch(1);
+      scheduledExecutorService.execute(latch::countDown);
+      assertTrue("Task didn't finish.", latch.await(1000, TimeUnit.MILLISECONDS));
+    }
+    ShadowLooper.idleMainLooper();
   }
 
   private ConfigUpdateListener generateEmptyRealtimeListener() {
@@ -1849,5 +1869,42 @@ public final class FirebaseRemoteConfigTest {
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}
     };
+  }
+
+  private static final class CloseTrackingByteArrayInputStream extends ByteArrayInputStream {
+    private int closeCount = 0;
+
+    CloseTrackingByteArrayInputStream(byte[] buf) {
+      super(buf);
+    }
+
+    @Override
+    public void close() throws IOException {
+      super.close();
+      closeCount++;
+    }
+
+    int getCloseCount() {
+      return closeCount;
+    }
+  }
+
+  private static final class FailingInputStream extends InputStream {
+    private int closeCount = 0;
+
+    @Override
+    public int read() throws IOException {
+      throw new IOException("Simulated read failure.");
+    }
+
+    @Override
+    public void close() throws IOException {
+      super.close();
+      closeCount++;
+    }
+
+    int getCloseCount() {
+      return closeCount;
+    }
   }
 }

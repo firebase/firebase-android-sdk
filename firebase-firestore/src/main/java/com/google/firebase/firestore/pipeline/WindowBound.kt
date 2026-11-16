@@ -19,8 +19,9 @@ import com.google.common.annotations.Beta
 /**
  * A symbolic window frame boundary, as opposed to a numeric offset.
  *
- * Window Functions SDK features are in preview until the backend feature launches. Look for launch
- * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ * Window Functions SDK features are in preview until the backend feature launches. Look for a
+ * launch announcement in the
+ * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
  *
  * Use these constants for symbolic bounds, and plain numbers for offsets:
  * ```

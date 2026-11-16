@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed an issue where transient upload failures bypassed priority
+  backoff delays when retrying pending events. (#8815)
+
 # 5.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

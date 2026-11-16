@@ -1,5 +1,7 @@
 # Unreleased
 
+# 16.0.0-beta08
+
 - [feature] Added support for function calling in on-device content generation
   requests and responses. (#8758)
 - [changed] **Breaking Change**: Updated `GenerateContentRequest` to accept a
@@ -10,7 +12,6 @@
 - [feature] Added `enableThinking` to `GenerateContentRequest`,
   `thoughtProcess` to `GenerateContentResponse`, and `isThinkingModeAvailable`
   to `GenerativeModel` to support thinking mode. (#8678)
-
 - [feature] Added `systemInstruction` property to `GenerateContentRequest`. (#8663)
 
 # 16.0.0-beta06

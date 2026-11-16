@@ -24,8 +24,9 @@ import com.google.firestore.v1.Value
  * Specification defining how documents are partitioned, ordered, and bounded for window functions
  * in [com.google.firebase.firestore.Pipeline.addWindowFields].
  *
- * Window Functions SDK features are in preview until the backend feature launches. Look for launch
- * announcement at: https://docs.cloud.google.com/firestore/docs/release-notes
+ * Window Functions SDK features are in preview until the backend feature launches. Look for a
+ * launch announcement in the
+ * [Firestore release notes](https://docs.cloud.google.com/firestore/docs/release-notes).
  *
  * **Sorting and Window Frames:**
  * - For document-based ([documents]) window frames, [sort] is optional; if no sort expressions are

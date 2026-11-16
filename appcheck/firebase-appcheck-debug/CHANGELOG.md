@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.1.0
+
 - [feature] Added support for loading the App Check debug token from the
   `firebase_app_check_debug_token` string resource in debuggable builds. (#8791)
 
