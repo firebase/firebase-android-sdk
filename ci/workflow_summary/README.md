@@ -33,7 +33,7 @@
 - `-t, --token`: **[Required]** GitHub access token. See
   [Creating a personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token).
 
-- `-w, --workflow_name`: **[Required]** Workflow filename, default value is `ci_tests.yml`.
+- `-w, --workflow_name`: **[Required]** Workflow filename, default value is `ci_unit_tests.yml` (use `ci_integration_tests.yml` for integration tests).
 
 - `-d, --days`: Filter workflows that running in past -d days, default value is `90`. See
   [retention period for GitHub Actions artifacts and logs](https://docs.github.com/en/organizations/managing-organization-settings/configuring-the-retention-period-for-github-actions-artifacts-and-logs-in-your-organization).

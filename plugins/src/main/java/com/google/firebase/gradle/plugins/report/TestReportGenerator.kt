@@ -39,7 +39,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @SuppressWarnings("NewApi")
-class TestReportGenerator(private val apiToken: String) {
+open class TestReportGenerator(private val apiToken: String) {
   private val LOG: Logger = LoggerFactory.getLogger("firebase-test-report")
 
   fun createReport(outputFile: File, commitCount: Int) {
@@ -250,21 +250,25 @@ class TestReportGenerator(private val apiToken: String) {
     return output.toString()
   }
 
-  private fun parseTestReports(commit: String): List<TestReport> {
+  internal fun parseTestReports(commit: String): List<TestReport> {
+    val reports: MutableList<TestReport> = mutableListOf()
+    val seenWorkflows: MutableSet<String> = mutableSetOf()
     val runs = request("actions/runs?head_sha=$commit")
     for (el in runs["workflow_runs"] as JsonArray) {
       val run = el as JsonObject
       val name =
         run["name"]?.jsonPrimitive?.content ?: throw RuntimeException("Couldn't find CI name")
-      if (name == "CI Tests") {
-        return parseCITests(
-          run["id"]?.jsonPrimitive?.content
-            ?: throw RuntimeException("Couldn't find run id for $commit run $name"),
-          commit,
+      if (name in CI_TEST_WORKFLOW_NAMES && seenWorkflows.add(name)) {
+        reports.addAll(
+          parseCITests(
+            run["id"]?.jsonPrimitive?.content
+              ?: throw RuntimeException("Couldn't find run id for $commit run $name"),
+            commit,
+          )
         )
       }
     }
-    return emptyList()
+    return reports
   }
 
   private fun parseCITests(id: String, commit: String): List<TestReport> {
@@ -331,7 +335,7 @@ class TestReportGenerator(private val apiToken: String) {
     )
   }
 
-  private fun request(path: String): JsonObject {
+  internal open fun request(path: String): JsonObject {
     return request(path, JsonObject::class.java)
   }
 
@@ -406,6 +410,7 @@ class TestReportGenerator(private val apiToken: String) {
   }
 
   companion object {
+    private val CI_TEST_WORKFLOW_NAMES = setOf("CI Tests", "CI Unit Tests", "CI Integration Tests")
     private const val URL_PREFIX = "https://api.github.com/repos/firebase/firebase-android-sdk/"
     private const val GITHUB_API_VERSION = "2022-11-28"
     // Pulls the URL corresponding to the rel="next" link header, if present.
