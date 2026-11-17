@@ -24,9 +24,9 @@ retries reads after transient failures, and returns an `OperationResult`, or thr
   - `builders/`: `QueryBuilder`, `FilterBuilder`, and `TransformBuilder`, which
     `OperationBuilderImpl` implements. `PostgrestSyntax.kt` formats the values of the query string.
   - `core/`: `OperationsExecutor` (headers, tokens, retries, timeouts, and cancellation),
-    `InstanceHeaders` (the headers that `FirebaseSql.setHeaders()` sets, until the first use of the
-    instance freezes them), `NetworkClient` (OkHttp and error responses), the token managers,
-    `QueryRequest`, and the JSON encoding of values.
+    `InstanceSettings` (the settings that the setters of `FirebaseSql`, such as `setHeaders()`,
+    change until the first use of the instance freezes them), `NetworkClient` (OkHttp and error
+    responses), the token managers, `QueryRequest`, and the JSON encoding of values.
 - `src/test/`: unit tests, which run with Robolectric. `MockServerEndToEndTest` runs the whole SDK
   against a `MockWebServer`.
 - `src/androidTest/`: `CloudSqlEndToEndTest`, which runs against a live service, and the SQL of its
@@ -54,10 +54,13 @@ Run these commands from the root of the repository after a change:
   `builders/QueryBuilder`, `builders/FilterBuilder`, and `builders/TransformBuilder`. The other
   classes are internal.
 - **Instances:** `FirebaseSqlComponent` caches one instance for each app, PostgREST URL, and schema,
-  so every property of `SqlServiceConfig` identifies the instance. The custom headers are not part
-  of the config: `FirebaseSql.setHeaders()` sets them on the instance, until the first call of
-  `from()`, `rpc()`, `terminate()`, or `suspendingTerminate()` freezes them. After that, it accepts
-  only headers equal to the current ones.
+  so every property of `SqlServiceConfig` identifies the instance. The other settings are not part
+  of the config: setters on `FirebaseSql`, such as `setHeaders()`, change them on the instance,
+  until the first call of `from()`, `rpc()`, `terminate()`, or `suspendingTerminate()` freezes
+  them. After that, a setter accepts only a value equal to the current one, and throws a
+  `FirebaseSqlMutationException` for another value. A new setting goes in `InstanceSettings`,
+  behind the same lock and frozen flag as the others, with a setter on `FirebaseSql` that follows
+  the same rules, so that `isMutable` covers it.
 - **Kotlin only:** the API is built on coroutines and kotlinx.serialization, and is not designed to
   be called from Java. `execute()` is a suspend function.
 - **Public interfaces:** `FirebaseSql` and the three builders are marked

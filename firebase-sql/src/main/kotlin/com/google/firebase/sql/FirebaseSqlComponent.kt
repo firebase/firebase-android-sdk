@@ -20,7 +20,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Deferred
-import com.google.firebase.sql.core.InstanceHeaders
+import com.google.firebase.sql.core.InstanceSettings
 import com.google.firebase.sql.core.OkHttpNetworkClient
 import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.newOkHttpClient
@@ -153,9 +153,9 @@ internal class FirebaseSqlComponent(
     restUrl: HttpUrl,
     okHttpClient: OkHttpClient
   ): FirebaseSqlImpl {
-    // FirebaseSql.setHeaders() changes the headers until the instance is used, and the executor
-    // reads them when it sends a request.
-    val headers = InstanceHeaders()
+    // The setters of FirebaseSql change the settings until the instance is used, and the executor
+    // reads the headers when it sends a request.
+    val settings = InstanceSettings()
     val executor =
       OperationsExecutor(
         // Without a schema, no Accept-Profile or Content-Profile header is sent.
@@ -164,12 +164,12 @@ internal class FirebaseSqlComponent(
         authDeferred = authDeferred,
         appCheckDeferred = appCheckDeferred,
         networkClient = OkHttpNetworkClient(okHttpClient),
-        headers = headers::get,
+        headers = settings::headers,
         appId = app.options.applicationId,
         blockingDispatcher = blockingDispatcher,
         nonBlockingDispatcher = nonBlockingDispatcher
       )
-    return FirebaseSqlImpl(this, app, config, headers, executor)
+    return FirebaseSqlImpl(this, app, config, settings, executor)
   }
 
   /** Removes [instance] from the cache, so that [get] creates another instance for its config. */

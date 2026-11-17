@@ -21,7 +21,7 @@ import com.google.firebase.sql.builders.FilterBuilder
 import com.google.firebase.sql.builders.OperationBuilderImpl
 import com.google.firebase.sql.builders.QueryBuilder
 import com.google.firebase.sql.core.CLOSED_MESSAGE
-import com.google.firebase.sql.core.InstanceHeaders
+import com.google.firebase.sql.core.InstanceSettings
 import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.defaultJson
 import com.google.firebase.sql.core.requireNotReservedHeader
@@ -36,30 +36,31 @@ import kotlinx.serialization.json.JsonNull
  * `rpc()`, and the `execute()` of every builder that this instance created throw an
  * [IllegalStateException], and the requests in flight are cancelled.
  *
- * [setHeaders] changes the [instanceHeaders], which the executor sends with every request, until
- * the first call of `from()`, `rpc()`, [terminate], or [suspendingTerminate] freezes them.
+ * The setters, such as [setHeaders], change the [settings], which the executor reads when it sends
+ * a request, until the first call of `from()`, `rpc()`, [terminate], or [suspendingTerminate]
+ * freezes them.
  */
 internal class FirebaseSqlImpl(
   private val component: FirebaseSqlComponent,
   override val app: FirebaseApp,
   override val config: SqlServiceConfig,
-  private val instanceHeaders: InstanceHeaders,
+  private val settings: InstanceSettings,
   private val executor: OperationsExecutor
 ) : FirebaseSql {
 
   override val isMutable: Boolean
-    get() = instanceHeaders.isMutable
+    get() = settings.isMutable
 
   override fun setHeaders(headers: Map<String, String>) {
-    // A reserved header is an invalid argument, whether or not the headers can still change.
+    // A reserved header is an invalid argument, whether or not the settings can still change.
     headers.keys.forEach { requireNotReservedHeader(it, "setHeaders()") }
-    instanceHeaders.set(headers)
+    settings.setHeaders(headers)
   }
 
   override fun from(table: String): QueryBuilder {
     checkNotTerminated()
     // Frozen only once the builder exists, so that a call with invalid arguments changes nothing.
-    return OperationBuilderImpl(table, executor).also { instanceHeaders.freeze() }
+    return OperationBuilderImpl(table, executor).also { settings.freeze() }
   }
 
   override fun rpc(
@@ -92,20 +93,20 @@ internal class FirebaseSqlImpl(
   ): FilterBuilder {
     checkNotTerminated()
     return OperationBuilderImpl.rpc(functionName, params, method, count, executor).also {
-      instanceHeaders.freeze()
+      settings.freeze()
     }
   }
 
   override fun terminate() {
     // Removed from the cache first, so that getInstance() never returns a terminated instance.
     component.remove(this)
-    instanceHeaders.freeze()
+    settings.freeze()
     executor.close()
   }
 
   override suspend fun suspendingTerminate() {
     component.remove(this)
-    instanceHeaders.freeze()
+    settings.freeze()
     executor.suspendingClose()
   }
 

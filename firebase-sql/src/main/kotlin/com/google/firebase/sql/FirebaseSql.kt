@@ -122,18 +122,18 @@ public interface FirebaseSql {
   public val config: SqlServiceConfig
 
   /**
-   * Whether [setHeaders] can still change the headers of this instance.
+   * Whether the setters of this instance, such as [setHeaders], can still change its settings.
    *
    * It is `true` for a new instance, and becomes `false` on the first call of [from], [rpc],
    * [terminate], or [suspendingTerminate]: from then on, the requests of the instance use its
-   * headers, or the instance is terminated. It never becomes `true` again. A call of [from] or
+   * settings, or the instance is terminated. It never becomes `true` again. A call of [from] or
    * [rpc] that throws because of its arguments, such as `from("")`, does not count.
    *
    * [getInstance] returns the same instance for equal configs, so another part of the app can have
-   * used it already, with its own headers. When the headers can differ between the calls that get
-   * the instance, check this property before [setHeaders], which throws a
-   * [FirebaseSqlMutationException] for other headers once the instance is in use. A call of
-   * [setHeaders] with the same headers never throws, so it needs no check.
+   * used it already, with its own settings. When a setting can differ between the calls that get
+   * the instance, check this property before its setter, which throws a
+   * [FirebaseSqlMutationException] for another value once the instance is in use. A setter called
+   * with the current value never throws, so it needs no check.
    *
    * **Example: set the headers unless the instance is already in use**
    * ```kotlin
@@ -148,7 +148,7 @@ public interface FirebaseSql {
   /**
    * Sets the custom headers that every request of this instance sends. Call it before the first
    * request: the first call of [from], [rpc], [terminate], or [suspendingTerminate] freezes the
-   * headers, and [isMutable] becomes `false`.
+   * settings of the instance, and [isMutable] becomes `false`.
    *
    * Each call replaces the headers of the earlier calls, and an empty map removes them. The map is
    * copied, so later changes to it have no effect. Header names are compared ignoring case. A

@@ -104,8 +104,8 @@ import okhttp3.HttpUrl
  * none.
  * @param networkClient Sends the requests.
  * @param headers Returns the global headers, which are sent with every request, unless the request
- * sets the same header: the [InstanceHeaders] of the instance, which `FirebaseSql.setHeaders()`
- * sets. It is called each time a request is sent.
+ * sets the same header: the headers in the [InstanceSettings] of the instance, which
+ * `FirebaseSql.setHeaders()` sets. It is called each time a request is sent.
  * @param appId The Firebase app ID, which is sent in the `x-firebase-gmpid` header, or `null` to
  * send none.
  * @param timeoutMillis The longest time in milliseconds that each attempt can take on the network:
