@@ -152,7 +152,8 @@ If the test tables do not exist yet, create them once from the terminal with
 
 ### Run the tests on CI
 
-The **Instrumentation Tests (:firebase-sql)** job of [`ci_tests.yml`](../.github/workflows/ci_tests.yml)
+The **Instrumentation Tests (:firebase-sql)** job of
+[`ci_integration_tests.yml`](../.github/workflows/ci_integration_tests.yml)
 runs `deviceCheck` for every pull request that affects this module, and after every merge to
 `main`. This module enables `testLab`, so `deviceCheck` runs `CloudSqlEndToEndTest` on a Firebase
 Test Lab device. Pull requests from forks skip the job, because they cannot read the secrets. The
