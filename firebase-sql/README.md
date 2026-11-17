@@ -7,9 +7,7 @@ carries the Firebase Authentication and Firebase App Check tokens of the app.
 
 This README is for contributors who build and test the SDK.
 
-- To write app code with the SDK, use the
-  [`firebase-sql-android` skill](skills/firebase-sql-android/SKILL.md), which is written for
-  developers and AI agents, and the KDoc of each public class and method.
+- To write app code with the SDK, use the KDoc of each public class and method.
 - To change the SDK, read [AGENTS.md](AGENTS.md).
 
 ## Building

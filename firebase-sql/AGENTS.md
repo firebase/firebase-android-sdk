@@ -2,8 +2,8 @@
 
 This guide is for AI agents and developers who change the code of this module. It adds the details
 of `firebase-sql` to the [repository guide](../AGENTS.md), which covers the setup, the build, and
-the conventions of every SDK in this repository. To write app code that uses the SDK, use the
-[`firebase-sql-android` skill](skills/firebase-sql-android/SKILL.md) instead.
+the conventions of every SDK in this repository. To write app code that uses the SDK, use the KDoc
+of each public class and method instead.
 
 ## What the SDK does
 
@@ -73,8 +73,7 @@ Run these commands from the root of the repository after a change:
 - **Documentation:** every public declaration has KDoc that a reader can use without other
   documentation: what it does, the PostgREST request that it produces, its errors, and examples
   that compile. KDoc and comments describe the behavior itself, and do not refer to other SDKs;
-  PostgREST and PostgreSQL are fine. When a change affects how apps use the SDK, update the
-  [`firebase-sql-android` skill](skills/firebase-sql-android/SKILL.md) too.
+  PostgREST and PostgreSQL are fine.
 
 ## Run the tests against a live service
 
