@@ -28,7 +28,8 @@ package com.google.firebase.sql
  * **Empty lists:** As in PostgreSQL, an empty list matches every row with an `_ALL` constant, even
  * the rows where the column is `NULL`, and no rows with an `_ANY` constant; `filterNot()` gives the
  * opposite. So in an `update()` or a `delete()`, an empty list can change every row of the table.
- * `maxAffected()` makes the server reject a change of more rows than expected.
+ * [maxAffected][com.google.firebase.sql.builders.TransformBuilder.maxAffected] makes the server
+ * reject a change of more rows than expected.
  *
  * **Example: choose the operator at run time**
  * ```kotlin

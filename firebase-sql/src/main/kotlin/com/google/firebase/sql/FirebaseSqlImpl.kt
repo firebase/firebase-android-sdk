@@ -17,14 +17,21 @@
 package com.google.firebase.sql
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sql.builders.FilterBuilder
+import com.google.firebase.sql.builders.OperationBuilderImpl
+import com.google.firebase.sql.builders.QueryBuilder
+import com.google.firebase.sql.core.CLOSED_MESSAGE
 import com.google.firebase.sql.core.InstanceSettings
 import com.google.firebase.sql.core.OperationsExecutor
+import com.google.firebase.sql.core.defaultJson
 import com.google.firebase.sql.core.requireNotReservedHeader
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.JsonNull
 
 /**
  * The implementation of [FirebaseSql].
  *
- * `from()` and `rpc()` return a new `OperationBuilderImpl` that sends its request with the shared
+ * `from()` and `rpc()` return a new [OperationBuilderImpl] that sends its request with the shared
  * [OperationsExecutor], which keeps the state of the instance. After [terminate], `from()`,
  * `rpc()`, and the `execute()` of every builder that this instance created throw an
  * [IllegalStateException], and the requests in flight are cancelled.
@@ -50,6 +57,46 @@ internal class FirebaseSqlImpl(
     settings.setHeaders(headers)
   }
 
+  override fun from(table: String): QueryBuilder {
+    checkNotTerminated()
+    // Frozen only once the builder exists, so that a call with invalid arguments changes nothing.
+    return OperationBuilderImpl(table, executor).also { settings.freeze() }
+  }
+
+  override fun rpc(
+    functionName: String,
+    params: Map<String, Any?>,
+    method: RpcMethod,
+    count: Count?
+  ): FilterBuilder = rpcBuilder(functionName, params, method, count)
+
+  override fun <T> rpc(
+    functionName: String,
+    params: T,
+    serializer: SerializationStrategy<T>,
+    method: RpcMethod,
+    count: Count?
+  ): FilterBuilder {
+    checkNotTerminated()
+    // A null object calls the function without arguments, like an empty map.
+    val arguments =
+      defaultJson.encodeToJsonElement(serializer, params).takeUnless { it is JsonNull }
+    return rpcBuilder(functionName, arguments, method, count)
+  }
+
+  /** Returns the builder of a call with [params]: `null`, a `Map`, or a `JsonElement`. */
+  private fun rpcBuilder(
+    functionName: String,
+    params: Any?,
+    method: RpcMethod,
+    count: Count?
+  ): FilterBuilder {
+    checkNotTerminated()
+    return OperationBuilderImpl.rpc(functionName, params, method, count, executor).also {
+      settings.freeze()
+    }
+  }
+
   override fun terminate() {
     // Removed from the cache first, so that getInstance() never returns a terminated instance.
     component.remove(this)
@@ -61,5 +108,9 @@ internal class FirebaseSqlImpl(
     component.remove(this)
     settings.freeze()
     executor.suspendingClose()
+  }
+
+  private fun checkNotTerminated() {
+    check(!executor.isClosed) { CLOSED_MESSAGE }
   }
 }

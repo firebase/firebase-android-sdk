@@ -18,6 +18,10 @@ package com.google.firebase.sql
 
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
+import com.google.firebase.sql.builders.FilterBuilder
+import com.google.firebase.sql.builders.QueryBuilder
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.serializer
 
 /**
  * The entry point of Firebase SQL: sends PostgREST requests to the Cloud SQL for PostgreSQL
@@ -26,10 +30,10 @@ import com.google.firebase.annotations.InternalForInheritanceFirebaseApi
  * Get an instance with `Firebase.sql(config)`, or with [getInstance]. To send custom headers with
  * every request, call [setHeaders] before the first request.
  *
- * Start each request with `from()` for a table or a view, or with `rpc()` for a PostgreSQL
- * function, add filters and modifiers, then call `execute()`, which sends the request and returns
- * an [OperationResult]. It throws a [FirebaseSqlException] when the server rejects the request, and
- * an `IOException` when no response arrives. Each call of the fluent API adds one part of the
+ * Start each request with [from] for a table or a view, or with [rpc] for a PostgreSQL function,
+ * add filters and modifiers, then call `execute()`, which sends the request and returns an
+ * [OperationResult]. It throws a [FirebaseSqlException] when the server rejects the request, and an
+ * `IOException` when no response arrives. Each call of the fluent API adds one part of the
  * PostgREST request, so filters, modifiers, and errors behave as described in the
  * [PostgREST API reference](https://docs.postgrest.org/en/stable/references/api.html).
  *
@@ -120,10 +124,10 @@ public interface FirebaseSql {
   /**
    * Whether the setters of this instance, such as [setHeaders], can still change its settings.
    *
-   * It is `true` for a new instance, and becomes `false` on the first call of `from()`, `rpc()`,
+   * It is `true` for a new instance, and becomes `false` on the first call of [from], [rpc],
    * [terminate], or [suspendingTerminate]: from then on, the requests of the instance use its
-   * settings, or the instance is terminated. It never becomes `true` again. A call of `from()` or
-   * `rpc()` that throws because of its arguments, such as `from("")`, does not count.
+   * settings, or the instance is terminated. It never becomes `true` again. A call of [from] or
+   * [rpc] that throws because of its arguments, such as `from("")`, does not count.
    *
    * [getInstance] returns the same instance for equal configs, so another part of the app can have
    * used it already, with its own settings. When a setting can differ between the calls that get
@@ -143,7 +147,7 @@ public interface FirebaseSql {
 
   /**
    * Sets the custom headers that every request of this instance sends. Call it before the first
-   * request: the first call of `from()`, `rpc()`, [terminate], or [suspendingTerminate] freezes the
+   * request: the first call of [from], [rpc], [terminate], or [suspendingTerminate] freezes the
    * settings of the instance, and [isMutable] becomes `false`.
    *
    * Each call replaces the headers of the earlier calls, and an empty map removes them. The map is
@@ -162,8 +166,8 @@ public interface FirebaseSql {
    * `setHeader()`, or terminate this instance and set the headers on the new instance that
    * [getInstance] returns.
    *
-   * It can be called from any thread. When another thread calls `from()` or `rpc()` at the same
-   * time, the headers change either before the instance uses them, or not at all: [setHeaders] then
+   * It can be called from any thread. When another thread calls [from] or [rpc] at the same time,
+   * the headers change either before the instance uses them, or not at all: [setHeaders] then
    * throws for other headers, even right after [isMutable] returned `true`. The headers never
    * change once the instance is in use.
    *
@@ -191,13 +195,233 @@ public interface FirebaseSql {
   public fun setHeaders(headers: Map<String, String>)
 
   /**
+   * Starts a request on the table or view named [table].
+   *
+   * Choose the operation on the returned [QueryBuilder]: [QueryBuilder.select] to read rows, or
+   * [QueryBuilder.insert], [QueryBuilder.upsert], [QueryBuilder.update], or [QueryBuilder.delete]
+   * to change them. Then add filters and modifiers, and call `execute()`.
+   *
+   * The table must be in the schema of this instance (see [SqlServiceConfig.schemaName]). Its name
+   * is case-sensitive, and PostgreSQL stores unquoted names in lowercase. The name is sent as one
+   * segment of the URL path, so it can contain any character, for example a space or a `/`.
+   *
+   * PostgREST: `/<table>`, for example `GET /products?select=*`
+   *
+   * **Example: read rows with a filter, an order, and a limit**
+   * ```kotlin
+   * // GET /products?select=*&category_id=eq.1&limit=10&order=price.asc
+   * val products =
+   *   sql
+   *     .from("products")
+   *     .select()
+   *     .eq("category_id", 1)
+   *     .order("price")
+   *     .limit(10)
+   *     .execute()
+   *     .decodeList<Product>()
+   * ```
+   *
+   * **Example: read rows with the row that they reference**
+   * ```kotlin
+   * @Serializable data class ProductName(val name: String, val categories: Category? = null)
+   *
+   * // Embeds the row of categories that the foreign key category_id references.
+   * val names =
+   *   sql
+   *     .from("products")
+   *     .select("name, categories(id, name)")
+   *     .execute()
+   *     .decodeList<ProductName>()
+   * ```
+   *
+   * Response:
+   * ```json
+   * [{"name": "Apple", "categories": {"id": 1, "name": "Fruit"}}]
+   * ```
+   *
+   * **Example: insert, update, and delete a row**
+   * ```kotlin
+   * // POST /products
+   * sql
+   *   .from("products")
+   *   .insert(Product(id = 43, name = "Kiwi", price = 0.5))
+   *   .execute()
+   *
+   * // PATCH /products?id=eq.43
+   * sql.from("products").update(mapOf("price" to 0.45)).eq("id", 43).execute()
+   *
+   * // DELETE /products?id=eq.43
+   * sql.from("products").delete().eq("id", 43).execute()
+   * ```
+   *
+   * @param table The name of the table or view. It must not be empty, `.`, or `..`.
+   * @return A [QueryBuilder] for [table].
+   * @throws IllegalArgumentException If [table] is empty, `.`, or `..`.
+   * @throws IllegalStateException If this instance is terminated.
+   */
+  public fun from(table: String): QueryBuilder
+
+  /**
+   * Calls the PostgreSQL function named [functionName].
+   *
+   * By default, the function is called with an HTTP POST request whose body is the JSON object of
+   * the arguments; a call without arguments sends `{}`. A function that returns one value answers
+   * with its JSON value, which `OperationResult.decodeAs<T>()` decodes. A function that returns
+   * rows, with `returns setof` or `returns table`, can be filtered, ordered, and paginated like a
+   * table, with the methods of the returned [FilterBuilder].
+   *
+   * With [RpcMethod.GET] or [RpcMethod.HEAD] as the [method], each argument is sent as a query
+   * parameter with its name instead. A `null` argument is left out, so that the function uses the
+   * default value of the parameter. A list is sent as a PostgreSQL array literal, for example
+   * `{1,2}`, and an object as its JSON text. PostgREST runs GET and HEAD requests in a read-only
+   * transaction, so a function that changes data fails with the PostgreSQL error `25006`, and must
+   * be called with POST. Use POST too when an argument would not reach the function:
+   * - a value that starts like a filter, for example `eq.1`, which PostgREST reads as a filter on
+   * the result;
+   * - an argument named `select`, `columns`, `on_conflict`, `order`, `limit`, `offset`, `and`, or
+   * `or`, which PostgREST reads as that query parameter.
+   *
+   * With GET or HEAD, an argument name must not start with `$`, because the server drops such query
+   * parameters: `execute()` throws an [IllegalArgumentException] for it.
+   *
+   * A call with GET or HEAD is retried up to 3 times after a transient failure, like the other GET
+   * and HEAD requests, unless the request calls `noRetry()`. A POST call is not retried.
+   *
+   * PostgREST: `POST /rpc/<functionName>` with the arguments as a JSON object, or `GET
+   * /rpc/<functionName>?<argument>=<value>` with [RpcMethod.GET], or `HEAD` with [RpcMethod.HEAD]
+   *
+   * **Example: call a function that returns a value**
+   * ```kotlin
+   * // POST /rpc/add_numbers with the body {"a":2,"b":3}
+   * val sum = sql.rpc("add_numbers", mapOf("a" to 2, "b" to 3)).execute().decodeAs<Int>()
+   * ```
+   *
+   * Response:
+   * ```json
+   * 5
+   * ```
+   *
+   * **Example: filter and order the rows that a function returns**
+   * ```kotlin
+   * // POST /rpc/products_under?category_id=eq.1&order=price.asc with the body {"max_price":10}
+   * val cheapFruit =
+   *   sql
+   *     .rpc("products_under", mapOf("max_price" to 10))
+   *     .eq("category_id", 1)
+   *     .order("price")
+   *     .execute()
+   *     .decodeList<Product>()
+   * ```
+   *
+   * **Example: pass the arguments as a class**
+   *
+   * The `rpc` extension function of this package takes an object of a class annotated with
+   * `@Serializable`, whose properties are the arguments.
+   * ```kotlin
+   * @Serializable data class PriceLimit(@SerialName("max_price") val maxPrice: Double)
+   *
+   * val cheap =
+   *   sql.rpc("products_under", PriceLimit(maxPrice = 10.0)).execute().decodeList<Product>()
+   * ```
+   *
+   * **Example: call a function with GET, and count its rows**
+   * ```kotlin
+   * // GET /rpc/products_under?max_price=10&limit=5 with the header Prefer: count=exact
+   * val result =
+   *   sql
+   *     .rpc(
+   *       "products_under",
+   *       mapOf("max_price" to 10),
+   *       method = RpcMethod.GET,
+   *       count = Count.EXACT
+   *     )
+   *     .limit(5)
+   *     .execute()
+   * val firstProducts = result.decodeList<Product>() // At most 5 products.
+   * val total = result.countOrNull() // Every product under 10, not only the first 5.
+   * ```
+   *
+   * **Example: count the rows of a function without reading them**
+   * ```kotlin
+   * // HEAD /rpc/products_under?max_price=10 with the header Prefer: count=exact
+   * val result =
+   *   sql
+   *     .rpc(
+   *       "products_under",
+   *       mapOf("max_price" to 10),
+   *       method = RpcMethod.HEAD,
+   *       count = Count.EXACT
+   *     )
+   *     .execute()
+   * val numberOfProducts = result.countOrNull()
+   * ```
+   *
+   * @param functionName The name of the function. It is case-sensitive, and the function must be in
+   * the schema of this instance. It is sent as one segment of the URL path, so it must not be
+   * empty, `.`, or `..`.
+   * @param params The arguments of the function, by name, for example a kotlinx.serialization
+   * `JsonObject`. A value can be a `String`, a number, a `Boolean`, `null`, an enum (sent as its
+   * name), a `UUID`, a `Date`, a `ByteArray` (sent as a `bytea` in hex), a `List`, a `Map`, or a
+   * `JsonElement`. An empty map, the default, calls the function without arguments. To pass the
+   * arguments as an object of a class annotated with `@Serializable`, call the `rpc` extension
+   * function.
+   * @param method The HTTP method of the call: [RpcMethod.POST], the default, sends the arguments
+   * as a JSON object in the body; [RpcMethod.GET] sends them as query parameters, for a function
+   * that does not change data; [RpcMethod.HEAD] sends them like GET, and the response has no body,
+   * so use it with [count] to get only the number of rows. See [RpcMethod].
+   * @param count The algorithm with which the server counts the rows that the function returns,
+   * sent in the `Prefer` header, for example `Prefer: count=exact`. The count is in
+   * `OperationResult.countOrNull()`. `null`, the default, counts nothing. See [Count].
+   * @return A [FilterBuilder] for the result of the function.
+   * @throws IllegalArgumentException If [functionName] is empty, `.`, or `..`, or if a value of
+   * [params] cannot be encoded to JSON, for example a `Double` that is not finite.
+   * @throws IllegalStateException If this instance is terminated.
+   */
+  public fun rpc(
+    functionName: String,
+    params: Map<String, Any?> = emptyMap(),
+    method: RpcMethod = RpcMethod.POST,
+    count: Count? = null
+  ): FilterBuilder
+
+  /**
+   * Calls the PostgreSQL function named [functionName] with the arguments in [params], encoded to a
+   * JSON object with [serializer]: each property is an argument, by its serial name. A `null`
+   * [params] calls the function without arguments. See the `rpc` that takes a `Map` for the
+   * details.
+   *
+   * The [rpc] extension function finds the serializer when the app is compiled, so
+   * `rpc("products_under", limit)` sends the same request as `rpc("products_under", limit,
+   * PriceLimit.serializer())`.
+   *
+   * @param functionName The name of the function. See the `rpc` that takes a `Map`.
+   * @param params The arguments, for example an object of a class annotated with `@Serializable`.
+   * @param serializer Encodes [params], for example `PriceLimit.serializer()`.
+   * @param method The HTTP method of the call: [RpcMethod.POST], the default, [RpcMethod.GET], or
+   * [RpcMethod.HEAD]. See the `rpc` that takes a `Map`.
+   * @param count The algorithm with which the server counts the rows that the function returns.
+   * `null`, the default, counts nothing. See [Count].
+   * @return A [FilterBuilder] for the result of the function.
+   * @throws IllegalArgumentException If [functionName] is empty, `.`, or `..`, or if [serializer]
+   * does not encode [params] as a JSON object or `null`, for example for a list.
+   * @throws IllegalStateException If this instance is terminated.
+   */
+  public fun <T> rpc(
+    functionName: String,
+    params: T,
+    serializer: SerializationStrategy<T>,
+    method: RpcMethod = RpcMethod.POST,
+    count: Count? = null
+  ): FilterBuilder
+
+  /**
    * Terminates this instance, cancels its requests in flight, and removes it from the cache. It
    * returns at once, without waiting for the requests in flight to end: [suspendingTerminate] waits
    * for them.
    *
    * After this call:
-   * - `from()` and `rpc()` throw an [IllegalStateException], and so does `execute()` on every
-   * builder of this instance, including the builders created earlier.
+   * - [from] and [rpc] throw an [IllegalStateException], and so does `execute()` on every builder
+   * of this instance, including the builders created earlier.
    * - A request in flight stops, whether it is getting its tokens, waiting for the server, or
    * waiting before a retry. Its `execute()` throws an [IllegalStateException] that says that the
    * instance is terminated.
@@ -360,3 +584,37 @@ public interface FirebaseSql {
       app.get(FirebaseSqlComponent::class.java).get(config)
   }
 }
+
+/**
+ * Calls the PostgreSQL function named [functionName] with the arguments in [params], an object of a
+ * class annotated with `@Serializable`: each property is an argument, by its serial name.
+ *
+ * It calls [FirebaseSql.rpc] with the serializer of the type [T], which the compiler finds, so that
+ * no class is looked up by reflection when the app runs. See the `rpc` that takes a `Map` for the
+ * details.
+ *
+ * **Example: pass the arguments as a class**
+ * ```kotlin
+ * @Serializable data class PriceLimit(@SerialName("max_price") val maxPrice: Double)
+ *
+ * val cheap =
+ *   sql.rpc("products_under", PriceLimit(maxPrice = 10.0)).execute().decodeList<Product>()
+ * ```
+ *
+ * @param functionName The name of the function. See [FirebaseSql.rpc].
+ * @param params The arguments of the function.
+ * @param method The HTTP method of the call: [RpcMethod.POST], the default, [RpcMethod.GET], or
+ * [RpcMethod.HEAD]. See [FirebaseSql.rpc].
+ * @param count The algorithm with which the server counts the rows that the function returns.
+ * `null`, the default, counts nothing. See [Count].
+ * @return A [FilterBuilder] for the result of the function.
+ * @throws IllegalArgumentException If [functionName] is empty, `.`, or `..`, or if [params] is not
+ * encoded as a JSON object or `null`, for example a list.
+ * @throws IllegalStateException If the instance is terminated.
+ */
+public inline fun <reified T> FirebaseSql.rpc(
+  functionName: String,
+  params: T,
+  method: RpcMethod = RpcMethod.POST,
+  count: Count? = null
+): FilterBuilder = rpc(functionName, params, serializer<T>(), method, count)
