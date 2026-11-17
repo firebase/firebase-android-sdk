@@ -49,7 +49,12 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions { targetSdk = targetSdkVersion }
+  // Robolectric reads the merged manifest, so that FirebaseApp discovers FirebaseSqlRegistrar and
+  // the unit tests can go through FirebaseSql.getInstance().
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
   lint { targetSdk = targetSdkVersion }
 }
 

@@ -23,7 +23,7 @@ package com.google.firebase.sql.core
  * for example `products`, or `rpc` and the function name. Each one is percent-encoded as a single
  * segment, so a table named `rpc/x` is not mistaken for the function `x`.
  * @property retryEnabled Whether a GET or HEAD request is sent again after a transient failure. See
- * `OperationsExecutor`.
+ * [OperationsExecutor].
  */
 internal data class QueryRequest(
   val httpMethod: String,

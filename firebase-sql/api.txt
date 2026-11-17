@@ -118,6 +118,24 @@ package com.google.firebase.sql {
     property public final com.google.firebase.sql.FilterOperator WFTS;
   }
 
+  @kotlin.SubclassOptInRequired public interface FirebaseSql {
+    method public com.google.firebase.FirebaseApp getApp();
+    method public com.google.firebase.sql.SqlServiceConfig getConfig();
+    method public boolean isMutable();
+    method public void setHeaders(java.util.Map<java.lang.String,java.lang.String> headers);
+    method public suspend Object? suspendingTerminate(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public void terminate();
+    property public abstract com.google.firebase.FirebaseApp app;
+    property public abstract com.google.firebase.sql.SqlServiceConfig config;
+    property public abstract boolean isMutable;
+    field public static final com.google.firebase.sql.FirebaseSql.Companion Companion;
+  }
+
+  public static final class FirebaseSql.Companion {
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceConfig config);
+    method public com.google.firebase.sql.FirebaseSql getInstance(com.google.firebase.sql.SqlServiceConfig config);
+  }
+
   public final class FirebaseSqlException extends com.google.firebase.FirebaseException {
     ctor public FirebaseSqlException(String message, com.google.firebase.sql.FirebaseSqlExceptionCategory category, String? code = null, Integer? status = null, String? details = null, String? hint = null, Throwable? cause = null);
     method public com.google.firebase.sql.FirebaseSqlExceptionCategory getCategory();
@@ -143,6 +161,10 @@ package com.google.firebase.sql {
     property public final com.google.firebase.sql.FirebaseSqlExceptionCategory CLIENT;
     property public final com.google.firebase.sql.FirebaseSqlExceptionCategory PLATFORM;
     property public final com.google.firebase.sql.FirebaseSqlExceptionCategory POSTGREST;
+  }
+
+  public final class FirebaseSqlMutationException extends java.lang.IllegalStateException {
+    ctor public FirebaseSqlMutationException(String message);
   }
 
   public final class OperationResult {
@@ -171,6 +193,12 @@ package com.google.firebase.sql {
     enum_constant public static final com.google.firebase.sql.Order DESCENDING;
   }
 
+  public final class ReservedHeaderException extends java.lang.IllegalArgumentException {
+    ctor public ReservedHeaderException(String headerName, String message);
+    method public String getHeaderName();
+    property public final String headerName;
+  }
+
   public final class RpcMethod {
     field public static final com.google.firebase.sql.RpcMethod.Companion Companion;
   }
@@ -182,6 +210,31 @@ package com.google.firebase.sql {
     property public final com.google.firebase.sql.RpcMethod GET;
     property public final com.google.firebase.sql.RpcMethod HEAD;
     property public final com.google.firebase.sql.RpcMethod POST;
+  }
+
+  public final class SqlKt {
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app, com.google.firebase.sql.SqlServiceConfig config);
+    method public static com.google.firebase.sql.FirebaseSql sql(com.google.firebase.Firebase, com.google.firebase.sql.SqlServiceConfig config);
+  }
+
+  public final class SqlServiceConfig {
+    ctor public SqlServiceConfig(String serviceId, String location, String? schemaName = null, String? host = null, Integer? port = null, Boolean? sslEnabled = null);
+    method public String? getHost();
+    method public String getLocation();
+    method public Integer? getPort();
+    method public String? getSchemaName();
+    method public String getServiceId();
+    method public Boolean? getSslEnabled();
+    property public final String? host;
+    property public final String location;
+    property public final Integer? port;
+    property public final String? schemaName;
+    property public final String serviceId;
+    property public final Boolean? sslEnabled;
+  }
+
+  public final class SqlServiceConfigKt {
+    method public static com.google.firebase.sql.SqlServiceConfig copy(com.google.firebase.sql.SqlServiceConfig, String serviceId = serviceId, String location = location, String? schemaName = schemaName, String? host = host, Integer? port = port, Boolean? sslEnabled = sslEnabled);
   }
 
   public final class TextSearchType {

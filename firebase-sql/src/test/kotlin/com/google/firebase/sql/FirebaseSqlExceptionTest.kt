@@ -130,4 +130,13 @@ class FirebaseSqlExceptionTest {
     assertThat(exception.code).isEqualTo("XX000")
     assertThat(exception.cause).isSameInstanceAs(cause)
   }
+
+  @Test
+  fun appsCanCreateAReservedHeaderException() {
+    val exception = ReservedHeaderException("Authorization", "Authorization is reserved")
+
+    assertThat(exception).isInstanceOf(IllegalArgumentException::class.java)
+    assertThat(exception.headerName).isEqualTo("Authorization")
+    assertThat(exception.message).isEqualTo("Authorization is reserved")
+  }
 }
