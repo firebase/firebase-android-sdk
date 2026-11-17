@@ -25,7 +25,8 @@ plugins {
 
 firebaseLibrary {
   libraryGroup = "sql"
-  testLab.enabled = false
+  // CI runs CloudSqlEndToEndTest on Firebase Test Lab with `deviceCheck`. See AGENTS.md.
+  testLab.enabled = true
   publishJavadoc = true
   onlyPublishKotlindoc = true
   // No release notes before the launch. At launch, replace `enabled = false` with the `name` and
@@ -44,6 +45,14 @@ android {
   defaultConfig {
     minSdk = minSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // CloudSqlEndToEndTest calls the service that these Gradle properties name, for example
+    // `./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service
+    // -PtargetLocation=us-east4`.
+    val targetServiceId = findProperty("targetServiceId") ?: ""
+    buildConfigField("String", "TARGET_SERVICE_ID", "\"$targetServiceId\"")
+    val targetLocation = findProperty("targetLocation") ?: ""
+    buildConfigField("String", "TARGET_LOCATION", "\"$targetLocation\"")
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
