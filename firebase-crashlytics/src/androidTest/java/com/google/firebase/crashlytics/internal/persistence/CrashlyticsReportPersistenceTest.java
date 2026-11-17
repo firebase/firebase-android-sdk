@@ -183,6 +183,25 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   @SdkSuppress(minSdkVersion = 37) // ProfilingManager, ProfilingTrigger
   @Test
+  public void testOomMarker_isScopedToSessionAndClearedOnFinalize() {
+    String oomSessionId = "oomSession";
+    String otherSessionId = "otherSession";
+    reportPersistence.persistReport(makeTestReport(oomSessionId));
+    reportPersistence.persistReport(makeTestReport(otherSessionId));
+
+    assertFalse(reportPersistence.hasOomMarker(oomSessionId));
+
+    reportPersistence.persistOomMarker(oomSessionId);
+
+    assertThat(reportPersistence.hasOomMarker(oomSessionId)).isTrue();
+    assertThat(reportPersistence.hasOomMarker(otherSessionId)).isFalse();
+
+    reportPersistence.finalizeReports("skipSession", System.currentTimeMillis());
+
+    assertThat(reportPersistence.hasOomMarker(oomSessionId)).isFalse();
+  }
+
+  @Test
   public void testLoadFinalizedReports_reportWithProfilingManagerTrigger_containsTriggers() {
     String sessionId = "sessionId";
     CrashlyticsReport report = makeTestReport(sessionId);
