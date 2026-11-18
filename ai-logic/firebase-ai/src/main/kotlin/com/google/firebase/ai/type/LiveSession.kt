@@ -668,6 +668,8 @@ internal constructor(
             // Notify the application
             goAwayHandler?.invoke(it)
           }
+          // TODO: Surface voice activity through a handler in LiveAudioConversationConfig.
+          is LiveServerVoiceActivity -> {}
           is LiveServerUnknownMessage -> {} // Ignore. Logging happens at de-serialization time
         }
       }

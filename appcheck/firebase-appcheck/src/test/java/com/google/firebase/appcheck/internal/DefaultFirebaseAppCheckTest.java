@@ -17,10 +17,15 @@ package com.google.firebase.appcheck.internal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.SharedPreferences;
+import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -34,6 +39,10 @@ import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +65,10 @@ public class DefaultFirebaseAppCheckTest {
   private static final String TOKEN_PAYLOAD = "tokenPayload";
   private static final long EXPIRES_IN_ONE_HOUR = 60L * 60L * 1000L; // 1 hour in millis
   private static final long EXPIRES_NOW = 0L;
+  // 2100-01-01T00:00:00Z and one hour earlier, in seconds. Both are larger than Integer.MAX_VALUE,
+  // and a token restored with these claims is still valid when the tests run.
+  private static final long IAT_AFTER_2038 = 4102441200L;
+  private static final long EXP_AFTER_2038 = 4102444800L;
 
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private AppCheckProviderFactory mockAppCheckProviderFactory;
@@ -487,5 +500,97 @@ public class DefaultFirebaseAppCheckTest {
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.isSuccessful()).isTrue();
     assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  @Test
+  public void testGetToken_customTokenWithClaimsAfter2038_returnsToken() throws Exception {
+    String rawToken = constructFakeRawToken(IAT_AFTER_2038, EXP_AFTER_2038);
+    AppCheckToken customToken = mock(AppCheckToken.class);
+    when(customToken.getToken()).thenReturn(rawToken);
+    when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(customToken));
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    Task<AppCheckTokenResult> tokenTask =
+        defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNull();
+    assertThat(tokenTask.getResult().getToken()).isEqualTo(rawToken);
+  }
+
+  @Test
+  public void testConstructor_storedCustomTokenWithClaimsAfter2038_restoresToken()
+      throws Exception {
+    String rawToken = constructFakeRawToken(IAT_AFTER_2038, EXP_AFTER_2038);
+    AppCheckToken customToken = mock(AppCheckToken.class);
+    when(customToken.getToken()).thenReturn(rawToken);
+    new StorageHelper(ApplicationProvider.getApplicationContext(), PERSISTENCE_KEY)
+        .saveAppCheckToken(customToken);
+
+    // Like on the next app launch, a new instance restores the stored token.
+    DefaultFirebaseAppCheck restartedFirebaseAppCheck =
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            TestOnlyExecutors.ui(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            /* backgroundExecutor= */ MoreExecutors.directExecutor(),
+            TestOnlyExecutors.blocking());
+    Task<AppCheckTokenResult> tokenTask =
+        restartedFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNull();
+    assertThat(tokenTask.getResult().getToken()).isEqualTo(rawToken);
+  }
+
+  @Test
+  public void testGetToken_storageUnavailable_doesNotThrowOrHang() {
+    Context contextWithoutStorage =
+        new ContextWrapper(ApplicationProvider.getApplicationContext()) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            throw new IllegalStateException("Storage is not available");
+          }
+        };
+    when(mockFirebaseApp.getApplicationContext()).thenReturn(contextWithoutStorage);
+    List<RuntimeException> backgroundExceptions = new ArrayList<>();
+    // Like a thread pool, this executor does not throw exceptions from the task to the caller.
+    Executor backgroundExecutor =
+        runnable -> {
+          try {
+            runnable.run();
+          } catch (RuntimeException e) {
+            backgroundExceptions.add(e);
+          }
+        };
+
+    DefaultFirebaseAppCheck firebaseAppCheck =
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            TestOnlyExecutors.ui(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            backgroundExecutor,
+            TestOnlyExecutors.blocking());
+    Task<AppCheckTokenResult> tokenTask = firebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    // Restoring the stored token fails without throwing, and the token request still completes
+    // (with an error, because no provider is installed).
+    assertThat(backgroundExceptions).isEmpty();
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  private static String constructFakeRawToken(long iat, long exp) throws Exception {
+    JSONObject claims = new JSONObject();
+    claims.put(DefaultAppCheckToken.ISSUED_AT_KEY, iat);
+    claims.put(DefaultAppCheckToken.EXPIRATION_TIME_KEY, exp);
+    // Raw tokens are JWTs with 3 parts which are split by '.'.
+    return "header."
+        + Base64.encodeToString(
+            claims.toString().getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING)
+        + ".signature";
   }
 }

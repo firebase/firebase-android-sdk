@@ -1059,6 +1059,8 @@ class CrashlyticsController {
     reportingCoordinator.persistProfilingManagerInfo(
         context.getFilesDir(),
         sessionId,
+        logFileManager,
+        userMetadata,
         appExits,
         settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled);
   }

@@ -16,6 +16,7 @@
 
 package com.google.firebase.messaging
 
+import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
@@ -36,6 +37,7 @@ inline fun remoteMessage(
 }
 
 /** @suppress */
+@Keep
 class FirebaseMessagingKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()
 }

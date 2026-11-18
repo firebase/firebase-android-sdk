@@ -27,6 +27,7 @@ import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ImageConfig
 import com.google.firebase.ai.type.LiveServerGoAway
+import com.google.firebase.ai.type.LiveServerVoiceActivity
 import com.google.firebase.ai.type.ModalityTokenCount
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
@@ -575,6 +576,28 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(LiveServerGoAway.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test LiveServerVoiceActivity serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "LiveServerVoiceActivity",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "audioOffset": {
+            "type": "string"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(LiveServerVoiceActivity.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 

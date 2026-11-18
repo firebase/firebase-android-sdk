@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck;
 
+import androidx.annotation.Keep;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
@@ -41,6 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @hide
  */
 @KeepForSdk
+@Keep
 public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-app-check";
 
