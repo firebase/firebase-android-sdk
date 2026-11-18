@@ -72,7 +72,7 @@ public class LiveSession
 internal constructor(
   @kotlin.jvm.Volatile private var session: DefaultClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
-  private var audioHelper: AudioHelper? = null,
+  @kotlin.jvm.Volatile private var audioHelper: AudioHelper? = null,
   private val firebaseApp: FirebaseApp,
   private val connectionFactory:
     (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? =
