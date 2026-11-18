@@ -96,10 +96,9 @@ internal fun Flow<ByteArray>.accumulateUntil(
  * needs an exception handler. Otherwise, the exception goes to the uncaught exception handler of
  * the thread, which crashes an Android app.
  *
- * If the parent coroutine context does not have a job, an empty one will be created.
+ * If the [currentCoroutineContext] does not have a job, the [SupervisorJob] has no parent.
  */
-internal suspend inline fun childSupervisorJob() =
-  SupervisorJob(currentCoroutineContext()[Job] ?: Job())
+internal suspend inline fun childSupervisorJob() = SupervisorJob(currentCoroutineContext()[Job])
 
 /**
  * A constant value pointing to a cancelled [CoroutineScope].
