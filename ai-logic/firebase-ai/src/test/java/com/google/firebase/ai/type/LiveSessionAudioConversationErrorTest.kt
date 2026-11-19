@@ -148,10 +148,11 @@ class LiveSessionAudioConversationErrorTest {
   }
 
   @Test(timeout = 10000)
-  fun goAwayWithInvalidTimeLeft_stopsConversationWithoutCrashing() = doBlocking {
-    val callerJob = startAudioConversation()
+  fun goAwayHandlerThrows_stopsConversationWithoutCrashing() = doBlocking {
+    val callerJob =
+      startAudioConversation(goAwayHandler = { throw IllegalStateException("Go away failed") })
 
-    incomingFrames.send(Frame.Text("""{"goAway": {"timeLeft": "NaNs"}}"""))
+    incomingFrames.send(Frame.Text("""{"goAway": {"timeLeft": "10s"}}"""))
 
     assertConversationStoppedWithoutCrashing(callerJob)
   }
@@ -222,12 +223,14 @@ class LiveSessionAudioConversationErrorTest {
 
   /** Starts an audio conversation from a coroutine in [callerScope] and returns its job. */
   private fun startAudioConversation(
+    goAwayHandler: ((LiveServerGoAway) -> Unit)? = null,
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ): Job =
     callerScope.launch {
       liveSession.startAudioConversation(
         liveAudioConversationConfig {
           this.functionCallHandler = functionCallHandler
+          this.goAwayHandler = goAwayHandler
           // With interruptions enabled, the playback loop doesn't pause or resume the recording on
           // every iteration, so it doesn't call the mocked AudioHelper in a tight loop.
           enableInterruptions = true
