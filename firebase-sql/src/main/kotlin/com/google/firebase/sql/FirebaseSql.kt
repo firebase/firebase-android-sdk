@@ -116,8 +116,9 @@ public interface FirebaseSql {
    * `null`, for example [SqlServiceConfig.host] for the production host.
    *
    * When [getInstance] returns this instance for another config that resolves to the same URL and
-   * schema, this property keeps the config of the call that created the instance. The config has no
-   * project ID: the project ID of the service is always the one in the options of the [app].
+   * schema, ignoring case, this property keeps the config of the call that created the instance.
+   * The config has no project ID: the project ID of the service is always the one in the options of
+   * the [app].
    */
   public val config: SqlServiceConfig
 
@@ -460,11 +461,12 @@ public interface FirebaseSql {
      *
      * `Firebase.sql(config)` is a shorthand for this call.
      *
-     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema:
-     * - A call whose config resolves to the same URL and schema as an open instance returns that
-     * instance, which keeps the config that created it, and the headers that [setHeaders] set on
-     * it. For example, a config without a host and a config with the production host resolve to the
-     * same URL.
+     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema,
+     * ignoring case:
+     * - A call whose config resolves to the same URL and schema, ignoring case, as an open instance
+     * returns that instance, which keeps the config that created it, and the headers that
+     * [setHeaders] set on it. For example, a config without a host and a config with the production
+     * host resolve to the same URL, and `"my-service"` and `"My-Service"` match.
      * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
      * [getInstance] with its name in [SqlServiceConfig.schemaName].
@@ -547,11 +549,12 @@ public interface FirebaseSql {
      * request that carried a token, the SDK sends that request once more with refreshed tokens,
      * even a write: the server does not run a request whose token it rejects. See [FirebaseSql].
      *
-     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema:
-     * - A call whose config resolves to the same URL and schema as an open instance returns that
-     * instance, which keeps the config that created it, and the headers that [setHeaders] set on
-     * it. For example, a config without a host and a config with the production host resolve to the
-     * same URL.
+     * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema,
+     * ignoring case:
+     * - A call whose config resolves to the same URL and schema, ignoring case, as an open instance
+     * returns that instance, which keeps the config that created it, and the headers that
+     * [setHeaders] set on it. For example, a config without a host and a config with the production
+     * host resolve to the same URL, and `"my-service"` and `"My-Service"` match.
      * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
      * [getInstance] with its name in [SqlServiceConfig.schemaName].
