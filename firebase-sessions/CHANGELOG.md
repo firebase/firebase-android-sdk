@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed ANRs during app startup by moving the SDK's DataStore
+  creation, which loads a native library, off the main thread. (#8615)
+
 # 4.0.2
 
 - [fixed] Fixed a crash with an uncaught `IOException` when the SDK

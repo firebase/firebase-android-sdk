@@ -259,6 +259,50 @@ class SharedSessionRepositoryTest {
     fakeDataStore.close()
   }
 
+  @Test
+  fun initSharedSessionRepo_lazyDataStore_isCreatedByBackgroundCollection() = runTest {
+    val publisher =
+      SessionFirelogPublisherImpl(
+        fakeFirebaseApp.firebaseApp,
+        firebaseInstallations,
+        sessionsSettings,
+        eventGDTLogger = fakeEventGDTLogger,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+    val fakeDataStore =
+      FakeDataStore(
+        SessionData(
+          SessionDetails(SESSION_ID_INIT, SESSION_ID_INIT, 0, fakeTimeProvider.currentTime().ms),
+          fakeTimeProvider.currentTime(),
+        )
+      )
+    val lazyDataStore = LazyDataStore { fakeDataStore }
+    val sharedSessionRepository =
+      SharedSessionRepositoryImpl(
+        sessionsSettings = sessionsSettings,
+        sessionGenerator = sessionGenerator,
+        sessionFirelogPublisher = publisher,
+        timeProvider = fakeTimeProvider,
+        sessionDataStore = lazyDataStore,
+        processDataManager = FakeProcessDataManager(),
+        backgroundDispatcher =
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+
+    // Constructing the repository and an activity resuming, which both happen on the main thread,
+    // don't create it.
+    sharedSessionRepository.appForeground()
+    assertThat(lazyDataStore.isInitialized()).isFalse()
+
+    // The background collection creates it, then handles the pending foreground.
+    runCurrent()
+    fakeDataStore.close()
+
+    assertThat(lazyDataStore.isInitialized()).isTrue()
+    assertThat(sharedSessionRepository.localSessionData.sessionDetails.sessionId)
+      .isEqualTo(SESSION_ID_1)
+  }
+
   companion object {
     const val SESSION_ID_INIT = "12345678901234546677960"
   }

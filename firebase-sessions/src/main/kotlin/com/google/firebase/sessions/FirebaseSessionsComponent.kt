@@ -178,13 +178,18 @@ internal interface FirebaseSessionsComponent {
           },
         )
 
+      /**
+       * Creates a [DataStore] that's only created when it's first read or written, see
+       * [LazyDataStore]. This keeps loading the native library and creating the DataStore off the
+       * main thread while Firebase initializes.
+       */
       private fun <T> createDataStore(
         serializer: Serializer<T>,
         corruptionHandler: ReplaceFileCorruptionHandler<T>,
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope,
         produceFile: () -> File,
-      ): DataStore<T> =
+      ): DataStore<T> = LazyDataStore {
         if (loadDataStoreSharedCounter()) {
           MultiProcessDataStoreFactory.create(
             serializer,
@@ -196,6 +201,7 @@ internal interface FirebaseSessionsComponent {
         } else {
           DataStoreFactory.create(serializer, corruptionHandler, migrations, scope, produceFile)
         }
+      }
 
       /** This native library in unavailable in some conditions, for example, Robolectric tests */
       // TODO(mrober): Remove this when b/392626815 is resolved
