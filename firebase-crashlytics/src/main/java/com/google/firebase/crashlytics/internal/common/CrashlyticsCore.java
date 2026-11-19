@@ -88,6 +88,7 @@ public class CrashlyticsCore {
   private CrashlyticsFileMarker initializationMarker;
   private CrashlyticsFileMarker crashMarker;
   private boolean didCrashOnPreviousExecution;
+  private String sessionId;
 
   private CrashlyticsController controller;
   private final IdManager idManager;
@@ -160,6 +161,7 @@ public class CrashlyticsCore {
     }
 
     String sessionIdentifier = new CLSUUID().getSessionId();
+    sessionId = sessionIdentifier;
     try {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
@@ -429,6 +431,15 @@ public class CrashlyticsCore {
               Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
           controller.logFatalException(Thread.currentThread(), throwable);
         });
+  }
+
+  /**
+   * Returns the ID of the Crashlytics session opened in {@link #onPreExecute}, when this process
+   * started. Crashlytics doesn't change this value when it opens another session later in the same
+   * process, such as after an on-demand fatal exception.
+   */
+  public String getSessionId() {
+    return sessionId;
   }
 
   // endregion

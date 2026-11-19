@@ -25,6 +25,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsSessionState;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -66,6 +67,13 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .add(Dependency.deferred(FirebaseRemoteConfigInterop.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
+            .build(),
+        Component.builder(CrashlyticsSessionState.class)
+            .add(Dependency.required(FirebaseCrashlytics.class))
+            .factory(
+                container ->
+                    new CrashlyticsSessionState(
+                        container.get(FirebaseCrashlytics.class).core.getSessionId()))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
