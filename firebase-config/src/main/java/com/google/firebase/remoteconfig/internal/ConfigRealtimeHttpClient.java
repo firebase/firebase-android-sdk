@@ -129,7 +129,31 @@ public class ConfigRealtimeHttpClient {
       Set<ConfigUpdateListener> listeners,
       ConfigSharedPrefsClient sharedPrefsClient,
       ScheduledExecutorService scheduledExecutorService) {
+    this(
+        firebaseApp,
+        firebaseInstallations,
+        configFetchHandler,
+        activatedCache,
+        context,
+        namespace,
+        listeners,
+        sharedPrefsClient,
+        scheduledExecutorService,
+        DefaultClock.getInstance());
+  }
 
+  @VisibleForTesting
+  public ConfigRealtimeHttpClient(
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCache,
+      Context context,
+      String namespace,
+      Set<ConfigUpdateListener> listeners,
+      ConfigSharedPrefsClient sharedPrefsClient,
+      ScheduledExecutorService scheduledExecutorService,
+      Clock clock) {
     this.listeners = listeners;
     this.isHttpConnectionRunning = false;
     this.scheduledExecutorService = scheduledExecutorService;
@@ -141,7 +165,7 @@ public class ConfigRealtimeHttpClient {
         Math.max(
             ORIGINAL_RETRIES - sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
             1);
-    clock = DefaultClock.getInstance();
+    this.clock = clock;
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
@@ -520,6 +544,7 @@ public class ConfigRealtimeHttpClient {
         sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
+      setIsHttpConnectionRunning(false);
       retryHttpConnectionWhenBackoffEnds();
       return;
     }

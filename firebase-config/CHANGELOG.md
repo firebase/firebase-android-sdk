@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed an issue where the real-time listener stopped receiving
+  updates if the stream connection was started during an active backoff
+  period. (#8827)
+
 # 24.0.1
 
 - [fixed] Fixed a `ConcurrentModificationException` crash when a config update listener is removed from inside its own callback. (#8686)
