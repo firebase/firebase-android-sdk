@@ -166,6 +166,39 @@ class FirebaseSqlTest {
   }
 
   @Test
+  fun instanceCacheKeyIsCaseInsensitive() {
+    val base =
+      SqlServiceConfig(
+        serviceId = "My-Service",
+        location = "US-Central1",
+        schemaName = "Inventory",
+        host = "Custom.Example.Com"
+      )
+    val instance = component.get(base)
+    val equivalents =
+      listOf(
+        base.copy(serviceId = "my-service"),
+        base.copy(serviceId = "MY-SERVICE"),
+        base.copy(location = "us-central1"),
+        base.copy(schemaName = "inventory"),
+        base.copy(schemaName = "INVENTORY"),
+        base.copy(host = "custom.example.com"),
+        SqlServiceConfig(
+          serviceId = "my-service",
+          location = "us-central1",
+          schemaName = "inventory",
+          host = "custom.example.com"
+        )
+      )
+
+    for (equivalent in equivalents) {
+      val cached = component.get(equivalent)
+      assertWithMessage("$equivalent").that(cached).isSameInstanceAs(instance)
+      assertThat(cached.config).isSameInstanceAs(base)
+    }
+  }
+
+  @Test
   fun configsThatDifferGiveDifferentInstances() {
     val instance = component.get(config())
     val others =

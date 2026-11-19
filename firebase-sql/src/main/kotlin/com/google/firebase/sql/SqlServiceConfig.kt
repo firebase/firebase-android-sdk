@@ -30,9 +30,9 @@ import java.util.Objects
  * `google-services.json` file of the app: the config has no project ID.
  *
  * Every property identifies the instance: [FirebaseSql.getInstance] returns the same instance for
- * all the configs that resolve to the same URL and schema, and that instance keeps the config that
- * created it. The custom headers of the requests are not part of the config: set them on the
- * instance with [FirebaseSql.setHeaders].
+ * all the configs that resolve to the same URL and schema, ignoring case, and that instance keeps
+ * the config that created it. The custom headers of the requests are not part of the config: set
+ * them on the instance with [FirebaseSql.setHeaders].
  *
  * [FirebaseSql.getInstance] checks the config on every call, and throws an
  * [IllegalArgumentException] when a property breaks the constraint that it documents. Two configs
