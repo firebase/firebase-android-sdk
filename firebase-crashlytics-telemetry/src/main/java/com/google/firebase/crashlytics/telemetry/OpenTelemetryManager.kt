@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private const val BASE_ENDPOINT = "https://firebasetelemetry.googleapis.com"
+private const val STORAGE_DIR_NAME = ".crashlytics.telemetry.v1"
 
 internal object OpenTelemetryManager {
   private val scope = CoroutineScope(Dispatchers.Default)
@@ -52,7 +53,8 @@ internal object OpenTelemetryManager {
       }
     val googleAppId = options.applicationId
     val apiKey = options.apiKey
-    val cacheDir = firebaseApp.applicationContext.cacheDir
+    val storageRoot = telemetryStorageRootDir(firebaseApp.applicationContext.noBackupFilesDir)
+    storageRoot.mkdirs()
 
     val resource = Resource.create(Attributes.of(stringKey("gcp.project_id"), projectId))
 
@@ -60,7 +62,7 @@ internal object OpenTelemetryManager {
     val logExporter = createLogExporter(projectId, googleAppId, apiKey)
 
     // Unify file-mapping initialization and span recovery inline using the trailing lambda API.
-    val mmapFileCurrent = File(cacheDir, "crashlytics_otel_current.mmap")
+    val mmapFileCurrent = File(storageRoot, "crashlytics_otel_current.mmap")
     Log.d("OpenTelemetryManager", "mmap file: $mmapFileCurrent")
 
     val mutationContext =
@@ -153,6 +155,9 @@ internal object OpenTelemetryManager {
       .build()
   }
 }
+
+internal fun telemetryStorageRootDir(noBackupFilesDir: File): File =
+  File(noBackupFilesDir, STORAGE_DIR_NAME)
 
 // region Helper
 
