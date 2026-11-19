@@ -24,6 +24,7 @@ import com.google.firebase.sql.core.InstanceSettings
 import com.google.firebase.sql.core.OkHttpNetworkClient
 import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.newOkHttpClient
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -61,8 +62,8 @@ internal class FirebaseSqlComponent(
   }
 
   /**
-   * The key of a cached instance. [restUrl] is the URL that the config resolves to, so that configs
-   * that name the same service in different ways share an instance.
+   * The key of a cached instance, with its text fields in lowercase, so that configs that name the
+   * same service and schema in different ways or cases share an instance.
    */
   private data class FirebaseSqlInstanceKey(
     val appName: String,
@@ -111,9 +112,9 @@ internal class FirebaseSqlComponent(
    * Returns the instance for the given [config], and creates it on the first call.
    *
    * The project ID of the service is always the one in the options of the [app]. Configs that
-   * resolve to the same URL and schema give the same instance, for example a config without a host
-   * and a config with the production host. The instance keeps the config that created it, and the
-   * headers that `FirebaseSql.setHeaders()` sets on it.
+   * resolve to the same URL and schema, ignoring case, give the same instance, for example a config
+   * without a host and a config with the production host. The instance keeps the config that
+   * created it, and the headers that `FirebaseSql.setHeaders()` sets on it.
    *
    * @throws IllegalArgumentException When the config does not name a valid service, or has an empty
    * schema name, or when the options of the [app] have no project ID.
@@ -124,8 +125,22 @@ internal class FirebaseSqlComponent(
     require(schemaName == null || schemaName.isNotEmpty()) {
       "SqlServiceConfig.schemaName must not be empty; use null to send no schema header"
     }
-    val restUrl = serviceUrlOf(config, projectIdOfApp())
-    val key = FirebaseSqlInstanceKey(app.name, schemaName, restUrl)
+    val projectId = projectIdOfApp()
+    val restUrl = serviceUrlOf(config, projectId)
+    val keyUrl =
+      serviceUrlOf(
+        config.copy(
+          serviceId = config.serviceId.lowercase(Locale.ROOT),
+          location = config.location.lowercase(Locale.ROOT)
+        ),
+        projectId.lowercase(Locale.ROOT)
+      )
+    val key =
+      FirebaseSqlInstanceKey(
+        app.name.lowercase(Locale.ROOT),
+        schemaName?.lowercase(Locale.ROOT),
+        keyUrl
+      )
 
     while (true) {
       val current = state.value
