@@ -54,22 +54,16 @@ android {
 }
 
 kotlin {
-  // Every public declaration must state its visibility, so that nothing becomes public API by
-  // accident.
   explicitApi()
   compilerOptions {
     jvmTarget = JvmTarget.JVM_1_8
-    // The public interfaces require this opt-in to be implemented, and the SDK implements them.
     optIn.add("com.google.firebase.annotations.InternalForInheritanceFirebaseApi")
   }
 }
 
 dependencies {
   api(libs.firebase.common)
-  // InternalForInheritanceFirebaseApi, the opt-in that implementing the public interfaces
-  // requires. It is part of the public API, so it is an api dependency.
-  api(project(":firebase-annotations"))
-  // SerializationStrategy and DeserializationStrategy, which the public API takes.
+  api(libs.firebase.annotations)
   api(libs.kotlinx.serialization.core)
   implementation(libs.firebase.components)
 
@@ -78,10 +72,7 @@ dependencies {
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.okhttp)
 
-  // The interfaces of Firebase Authentication and App Check, which the SDK uses to send their
-  // tokens. They are needed at runtime even when the app links neither SDK, so they are not
-  // compileOnly.
-  implementation(project(":appcheck:firebase-appcheck-interop"))
+  implementation("com.google.firebase:firebase-appcheck-interop:18.0.0")
   implementation(libs.firebase.auth.interop)
 
   testImplementation(libs.junit)

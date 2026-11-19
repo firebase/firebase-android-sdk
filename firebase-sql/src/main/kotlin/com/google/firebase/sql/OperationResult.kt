@@ -19,7 +19,12 @@ package com.google.firebase.sql
 import com.google.firebase.sql.core.defaultJson
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -214,9 +219,17 @@ internal constructor(
    */
   public fun <T> decodeList(deserializer: DeserializationStrategy<T>): List<T> {
     check(data.isNotBlank()) { noDataMessage("decodeList()") }
-    return defaultJson.decodeFromString(JsonArray.serializer(), data).map {
-      defaultJson.decodeFromJsonElement(deserializer, it)
-    }
+    val elementSerializer =
+      deserializer as? KSerializer<T>
+        ?: object : KSerializer<T> {
+          override val descriptor: SerialDescriptor = deserializer.descriptor
+
+          override fun deserialize(decoder: Decoder): T = deserializer.deserialize(decoder)
+
+          override fun serialize(encoder: Encoder, value: T): Nothing =
+            throw UnsupportedOperationException()
+        }
+    return defaultJson.decodeFromString(ListSerializer(elementSerializer), data)
   }
 
   /**
