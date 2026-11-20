@@ -23,6 +23,8 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Tool
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 
 @OptIn(PublicPreviewAPI::class)
 public class AIModels {
@@ -100,7 +102,11 @@ public class AIModels {
 
     public fun setup() {
       val context = InstrumentationRegistry.getInstrumentation().context
-      app = FirebaseApp.initializeApp(context)
+      app =
+        FirebaseApp.initializeApp(context)?.also {
+          FirebaseAppCheck.getInstance(it)
+            .installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())
+        }
     }
 
     public fun getGoogleLiveModel(
