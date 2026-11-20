@@ -87,6 +87,20 @@ internal class PersistenceContext private constructor() {
         }
         return mutationContext!!
       }
+
+    // The persistence library registers its native methods on this class by name, so they stay
+    // private here. These let MmapSpanLoader call them without using the context that [initialize]
+    // manages.
+
+    /** Opens the file at [filePath] and returns a native context pointer, or 0 on failure. */
+    fun openNative(filePath: String, mmapSize: MmapSize): Long =
+      initializeNative(filePath, mmapSize.ordinal)
+
+    /** Returns the spans that [openNative] found in the file. */
+    fun recoverNative(contextPtr: Long): Array<Span> = recoverSpansNative(contextPtr)
+
+    /** Releases a native context pointer from [openNative]. */
+    fun closeNative(contextPtr: Long) = shutdownNative(contextPtr)
   }
 }
 
