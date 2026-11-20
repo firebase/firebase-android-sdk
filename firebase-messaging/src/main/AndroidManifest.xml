@@ -44,7 +44,7 @@
             </intent-filter>
         </service>
         <service android:exported="false"
-            android:name="com.google.firebase.components.ComponentDiscoveryService"> <meta-data android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
+            android:name="com.google.firebase.components.ComponentDiscoveryService">
             <meta-data
                 android:name="com.google.firebase.components:com.google.firebase.messaging.FirebaseMessagingRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />

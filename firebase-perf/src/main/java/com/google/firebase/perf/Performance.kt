@@ -16,11 +16,8 @@
 
 package com.google.firebase.perf
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 
@@ -59,9 +56,3 @@ inline fun <T> Trace.trace(block: Trace.() -> T): T {
  * wrapped by calls to [start] and [stop].
  */
 inline fun <T> trace(name: String, block: Trace.() -> T): T = Trace.create(name).trace(block)
-
-/** @suppress */
-@Keep
-class FirebasePerfKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}
