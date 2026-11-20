@@ -335,7 +335,7 @@ class OperationsExecutorTest {
       assertThat(before.valuesOf("x-firebase-auth-token")).isEmpty()
       assertThat(before.valuesOf("X-Firebase-AppCheck")).isEmpty()
 
-      val delivery = Thread { deliveries.forEach { it() } }
+      val delivery = Thread { for (deliver in deliveries) deliver() }
       delivery.start()
       delivery.join()
       executor.execute(request("GET"))

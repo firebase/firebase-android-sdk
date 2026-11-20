@@ -112,7 +112,6 @@ class FirebaseSqlTest {
         config(host = "[::1]:9399", sslEnabled = false) to "http://[::1]:9399",
         config(host = null, port = 8443, sslEnabled = null) to
           "https://firebasedataconnect.googleapis.com:8443",
-        config(host = null, sslEnabled = false) to "http://firebasedataconnect.googleapis.com",
         // The port replaces the port of the host.
         config(host = "127.0.0.1:8080", port = 9399, sslEnabled = false) to "http://127.0.0.1:9399"
       )
@@ -121,6 +120,29 @@ class FirebaseSqlTest {
       assertWithMessage("$config")
         .that(serviceUrlOf(config, PROJECT).toString())
         .isEqualTo("$baseUrl$PATH")
+    }
+  }
+
+  @Test
+  fun sslCannotBeTurnedOffForTheProductionHost() {
+    // http would send the Firebase Authentication and Firebase App Check tokens in plain text.
+    val configs =
+      listOf(
+        config(host = null, sslEnabled = false),
+        config(host = null, port = 8080, sslEnabled = false),
+        config(host = "FirebaseDataConnect.googleapis.com", sslEnabled = false),
+        config(host = "firebasedataconnect.googleapis.com.:80", sslEnabled = false)
+      )
+
+    for (config in configs) {
+      val error =
+        assertThrows("$config", IllegalArgumentException::class.java) {
+          serviceUrlOf(config, PROJECT)
+        }
+      assertWithMessage("$config")
+        .that(error)
+        .hasMessageThat()
+        .contains("must not be false for the production host")
     }
   }
 
@@ -295,6 +317,38 @@ class FirebaseSqlTest {
 
     assertThrows(IllegalArgumentException::class.java) {
       fsql.setHeaders(mapOf("Authorization" to "Bearer token"))
+    }
+  }
+
+  @Test
+  fun setHeadersRejectsAHeaderThatHttpDoesNotAllow() {
+    // OkHttp would reject such a header on every request, once the settings can no longer change.
+    val invalidHeaders =
+      listOf(
+        mapOf("" to "value"),
+        mapOf("X Custom" to "value"),
+        mapOf("X-Custom" to "line\nbreak"),
+        mapOf("X-Custom" to "Jos\u00e9")
+      )
+    val fsql = component.get(config())
+
+    for (headers in invalidHeaders) {
+      assertThrows("$headers", IllegalArgumentException::class.java) { fsql.setHeaders(headers) }
+    }
+    // Nothing changed: the instance is still mutable, and accepts valid headers.
+    assertThat(fsql.isMutable).isTrue()
+    fsql.setHeaders(CUSTOM)
+  }
+
+  @Test
+  fun anInvalidHeaderIsAnIllegalArgumentOnAnInstanceInUse() {
+    val fsql = component.get(config())
+    fsql.terminate()
+
+    // Not a FirebaseSqlMutationException: the header is invalid whether or not the settings can
+    // change.
+    assertThrows(IllegalArgumentException::class.java) {
+      fsql.setHeaders(mapOf("X Custom" to "value"))
     }
   }
 

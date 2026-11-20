@@ -81,9 +81,10 @@ import java.util.Objects
  * [host] has a port too, this port replaces it.
  * @property sslEnabled Whether the requests use `https` (`true`) or `http` (`false`). If `null`,
  * the default, they use `https`. Turn SSL off only for a local server, because `http` sends the
- * Firebase Authentication and Firebase App Check tokens in plain text. On Android 9 (API level 28)
- * and higher, the app must also allow cleartext traffic to that host, for example in its network
- * security configuration; otherwise the requests fail with a status of `0`.
+ * Firebase Authentication and Firebase App Check tokens in plain text: it must not be `false` with
+ * the production host, which is the default [host]. On Android 9 (API level 28) and higher, the app
+ * must also allow cleartext traffic to that host, for example in its network security
+ * configuration; otherwise the requests fail with a status of `0`.
  */
 public class SqlServiceConfig(
   public val serviceId: String,

@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.sql.core.InstanceSettings
 import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.requireNotReservedHeader
+import com.google.firebase.sql.core.requireValidHeader
 
 /**
  * The implementation of [FirebaseSql].
@@ -45,8 +46,12 @@ internal class FirebaseSqlImpl(
     get() = settings.isMutable
 
   override fun setHeaders(headers: Map<String, String>) {
-    // A reserved header is an invalid argument, whether or not the settings can still change.
-    headers.keys.forEach { requireNotReservedHeader(it, "setHeaders()") }
+    // An invalid header is an invalid argument, whether or not the settings can still change.
+    // Checking it here keeps OkHttp from rejecting it on every request once the settings freeze.
+    for ((name, value) in headers) {
+      requireNotReservedHeader(name, "setHeaders()")
+      requireValidHeader(name, value)
+    }
     settings.setHeaders(headers)
   }
 

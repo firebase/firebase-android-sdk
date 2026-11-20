@@ -186,6 +186,10 @@ public interface FirebaseSql {
    * `x-firebase-client-log-type`). Choose the schema with [SqlServiceConfig.schemaName].
    * @throws ReservedHeaderException If [headers] has a header that the SDK reserves, whether or not
    * this instance is mutable. It is an `IllegalArgumentException`.
+   * @throws IllegalArgumentException If [headers] has a name or a value that HTTP does not allow,
+   * whether or not this instance is mutable: an empty name, a name with a space or a character
+   * outside visible ASCII, or a value with a line break or a character outside ASCII, such as an
+   * accented letter.
    * @throws FirebaseSqlMutationException If [isMutable] is `false`, and [headers] are not equal to
    * the current headers. It is an `IllegalStateException`.
    */
@@ -302,8 +306,9 @@ public interface FirebaseSql {
      * @param config The service, and how to send it the requests. See [SqlServiceConfig].
      * @return The cached instance for this config, or a new instance.
      * @throws IllegalArgumentException When a property of [config] breaks the constraint that
-     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, or an
-     * invalid host or port. Also when the options of the default app have no project ID.
+     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, an
+     * invalid host or port, or SSL turned off for the production host. Also when the options of the
+     * default app have no project ID.
      * @throws IllegalStateException When the default [FirebaseApp] is not initialized, or was
      * deleted.
      */
@@ -354,8 +359,9 @@ public interface FirebaseSql {
      * @param config The service, and how to send it the requests. See [SqlServiceConfig].
      * @return The cached instance for this app and this config, or a new instance.
      * @throws IllegalArgumentException When a property of [config] breaks the constraint that
-     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, or an
-     * invalid host or port. Also when the options of [app] have no project ID.
+     * [SqlServiceConfig] documents for it: an empty service ID, location, or schema name, an
+     * invalid host or port, or SSL turned off for the production host. Also when the options of
+     * [app] have no project ID.
      * @throws IllegalStateException When [app] was deleted.
      */
     @android.annotation.SuppressLint("FirebaseUseExplicitDependencies")

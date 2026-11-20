@@ -321,7 +321,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
     /**
      * Returns the response of a call that failed with [e] before or while reading the HTTP
      * response. A timeout ([InterruptedIOException], including `SocketTimeoutException`) is not a
-     * transport error, so `OperationsExecutor` does not retry it: after a read timeout, the server
+     * transport error, so [OperationsExecutor] does not retry it: after a read timeout, the server
      * may still be running, and may commit, the request. OkHttp also throws a
      * `SocketTimeoutException` when it cannot connect in time, before the request is sent, and that
      * timeout is not retried either.

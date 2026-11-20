@@ -210,7 +210,9 @@ internal class FirebaseSqlComponent(
         when (val current = state.value) {
           is State.Open -> current
           is State.Closing -> {
-            current.instances.forEach(FirebaseSqlImpl::terminate)
+            for (instance in current.instances) {
+              instance.terminate()
+            }
             current.shutdownJob.start()
             return
           }
@@ -230,7 +232,9 @@ internal class FirebaseSqlComponent(
       @OptIn(DelicateCoroutinesApi::class)
       val shutdownJob =
         GlobalScope.launch(blockingDispatcher, start = CoroutineStart.LAZY) {
-          instances.forEach { it.suspendingTerminate() }
+          for (instance in instances) {
+            instance.suspendingTerminate()
+          }
           if (okHttpClient != null) {
             okHttpClient.dispatcher.executorService.shutdown()
             okHttpClient.connectionPool.evictAll()
@@ -273,11 +277,13 @@ private const val PROD_HOST = "firebasedataconnect.googleapis.com"
  * - Without a host, the production host is used. OkHttp parses `<scheme>://<host>`, and the host
  * must give only a host name or an IP address, with an optional port.
  * - The scheme is `http` when [SqlServiceConfig.sslEnabled] is `false`, and `https` otherwise.
+ * `http` is not allowed with the production host, because it would send the tokens in plain text.
  * - The port, when set, replaces the port of the host.
  *
  * Each ID is percent-encoded as one path segment.
  *
- * @throws IllegalArgumentException When the config does not name a valid service.
+ * @throws IllegalArgumentException When the config does not name a valid service, or turns SSL off
+ * for the production host.
  */
 internal fun serviceUrlOf(config: SqlServiceConfig, projectId: String): HttpUrl {
   require(config.serviceId.isNotEmpty()) { "SqlServiceConfig.serviceId must not be empty" }
@@ -302,6 +308,12 @@ internal fun serviceUrlOf(config: SqlServiceConfig, projectId: String): HttpUrl 
     "SqlServiceConfig.host must be a host name or an IP address with an optional port, for " +
       "example $PROD_HOST or 10.0.2.2:9399, without a scheme, a path, a query, or a fragment, " +
       "but is '$host'; SqlServiceConfig.sslEnabled chooses between https and http"
+  }
+  // OkHttp gives the host in lowercase. A trailing dot names the same host.
+  require(config.sslEnabled != false || base.host.removeSuffix(".") != PROD_HOST) {
+    "SqlServiceConfig.sslEnabled must not be false for the production host $PROD_HOST, because " +
+      "http would send the Firebase Authentication and Firebase App Check tokens in plain text; " +
+      "turn SSL off only for a local server, and set SqlServiceConfig.host to its address"
   }
 
   // The backend serves the tables and functions of a service under its `postgrest` path.
