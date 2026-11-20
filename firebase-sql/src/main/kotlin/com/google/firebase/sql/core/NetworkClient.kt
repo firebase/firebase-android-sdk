@@ -101,7 +101,7 @@ internal interface NetworkClient {
  * Every body is one-shot. OkHttp sends a request again by itself after some failures, for example
  * after a 408 or a network error, but never a request with a one-shot body once it has sent it,
  * because it could change the data twice. The client of [newOkHttpClient] does not send a request
- * again after a 503: the retries of `OperationsExecutor` handle it.
+ * again after a 503: the retries of [OperationsExecutor] handle it.
  *
  * The total row count is read from the `Content-Range` header, which PostgREST sends as
  * `<first>-<last>/<total>`. Every error response becomes a [FirebaseSqlException] with the HTTP
@@ -321,7 +321,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
     /**
      * Returns the response of a call that failed with [e] before or while reading the HTTP
      * response. A timeout ([InterruptedIOException], including `SocketTimeoutException`) is not a
-     * transport error, so `OperationsExecutor` does not retry it: after a read timeout, the server
+     * transport error, so [OperationsExecutor] does not retry it: after a read timeout, the server
      * may still be running, and may commit, the request. OkHttp also throws a
      * `SocketTimeoutException` when it cannot connect in time, before the request is sent, and that
      * timeout is not retried either.
@@ -367,11 +367,11 @@ private class OneShotRequestBody(private val bytes: ByteArray, private val media
 /**
  * Returns a new [OkHttpClient] for the requests of the SDK. Its read timeout is longer than the
  * deadline of the server, so that OkHttp does not fail a request that the server still runs, and
- * may commit. The timeout of each attempt is set by `OperationsExecutor`.
+ * may commit. The timeout of each attempt is set by [OperationsExecutor].
  *
  * The client removes the `Retry-After` header of every 503 response, which PostgREST sets to 0.
  * After a 503 with `Retry-After: 0`, OkHttp would send a GET or HEAD request again at once by
- * itself, without the wait and the `X-Retry-Count` header of the retries of `OperationsExecutor`:
+ * itself, without the wait and the `X-Retry-Count` header of the retries of [OperationsExecutor]:
  * each attempt would reach the server twice. A network interceptor sees the response before OkHttp
  * decides whether to send the request again.
  */

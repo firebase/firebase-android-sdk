@@ -76,8 +76,8 @@ import com.google.firebase.FirebaseException
  * `SerializationException` of kotlinx.serialization.
  * - Programming errors, such as an invalid config or a call on a terminated instance, are thrown as
  * an [IllegalArgumentException] or an [IllegalStateException]. A header that the SDK reserves gives
- * a `ReservedHeaderException`, which is an [IllegalArgumentException]. A change to the headers of
- * an instance that is in use gives a `FirebaseSqlMutationException`, which is an
+ * a [ReservedHeaderException], which is an [IllegalArgumentException]. A change to the headers of
+ * an instance that is in use gives a [FirebaseSqlMutationException], which is an
  * [IllegalStateException].
  *
  * **Example: react to each category**
