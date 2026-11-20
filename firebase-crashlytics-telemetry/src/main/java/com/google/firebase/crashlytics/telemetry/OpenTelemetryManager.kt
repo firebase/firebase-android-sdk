@@ -66,10 +66,12 @@ internal object OpenTelemetryManager {
 
     scope.launch {
       val previousLaunchCrashed = Firebase.crashlytics.didCrashOnPreviousExecution()
-      val recoveredSpans = activeSessionStore.processPreviousSession(previousLaunchCrashed)
-      // Delete previous_telemetry.mmap only once its spans are saved for upload.
-      if (recoveredSpans != null && preparedStore.save(recoveredSpans)) {
-        activeSessionStore.deletePreviousSession()
+      // Move every crashed session into prepared/, deleting each span folder only once its
+      // prepared file is safely on disk.
+      for (session in activeSessionStore.processEarlierSessions(previousLaunchCrashed)) {
+        if (preparedStore.save(session.sessionId, session.spans)) {
+          activeSessionStore.deleteSession(session.sessionId)
+        }
       }
 
       for (session in preparedStore.loadSessions()) {

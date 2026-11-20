@@ -18,6 +18,7 @@ package com.google.firebase.crashlytics.telemetry
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -26,119 +27,184 @@ class ActiveSessionStoreTest {
 
   @TempDir lateinit var storageRoot: File
 
-  private var nowMillis = System.currentTimeMillis()
-  private var previousSpans: List<Span>? = emptyList()
+  private var nowMillis = 1_763_659_200_000L
+
+  /** Spans returned by the fake reader, keyed by session ID. */
+  private val savedSpans = mutableMapOf<String, List<Span>>()
 
   @Test
-  fun openCurrentSession_opensCurrentFileAndRotatesEarlierLaunchToPrevious() {
+  fun createSessionId_encodesTimestampSequencePidAndFullUuidInCreationOrder() {
+    val id = ActiveSessionStore.createSessionId(nowMillis = 0x019a9f4b8cfbL, pid = 1_234_567)
+    val parts = id.split('_')
+
+    assertThat(id).hasLength(63)
+    assertThat(parts).hasSize(4)
+    assertThat(parts[0]).isEqualTo("019a9f4b8cfb")
+    assertThat(parts[1]).hasLength(4)
+    assertThat(parts[2]).isEqualTo("0012d687")
+    assertThat(UUID.fromString(parts[3]).version()).isEqualTo(4)
+
+    val preEpoch = ActiveSessionStore.createSessionId(nowMillis = -500L, pid = 42)
+    assertThat(preEpoch.substringBefore('_')).isEqualTo("000000000000")
+
+    val burst = buildList {
+      add(ActiveSessionStore.createSessionId(nowMillis = 1_000L, pid = 100))
+      repeat(50) { add(ActiveSessionStore.createSessionId(nowMillis = 2_000L, pid = 100)) }
+      add(ActiveSessionStore.createSessionId(nowMillis = 3_000L, pid = 100))
+    }
+    assertThat(burst).isInStrictOrder()
+  }
+
+  @Test
+  fun openCurrentSession_opensSpanFileInFolderNamedByCurrentSessionId() {
     val openedPaths = mutableListOf<String>()
-    val first =
+    val store =
       ActiveSessionStore(
         storageRoot,
         MmapSize.SMALL,
         clockMillis = { nowMillis },
         openSession = { path, _ ->
           openedPaths += path
-          File(path).writeText("launch-1")
           MutationContext(0L)
         },
-        readSessionSpans = { _, _ -> previousSpans },
+        readSessionSpans = { _, _ -> emptyList() },
       )
-    first.openCurrentSession()
 
-    val activeDir = File(storageRoot, "active-sessions")
-    val currentFile = File(activeDir, "current_telemetry.mmap")
-    val previousFile = File(activeDir, "previous_telemetry.mmap")
-    assertThat(openedPaths).containsExactly(currentFile.absolutePath)
-    assertThat(currentFile.readText()).isEqualTo("launch-1")
-    assertThat(previousFile.exists()).isFalse()
+    store.openCurrentSession()
 
+    val expected = File(storageRoot, "active-sessions/${store.currentSessionId}/telemetry.mmap")
+    assertThat(openedPaths).containsExactly(expected.absolutePath)
+    assertThat(expected.parentFile!!.isDirectory).isTrue()
+  }
+
+  @Test
+  fun processEarlierSessions_previousLaunchHealthy_deletesItsFolder() {
+    launch()
+    val second = launch()
+
+    assertThat(second.processEarlierSessions(previousLaunchCrashed = false)).isEmpty()
+    assertThat(sessionIds()).containsExactly(second.currentSessionId)
+  }
+
+  @Test
+  fun processEarlierSessions_previousLaunchCrashed_returnsSpansAndKeepsFolderUntilDeleted() {
+    val first = launch()
+    savedSpans[first.currentSessionId] = listOf(testSpan("checkout"))
+    val second = launch()
+
+    val crashed = second.processEarlierSessions(previousLaunchCrashed = true)
+
+    assertThat(crashed.map { it.sessionId }).containsExactly(first.currentSessionId)
+    assertThat(crashed.single().spans.map { it.name }).containsExactly("checkout")
+    assertThat(sessionIds()).containsExactly(first.currentSessionId, second.currentSessionId)
+
+    second.deleteSession(first.currentSessionId)
+    assertThat(sessionIds()).containsExactly(second.currentSessionId)
+  }
+
+  @Test
+  fun processEarlierSessions_keepsUpToFourCrashedFoldersUntilPrepared() {
+    val crashes = mutableListOf<String>()
+    repeat(6) { index ->
+      nowMillis += 1_000L
+      val store = launch()
+      savedSpans[store.currentSessionId] = listOf(testSpan("crash-$index"))
+      crashes += store.currentSessionId
+      if (index > 0) {
+        // Previous launch crashed, and caller did not delete its folder yet (for example save
+        // failed or the process died before preparing finished).
+        store.processEarlierSessions(previousLaunchCrashed = true)
+      }
+    }
+
+    nowMillis += 1_000L
+    val current = launch()
+    val returned = current.processEarlierSessions(previousLaunchCrashed = true)
+
+    assertThat(returned.map { it.sessionId })
+      .containsExactly(crashes[2], crashes[3], crashes[4], crashes[5])
+      .inOrder()
+    assertThat(sessionIds())
+      .containsExactly(crashes[2], crashes[3], crashes[4], crashes[5], current.currentSessionId)
+  }
+
+  @Test
+  fun processEarlierSessions_crashedSessionWithNoSpans_deletesItsFolder() {
+    launch()
+    val second = launch()
+
+    assertThat(second.processEarlierSessions(previousLaunchCrashed = true)).isEmpty()
+    assertThat(sessionIds()).containsExactly(second.currentSessionId)
+  }
+
+  @Test
+  fun processEarlierSessions_crashedSessionCannotBeRead_keepsItsFolder() {
+    val first = launch()
     val second =
       ActiveSessionStore(
         storageRoot,
         MmapSize.SMALL,
         clockMillis = { nowMillis },
         openSession = { path, _ ->
-          File(path).writeText("launch-2")
+          File(path).createNewFile()
           MutationContext(0L)
         },
-        readSessionSpans = { _, _ -> previousSpans },
+        readSessionSpans = { _, _ -> null },
       )
     second.openCurrentSession()
 
-    assertThat(previousFile.readText()).isEqualTo("launch-1")
-    assertThat(currentFile.readText()).isEqualTo("launch-2")
+    assertThat(second.processEarlierSessions(previousLaunchCrashed = true)).isEmpty()
+    assertThat(sessionIds()).containsExactly(first.currentSessionId, second.currentSessionId)
   }
 
   @Test
-  fun processPreviousSession_previousLaunchHealthy_deletesPreviousFile() {
-    launch("launch-1")
-    val second = launch("launch-2")
+  fun processEarlierSessions_readingCrashedSession_doesNotResetSevenDayLimit() {
+    val crashedLaunch = launch()
+    savedSpans[crashedLaunch.currentSessionId] = listOf(testSpan("checkout"))
 
-    assertThat(second.processPreviousSession(previousLaunchCrashed = false)).isNull()
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap")
+    nowMillis += TimeUnit.DAYS.toMillis(5)
+    val day5Store =
+      ActiveSessionStore(
+        storageRoot,
+        MmapSize.SMALL,
+        clockMillis = { nowMillis },
+        openSession = { path, _ ->
+          File(path).createNewFile()
+          MutationContext(0L)
+        },
+        readSessionSpans = { file, _ ->
+          val sessionDir = file.parentFile!!
+          val tempCopy = File(sessionDir, "telemetry.mmap.read")
+          tempCopy.createNewFile()
+          tempCopy.delete()
+          sessionDir.setLastModified(nowMillis)
+          savedSpans[sessionDir.name].orEmpty()
+        },
+      )
+    day5Store.openCurrentSession()
+    assertThat(day5Store.processEarlierSessions(previousLaunchCrashed = true).map { it.sessionId })
+      .containsExactly(crashedLaunch.currentSessionId)
+
+    nowMillis += TimeUnit.DAYS.toMillis(3)
+    val day8Store = launch()
+    assertThat(day8Store.processEarlierSessions(previousLaunchCrashed = false)).isEmpty()
+    assertThat(sessionIds()).containsExactly(day8Store.currentSessionId)
   }
 
-  @Test
-  fun processPreviousSession_previousLaunchCrashed_returnsSpansAndKeepsFileUntilDeleted() {
-    previousSpans = listOf(testSpan("checkout"))
-    launch("launch-1")
-    val second = launch("launch-2")
-
-    val spans = second.processPreviousSession(previousLaunchCrashed = true)
-
-    assertThat(spans!!.map { it.name }).containsExactly("checkout")
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap", "previous_telemetry.mmap")
-
-    second.deletePreviousSession()
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap")
-  }
-
-  @Test
-  fun processPreviousSession_crashedSessionWithNoSpans_deletesPreviousFile() {
-    previousSpans = emptyList()
-    launch("launch-1")
-    val second = launch("launch-2")
-
-    assertThat(second.processPreviousSession(previousLaunchCrashed = true)).isNull()
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap")
-  }
-
-  @Test
-  fun processPreviousSession_crashedSessionCannotBeRead_keepsPreviousFile() {
-    previousSpans = null
-    launch("launch-1")
-    val second = launch("launch-2")
-
-    assertThat(second.processPreviousSession(previousLaunchCrashed = true)).isNull()
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap", "previous_telemetry.mmap")
-  }
-
-  @Test
-  fun processPreviousSession_crashedSessionOlderThanSevenDays_deletesPreviousFile() {
-    previousSpans = listOf(testSpan("checkout"))
-    launch("launch-1")
-    nowMillis += TimeUnit.DAYS.toMillis(8)
-    val second = launch("launch-2")
-
-    assertThat(second.processPreviousSession(previousLaunchCrashed = true)).isNull()
-    assertThat(activeFiles()).containsExactly("current_telemetry.mmap")
-  }
-
-  private fun launch(contents: String): ActiveSessionStore =
+  private fun launch(): ActiveSessionStore =
     ActiveSessionStore(
         storageRoot,
         MmapSize.SMALL,
         clockMillis = { nowMillis },
         openSession = { path, _ ->
-          File(path).writeText(contents)
+          File(path).createNewFile()
           MutationContext(0L)
         },
-        readSessionSpans = { _, _ -> previousSpans },
+        readSessionSpans = { file, _ -> savedSpans[file.parentFile!!.name].orEmpty() },
       )
       .also { it.openCurrentSession() }
 
-  private fun activeFiles(): List<String> =
+  private fun sessionIds(): List<String> =
     File(storageRoot, "active-sessions").list().orEmpty().sorted()
 
   private fun testSpan(name: String) =

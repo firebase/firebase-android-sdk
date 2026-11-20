@@ -16,7 +16,6 @@
 
 package com.google.firebase.crashlytics.telemetry
 
-import android.os.Process
 import android.util.Log
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -26,33 +25,35 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.UUID
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Keeps the spans of crashed sessions in small files under `prepared/` until Telemetry uploads
  * them.
  *
- * Each file is named `<12-hex-ms>_<4-hex-seq>_<8-hex-pid>_<uuid>.spans`, so sorting by name sorts
- * by creation time and encodes when the crash was saved. The store keeps at most
- * [MAX_PREPARED_SESSIONS] sessions, and none older than [MAX_PREPARED_SESSION_AGE_MILLIS].
+ * Each file reuses the session ID created by [ActiveSessionStore] (`<sessionId>.spans`), so saving
+ * the same session twice is idempotent and its age tracks when the crashed launch started. The
+ * store keeps at most [MAX_PREPARED_SESSIONS] sessions, and none older than
+ * [MAX_PREPARED_SESSION_AGE_MILLIS].
  */
 internal class PreparedSessionStore(
   storageRoot: File,
   private val clockMillis: () -> Long = System::currentTimeMillis,
-  private val pidProvider: () -> Int = Process::myPid,
 ) {
   private val preparedDir = File(storageRoot, PREPARED_DIR_NAME)
 
   /**
-   * Saves [spans] under a new prepared session ID and returns whether the file is safely on disk.
+   * Saves [spans] under [sessionId] and returns whether the file is safely on disk.
    *
-   * The store writes to a temporary file, calls `sync`, and renames it, so a process death partway
+   * Returns `true` right away if `<sessionId>.spans` already exists, such as when a previous launch
+   * died after saving the file and before deleting the folder in [ActiveSessionStore]. Otherwise
+   * the store writes to a temporary file, calls `sync`, and renames it so a process death partway
    * through never leaves a partial `.spans` file that [loadSessions] would read.
    */
-  fun save(spans: List<Span>): Boolean {
-    val sessionId = createSessionId(clockMillis(), pidProvider())
+  fun save(sessionId: String, spans: List<Span>): Boolean {
+    val target = File(preparedDir, sessionId + SPANS_SUFFIX)
+    if (target.exists()) return true
+
     val temp = File(preparedDir, sessionId + TEMP_SUFFIX)
     try {
       preparedDir.mkdirs()
@@ -74,7 +75,7 @@ internal class PreparedSessionStore(
         out.flush()
         file.fd.sync()
       }
-      if (temp.renameTo(File(preparedDir, sessionId + SPANS_SUFFIX))) return true
+      if (temp.renameTo(target)) return true
     } catch (e: IOException) {
       Log.d(LOG_TAG, "Could not save prepared session $sessionId", e)
     }
@@ -86,7 +87,8 @@ internal class PreparedSessionStore(
    * Deletes saved sessions that are past the limits or unreadable, and returns the rest, newest
    * first.
    *
-   * [createSessionId] puts the fixed-width hex timestamp first, so sorting by name sorts by time.
+   * [ActiveSessionStore.createSessionId] puts the fixed-width hex timestamp first, so sorting by
+   * name sorts by creation time.
    */
   fun loadSessions(): List<PreparedSession> {
     val (saved, leftovers) =
@@ -97,7 +99,8 @@ internal class PreparedSessionStore(
     val newestFirst = saved.sortedByDescending { it.name }
     val kept =
       newestFirst.take(MAX_PREPARED_SESSIONS).filter { file ->
-        val createdAtMillis = sessionTimestampMillis(file.name.removeSuffix(SPANS_SUFFIX))
+        val sessionId = file.name.removeSuffix(SPANS_SUFFIX)
+        val createdAtMillis = ActiveSessionStore.sessionTimestampMillis(sessionId)
         createdAtMillis != null && createdAtMillis >= oldestAllowed
       }
     newestFirst.filterNot { it in kept }.forEach { it.delete() }
@@ -149,31 +152,12 @@ internal class PreparedSessionStore(
   /** Spans saved under `prepared/` for an earlier session whose process crashed. */
   class PreparedSession(val sessionId: String, val spans: List<Span>)
 
-  internal companion object {
-    private const val LOG_TAG = "PreparedSessionStore"
-    private const val PREPARED_DIR_NAME = "prepared"
-    private const val SPANS_SUFFIX = ".spans"
-    private const val TEMP_SUFFIX = ".tmp"
-    private const val MAX_PREPARED_SESSIONS = 4
-    private const val MAX_TIMESTAMP_MILLIS = 0xFFFF_FFFF_FFFFL
-    private val MAX_PREPARED_SESSION_AGE_MILLIS = TimeUnit.DAYS.toMillis(14)
-    private val nextSequence = AtomicInteger(0)
-
-    /** Builds a filename-safe ID formatted as `<12-hex-ms>_<4-hex-seq>_<8-hex-pid>_<uuid>`. */
-    fun createSessionId(nowMillis: Long, pid: Int): String {
-      val timeHex =
-        (nowMillis.coerceAtLeast(0L) and MAX_TIMESTAMP_MILLIS).toString(16).padStart(12, '0')
-      val seqHex = (nextSequence.incrementAndGet() and 0xFFFF).toString(16).padStart(4, '0')
-      val pidHex = (pid.toLong() and 0xFFFF_FFFFL).toString(16).padStart(8, '0')
-      return "${timeHex}_${seqHex}_${pidHex}_${UUID.randomUUID()}"
-    }
-
-    private fun sessionTimestampMillis(sessionId: String): Long? {
-      val timeHex = sessionId.substringBefore('_', missingDelimiterValue = "")
-      if (timeHex.length != 12 || !timeHex.all { it in '0'..'9' || it in 'a'..'f' }) {
-        return null
-      }
-      return timeHex.toLongOrNull(16)
-    }
+  private companion object {
+    const val LOG_TAG = "PreparedSessionStore"
+    const val PREPARED_DIR_NAME = "prepared"
+    const val SPANS_SUFFIX = ".spans"
+    const val TEMP_SUFFIX = ".tmp"
+    const val MAX_PREPARED_SESSIONS = 4
+    val MAX_PREPARED_SESSION_AGE_MILLIS = TimeUnit.DAYS.toMillis(14)
   }
 }

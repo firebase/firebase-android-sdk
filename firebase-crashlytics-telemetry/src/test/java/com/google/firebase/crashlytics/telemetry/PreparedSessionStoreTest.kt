@@ -20,7 +20,6 @@ import com.google.common.truth.Truth.assertThat
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -30,32 +29,7 @@ class PreparedSessionStoreTest {
   @TempDir lateinit var storageRoot: File
 
   private var nowMillis = 1_763_659_200_000L
-  private val store by lazy {
-    PreparedSessionStore(storageRoot, clockMillis = { nowMillis }, pidProvider = { 4_321 })
-  }
-
-  @Test
-  fun createSessionId_encodesTimestampSequencePidAndFullUuidInCreationOrder() {
-    val id = PreparedSessionStore.createSessionId(nowMillis = 0x019a9f4b8cfbL, pid = 1_234_567)
-    val parts = id.split('_')
-
-    assertThat(id).hasLength(63)
-    assertThat(parts).hasSize(4)
-    assertThat(parts[0]).isEqualTo("019a9f4b8cfb")
-    assertThat(parts[1]).hasLength(4)
-    assertThat(parts[2]).isEqualTo("0012d687")
-    assertThat(UUID.fromString(parts[3]).version()).isEqualTo(4)
-
-    val preEpoch = PreparedSessionStore.createSessionId(nowMillis = -500L, pid = 42)
-    assertThat(preEpoch.substringBefore('_')).isEqualTo("000000000000")
-
-    val burst = buildList {
-      add(PreparedSessionStore.createSessionId(nowMillis = 1_000L, pid = 100))
-      repeat(50) { add(PreparedSessionStore.createSessionId(nowMillis = 2_000L, pid = 100)) }
-      add(PreparedSessionStore.createSessionId(nowMillis = 3_000L, pid = 100))
-    }
-    assertThat(burst).isInStrictOrder()
-  }
+  private val store by lazy { PreparedSessionStore(storageRoot, clockMillis = { nowMillis }) }
 
   @Test
   fun save_thenLoadSessions_returnsTheSameSpans() {
@@ -68,28 +42,41 @@ class PreparedSessionStoreTest {
         name = "checkout",
         attributes = mapOf("http.request.method" to "POST", "app.screen.name" to "Cart"),
       )
+    val sessionId = newSessionId()
 
-    assertThat(store.save(listOf(checkout, testSpan("tap")))).isTrue()
+    assertThat(store.save(sessionId, listOf(checkout, testSpan("tap")))).isTrue()
 
     val loaded = store.loadSessions().single()
+    assertThat(loaded.sessionId).isEqualTo(sessionId)
     assertThat(loaded.spans).containsExactly(checkout, testSpan("tap")).inOrder()
-    assertThat(preparedFiles()).containsExactly("${loaded.sessionId}.spans")
+    assertThat(preparedFiles()).containsExactly("$sessionId.spans")
+  }
+
+  @Test
+  fun save_whenSessionAlreadyPrepared_returnsTrueWithoutDuplicating() {
+    val sessionId = newSessionId()
+    assertThat(store.save(sessionId, listOf(testSpan("first")))).isTrue()
+    assertThat(store.save(sessionId, listOf(testSpan("second")))).isTrue()
+
+    val loaded = store.loadSessions()
+    assertThat(loaded.map { it.sessionId }).containsExactly(sessionId)
+    assertThat(loaded.single().spans.map { it.name }).containsExactly("first")
+    assertThat(preparedFiles()).containsExactly("$sessionId.spans")
   }
 
   @Test
   fun save_cannotWriteFile_returnsFalse() {
-    // A regular file where the prepared folder belongs makes every write fail.
     File(storageRoot, "prepared").createNewFile()
 
-    assertThat(store.save(listOf(testSpan("tap")))).isFalse()
+    assertThat(store.save(newSessionId(), listOf(testSpan("tap")))).isFalse()
   }
 
   @Test
   fun delete_removesTheSavedSession() {
-    store.save(listOf(testSpan("tap")))
-    val saved = store.loadSessions().single()
+    val sessionId = newSessionId()
+    store.save(sessionId, listOf(testSpan("tap")))
 
-    store.delete(saved.sessionId)
+    store.delete(sessionId)
 
     assertThat(store.loadSessions()).isEmpty()
     assertThat(preparedFiles()).isEmpty()
@@ -97,42 +84,46 @@ class PreparedSessionStoreTest {
 
   @Test
   fun loadSessions_keepsNewestFourSessionsNewestFirst() {
-    repeat(6) { index ->
-      nowMillis += 1_000L
-      store.save(listOf(testSpan("crash-$index")))
-    }
+    val ids =
+      List(6) {
+        nowMillis += 1_000L
+        newSessionId().also { id -> store.save(id, listOf(testSpan("tap"))) }
+      }
 
-    val loadedNames = store.loadSessions().map { it.spans.single().name }
+    val loadedIds = store.loadSessions().map { it.sessionId }
 
-    assertThat(loadedNames).containsExactly("crash-5", "crash-4", "crash-3", "crash-2").inOrder()
-    assertThat(preparedFiles()).hasSize(4)
+    assertThat(loadedIds).containsExactly(ids[5], ids[4], ids[3], ids[2]).inOrder()
+    assertThat(preparedFiles()).containsExactlyElementsIn(loadedIds.map { "$it.spans" })
   }
 
   @Test
   fun loadSessions_deletesSessionsOlderThanFourteenDays() {
-    store.save(listOf(testSpan("old")))
+    val old = newSessionId()
+    store.save(old, listOf(testSpan("tap")))
     nowMillis += TimeUnit.DAYS.toMillis(15)
-    store.save(listOf(testSpan("recent")))
+    val recent = newSessionId()
+    store.save(recent, listOf(testSpan("tap")))
 
-    val loaded = store.loadSessions()
-    assertThat(loaded.map { it.spans.single().name }).containsExactly("recent")
-    assertThat(preparedFiles()).containsExactly("${loaded.single().sessionId}.spans")
+    assertThat(store.loadSessions().map { it.sessionId }).containsExactly(recent)
+    assertThat(preparedFiles()).containsExactly("$recent.spans")
   }
 
   @Test
   fun loadSessions_deletesTemporaryAndCorruptFiles() {
-    store.save(listOf(testSpan("good")))
+    val good = newSessionId()
+    store.save(good, listOf(testSpan("good")))
     val preparedDir = File(storageRoot, "prepared")
-    File(preparedDir, "${PreparedSessionStore.createSessionId(nowMillis, 1)}.tmp")
-      .writeText("partial")
+    File(preparedDir, "${newSessionId()}.tmp").writeText("partial")
     val corruptFile =
-      File(preparedDir, "${PreparedSessionStore.createSessionId(nowMillis + 1L, 1)}.spans")
+      File(preparedDir, "${ActiveSessionStore.createSessionId(nowMillis + 1L, 1)}.spans")
     DataOutputStream(FileOutputStream(corruptFile)).use { it.writeInt(500_000_000) }
 
     val loaded = store.loadSessions()
-    assertThat(loaded.map { it.spans.single().name }).containsExactly("good")
-    assertThat(preparedFiles()).containsExactly("${loaded.single().sessionId}.spans")
+    assertThat(loaded.map { it.sessionId }).containsExactly(good)
+    assertThat(preparedFiles()).containsExactly("$good.spans")
   }
+
+  private fun newSessionId(): String = ActiveSessionStore.createSessionId(nowMillis, pid = 4_321)
 
   private fun preparedFiles(): List<String> =
     File(storageRoot, "prepared").list().orEmpty().sorted()
