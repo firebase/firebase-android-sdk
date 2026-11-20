@@ -16,8 +16,6 @@
 
 plugins { id("java-library") }
 
-val jvm = org.gradle.internal.jvm.Jvm.current()
-
 dependencies {
   // TODO(m187-repin): restore pin on com.google.firebase:firebase-encoders.
   implementation(project(":encoders:firebase-encoders"))
@@ -34,7 +32,6 @@ dependencies {
   annotationProcessor("com.google.auto.service:auto-service:1.0-rc6")
 
   testImplementation("com.google.testing.compile:compile-testing:0.18")
-  jvm.toolsJar?.let { testImplementation(files(it)) }
   testImplementation("com.google.truth:truth:1.0.1")
 }
 
