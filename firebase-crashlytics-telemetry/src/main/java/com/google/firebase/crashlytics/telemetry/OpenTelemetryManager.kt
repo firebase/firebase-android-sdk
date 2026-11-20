@@ -54,32 +54,35 @@ internal object OpenTelemetryManager {
     val googleAppId = options.applicationId
     val apiKey = options.apiKey
     val storageRoot = telemetryStorageRootDir(firebaseApp.applicationContext.noBackupFilesDir)
-    storageRoot.mkdirs()
 
     val resource = Resource.create(Attributes.of(stringKey("gcp.project_id"), projectId))
 
     val spanExporter = createSpanExporter(projectId, googleAppId, apiKey)
     val logExporter = createLogExporter(projectId, googleAppId, apiKey)
 
-    // Unify file-mapping initialization and span recovery inline using the trailing lambda API.
-    val mmapFileCurrent = File(storageRoot, "crashlytics_otel_current.mmap")
-    Log.d("OpenTelemetryManager", "mmap file: $mmapFileCurrent")
+    val activeSessionStore = ActiveSessionStore(storageRoot, MmapSize.SMALL)
+    val preparedStore = PreparedSessionStore(storageRoot)
+    val mutationContext = activeSessionStore.openCurrentSession()
 
-    val mutationContext =
-      PersistenceContext.initialize(mmapFileCurrent.absolutePath, MmapSize.SMALL) { recoveredSpans
-        ->
-        val recoverPreviousSpans = Firebase.crashlytics.didCrashOnPreviousExecution()
-        if (recoverPreviousSpans) {
-          Log.d("OpenTelemetryManager", "Found ${recoveredSpans.size} recovered spans to export.")
-          scope.launch {
-            Log.d(
-              "OpenTelemetryManager",
-              "Exporting ${recoveredSpans.size} recovered spans: ${recoveredSpans.map { it.name }}",
-            )
-            spanExporter.export(recoveredSpans.map { it.toSpanData() })
-          }
-        }
+    scope.launch {
+      val previousLaunchCrashed = Firebase.crashlytics.didCrashOnPreviousExecution()
+      val recoveredSpans = activeSessionStore.processPreviousSession(previousLaunchCrashed)
+      // Delete previous_telemetry.mmap only once its spans are saved for upload.
+      if (recoveredSpans != null && preparedStore.save(recoveredSpans)) {
+        activeSessionStore.deletePreviousSession()
       }
+
+      for (session in preparedStore.loadSessions()) {
+        Log.d(
+          "OpenTelemetryManager",
+          "Exporting ${session.spans.size} spans from prepared session ${session.sessionId}.",
+        )
+        val result = spanExporter.export(session.spans.map { it.toSpanData() })
+        // Delete the prepared file only once the upload succeeds. Otherwise the next launch
+        // retries.
+        result.whenComplete { if (result.isSuccess) preparedStore.delete(session.sessionId) }
+      }
+    }
 
     val crashlyticsSpanProcessor = CrashlyticsSpanProcessor(mutationContext)
 
