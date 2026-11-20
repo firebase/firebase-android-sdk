@@ -181,7 +181,6 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
         finalizedReport);
   }
 
-  @SdkSuppress(minSdkVersion = 37) // ProfilingManager, ProfilingTrigger
   @Test
   public void testOomMarker_isScopedToSessionAndClearedOnFinalize() {
     String oomSessionId = "oomSession";
@@ -201,6 +200,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertThat(reportPersistence.hasOomMarker(oomSessionId)).isFalse();
   }
 
+  @SdkSuppress(minSdkVersion = 37) // ProfilingManager, ProfilingTrigger
   @Test
   public void testLoadFinalizedReports_reportWithProfilingManagerTrigger_containsTriggers() {
     String sessionId = "sessionId";
