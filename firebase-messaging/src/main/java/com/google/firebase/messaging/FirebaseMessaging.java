@@ -44,7 +44,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.EventHandler;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
@@ -317,14 +316,13 @@ public class FirebaseMessaging {
     }
   }
 
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
   private boolean shouldRetainProxyNotifications() {
     ProxyNotificationInitializer.initialize(context);
     if (!ProxyNotificationInitializer.isProxyNotificationEnabled(context)) {
       // Proxy notifications not enabled, shouldn't retain.
       return false;
     }
-    if (firebaseApp.get(AnalyticsConnector.class) != null) {
+    if (MessagingAnalytics.getAnalyticsConnector(firebaseApp) != null) {
       // Google Analytics is present, should retain.
       return true;
     }
