@@ -167,6 +167,9 @@ public class FirebaseCrashlytics {
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
+    // Reaching this point means that cached settings, if any, did not crash initialization.
+    settingsController.onSynchronousInitializationComplete();
+
     if (finishCoreInBackground) {
       core.doBackgroundInitializationAsync(settingsController);
     }

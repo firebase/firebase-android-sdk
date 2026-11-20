@@ -160,13 +160,22 @@ public class SettingsController implements SettingsProvider {
    */
   public Task<Void> loadSettingsData(
       SettingsCacheBehavior cacheBehavior, CrashlyticsWorkers crashlyticsWorkers) {
+    // A marker is created before cached settings are applied, and removed when the synchronous part
+    // of initialization completes. If it is still present, the previous launch applied cached
+    // settings and died before initialization completed, possibly because of those settings.
+    // Applying them again could crash every launch, because a process that dies during
+    // initialization never gets to fetch new settings. So discard them, and use the defaults until
+    // new settings are fetched, as on a fresh install.
+    final boolean useCachedSettings = !discardCachedSettingsIfInitDidNotComplete();
+
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
-    if (!buildInstanceIdentifierChanged()) {
+    if (useCachedSettings && !buildInstanceIdentifierChanged()) {
       final Settings cachedSettings = getCachedSettingsData(cacheBehavior);
       if (cachedSettings != null) {
+        cachedSettingsIo.createApplyingMarker();
         settings.set(cachedSettings);
         settingsTask.get().trySetResult(cachedSettings);
         return Tasks.forResult(null);
@@ -179,8 +188,11 @@ public class SettingsController implements SettingsProvider {
 
     // The cached settings are too old, so if there are expired settings, use those for now.
     final Settings expiredSettings =
-        getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION);
+        useCachedSettings
+            ? getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION)
+            : null;
     if (expiredSettings != null) {
+      cachedSettingsIo.createApplyingMarker();
       settings.set(expiredSettings);
       settingsTask.get().trySetResult(expiredSettings);
     }
@@ -224,6 +236,35 @@ public class SettingsController implements SettingsProvider {
                 return Tasks.forResult(null);
               }
             });
+  }
+
+  /**
+   * Called when the synchronous part of Crashlytics initialization has completed. Removes the marker
+   * that {@code loadSettingsData} creates before it applies cached settings, because reaching this
+   * point means that the cached settings did not crash initialization. If the marker is still
+   * present at the next launch, the cached settings are discarded instead of applied.
+   */
+  public void onSynchronousInitializationComplete() {
+    cachedSettingsIo.removeApplyingMarker();
+  }
+
+  /**
+   * Discards the cached settings if the previous launch applied them and didn't complete the
+   * synchronous part of initialization, since they might have crashed the app.
+   *
+   * @return whether the cached settings were discarded.
+   */
+  private boolean discardCachedSettingsIfInitDidNotComplete() {
+    if (!cachedSettingsIo.isApplyingMarkerPresent()) {
+      return false;
+    }
+    Logger.getLogger()
+        .w(
+            "Crashlytics did not finish initializing after it applied cached settings on the"
+                + " previous launch. Deleting the cached settings and fetching new settings.");
+    cachedSettingsIo.deleteCachedSettings();
+    cachedSettingsIo.removeApplyingMarker();
+    return true;
   }
 
   private Settings getCachedSettingsData(SettingsCacheBehavior cacheBehavior) {
