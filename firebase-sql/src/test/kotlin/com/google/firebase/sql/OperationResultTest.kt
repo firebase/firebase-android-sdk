@@ -18,9 +18,11 @@ package com.google.firebase.sql
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -195,8 +197,18 @@ class OperationResultTest {
     val row = result("{\"id\": 1, \"name\": \"Product 1\"}")
     val noRow = result("null")
 
+    val deserializerOnly =
+      object : DeserializationStrategy<Product> {
+        override val descriptor = Product.serializer().descriptor
+
+        override fun deserialize(decoder: Decoder): Product =
+          Product.serializer().deserialize(decoder)
+      }
+
     assertThat(rows.decodeList(Product.serializer())).containsExactly(product)
+    assertThat(rows.decodeList(deserializerOnly)).containsExactly(product)
     assertThat(row.decodeSingle(Product.serializer())).isEqualTo(product)
+    assertThat(row.decodeSingle(deserializerOnly)).isEqualTo(product)
     assertThat(row.decodeSingleOrNull(Product.serializer())).isEqualTo(product)
     assertThat(noRow.decodeSingleOrNull(Product.serializer())).isNull()
     assertThat(rows.decodeAs(ListSerializer(Product.serializer()))).containsExactly(product)

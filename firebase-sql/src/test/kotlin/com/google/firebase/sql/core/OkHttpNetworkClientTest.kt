@@ -22,6 +22,7 @@ import com.google.firebase.sql.FirebaseSqlException
 import com.google.firebase.sql.FirebaseSqlExceptionCategory
 import com.google.firebase.sql.takeRequestOrFail
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
@@ -547,6 +548,22 @@ class OkHttpNetworkClientTest {
   }
 
   @Test
+  fun truncatesALongBodyInTheFallbackErrorMessage() {
+    val exactLimit = "x".repeat(1_000)
+    val (atLimit, _) =
+      send(response = MockResponse().setStatus("HTTP/1.1 502 Bad Gateway").setBody(exactLimit))
+    assertThat(atLimit.error).hasMessageThat().isEqualTo("HTTP 502: $exactLimit")
+
+    val longBody = "<html>" + "a".repeat(2_500) + "</html>"
+    val (overLimit, _) =
+      send(response = MockResponse().setStatus("HTTP/1.1 502 Bad Gateway").setBody(longBody))
+    val error = overLimit.error as FirebaseSqlException
+    assertThat(error).hasMessageThat().isEqualTo("HTTP 502: ${longBody.take(1_000)}…")
+    assertThat(error.status).isEqualTo(502)
+    assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.PLATFORM)
+  }
+
+  @Test
   fun returnsATransportErrorWhenTheServerIsUnreachable() =
     runBlocking<Unit> {
       // A server of its own, so that shutting it down does not affect the server of the rule.
@@ -563,6 +580,35 @@ class OkHttpNetworkClientTest {
       // The IOException of OkHttp, as it is.
       assertThat(response.error).isInstanceOf(IOException::class.java)
       assertThat(response.isTransportError).isTrue()
+    }
+
+  @Test
+  fun returnsATimeoutThatIsNotATransportErrorWhenTheReadTimesOut() =
+    runBlocking<Unit> {
+      val shortReadTimeout =
+        OkHttpNetworkClient(OkHttpClient.Builder().readTimeout(100, TimeUnit.MILLISECONDS).build())
+      // Timeout before headers (onFailure) and while reading the body (onResponse).
+      val responses =
+        listOf(
+          MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE),
+          MockResponse().setBody("0123456789").throttleBody(1, 500, TimeUnit.MILLISECONDS)
+        )
+      for (mockResponse in responses) {
+        server.enqueue(mockResponse)
+
+        val response =
+          shortReadTimeout.sendRequest(
+            server.url("/"),
+            QueryRequest("GET", listOf("products"), emptyList(), emptyMap())
+          )
+        server.takeRequestOrFail()
+
+        assertThat(response.status).isEqualTo(0)
+        assertThat(response.statusText).isEqualTo("Timeout")
+        assertThat(response.body).isNull()
+        assertThat(response.error).isInstanceOf(InterruptedIOException::class.java)
+        assertThat(response.isTransportError).isFalse()
+      }
     }
 
   @Test
