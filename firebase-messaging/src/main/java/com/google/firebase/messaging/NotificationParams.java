@@ -285,8 +285,9 @@ public class NotificationParams {
         throw new JSONException("lightSettings don't have all three fields");
       }
 
-      // No need to check for presence of COLOR, LIGHT_ON_DURATION and LIGHT_OFF_DURATION. These
-      // three fields are guaranteed to exist since backend proto always gives default values.
+      // The payload is untrusted, so don't assume that the backend always sends valid values.
+      // getLightColor throws IllegalArgumentException for an empty or invalid color, which skips
+      // setting LightSettings. optInt returns 0 for a duration that is not a number.
       result[0] = getLightColor(lightSettings.optString(0)); // color
       result[1] = lightSettings.optInt(1); // lightOnDuration
       result[2] = lightSettings.optInt(2); // lightOnDuration
@@ -401,8 +402,17 @@ public class NotificationParams {
         || key.startsWith(MessageNotificationKeys.NOTIFICATION_PREFIX_OLD);
   }
 
-  /** @throws IllegalArgumentException if {@code color} maps to color "transparent". */
+  /**
+   * @throws IllegalArgumentException if {@code color} is empty, is not a valid color, or maps to
+   *     color "transparent".
+   */
   private static int getLightColor(String color) {
+    // Color.parseColor("") throws StringIndexOutOfBoundsException rather than
+    // IllegalArgumentException, so reject an empty color here.
+    if (TextUtils.isEmpty(color)) {
+      throw new IllegalArgumentException("Empty color is invalid");
+    }
+
     int result = Color.parseColor(color);
 
     if (result == COLOR_TRANSPARENT_IN_HEX) {
