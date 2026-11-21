@@ -17,8 +17,8 @@
 package com.google.firebase.sessions
 
 import android.content.Context
+import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.settings.SessionConfigs
 import com.google.firebase.sessions.settings.SessionConfigsSerializer
@@ -29,45 +29,55 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
-/**
- * Tests that [FirebaseSessionsComponent] provides data stores that aren't created until they're
- * used, so they aren't created on the main thread while Firebase initializes. See
- * https://github.com/firebase/firebase-android-sdk/issues/8615
- */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class FirebaseSessionsComponentTest {
   private val appContext: Context = ApplicationProvider.getApplicationContext()
 
   @Test
-  fun sessionConfigsDataStore_isCreatedOnFirstRead() = runTest {
+  fun sessionConfigsDataStore_readsDefaultThenPersistsUpdate() = runTest {
     val dataStore =
       FirebaseSessionsComponent.MainModule.sessionConfigsDataStore(
-        appContext,
+        appContext = appContext,
         blockingDispatcher = StandardTestDispatcher(testScheduler, "blocking"),
       )
 
-    assertThat(dataStore).isInstanceOf(LazyDataStore::class.java)
-    assertThat((dataStore as LazyDataStore<SessionConfigs>).isInitialized()).isFalse()
-
     assertThat(dataStore.data.first()).isEqualTo(SessionConfigsSerializer.defaultValue)
-    assertThat(dataStore.isInitialized()).isTrue()
+
+    val sessionConfigs =
+      SessionConfigs(
+        sessionsEnabled = true,
+        sessionSamplingRate = 0.5,
+        sessionTimeoutSeconds = 60,
+        cacheDurationSeconds = 3_600,
+        cacheUpdatedTimeSeconds = 1_234L,
+      )
+    dataStore.updateData { sessionConfigs }
+
+    assertThat(dataStore.data.first()).isEqualTo(sessionConfigs)
+    assertThat(appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data").exists())
+      .isTrue()
   }
 
   @Test
-  fun sessionDataStore_isCreatedOnFirstRead() = runTest {
+  fun sessionDataStore_readsDefaultThenPersistsUpdate() = runTest {
+    val timeProvider = FakeTimeProvider()
+    val sessionGenerator = SessionGenerator(timeProvider, FakeUuidGenerator())
     val dataStore =
       FirebaseSessionsComponent.MainModule.sessionDataStore(
-        appContext,
+        appContext = appContext,
         blockingDispatcher = StandardTestDispatcher(testScheduler, "blocking"),
-        sessionDataSerializer =
-          SessionDataSerializer(SessionGenerator(FakeTimeProvider(), FakeUuidGenerator())),
+        sessionDataSerializer = SessionDataSerializer(sessionGenerator),
       )
 
-    assertThat(dataStore).isInstanceOf(LazyDataStore::class.java)
-    assertThat((dataStore as LazyDataStore<SessionData>).isInitialized()).isFalse()
+    val initialSessionData = dataStore.data.first()
+    assertThat(initialSessionData.backgroundTime).isNull()
 
-    assertThat(dataStore.data.first().sessionDetails.sessionId).isNotEmpty()
-    assertThat(dataStore.isInitialized()).isTrue()
+    val sessionData = initialSessionData.copy(backgroundTime = timeProvider.currentTime())
+    dataStore.updateData { sessionData }
+
+    assertThat(dataStore.data.first()).isEqualTo(sessionData)
+    assertThat(appContext.dataStoreFile("firebaseSessions/sessionDataStore.data").exists()).isTrue()
   }
 }

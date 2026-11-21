@@ -1,7 +1,8 @@
 # Unreleased
 
-- [fixed] Fixed ANRs during app startup by moving the SDK's `DataStore`
-  creation, which loads a native library, off the main thread. (#8615)
+- [fixed] Fixed ANRs during app startup caused by loading the `DataStore`
+  native library on the main thread. (#8615)
+- [changed] Updated `androidx.datastore` dependency to `1.2.1`. (#8845)
 
 # 4.0.2
 

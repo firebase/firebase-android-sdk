@@ -22,7 +22,6 @@ import androidx.datastore.dataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.sessions.LazyDataStore
 import com.google.firebase.sessions.testing.FakeDataStore
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import java.io.IOException
@@ -358,28 +357,6 @@ class SettingsCacheTest {
 
       assertThat(settingsCache.sessionsEnabled()).isNull()
     }
-
-  @Test
-  fun settingsCache_lazyDataStore_isCreatedByBackgroundCollection() = runTest {
-    val fakeDataStore = FakeDataStore(firstValue = SessionConfigsSerializer.defaultValue)
-    val lazyDataStore = LazyDataStore { fakeDataStore }
-    val settingsCache =
-      SettingsCacheImpl(
-        backgroundDispatcher = StandardTestDispatcher(testScheduler, "background"),
-        timeProvider = FakeTimeProvider(),
-        sessionConfigsDataStore = lazyDataStore,
-      )
-
-    // Constructing the settings cache, which happens on the main thread, doesn't create it.
-    assertThat(lazyDataStore.isInitialized()).isFalse()
-
-    runCurrent()
-
-    assertThat(lazyDataStore.isInitialized()).isTrue()
-    assertThat(settingsCache.sessionsEnabled()).isNull()
-    assertThat(fakeDataStore.dataCollectionCount).isEqualTo(1)
-    fakeDataStore.close()
-  }
 
   @After
   fun cleanUp() {
