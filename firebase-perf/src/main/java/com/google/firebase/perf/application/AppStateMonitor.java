@@ -120,6 +120,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
       isRegisteredForLifecycleCallbacks = true;
+      if (screenPerformanceRecordingSupported) {
+        // Start the frame metrics thread now so that FrameMetricsRecorder.start() in
+        // onActivityStarted never has to wait for it on the main thread.
+        PerfFrameMetricsAggregator.prewarm();
+      }
     }
   }
 

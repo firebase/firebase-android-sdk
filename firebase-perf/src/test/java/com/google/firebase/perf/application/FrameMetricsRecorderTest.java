@@ -23,7 +23,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import android.view.WindowManager;
-import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
@@ -47,7 +46,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   private Activity activity;
   private FrameMetricsRecorder recorder;
 
-  @Mock private FrameMetricsAggregator fma;
+  @Mock private PerfFrameMetricsAggregator fma;
 
   @Before
   public void setUp() {
@@ -247,7 +246,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   }
 
   private static void stubFrameMetricsAggregatorData(
-      FrameMetricsAggregator mockFMA, int[][] frameTimes) {
+      PerfFrameMetricsAggregator mockFMA, int[][] frameTimes) {
     SparseIntArray totalIndexValue = createFrameMetricsAggregatorData(frameTimes);
     SparseIntArray[] mMetrics = new SparseIntArray[9];
     mMetrics[TOTAL_INDEX] = totalIndexValue;
