@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <service android:name="com.google.firebase.components.ComponentDiscoveryService"
+            android:directBootAware="true"
+            android:exported="false">
+            <meta-data
+                android:name="com.google.firebase.components:com.google.firebase.sql.FirebaseSqlRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
+        </service>
+    </application>
+</manifest>
