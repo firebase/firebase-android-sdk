@@ -430,7 +430,18 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     // to happen because if we stop a stream ourselves, this callback will never be called. To
     // prevent cases where we retry without a backoff accidentally, we set the stream to error
     // in all cases.
-    close(State.Error, status);
+    Status closeStatus = status;
+    if (status.isOk()) {
+      // A server or proxy can still end the stream with OK. Report it as a transient error too:
+      // close() resets the backoff for OK, and listeners expect OK only for closes that the client
+      // initiated.
+      Logger.warn(
+          getClass().getSimpleName(),
+          "(%x) Server closed the stream with status OK. Treating it as a transient error.",
+          System.identityHashCode(this));
+      closeStatus = Status.UNAVAILABLE.withDescription("Server closed the stream with status OK");
+    }
+    close(State.Error, closeStatus);
   }
 
   /** Marks the stream as available. */
