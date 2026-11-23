@@ -16,11 +16,8 @@
 
 package com.google.firebase.functions
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import java.net.URL
 
 /** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
@@ -38,12 +35,6 @@ public fun Firebase.functions(app: FirebaseApp): FirebaseFunctions =
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain]. */
 public fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
   FirebaseFunctions.getInstance(app, regionOrCustomDomain)
-
-/** @suppress */
-@Keep
-public class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}
 
 /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
 public fun FirebaseFunctions.getHttpsCallable(

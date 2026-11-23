@@ -16,11 +16,8 @@
 
 package com.google.firebase.firestore
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
@@ -210,12 +207,6 @@ fun persistentCacheSettings(
   val builder = PersistentCacheSettings.newBuilder()
   builder.init()
   return builder.build()
-}
-
-/** @suppress */
-@Keep
-class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
 }
 
 /**

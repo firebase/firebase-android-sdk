@@ -16,11 +16,8 @@
 
 package com.google.firebase.remoteconfig
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
@@ -75,9 +72,3 @@ val FirebaseRemoteConfig.configUpdates
       )
     awaitClose { registration.remove() }
   }
-
-/** @suppress */
-@Keep
-class FirebaseRemoteConfigKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

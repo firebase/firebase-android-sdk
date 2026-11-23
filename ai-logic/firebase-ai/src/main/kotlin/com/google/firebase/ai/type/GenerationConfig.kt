@@ -21,26 +21,17 @@ import kotlinx.serialization.Serializable
 /**
  * Configuration parameters to use for content generation.
  *
- * @property temperature *Deprecated. Not supported in Gemini 3.x and later models. The model will
- * ignore this parameter if it's included in a request. Omit this parameter and let the model manage
- * sampling automatically.*
+ * @property temperature *Deprecated. Not supported in Gemini 3.x and later models.*
  *
- * @property topK *Deprecated. Not supported in Gemini 3.x and later models. The model will ignore
- * this parameter if it's included in a request. Omit this parameter and let the model manage
- * sampling automatically.*
+ * @property topK *Deprecated. Not supported in Gemini 3.x and later models.*
  *
- * @property topP *Deprecated. Not supported in Gemini 3.x and later models. The model will ignore
- * this parameter if it's included in a request. Omit this parameter and let the model manage
- * sampling automatically.*
+ * @property topP *Deprecated. Not supported in Gemini 3.x and later models.*
  *
- * @property candidateCount *Deprecated. Not supported in Gemini 3.x and later models. The model
- * will ignore this parameter if it's included in a request. Make parallel requests instead.*
+ * @property candidateCount *Deprecated. Not supported in Gemini 3.x and later models.*
  *
- * @property presencePenalty *Deprecated. Not supported in Gemini 3.x and later models. Requests
- * that include this parameter will fail with a 400 error. Omit this parameter.*
+ * @property presencePenalty *Deprecated. Not supported in Gemini 3.x and later models.*
  *
- * @property frequencyPenalty *Deprecated. Not supported in Gemini 3.x and later models. Requests
- * that include this parameter will fail with a 400 error. Omit this parameter.*
+ * @property frequencyPenalty *Deprecated. Not supported in Gemini 3.x and later models.*
  *
  * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
  * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
@@ -186,26 +177,18 @@ private constructor(
       this.speechConfig = speechConfig
     }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. The model will ignore this parameter if it's included in a request. Omit this parameter and let the model manage sampling automatically."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
     }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. The model will ignore this parameter if it's included in a request. Omit this parameter and let the model manage sampling automatically."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setTopK(topK: Int?): Builder = apply { this.topK = topK }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. The model will ignore this parameter if it's included in a request. Omit this parameter and let the model manage sampling automatically."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setTopP(topP: Float?): Builder = apply { this.topP = topP }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. The model will ignore this parameter if it's included in a request. Make parallel requests instead."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setCandidateCount(candidateCount: Int?): Builder = apply {
       this.candidateCount = candidateCount
     }
@@ -214,16 +197,12 @@ private constructor(
       this.maxOutputTokens = maxOutputTokens
     }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. Requests that include this parameter will fail with a 400 error. Omit this parameter."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setPresencePenalty(presencePenalty: Float?): Builder = apply {
       this.presencePenalty = presencePenalty
     }
 
-    @Deprecated(
-      "Not supported in Gemini 3.x and later models. Requests that include this parameter will fail with a 400 error. Omit this parameter."
-    )
+    @Deprecated("Not supported in Gemini 3.x and later models.")
     public fun setFrequencyPenalty(frequencyPenalty: Float?): Builder = apply {
       this.frequencyPenalty = frequencyPenalty
     }
