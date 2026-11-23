@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''A utility collecting ci_test.yml workflow failure logs.
+'''A utility collecting CI workflow failure logs (for example, ci_unit_tests.yml or ci_integration_tests.yml).
 
 Usage:
 

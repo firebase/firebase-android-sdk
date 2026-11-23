@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck.debug.testing;
 
+import androidx.annotation.Keep;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.appcheck.debug.BuildConfig;
 import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
@@ -30,6 +31,7 @@ import java.util.List;
  * @hide
  */
 @KeepForSdk
+@Keep
 public class FirebaseAppCheckDebugTestingRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-app-check-debug-testing";
 

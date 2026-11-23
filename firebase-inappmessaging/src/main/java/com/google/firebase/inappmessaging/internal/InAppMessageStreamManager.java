@@ -342,8 +342,10 @@ public class InAppMessageStreamManager {
         .flatMapMaybe(appForegroundRateLimitFilter)
         .flatMapMaybe(filterDisplayable)
         .sorted(InAppMessageStreamManager::compareByPriority)
-        .firstElement()
-        .flatMap(content -> triggeredInAppMessage(content, event));
+        // Try the candidates lazily in priority order and deliver the first one that yields a
+        // message, so that a campaign that cannot be decoded does not hide the next eligible one.
+        .concatMapMaybe(content -> triggeredInAppMessage(content, event))
+        .firstElement();
   }
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event) {
@@ -357,24 +359,33 @@ public class InAppMessageStreamManager {
       // Handle experiment case
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = content.getExperimentalPayload().getCampaignName();
-      // At this point we set the experiment to become active in analytics.
-      // As long as it's not a test experiment.
-      if (!content.getIsTestCampaign()) {
-        abtIntegrationHelper.setExperimentActive(
-            content.getExperimentalPayload().getExperimentPayload());
-      }
     } else {
       return Maybe.empty();
     }
-    InAppMessage inAppMessage =
-        ProtoMarshallerClient.decode(
-            content.getContent(),
-            campaignId,
-            campaignName,
-            content.getIsTestCampaign(),
-            content.getDataBundleMap());
+    InAppMessage inAppMessage;
+    try {
+      inAppMessage =
+          ProtoMarshallerClient.decode(
+              content.getContent(),
+              campaignId,
+              campaignName,
+              content.getIsTestCampaign(),
+              content.getDataBundleMap());
+    } catch (RuntimeException e) {
+      // The campaign comes from the server and can be missing fields that the message models
+      // require. Skip it instead of failing the stream, which would crash the app.
+      Logging.logw("Skipping campaign " + campaignId + " because it could not be decoded: " + e);
+      return Maybe.empty();
+    }
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
+    }
+    // At this point we set the experiment to become active in analytics.
+    // As long as it's not a test experiment.
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)
+        && !content.getIsTestCampaign()) {
+      abtIntegrationHelper.setExperimentActive(
+          content.getExperimentalPayload().getExperimentPayload());
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));

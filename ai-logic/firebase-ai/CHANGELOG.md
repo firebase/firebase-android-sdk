@@ -1,5 +1,13 @@
 # Unreleased
 
+# 18.2.0
+
+- [feature] Added `LiveServerVoiceActivity` and `VoiceActivityType` to
+  detect when user speech starts or ends during a `LiveSession` using
+  server-side voice activity detection.
+- [feature] Added support for function calling in on-device and hybrid
+  inference modes, with automatic cloud fallback when the on-device model does
+  not support function calling. (#8758)
 - [feature] Added support for multiple `TextPart` and `ImagePart` instances in
   on-device and hybrid inference modes. (#8754)
 
@@ -269,3 +277,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

@@ -65,6 +65,7 @@ public class CrashlyticsReportPersistence {
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
 
   private static final String PROFILING_MANAGER_INFO_FILE_NAME = "profiling-manager-info";
+  private static final String OOM_MARKER_FILE_NAME = "oom-marker";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -163,6 +164,19 @@ public class CrashlyticsReportPersistence {
     } catch (IOException e) {
       Logger.getLogger().w("Could not persist Profiling Manager info " + sessionId, e);
     }
+  }
+
+  public void persistOomMarker(@NonNull String sessionId) {
+    try {
+      //noinspection ResultOfMethodCallIgnored
+      fileStore.getSessionFile(sessionId, OOM_MARKER_FILE_NAME).createNewFile();
+    } catch (IOException e) {
+      Logger.getLogger().w("Could not persist OOM marker for session " + sessionId, e);
+    }
+  }
+
+  public boolean hasOomMarker(@NonNull String sessionId) {
+    return fileStore.getSessionFile(sessionId, OOM_MARKER_FILE_NAME).exists();
   }
 
   /**

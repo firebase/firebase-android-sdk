@@ -208,7 +208,7 @@ public class UploaderTest {
     when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordFailure(any());
-    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2, true);
+    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
   }
 
   @Test
@@ -368,7 +368,7 @@ public class UploaderTest {
     store.persist(TRANSPORT_CONTEXT, EVENT);
     store.persist(TRANSPORT_CONTEXT, otherEvent);
 
-    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 3);
     assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 1, true);
   }
