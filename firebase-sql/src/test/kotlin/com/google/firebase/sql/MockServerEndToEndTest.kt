@@ -363,7 +363,7 @@ class MockServerEndToEndTest {
   ): FirebaseSql {
     val sql =
       component.get(
-        SqlServiceConfig(
+        ServiceConfig(
           serviceId = SERVICE_ID,
           location = LOCATION,
           schemaName = schemaName,

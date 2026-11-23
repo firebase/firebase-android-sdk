@@ -34,7 +34,7 @@ package com.google.firebase.sql
  *
  * **Example: set the headers only on an instance that is not in use yet**
  * ```kotlin
- * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ * val sql = Firebase.sql(ServiceConfig(serviceId = "my-service", location = "us-central1"))
  * if (sql.isMutable) {
  *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
  * }

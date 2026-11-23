@@ -40,7 +40,7 @@ import java.util.Objects
  *
  * **Example: the production service**
  * ```kotlin
- * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ * val sql = Firebase.sql(ServiceConfig(serviceId = "my-service", location = "us-central1"))
  * ```
  *
  * **Example: a local server, from the Android emulator**
@@ -48,7 +48,7 @@ import java.util.Objects
  * // 10.0.2.2 is the address of the computer that runs the Android emulator.
  * val local =
  *   Firebase.sql(
- *     SqlServiceConfig(
+ *     ServiceConfig(
  *       serviceId = "my-service",
  *       location = "us-central1",
  *       host = "10.0.2.2",
@@ -86,7 +86,7 @@ import java.util.Objects
  * must also allow cleartext traffic to that host, for example in its network security
  * configuration; otherwise the requests fail with a status of `0`.
  */
-public class SqlServiceConfig(
+public class ServiceConfig(
   public val serviceId: String,
   public val location: String,
   public val schemaName: String? = null,
@@ -101,11 +101,11 @@ public class SqlServiceConfig(
    * example a config without a [host] and a config with the production host.
    *
    * @param other The object to compare with this config.
-   * @return `true` if, and only if, [other] is a [SqlServiceConfig] whose properties are all equal
-   * to the properties of this config.
+   * @return `true` if, and only if, [other] is a [ServiceConfig] whose properties are all equal to
+   * the properties of this config.
    */
   override fun equals(other: Any?): Boolean =
-    other is SqlServiceConfig &&
+    other is ServiceConfig &&
       other.serviceId == serviceId &&
       other.location == location &&
       other.schemaName == schemaName &&
@@ -119,7 +119,7 @@ public class SqlServiceConfig(
 
   /** Returns a text with the values of all the properties, for debugging. Its format can change. */
   override fun toString(): String =
-    "SqlServiceConfig(serviceId=$serviceId, location=$location, schemaName=$schemaName, " +
+    "ServiceConfig(serviceId=$serviceId, location=$location, schemaName=$schemaName, " +
       "host=$host, port=$port, sslEnabled=$sslEnabled)"
 }
 
@@ -130,28 +130,28 @@ public class SqlServiceConfig(
  *
  * **Example: the same service in another schema**
  * ```kotlin
- * val config = SqlServiceConfig(serviceId = "my-service", location = "us-central1")
+ * val config = ServiceConfig(serviceId = "my-service", location = "us-central1")
  * val inventory = Firebase.sql(config.copy(schemaName = "inventory"))
  * ```
  *
- * @param serviceId The [SqlServiceConfig.serviceId] of the copy.
- * @param location The [SqlServiceConfig.location] of the copy.
- * @param schemaName The [SqlServiceConfig.schemaName] of the copy.
- * @param host The [SqlServiceConfig.host] of the copy.
- * @param port The [SqlServiceConfig.port] of the copy.
- * @param sslEnabled The [SqlServiceConfig.sslEnabled] of the copy.
+ * @param serviceId The [ServiceConfig.serviceId] of the copy.
+ * @param location The [ServiceConfig.location] of the copy.
+ * @param schemaName The [ServiceConfig.schemaName] of the copy.
+ * @param host The [ServiceConfig.host] of the copy.
+ * @param port The [ServiceConfig.port] of the copy.
+ * @param sslEnabled The [ServiceConfig.sslEnabled] of the copy.
  * @return A config with the given properties, and with the properties of this config for the
  * others.
  */
-public fun SqlServiceConfig.copy(
+public fun ServiceConfig.copy(
   serviceId: String = this.serviceId,
   location: String = this.location,
   schemaName: String? = this.schemaName,
   host: String? = this.host,
   port: Int? = this.port,
   sslEnabled: Boolean? = this.sslEnabled
-): SqlServiceConfig =
-  SqlServiceConfig(
+): ServiceConfig =
+  ServiceConfig(
     serviceId = serviceId,
     location = location,
     schemaName = schemaName,

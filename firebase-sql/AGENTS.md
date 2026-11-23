@@ -17,7 +17,7 @@ retries reads after transient failures, and returns an `OperationResult`, or thr
 ## Layout
 
 - `src/main/kotlin/com/google/firebase/sql/`:
-  - The public API: `FirebaseSql`, `Firebase.sql()` in `Sql.kt`, `SqlServiceConfig`,
+  - The public API: `FirebaseSql`, `Firebase.sql()` in `Sql.kt`, `ServiceConfig`,
     `OperationResult`, the exceptions, and the classes of constants.
   - `FirebaseSqlComponent.kt`: creates and reuses the `FirebaseSql` instances of one `FirebaseApp`,
     and closes them when that app is deleted. `FirebaseSqlRegistrar.kt` registers it.
@@ -48,13 +48,13 @@ Run these commands from the root of the repository after a change:
 
 ## Conventions
 
-- **Public API:** `FirebaseSql`, `SqlServiceConfig`, `OperationResult`, `FirebaseSqlException`,
+- **Public API:** `FirebaseSql`, `ServiceConfig`, `OperationResult`, `FirebaseSqlException`,
   `FirebaseSqlExceptionCategory`, `ReservedHeaderException`, `FirebaseSqlMutationException`,
   `Count`, `Order`, `TextSearchType`, `RpcMethod`, `FilterOperator`, `ExplainFormat`,
   `builders/QueryBuilder`, `builders/FilterBuilder`, and `builders/TransformBuilder`. The other
   classes are internal.
 - **Instances:** `FirebaseSqlComponent` caches one instance for each app, PostgREST URL, and schema,
-  so every property of `SqlServiceConfig` identifies the instance. The other settings are not part
+  so every property of `ServiceConfig` identifies the instance. The other settings are not part
   of the config: setters on `FirebaseSql`, such as `setHeaders()`, change them on the instance,
   until the first call of `from()`, `rpc()`, `terminate()`, or `suspendingTerminate()` freezes
   them. After that, a setter accepts only a value equal to the current one, and throws a

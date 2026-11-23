@@ -53,8 +53,8 @@ internal class SqlTestService(val serviceId: String, val location: String) {
   fun sql(app: FirebaseApp, schema: String? = null): FirebaseSql = Firebase.sql(app, config(schema))
 
   /** The config of the service, with [schema]. */
-  fun config(schema: String? = null): SqlServiceConfig =
-    SqlServiceConfig(serviceId, location, schemaName = schema)
+  fun config(schema: String? = null): ServiceConfig =
+    ServiceConfig(serviceId, location, schemaName = schema)
 
   override fun toString() =
     "Firebase SQL service $serviceId in $location of project ${options.projectId}"

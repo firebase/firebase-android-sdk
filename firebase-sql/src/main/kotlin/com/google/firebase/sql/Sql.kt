@@ -29,16 +29,16 @@ import com.google.firebase.FirebaseApp
  *
  * **Example: the production service**
  * ```kotlin
- * val sql = Firebase.sql(SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ * val sql = Firebase.sql(ServiceConfig(serviceId = "my-service", location = "us-central1"))
  * ```
  *
- * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+ * @param config The service, and how to send it the requests. See [ServiceConfig].
  * @return The cached instance for this config, or a new instance.
  * @throws IllegalArgumentException When a property of [config] breaks the constraint that
- * [SqlServiceConfig] documents for it, or when the options of the default app have no project ID.
+ * [ServiceConfig] documents for it, or when the options of the default app have no project ID.
  * @throws IllegalStateException When the default [FirebaseApp] is not initialized, or was deleted.
  */
-public fun Firebase.sql(config: SqlServiceConfig): FirebaseSql = FirebaseSql.getInstance(config)
+public fun Firebase.sql(config: ServiceConfig): FirebaseSql = FirebaseSql.getInstance(config)
 
 /**
  * Returns the [FirebaseSql] instance of [app] for the given [config], and creates it on the first
@@ -51,15 +51,15 @@ public fun Firebase.sql(config: SqlServiceConfig): FirebaseSql = FirebaseSql.get
  * **Example: an app other than the default app**
  * ```kotlin
  * val otherSql =
- *   Firebase.sql(otherApp, SqlServiceConfig(serviceId = "my-service", location = "us-central1"))
+ *   Firebase.sql(otherApp, ServiceConfig(serviceId = "my-service", location = "us-central1"))
  * ```
  *
  * @param app The app whose project ID and tokens the instance uses.
- * @param config The service, and how to send it the requests. See [SqlServiceConfig].
+ * @param config The service, and how to send it the requests. See [ServiceConfig].
  * @return The cached instance for this app and this config, or a new instance.
  * @throws IllegalArgumentException When a property of [config] breaks the constraint that
- * [SqlServiceConfig] documents for it, or when the options of [app] have no project ID.
+ * [ServiceConfig] documents for it, or when the options of [app] have no project ID.
  * @throws IllegalStateException When [app] was deleted.
  */
-public fun Firebase.sql(app: FirebaseApp, config: SqlServiceConfig): FirebaseSql =
+public fun Firebase.sql(app: FirebaseApp, config: ServiceConfig): FirebaseSql =
   FirebaseSql.getInstance(app, config)

@@ -702,7 +702,7 @@ public interface TransformBuilder {
    * the app ID (`x-goog-api-client`, `x-client-version`, and `x-firebase-gmpid`), `X-Retry-Count`,
    * the routing headers (`x-firebase-sqlconnect-affinity` and `x-goog-request-params`), and the
    * heartbeat headers (`x-firebase-client` and `x-firebase-client-log-type`). To choose the schema,
-   * use `SqlServiceConfig.schemaName`. It is an `IllegalArgumentException`.
+   * use `ServiceConfig.schemaName`. It is an `IllegalArgumentException`.
    * @throws IllegalArgumentException If HTTP does not allow [name] or [value]: an empty name, a
    * name with a space or a character outside visible ASCII, or a value with a line break or a
    * character outside ASCII, such as an accented letter.
@@ -777,7 +777,7 @@ public interface TransformBuilder {
    * terminated before the call, or while the request runs.
    * @throws IllegalArgumentException If the request cannot be built: a query parameter name that
    * starts with `$`, such as a filter on a column whose name starts with `$`, which the server
-   * would ignore, or a `SqlServiceConfig.schemaName` that HTTP does not allow in a header.
+   * would ignore, or a `ServiceConfig.schemaName` that HTTP does not allow in a header.
    * @throws kotlin.coroutines.cancellation.CancellationException If the coroutine is cancelled.
    */
   public suspend fun execute(): OperationResult

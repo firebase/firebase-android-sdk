@@ -484,7 +484,7 @@ class TransformBuilderTest {
       assertThrows(ReservedHeaderException::class.java) {
         from().select().setHeader("Accept-Profile", "inventory")
       }
-    assertThat(schemaError).hasMessageThat().contains("SqlServiceConfig.schemaName")
+    assertThat(schemaError).hasMessageThat().contains("ServiceConfig.schemaName")
 
     val tokenError =
       assertThrows(ReservedHeaderException::class.java) {

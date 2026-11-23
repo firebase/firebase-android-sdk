@@ -120,10 +120,10 @@ internal class FirebaseSqlComponent(
    * schema name, or when the options of the [app] have no project ID.
    * @throws IllegalStateException When the [app] was deleted.
    */
-  fun get(config: SqlServiceConfig): FirebaseSqlImpl {
+  fun get(config: ServiceConfig): FirebaseSqlImpl {
     val schemaName = config.schemaName
     require(schemaName == null || schemaName.isNotEmpty()) {
-      "SqlServiceConfig.schemaName must not be empty; use null to send no schema header"
+      "ServiceConfig.schemaName must not be empty; use null to send no schema header"
     }
     val projectId = projectIdOfApp()
     val restUrl = serviceUrlOf(config, projectId)
@@ -164,7 +164,7 @@ internal class FirebaseSqlComponent(
   }
 
   private fun newInstance(
-    config: SqlServiceConfig,
+    config: ServiceConfig,
     restUrl: HttpUrl,
     okHttpClient: OkHttpClient
   ): FirebaseSqlImpl {
@@ -276,8 +276,8 @@ private const val PROD_HOST = "firebasedataconnect.googleapis.com"
  *
  * - Without a host, the production host is used. OkHttp parses `<scheme>://<host>`, and the host
  * must give only a host name or an IP address, with an optional port.
- * - The scheme is `http` when [SqlServiceConfig.sslEnabled] is `false`, and `https` otherwise.
- * `http` is not allowed with the production host, because it would send the tokens in plain text.
+ * - The scheme is `http` when [ServiceConfig.sslEnabled] is `false`, and `https` otherwise. `http`
+ * is not allowed with the production host, because it would send the tokens in plain text.
  * - The port, when set, replaces the port of the host.
  *
  * Each ID is percent-encoded as one path segment.
@@ -285,13 +285,13 @@ private const val PROD_HOST = "firebasedataconnect.googleapis.com"
  * @throws IllegalArgumentException When the config does not name a valid service, or turns SSL off
  * for the production host.
  */
-internal fun serviceUrlOf(config: SqlServiceConfig, projectId: String): HttpUrl {
-  require(config.serviceId.isNotEmpty()) { "SqlServiceConfig.serviceId must not be empty" }
-  require(config.location.isNotEmpty()) { "SqlServiceConfig.location must not be empty" }
+internal fun serviceUrlOf(config: ServiceConfig, projectId: String): HttpUrl {
+  require(config.serviceId.isNotEmpty()) { "ServiceConfig.serviceId must not be empty" }
+  require(config.location.isNotEmpty()) { "ServiceConfig.location must not be empty" }
 
   val host = config.host ?: PROD_HOST
   require(host.isNotEmpty()) {
-    "SqlServiceConfig.host must not be empty; use null for the production host"
+    "ServiceConfig.host must not be empty; use null for the production host"
   }
   val scheme = if (config.sslEnabled == false) "http" else "https"
   // OkHttp parses the host and its port. The parsed URL must have nothing else, because a URL
@@ -305,15 +305,15 @@ internal fun serviceUrlOf(config: SqlServiceConfig, projectId: String): HttpUrl 
         it.password.isEmpty()
     }
   requireNotNull(base) {
-    "SqlServiceConfig.host must be a host name or an IP address with an optional port, for " +
+    "ServiceConfig.host must be a host name or an IP address with an optional port, for " +
       "example $PROD_HOST or 10.0.2.2:9399, without a scheme, a path, a query, or a fragment, " +
-      "but is '$host'; SqlServiceConfig.sslEnabled chooses between https and http"
+      "but is '$host'; ServiceConfig.sslEnabled chooses between https and http"
   }
   // OkHttp gives the host in lowercase. A trailing dot names the same host.
   require(config.sslEnabled != false || base.host.removeSuffix(".") != PROD_HOST) {
-    "SqlServiceConfig.sslEnabled must not be false for the production host $PROD_HOST, because " +
+    "ServiceConfig.sslEnabled must not be false for the production host $PROD_HOST, because " +
       "http would send the Firebase Authentication and Firebase App Check tokens in plain text; " +
-      "turn SSL off only for a local server, and set SqlServiceConfig.host to its address"
+      "turn SSL off only for a local server, and set ServiceConfig.host to its address"
   }
 
   // The backend serves the tables and functions of a service under its `postgrest` path.
