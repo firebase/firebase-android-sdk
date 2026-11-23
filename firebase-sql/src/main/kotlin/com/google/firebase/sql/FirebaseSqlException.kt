@@ -46,7 +46,8 @@ import com.google.firebase.FirebaseException
  * - The Firebase SQL service gives its `message`, its `status` as the [code], and its `details` as
  * JSON text in [details].
  * - Another body, for example the error page of a proxy or an empty body, gives no [code], and the
- * message `HTTP <status>: <body>`.
+ * message `HTTP <status>: <body>`. A body of more than 1,000 characters is cut to its first 1,000
+ * characters, followed by `…`.
  *
  * The SDK reports `maybeSingle()` with more than one row in the same form as PostgREST: status
  * `406` and code `PGRST116`.
@@ -68,7 +69,7 @@ import com.google.firebase.FirebaseException
  * The other errors are thrown as they are, not as a [FirebaseSqlException]:
  * - When no HTTP response arrives, `execute()` throws the `IOException` of the network, for example
  * an `UnknownHostException` when the device is offline, or an `InterruptedIOException` when an
- * attempt takes longer than 100 seconds.
+ * attempt times out, for example when it takes longer than 100 seconds.
  * - When the Firebase Authentication token of the signed-in user cannot be retrieved, `execute()`
  * throws the error of Firebase Authentication, and the request is not sent.
  * - When the data does not fit the requested type, the decode functions throw the

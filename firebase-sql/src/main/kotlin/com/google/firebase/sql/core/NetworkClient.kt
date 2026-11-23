@@ -19,6 +19,7 @@ package com.google.firebase.sql.core
 import com.google.firebase.sql.FirebaseSqlException
 import com.google.firebase.sql.FirebaseSqlExceptionCategory
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -107,10 +108,11 @@ internal interface NetworkClient {
  * status. A PostgREST error gives its `message`, `code`, `details`, and `hint` fields. An error of
  * the Google API layer in front of PostgREST, `{"error": {...}}`, gives its `message`, its `status`
  * as the code, and its `details`. When an error has no message, or a blank one, the message is
- * `HTTP <status>: <body>`. A request that gets no response, for example because the server is
- * unreachable, returns a status of 0 and the [IOException] as its error. A response that cannot be
- * read because of another exception gives a [FirebaseSqlException] of the category
- * [FirebaseSqlExceptionCategory.CLIENT], with the HTTP status and that exception as its cause.
+ * `HTTP <status>: <body>`, with the body truncated to 1,000 characters. A request that gets no
+ * response, for example because the server is unreachable, returns a status of 0 and the
+ * [IOException] as its error. A response that cannot be read because of another exception gives a
+ * [FirebaseSqlException] of the category [FirebaseSqlExceptionCategory.CLIENT], with the HTTP
+ * status and that exception as its cause.
  *
  * Cancelling the coroutine of a request cancels its HTTP call.
  *
@@ -125,11 +127,17 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
   override suspend fun sendRequest(serviceUrl: HttpUrl, request: QueryRequest): NetworkResponse {
     // addPathSegment() replaces the empty last segment of a URL that ends with `/`.
     val urlBuilder = serviceUrl.newBuilder()
-    request.pathSegments.forEach { urlBuilder.addPathSegment(it) }
-    request.queryParams.forEach { (key, value) -> urlBuilder.addQueryParameter(key, value) }
+    for (segment in request.pathSegments) {
+      urlBuilder.addPathSegment(segment)
+    }
+    for ((key, value) in request.queryParams) {
+      urlBuilder.addQueryParameter(key, value)
+    }
 
     val requestBuilder = Request.Builder().url(urlBuilder.build())
-    request.headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
+    for ((key, value) in request.headers) {
+      requestBuilder.addHeader(key, value)
+    }
     requestBuilder.method(request.httpMethod, requestBody(request))
     val call = okHttpClient.newCall(requestBuilder.build())
     return suspendCancellableCoroutine { continuation ->
@@ -137,7 +145,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
       call.enqueue(
         object : Callback {
           override fun onFailure(call: Call, e: IOException) {
-            if (continuation.isActive) continuation.resume(transportError(e))
+            if (continuation.isActive) continuation.resume(networkFailure(e))
           }
 
           override fun onResponse(call: Call, response: Response) {
@@ -148,7 +156,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
               try {
                 response.use { toNetworkResponse(it) }
               } catch (e: IOException) {
-                transportError(e)
+                networkFailure(e)
               } catch (e: Exception) {
                 unreadableResponse(response, e)
               }
@@ -165,6 +173,9 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
     /** The error code in a `Proxy-Status: PostgREST; error=<code>` header. */
     val PROXY_STATUS_ERROR = Regex("""(?i)\bPostgREST\b.*?;\s*error=([^;,\s]+)""")
     val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+    /** The maximum number of characters of an error body included in a fallback error message. */
+    const val MAX_ERROR_BODY_CHARS = 1_000
 
     fun requestBody(request: QueryRequest): RequestBody? {
       if (request.httpMethod in METHODS_WITHOUT_BODY) return null
@@ -226,7 +237,9 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
      * HEAD request, but still names the PostgREST error code in this header.
      */
     fun parseError(status: Int, body: String, proxyStatus: String? = null): FirebaseSqlException {
-      val fallbackMessage = "HTTP $status: $body"
+      val excerpt =
+        if (body.length <= MAX_ERROR_BODY_CHARS) body else body.take(MAX_ERROR_BODY_CHARS) + "…"
+      val fallbackMessage = "HTTP $status: $excerpt"
       val proxyStatusCode = proxyStatus?.let { PROXY_STATUS_ERROR.find(it) }?.groupValues?.get(1)
       if (body.isBlank() && proxyStatusCode != null) {
         return FirebaseSqlException(
@@ -305,14 +318,32 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
           )
       )
 
-    fun transportError(e: IOException) =
-      NetworkResponse(
-        status = 0,
-        statusText = "Transport Error",
-        body = null,
-        error = e,
-        isTransportError = true
-      )
+    /**
+     * Returns the response of a call that failed with [e] before or while reading the HTTP
+     * response. A timeout ([InterruptedIOException], including `SocketTimeoutException`) is not a
+     * transport error, so [OperationsExecutor] does not retry it: after a read timeout, the server
+     * may still be running, and may commit, the request. OkHttp also throws a
+     * `SocketTimeoutException` when it cannot connect in time, before the request is sent, and that
+     * timeout is not retried either.
+     */
+    fun networkFailure(e: IOException) =
+      if (e is InterruptedIOException) {
+        NetworkResponse(
+          status = 0,
+          statusText = "Timeout",
+          body = null,
+          error = e,
+          isTransportError = false
+        )
+      } else {
+        NetworkResponse(
+          status = 0,
+          statusText = "Transport Error",
+          body = null,
+          error = e,
+          isTransportError = true
+        )
+      }
   }
 }
 
