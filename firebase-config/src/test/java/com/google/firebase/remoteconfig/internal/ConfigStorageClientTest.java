@@ -118,6 +118,23 @@ public class ConfigStorageClientTest {
   }
 
   @Test
+  public void read_containerWrittenByOldestSdkFormat_returnsContainer() throws Exception {
+    // Upgrade path: the oldest on-disk format (SDK <=20.0.0) only has configs, fetch time and ABT
+    // experiments. Any key added later must be optional when reading, otherwise read() returns
+    // null and all values fall back to in-app defaults (#2186).
+    String oldestFormatJson =
+        "{\"configs_key\":{\"long_param\":\"1L\",\"string_param\":\"string_value\"},"
+            + "\"fetch_time_key\":1000,\"abt_experiments_key\":[]}";
+    try (FileOutputStream outputStream = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE)) {
+      outputStream.write(oldestFormatJson.getBytes(StandardCharsets.UTF_8));
+    }
+
+    ConfigContainer container = storageClient.read();
+
+    assertThat(container).isEqualTo(configContainer);
+  }
+
+  @Test
   public void read_emptyFile_returnsNull() throws Exception {
     ConfigContainer container = storageClient.read();
 

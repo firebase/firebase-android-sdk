@@ -18,8 +18,6 @@ package com.google.firebase.messaging
 
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseMessaging] instance of the default [FirebaseApp]. */
 val Firebase.messaging: FirebaseMessaging
@@ -33,9 +31,4 @@ inline fun remoteMessage(
   val builder = RemoteMessage.Builder(to)
   builder.init()
   return builder.build()
-}
-
-/** @suppress */
-class FirebaseMessagingKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
 }

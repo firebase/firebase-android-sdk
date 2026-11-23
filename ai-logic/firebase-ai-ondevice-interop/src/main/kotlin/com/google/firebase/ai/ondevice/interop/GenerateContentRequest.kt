@@ -31,8 +31,11 @@ package com.google.firebase.ai.ondevice.interop
  * response.
  * @property systemInstruction Instructions that direct the model to behave a certain way.
  * @property enableThinking Whether to enable thinking mode for the model.
+ * @property tools The list of function declaration tools available to the model.
  */
-public class GenerateContentRequest(
+public class GenerateContentRequest
+@JvmOverloads
+constructor(
   public val parts: List<Part>,
   public val temperature: Float? = null,
   public val topK: Int? = null,
@@ -41,4 +44,5 @@ public class GenerateContentRequest(
   public val maxOutputTokens: Int? = null,
   public val systemInstruction: TextPart? = null,
   public val enableThinking: Boolean? = null,
+  public val tools: List<FunctionDeclaration> = emptyList(),
 ) {}

@@ -1,5 +1,13 @@
 # Unreleased
 
+- [fixed] Fixed a crash when Realtime Database data from the server had a
+  priority that wasn't a `string` or `number`, or contained an unresolved
+  server value. With persistence enabled, this could crash the app at every
+  launch. (#8782)
+- [fixed] Fixed a crash when the server's response to a `get()` call
+  contained data that the SDK couldn't parse. The `Task` now fails instead,
+  or returns the locally cached value if there is one. (#8777)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

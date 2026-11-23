@@ -18,8 +18,6 @@ package com.google.firebase.ml.modeldownloader
 
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import java.io.File
 
 internal const val DEPRECATION_MESSAGE =
@@ -58,8 +56,3 @@ fun customModelDownloadConditions(
 @Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component4() = modelHash
 
 @Deprecated(DEPRECATION_MESSAGE) operator fun CustomModel.component5() = name
-
-/** @suppress */
-class FirebaseMlModelDownloaderKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

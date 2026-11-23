@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
@@ -54,6 +55,7 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowLooper;
 
 /** Unit tests for the Firebase Remote Config Component. */
 @RunWith(RobolectricTestRunner.class)
@@ -103,7 +105,7 @@ public class RemoteConfigComponentTest {
   }
 
   @Test
-  @LooperMode(LooperMode.Mode.LEGACY)
+  @LooperMode(LooperMode.Mode.PAUSED)
   public void frc2p_doesNotCallAbt() throws Exception {
 
     FirebaseRemoteConfig fireperfFrc =
@@ -111,15 +113,17 @@ public class RemoteConfigComponentTest {
             getNewFrcComponent(), /* namespace= */ "fireperf");
     loadConfigsWithExperimentsForActivate();
 
+    Task<Boolean> activateTask = fireperfFrc.activate();
+    ShadowLooper.idleMainLooper();
     assertWithMessage("Fireperf fetch and activate failed!")
-        .that(fireperfFrc.activate().getResult())
+        .that(activateTask.getResult())
         .isTrue();
 
     verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
   }
 
   @Test
-  @LooperMode(LooperMode.Mode.LEGACY)
+  @LooperMode(LooperMode.Mode.PAUSED)
   public void frcNonMainFirebaseApp_doesNotCallAbt() throws Exception {
 
     when(mockFirebaseApp.getName()).thenReturn("secondary");
@@ -128,7 +132,9 @@ public class RemoteConfigComponentTest {
             getNewFrcComponentWithoutLoadingDefault(), DEFAULT_NAMESPACE);
     loadConfigsWithExperimentsForActivate();
 
-    assertWithMessage("Fetch and activate failed!").that(frc.activate().getResult()).isTrue();
+    Task<Boolean> activateTask = frc.activate();
+    ShadowLooper.idleMainLooper();
+    assertWithMessage("Fetch and activate failed!").that(activateTask.getResult()).isTrue();
 
     verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
   }

@@ -1,5 +1,7 @@
 ### Unreleased
 
+- [fixed] Fixed nondeterministic ordering of native build ID resources. [#8789]
+
 ### Crashlytics Gradle plugin version 3.0.8
 
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects

@@ -1,5 +1,13 @@
 # Unreleased
 
+- [fixed] Fixed crashes and silently disabled crash reporting caused by
+  out-of-range on-demand upload settings from the server, including settings
+  already cached on the device. (#8761)
+- [fixed] Avoid overwriting the app's `ActivityManager.setProcessStateSummary` value when recording
+  an OOM issue on API levels 37+ [#8846]
+
+# 21.1.0
+
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed a `NullPointerException` thrown by `checkForUnsentReports()`,
