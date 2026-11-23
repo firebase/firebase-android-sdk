@@ -1,8 +1,9 @@
 # Firebase SQL Android SDK
 
-The Firebase SQL Android SDK (`firebase-sql`) is for Android apps that read and write the Cloud SQL
-for PostgreSQL database of a Firebase SQL service through its
-[PostgREST](https://docs.postgrest.org/en/stable/) API.
+The Firebase SQL Android SDK (`firebase-sql`) lets an Android app read and write the Cloud SQL for
+PostgreSQL database of a Firebase SQL service through its
+[PostgREST](https://docs.postgrest.org/en/stable/) API, with a fluent Kotlin API. Each request
+carries the Firebase Authentication and Firebase App Check tokens of the app.
 
 This README is for contributors who build and test the SDK.
 

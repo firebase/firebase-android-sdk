@@ -31,6 +31,7 @@ import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Deferred
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
+import com.google.firebase.sql.builders.OperationBuilderImpl
 import com.google.firebase.sql.core.MAX_RETRIES
 import com.google.firebase.sql.core.MAX_RETRY_DELAY_MILLIS
 import com.google.firebase.sql.core.NetworkClient
@@ -205,6 +206,11 @@ class OperationsExecutorTest {
       assertThat(response.body).isNull()
       // The error of Firebase Authentication, as it is.
       assertThat(response.error).isSameInstanceAs(cause)
+
+      // A builder throws the error.
+      val query = OperationBuilderImpl("products", executor).select()
+      val thrown = assertThrows(FirebaseException::class.java) { runBlocking { query.execute() } }
+      assertThat(thrown).isSameInstanceAs(cause)
       assertThat(client.lastRequest).isNull()
     }
 
@@ -1214,6 +1220,16 @@ class OperationsExecutorTest {
       assertThat(client.requests).hasSize(4)
       assertThat(response.isTransportError).isTrue()
       assertThat(response.error).isSameInstanceAs(errors.last().error)
+
+      // A builder throws the IOException as it is.
+      val query =
+        OperationBuilderImpl(
+            "products",
+            executor(client = ResponsesNetworkClient(*errors.toTypedArray()))
+          )
+          .select()
+      val thrown = assertThrows(IOException::class.java) { runBlocking { query.execute() } }
+      assertThat(thrown).isSameInstanceAs(errors.last().error)
     }
 
   @Test

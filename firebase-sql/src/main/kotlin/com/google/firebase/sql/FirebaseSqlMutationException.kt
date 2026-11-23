@@ -20,10 +20,10 @@ package com.google.firebase.sql
  * The error of a change to a setting of a [FirebaseSql] instance that can no longer change.
  *
  * The setters of an instance, such as [FirebaseSql.setHeaders], throw it when
- * [FirebaseSql.isMutable] is `false`, that is after the first call of `from()`, `rpc()`,
- * [FirebaseSql.terminate], or [FirebaseSql.suspendingTerminate], for a value that is not equal to
- * the current one. They do not throw it for an equal value, so that code that runs again can set
- * the same value. The message names the setter.
+ * [FirebaseSql.isMutable] is `false`, that is after the first call of [FirebaseSql.from],
+ * [FirebaseSql.rpc], [FirebaseSql.terminate], or [FirebaseSql.suspendingTerminate], for a value
+ * that is not equal to the current one. They do not throw it for an equal value, so that code that
+ * runs again can set the same value. The message names the setter.
  *
  * It is about the instance, not about the data: the errors of an insert, an update, or a delete are
  * [FirebaseSqlException]s.

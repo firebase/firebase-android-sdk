@@ -17,7 +17,7 @@
 package com.google.firebase.sql
 
 /**
- * The HTTP method with which `rpc()` calls a PostgreSQL function.
+ * The HTTP method with which [FirebaseSql.rpc] calls a PostgreSQL function.
  *
  * The method decides where the arguments go and whether the function can change data:
  * - [POST], the default, sends the arguments as a JSON object in the request body. It is the only

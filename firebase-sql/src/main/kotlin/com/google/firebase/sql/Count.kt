@@ -18,7 +18,7 @@ package com.google.firebase.sql
 
 /**
  * The algorithm that the server uses to count rows, for the `count` parameter of `select()`,
- * `insert()`, `upsert()`, `update()`, `delete()`, and `rpc()`.
+ * `insert()`, `upsert()`, `update()`, `delete()`, and [FirebaseSql.rpc].
  *
  * The SDK sends it in the `Prefer` request header, for example `Prefer: count=exact`. The server
  * returns the total in the `Content-Range` response header, and the SDK exposes it as
