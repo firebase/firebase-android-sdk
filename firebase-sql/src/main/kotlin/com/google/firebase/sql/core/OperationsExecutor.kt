@@ -94,7 +94,7 @@ import okhttp3.HttpUrl
  *
  * @param schemaName The schema of the requests. PostgREST reads the schema from the
  * `Content-Profile` header of POST, PUT, PATCH, and DELETE requests, and from the `Accept-Profile`
- * header of the other requests. `null`, the default of [SqlServiceConfig], sends no header, and the
+ * header of the other requests. `null`, the default of [ServiceConfig], sends no header, and the
  * server uses its first exposed schema: the schema of the service, which is the only one that
  * Firebase SQL exposes by default. A header that names a schema that the server does not expose
  * fails with a `PGRST106` error, so `public` is not a safe default.
@@ -501,7 +501,7 @@ internal val RESERVED_HEADERS: Set<String> =
     "x-firebase-client-log-type"
   )
 
-/** The reserved headers that name the schema, which `SqlServiceConfig.schemaName` chooses. */
+/** The reserved headers that name the schema, which `ServiceConfig.schemaName` chooses. */
 private val SCHEMA_HEADERS: Set<String> = setOf("accept-profile", "content-profile")
 
 /**
@@ -514,7 +514,7 @@ internal fun requireNotReservedHeader(name: String, source: String) {
   val lowercaseName = name.lowercase(Locale.ROOT)
   if (lowercaseName !in RESERVED_HEADERS) return
   val schemaHint =
-    if (lowercaseName in SCHEMA_HEADERS) " Use SqlServiceConfig.schemaName to choose the schema."
+    if (lowercaseName in SCHEMA_HEADERS) " Use ServiceConfig.schemaName to choose the schema."
     else ""
   throw ReservedHeaderException(
     name,

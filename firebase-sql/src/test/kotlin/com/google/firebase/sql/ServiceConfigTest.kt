@@ -20,12 +20,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
-/** Tests the value semantics of [SqlServiceConfig]. */
-class SqlServiceConfigTest {
+/** Tests the value semantics of [ServiceConfig]. */
+class ServiceConfigTest {
 
   @Test
   fun onlyTheServiceIdAndTheLocationAreRequired() {
-    val config = SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
+    val config = ServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
 
     assertThat(config.serviceId).isEqualTo(SERVICE_ID)
     assertThat(config.location).isEqualTo(LOCATION)
@@ -73,7 +73,7 @@ class SqlServiceConfigTest {
 
     assertThat(copy)
       .isEqualTo(
-        SqlServiceConfig(
+        ServiceConfig(
           serviceId = SERVICE_ID,
           location = LOCATION,
           schemaName = "other_schema",
@@ -112,7 +112,7 @@ class SqlServiceConfigTest {
   }
 
   private fun fullConfig() =
-    SqlServiceConfig(
+    ServiceConfig(
       serviceId = SERVICE_ID,
       location = LOCATION,
       schemaName = "inventory",

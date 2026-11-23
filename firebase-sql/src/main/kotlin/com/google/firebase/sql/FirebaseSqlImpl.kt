@@ -37,7 +37,7 @@ import com.google.firebase.sql.core.requireValidHeader
 internal class FirebaseSqlImpl(
   private val component: FirebaseSqlComponent,
   override val app: FirebaseApp,
-  override val config: SqlServiceConfig,
+  override val config: ServiceConfig,
   private val settings: InstanceSettings,
   private val executor: OperationsExecutor
 ) : FirebaseSql {

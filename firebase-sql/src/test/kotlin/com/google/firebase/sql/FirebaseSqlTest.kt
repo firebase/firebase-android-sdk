@@ -80,7 +80,7 @@ class FirebaseSqlTest {
 
   @Test
   fun theInstanceKeepsTheGivenConfig() {
-    val config = SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
+    val config = ServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
 
     val fsql = component.get(config)
 
@@ -93,7 +93,7 @@ class FirebaseSqlTest {
 
   @Test
   fun theDefaultsNameTheProductionService() {
-    val url = serviceUrlOf(SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION), PROJECT)
+    val url = serviceUrlOf(ServiceConfig(serviceId = SERVICE_ID, location = LOCATION), PROJECT)
 
     assertThat(url.toString()).isEqualTo("https://firebasedataconnect.googleapis.com$PATH")
   }
@@ -148,7 +148,7 @@ class FirebaseSqlTest {
 
   @Test
   fun theIdsAreEncodedAsPathSegments() {
-    val config = SqlServiceConfig(serviceId = "my service", location = "us/central1")
+    val config = ServiceConfig(serviceId = "my service", location = "us/central1")
 
     val url = serviceUrlOf(config, "my project")
 
@@ -171,7 +171,7 @@ class FirebaseSqlTest {
   @Test
   fun configsThatNameTheSameServiceShareAnInstance() {
     // An unset property and its default value give the same instance.
-    val base = SqlServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
+    val base = ServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
     val instance = component.get(base)
     val equivalents =
       listOf(
@@ -190,7 +190,7 @@ class FirebaseSqlTest {
   @Test
   fun instanceCacheKeyIsCaseInsensitive() {
     val base =
-      SqlServiceConfig(
+      ServiceConfig(
         serviceId = "My-Service",
         location = "US-Central1",
         schemaName = "Inventory",
@@ -205,7 +205,7 @@ class FirebaseSqlTest {
         base.copy(schemaName = "inventory"),
         base.copy(schemaName = "INVENTORY"),
         base.copy(host = "custom.example.com"),
-        SqlServiceConfig(
+        ServiceConfig(
           serviceId = "my-service",
           location = "us-central1",
           schemaName = "inventory",
@@ -387,7 +387,7 @@ class FirebaseSqlTest {
       val error =
         assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.host")
+      assertWithMessage(host).that(error).hasMessageThat().contains("ServiceConfig.host")
     }
   }
 
@@ -407,7 +407,7 @@ class FirebaseSqlTest {
       val error =
         assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.sslEnabled")
+      assertWithMessage(host).that(error).hasMessageThat().contains("ServiceConfig.sslEnabled")
     }
     val withMoreThanAHost =
       listOf(
@@ -421,7 +421,7 @@ class FirebaseSqlTest {
       val error =
         assertThrows(IllegalArgumentException::class.java) { component.get(config(host = host)) }
 
-      assertWithMessage(host).that(error).hasMessageThat().contains("SqlServiceConfig.host")
+      assertWithMessage(host).that(error).hasMessageThat().contains("ServiceConfig.host")
     }
   }
 
@@ -430,7 +430,7 @@ class FirebaseSqlTest {
     val error =
       assertThrows(IllegalArgumentException::class.java) { component.get(config(schemaName = "")) }
 
-    assertThat(error).hasMessageThat().contains("SqlServiceConfig.schemaName")
+    assertThat(error).hasMessageThat().contains("ServiceConfig.schemaName")
   }
 
   @Test
@@ -440,8 +440,8 @@ class FirebaseSqlTest {
     val service =
       assertThrows(IllegalArgumentException::class.java) { component.get(config(serviceId = "")) }
 
-    assertThat(location).hasMessageThat().contains("SqlServiceConfig.location")
-    assertThat(service).hasMessageThat().contains("SqlServiceConfig.serviceId")
+    assertThat(location).hasMessageThat().contains("ServiceConfig.location")
+    assertThat(service).hasMessageThat().contains("ServiceConfig.serviceId")
   }
 
   @Test
@@ -545,7 +545,7 @@ class FirebaseSqlTest {
     serviceId: String = SERVICE_ID,
     schemaName: String? = null
   ) =
-    SqlServiceConfig(
+    ServiceConfig(
       serviceId = serviceId,
       location = location,
       schemaName = schemaName,

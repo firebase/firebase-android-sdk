@@ -24,7 +24,7 @@ package com.google.firebase.sql
  * - the tokens, `x-firebase-auth-token` and `X-Firebase-AppCheck`, and `Authorization`, which the
  * server also reads as a credential;
  * - the schema, `Accept-Profile` and `Content-Profile`: choose the schema with
- * [SqlServiceConfig.schemaName] instead;
+ * [ServiceConfig.schemaName] instead;
  * - the versions and the app ID, `x-goog-api-client`, `x-client-version`, and `x-firebase-gmpid`;
  * - `X-Retry-Count`, which numbers the retries of a request;
  * - the routing headers, `x-firebase-sqlconnect-affinity` and `x-goog-request-params`, and the
