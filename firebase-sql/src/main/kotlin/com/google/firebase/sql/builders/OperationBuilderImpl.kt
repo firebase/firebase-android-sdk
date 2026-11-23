@@ -31,6 +31,7 @@ import com.google.firebase.sql.core.OperationsExecutor
 import com.google.firebase.sql.core.QueryRequest
 import com.google.firebase.sql.core.defaultJson
 import com.google.firebase.sql.core.requireNotReservedHeader
+import com.google.firebase.sql.core.requireValidHeader
 import java.util.TreeMap
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
@@ -478,6 +479,7 @@ private constructor(private val executor: OperationsExecutor, private val state:
 
   override fun setHeader(name: String, value: String): FilterBuilder {
     requireNotReservedHeader(name, "setHeader()")
+    requireValidHeader(name, value)
     val headers = TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER)
     headers.putAll(state.customHeaders)
     headers[name] = value
@@ -619,14 +621,14 @@ private constructor(private val executor: OperationsExecutor, private val state:
     state.onConflict?.let { params.add("on_conflict" to it) }
     params.addAll(state.filters)
 
-    state.limits.forEach { (ref, limit) ->
+    for ((ref, limit) in state.limits) {
       params.add((if (ref != null) "$ref.limit" else "limit") to limit.toString())
     }
-    state.offsets.forEach { (ref, offset) ->
+    for ((ref, offset) in state.offsets) {
       params.add((if (ref != null) "$ref.offset" else "offset") to offset.toString())
     }
     // PostgREST reads only the first `order` parameter of a table, so the terms are joined.
-    state.orders.groupBy({ it.first }, { it.second }).forEach { (ref, orders) ->
+    for ((ref, orders) in state.orders.groupBy({ it.first }, { it.second })) {
       params.add((if (ref != null) "$ref.order" else "order") to orders.joinToString(","))
     }
     // The server treats the query parameters whose names start with `$` as system parameters and
@@ -750,7 +752,9 @@ private constructor(private val executor: OperationsExecutor, private val state:
     private fun columnsOf(body: Any?): String? {
       val rows = body as? JsonArray ?: return null
       val names = LinkedHashSet<String>()
-      rows.forEach { row -> if (row is JsonObject) names.addAll(row.keys) }
+      for (row in rows) {
+        if (row is JsonObject) names.addAll(row.keys)
+      }
       return if (names.isEmpty()) null else PostgrestSyntax.columns(names)
     }
   }

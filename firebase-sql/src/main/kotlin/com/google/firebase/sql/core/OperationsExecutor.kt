@@ -41,6 +41,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.Headers
 import okhttp3.HttpUrl
 
 /**
@@ -313,7 +314,7 @@ internal open class OperationsExecutor(
   private fun requestHeaders(request: QueryRequest): TreeMap<String, String> {
     val finalHeaders = TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER)
     finalHeaders.putAll(request.headers)
-    headers().forEach { (name, value) ->
+    for ((name, value) in headers()) {
       val requestValue = finalHeaders[name]
       if (requestValue == null) {
         finalHeaders[name] = value
@@ -520,4 +521,15 @@ internal fun requireNotReservedHeader(name: String, source: String) {
     "The header '$name' is reserved by the SDK and cannot be set with $source. The reserved " +
       "headers, compared ignoring case, are ${RESERVED_HEADERS.joinToString()}.$schemaHint"
   )
+}
+
+/**
+ * Checks that HTTP allows a header with this [name] and [value], with the check that OkHttp makes
+ * when it sends a request: the name must not be empty, and must have only visible ASCII characters,
+ * and the value must have only visible ASCII characters, spaces, and tabs.
+ *
+ * @throws IllegalArgumentException If OkHttp would reject the header, with the message of OkHttp.
+ */
+internal fun requireValidHeader(name: String, value: String) {
+  Headers.Builder().add(name, value)
 }

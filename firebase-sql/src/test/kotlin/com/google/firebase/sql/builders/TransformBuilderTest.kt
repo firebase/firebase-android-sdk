@@ -461,6 +461,24 @@ class TransformBuilderTest {
   }
 
   @Test
+  fun setHeaderRejectsAHeaderThatHttpDoesNotAllow() {
+    // OkHttp would otherwise reject the request only when it is sent.
+    val invalidHeaders =
+      listOf(
+        "" to "value",
+        "X Custom" to "value",
+        "X-Custom" to "line\nbreak",
+        "X-Custom" to "Jos\u00e9"
+      )
+
+    for ((name, value) in invalidHeaders) {
+      assertThrows("$name: $value", IllegalArgumentException::class.java) {
+        from().select().setHeader(name, value)
+      }
+    }
+  }
+
+  @Test
   fun onlyTheSchemaHeadersPointToSchemaName() {
     val schemaError =
       assertThrows(ReservedHeaderException::class.java) {

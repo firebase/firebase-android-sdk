@@ -154,7 +154,7 @@ class BuilderImmutabilityTest {
           }
           .awaitAll()
 
-      requests.forEachIndexed { index, request ->
+      for ((index, request) in requests.withIndex()) {
         val id = index + 1
         assertThat(request.queryParams)
           .containsExactly("select" to "id", "id" to "eq.$id", "limit" to "$id")

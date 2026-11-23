@@ -680,7 +680,7 @@ public interface TransformBuilder {
    * PostgREST uses the first value of each preference, so yours win.
    *
    * A name or a value that HTTP does not allow, for example a value with a line break or a name
-   * with a space, makes [execute] throw an `IllegalArgumentException`.
+   * with a space, makes [setHeader] throw an `IllegalArgumentException`.
    *
    * **Example: get the timestamps in another time zone**
    * ```kotlin
@@ -703,6 +703,9 @@ public interface TransformBuilder {
    * the routing headers (`x-firebase-sqlconnect-affinity` and `x-goog-request-params`), and the
    * heartbeat headers (`x-firebase-client` and `x-firebase-client-log-type`). To choose the schema,
    * use `SqlServiceConfig.schemaName`. It is an `IllegalArgumentException`.
+   * @throws IllegalArgumentException If HTTP does not allow [name] or [value]: an empty name, a
+   * name with a space or a character outside visible ASCII, or a value with a line break or a
+   * character outside ASCII, such as an accented letter.
    */
   public fun setHeader(name: String, value: String): TransformBuilder
 
@@ -774,7 +777,7 @@ public interface TransformBuilder {
    * terminated before the call, or while the request runs.
    * @throws IllegalArgumentException If the request cannot be built: a query parameter name that
    * starts with `$`, such as a filter on a column whose name starts with `$`, which the server
-   * would ignore, or a header name or value that HTTP does not allow.
+   * would ignore, or a `SqlServiceConfig.schemaName` that HTTP does not allow in a header.
    * @throws kotlin.coroutines.cancellation.CancellationException If the coroutine is cancelled.
    */
   public suspend fun execute(): OperationResult
