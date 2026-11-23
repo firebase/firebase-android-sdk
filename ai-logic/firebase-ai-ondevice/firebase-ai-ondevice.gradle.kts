@@ -73,8 +73,8 @@ kotlin {
 dependencies {
   implementation(libs.genai.prompt)
   api(libs.genai.schema)
-  // TODO(m188-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
-  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta08")
+  // TODO(m190-repin): restore pin on com.google.firebase:firebase-ai-ondevice-interop.
+  implementation(project(":ai-logic:firebase-ai-ondevice-interop"))
 
   implementation(libs.firebase.common)
   implementation(libs.firebase.components)

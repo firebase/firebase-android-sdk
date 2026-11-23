@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.ondevice
 
+import com.google.firebase.ai.ondevice.interop.Content as InteropContent
 import com.google.firebase.ai.ondevice.interop.FinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
@@ -29,10 +30,12 @@ import com.google.mlkit.genai.common.FunctionCall
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.common.GenAiException.ErrorCode
 import com.google.mlkit.genai.prompt.Candidate as MlKitCandidate
+import com.google.mlkit.genai.prompt.Content as MlKitContent
 import com.google.mlkit.genai.prompt.CountTokensResponse as MlKitCountTokensResponse
 import com.google.mlkit.genai.prompt.Feature
 import com.google.mlkit.genai.prompt.GenerateContentRequest as MlKitGenerateContentRequest
 import com.google.mlkit.genai.prompt.GenerativeModel as MlKitGenerativeModel
+import com.google.mlkit.genai.prompt.TextPart as MlKitTextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -42,6 +45,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -136,7 +140,8 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val generateContentRequest =
+      InteropGenerateContentRequest(listOf(InteropContent(listOf(InteropTextPart("prompt")))))
     val generateContentResponse = model.generateContent(generateContentRequest)
 
     generateContentResponse.apply {
@@ -180,7 +185,8 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val generateContentRequest =
+      InteropGenerateContentRequest(listOf(InteropContent(listOf(InteropTextPart("prompt")))))
     val response = model.generateContent(generateContentRequest)
 
     response.candidates shouldHaveSize 1
@@ -202,7 +208,8 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val generateContentRequest =
+      InteropGenerateContentRequest(listOf(InteropContent(listOf(InteropTextPart("prompt")))))
     val countTokensResponse = model.countTokens(generateContentRequest)
 
     countTokensResponse.apply { totalTokens shouldBe 10 }
@@ -230,7 +237,8 @@ class GenerativeModelImplTest {
       }
     val model = GenerativeModelImpl(mlkitModel)
 
-    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val generateContentRequest =
+      InteropGenerateContentRequest(listOf(InteropContent(listOf(InteropTextPart("prompt")))))
     val generateContentResponseFlow = model.generateContentStream(generateContentRequest)
 
     generateContentResponseFlow.first().apply {
@@ -286,7 +294,8 @@ class GenerativeModelImplTest {
 
     // TODO: Use an image part. There's a bug preventing us from testing this using actual bitmaps.
     // Since we are testing the exception handlers, it doesn't make much of a difference.
-    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val generateContentRequest =
+      InteropGenerateContentRequest(listOf(InteropContent(listOf(InteropTextPart("prompt")))))
     val exception =
       shouldThrow<FirebaseAIOnDeviceInvalidRequestException> {
         model.generateContent(generateContentRequest)
@@ -304,5 +313,47 @@ class GenerativeModelImplTest {
     val exception = shouldThrow<FirebaseAIOnDeviceNotAvailableException> { model.warmup() }
 
     exception.cause shouldBe genAiException
+  }
+
+  @Test
+  fun `generateContent forwards multi-turn contents and roles to MLKit`() = runTest {
+    val capturedRequest = slot<MlKitGenerateContentRequest>()
+    val mlkitModel =
+      mockk<MlKitGenerativeModel> {
+        coEvery { getBaseModelName() } returns "gemini-3.1-flash-lite"
+        coEvery { generateContent(capture(capturedRequest)) } returns
+          mockk {
+            every { candidates } returns
+              listOf(
+                mockk {
+                  every { text } returns "I am doing great!"
+                  every { finishReason } returns MlKitCandidate.FinishReason.STOP
+                  every { functionCalls } returns emptyList()
+                }
+              )
+            every { thoughtProcess } returns emptyList()
+          }
+      }
+    val model = GenerativeModelImpl(mlkitModel)
+
+    val request =
+      InteropGenerateContentRequest(
+        contents =
+          listOf(
+            InteropContent(listOf(InteropTextPart("hello")), InteropContent.Role.USER),
+            InteropContent(listOf(InteropTextPart("hi there")), InteropContent.Role.MODEL),
+            InteropContent(listOf(InteropTextPart("how are you?")), InteropContent.Role.USER)
+          )
+      )
+    model.generateContent(request)
+
+    val mlKitContents = capturedRequest.captured.contents
+    mlKitContents shouldHaveSize 3
+    mlKitContents[0].role shouldBe MlKitContent.Role.USER
+    mlKitContents[0].parts shouldBe listOf(MlKitTextPart("hello"))
+    mlKitContents[1].role shouldBe MlKitContent.Role.MODEL
+    mlKitContents[1].parts shouldBe listOf(MlKitTextPart("hi there"))
+    mlKitContents[2].role shouldBe MlKitContent.Role.USER
+    mlKitContents[2].parts shouldBe listOf(MlKitTextPart("how are you?"))
   }
 }

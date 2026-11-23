@@ -1,5 +1,11 @@
 # Unreleased
 
+- [feature] Added support for multi-turn prompts and `Content` roles
+  (`"user"` and `"model"`) for on-device and hybrid inference modes.
+
+- [fixed] Fixed on-device response candidates to set `Content.role` to
+  `"model"` instead of defaulting to `"user"`.
+
 # 18.2.0
 
 - [feature] Added `LiveServerVoiceActivity` and `VoiceActivityType` to
