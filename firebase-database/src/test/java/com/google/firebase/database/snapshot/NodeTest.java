@@ -18,8 +18,12 @@ import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.database.ListBuilder;
 import com.google.firebase.database.MapBuilder;
 import com.google.firebase.database.core.Path;
+import com.google.firebase.database.core.utilities.NodeSizeEstimator;
+import com.google.firebase.database.core.utilities.Utilities;
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
@@ -28,6 +32,14 @@ import org.robolectric.annotation.Config;
 @org.junit.runner.RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class NodeTest {
+
+  private static final CompoundHash.SplitStrategy NEVER_SPLIT_STRATEGY =
+      new CompoundHash.SplitStrategy() {
+        @Override
+        public boolean shouldSplit(CompoundHash.CompoundHashBuilder state) {
+          return false;
+        }
+      };
 
   @Test
   public void getHashWorksCorrectly() {
@@ -181,5 +193,62 @@ public class NodeTest {
     Node empty2 =
         NodeFromJSON(new MapBuilder().put("dummy-node", null).put(".priority", "prio").build());
     assertTrue(empty2.getPriority().isEmpty());
+  }
+
+  @Test
+  public void leafNodeWithObjectPriorityHashesPriorityWithV1() {
+    Node priority = NodeFromJSON(new MapBuilder().put("k", "v").build());
+    // A server overwrite at "<path>/.priority" sets the priority without validating it.
+    Node node = NodeFromJSON("bar").updateChild(new Path(".priority"), priority);
+
+    String priorityHash = "priority:" + priority.getHashRepresentation(Node.HashVersion.V1) + ":";
+    assertEquals(priorityHash + "string:bar", node.getHashRepresentation(Node.HashVersion.V1));
+    assertEquals(priorityHash + "string:\"bar\"", node.getHashRepresentation(Node.HashVersion.V2));
+  }
+
+  @Test
+  public void compoundHashOfLeafNodeWithPriorityIsUnchanged() {
+    Node node =
+        NodeFromJSON(
+            new MapBuilder()
+                .put("foo", new MapBuilder().put(".value", "bar").put(".priority", "baz").build())
+                .build());
+
+    CompoundHash hash = CompoundHash.fromNode(node, NEVER_SPLIT_STRATEGY);
+
+    String expectedHash =
+        Utilities.sha1HexDigest("(\"foo\":(priority:string:\"baz\":string:\"bar\"))");
+    assertEquals(Arrays.asList(new Path("foo")), hash.getPosts());
+    assertEquals(Arrays.asList(expectedHash, ""), hash.getHashes());
+  }
+
+  @Test
+  public void compoundHashToleratesInvalidPrioritiesAndServerValues() {
+    Map<String, Object> serverTimestamp = new MapBuilder().put(".sv", "timestamp").build();
+    Node objectPriority = NodeFromJSON(new MapBuilder().put("k", "v").build());
+    Node node = EmptyNode.Empty();
+    for (int i = 0; i < 100; i++) {
+      node = node.updateImmediateChild(ChildKey.fromString("key-" + i), NodeFromJSON("value-" + i));
+    }
+    // Server overwrites at "<path>/.priority" set priorities without validating them.
+    node = node.updateChild(new Path("key-1/.priority"), objectPriority);
+    node =
+        node.updateChild(
+            new Path("key-2/.priority"), NodeFromJSON(new ListBuilder().put("a").put("b").build()));
+    node = node.updateChild(new Path("key-3/.priority"), NodeFromJSON(serverTimestamp));
+    node = node.updateChild(new Path("key-4"), NodeFromJSON(serverTimestamp));
+    node =
+        node.updateChild(
+            new Path("key-5"),
+            NodeFromJSON(new MapBuilder().put("a", 1L).build())
+                .updateImmediateChild(ChildKey.getPriorityKey(), objectPriority));
+    // Listens include a compound hash, built with the default split strategy, for nodes over
+    // 1024 estimated bytes.
+    assertTrue(NodeSizeEstimator.estimateSerializedNodeSize(node) > 1024);
+
+    CompoundHash hash = CompoundHash.fromNode(node);
+
+    assertTrue(hash.getHashes().size() > 1);
+    assertEquals("", hash.getHashes().get(hash.getHashes().size() - 1));
   }
 }

@@ -18,7 +18,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -626,14 +625,28 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     verify(reportPersistence).deleteAllReports();
   }
 
+  @SdkSuppress(minSdkVersion = 37)
   @Test
-  public void testIsOom_skipsAllIrrelevantAppExitInfos() {
-    ApplicationExitInfo nonOom1 = makeApplicationExitInfo(ApplicationExitInfo.REASON_ANR, 0, 0);
-    ApplicationExitInfo nonOom2 = makeApplicationExitInfo(ApplicationExitInfo.REASON_CRASH, 0, 0);
-    ApplicationExitInfo nonOom3 =
-        makeApplicationExitInfo(ApplicationExitInfo.REASON_SIGNALED, 0, 0);
+  public void testIsOom_returnsFalseWhenMarkerAbsent() {
+    when(reportPersistence.hasOomMarker("sessionId")).thenReturn(false);
 
-    assertNull(reportingCoordinator.isOom("sessionId", List.of(nonOom1, nonOom2, nonOom3)));
+    assertFalse(reportingCoordinator.isOom("sessionId"));
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testIsOom_returnsTrueWhenMarkerPresent() {
+    when(reportPersistence.hasOomMarker("sessionId")).thenReturn(true);
+
+    assertTrue(reportingCoordinator.isOom("sessionId"));
+  }
+
+  @SdkSuppress(minSdkVersion = 37)
+  @Test
+  public void testPersistOomMarker_delegatesToPersistence() {
+    reportingCoordinator.persistOomMarker("sessionId");
+
+    verify(reportPersistence).persistOomMarker("sessionId");
   }
 
   @SdkSuppress(minSdkVersion = 37)
