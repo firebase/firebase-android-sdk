@@ -316,14 +316,15 @@ class MockServerEndToEndTest {
 
   @Test
   fun aReservedHeaderNameWithWhitespaceIsNeverSent() {
-    // HTTP does not allow whitespace in a header name, so these names are not the reserved headers:
-    // setHeaders() rejects them, and setHeader() accepts them, but OkHttp then rejects the request
-    // before it is sent. Either way, the server never gets a second credential.
+    // HTTP does not allow whitespace in a header name, so these names are not the reserved headers,
+    // and setHeader() and setHeaders() reject them. Either way, the server never gets a second
+    // credential.
     val names = listOf(" Authorization", "x-firebase-auth-token ", "\tAuthorization\n")
     val fsql = sql()
     for (name in names) {
-      val query = fsql.from("products").select().setHeader(name, "Bearer token")
-      assertThrows(name, IllegalArgumentException::class.java) { runBlocking { query.execute() } }
+      assertThrows(name, IllegalArgumentException::class.java) {
+        fsql.from("products").select().setHeader(name, "Bearer token")
+      }
       // An invalid header is an invalid argument, also once the instance is in use.
       assertThrows(name, IllegalArgumentException::class.java) {
         fsql.setHeaders(mapOf(name to "Bearer token"))
