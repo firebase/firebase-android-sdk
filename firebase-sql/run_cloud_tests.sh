@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Runs CloudSqlEndToEndTest against a Firebase SQL service in production.
+# Runs CloudSqlEndToEndTest against a Firebase SQL service that you use only for these tests.
 #
 # The script applies src/androidTest/sql/e2e_setup.sql to the database of the service
 # through the Cloud SQL Auth Proxy, as your Google account (gcloud auth login), and runs the tests,
@@ -22,6 +22,11 @@
 #   firebase dataconnect:sql:grant -R owner -E <your email> --service <service> --location <location>
 # (run it from a directory with a firebase.json and dataconnect.yaml for the service). The service
 # must not enforce App Check, because the tests send no App Check token.
+#
+# The setup lets requests without a token read and change the test tables, and replaces
+# postgrest.pre_config(), so e2e_setup.sql refuses a database that has other tables, or test tables
+# that it did not mark. For a database that is only for these tests, but whose test tables come from
+# an earlier version of this script, run the script once with ADOPT_TEST_TABLES=true.
 #
 # Configuration:
 # - The project comes from a google-services.json file. Set FIREBASE_GOOGLE_SERVICES_PATH to the
@@ -38,7 +43,7 @@
 # Studio.
 #
 # Usage: FIREBASE_SQL_SERVICE_ID=<id> FIREBASE_SQL_LOCATION=<location> [RUN_TESTS=false]
-#   ./run_cloud_tests.sh [extra Gradle arguments]
+#   [ADOPT_TEST_TABLES=true] ./run_cloud_tests.sh [extra Gradle arguments]
 # The log of the proxy is written to build/e2e-logs/.
 set -euo pipefail
 
@@ -48,6 +53,7 @@ REPO_ROOT="$(dirname "$MODULE_DIR")"
 SERVICE_ID=${FIREBASE_SQL_SERVICE_ID:-""}
 SERVICE_LOCATION=${FIREBASE_SQL_LOCATION:-""}
 RUN_TESTS=${RUN_TESTS:-"true"}
+ADOPT_TEST_TABLES=${ADOPT_TEST_TABLES:-"false"}
 PROXY_PORT=${PROXY_PORT:-5433}
 # A test class, or a single test as `<class>#<method>`.
 TEST_FILTER=${TEST_FILTER:-"com.google.firebase.sql.CloudSqlEndToEndTest"}
@@ -177,8 +183,9 @@ for service in json.load(sys.stdin)["result"]["services"]:
   "$PSQL" "host=127.0.0.1 port=$PROXY_PORT user=$IAM_USER dbname=$SERVICE_DB_NAME sslmode=disable" \
     -v ON_ERROR_STOP=1 -q \
     -v owner_role="firebaseowner_${SERVICE_DB_NAME}_public" \
+    -v adopt_test_tables="$ADOPT_TEST_TABLES" \
     -f "$SQL_DIR/e2e_setup.sql" ||
-    fail "Could not apply e2e_setup.sql as $IAM_USER. Does the account have the owner role of the database (see the top of this script)?"
+    fail "Could not apply e2e_setup.sql as $IAM_USER. See the error above: the account needs the owner role of the database (see the top of this script), and the database must be only for these tests."
 
   # The proxy is only needed for the schema.
   kill "$PROXY_PID" 2>/dev/null || true

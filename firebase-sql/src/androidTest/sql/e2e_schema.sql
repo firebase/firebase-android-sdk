@@ -39,6 +39,11 @@ CREATE TABLE IF NOT EXISTS public.products (
   search_vector tsvector
 );
 
+-- Marks the test tables, so that e2e_setup.sql tells the database of these tests from a database in
+-- use, which it refuses to change.
+COMMENT ON TABLE public.categories IS 'firebase-sql-e2e';
+COMMENT ON TABLE public.products IS 'firebase-sql-e2e';
+
 CREATE OR REPLACE FUNCTION public.hello_world() RETURNS text
   LANGUAGE plpgsql
   AS $$

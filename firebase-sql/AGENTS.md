@@ -80,11 +80,17 @@ Run these commands from the root of the repository after a change:
 
 ## Run the tests against a live service
 
-`CloudSqlEndToEndTest` runs the SDK on a device or emulator against a Firebase SQL service in
-production, through `Firebase.sql()` like an app. The service must not enforce App Check, because
-the tests send no App Check token. `testMultipleSchemas` is ignored, because the service exposes
-only its own schema. The dry-run tests and `testExplain` need the settings that `e2e_setup.sql`
-puts in `postgrest.pre_config()`.
+`CloudSqlEndToEndTest` runs the SDK on a device or emulator against a live Firebase SQL service
+that you use only for these tests, through `Firebase.sql()` like an app. The service must not
+enforce App Check, because the tests send no App Check token. `testMultipleSchemas` is ignored,
+because the service exposes only its own schema. The dry-run tests and `testExplain` need the
+settings that `e2e_setup.sql` puts in `postgrest.pre_config()`.
+
+`e2e_setup.sql` lets requests without a token read and change the test tables, and replaces
+`postgrest.pre_config()`, so it refuses a database that is in use: one that has other tables, or
+test tables without the `firebase-sql-e2e` comment that it gives them. A database that is only for
+these tests, but whose test tables come from an earlier version of the script, needs
+`ADOPT_TEST_TABLES=true ./firebase-sql/run_cloud_tests.sh` once.
 
 ### Prerequisites
 
