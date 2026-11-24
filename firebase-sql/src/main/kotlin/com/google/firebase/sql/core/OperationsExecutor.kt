@@ -501,9 +501,6 @@ internal val RESERVED_HEADERS: Set<String> =
     "x-firebase-client-log-type"
   )
 
-/** The reserved headers that name the schema, which `ServiceConfig.schemaName` chooses. */
-private val SCHEMA_HEADERS: Set<String> = setOf("accept-profile", "content-profile")
-
 /**
  * Checks that [name] is not one of the [RESERVED_HEADERS], ignoring case.
  *
@@ -511,16 +508,12 @@ private val SCHEMA_HEADERS: Set<String> = setOf("accept-profile", "content-profi
  * @throws ReservedHeaderException If the header is reserved.
  */
 internal fun requireNotReservedHeader(name: String, source: String) {
-  val lowercaseName = name.lowercase(Locale.ROOT)
-  if (lowercaseName !in RESERVED_HEADERS) return
-  val schemaHint =
-    if (lowercaseName in SCHEMA_HEADERS) " Use ServiceConfig.schemaName to choose the schema."
-    else ""
-  throw ReservedHeaderException(
-    name,
-    "The header '$name' is reserved by the SDK and cannot be set with $source. The reserved " +
-      "headers, compared ignoring case, are ${RESERVED_HEADERS.joinToString()}.$schemaHint"
-  )
+  if (name.lowercase(Locale.ROOT) in RESERVED_HEADERS) {
+    throw ReservedHeaderException(
+      name,
+      "The header '$name' is reserved by the SDK and cannot be set with $source."
+    )
+  }
 }
 
 /**
