@@ -42,12 +42,14 @@ import com.google.firebase.FirebaseException
  * Every HTTP error response gives an error with its [status]:
  * - PostgREST answers with a JSON object whose `message`, `code`, `details`, and `hint` fields give
  * the message, the [code], the [details], and the [hint]. The response to a HEAD request has no
- * body, so its error has only the [code], which the server sends in the `Proxy-Status` header.
+ * body, so the server sends the [code] in the `Proxy-Status` header instead.
  * - The Firebase SQL service gives its `message`, its `status` as the [code], and its `details` as
  * JSON text in [details].
  * - Another body, for example the error page of a proxy or an empty body, gives no [code], and the
- * message `HTTP <status>: <body>`. A body of more than 1,000 characters is cut to its first 1,000
- * characters, followed by `…`.
+ * message `HTTP <status>: <body>`, or `HTTP <status>` for an empty body. A body of more than 1,000
+ * characters is cut to its first 1,000 characters, followed by `…`.
+ *
+ * An error response without details gets its status text, for example `Not Found`, as [details].
  *
  * The SDK reports `maybeSingle()` with more than one row in the same form as PostgREST: status
  * `406` and code `PGRST116`.
@@ -150,7 +152,8 @@ import com.google.firebase.FirebaseException
  * @property details More information about the error, or `null`, the default. For a PostgREST
  * error, its `details` field, for example `The result contains 0 rows`. For an error of the
  * platform, its `details` array as JSON text, for example
- * `[{"@type":"type.googleapis.com/google.rpc.ErrorInfo",...}]`.
+ * `[{"@type":"type.googleapis.com/google.rpc.ErrorInfo",...}]`. For an error response without
+ * details, its HTTP status text, for example `Not Found`.
  * @property hint A suggestion to fix the error, from the `hint` field of a PostgREST error, for
  * example `You might need to add explicit type casts.`, or `null`, the default.
  * @param cause The underlying error, or `null`, the default.
