@@ -94,6 +94,9 @@ public class ConfigRealtimeHttpClient {
   private boolean isHttpConnectionRunning;
 
   @GuardedBy("this")
+  private boolean isConnectionScheduled;
+
+  @GuardedBy("this")
   private int httpRetriesRemaining;
 
   @GuardedBy("this")
@@ -156,6 +159,7 @@ public class ConfigRealtimeHttpClient {
       Clock clock) {
     this.listeners = listeners;
     this.isHttpConnectionRunning = false;
+    this.isConnectionScheduled = false;
     this.scheduledExecutorService = scheduledExecutorService;
 
     // Retry parameters
@@ -383,8 +387,20 @@ public class ConfigRealtimeHttpClient {
   }
 
   /** Initial Http stream attempt that makes call without waiting. */
-  public void startHttpConnection() {
-    makeRealtimeHttpConnection(/*retrySeconds*/ 0);
+  public synchronized void startHttpConnection() {
+    if (!canMakeHttpStreamConnection() || isConnectionScheduled) {
+      return;
+    }
+
+    Date currentTime = new Date(clock.currentTimeMillis());
+    Date backoffEndTime = sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime();
+    if (currentTime.before(backoffEndTime)) {
+      scheduleDeferredStreamLocked(
+          backoffEndTime.getTime() - currentTime.getTime(), /* useRetryBudget= */ true);
+      return;
+    }
+
+    makeRealtimeHttpConnection(/* retryMilliseconds= */ 0);
   }
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
@@ -400,18 +416,19 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void makeRealtimeHttpConnection(long retryMilliseconds) {
-    if (!canMakeHttpStreamConnection()) {
+    if (!canMakeHttpStreamConnection() || isConnectionScheduled) {
       return;
     }
 
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
+      isConnectionScheduled = true;
       ScheduledFuture<?> unused =
           scheduledExecutorService.schedule(
               new Runnable() {
                 @Override
                 public void run() {
-                  beginRealtimeHttpStream();
+                  onScheduledConnection();
                 }
               },
               retryMilliseconds,
@@ -421,6 +438,50 @@ public class ConfigRealtimeHttpClient {
           new FirebaseRemoteConfigClientException(
               "Unable to connect to the server. Check your connection and try again.",
               FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+    }
+  }
+
+  private void onScheduledConnection() {
+    synchronized (this) {
+      isConnectionScheduled = false;
+    }
+    beginRealtimeHttpStream();
+  }
+
+  private synchronized void deferStreamUntilBackoffEnds(long delayMillis) {
+    setIsHttpConnectionRunning(false);
+    if (!canMakeHttpStreamConnection() || isConnectionScheduled) {
+      return;
+    }
+    scheduleDeferredStreamLocked(delayMillis, /* useRetryBudget= */ false);
+  }
+
+  @GuardedBy("this")
+  private void scheduleDeferredStreamLocked(long delayMillis, boolean useRetryBudget) {
+    isConnectionScheduled = true;
+    ScheduledFuture<?> unused =
+        scheduledExecutorService.schedule(
+            new Runnable() {
+              @Override
+              public void run() {
+                onScheduledDeferredStream(useRetryBudget);
+              }
+            },
+            Math.max(0L, delayMillis),
+            TimeUnit.MILLISECONDS);
+  }
+
+  private void onScheduledDeferredStream(boolean useRetryBudget) {
+    if (useRetryBudget) {
+      synchronized (this) {
+        isConnectionScheduled = false;
+        startHttpConnection();
+      }
+    } else {
+      synchronized (this) {
+        isConnectionScheduled = false;
+      }
+      beginRealtimeHttpStream();
     }
   }
 
@@ -544,8 +605,8 @@ public class ConfigRealtimeHttpClient {
         sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
-      setIsHttpConnectionRunning(false);
-      retryHttpConnectionWhenBackoffEnds();
+      deferStreamUntilBackoffEnds(
+          backoffMetadata.getBackoffEndTime().getTime() - currentTime.getTime());
       return;
     }
 

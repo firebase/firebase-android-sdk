@@ -383,7 +383,8 @@ public class ConfigSharedPrefsClient {
     }
   }
 
-  void setRealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+  public void setRealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
     synchronized (realtimeBackoffMetadataLock) {
       frcSharedPrefs
           .edit()
