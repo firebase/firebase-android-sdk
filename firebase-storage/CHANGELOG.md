@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fixed truncated uploads that were reported as successful. This could
+  happen for uploads larger than 512 KiB when the last chunk failed and was
+  retried, because the upload was finalized before all data was sent. (#8810)
+
 # 23.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)

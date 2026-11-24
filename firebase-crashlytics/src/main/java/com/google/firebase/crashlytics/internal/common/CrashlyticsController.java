@@ -257,11 +257,10 @@ class CrashlyticsController {
                     && !isOnDemand) {
                   Logger.getLogger().i("OOMs will be sent on restart");
 
-                  ActivityManager activityManager =
-                      (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                  activityManager.setProcessStateSummary("OOM, Java Heap".getBytes());
+                  // Leave the session open so it can be finalized on the next launch, where this
+                  // marker tells us the trigger was an OOM so any heap dump can be attached
+                  reportingCoordinator.persistOomMarker(currentSessionId);
 
-                  crashMarker.remove();
                   return Tasks.forResult(null);
                 }
 
@@ -1056,9 +1055,15 @@ class CrashlyticsController {
 
     List<ApplicationExitInfo> appExits = manager.getHistoricalProcessExitReasons(null, 0, 0);
 
+    LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
+    UserMetadata relevantUserMetadata =
+        UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
+
     reportingCoordinator.persistProfilingManagerInfo(
         context.getFilesDir(),
         sessionId,
+        relevantSessionLogManager,
+        relevantUserMetadata,
         appExits,
         settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled);
   }

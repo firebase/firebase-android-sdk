@@ -207,7 +207,7 @@ public class Uploader {
                   transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
               return null;
             });
-        workScheduler.schedule(transportContext, attemptNumber + 1, true);
+        workScheduler.schedule(transportContext, attemptNumber + 1);
         return response;
       } else {
         guard.runCriticalSection(
@@ -256,7 +256,7 @@ public class Uploader {
         });
 
     if (eventStore.hasPendingEventsFor(transportContext)) {
-      workScheduler.schedule(transportContext, attemptNumber, true);
+      workScheduler.schedule(transportContext, 1, true);
     }
     return response;
   }

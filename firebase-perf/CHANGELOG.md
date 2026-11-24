@@ -7,6 +7,8 @@
   a network request was completed on two threads at the same time, for example
   when an SDK calls `HttpURLConnection.disconnect()` from a network callback.
   (#8642)
+- [fixed] Fixed an `IllegalArgumentException` crash that could occur when the
+  CPU or memory gauge capture frequency was very large. (#8755)
 
 # 23.0.0
 

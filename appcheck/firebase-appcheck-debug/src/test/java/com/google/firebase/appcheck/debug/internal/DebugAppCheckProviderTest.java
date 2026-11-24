@@ -18,25 +18,31 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
+import com.google.firebase.appcheck.debug.R;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.appcheck.internal.util.Logger;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inject.Provider;
 import java.io.IOException;
@@ -52,13 +58,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowLog;
 
 /** Tests for {@link DebugAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
 @LooperMode(LooperMode.Mode.PAUSED)
 public class DebugAppCheckProviderTest {
 
@@ -210,12 +214,237 @@ public class DebugAppCheckProviderTest {
 
   @Test
   public void testDetermineDebugSecret_storedSecret_usesExistingSecret() {
+    ShadowLog.clear();
     storageHelper.saveDebugSecret(DEBUG_SECRET);
 
     Task<String> debugSecretTask =
         DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
     assertThat(debugSecretTask.getResult()).isEqualTo(DEBUG_SECRET);
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
+    assertThat(hasLogMessage("Debug token loaded from SharedPreferences.")).isTrue();
+  }
+
+  @Test
+  public void testDetermineDebugSecret_providerTakesPriorityOverResourceAndStorage() {
+    ShadowLog.clear();
+    String providerSecret = "providerDebugSecret";
+    String resourceSecret = "resourceDebugSecret";
+    storageHelper.saveDebugSecret(DEBUG_SECRET);
+    configureMockResourceToken(resourceSecret, /* isDebuggable= */ true);
+    Provider<InternalDebugSecretProvider> debugSecretProvider = () -> () -> providerSecret;
+
+    Task<String> debugSecretTask =
+        DebugAppCheckProvider.determineDebugSecret(
+            mockFirebaseApp, debugSecretProvider, backgroundExecutor);
+
+    assertThat(debugSecretTask.getResult()).isEqualTo(providerSecret);
+    assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
+    assertThat(hasLogMessage("Debug token loaded from InternalDebugSecretProvider.")).isTrue();
+  }
+
+  @Test
+  public void testDetermineDebugSecret_resourceTokenInDebuggableBuild_takesPriorityOverStorage() {
+    ShadowLog.clear();
+    String resourceSecret = "resourceDebugSecret";
+    storageHelper.saveDebugSecret(DEBUG_SECRET);
+    configureMockResourceToken(resourceSecret, /* isDebuggable= */ true);
+
+    Task<String> debugSecretTask =
+        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
+
+    assertThat(debugSecretTask.getResult()).isEqualTo(resourceSecret);
+    assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
+    assertThat(hasLogMessage("Debug token loaded from R.string.firebase_app_check_debug_token."))
+        .isTrue();
+  }
+
+  @Test
+  public void
+      testDetermineDebugSecret_resourceTokenInReleaseBuild_logsSecurityWarningAndFallsBack() {
+    ShadowLog.clear();
+    String resourceSecret = "resourceDebugSecret";
+    storageHelper.saveDebugSecret(DEBUG_SECRET);
+    configureMockResourceToken(resourceSecret, /* isDebuggable= */ false);
+
+    Task<String> debugSecretTask =
+        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
+
+    assertThat(debugSecretTask.getResult()).isEqualTo(DEBUG_SECRET);
+    assertThat(
+            hasLogMessage(
+                "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token."))
+        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from SharedPreferences.")).isTrue();
+  }
+
+  @Test
+  public void
+      testDetermineDebugSecret_resourceTokenInReleaseBuild_noStoredSecret_fallsBackToUuid() {
+    ShadowLog.clear();
+    String resourceSecret = "resourceDebugSecret";
+    configureMockResourceToken(resourceSecret, /* isDebuggable= */ false);
+
+    Task<String> debugSecretTask =
+        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
+
+    assertThat(debugSecretTask.getResult()).isNotEqualTo(resourceSecret);
+    assertThat(debugSecretTask.getResult()).isEqualTo(storageHelper.retrieveDebugSecret());
+    assertThat(
+            hasLogMessage(
+                "SECURITY WARNING: App Check debug token found in a non-debuggable Release build! Ignoring token."))
+        .isTrue();
+    assertThat(hasLogMessage("Debug token loaded from auto-generated UUID.")).isTrue();
+  }
+
+  @Test
+  public void
+      exchangeDebugToken_onHttp403FailureWithResourceSource_logsForceRecoveryHintAndFailsTask()
+          throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException forbiddenException =
+        new FirebaseException("Error returned from API. code: 403 body: Permission denied.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(forbiddenException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.RESOURCE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(forbiddenException);
+    assertThat(
+            hasLogMessage(
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create"
+                    + " --force' to provision a new token, then rebuild the app."))
+        .isTrue();
+  }
+
+  @Test
+  public void
+      exchangeDebugToken_onHttp403FailureWithProviderSource_logsProviderRecoveryHintAndFailsTask()
+          throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException forbiddenException =
+        new FirebaseException("Error returned from API. code: 403 body: Permission denied.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(forbiddenException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.PROVIDER,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(forbiddenException);
+    assertThat(
+            hasLogMessage(
+                "Debug token from InternalDebugSecretProvider was rejected by server. Update or"
+                    + " register the configured secret."))
+        .isTrue();
+  }
+
+  @Test
+  public void
+      exchangeDebugToken_onHttp403FailureWithStorageSource_logsRegisterRecoveryHintAndFailsTask()
+          throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException forbiddenException =
+        new FirebaseException("Error returned from API. code: 403 body: Permission denied.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(forbiddenException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.STORAGE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(forbiddenException);
+    assertThat(
+            hasLogMessage(
+                String.format(
+                    "Debug token was rejected by server. Register it with: firebase"
+                        + " appcheck:debugtokens:create %s --project %s --app %s",
+                    DEBUG_SECRET, PROJECT_ID, APP_ID)))
+        .isTrue();
+  }
+
+  @Test
+  public void exchangeDebugToken_onNon403FailureWith403InBody_doesNotLogRejectionRecoveryHint()
+      throws Exception {
+    ShadowLog.clear();
+    when(mockNetworkClient.getProjectId()).thenReturn(PROJECT_ID);
+    when(mockNetworkClient.getAppId()).thenReturn(APP_ID);
+    FirebaseException badRequestException =
+        new FirebaseException(
+            "Error returned from API. code: 400 body: Invalid request for app 1:4035551234:android:abc.");
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
+        .thenThrow(badRequestException);
+
+    DebugAppCheckProvider provider =
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            DebugAppCheckProvider.SecretSource.RESOURCE,
+            mockNetworkClient,
+            liteExecutor,
+            blockingExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(badRequestException);
+    assertThat(
+            hasLogMessage(
+                "Debug token was rejected by server. Run 'firebase appcheck:debugtokens:create"
+                    + " --force' to provision a new token, then rebuild the app."))
+        .isFalse();
+  }
+
+  private void configureMockResourceToken(String resourceToken, boolean isDebuggable) {
+    Context baseContext = ApplicationProvider.getApplicationContext();
+    Context spyContext = spy(baseContext);
+
+    ApplicationInfo appInfo = new ApplicationInfo(baseContext.getApplicationInfo());
+    if (isDebuggable) {
+      appInfo.flags |= ApplicationInfo.FLAG_DEBUGGABLE;
+    } else {
+      appInfo.flags &= ~ApplicationInfo.FLAG_DEBUGGABLE;
+    }
+
+    doReturn(appInfo).when(spyContext).getApplicationInfo();
+    doReturn(resourceToken).when(spyContext).getString(R.string.firebase_app_check_debug_token);
+    when(mockFirebaseApp.getApplicationContext()).thenReturn(spyContext);
+  }
+
+  private static boolean hasLogMessage(String expectedMessage) {
+    return ShadowLog.getLogsForTag(Logger.TAG).stream()
+        .anyMatch(log -> expectedMessage.equals(log.msg));
   }
 
   @Test
@@ -275,17 +504,14 @@ public class DebugAppCheckProviderTest {
     assertThat(task.isSuccessful()).isFalse();
 
     boolean foundLog =
-        ShadowLog.getLogsForTag(DebugAppCheckProvider.class.getName()).stream()
-            .anyMatch(
-                log ->
-                    log.msg.equals(
-                        "Failed to exchange debug token ("
-                            + DEBUG_SECRET
-                            + "). If you haven't registered it, "
-                            + "you can do so in the Firebase Console: "
-                            + String.format(
-                                "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
-                                PROJECT_ID, APP_ID)));
+        hasLogMessage(
+            "Failed to exchange debug token ("
+                + DEBUG_SECRET
+                + "). If you haven't registered it, "
+                + "you can do so in the Firebase Console: "
+                + String.format(
+                    "https://console.firebase.google.com/project/%s/appcheck/apps?selectedAppId=%s",
+                    PROJECT_ID, APP_ID));
     assertThat(foundLog).isTrue();
   }
 

@@ -62,6 +62,7 @@ import com.google.firebase.ai.type.LiveServerMessage;
 import com.google.firebase.ai.type.LiveServerSetupComplete;
 import com.google.firebase.ai.type.LiveServerToolCall;
 import com.google.firebase.ai.type.LiveServerToolCallCancellation;
+import com.google.firebase.ai.type.LiveServerVoiceActivity;
 import com.google.firebase.ai.type.ModalityTokenCount;
 import com.google.firebase.ai.type.MultiSpeakerVoiceConfig;
 import com.google.firebase.ai.type.Part;
@@ -78,6 +79,7 @@ import com.google.firebase.ai.type.TextPart;
 import com.google.firebase.ai.type.ToolConfig;
 import com.google.firebase.ai.type.UsageMetadata;
 import com.google.firebase.ai.type.Voice;
+import com.google.firebase.ai.type.VoiceActivityType;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -491,6 +493,15 @@ public class JavaCompileTests {
     } else if (message instanceof LiveServerToolCallCancellation) {
       LiveServerToolCallCancellation cancel = (LiveServerToolCallCancellation) message;
       List<String> functions = cancel.getFunctionIds();
+    } else if (message instanceof LiveServerVoiceActivity) {
+      LiveServerVoiceActivity activity = (LiveServerVoiceActivity) message;
+      VoiceActivityType type = activity.getType();
+      kotlin.time.Duration audioOffset = activity.getAudioOffset();
+      if (type.equals(VoiceActivityType.ACTIVITY_START)
+          || type.equals(VoiceActivityType.ACTIVITY_END)
+          || type.equals(VoiceActivityType.UNKNOWN)) {
+        Assert.assertNotNull(type.toString());
+      }
     }
   }
 }

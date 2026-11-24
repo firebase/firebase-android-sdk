@@ -16,6 +16,8 @@
 
 package com.google.firebase.gradle.plugins
 
+import java.io.Serializable
+
 /**
  * Possible version types in a SemVer versioning scheme.
  *
@@ -68,7 +70,7 @@ enum class PreReleaseVersionType {
  * @see fromStringsOrNull
  */
 data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1) :
-  Comparable<PreReleaseVersion> {
+  Comparable<PreReleaseVersion>, Serializable {
 
   companion object {
 
@@ -137,7 +139,7 @@ data class ModuleVersion(
   val minor: Int,
   val patch: Int,
   val pre: PreReleaseVersion? = null,
-) : Comparable<ModuleVersion> {
+) : Comparable<ModuleVersion>, Serializable {
 
   /** Formatted as `MAJOR.MINOR.PATCH-PRE` */
   override fun toString() = "$major.$minor.$patch${pre?.let { "-$it" } ?: ""}"

@@ -24,10 +24,13 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownExceptio
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as InteropGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.TextPart as InteropTextPart
 import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.FunctionArgValue
+import com.google.mlkit.genai.common.FunctionCall
 import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.common.GenAiException.ErrorCode
 import com.google.mlkit.genai.prompt.Candidate as MlKitCandidate
 import com.google.mlkit.genai.prompt.CountTokensResponse as MlKitCountTokensResponse
+import com.google.mlkit.genai.prompt.Feature
 import com.google.mlkit.genai.prompt.GenerateContentRequest as MlKitGenerateContentRequest
 import com.google.mlkit.genai.prompt.GenerativeModel as MlKitGenerativeModel
 import io.kotest.assertions.throwables.shouldThrow
@@ -67,7 +70,9 @@ class GenerativeModelImplTest {
   @Test
   fun `isThinkingModeAvailable returns true when MLKit supports thinking mode`() = runTest {
     val mlkitModel =
-      mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns true }
+      mockk<MlKitGenerativeModel> {
+        coEvery { getAvailableFeatures() } returns listOf(Feature.THINKING_MODE)
+      }
     val model = GenerativeModelImpl(mlkitModel)
 
     model.isThinkingModeAvailable().shouldBeTrue()
@@ -77,10 +82,31 @@ class GenerativeModelImplTest {
   fun `isThinkingModeAvailable returns false when MLKit does not support thinking mode`() =
     runTest {
       val mlkitModel =
-        mockk<MlKitGenerativeModel> { coEvery { isThinkingModeAvailable() } returns false }
+        mockk<MlKitGenerativeModel> { coEvery { getAvailableFeatures() } returns emptyList() }
       val model = GenerativeModelImpl(mlkitModel)
 
       model.isThinkingModeAvailable().shouldBeFalse()
+    }
+
+  @Test
+  fun `isFunctionCallingAvailable returns true when MLKit supports function calling`() = runTest {
+    val mlkitModel =
+      mockk<MlKitGenerativeModel> {
+        coEvery { getAvailableFeatures() } returns listOf(Feature.FUNCTION_CALLING)
+      }
+    val model = GenerativeModelImpl(mlkitModel)
+
+    model.isFunctionCallingAvailable().shouldBeTrue()
+  }
+
+  @Test
+  fun `isFunctionCallingAvailable returns false when MLKit does not support function calling`() =
+    runTest {
+      val mlkitModel =
+        mockk<MlKitGenerativeModel> { coEvery { getAvailableFeatures() } returns emptyList() }
+      val model = GenerativeModelImpl(mlkitModel)
+
+      model.isFunctionCallingAvailable().shouldBeFalse()
     }
 
   @Test
@@ -95,6 +121,7 @@ class GenerativeModelImplTest {
                 mockk {
                   every { text } returns "response text"
                   every { finishReason } returns MlKitCandidate.FinishReason.MAX_TOKENS
+                  every { functionCalls } returns emptyList()
                 }
               )
             every { thoughtProcess } returns
@@ -102,6 +129,7 @@ class GenerativeModelImplTest {
                 mockk {
                   every { text } returns "thought text"
                   every { finishReason } returns MlKitCandidate.FinishReason.STOP
+                  every { functionCalls } returns emptyList()
                 }
               )
           }
@@ -121,6 +149,47 @@ class GenerativeModelImplTest {
       thoughtProcess.first().apply {
         text shouldBe "thought text"
         finishReason shouldBe FinishReason.STOP
+      }
+    }
+  }
+
+  @Test
+  fun `generateContent should return converted function calls`() = runTest {
+    val mlkitModel =
+      mockk<MlKitGenerativeModel> {
+        coEvery { getBaseModelName() } returns "gemini-3.1-flash-lite"
+        coEvery { generateContent(any<MlKitGenerateContentRequest>()) } returns
+          mockk {
+            every { candidates } returns
+              listOf(
+                mockk {
+                  every { text } returns ""
+                  every { finishReason } returns MlKitCandidate.FinishReason.STOP
+                  every { functionCalls } returns
+                    listOf(
+                      FunctionCall(
+                        name = "fetchWeather",
+                        arguments = mapOf("city" to FunctionArgValue.StringValue("London")),
+                        id = "call-1"
+                      )
+                    )
+                }
+              )
+            every { thoughtProcess } returns emptyList()
+          }
+      }
+    val model = GenerativeModelImpl(mlkitModel)
+
+    val generateContentRequest = InteropGenerateContentRequest(listOf(InteropTextPart("prompt")))
+    val response = model.generateContent(generateContentRequest)
+
+    response.candidates shouldHaveSize 1
+    response.candidates.first().apply {
+      functionCalls shouldHaveSize 1
+      functionCalls.first().apply {
+        name shouldBe "fetchWeather"
+        args shouldBe mapOf("city" to "London")
+        id shouldBe "call-1"
       }
     }
   }
@@ -152,6 +221,7 @@ class GenerativeModelImplTest {
                   mockk {
                     every { text } returns "partial response"
                     every { finishReason } returns MlKitCandidate.FinishReason.STOP
+                    every { functionCalls } returns emptyList()
                   }
                 )
               every { thoughtProcess } returns emptyList()
