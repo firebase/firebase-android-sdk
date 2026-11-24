@@ -118,8 +118,9 @@ The test resources are not hard-coded:
   edited. The copy is kept until it is deleted; `run_cloud_tests.sh` replaces it when
   `FIREBASE_GOOGLE_SERVICES_PATH` is set.
 - **The service** comes from the required Gradle properties `targetServiceId` and
-  `targetLocation`, which the build compiles into `BuildConfig`. `run_cloud_tests.sh` reads the
-  environment variables `FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION`, and passes them on.
+  `targetLocation`, which the build passes to the tests as instrumentation arguments, so that no
+  build of the library contains them. `run_cloud_tests.sh` reads the environment variables
+  `FIREBASE_SQL_SERVICE_ID` and `FIREBASE_SQL_LOCATION`, and passes them on.
 - **The Cloud SQL instance and database** of the service are looked up by `run_cloud_tests.sh` with
   `firebase dataconnect:services:list`.
 

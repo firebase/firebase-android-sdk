@@ -48,11 +48,11 @@ android {
 
     // CloudSqlEndToEndTest calls the service that these Gradle properties name, for example
     // `./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service
-    // -PtargetLocation=us-east4`.
-    val targetServiceId = findProperty("targetServiceId") ?: ""
-    buildConfigField("String", "TARGET_SERVICE_ID", "\"$targetServiceId\"")
-    val targetLocation = findProperty("targetLocation") ?: ""
-    buildConfigField("String", "TARGET_LOCATION", "\"$targetLocation\"")
+    // -PtargetLocation=us-east4`. They reach the tests as instrumentation arguments, which Firebase
+    // Test Lab gets too, and not as BuildConfig fields, so that no build of the library has them.
+    for (name in listOf("targetServiceId", "targetLocation")) {
+      findProperty(name)?.let { testInstrumentationRunnerArguments[name] = it.toString() }
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8

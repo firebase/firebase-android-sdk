@@ -28,7 +28,7 @@ import com.google.firebase.FirebaseOptions
  * Like in an app, the project comes from the `google-services.json` file of the module. The
  * required Gradle properties `targetServiceId` and `targetLocation` name the service, for example
  * `./gradlew :firebase-sql:connectedCheck -PtargetServiceId=my-service -PtargetLocation=us-east4`.
- * The build compiles them into [BuildConfig.TARGET_SERVICE_ID] and [BuildConfig.TARGET_LOCATION].
+ * The build passes them to the tests as instrumentation arguments.
  */
 internal class SqlTestService(val serviceId: String, val location: String) {
 
@@ -61,14 +61,16 @@ internal class SqlTestService(val serviceId: String, val location: String) {
 
   companion object {
     /** The service that the Gradle properties `targetServiceId` and `targetLocation` name. */
-    fun fromBuildConfig(): SqlTestService =
-      SqlTestService(
-        serviceId = requireProperty("targetServiceId", BuildConfig.TARGET_SERVICE_ID),
-        location = requireProperty("targetLocation", BuildConfig.TARGET_LOCATION)
+    fun fromInstrumentationArguments(): SqlTestService {
+      val arguments = InstrumentationRegistry.getArguments()
+      return SqlTestService(
+        serviceId = requireProperty("targetServiceId", arguments.getString("targetServiceId")),
+        location = requireProperty("targetLocation", arguments.getString("targetLocation"))
       )
+    }
 
-    private fun requireProperty(name: String, value: String): String =
-      requireNotNull(value.trim().takeIf { it.isNotEmpty() }) {
+    private fun requireProperty(name: String, value: String?): String =
+      requireNotNull(value?.trim()?.takeIf { it.isNotEmpty() }) {
         "The $name Gradle property is required. Run the tests with " +
           "-PtargetServiceId=<service ID> -PtargetLocation=<location>, or set both properties " +
           "in ~/.gradle/gradle.properties. See firebase-sql/AGENTS.md."
