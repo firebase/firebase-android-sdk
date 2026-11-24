@@ -602,4 +602,44 @@ public class ResumableUploadMetadataStoreTest extends CrashlyticsTestCase {
     Optional<ResumableUploadMetadataStore.InProgressUploadMetadata> finalUpload = store.getUpload();
     assertThat(finalUpload.isPresent()).isFalse();
   }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testHasPendingUploads_reflectsStoreState() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+    assertThat(store.hasPendingUploads()).isFalse();
+
+    store.addInProgressUpload("sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    assertThat(store.hasPendingUploads()).isTrue();
+
+    store.removeInProgressUpload("path1");
+    assertThat(store.hasPendingUploads()).isFalse();
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = 37)
+  public void testClearInProgressUploads_clearsMemoryAndDeletesFile() throws IOException {
+    Path metadataFilePath = Files.createTempFile("test", ".test");
+    File metadataFile = metadataFilePath.toFile();
+    metadataFile.deleteOnExit();
+
+    when(fileStore.getCommonFile("out-of-band-uploads")).thenReturn(metadataFile);
+
+    ResumableUploadMetadataStore store = new ResumableUploadMetadataStore(context, fileStore);
+    store.addInProgressUpload("sessionId1", ProfilingTrigger.TRIGGER_TYPE_OOM, "path1");
+    store.addInProgressUpload("sessionId2", ProfilingTrigger.TRIGGER_TYPE_ANOMALY, "path2");
+    assertThat(store.hasPendingUploads()).isTrue();
+    assertThat(metadataFile.exists()).isTrue();
+
+    assertThat(store.clearInProgressUploads()).isTrue();
+    assertThat(store.hasPendingUploads()).isFalse();
+    assertThat(store.getUpload().isPresent()).isFalse();
+    assertThat(metadataFile.exists()).isFalse();
+  }
 }

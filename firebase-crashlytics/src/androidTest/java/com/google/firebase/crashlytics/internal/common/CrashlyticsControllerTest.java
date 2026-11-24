@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
@@ -30,8 +31,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.ProfilingManager;
+import android.os.ProfilingResult;
+import android.os.ProfilingTrigger;
 import androidx.test.filters.SdkSuppress;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -64,6 +69,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -611,6 +617,45 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     crashlyticsWorkers.common.await();
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
+  }
+
+  @SdkSuppress(minSdkVersion = 37) // ProfilingManager, TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testAndroidProfilingManagerRegistrar_registersAndRemovesTriggers() {
+    ProfilingManager mockProfilingManager = mock(ProfilingManager.class);
+    Context contextWithProfiling =
+        new ContextWrapper(testContext) {
+          @Override
+          public Object getSystemService(String name) {
+            if (Context.PROFILING_SERVICE.equals(name)) {
+              return mockProfilingManager;
+            }
+            return super.getSystemService(name);
+          }
+        };
+
+    CrashlyticsController.AndroidProfilingManagerRegistrar registrar =
+        new CrashlyticsController.AndroidProfilingManagerRegistrar(contextWithProfiling);
+
+    registrar.register(Runnable::run);
+    registrar.register(Runnable::run);
+
+    ArgumentCaptor<Consumer<ProfilingResult>> listenerCaptor =
+        ArgumentCaptor.forClass(Consumer.class);
+    verify(mockProfilingManager, times(2)).addProfilingTriggers(any());
+    verify(mockProfilingManager, times(1))
+        .registerForAllProfilingResults(any(Executor.class), listenerCaptor.capture());
+
+    registrar.unregister();
+
+    verify(mockProfilingManager)
+        .removeProfilingTriggersByType(
+            aryEq(
+                new int[] {
+                  ProfilingTrigger.TRIGGER_TYPE_OOM, ProfilingTrigger.TRIGGER_TYPE_ANOMALY
+                }));
+    verify(mockProfilingManager).unregisterForAllProfilingResults(eq(listenerCaptor.getValue()));
   }
 
   private void assertFirebaseAnalyticsCrashEvent(AnalyticsEventLogger mockFirebaseAnalyticsLogger) {

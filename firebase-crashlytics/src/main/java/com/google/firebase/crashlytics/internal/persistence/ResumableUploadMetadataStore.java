@@ -111,6 +111,13 @@ public class ResumableUploadMetadataStore {
     }
   }
 
+  public boolean hasPendingUploads() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN && isDefaultProcess(context)) {
+      return locked(() -> !uploads.isEmpty());
+    }
+    return false;
+  }
+
   public Optional<InProgressUploadMetadata> getUpload() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN && isDefaultProcess(context)) {
       // Find the oldest in-progress upload. An in progress upload will contain a non-null handle
@@ -188,6 +195,24 @@ public class ResumableUploadMetadataStore {
             if (uploads.removeIf(upload -> upload.path.equals(path))
                 && !flush(fileStore, uploads)) {
               Logger.getLogger().e("Unable to remove and flush an in progress upload");
+              return false;
+            }
+
+            return true;
+          });
+    }
+
+    return false;
+  }
+
+  public boolean clearInProgressUploads() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+      return locked(
+          () -> {
+            uploads.clear();
+            File metadata = fileStore.getCommonFile(METADATA_FILENAME);
+            if (metadata.exists() && !metadata.delete() && !flush(fileStore, uploads)) {
+              Logger.getLogger().e("Unable to clear in-progress upload metadata file");
               return false;
             }
 

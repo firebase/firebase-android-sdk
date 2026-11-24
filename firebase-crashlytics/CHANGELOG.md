@@ -5,6 +5,8 @@
   already cached on the device. (#8761)
 - [fixed] Avoid overwriting the app's `ActivityManager.setProcessStateSummary` value when recording
   an OOM issue on API levels 37+ [#8846]
+- [fixed] Respect Crashlytics data collection consent (`isCrashlyticsCollectionEnabled()` and
+  `deleteUnsentReports()`) for heap dump capture, queueing, and uploads on API levels 37+ (#8855)
 
 # 21.1.0
 

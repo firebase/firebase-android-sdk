@@ -72,6 +72,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 class CrashlyticsController {
 
@@ -136,6 +137,79 @@ class CrashlyticsController {
   // Out-of-band heap dump upload client.
   final ScottyUploader scottyUploader;
 
+  private final Object profilingManagerLock = new Object();
+  @Nullable private final ProfilingManagerRegistrar profilingManagerRegistrar;
+
+  @VisibleForTesting
+  interface ProfilingManagerRegistrar {
+    void register(@Background Executor backgroundExecutor);
+
+    void unregister();
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  @VisibleForTesting
+  static final class AndroidProfilingManagerRegistrar implements ProfilingManagerRegistrar {
+    private final Context context;
+    @Nullable private Consumer<ProfilingResult> profilingResultListener;
+
+    AndroidProfilingManagerRegistrar(Context context) {
+      this.context = context;
+    }
+
+    @SuppressLint({"WrongConstant", "DefaultLocale"}) // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
+    @Override
+    public void register(@Background Executor backgroundExecutor) {
+      ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
+      if (profilingManager == null) {
+        Logger.getLogger().w("ProfilingManager service is unavailable.");
+        return;
+      }
+
+      profilingManager.addProfilingTriggers(
+          List.of(
+              new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_OOM).build(),
+              new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_ANOMALY).build()));
+      if (profilingResultListener == null) {
+        profilingResultListener =
+            (result) -> {
+              if (result.getErrorCode() != ProfilingResult.ERROR_NONE) {
+                Logger.getLogger().d(String.format("Profiling failed; %s", result.getErrorCode()));
+                return;
+              }
+
+              // No-op, we determine oom or memory limiter on restart.
+              Logger.getLogger()
+                  .d(
+                      String.format(
+                          "Got trigger %d, path: %s",
+                          result.getTriggerType(), result.getResultFilePath()));
+            };
+        profilingManager.registerForAllProfilingResults(
+            backgroundExecutor, profilingResultListener);
+      }
+    }
+
+    @SuppressLint("WrongConstant") // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
+    @Override
+    public void unregister() {
+      ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
+      if (profilingManager == null) {
+        Logger.getLogger().w("ProfilingManager service is unavailable.");
+        return;
+      }
+
+      // ProfilingManager triggers persist across app restarts and system reboots, so remove them
+      // explicitly when automatic data collection is disabled.
+      profilingManager.removeProfilingTriggersByType(
+          new int[] {ProfilingTrigger.TRIGGER_TYPE_OOM, ProfilingTrigger.TRIGGER_TYPE_ANOMALY});
+      if (profilingResultListener != null) {
+        profilingManager.unregisterForAllProfilingResults(profilingResultListener);
+        profilingResultListener = null;
+      }
+    }
+  }
+
   CrashlyticsController(
       Context context,
       IdManager idManager,
@@ -152,6 +226,50 @@ class CrashlyticsController {
       CrashlyticsWorkers crashlyticsWorkers,
       ResumableUploadMetadataStore resumableUploadMetadataStore,
       FirebaseApp app) {
+    this(
+        context,
+        idManager,
+        dataCollectionArbiter,
+        fileStore,
+        crashMarker,
+        appData,
+        userMetadata,
+        logFileManager,
+        sessionReportingCoordinator,
+        nativeComponent,
+        analyticsEventLogger,
+        sessionsSubscriber,
+        crashlyticsWorkers,
+        resumableUploadMetadataStore,
+        app,
+        new ScottyUploader(
+            appData.buildId,
+            fileStore,
+            ScottyUploader.makeUploadClient(crashlyticsWorkers.network)),
+        VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN
+            ? new AndroidProfilingManagerRegistrar(context)
+            : null);
+  }
+
+  @VisibleForTesting
+  CrashlyticsController(
+      Context context,
+      IdManager idManager,
+      DataCollectionArbiter dataCollectionArbiter,
+      FileStore fileStore,
+      CrashlyticsFileMarker crashMarker,
+      AppData appData,
+      UserMetadata userMetadata,
+      LogFileManager logFileManager,
+      SessionReportingCoordinator sessionReportingCoordinator,
+      CrashlyticsNativeComponent nativeComponent,
+      AnalyticsEventLogger analyticsEventLogger,
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      CrashlyticsWorkers crashlyticsWorkers,
+      ResumableUploadMetadataStore resumableUploadMetadataStore,
+      FirebaseApp app,
+      ScottyUploader scottyUploader,
+      @Nullable ProfilingManagerRegistrar profilingManagerRegistrar) {
     this.context = context;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
@@ -166,11 +284,8 @@ class CrashlyticsController {
     this.reportingCoordinator = sessionReportingCoordinator;
     this.crashlyticsWorkers = crashlyticsWorkers;
     this.resumableUploadMetadataStore = resumableUploadMetadataStore;
-    this.scottyUploader =
-        new ScottyUploader(
-            appData.buildId,
-            fileStore,
-            ScottyUploader.makeUploadClient(crashlyticsWorkers.network));
+    this.scottyUploader = scottyUploader;
+    this.profilingManagerRegistrar = profilingManagerRegistrar;
   }
 
   // region Exception handling
@@ -202,8 +317,15 @@ class CrashlyticsController {
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   void enableProfilingManagerListener() {
-    // Set up profiling manager here, use background executor because it's just file I/O
-    registerProfilingManagerListener(crashlyticsWorkers.diskWrite.getExecutor());
+    updateProfilingManagerRegistration();
+  }
+
+  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
+  void updateProfilingManagerRegistration() {
+    // Run ProfilingManager IPCs on the serial diskWrite worker so state transitions stay ordered
+    // and never block the calling thread.
+    crashlyticsWorkers.diskWrite.submit(
+        () -> updateProfilingManagerRegistration(crashlyticsWorkers.diskWrite.getExecutor()));
   }
 
   void handleUncaughtException(
@@ -396,7 +518,9 @@ class CrashlyticsController {
   }
 
   void submitAllReports(Task<Settings> settingsDataTask) {
-    if (!reportingCoordinator.hasReportsToSend()) {
+    final boolean hasCrashReports = reportingCoordinator.hasReportsToSend();
+    final boolean hasHeapDumps = resumableUploadMetadataStore.hasPendingUploads();
+    if (!hasCrashReports && !hasHeapDumps) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
       unsentReportsAvailable.trySetResult(false);
@@ -415,6 +539,7 @@ class CrashlyticsController {
                   Logger.getLogger().v("Deleting cached crash reports...");
                   deleteFiles(listAppExceptionMarkerFiles());
                   reportingCoordinator.removeAllReports();
+                  resumableUploadMetadataStore.clearInProgressUploads();
                   unsentReportsHandled.trySetResult(null);
 
                   return Tasks.forResult(null);
@@ -440,8 +565,13 @@ class CrashlyticsController {
                                   "Received null app settings at app startup. Cannot send cached reports");
                           return Tasks.forResult(null);
                         }
-                        logAnalyticsAppExceptionEvents();
-                        reportingCoordinator.sendReports(crashlyticsWorkers.common);
+                        if (hasCrashReports) {
+                          logAnalyticsAppExceptionEvents();
+                          reportingCoordinator.sendReports(crashlyticsWorkers.common);
+                        }
+                        if (appSettingsData.profiling.heapDumpCollectionEnabled) {
+                          triggerHeapdumpUpload();
+                        }
                         unsentReportsHandled.trySetResult(null);
 
                         return Tasks.forResult(null);
@@ -571,7 +701,6 @@ class CrashlyticsController {
     }
     Logger.getLogger().v("Closed all previously open sessions.");
 
-    triggerHeapdumpUpload();
     return true;
   }
 
@@ -699,7 +828,7 @@ class CrashlyticsController {
     }
 
     if (android.os.Build.VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN && isInitProcess) {
-      writeProfilingManagerInfo(mostRecentSessionIdToClose);
+      writeProfilingManagerInfo(mostRecentSessionIdToClose, settingsProvider);
     }
 
     String currentSessionId = null;
@@ -1047,7 +1176,8 @@ class CrashlyticsController {
 
   // region ProfilingManager
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private void writeProfilingManagerInfo(String sessionId) {
+  @VisibleForTesting
+  void writeProfilingManagerInfo(String sessionId, SettingsProvider settingsProvider) {
     ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
     Logger.getLogger()
@@ -1059,48 +1189,47 @@ class CrashlyticsController {
     UserMetadata relevantUserMetadata =
         UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
 
+    boolean isHeapDumpCollectionEnabled =
+        dataCollectionArbiter.isAutomaticDataCollectionEnabled()
+            && settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled;
+
     reportingCoordinator.persistProfilingManagerInfo(
         context.getFilesDir(),
         sessionId,
         relevantSessionLogManager,
         relevantUserMetadata,
         appExits,
-        settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled);
+        isHeapDumpCollectionEnabled);
   }
 
-  @SuppressLint({"WrongConstant", "DefaultLocale"}) // TRIGGER_TYPE_OOM, TRIGGER_TYPE_ANOMALY
-  @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
-  private void registerProfilingManagerListener(@Background Executor backgroundExecutor) {
-    ProfilingManager profilingManager = context.getSystemService(ProfilingManager.class);
+  @VisibleForTesting
+  void updateProfilingManagerRegistration(@Background Executor backgroundExecutor) {
+    synchronized (profilingManagerLock) {
+      if (profilingManagerRegistrar == null) {
+        return;
+      }
 
-    boolean isTriggerHeapDumpCollectionEnabled =
-        settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled;
+      if (!dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
+        Logger.getLogger()
+            .d(
+                "Automatic data collection is disabled; removing Crashlytics ProfilingManager"
+                    + " triggers.");
+        profilingManagerRegistrar.unregister();
+        return;
+      }
 
-    Logger.getLogger()
-        .i(
-            String.format(
-                "Registering with ProfilingManager; heap dump collection is %s",
-                (isTriggerHeapDumpCollectionEnabled ? "enabled" : "disabled")));
+      boolean isTriggerHeapDumpCollectionEnabled =
+          settingsProvider != null
+              && settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled;
 
-    profilingManager.addProfilingTriggers(
-        List.of(
-            new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_OOM).build(),
-            new ProfilingTrigger.Builder(ProfilingTrigger.TRIGGER_TYPE_ANOMALY).build()));
-    profilingManager.registerForAllProfilingResults(
-        backgroundExecutor,
-        (result) -> {
-          if (result.getErrorCode() != ProfilingResult.ERROR_NONE) {
-            Logger.getLogger().d(String.format("Profiling failed; %s", result.getErrorCode()));
-            return;
-          }
+      Logger.getLogger()
+          .i(
+              String.format(
+                  "Registering with ProfilingManager; heap dump collection is %s",
+                  (isTriggerHeapDumpCollectionEnabled ? "enabled" : "disabled")));
 
-          // No-op, we determine oom or memory limiter on restart.
-          Logger.getLogger()
-              .d(
-                  String.format(
-                      "Got trigger %d, path: %s",
-                      result.getTriggerType(), result.getResultFilePath()));
-        });
+      profilingManagerRegistrar.register(backgroundExecutor);
+    }
   }
 
   private boolean isActiveNetworkMetered() {

@@ -297,6 +297,9 @@ public class CrashlyticsCore {
 
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     dataCollectionArbiter.setCrashlyticsDataCollectionEnabled(enabled);
+    if (VERSION.SDK_INT >= VERSION_CODES.CINNAMON_BUN && controller != null) {
+      controller.updateProfilingManagerRegistration();
+    }
   }
 
   // region Unsent report management.
