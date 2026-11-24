@@ -11,7 +11,7 @@
   (`firebase_messaging_installation_id_enabled`) made FCM reject messages sent
   to the installation ID. In these apps, callable function requests no longer
   get a legacy FCM registration token or send the `Firebase-Instance-ID-Token`
-  header. (#8694)
+  header. (#8859)
 
 # 23.0.0
 
