@@ -1,7 +1,5 @@
 # Unreleased
 
-- [changed] Updated `androidx.datastore` dependency to `1.2.1`. (#8845)
-
 # 20.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 24 or higher. (#8638)
