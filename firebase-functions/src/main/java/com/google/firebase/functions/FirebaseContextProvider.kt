@@ -92,7 +92,10 @@ constructor(
           PackageManager.GET_META_DATA
         )
       applicationInfo.metaData?.getBoolean(FCM_INSTALLATION_ID_ENABLED_METADATA_KEY) ?: false
-    } catch (e: PackageManager.NameNotFoundException) {
+    } catch (e: Exception) {
+      // NameNotFoundException can't happen for our own package, but PackageManager calls can also
+      // throw RuntimeExceptions if the system server fails. Don't fail every call because of that.
+      Log.w(TAG, "Couldn't read $FCM_INSTALLATION_ID_ENABLED_METADATA_KEY from the manifest.", e)
       false
     }
   }

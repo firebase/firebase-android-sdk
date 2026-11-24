@@ -15,6 +15,8 @@
 package com.google.firebase.functions
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.tasks.Task
@@ -66,16 +68,32 @@ class FirebaseContextProviderTests {
   }
 
   @Test
+  fun getContext_whenPackageManagerThrows_includesInstanceIdToken() {
+    val brokenContext =
+      object : ContextWrapper(context) {
+        override fun getPackageManager(): PackageManager =
+          throw RuntimeException("Package manager has died")
+      }
+
+    val callableContext = getContext(providerOf(iid), brokenContext)
+
+    assertThat(callableContext.instanceIdToken).isEqualTo(IID_TOKEN)
+  }
+
+  @Test
   fun getContext_withoutInstanceIdComponent_omitsInstanceIdToken() {
     val callableContext = getContext(providerOf(null))
 
     assertThat(callableContext.instanceIdToken).isNull()
   }
 
-  private fun getContext(instanceId: Provider<FirebaseInstanceIdInternal>): HttpsCallableContext {
+  private fun getContext(
+    instanceId: Provider<FirebaseInstanceIdInternal>,
+    applicationContext: Context = context,
+  ): HttpsCallableContext {
     val contextProvider =
       FirebaseContextProvider(
-        context,
+        applicationContext,
         providerOf<InternalAuthProvider>(null),
         instanceId,
         Deferred<InteropAppCheckTokenProvider> {},
