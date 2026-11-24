@@ -1,5 +1,5 @@
 {
-  "defaultVersion": "3.4.26",
+  "defaultVersion": "3.4.28",
   "versions": [
     {
       "version": "1.3.4",
@@ -2620,6 +2620,62 @@
       "arch": "amd64",
       "size": 34803874,
       "sha512DigestHex": "441e80fa44ae0b023b7f494a65ab8de14bc5c2a3b6387cbbf59892135c1232f7341ef5c6a0c9c80b82ee88553c4b12b710c5db6cc875f9f218ca280b83df70d7"
+    },
+    {
+      "version": "3.4.27",
+      "os": "windows",
+      "arch": "amd64",
+      "size": 36278272,
+      "sha512DigestHex": "e3314e4c2f2be974e7ba2f881addb1332957caea75e67332cad2343e1c9ff4f67846168715f7621cc23010a4e64597a463e00908049cc20af82ab24a095e95bd"
+    },
+    {
+      "version": "3.4.27",
+      "os": "macos",
+      "arch": "amd64",
+      "size": 36296192,
+      "sha512DigestHex": "3d4c9923db9dc3a42ee5460450e25506b2ae501746c7edcee6fd778c0caf7cd9243299ae34c209cb5d238ff4bdcb226e53492fe103c5d7ca8a0b68310e2245ee"
+    },
+    {
+      "version": "3.4.27",
+      "os": "macos",
+      "arch": "arm64",
+      "size": 34214258,
+      "sha512DigestHex": "853e85cb51b281f0ce3b961a2ef8b13015e4a9be5d7d33d867e331a08c72501ce49ceaf8c93cefe634e4d96aa11e0b5bb20a2c928060f9d6e33c33d8189d0aae"
+    },
+    {
+      "version": "3.4.27",
+      "os": "linux",
+      "arch": "amd64",
+      "size": 35295394,
+      "sha512DigestHex": "90d17ebbf1523eb218af9c4d26851b99e972bc50f940376308d314800b065dd49c2c0698b0d62428c6be335880238bffe610630336f7495f4517fcc8e0db0581"
+    },
+    {
+      "version": "3.4.28",
+      "os": "windows",
+      "arch": "amd64",
+      "size": 36275200,
+      "sha512DigestHex": "fc217ade018817f259c196c916b4b8f84112fe65097663477534dc27239531272a8399770a43d5c2bf75ef28975e83e621f69c5a138ea3d5bab68a5b2dfc6e54"
+    },
+    {
+      "version": "3.4.28",
+      "os": "macos",
+      "arch": "amd64",
+      "size": 36296112,
+      "sha512DigestHex": "7d22cff714373072fcb8482dd44abf9438d53390d5d2cf85be9bb0f3632bbdbadbdfc0cbb5492fe76d83ddfd156523ac178890640f63f169e2b7739e1c8185ff"
+    },
+    {
+      "version": "3.4.28",
+      "os": "macos",
+      "arch": "arm64",
+      "size": 34214194,
+      "sha512DigestHex": "1aa995ff57b51fc83af6a99a3b957089d14ff8a3453d65cef682ba5362c0d065de87b20f5eb1e2597265b2029cdef25ebeeec13c268ace742642f3bd37be75a3"
+    },
+    {
+      "version": "3.4.28",
+      "os": "linux",
+      "arch": "amd64",
+      "size": 35291298,
+      "sha512DigestHex": "a0484cfd31575144cb8c7c612b23d880be78a90960c9b87d98cedfba9dd1ff4cb4c3d9174b54be97651e3812f577fdbd0510f74dace0c8784c245cdf208d3a19"
     }
   ]
 }

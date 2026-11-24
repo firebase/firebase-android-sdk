@@ -152,6 +152,12 @@ public class SessionReportingCoordinator {
     persistEvent(event, thread, EVENT_TYPE_LOGGED, eventMetadata, false);
   }
 
+  /** Marks the session as having ended with an OutOfMemoryError, checked on the next launch. */
+  public void persistOomMarker(@NonNull String sessionId) {
+    Logger.getLogger().v("Persisting OOM marker for session " + sessionId);
+    reportPersistence.persistOomMarker(sessionId);
+  }
+
   @RequiresApi(api = Build.VERSION_CODES.R)
   public void persistRelevantAppExitInfoEvent(
       String sessionId,
@@ -556,11 +562,11 @@ public class SessionReportingCoordinator {
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   TriggerReasonPair getTriggerAndReason(
       String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
-    ApplicationExitInfo applicationExitInfo;
-    if ((applicationExitInfo = isOom(sessionId, applicationExitInfoList)) != null) {
-      return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_OOM, applicationExitInfo);
+    if (isOom(sessionId)) {
+      return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_OOM, null);
     }
 
+    ApplicationExitInfo applicationExitInfo;
     if ((applicationExitInfo = isMemoryLimiterKill(sessionId, applicationExitInfoList)) != null) {
       return new TriggerReasonPair(ProfilingTrigger.TRIGGER_TYPE_ANOMALY, applicationExitInfo);
     }
@@ -570,15 +576,8 @@ public class SessionReportingCoordinator {
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)
   @VisibleForTesting
-  ApplicationExitInfo isOom(String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
-    return findRelevantApplicationExitInfo(
-        sessionId,
-        applicationExitInfoList,
-        aei ->
-            aei.getReason() == ApplicationExitInfo.REASON_CRASH
-                && aei.getProcessStateSummary() != null
-                && aei.getProcessStateSummary().length != 0
-                && Arrays.equals(aei.getProcessStateSummary(), "OOM, Java Heap".getBytes()));
+  boolean isOom(String sessionId) {
+    return reportPersistence.hasOomMarker(sessionId);
   }
 
   @RequiresApi(api = VERSION_CODES.CINNAMON_BUN)

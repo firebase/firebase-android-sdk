@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -45,6 +46,7 @@ import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
 import com.google.firebase.inappmessaging.internal.InAppMessageStreamManager;
 import com.google.firebase.inappmessaging.internal.InstallationIdResult;
+import com.google.firebase.inappmessaging.internal.Logging;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.RateLimiterClient;
 import com.google.firebase.inappmessaging.internal.Schedulers;
@@ -57,6 +59,9 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCa
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Maybe;
+import io.reactivex.plugins.RxJavaPlugins;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,6 +71,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
@@ -245,6 +251,26 @@ public class FirebaseInAppMessagingTest {
             BANNER_MESSAGE_MODEL,
             displayCallbacksFactory.generateDisplayCallback(
                 BANNER_MESSAGE_MODEL, ON_FOREGROUND.name()));
+  }
+
+  @Test
+  public void streamError_isLoggedInsteadOfCrashing() {
+    String errorMessage = "Banner model must have a background color";
+    List<Throwable> unhandledErrors = new ArrayList<>();
+    // Without an error consumer, RxJava reports OnErrorNotImplementedException here, which crashes
+    // the app.
+    RxJavaPlugins.setErrorHandler(unhandledErrors::add);
+    try {
+      emitter.onError(new IllegalArgumentException(errorMessage));
+    } finally {
+      RxJavaPlugins.reset();
+    }
+
+    assertThat(unhandledErrors).isEmpty();
+    assertThat(
+            ShadowLog.getLogsForTag(Logging.TAG).stream()
+                .anyMatch(log -> log.type == Log.ERROR && log.msg.contains(errorMessage)))
+        .isTrue();
   }
 
   @Test

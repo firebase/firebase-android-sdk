@@ -1,0 +1,81 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+  id("firebase-library")
+  id("kotlin-android")
+}
+
+firebaseLibrary {
+  libraryGroup = "appdistribution"
+  previewMode = "beta"
+  releaseNotes {
+    name.set("{{appdistro}} API")
+    versionName.set("app-distro-api")
+  }
+}
+
+android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
+  namespace = "com.google.firebase.appdistribution"
+  compileSdk = compileSdkVersion
+  defaultConfig {
+    minSdk = minSdkVersion
+    multiDexEnabled = true
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+}
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
+dependencies {
+  api(libs.playservices.tasks)
+  api(libs.firebase.common)
+  api(libs.firebase.components)
+
+  implementation(libs.androidx.annotation)
+  implementation(libs.kotlin.stdlib)
+
+  compileOnly(libs.autovalue.annotations)
+
+  annotationProcessor(libs.autovalue)
+
+  testImplementation(project(":firebase-appdistribution-api"))
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.truth)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+
+  androidTestImplementation(libs.androidx.test.core)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.mockito.android)
+}
