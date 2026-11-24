@@ -41,22 +41,24 @@ public class BlockingAnalyticsEventLoggerTest {
   private AutoCloseable mocks;
 
   private BlockingAnalyticsEventLogger blockingAnalyticsEventLogger;
+  private FirebaseApp firebaseApp;
 
   @Before
   public void setUp() throws Exception {
-    FirebaseApp.initializeApp(
-        ApplicationProvider.getApplicationContext(),
-        new FirebaseOptions.Builder()
-            .setApplicationId("1:1:android:1")
-            .setApiKey("API-KEY-API-KEY-API-KEY-API-KEY-API-KEY")
-            .setProjectId("project-id")
-            .build());
+    firebaseApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(),
+            new FirebaseOptions.Builder()
+                .setApplicationId("1:1:android:1")
+                .setApiKey("API-KEY-API-KEY-API-KEY-API-KEY-API-KEY")
+                .setProjectId("project-id")
+                .build());
     mocks = MockitoAnnotations.openMocks(this);
   }
 
   @After
   public void cleanUp() throws Exception {
-    FirebaseApp.clearInstancesForTest();
+    firebaseApp.delete();
     mocks.close();
   }
 

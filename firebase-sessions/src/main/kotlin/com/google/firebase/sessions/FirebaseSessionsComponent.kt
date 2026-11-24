@@ -55,6 +55,7 @@ import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 
 @Qualifier internal annotation class LocalOverrideSettingsProvider
 
@@ -139,6 +140,7 @@ internal interface FirebaseSessionsComponent {
       @Singleton
       fun sessionConfigsDataStore(
         appContext: Context,
+        firebaseApp: FirebaseApp,
         @Blocking blockingDispatcher: CoroutineContext,
       ): DataStore<SessionConfigs> =
         createDataStore(
@@ -148,7 +150,7 @@ internal interface FirebaseSessionsComponent {
               Log.w(TAG, "CorruptionException in session configs DataStore", ex)
               SessionConfigsSerializer.defaultValue
             },
-          scope = CoroutineScope(blockingDispatcher),
+          scope = dataStoreScope(firebaseApp, blockingDispatcher),
           produceFile = {
             appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data").also {
               prepDataStoreFile(it)
@@ -160,6 +162,7 @@ internal interface FirebaseSessionsComponent {
       @Singleton
       fun sessionDataStore(
         appContext: Context,
+        firebaseApp: FirebaseApp,
         @Blocking blockingDispatcher: CoroutineContext,
         sessionDataSerializer: SessionDataSerializer,
       ): DataStore<SessionData> =
@@ -170,13 +173,21 @@ internal interface FirebaseSessionsComponent {
               Log.w(TAG, "CorruptionException in session data DataStore", ex)
               sessionDataSerializer.defaultValue
             },
-          scope = CoroutineScope(blockingDispatcher),
+          scope = dataStoreScope(firebaseApp, blockingDispatcher),
           produceFile = {
             appContext.dataStoreFile("firebaseSessions/sessionDataStore.data").also {
               prepDataStoreFile(it)
             }
           },
         )
+
+      private fun dataStoreScope(
+        firebaseApp: FirebaseApp,
+        blockingDispatcher: CoroutineContext,
+      ): CoroutineScope =
+        CoroutineScope(blockingDispatcher).also { scope ->
+          firebaseApp.addLifecycleEventListener { _, _ -> scope.cancel() }
+        }
 
       private fun <T> createDataStore(
         serializer: Serializer<T>,
