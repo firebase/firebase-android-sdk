@@ -18,8 +18,6 @@ package com.google.firebase.appcheck
 
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 val Firebase.appCheck: FirebaseAppCheck
@@ -41,8 +39,3 @@ operator fun AppCheckToken.component1() = token
  * @return the expireTimeMillis of the [AppCheckToken]
  */
 operator fun AppCheckToken.component2() = expireTimeMillis
-
-/** @suppress */
-class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

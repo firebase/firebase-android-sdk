@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
@@ -7827,7 +7826,6 @@ abstract class Expression internal constructor() {
      * distance computation.
      * @param location Compute distance to this GeoPoint.
      */
-    @Beta
     @JvmStatic
     fun geoDistance(fieldName: String, location: GeoPoint): Expression =
       geoDistance(field(fieldName), location)
@@ -7849,7 +7847,6 @@ abstract class Expression internal constructor() {
      * distance computation.
      * @param location Compute distance to this GeoPoint.
      */
-    @Beta
     @JvmStatic
     fun geoDistance(field: Field, location: GeoPoint): Expression =
       FunctionExpression("geo_distance", notImplemented, field, constant(location))
@@ -7868,7 +7865,6 @@ abstract class Expression internal constructor() {
      *
      * @param rquery Define the search query using the search DSL.
      */
-    @Beta
     @JvmStatic
     fun documentMatches(rquery: String): BooleanExpression =
       BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
@@ -7889,7 +7885,6 @@ abstract class Expression internal constructor() {
     //     * @param rquery Define the search query using the search DSL.
     //     */
     //    // TODO(search) this is internal until supported by the backend
-    //    @Beta
     //    @JvmStatic
     //    internal fun matches(fieldName: String, rquery: String): BooleanExpression =
     //      matches(field(fieldName), rquery)
@@ -7910,7 +7905,6 @@ abstract class Expression internal constructor() {
     //     * @param rquery Define the search query using the search DSL.
     //     */
     //    // TODO(search) this is internal until supported by the backend
-    //    @Beta
     //    @JvmStatic
     //    internal fun matches(field: Field, rquery: String): BooleanExpression =
     //      BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
@@ -7928,7 +7922,7 @@ abstract class Expression internal constructor() {
      * )
      * ```
      */
-    @Beta @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
+    @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
 
     //    /**
     //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
@@ -7948,7 +7942,6 @@ abstract class Expression internal constructor() {
     //     * @param fieldName Search the specified field for matching terms.
     //     * @param rquery Define the search query using the search DSL.
     //     */
-    //    @Beta
     //    @JvmStatic
     //    fun snippet(fieldName: String, rquery: String): Expression =
     //      FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
@@ -7965,7 +7958,6 @@ abstract class Expression internal constructor() {
     //     */
     //    // TODO(search) snippet with options is internal and unimplemented until supported by the
     //    // backend
-    //    @Beta
     //    @JvmStatic
     //    internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
     //      throw NotImplementedError("Not implemented")
@@ -8038,7 +8030,6 @@ abstract class Expression internal constructor() {
   }
 
   //  // TODO(search) SnippetOptions is internal until supported by the backend
-  //  @Beta
   //  internal class SnippetOptions private constructor(options: InternalOptions) :
   //    AbstractOptions<SnippetOptions>(options) {
   //    /** Creates a new, empty `SnippetOptions` object. */
@@ -11039,7 +11030,6 @@ abstract class Expression internal constructor() {
   //   *
   //   * @param rquery Define the search query using the search DTS.
   //   */
-  //  @Beta
   //  fun snippet(rquery: String): Expression =
   //    FunctionExpression(
   //      "snippet",
@@ -11059,7 +11049,6 @@ abstract class Expression internal constructor() {
   //   *
   //   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
   //   */
-  //  @Beta
   //  internal fun snippet(options: SnippetOptions): Expression {
   //    throw NotImplementedError()
   //  }
@@ -11242,7 +11231,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
    *
    * @param location Compute distance to this GeoPoint.
    */
-  @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
+  fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
   //  /**
   //   * Perform a full-text search on this field.
@@ -11251,7 +11240,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   //   *
   //   * @param rquery Define the search query using the rquery DTS.
   //   */
-  //  @Beta internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
+  //  internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
 }
 
 /**

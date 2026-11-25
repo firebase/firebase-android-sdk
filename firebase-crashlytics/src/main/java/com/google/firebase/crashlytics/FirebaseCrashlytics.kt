@@ -16,11 +16,8 @@
 
 package com.google.firebase.crashlytics
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp]. */
 val Firebase.crashlytics: FirebaseCrashlytics
@@ -33,11 +30,3 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) =
 /** Records a non-fatal report to send to Crashlytics with additional custom keys */
 fun FirebaseCrashlytics.recordException(throwable: Throwable, init: KeyValueBuilder.() -> Unit) =
   recordException(throwable, KeyValueBuilder().apply(init).build())
-
-/** @suppress */
-@Keep
-internal class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-
-  companion object {}
-}

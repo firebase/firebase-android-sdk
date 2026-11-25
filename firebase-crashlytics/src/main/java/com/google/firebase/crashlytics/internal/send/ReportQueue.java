@@ -81,9 +81,11 @@ final class ReportQueue {
 
     startTimeMs = SystemClock.elapsedRealtime();
 
-    // The queue capacity is the per-minute rate number. // TODO(mrober): Round up to next int?
-    queueCapacity = (int) ratePerMinute;
-    queue = new ArrayBlockingQueue<>(queueCapacity);
+    // The queue capacity is the per-minute rate number, rounded up so that a fractional rate still
+    // allows reports. With a rate of 0, the queue is always full and on-demand reports are dropped.
+    queueCapacity = (int) Math.ceil(ratePerMinute);
+    // ArrayBlockingQueue requires a capacity of at least 1, even when the rate is 0.
+    queue = new ArrayBlockingQueue<>(Math.max(1, queueCapacity));
     singleThreadExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, queue);
 
     step = 0;

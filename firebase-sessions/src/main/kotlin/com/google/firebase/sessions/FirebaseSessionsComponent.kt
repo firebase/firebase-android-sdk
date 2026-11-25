@@ -21,7 +21,6 @@ import android.os.Build
 import android.util.Log
 import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.MultiProcessDataStoreFactory
 import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
@@ -178,6 +177,11 @@ internal interface FirebaseSessionsComponent {
           },
         )
 
+      /**
+       * Creates a multi-process [DataStore]. Don't load its native library here: this runs on the
+       * main thread while Firebase initializes, and DataStore loads the library itself on the first
+       * read or write, using the dispatcher in [scope].
+       */
       private fun <T> createDataStore(
         serializer: Serializer<T>,
         corruptionHandler: ReplaceFileCorruptionHandler<T>,
@@ -185,29 +189,13 @@ internal interface FirebaseSessionsComponent {
         scope: CoroutineScope,
         produceFile: () -> File,
       ): DataStore<T> =
-        if (loadDataStoreSharedCounter()) {
-          MultiProcessDataStoreFactory.create(
-            serializer,
-            corruptionHandler,
-            migrations,
-            scope,
-            produceFile,
-          )
-        } else {
-          DataStoreFactory.create(serializer, corruptionHandler, migrations, scope, produceFile)
-        }
-
-      /** This native library in unavailable in some conditions, for example, Robolectric tests */
-      // TODO(mrober): Remove this when b/392626815 is resolved
-      private fun loadDataStoreSharedCounter(): Boolean =
-        try {
-          System.loadLibrary("datastore_shared_counter")
-          true
-        } catch (_: UnsatisfiedLinkError) {
-          false
-        } catch (_: SecurityException) {
-          false
-        }
+        MultiProcessDataStoreFactory.create(
+          serializer,
+          corruptionHandler,
+          migrations,
+          scope,
+          produceFile,
+        )
 
       /**
        * Prepares the DataStore file by ensuring its parent directory exists. Throws [IOException]
