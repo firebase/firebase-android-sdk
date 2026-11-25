@@ -44,6 +44,13 @@ public interface GenerativeModel {
   public suspend fun isThinkingModeAvailable(): Boolean
 
   /**
+   * Checks whether function calling is available on the model.
+   *
+   * @return `true` if function calling is available, `false` otherwise.
+   */
+  public suspend fun isFunctionCallingAvailable(): Boolean
+
+  /**
    * Generates new content from the input [GenerateContentRequest] given to the model as a prompt.
    *
    * @param request The input given to the model as a prompt.

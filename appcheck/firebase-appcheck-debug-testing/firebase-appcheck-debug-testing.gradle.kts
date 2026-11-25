@@ -1,0 +1,84 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+  id("firebase-library")
+  // id("copy-google-services")
+}
+
+firebaseLibrary {
+  libraryGroup = "appcheck"
+  testLab.enabled = true
+  releaseNotes {
+    name.set("{{app_check}} Debug Testing")
+    versionName.set("appcheck-debug-testing")
+    nestedHeader.set(true)
+  }
+}
+
+android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
+  installation { timeOutInMs = 60 * 1000 }
+
+  namespace = "com.google.firebase.appcheck.debug.testing"
+  compileSdk = compileSdkVersion
+  defaultConfig {
+    minSdk = minSdkVersion
+    multiDexEnabled = true
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunnerArguments["firebaseAppCheckDebugSecret"] =
+      System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET") ?: ""
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+}
+
+dependencies {
+  javadocClasspath(libs.autovalue.annotations)
+
+  api(project(":appcheck:firebase-appcheck"))
+  api(project(":appcheck:firebase-appcheck-debug"))
+  api("com.google.firebase:firebase-appcheck-interop:18.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
+
+  implementation(libs.androidx.test.core)
+  implementation(libs.playservices.base)
+  implementation(libs.playservices.tasks)
+
+  testImplementation(project(":appcheck:firebase-appcheck-playintegrity"))
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.truth)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+
+  androidTestImplementation(project(":firebase-storage"))
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.mockito.core)
+}

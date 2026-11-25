@@ -34,6 +34,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -200,5 +201,44 @@ class LiveSessionTest {
       blockingDispatcher = Dispatchers.Unconfined,
       firebaseApp = mockk<FirebaseApp>()
     )
+  }
+  fun testReceive_voiceActivityMessages() {
+    runBlocking {
+      val mockSession = mockk<DefaultClientWebSocketSession>()
+      val mockFirebaseApp = mockk<FirebaseApp>()
+      val incomingChannel = Channel<Frame>(Channel.UNLIMITED)
+      val closeReasonDeferred = CompletableDeferred<CloseReason?>()
+
+      val job = Job()
+      every { mockSession.coroutineContext } returns EmptyCoroutineContext + job
+      every { mockSession.incoming } returns incomingChannel
+      every { mockSession.closeReason } returns closeReasonDeferred
+
+      val liveSession =
+        LiveSession(
+          session = mockSession,
+          blockingDispatcher = Dispatchers.Unconfined,
+          firebaseApp = mockFirebaseApp
+        )
+
+      incomingChannel.send(
+        Frame.Text("""{"voiceActivity": {"type": "ACTIVITY_START", "audioOffset": "2.520s"}}""")
+      )
+      incomingChannel.send(
+        Frame.Text("""{"voiceActivity": {"type": "ACTIVITY_END", "audioOffset": "3.640s"}}""")
+      )
+      incomingChannel.close()
+
+      val messages = liveSession.receive().toList()
+      messages.size shouldBe 2
+
+      val startActivity = messages[0] as LiveServerVoiceActivity
+      startActivity.type shouldBe VoiceActivityType.ACTIVITY_START
+      startActivity.audioOffset?.inWholeMilliseconds shouldBe 2520
+
+      val endActivity = messages[1] as LiveServerVoiceActivity
+      endActivity.type shouldBe VoiceActivityType.ACTIVITY_END
+      endActivity.audioOffset?.inWholeMilliseconds shouldBe 3640
+    }
   }
 }
