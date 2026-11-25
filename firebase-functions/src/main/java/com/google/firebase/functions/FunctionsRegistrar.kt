@@ -45,7 +45,7 @@ public class FunctionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(Context::class.java))
         .add(Dependency.required(FirebaseOptions::class.java))
         .add(Dependency.optionalProvider(InternalAuthProvider::class.java))
-        .add(Dependency.requiredProvider(FirebaseInstanceIdInternal::class.java))
+        .add(Dependency.optionalProvider(FirebaseInstanceIdInternal::class.java))
         .add(Dependency.deferred(InteropAppCheckTokenProvider::class.java))
         .add(Dependency.required(liteExecutor))
         .add(Dependency.required(uiExecutor))

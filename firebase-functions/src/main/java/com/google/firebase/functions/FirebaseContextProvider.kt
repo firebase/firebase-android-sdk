@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.functions
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
@@ -35,6 +37,7 @@ import javax.inject.Singleton
 internal class FirebaseContextProvider
 @Inject
 constructor(
+  private val applicationContext: Context,
   private val tokenProvider: Provider<InternalAuthProvider>,
   private val instanceId: Provider<FirebaseInstanceIdInternal>,
   appCheckDeferred: Deferred<InteropAppCheckTokenProvider>,
@@ -42,6 +45,7 @@ constructor(
 ) : ContextProvider {
   private val TAG = "FirebaseContextProvider"
   private val appCheckRef = AtomicReference<InteropAppCheckTokenProvider>()
+  private val isFcmInstallationIdEnabled: Boolean by lazy { readFcmInstallationIdEnabled() }
 
   init {
     appCheckDeferred.whenAvailable { p: Provider<InteropAppCheckTokenProvider> ->
@@ -59,8 +63,40 @@ constructor(
     val appCheckToken = getAppCheckToken(getLimitedUseAppCheckToken)
     return Tasks.whenAll(authToken, appCheckToken).onSuccessTask(executor) { _ ->
       Tasks.forResult(
-        HttpsCallableContext(authToken.result, instanceId.get().token, appCheckToken.result)
+        HttpsCallableContext(authToken.result, getInstanceIdToken(), appCheckToken.result)
       )
+    }
+  }
+
+  /**
+   * Returns the legacy FCM registration token for the `Firebase-Instance-ID-Token` header.
+   *
+   * Returns null if FCM registers with the Firebase installation ID
+   * (`firebase_messaging_installation_id_enabled` is true). Getting a legacy token then creates a
+   * second registration for the app instance, and FCM rejects sends to the installation ID.
+   */
+  private fun getInstanceIdToken(): String? {
+    if (isFcmInstallationIdEnabled) {
+      return null
+    }
+    return instanceId.get()?.token
+  }
+
+  /** Reads the manifest flag that firebase-messaging uses to register with the installation ID. */
+  private fun readFcmInstallationIdEnabled(): Boolean {
+    return try {
+      val packageManager = applicationContext.packageManager ?: return false
+      val applicationInfo =
+        packageManager.getApplicationInfo(
+          applicationContext.packageName,
+          PackageManager.GET_META_DATA
+        )
+      applicationInfo.metaData?.getBoolean(FCM_INSTALLATION_ID_ENABLED_METADATA_KEY) ?: false
+    } catch (e: Exception) {
+      // NameNotFoundException can't happen for our own package, but PackageManager calls can also
+      // throw RuntimeExceptions if the system server fails. Don't fail every call because of that.
+      Log.w(TAG, "Couldn't read $FCM_INSTALLATION_ID_ENABLED_METADATA_KEY from the manifest.", e)
+      false
     }
   }
 
@@ -93,5 +129,10 @@ constructor(
       // Send valid token (success) or placeholder (failure).
       Tasks.forResult(result.token)
     }
+  }
+
+  private companion object {
+    private const val FCM_INSTALLATION_ID_ENABLED_METADATA_KEY =
+      "firebase_messaging_installation_id_enabled"
   }
 }
