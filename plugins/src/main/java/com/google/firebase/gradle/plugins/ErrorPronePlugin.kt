@@ -35,15 +35,23 @@ class ErrorPronePlugin : Plugin<Project> {
 
     if (isErrorProneRequested) {
       project.subprojects {
-        apply<LtgtErrorPronePlugin>()
-        dependencies {
-          add("errorprone", "com.google.errorprone:error_prone_core:$ERRORPRONE_VERSION")
-          add("errorproneJavac", "com.google.errorprone:javac:$ERRORPRONE_JAVAC_VERSION")
+        var configured = false
+        val configureErrorProne = {
+          if (!configured) {
+            configured = true
+            apply<LtgtErrorPronePlugin>()
+            dependencies {
+              add("errorprone", "com.google.errorprone:error_prone_core:$ERRORPRONE_VERSION")
+              add("errorproneJavac", "com.google.errorprone:javac:$ERRORPRONE_JAVAC_VERSION")
+            }
+            tasks.withType<JavaCompile>().configureEach {
+              options.errorprone.excludedPaths.set(".*/build/generated/.*")
+              options.errorprone.disable("JdkObsolete", "ProtoTimestampGetSecondsGetNano")
+            }
+          }
         }
-        tasks.withType<JavaCompile>().configureEach {
-          options.errorprone.excludedPaths.set(".*/build/generated/.*")
-          options.errorprone.disable("JdkObsolete", "ProtoTimestampGetSecondsGetNano")
-        }
+        plugins.withId("java-base") { configureErrorProne() }
+        plugins.withId("com.android.base") { configureErrorProne() }
       }
     }
 
