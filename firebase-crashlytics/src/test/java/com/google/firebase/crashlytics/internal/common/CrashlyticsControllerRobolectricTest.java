@@ -26,8 +26,12 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -57,6 +61,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivityManager;
+import org.robolectric.shadows.ShadowNetworkInfo;
 
 @RunWith(RobolectricTestRunner.class)
 public class CrashlyticsControllerRobolectricTest {
@@ -69,6 +74,7 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private FileStore testFileStore;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
+  @Mock private ResumableUploadMetadataStore mockResumableUploadMetadataStore;
 
   @Mock private FirebaseApp firebaseApp;
 
@@ -100,6 +106,46 @@ public class CrashlyticsControllerRobolectricTest {
             .build();
 
     when(firebaseApp.getOptions()).thenReturn(options);
+    when(mockDataCollectionArbiter.waitForAutomaticDataCollectionEnabled())
+        .thenReturn(Tasks.forResult(null));
+  }
+
+  @Test
+  public void testFinalizeSessions_dataCollectionDisabled_doesNotTriggerHeapdumpUpload()
+      throws Exception {
+    TaskCompletionSource<Void> dataCollectionEnabled = new TaskCompletionSource<>();
+    when(mockDataCollectionArbiter.waitForAutomaticDataCollectionEnabled())
+        .thenReturn(dataCollectionEnabled.getTask());
+    CrashlyticsController controller = createController();
+
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
+
+    verify(mockDataCollectionArbiter).waitForAutomaticDataCollectionEnabled();
+    verify(mockResumableUploadMetadataStore, never()).getUpload();
+  }
+
+  @Test
+  public void testFinalizeSessions_dataCollectionEnabledLater_triggersHeapdumpUpload()
+      throws Exception {
+    TaskCompletionSource<Void> dataCollectionEnabled = new TaskCompletionSource<>();
+    when(mockDataCollectionArbiter.waitForAutomaticDataCollectionEnabled())
+        .thenReturn(dataCollectionEnabled.getTask());
+
+    // Robolectric defaults to a connected mobile network, which is metered
+    setActiveNetworkToWifi();
+    CrashlyticsController controller = createController();
+
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    Thread.sleep(100);
+    verify(mockResumableUploadMetadataStore, never()).getUpload();
+
+    // Simulate the app enabling data collection mid-run
+    dataCollectionEnabled.setResult(null);
+    Thread.sleep(100);
+
+    verify(mockResumableUploadMetadataStore).getUpload();
   }
 
   @Test
@@ -193,9 +239,6 @@ public class CrashlyticsControllerRobolectricTest {
             "versionName",
             mock(DevelopmentPlatformProvider.class));
 
-    ResumableUploadMetadataStore store =
-        new ResumableUploadMetadataStore(testContext, testFileStore);
-
     final CrashlyticsController controller =
         new CrashlyticsController(
             testContext,
@@ -211,10 +254,24 @@ public class CrashlyticsControllerRobolectricTest {
             mock(AnalyticsEventLogger.class),
             mock(CrashlyticsAppQualitySessionsSubscriber.class),
             crashlyticsWorkers,
-            store,
+            mockResumableUploadMetadataStore,
             firebaseApp);
     controller.openSession(SESSION_ID);
     return controller;
+  }
+
+  @SuppressWarnings("deprecation") // Robolectric's metered check still keys off NetworkInfo
+  private void setActiveNetworkToWifi() {
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager) testContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+    shadowOf(connectivityManager)
+        .setActiveNetworkInfo(
+            ShadowNetworkInfo.newInstance(
+                NetworkInfo.DetailedState.CONNECTED,
+                ConnectivityManager.TYPE_WIFI,
+                /* subType= */ 0,
+                /* isAvailable= */ true,
+                NetworkInfo.State.CONNECTED));
   }
 
   private void addAppExitInfo(int reason) {
