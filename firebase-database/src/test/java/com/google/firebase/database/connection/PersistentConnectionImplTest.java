@@ -17,6 +17,7 @@ package com.google.firebase.database.connection;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -433,6 +434,36 @@ public class PersistentConnectionImplTest {
   }
 
   @Test
+  public void dataPushesWithTagThatIsNotAnInteger_areIgnored() {
+    connect();
+
+    for (Object tag : Arrays.<Object>asList("1", 1.5, true)) {
+      persistentConnection.onDataMessage(taggedPush("d", "value", tag));
+      persistentConnection.onDataMessage(
+          taggedPush("m", new MapBuilder().put("key", "value").build(), tag));
+      persistentConnection.onDataMessage(taggedPush("rm", Collections.singletonList(range()), tag));
+    }
+
+    verifyNoDataUpdates();
+    verifyWarningLogged("push");
+    verify(realtime, never()).close();
+  }
+
+  @Test
+  public void dataPushesWithIntegerTag_updateTaggedQuery() {
+    connect();
+    Map<String, Object> data = new MapBuilder().put("key", "value").build();
+
+    persistentConnection.onDataMessage(taggedPush("d", "value", 5));
+    persistentConnection.onDataMessage(taggedPush("m", data, 6L));
+    persistentConnection.onDataMessage(taggedPush("rm", Collections.singletonList(range()), 7));
+
+    verify(delegate).onDataUpdate(PATH, "value", /* isMerge= */ false, /* optTag= */ 5L);
+    verify(delegate).onDataUpdate(PATH, data, /* isMerge= */ true, /* optTag= */ 6L);
+    verify(delegate).onRangeMergeUpdate(eq(PATH), anyList(), eq(7L));
+  }
+
+  @Test
   public void controlPushesWithNonStringFields_areIgnored() {
     connect();
     clearInvocations(delegate);
@@ -503,6 +534,22 @@ public class PersistentConnectionImplTest {
   private void verifyNoDataUpdates() {
     verify(delegate, never()).onDataUpdate(any(), any(), anyBoolean(), any());
     verify(delegate, never()).onRangeMergeUpdate(any(), any(), any());
+  }
+
+  /** Returns a push for {@link #PATH} with the given action, data, and query tag. */
+  private static Map<String, Object> taggedPush(String action, Object data, Object tag) {
+    return new MapBuilder()
+        .put("a", action)
+        .put("b", new MapBuilder().put("p", "a/b").put("d", data).put("t", tag).build())
+        .build();
+  }
+
+  private static Map<String, Object> range() {
+    return new MapBuilder()
+        .put("s", "k0")
+        .put("e", "k2")
+        .put("m", new MapBuilder().put("k1", "v1").build())
+        .build();
   }
 
   private void verifyWarningLogged(String text) {

@@ -1019,6 +1019,18 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     if (requiresPath && !(body.get(SERVER_DATA_UPDATE_PATH) instanceof String)) {
       return false;
     }
+    boolean supportsQueryTag =
+        action.equals(SERVER_ASYNC_DATA_UPDATE)
+            || action.equals(SERVER_ASYNC_DATA_MERGE)
+            || action.equals(SERVER_ASYNC_DATA_RANGE_MERGE);
+    if (supportsQueryTag) {
+      // A tag that isn't an integer would become null in onDataPush, and Repo would then apply the
+      // query's partial result as an untagged update that replaces data at the whole location.
+      Object tag = body.get(SERVER_DATA_TAG);
+      if (tag != null && ConnectionUtils.longFromObject(tag) == null) {
+        return false;
+      }
+    }
     if (action.equals(SERVER_ASYNC_DATA_MERGE)) {
       return body.get(SERVER_DATA_UPDATE_BODY) instanceof Map;
     }
