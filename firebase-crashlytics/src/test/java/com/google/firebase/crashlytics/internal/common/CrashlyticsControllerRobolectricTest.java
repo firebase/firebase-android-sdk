@@ -119,7 +119,7 @@ public class CrashlyticsControllerRobolectricTest {
     CrashlyticsController controller = createController();
 
     crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
-    // cannot use await since it check preconditions if blocking main thread
+    // Cannot use await since Tasks has preconditions not to block the main thread
     Thread.sleep(100);
 
     verify(mockDataCollectionArbiter).waitForAutomaticDataCollectionEnabled();
@@ -138,11 +138,15 @@ public class CrashlyticsControllerRobolectricTest {
     CrashlyticsController controller = createController();
 
     crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+
+    // Cannot use await since Tasks has preconditions not to block the main thread
     Thread.sleep(100);
     verify(mockResumableUploadMetadataStore, never()).getUpload();
 
     // Simulate the app enabling data collection mid-run
     dataCollectionEnabled.setResult(null);
+
+    // Cannot use await since Tasks has preconditions not to block the main thread
     Thread.sleep(100);
 
     verify(mockResumableUploadMetadataStore).getUpload();
