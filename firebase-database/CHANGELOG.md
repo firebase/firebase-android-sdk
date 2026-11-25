@@ -10,6 +10,9 @@
 - [fixed] Fixed a crash when the Realtime Database server sent a message with
   a missing or malformed field. The SDK now fails the affected request, ignores
   the message, or reconnects instead. (#8764)
+- [fixed] Fixed a crash when the Realtime Database server sent a host or
+  session ID that wasn't valid in a URL. The SDK now ignores the value.
+  (#8780)
 
 # 23.0.0
 
