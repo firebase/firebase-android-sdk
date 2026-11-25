@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
@@ -58,6 +59,7 @@ public class FirebasePerfRegistrarTest {
     assertThat(firebasePerfEarlyComponent.getDependencies())
         .containsExactly(
             Dependency.required(Qualified.qualified(UiThread.class, Executor.class)),
+            Dependency.required(Qualified.qualified(Background.class, Executor.class)),
             Dependency.required(FirebaseApp.class),
             Dependency.optionalProvider(StartupTime.class));
 

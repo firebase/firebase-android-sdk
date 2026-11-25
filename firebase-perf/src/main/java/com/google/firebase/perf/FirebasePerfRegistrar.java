@@ -18,6 +18,7 @@ import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -51,6 +52,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   @Keep
   public List<Component<?>> getComponents() {
     Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
+    Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebasePerformance.class)
             .name(LIBRARY_NAME)
@@ -66,13 +68,15 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .add(Dependency.required(uiExecutor))
+            .add(Dependency.required(bgExecutor))
             .eagerInDefaultApp()
             .factory(
                 container ->
                     new FirebasePerfEarly(
                         container.get(FirebaseApp.class),
                         container.getProvider(StartupTime.class).get(),
-                        container.get(uiExecutor)))
+                        container.get(uiExecutor),
+                        container.get(bgExecutor)))
             .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link

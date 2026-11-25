@@ -1,8 +1,8 @@
 # Unreleased
 
 - [fixed] Fixed an ANR that could occur during app startup when screen trace
-  collection blocked the main thread while waiting for the frame metrics
-  background thread to start.
+  collection blocked the main thread while starting the frame metrics
+  background thread. (#8838)
 - [fixed] Fixed an issue where `NoSuchFieldException` was thrown at runtime in
   apps compiled with R8 or ProGuard optimizations enabled.
   ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))

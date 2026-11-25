@@ -16,7 +16,6 @@ package com.google.firebase.perf.application;
 
 import static androidx.core.app.FrameMetricsAggregator.TOTAL_INDEX;
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -251,7 +250,5 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     SparseIntArray[] mMetrics = new SparseIntArray[9];
     mMetrics[TOTAL_INDEX] = totalIndexValue;
     doReturn(mMetrics).when(mockFMA).getMetrics();
-    doReturn(mMetrics).when(mockFMA).remove(any());
-    doReturn(mMetrics).when(mockFMA).reset();
   }
 }

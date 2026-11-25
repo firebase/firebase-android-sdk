@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.application;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -25,20 +26,23 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.FrameMetricsAggregator;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Minimal replacement for the subset of {@link FrameMetricsAggregator} used by Firebase
- * Performance that never blocks the calling (main) thread.
+ * Performance that never blocks or spawns threads on the calling (main) thread.
  *
  * <p>{@link FrameMetricsAggregator} lazily creates a {@link HandlerThread} on the first {@code
  * add()} and then calls {@link HandlerThread#getLooper()}, which waits until the new thread has
- * been scheduled. During cold start on heavily loaded devices this wait can exceed the input
- * dispatch timeout and cause an ANR.
+ * been scheduled. During cold start on heavily loaded devices, either {@link Thread#start()} or
+ * {@link HandlerThread#getLooper()} on the main thread can exceed the input dispatch timeout and
+ * cause an ANR.
  *
- * <p>Here the background thread is started eagerly via {@link #prewarm()} and {@link
- * #add(Activity)} never waits for it: if its looper is not ready yet, the listener is attached to
- * the main looper instead. The listener only increments a histogram bucket, so running it on the
- * main thread is cheap.
+ * <p>Here the background thread is created and started asynchronously via {@link
+ * #prewarm(Executor)} and {@link #add(Activity)} never waits for it: if its looper is not ready
+ * yet, the listener is attached to the main looper instead. The listener only increments a
+ * histogram bucket, so running it on the main thread during early startup is cheap.
  *
  * <p>Only {@link FrameMetrics#TOTAL_DURATION} is tracked, which is the only metric consumed by
  * {@link com.google.firebase.perf.metrics.FrameMetricsCalculator}.
@@ -48,14 +52,20 @@ class PerfFrameMetricsAggregator {
   // Round to the nearest millisecond, same as FrameMetricsAggregator.
   private static final int NANOS_ROUNDING_VALUE = NANOS_PER_MS / 2;
   private static final String THREAD_NAME = "FirebasePerfFrameMetrics";
+  private static final int METRICS_ARRAY_SIZE = FrameMetricsAggregator.TOTAL_INDEX + 1;
 
   private static final Object threadLock = new Object();
 
   @GuardedBy("threadLock")
   private static HandlerThread handlerThread;
 
+  private static final AtomicBoolean prewarmSubmitted = new AtomicBoolean(false);
+
   // Published by the background thread itself once its Looper is prepared.
   private static volatile Handler backgroundHandler;
+
+  // Lazily created fallback handler on the main looper.
+  private static volatile Handler mainHandler;
 
   private final Object metricsLock = new Object();
 
@@ -67,10 +77,24 @@ class PerfFrameMetricsAggregator {
           recordFrameDurationNanos(frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION));
 
   /**
-   * Starts the shared background thread without waiting for it. Idempotent and safe to call from
-   * any thread; call as early as possible (e.g. when registering activity lifecycle callbacks).
+   * Schedules creation and startup of the shared background thread on {@code executor} without
+   * waiting for it or calling {@link Thread#start()} on the calling thread. Idempotent and safe to
+   * call from any thread; call as early as possible (for example, when registering activity
+   * lifecycle callbacks).
    */
-  static void prewarm() {
+  static void prewarm(@NonNull Executor executor) {
+    if (backgroundHandler != null || !prewarmSubmitted.compareAndSet(false, true)) {
+      return;
+    }
+    try {
+      executor.execute(PerfFrameMetricsAggregator::startBackgroundThread);
+    } catch (RuntimeException e) {
+      // Allow a future call to retry if the executor rejected the task.
+      prewarmSubmitted.set(false);
+    }
+  }
+
+  private static void startBackgroundThread() {
     synchronized (threadLock) {
       if (handlerThread != null) {
         return;
@@ -83,11 +107,17 @@ class PerfFrameMetricsAggregator {
               backgroundHandler = new Handler(getLooper());
             }
           };
-      handlerThread.start(); // Non-blocking.
+      handlerThread.start();
     }
   }
 
-  /** Returns the background handler if ready, otherwise a main-looper handler. Never blocks. */
+  /**
+   * Returns the background handler if its looper is ready, otherwise a main-looper handler. Never
+   * blocks and never spawns a thread on the calling thread.
+   */
+  // Window.addOnFrameMetricsAvailableListener requires an android.os.Handler rather than an
+  // Executor.
+  @SuppressLint("ThreadPoolCreation")
   @VisibleForTesting
   @NonNull
   static Handler getHandlerNonBlocking() {
@@ -95,9 +125,25 @@ class PerfFrameMetricsAggregator {
     if (handler != null) {
       return handler;
     }
-    prewarm(); // In case nobody pre-warmed; still non-blocking.
-    handler = backgroundHandler;
-    return handler != null ? handler : new Handler(Looper.getMainLooper());
+    Handler fallback = mainHandler;
+    if (fallback == null) {
+      fallback = new Handler(Looper.getMainLooper());
+      mainHandler = fallback;
+    }
+    return fallback;
+  }
+
+  @VisibleForTesting
+  static void resetForTesting() {
+    synchronized (threadLock) {
+      if (handlerThread != null) {
+        handlerThread.quit();
+        handlerThread = null;
+      }
+      backgroundHandler = null;
+      mainHandler = null;
+      prewarmSubmitted.set(false);
+    }
   }
 
   /** Starts collecting frame metrics for the activity's window. */
@@ -109,8 +155,8 @@ class PerfFrameMetricsAggregator {
    * Stops collecting frame metrics for the activity's window.
    *
    * <p>May throw {@link IllegalArgumentException} or {@link NullPointerException} for windows that
-   * are not hardware-accelerated, exactly like {@link FrameMetricsAggregator#remove}; callers
-   * already handle this.
+   * are not hardware-accelerated, exactly like {@link FrameMetricsAggregator#remove(Activity)};
+   * callers already handle this.
    */
   void remove(@NonNull Activity activity) {
     activity.getWindow().removeOnFrameMetricsAvailableListener(listener);
@@ -123,7 +169,7 @@ class PerfFrameMetricsAggregator {
    */
   @NonNull
   SparseIntArray[] getMetrics() {
-    SparseIntArray[] metrics = new SparseIntArray[FrameMetricsAggregator.LAST_INDEX + 1];
+    SparseIntArray[] metrics = new SparseIntArray[METRICS_ARRAY_SIZE];
     synchronized (metricsLock) {
       metrics[FrameMetricsAggregator.TOTAL_INDEX] = totalDurations.clone();
     }
@@ -139,10 +185,14 @@ class PerfFrameMetricsAggregator {
 
   @VisibleForTesting
   void recordFrameDurationNanos(long durationNanos) {
-    int durationMs = (int) ((durationNanos + NANOS_ROUNDING_VALUE) / NANOS_PER_MS);
-    if (durationMs < 0) {
+    if (durationNanos < 0) {
       return;
     }
+    long durationMsLong = (durationNanos + NANOS_ROUNDING_VALUE) / NANOS_PER_MS;
+    if (durationMsLong < 0 || durationMsLong > Integer.MAX_VALUE) {
+      return;
+    }
+    int durationMs = (int) durationMsLong;
     synchronized (metricsLock) {
       totalDurations.put(durationMs, totalDurations.get(durationMs) + 1);
     }
