@@ -32,7 +32,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
-import com.google.firebase.ai.common.util.childJob
+import com.google.firebase.ai.common.util.childSupervisorJob
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -44,6 +44,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -71,7 +72,7 @@ public class LiveSession
 internal constructor(
   @kotlin.jvm.Volatile private var session: DefaultClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
-  private var audioHelper: AudioHelper? = null,
+  @kotlin.jvm.Volatile private var audioHelper: AudioHelper? = null,
   private val firebaseApp: FirebaseApp,
   private val connectionFactory:
     (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? =
@@ -95,6 +96,19 @@ internal constructor(
    * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
    */
   private var audioScope = CancelledCoroutineScope
+
+  /**
+   * Handles an exception thrown by a coroutine in [networkScope] or [audioScope], for example
+   * because the server sent a message that couldn't be processed.
+   *
+   * Both scopes use a [kotlinx.coroutines.SupervisorJob], so the exception doesn't fail the
+   * coroutine that called [startAudioConversation], which would crash the app if that coroutine has
+   * no exception handler. Instead, the exception is logged and the conversation is stopped.
+   */
+  private val audioConversationExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+    Log.e(TAG, "Stopping the audio conversation because of an unexpected error.", throwable)
+    stopAudioConversation()
+  }
 
   /**
    * Playback audio data sent from the model.
@@ -259,8 +273,19 @@ internal constructor(
         return@catchAsync
       }
       networkScope =
-        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
-      audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
+        CoroutineScope(
+          blockingDispatcher +
+            childSupervisorJob() +
+            audioConversationExceptionHandler +
+            CoroutineName("LiveSession Network")
+        )
+      audioScope =
+        CoroutineScope(
+          audioDispatcher +
+            childSupervisorJob() +
+            audioConversationExceptionHandler +
+            CoroutineName("LiveSession Audio")
+        )
       audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
@@ -331,6 +356,12 @@ internal constructor(
                 delay(0)
                 continue
               }
+            }
+            if (response.isFailure) {
+              // No frame is buffered yet. delay(0) returns immediately without suspending, so wait
+              // before polling again instead of spinning a thread at 100% CPU.
+              delay(IDLE_POLL_INTERVAL_MS)
+              continue
             }
             response
               .getOrNull()
@@ -669,8 +700,9 @@ internal constructor(
             audioHelper?.resumeRecording()
           }
           // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
-          // when compared to yield.
-          delay(0)
+          // when compared to yield. delay(0) returns immediately without suspending, so wait
+          // before polling again instead of spinning a thread at 100% CPU.
+          delay(IDLE_POLL_INTERVAL_MS)
         } else {
           /**
            * We pause the recording while the model is speaking to avoid interrupting it because of
@@ -768,6 +800,14 @@ internal constructor(
     @SuppressLint("ThreadPoolCreation")
     val audioDispatcher =
       Executors.newCachedThreadPool(AudioThreadFactory()).asCoroutineDispatcher()
+
+    /**
+     * How long to wait before polling again when there is nothing to process.
+     *
+     * This must be positive: `delay(0)` returns immediately without suspending, so a polling loop
+     * that uses it never yields its thread and can't be cancelled while it's idle.
+     */
+    private const val IDLE_POLL_INTERVAL_MS = 10L
   }
 }
 

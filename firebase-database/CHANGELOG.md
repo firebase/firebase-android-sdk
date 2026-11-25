@@ -7,6 +7,9 @@
 - [fixed] Fixed a crash when the server's response to a `get()` call
   contained data that the SDK couldn't parse. The `Task` now fails instead,
   or returns the locally cached value if there is one. (#8777)
+- [fixed] Fixed a crash when the Realtime Database server sent a host or
+  session ID that wasn't valid in a URL. The SDK now ignores the value.
+  (#8780)
 
 # 23.0.0
 

@@ -88,7 +88,12 @@ dependencies {
   implementation("com.google.android.datatransport:transport-api:5.0.0")
   implementation(libs.javax.inject)
   implementation(libs.androidx.annotation)
-  implementation(libs.androidx.datastore)
+  // Sessions uses a newer DataStore than the rest of Firebase so that it doesn't have to load
+  // DataStore's native library on the main thread. The other SDKs stay on the catalog version
+  // because 1.2.x requires AGP 8.1.1 and depends on kotlinx-serialization, and firebase-common
+  // would pass both on to every app. For context, see
+  // https://github.com/firebase/firebase-android-sdk/pull/8845#discussion_r4682306218
+  implementation("androidx.datastore:datastore:1.2.1")
   implementation(libs.kotlinx.serialization.json)
 
   vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
