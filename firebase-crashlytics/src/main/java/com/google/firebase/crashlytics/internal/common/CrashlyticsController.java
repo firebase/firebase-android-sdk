@@ -592,44 +592,45 @@ class CrashlyticsController {
 
               resumableUploadMetadataStore
                   .getUpload()
-                  .ifPresent(upload -> {
-                    String gmpAppId = appData.googleAppId;
-                    String sessionId = upload.sessionId;
-                    String heapdump = upload.path;
+                  .ifPresent(
+                      upload -> {
+                        String gmpAppId = appData.googleAppId;
+                        String sessionId = upload.sessionId;
+                        String heapdump = upload.path;
 
-                    Logger.getLogger().d("About to trigger an upload!");
+                        Logger.getLogger().d("About to trigger an upload!");
 
-                    if (upload.isInProgress()) {
-                      scottyUploader.resumeUpload(
-                          heapdump,
-                          upload.handle,
-                          new ScottyUploader.Listener() {
-                            @Override
-                            public void onDoneOrUnrecoverable() {
-                              resumableUploadMetadataStore.removeInProgressUpload(heapdump);
-                            }
-                          });
-                    }
+                        if (upload.isInProgress()) {
+                          scottyUploader.resumeUpload(
+                              heapdump,
+                              upload.handle,
+                              new ScottyUploader.Listener() {
+                                @Override
+                                public void onDoneOrUnrecoverable() {
+                                  resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                                }
+                              });
+                        }
 
-                    if (upload.isNew()) {
-                      scottyUploader.triggerUpload(
-                          gmpAppId,
-                          sessionId,
-                          upload.type,
-                          heapdump,
-                          new ScottyUploader.Listener() {
-                            @Override
-                            public void onHandleAvailable(String handle) {
-                              resumableUploadMetadataStore.updateHandle(heapdump, handle);
-                            }
+                        if (upload.isNew()) {
+                          scottyUploader.triggerUpload(
+                              gmpAppId,
+                              sessionId,
+                              upload.type,
+                              heapdump,
+                              new ScottyUploader.Listener() {
+                                @Override
+                                public void onHandleAvailable(String handle) {
+                                  resumableUploadMetadataStore.updateHandle(heapdump, handle);
+                                }
 
-                            @Override
-                            public void onDoneOrUnrecoverable() {
-                              resumableUploadMetadataStore.removeInProgressUpload(heapdump);
-                            }
-                          });
-                    }
-                  });
+                                @Override
+                                public void onDoneOrUnrecoverable() {
+                                  resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                                }
+                              });
+                        }
+                      });
             });
   }
 
