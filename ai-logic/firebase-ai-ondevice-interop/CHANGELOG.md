@@ -1,8 +1,8 @@
 # Unreleased
 
-- [changed] **Breaking Change**: Added `Content` and `Content.Role` and
+- [changed] **Breaking change:** Added `Content` and `Content.Role` and
   updated `GenerateContentRequest` to accept `List<Content>` instead of
-  `List<Part>` to support multi-turn prompts with roles.
+  `List<Part>` to support multi-turn prompts with roles. (#8856)
 
 # 16.0.0-beta08
 

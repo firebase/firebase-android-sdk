@@ -1,7 +1,7 @@
 # Unreleased
 
-- [feature] Added support for multi-turn prompts and `Content` roles (`USER`
-  and `MODEL`) in on-device content generation requests.
+- [feature] Added support for multi-turn prompts and `Content` roles
+  (`USER` and `MODEL`) in on-device content generation requests. (#8856)
 
 # 16.0.0-beta08
 
