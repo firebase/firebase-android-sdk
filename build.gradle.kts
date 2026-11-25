@@ -20,7 +20,7 @@ import java.util.regex.Pattern
 plugins {
   alias(libs.plugins.spotless)
   alias(libs.plugins.protobuf) apply false
-  alias(libs.plugins.errorprone)
+  id("firebase-errorprone")
   alias(libs.plugins.crashlytics) apply false
   id("org.jetbrains.kotlin.android") version "2.3.21" apply false
   id("PublishingPlugin")
@@ -73,5 +73,3 @@ fun Project.applySpotless() {
 applySpotless()
 
 configure(subprojects) { applySpotless() }
-
-apply(from = "gradle/errorProne.gradle")
