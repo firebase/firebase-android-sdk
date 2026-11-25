@@ -1,5 +1,10 @@
 # Unreleased
 
+- [fixed] Fixed ANRs during app startup caused by loading the `DataStore`
+  native library on the main thread. (#8615)
+- [changed] Updated `androidx.datastore` dependency to `1.2.1`, which
+  requires Android Gradle plugin (AGP) 8.1.1 or later. (#8845)
+
 # 4.0.2
 
 - [fixed] Fixed a crash with an uncaught `IOException` when the SDK
