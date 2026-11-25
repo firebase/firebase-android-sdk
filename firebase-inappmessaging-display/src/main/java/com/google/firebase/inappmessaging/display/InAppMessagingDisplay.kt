@@ -16,18 +16,9 @@
 
 package com.google.firebase.inappmessaging.display
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseInAppMessagingDisplay] instance of the default [FirebaseApp]. */
 val Firebase.inAppMessagingDisplay: FirebaseInAppMessagingDisplay
   get() = FirebaseInAppMessagingDisplay.getInstance()
-
-/** @suppress */
-@Keep
-class FirebaseInAppMessagingDisplayKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

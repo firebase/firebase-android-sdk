@@ -17,6 +17,7 @@ package com.google.firebase;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import androidx.annotation.Keep;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** @hide */
+@Keep
 public class FirebaseCommonRegistrar implements ComponentRegistrar {
   private static final String FIREBASE_ANDROID = "fire-android";
   private static final String FIREBASE_COMMON = "fire-core";

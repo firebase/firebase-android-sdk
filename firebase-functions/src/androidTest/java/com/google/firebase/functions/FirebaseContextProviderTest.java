@@ -16,6 +16,7 @@ package com.google.firebase.functions;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
@@ -57,6 +58,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             absentProvider(),
             providerOf(fixedIidProvider),
             absentDeferred(),
@@ -73,6 +75,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             providerOf(fixedAuthProvider),
             providerOf(fixedIidProvider),
             absentDeferred(),
@@ -89,6 +92,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             absentProvider(),
             providerOf(fixedIidProvider),
             deferredOf(fixedAppCheckProvider),
@@ -105,6 +109,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             providerOf(anonymousAuthProvider),
             providerOf(fixedIidProvider),
             absentDeferred(),
@@ -121,6 +126,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             absentProvider(),
             providerOf(fixedIidProvider),
             deferredOf(errorAppCheckProvider),
@@ -138,6 +144,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             absentProvider(),
             providerOf(fixedIidProvider),
             deferredOf(errorAppCheckProvider),
@@ -155,6 +162,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             absentProvider(),
             providerOf(fixedIidProvider),
             deferredOf(fixedAppCheckProvider),
@@ -171,6 +179,7 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
+            ApplicationProvider.getApplicationContext(),
             providerOf(fixedAuthProvider),
             providerOf(fixedIidProvider),
             deferredOf(fixedAppCheckProvider),
