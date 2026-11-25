@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.send;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -64,7 +63,9 @@ public class ReportQueueRobolectricTest {
     ReportQueue reportQueue = new ReportQueue(mockTransport, settingsWithRate(0), onDemandCounter);
 
     Task<CrashlyticsReportWithSessionId> task =
-        reportQueue.enqueueReport(mockReportWithSessionId(), /* isOnDemand= */ true).getTask();
+        reportQueue
+            .enqueueReport(createTestReportWithSessionId(), /* isOnDemand= */ true)
+            .getTask();
 
     assertThat(task.isSuccessful()).isTrue();
     assertThat(onDemandCounter.getRecordedOnDemandExceptions()).isEqualTo(1);
@@ -76,7 +77,7 @@ public class ReportQueueRobolectricTest {
   public void zeroRate_stillSendsReportsThatAreNotOnDemand() {
     ReportQueue reportQueue = new ReportQueue(mockTransport, settingsWithRate(0), onDemandCounter);
 
-    reportQueue.enqueueReport(mockReportWithSessionId(), /* isOnDemand= */ false);
+    reportQueue.enqueueReport(createTestReportWithSessionId(), /* isOnDemand= */ false);
 
     verify(mockTransport).schedule(any(), any());
   }
@@ -115,7 +116,7 @@ public class ReportQueueRobolectricTest {
         .when(mockTransport)
         .schedule(any(), any());
     ReportQueue reportQueue = new ReportQueue(mockTransport, settings, onDemandCounter);
-    CrashlyticsReportWithSessionId report = mockReportWithSessionId();
+    CrashlyticsReportWithSessionId report = createTestReportWithSessionId();
 
     reportQueue.enqueueReport(report, /* isOnDemand= */ true);
     assertThat(sending.await(5, TimeUnit.SECONDS)).isTrue();
@@ -142,8 +143,16 @@ public class ReportQueueRobolectricTest {
         /* onDemandBackoffStepDurationSeconds= */ 60);
   }
 
-  private static CrashlyticsReportWithSessionId mockReportWithSessionId() {
-    return CrashlyticsReportWithSessionId.create(
-        mock(CrashlyticsReport.class), "sessionId", new File("fake"));
+  private static CrashlyticsReportWithSessionId createTestReportWithSessionId() {
+    CrashlyticsReport report =
+        CrashlyticsReport.builder()
+            .setSdkVersion("sdkVersion")
+            .setGmpAppId("gmpAppId")
+            .setPlatform(1)
+            .setInstallationUuid("installationId")
+            .setBuildVersion("1")
+            .setDisplayVersion("1.0.0")
+            .build();
+    return CrashlyticsReportWithSessionId.create(report, "sessionId", new File("fake"));
   }
 }

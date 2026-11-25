@@ -18,17 +18,15 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -76,14 +74,11 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private IdManager idManager;
-  @Mock private CrashlyticsReport mockReport;
-  @Mock private CrashlyticsReport.Session.Event mockEvent;
-  @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
-  @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
-  @Mock private CrashlyticsReport.Session.Event.Application.Builder mockEventAppBuilder;
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
+  private final CrashlyticsReport testReport = makeTestReport(TEST_SESSION_ID);
+  private final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
   private UserMetadata reportMetadata;
   private SessionReportingCoordinator reportingCoordinator;
   private AutoCloseable mocks;
@@ -122,12 +117,12 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testOnSessionBegin_persistsReportForSessionId() {
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
+    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(testReport);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
 
     verify(dataCapture).captureReportData(sessionId, timestamp);
-    verify(reportPersistence).persistReport(mockReport);
+    verify(reportPersistence).persistReport(testReport);
   }
 
   @Test
@@ -136,7 +131,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -147,7 +142,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     verify(dataCapture)
         .captureEventData(
             mockException, mockThread, eventType, timestamp, 4, 8, expectedAllThreads);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId, expectedHighPriority);
+    verify(reportPersistence).persistEvent(testEvent, sessionId, expectedHighPriority);
   }
 
   @Test
@@ -157,7 +152,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
@@ -171,14 +166,14 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     verify(dataCapture)
         .captureEventData(
             mockException, mockThread, eventType, timestamp, 4, 8, expectedAllThreads);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId, expectedHighPriority);
+    verify(reportPersistence).persistEvent(testEvent, sessionId, expectedHighPriority);
   }
 
   @Test
   public void testNonFatalEvent_addsLogsToEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
     final String testLog = "test\nlog";
@@ -191,9 +186,11 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventBuilder)
-        .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertEquals(
+        CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build(),
+        persistedEvent.getLog());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -201,7 +198,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() throws Exception {
     long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -213,8 +210,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertNull(persistedEvent.getLog());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -222,7 +220,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testFatalEvent_addsLogsToEvent() {
     long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
     final String testLog = "test\nlog";
@@ -232,9 +230,11 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventBuilder)
-        .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertEquals(
+        CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build(),
+        persistedEvent.getLog());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -242,7 +242,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -251,8 +251,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertNull(persistedEvent.getLog());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -260,7 +261,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_addsSortedKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -291,11 +292,10 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getCustomAttributes());
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getInternalKeys());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -303,7 +303,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -313,10 +313,10 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
-    verify(mockEventAppBuilder, never()).build();
-    verify(mockEventBuilder, never()).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertNull(persistedEvent.getApp().getCustomAttributes());
+    assertNull(persistedEvent.getApp().getInternalKeys());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -324,7 +324,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_addsUserInfoKeysToEventWhenAvailable() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -346,10 +346,10 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getCustomAttributes());
+    assertEquals(Collections.emptyList(), persistedEvent.getApp().getInternalKeys());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -357,7 +357,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_mergesUserInfoKeysWithCustomKeys() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -397,10 +397,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getCustomAttributes());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -408,7 +407,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testNonFatalEvent_addRolloutsEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
     String sessionId = "testSessionId";
-    mockEventInteractions();
+    stubCaptureEventData();
 
     List<RolloutAssignment> rolloutsState = new ArrayList<>();
     rolloutsState.add(fakeRolloutAssignment());
@@ -421,19 +420,23 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
     crashlyticsWorkers.diskWrite.await();
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
-    verify(mockEventAppBuilder, never()).build();
-    verify(mockEventBuilder, never()).setApp(mockEventApp);
-    // first build for custom keys
-    // second build for rollouts
-    verify(mockEventBuilder, times(2)).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ false);
+    assertNull(persistedEvent.getApp().getCustomAttributes());
+    assertNull(persistedEvent.getApp().getInternalKeys());
+    assertEquals(
+        CrashlyticsReport.Session.Event.RolloutsState.builder()
+            .setRolloutAssignments(
+                Collections.singletonList(fakeRolloutAssignment().toReportProto()))
+            .build(),
+        persistedEvent.getRollouts());
   }
 
   @Test
   public void testFatalEvent_addsSortedCustomKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -460,10 +463,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getCustomAttributes());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -471,7 +473,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testFatalEvent_addsSortedInternalKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
@@ -498,10 +500,9 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertEquals(expectedCustomAttributes, persistedEvent.getApp().getInternalKeys());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -509,17 +510,17 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
     final long timestamp = System.currentTimeMillis();
 
-    mockEventInteractions();
+    stubCaptureEventData();
 
     final String sessionId = "testSessionId";
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
-    verify(mockEventAppBuilder, never()).build();
-    verify(mockEventBuilder, never()).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertNull(persistedEvent.getApp().getCustomAttributes());
+    assertNull(persistedEvent.getApp().getInternalKeys());
     verify(logFileManager, never()).clearLog();
   }
 
@@ -527,7 +528,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
   public void testFatalEvent_addRolloutsToEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
     String sessionId = "testSessionId";
-    mockEventInteractions();
+    stubCaptureEventData();
 
     List<RolloutAssignment> rolloutsState = new ArrayList<>();
     rolloutsState.add(fakeRolloutAssignment());
@@ -538,12 +539,16 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
-    verify(mockEventAppBuilder, never()).build();
-    verify(mockEventBuilder, never()).setApp(mockEventApp);
-    // first build for custom keys
-    // second build for rollouts
-    verify(mockEventBuilder, times(2)).build();
+    CrashlyticsReport.Session.Event persistedEvent =
+        capturePersistedEvent(sessionId, /* isHighPriority= */ true);
+    assertNull(persistedEvent.getApp().getCustomAttributes());
+    assertNull(persistedEvent.getApp().getInternalKeys());
+    assertEquals(
+        CrashlyticsReport.Session.Event.RolloutsState.builder()
+            .setRolloutAssignments(
+                Collections.singletonList(fakeRolloutAssignment().toReportProto()))
+            .build(),
+        persistedEvent.getRollouts());
   }
 
   @Test
@@ -584,26 +589,43 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     final String sessionId2 = "sessionId2";
 
     final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
-    final CrashlyticsReportWithSessionId mockReport1 = mockReportWithSessionId(sessionId1);
-    final CrashlyticsReportWithSessionId mockReport2 = mockReportWithSessionId(sessionId2);
-    finalizedReports.add(mockReport1);
-    finalizedReports.add(mockReport2);
+    final CrashlyticsReportWithSessionId report1 = createTestReportWithSessionId(sessionId1);
+    final CrashlyticsReportWithSessionId report2 = createTestReportWithSessionId(sessionId2);
+    finalizedReports.add(report1);
+    finalizedReports.add(report2);
 
     when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
 
-    final Task<CrashlyticsReportWithSessionId> successfulTask = Tasks.forResult(mockReport1);
+    final CrashlyticsReportWithSessionId expectedReport1 =
+        CrashlyticsReportWithSessionId.create(
+            report1
+                .getReport()
+                .withFirebaseInstallationId("fid")
+                .withFirebaseAuthenticationToken("authToken"),
+            sessionId1,
+            report1.getReportFile());
+    final CrashlyticsReportWithSessionId expectedReport2 =
+        CrashlyticsReportWithSessionId.create(
+            report2
+                .getReport()
+                .withFirebaseInstallationId("fid")
+                .withFirebaseAuthenticationToken("authToken"),
+            sessionId2,
+            report2.getReportFile());
+
+    final Task<CrashlyticsReportWithSessionId> successfulTask = Tasks.forResult(expectedReport1);
     final Task<CrashlyticsReportWithSessionId> failedTask =
         Tasks.forException(new Exception("fail"));
 
-    when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
-    when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
+    when(reportSender.enqueueReport(expectedReport1, false)).thenReturn(successfulTask);
+    when(reportSender.enqueueReport(expectedReport2, false)).thenReturn(failedTask);
 
     when(idManager.fetchTrueFid(anyBoolean()))
         .thenReturn(new FirebaseInstallationId("fid", "authToken"));
     reportingCoordinator.sendReports(Runnable::run);
 
-    verify(reportSender).enqueueReport(mockReport1, false);
-    verify(reportSender).enqueueReport(mockReport2, false);
+    verify(reportSender).enqueueReport(expectedReport1, false);
+    verify(reportSender).enqueueReport(expectedReport2, false);
   }
 
   @Test
@@ -754,14 +776,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     crashlyticsWorkers.diskWrite.await();
   }
 
-  private void mockEventInteractions() {
-    when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
-    when(mockEventBuilder.build()).thenReturn(mockEvent);
-    when(mockEvent.getApp()).thenReturn(mockEventApp);
-    when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setCustomAttributes(anyList())).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setInternalKeys(anyList())).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
+  private void stubCaptureEventData() {
     when(dataCapture.captureEventData(
             any(Throwable.class),
             any(Thread.class),
@@ -770,22 +785,74 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
             anyInt(),
             anyInt(),
             anyBoolean()))
-        .thenReturn(mockEvent);
+        .thenReturn(testEvent);
   }
 
-  private static CrashlyticsReport mockReport(String sessionId) {
-    final CrashlyticsReport mockReport = mock(CrashlyticsReport.class);
-    final CrashlyticsReport.Session mockSession = mock(CrashlyticsReport.Session.class);
-    when(mockSession.getIdentifier()).thenReturn(sessionId);
-    when(mockReport.getSession()).thenReturn(mockSession);
-    when(mockReport.withFirebaseInstallationId(anyString())).thenReturn(mockReport);
-    when(mockReport.withFirebaseAuthenticationToken(anyString())).thenReturn(mockReport);
-    return mockReport;
+  private CrashlyticsReport.Session.Event capturePersistedEvent(
+      String sessionId, boolean isHighPriority) {
+    ArgumentCaptor<CrashlyticsReport.Session.Event> eventCaptor =
+        ArgumentCaptor.forClass(CrashlyticsReport.Session.Event.class);
+    verify(reportPersistence)
+        .persistEvent(eventCaptor.capture(), eq(sessionId), eq(isHighPriority));
+    return eventCaptor.getValue();
   }
 
-  private static CrashlyticsReportWithSessionId mockReportWithSessionId(String sessionId) {
+  private static CrashlyticsReport makeTestReport(String sessionId) {
+    return CrashlyticsReport.builder()
+        .setSdkVersion("sdkVersion")
+        .setGmpAppId("gmpAppId")
+        .setPlatform(1)
+        .setInstallationUuid("installationId")
+        .setBuildVersion("1")
+        .setDisplayVersion("1.0.0")
+        .setSession(
+            CrashlyticsReport.Session.builder()
+                .setGenerator("generator")
+                .setIdentifier(sessionId)
+                .setStartedAt(0)
+                .setApp(
+                    CrashlyticsReport.Session.Application.builder()
+                        .setIdentifier("applicationId")
+                        .setVersion("version")
+                        .setDisplayVersion("displayVersion")
+                        .build())
+                .setGeneratorType(3)
+                .build())
+        .build();
+  }
+
+  private static CrashlyticsReport.Session.Event makeTestEvent() {
+    return CrashlyticsReport.Session.Event.builder()
+        .setType("error")
+        .setTimestamp(1000L)
+        .setApp(
+            CrashlyticsReport.Session.Event.Application.builder()
+                .setExecution(
+                    CrashlyticsReport.Session.Event.Application.Execution.builder()
+                        .setSignal(
+                            CrashlyticsReport.Session.Event.Application.Execution.Signal.builder()
+                                .setName("0")
+                                .setCode("0")
+                                .setAddress(0)
+                                .build())
+                        .setBinaries(Collections.emptyList())
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            CrashlyticsReport.Session.Event.Device.builder()
+                .setBatteryVelocity(3)
+                .setProximityOn(false)
+                .setOrientation(1)
+                .setRamUsed(10000L)
+                .setDiskUsed(10000L)
+                .build())
+        .build();
+  }
+
+  private static CrashlyticsReportWithSessionId createTestReportWithSessionId(String sessionId) {
     return CrashlyticsReportWithSessionId.create(
-        mockReport(sessionId), sessionId, new File("fake"));
+        makeTestReport(sessionId), sessionId, new File("fake"));
   }
 
   private static RolloutAssignment fakeRolloutAssignment() {
