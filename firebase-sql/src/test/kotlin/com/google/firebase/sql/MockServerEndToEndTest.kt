@@ -226,7 +226,8 @@ class MockServerEndToEndTest {
     assertThat(error)
       .hasMessageThat()
       .isEqualTo("Could not find the table 'public.product' in the schema cache")
-    assertThat(error.details).isNull()
+    // The body has no details, so the error gets the status text.
+    assertThat(error.details).isEqualTo("Not Found")
     assertThat(error.hint).isEqualTo("Perhaps you meant the table 'public.products'")
   }
 

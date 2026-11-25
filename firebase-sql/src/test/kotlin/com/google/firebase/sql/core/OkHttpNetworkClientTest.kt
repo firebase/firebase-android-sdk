@@ -408,7 +408,8 @@ class OkHttpNetworkClientTest {
     assertThat(error.status).isEqualTo(404)
     assertThat(error.code).isEqualTo("42883")
     assertThat(error).hasMessageThat().isEqualTo("operator does not exist: text > integer")
-    assertThat(error.details).isNull()
+    // The error has no details, so it gets the status text.
+    assertThat(error.details).isEqualTo("Not Found")
     assertThat(error.hint).isEqualTo("You might need to add explicit type casts.")
     assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.POSTGREST)
   }
@@ -432,7 +433,7 @@ class OkHttpNetworkClientTest {
     assertThat(error.status).isEqualTo(403)
     assertThat(error).hasMessageThat().isEqualTo("Permission denied.")
     assertThat(error.code).isEqualTo("PERMISSION_DENIED")
-    assertThat(error.details).isNull()
+    assertThat(error.details).isEqualTo("Forbidden")
     assertThat(error.hint).isNull()
     assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.PLATFORM)
   }
@@ -477,7 +478,44 @@ class OkHttpNetworkClientTest {
     val error = response.error as FirebaseSqlException
     assertThat(error.status).isEqualTo(406)
     assertThat(error.code).isEqualTo("PGRST116")
+    assertThat(error).hasMessageThat().isEqualTo("HTTP 406")
+    assertThat(error.details).isEqualTo("Not Acceptable")
     assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.POSTGREST)
+  }
+
+  @Test
+  fun usesTheStatusTextOfTheResponseAsTheDetailsOfAnErrorWithoutDetails() {
+    val (response, _) =
+      send(
+        response =
+          MockResponse()
+            .setStatus("HTTP/1.1 503 Back Soon")
+            .setBody(
+              """{"code":"PGRST001","details":null,"hint":null,""" +
+                """"message":"Database client error. Retrying the connection."}"""
+            )
+      )
+
+    val error = response.error as FirebaseSqlException
+    assertThat(error.code).isEqualTo("PGRST001")
+    assertThat(error.details).isEqualTo("Back Soon")
+  }
+
+  @Test
+  fun usesTheStandardStatusTextAsTheDetailsWhenTheResponseHasNoStatusText() {
+    // An HTTP/2 response has no status text, like these status lines.
+    val expectedDetails = listOf(404 to "Not Found", 503 to "Service Unavailable", 599 to null)
+    for ((status, details) in expectedDetails) {
+      val (response, _) =
+        send(
+          response =
+            MockResponse().setStatus("HTTP/1.1 $status").setBody("""{"message":"Failed"}""")
+        )
+
+      val error = response.error as FirebaseSqlException
+      assertWithMessage("status $status").that(error.status).isEqualTo(status)
+      assertWithMessage("status $status").that(error.details).isEqualTo(details)
+    }
   }
 
   @Test
@@ -511,7 +549,7 @@ class OkHttpNetworkClientTest {
   fun returnsAnErrorWithoutCodeForABodyThatIsNotAJsonObject() {
     // A proxy or load balancer can answer with any body. Every HTTP error response gives an error
     // with its status, so that callers can always read it.
-    for (body in listOf("<html>Bad Gateway</html>", "[1,2]", "")) {
+    for (body in listOf("<html>Bad Gateway</html>", "[1,2]")) {
       val (response, _) =
         send(response = MockResponse().setStatus("HTTP/1.1 502 Bad Gateway").setBody(body))
 
@@ -521,24 +559,37 @@ class OkHttpNetworkClientTest {
       assertThat(error).hasMessageThat().isEqualTo("HTTP 502: $body")
       assertThat(error.status).isEqualTo(502)
       assertThat(error.code).isNull()
-      assertThat(error.details).isNull()
+      assertThat(error.details).isEqualTo("Bad Gateway")
       assertThat(error.hint).isNull()
       assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.PLATFORM)
     }
   }
 
   @Test
+  fun usesTheStatusAsTheMessageOfAnErrorWithAnEmptyBody() {
+    val (response, _) =
+      send(response = MockResponse().setStatus("HTTP/1.1 500 Internal Server Error").setBody(""))
+
+    val error = response.error as FirebaseSqlException
+    assertThat(error).hasMessageThat().isEqualTo("HTTP 500")
+    assertThat(error.status).isEqualTo(500)
+    assertThat(error.code).isNull()
+    assertThat(error.details).isEqualTo("Internal Server Error")
+    assertThat(error.category).isEqualTo(FirebaseSqlExceptionCategory.PLATFORM)
+  }
+
+  @Test
   fun a404WithAnEmptyBodyOrAnEmptyArrayIsAnError() {
     // A 404 is an error even without an error body: an empty array is not a PostgREST error, and
     // an empty body is how the error of a HEAD request arrives. Neither becomes a success.
-    for (body in listOf("", "[]")) {
+    for ((body, message) in listOf("" to "HTTP 404", "[]" to "HTTP 404: []")) {
       val (response, _) =
         send(response = MockResponse().setStatus("HTTP/1.1 404 Not Found").setBody(body))
 
       assertWithMessage("body '$body'").that(response.status).isEqualTo(404)
       assertWithMessage("body '$body'").that(response.body).isNull()
       val error = response.error as FirebaseSqlException
-      assertWithMessage("body '$body'").that(error).hasMessageThat().isEqualTo("HTTP 404: $body")
+      assertWithMessage("body '$body'").that(error).hasMessageThat().isEqualTo(message)
       assertWithMessage("body '$body'").that(error.status).isEqualTo(404)
       assertWithMessage("body '$body'").that(error.code).isNull()
       assertWithMessage("body '$body'")

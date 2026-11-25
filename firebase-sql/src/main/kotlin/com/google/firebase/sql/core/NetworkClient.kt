@@ -107,8 +107,10 @@ internal interface NetworkClient {
  * `<first>-<last>/<total>`. Every error response becomes a [FirebaseSqlException] with the HTTP
  * status. A PostgREST error gives its `message`, `code`, `details`, and `hint` fields. An error of
  * the Google API layer in front of PostgREST, `{"error": {...}}`, gives its `message`, its `status`
- * as the code, and its `details`. When an error has no message, or a blank one, the message is
- * `HTTP <status>: <body>`, with the body truncated to 1,000 characters. A request that gets no
+ * as the code, and its `details`. An error without details gets the status text of the response as
+ * its details, or the standard text of the status when the response has none, as over HTTP/2. When
+ * an error has no message, or a blank one, the message is `HTTP <status>: <body>`, with the body
+ * truncated to 1,000 characters, or `HTTP <status>` when the body is blank. A request that gets no
  * response, for example because the server is unreachable, returns a status of 0 and the
  * [IOException] as its error. A response that cannot be read because of another exception gives a
  * [FirebaseSqlException] of the category [FirebaseSqlExceptionCategory.CLIENT], with the HTTP
@@ -177,6 +179,47 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
     /** The maximum number of characters of an error body included in a fallback error message. */
     const val MAX_ERROR_BODY_CHARS = 1_000
 
+    /**
+     * The standard status texts of the HTTP error statuses, from RFC 9110 and the RFCs that add
+     * statuses. An HTTP/2 response has no status text, so the details of its error use these.
+     */
+    val STANDARD_STATUS_TEXTS =
+      mapOf(
+        400 to "Bad Request",
+        401 to "Unauthorized",
+        402 to "Payment Required",
+        403 to "Forbidden",
+        404 to "Not Found",
+        405 to "Method Not Allowed",
+        406 to "Not Acceptable",
+        407 to "Proxy Authentication Required",
+        408 to "Request Timeout",
+        409 to "Conflict",
+        410 to "Gone",
+        411 to "Length Required",
+        412 to "Precondition Failed",
+        413 to "Content Too Large",
+        414 to "URI Too Long",
+        415 to "Unsupported Media Type",
+        416 to "Range Not Satisfiable",
+        417 to "Expectation Failed",
+        421 to "Misdirected Request",
+        422 to "Unprocessable Content",
+        425 to "Too Early",
+        426 to "Upgrade Required",
+        428 to "Precondition Required",
+        429 to "Too Many Requests",
+        431 to "Request Header Fields Too Large",
+        451 to "Unavailable For Legal Reasons",
+        500 to "Internal Server Error",
+        501 to "Not Implemented",
+        502 to "Bad Gateway",
+        503 to "Service Unavailable",
+        504 to "Gateway Timeout",
+        505 to "HTTP Version Not Supported",
+        511 to "Network Authentication Required"
+      )
+
     fun requestBody(request: QueryRequest): RequestBody? {
       if (request.httpMethod in METHODS_WITHOUT_BODY) return null
       val bytes =
@@ -224,7 +267,8 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
           status = response.code,
           statusText = response.message,
           body = null,
-          error = parseError(response.code, body, response.header("Proxy-Status")),
+          error =
+            parseError(response.code, body, response.header("Proxy-Status"), response.message),
           preferenceApplied = response.header("Preference-Applied")
         )
       }
@@ -235,17 +279,26 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
      *
      * @param proxyStatus The `Proxy-Status` header. The server strips the body of the response to a
      * HEAD request, but still names the PostgREST error code in this header.
+     * @param statusText The status text of the response, which is empty over HTTP/2. An error
+     * without details gets it as its details, or the standard text of [status] when it is empty.
      */
-    fun parseError(status: Int, body: String, proxyStatus: String? = null): FirebaseSqlException {
+    fun parseError(
+      status: Int,
+      body: String,
+      proxyStatus: String? = null,
+      statusText: String = ""
+    ): FirebaseSqlException {
       val excerpt =
         if (body.length <= MAX_ERROR_BODY_CHARS) body else body.take(MAX_ERROR_BODY_CHARS) + "…"
-      val fallbackMessage = "HTTP $status: $excerpt"
+      val fallbackMessage = if (body.isBlank()) "HTTP $status" else "HTTP $status: $excerpt"
+      val fallbackDetails = statusText.ifBlank { STANDARD_STATUS_TEXTS[status] }
       val proxyStatusCode = proxyStatus?.let { PROXY_STATUS_ERROR.find(it) }?.groupValues?.get(1)
       if (body.isBlank() && proxyStatusCode != null) {
         return FirebaseSqlException(
           message = fallbackMessage,
           status = status,
           code = proxyStatusCode,
+          details = fallbackDetails,
           category = FirebaseSqlExceptionCategory.POSTGREST
         )
       }
@@ -256,6 +309,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
           ?: return FirebaseSqlException(
             message = fallbackMessage,
             status = status,
+            details = fallbackDetails,
             category = FirebaseSqlExceptionCategory.PLATFORM
           )
       // The Google API layer in front of PostgREST, which checks the tokens and the quotas for
@@ -266,7 +320,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
           message = googleError.message() ?: fallbackMessage,
           status = status,
           code = googleError.text("status"),
-          details = googleError.text("details"),
+          details = googleError.text("details") ?: fallbackDetails,
           category = FirebaseSqlExceptionCategory.PLATFORM
         )
       }
@@ -275,7 +329,7 @@ internal class OkHttpNetworkClient(private val okHttpClient: OkHttpClient) : Net
         message = json.message() ?: fallbackMessage,
         status = status,
         code = json.text("code"),
-        details = json.text("details"),
+        details = json.text("details") ?: fallbackDetails,
         hint = json.text("hint"),
         category =
           if (isPostgrestError) FirebaseSqlExceptionCategory.POSTGREST

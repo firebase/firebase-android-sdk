@@ -479,18 +479,17 @@ class TransformBuilderTest {
   }
 
   @Test
-  fun onlyTheSchemaHeadersPointToSchemaName() {
-    val schemaError =
+  fun theErrorOfAReservedHeaderNamesOnlyThatHeader() {
+    // The documentation of ReservedHeaderException lists all the reserved headers.
+    val error =
       assertThrows(ReservedHeaderException::class.java) {
         from().select().setHeader("Accept-Profile", "inventory")
       }
-    assertThat(schemaError).hasMessageThat().contains("ServiceConfig.schemaName")
-
-    val tokenError =
-      assertThrows(ReservedHeaderException::class.java) {
-        from().select().setHeader("Authorization", "Bearer token")
-      }
-    assertThat(tokenError).hasMessageThat().doesNotContain("schemaName")
+    assertThat(error)
+      .hasMessageThat()
+      .isEqualTo(
+        "The header 'Accept-Profile' is reserved by the SDK and cannot be set with setHeader()."
+      )
   }
 
   // --- Order and LongRange forms, and argument checks ---
