@@ -1,5 +1,10 @@
 # Unreleased
 
+- [fixed] Fixed a crash when an error occurred during a `LiveSession` audio
+  conversation, such as a server message that the SDK couldn't process or an
+  exception from a function call handler. The conversation now stops and logs
+  the error. (#8783)
+
 # 18.2.0
 
 - [feature] Added `LiveServerVoiceActivity` and `VoiceActivityType` to
