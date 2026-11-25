@@ -112,15 +112,24 @@ public interface FirebaseSql {
   public val app: FirebaseApp
 
   /**
-   * The config that created this instance, as it was given: a property that was not set stays
-   * `null`, for example [ServiceConfig.host] for the production host.
-   *
-   * When [getInstance] returns this instance for another config that resolves to the same URL and
-   * schema, ignoring case, this property keeps the config of the call that created the instance.
-   * The config has no project ID: the project ID of the service is always the one in the options of
-   * the [app].
+   * The schema of the requests of this instance: the [ServiceConfig.schemaName] of the config that
+   * created it, or `null` for the default schema of the service. The requests name it in the
+   * `Accept-Profile` or `Content-Profile` header.
    */
-  public val config: ServiceConfig
+  public val schemaName: String?
+
+  /**
+   * The URL of the PostgREST API of the service, where the requests of this instance go, for
+   * example
+   * `https://firebasedataconnect.googleapis.com/v1/projects/my-project/locations/us-central1/services/my-service/postgrest`.
+   * It comes from the config that created this instance, with the project ID in the options of the
+   * [app].
+   *
+   * Configs that differ can give the same instance: [getInstance] returns this instance for every
+   * config that resolves to the same URL and schema, ignoring case. For example, a config without a
+   * host and a config with the production host.
+   */
+  public val restUrl: String
 
   /**
    * Whether the setters of this instance, such as [setHeaders], can still change its settings.
@@ -443,8 +452,9 @@ public interface FirebaseSql {
    *
    * **Example: change the headers of an instance that is in use**
    * ```kotlin
-   * sql.terminate()
-   * val withHeader = Firebase.sql(sql.app, sql.config)
+   * val config = ServiceConfig(serviceId = "my-service", location = "us-central1")
+   * Firebase.sql(config).terminate()
+   * val withHeader = Firebase.sql(config)
    * withHeader.setHeaders(mapOf("X-Request-Source" to "sync"))
    * ```
    */
@@ -468,9 +478,10 @@ public interface FirebaseSql {
      * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema,
      * ignoring case:
      * - A call whose config resolves to the same URL and schema, ignoring case, as an open instance
-     * returns that instance, which keeps the config that created it, and the headers that
-     * [setHeaders] set on it. For example, a config without a host and a config with the production
-     * host resolve to the same URL, and `"my-service"` and `"My-Service"` match.
+     * returns that instance, which keeps the [schemaName] and the [restUrl] of the config that
+     * created it, and the headers that [setHeaders] set on it. For example, a config without a host
+     * and a config with the production host resolve to the same URL, and `"my-service"` and
+     * `"My-Service"` match.
      * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
      * [getInstance] with its name in [ServiceConfig.schemaName].
@@ -557,9 +568,10 @@ public interface FirebaseSql {
      * Instances are cached by app, by the PostgREST URL that the config resolves to, and by schema,
      * ignoring case:
      * - A call whose config resolves to the same URL and schema, ignoring case, as an open instance
-     * returns that instance, which keeps the config that created it, and the headers that
-     * [setHeaders] set on it. For example, a config without a host and a config with the production
-     * host resolve to the same URL, and `"my-service"` and `"My-Service"` match.
+     * returns that instance, which keeps the [schemaName] and the [restUrl] of the config that
+     * created it, and the headers that [setHeaders] set on it. For example, a config without a host
+     * and a config with the production host resolve to the same URL, and `"my-service"` and
+     * `"My-Service"` match.
      * - A config with `schemaName = null` and a config with `schemaName = "public"` give two
      * different instances, even when they reach the same schema. To query another schema, call
      * [getInstance] with its name in [ServiceConfig.schemaName].

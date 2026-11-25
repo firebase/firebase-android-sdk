@@ -113,8 +113,8 @@ internal class FirebaseSqlComponent(
    *
    * The project ID of the service is always the one in the options of the [app]. Configs that
    * resolve to the same URL and schema, ignoring case, give the same instance, for example a config
-   * without a host and a config with the production host. The instance keeps the config that
-   * created it, and the headers that `FirebaseSql.setHeaders()` sets on it.
+   * without a host and a config with the production host. The instance keeps the schema and the URL
+   * of the config that created it, and the headers that `FirebaseSql.setHeaders()` sets on it.
    *
    * @throws IllegalArgumentException When the config does not name a valid service, or has an empty
    * schema name, or when the options of the [app] have no project ID.
@@ -145,7 +145,7 @@ internal class FirebaseSqlComponent(
     while (true) {
       val current = state.value
       check(current is State.Open) { "FirebaseApp has been deleted" }
-      // The cached instance keeps the config that created it, and its headers.
+      // The cached instance keeps the schema and the URL of its config, and its headers.
       current.instances[key]?.let {
         return it
       }
@@ -184,7 +184,7 @@ internal class FirebaseSqlComponent(
         blockingDispatcher = blockingDispatcher,
         nonBlockingDispatcher = nonBlockingDispatcher
       )
-    return FirebaseSqlImpl(this, app, config, settings, executor)
+    return FirebaseSqlImpl(this, app, config.schemaName, restUrl.toString(), settings, executor)
   }
 
   /** Removes [instance] from the cache, so that [get] creates another instance for its config. */

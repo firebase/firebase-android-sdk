@@ -44,7 +44,8 @@ import kotlinx.serialization.json.JsonNull
 internal class FirebaseSqlImpl(
   private val component: FirebaseSqlComponent,
   override val app: FirebaseApp,
-  override val config: ServiceConfig,
+  override val schemaName: String?,
+  override val restUrl: String,
   private val settings: InstanceSettings,
   private val executor: OperationsExecutor
 ) : FirebaseSql {

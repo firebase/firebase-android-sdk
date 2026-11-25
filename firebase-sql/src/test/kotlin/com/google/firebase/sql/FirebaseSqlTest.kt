@@ -86,16 +86,31 @@ class FirebaseSqlTest {
   // --- Defaults and the URL of the service ---
 
   @Test
-  fun theInstanceKeepsTheGivenConfig() {
-    val config = ServiceConfig(serviceId = SERVICE_ID, location = LOCATION)
+  fun theInstanceHasTheSchemaAndTheUrlOfItsConfig() {
+    val fsql = component.get(ServiceConfig(serviceId = SERVICE_ID, location = LOCATION))
 
-    val fsql = component.get(config)
+    // Without a host and a schema: the production host, and the default schema of the service.
+    assertThat(fsql.schemaName).isNull()
+    assertThat(fsql.restUrl)
+      .isEqualTo(
+        "https://firebasedataconnect.googleapis.com/v1/projects/sql-test-project/locations/$LOCATION/" +
+          "services/$SERVICE_ID/postgrest"
+      )
+  }
 
-    // The defaults are applied when the URL is built; the config stays as it was given.
-    assertThat(fsql.config).isEqualTo(config)
-    assertThat(fsql.config.host).isNull()
-    assertThat(fsql.config.sslEnabled).isNull()
-    assertThat(fsql.config.schemaName).isNull()
+  @Test
+  fun theUrlOfTheInstanceHasTheSchemeTheHostAndThePortOfItsConfig() {
+    val fsql =
+      component.get(
+        config(host = "10.0.2.2", port = 9399, sslEnabled = false, schemaName = "inventory")
+      )
+
+    assertThat(fsql.schemaName).isEqualTo("inventory")
+    assertThat(fsql.restUrl)
+      .isEqualTo(
+        "http://10.0.2.2:9399/v1/projects/sql-test-project/locations/$LOCATION/services/$SERVICE_ID/" +
+          "postgrest"
+      )
   }
 
   @Test
@@ -221,10 +236,16 @@ class FirebaseSqlTest {
       )
 
     for (equivalent in equivalents) {
-      val cached = component.get(equivalent)
-      assertWithMessage("$equivalent").that(cached).isSameInstanceAs(instance)
-      assertThat(cached.config).isSameInstanceAs(base)
+      assertWithMessage("$equivalent").that(component.get(equivalent)).isSameInstanceAs(instance)
     }
+    // The instance keeps the schema and the URL of the config that created it. OkHttp gives the
+    // host in lowercase.
+    assertThat(instance.schemaName).isEqualTo("Inventory")
+    assertThat(instance.restUrl)
+      .isEqualTo(
+        "https://custom.example.com/v1/projects/sql-test-project/locations/US-Central1/services/" +
+          "My-Service/postgrest"
+      )
   }
 
   @Test
@@ -246,7 +267,7 @@ class FirebaseSqlTest {
   }
 
   @Test
-  fun theCachedInstanceKeepsItsConfigAndItsHeaders() =
+  fun theCachedInstanceKeepsItsHeaders() =
     runBlocking<Unit> {
       // The headers are not part of the config, so a later call with an equal config gets the
       // instance with the headers that were set on it.
@@ -259,7 +280,6 @@ class FirebaseSqlTest {
         cached.from("t").select().execute()
 
         assertThat(cached).isSameInstanceAs(instance)
-        assertThat(cached.config).isSameInstanceAs(first)
         assertThat(server.takeRequestOrFail().getHeader("X-Custom")).isEqualTo("1")
       }
     }
@@ -991,7 +1011,7 @@ class FirebaseSqlTest {
 
     val fsql = component.get(config)
 
-    assertThat(fsql.config.schemaName).isEqualTo(" ")
+    assertThat(fsql.schemaName).isEqualTo(" ")
     assertThat(serviceUrlOf(config, PROJECT).pathSegments)
       .containsAtLeast(" us-central1", "my service ")
       .inOrder()
