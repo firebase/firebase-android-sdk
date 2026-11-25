@@ -79,7 +79,10 @@ public class HostInfo {
       }
     }
     if (optLastSessionId != null) {
-      URI url = tryGetConnectionUrl(connectionHost, optLastSessionId);
+      URI url =
+          isUsableSessionId(optLastSessionId)
+              ? tryGetConnectionUrl(connectionHost, optLastSessionId)
+              : null;
       if (url != null) {
         return url;
       }
@@ -90,13 +93,53 @@ public class HostInfo {
 
   /**
    * Returns whether a host that the server sent can be used to connect to this database, that is,
-   * whether the connection URL for it is a valid URI that names a host. This only checks the
-   * syntax. It doesn't restrict which hosts the server can send.
+   * whether it is a host name or IP address with an optional port, and nothing else. This only
+   * checks the syntax. It doesn't restrict which hosts the server can send.
    */
   boolean isUsableHost(String host) {
     URI url = tryGetConnectionUrl(host, /* optLastSessionId= */ null);
     // Without a host in the URL, the websocket would connect to the loopback address.
-    return url != null && url.getHost() != null;
+    if (url == null || url.getHost() == null) {
+      return false;
+    }
+    int port = url.getPort();
+    if (port != -1 && (port < 1 || port > 65535)) {
+      return false;
+    }
+    // The host must be all of the URL's authority. Otherwise it contained a scheme, user info, a
+    // path, a query, or a fragment, and the websocket would connect to a different host or lose the
+    // /.ws path and its query parameters.
+    String authority = port == -1 ? url.getHost() : url.getHost() + ":" + port;
+    return authority.equals(host);
+  }
+
+  /**
+   * Returns whether a session ID that the server sent can be used as the value of the last session
+   * ID query parameter.
+   *
+   * <p>{@code WebSocketHandshake} writes the percent-decoded query ({@link URI#getQuery()}) into
+   * the HTTP request line, so the session ID must be a valid query value both as it is and after
+   * decoding. Otherwise a percent-encoded space would break the request, and an encoded CR LF
+   * would end the request line. It also must not contain {@code &} or {@code #}, which would add a
+   * query parameter or start a fragment.
+   */
+  private static boolean isUsableSessionId(String sessionId) {
+    String decoded = decodeQueryValue(sessionId);
+    return decoded != null && decoded.indexOf('&') == -1 && decodeQueryValue(decoded) != null;
+  }
+
+  /**
+   * Returns the percent-decoded value, or null if the value isn't a valid URI query without a
+   * fragment.
+   */
+  @Nullable
+  private static String decodeQueryValue(String value) {
+    try {
+      URI uri = URI.create("?" + value);
+      return uri.getRawFragment() == null ? uri.getQuery() : null;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   /** Returns the connection URL, or null if it isn't a valid URI. */

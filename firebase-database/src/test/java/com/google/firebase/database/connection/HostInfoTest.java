@@ -52,12 +52,10 @@ public class HostInfoTest {
           "10.0.2.2:9000",
           "[::1]:9000");
 
-  /**
-   * Hosts that can't be used in a connection URL. With the first ones, the URL isn't a valid URI.
-   * With the last ones, it is, but it doesn't name a host.
-   */
+  /** Hosts that can't be used in a connection URL. */
   private static final List<String> INVALID_HOSTS =
       Arrays.asList(
+          // The URL isn't a valid URI.
           "bad host",
           "a|b.firebaseio.com",
           "a^b.firebaseio.com",
@@ -65,12 +63,42 @@ public class HostInfoTest {
           "a\"b.firebaseio.com",
           "a\\b.firebaseio.com",
           "a%zz.firebaseio.com",
+          // The URL is a valid URI, but it doesn't name a host.
           "",
-          "test.firebaseio.com:port");
+          "test.firebaseio.com:port",
+          // The URL names a host, but the value is more than a host and port.
+          "https://s-usc1b-nss-2073.firebaseio.com",
+          "s-usc1b-nss-2073.firebaseio.com#x",
+          "s-usc1b-nss-2073.firebaseio.com?x=1",
+          "s-usc1b-nss-2073.firebaseio.com/path",
+          "user@s-usc1b-nss-2073.firebaseio.com",
+          // The port is out of range.
+          "s-usc1b-nss-2073.firebaseio.com:70000",
+          "localhost:0");
 
-  /** Session IDs that make the connection URL an invalid URI. */
+  /** Session IDs that can't be used in the connection URL. */
   private static final List<String> INVALID_SESSION_IDS =
-      Arrays.asList("a b", "a|b", "a\"b", "{a}", "%");
+      Arrays.asList(
+          // The URL isn't a valid URI.
+          "a b",
+          "a|b",
+          "a\"b",
+          "{a}",
+          "%",
+          // The session ID would start a fragment or add a query parameter.
+          "a#b",
+          "a&x=1",
+          // The URL is valid, but the decoded query that goes into the HTTP request line isn't.
+          "a%20b",
+          "a%7Cb",
+          "a%25",
+          "a%0D%0AX-Injected:%201",
+          "a%23b",
+          "a%26x=1");
+
+  /** Session IDs that are valid in the URL both as they are and after percent-decoding. */
+  private static final List<String> VALID_SESSION_IDS =
+      Arrays.asList("session-id", "a.b_c~d", "a+b", "a=b", "a%2Bb", "");
 
   private final Logger logger = mock(Logger.class);
   private final LogWrapper logWrapper = new LogWrapper(logger, "HostInfoTest");
@@ -143,6 +171,16 @@ public class HostInfoTest {
   public void getConnectionUrl_withInvalidHost_keepsSessionId() {
     assertThat(getConnectionUrl("bad host", "session-id"))
         .isEqualTo(CONFIGURED_HOST_URL + "&ls=session-id");
+  }
+
+  @Test
+  public void getConnectionUrl_withValidSessionIds_usesThem() {
+    for (String sessionId : VALID_SESSION_IDS) {
+      assertWithMessage("session ID: %s", sessionId)
+          .that(getConnectionUrl(/* cachedHost= */ null, sessionId))
+          .isEqualTo(CONFIGURED_HOST_URL + "&ls=" + sessionId);
+    }
+    assertNoWarnings();
   }
 
   @Test

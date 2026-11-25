@@ -57,7 +57,14 @@ public class ConnectionResetTest {
 
   /** Hosts that can't be used in a connection URL. */
   private static final List<String> INVALID_HOSTS =
-      Arrays.asList("bad host", "a|b.firebaseio.com", "a^b.firebaseio.com", "");
+      Arrays.asList(
+          "bad host",
+          "a|b.firebaseio.com",
+          "a^b.firebaseio.com",
+          "",
+          "https://s-usc1b-nss-2073.firebaseio.com",
+          "s-usc1b-nss-2073.firebaseio.com/path",
+          "s-usc1b-nss-2073.firebaseio.com:70000");
 
   private final Logger logger = mock(Logger.class);
   private MockedConstruction<WebsocketConnection> websockets;
