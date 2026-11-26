@@ -53,6 +53,7 @@ dependencies {
   // resolution works, otherwise it breaks Fireperf Test Apps.
   // See https://github.com/gradle/gradle/issues/12286
   implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
+  implementation("net.ltgt.gradle:gradle-errorprone-plugin:${libs.versions.gradleErrorpronePlugin.get()}")
   implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21")
   implementation(libs.org.json)
   implementation(libs.bundles.maven.resolver)
@@ -116,6 +117,10 @@ gradlePlugin {
     register("testReportPlugin") {
       id = "test-report"
       implementationClass = "com.google.firebase.gradle.plugins.report.TestReportPlugin"
+    }
+    register("errorPronePlugin") {
+      id = "firebase-errorprone"
+      implementationClass = "com.google.firebase.gradle.plugins.ErrorPronePlugin"
     }
   }
 }

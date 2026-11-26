@@ -37,6 +37,9 @@ Plugins are registered in `plugins/build.gradle.kts`:
   - `smoke-tests` (`SmokeTestsPlugin`): Registers `assembleAllForSmokeTests`, which runs
     `publishAllToBuildDir` and writes `build/m2repository/changed-artifacts.json`.
   - `test-report` (`TestReportPlugin`): Registers `generateTestReport`.
+  - `firebase-errorprone` (`ErrorPronePlugin`): Registers the `withErrorProne` marker task and,
+    when `withErrorProne` is requested on the command line, applies `net.ltgt.errorprone` and
+    configures ErrorProne options on all subprojects.
 - **Utility Plugins**:
   - `firebase-vendor` (`VendorPlugin`): Shades and relocates dependencies declared on the `vendor`
     configuration into the module's namespace during `release` builds using JarJar

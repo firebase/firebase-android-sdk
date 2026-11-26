@@ -15,6 +15,7 @@
 package com.google.firebase.database.connection;
 
 import com.google.firebase.database.logging.LogWrapper;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -143,8 +144,12 @@ class Connection implements WebsocketConnection.Delegate {
               "Failed to parse server message: missing message type:" + message.toString());
         close();
       }
-    } catch (ClassCastException e) {
-      if (logger.logsDebug()) logger.debug("Failed to parse server message: " + e.toString());
+    } catch (RuntimeException e) {
+      // All handling of a server message, including the persistent connection's, runs
+      // synchronously from here. An unexpected message must not throw into the run loop, which
+      // would crash the app. Close the connection instead, so that the persistent connection
+      // reconnects with its usual backoff.
+      logger.warn("Failed to process server message, closing the connection", e);
       close();
     }
   }
@@ -190,8 +195,8 @@ class Connection implements WebsocketConnection.Delegate {
         if (logger.logsDebug()) logger.debug("Got invalid control message: " + data.toString());
         close();
       }
-    } catch (ClassCastException e) {
-      if (logger.logsDebug()) logger.debug("Failed to parse control message: " + e.toString());
+    } catch (RuntimeException e) {
+      logger.warn("Failed to process control message, closing the connection", e);
       close();
     }
   }
@@ -203,15 +208,37 @@ class Connection implements WebsocketConnection.Delegate {
   }
 
   private void onHandshake(Map<String, Object> handshake) {
-    long timestamp = (Long) handshake.get(SERVER_HELLO_TIMESTAMP);
-    String host = (String) handshake.get(SERVER_HELLO_HOST);
+    if (handshake == null) {
+      // Every field of the handshake is optional for the client, so treat a missing payload like
+      // an empty one.
+      handshake = Collections.emptyMap();
+    }
+    long timestamp = getServerTimestamp(handshake);
+    Object hostObj = handshake.get(SERVER_HELLO_HOST);
+    String host = hostObj instanceof String ? (String) hostObj : null;
     delegate.onCacheHost(host);
-    String sessionId = (String) handshake.get(SERVER_HELLO_SESSION_ID);
+    Object sessionIdObj = handshake.get(SERVER_HELLO_SESSION_ID);
+    String sessionId = sessionIdObj instanceof String ? (String) sessionIdObj : null;
 
     if (state == State.REALTIME_CONNECTING) {
       conn.start();
       onConnectionReady(timestamp, sessionId);
     }
+  }
+
+  /**
+   * Returns the server time from the handshake, which the client uses to compute the offset between
+   * the server clock and the local clock. If the server did not send a usable timestamp, this
+   * returns the local time instead, so that the client assumes no offset and the connection still
+   * works.
+   */
+  private long getServerTimestamp(Map<String, Object> handshake) {
+    Object timestamp = handshake.get(SERVER_HELLO_TIMESTAMP);
+    if (timestamp instanceof Number) {
+      return ((Number) timestamp).longValue();
+    }
+    logger.warn("Server handshake did not include a valid timestamp, using the local time");
+    return System.currentTimeMillis();
   }
 
   private void onConnectionReady(long timestamp, String sessionId) {
