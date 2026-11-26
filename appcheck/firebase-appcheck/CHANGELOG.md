@@ -3,6 +3,13 @@
 - [fixed] Fixed a crash on every app launch after a custom `AppCheckProvider`
   returned a token whose `iat` or `exp` claim was not a 32-bit integer, for
   example a token that expires after 2038-01-19. (#8762)
+- [fixed] Fixed App Check token requests that never completed when the
+  `AppCheckProvider` didn't return a token, for example after the Play Store
+  updated itself while the app was running. Token requests now fail after 60
+  seconds, so later requests ask the provider again, and Firebase products that
+  wait for an App Check token, such as Auth and Realtime Database, no longer
+  hang. Installing a new `AppCheckProviderFactory` no longer waits for a request
+  to the previous provider. (#8802)
 
 # 20.1.0
 

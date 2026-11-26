@@ -19,6 +19,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -41,10 +42,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   private static final long BUFFER_TIME_MILLIS = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  /**
+   * How long to wait for the installed {@link AppCheckProvider} to return a token. A provider task
+   * that never completes would otherwise block every later token request, and the requests of
+   * products that wait for an App Check token, such as Firebase Auth.
+   */
+  @VisibleForTesting static final long PROVIDER_TIMEOUT_SECONDS = 60;
 
   private final FirebaseApp firebaseApp;
   private final Provider<HeartBeatController> heartbeatControllerProvider;
@@ -55,6 +65,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final Executor uiExecutor;
   private final Executor liteExecutor;
   private final Executor backgroundExecutor;
+  private final ScheduledExecutorService scheduledExecutorService;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
 
@@ -87,6 +98,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.uiExecutor = uiExecutor;
     this.liteExecutor = liteExecutor;
     this.backgroundExecutor = backgroundExecutor;
+    this.scheduledExecutorService = scheduledExecutorService;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
   }
@@ -119,6 +131,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     checkNotNull(factory);
     appCheckProviderFactory = factory;
     appCheckProvider = factory.create(firebaseApp);
+    // Don't make later token requests wait for a request to the previous provider.
+    cachedTokenTask = null;
     tokenRefreshManager.setIsAutoRefreshEnabled(isTokenAutoRefreshEnabled);
   }
 
@@ -138,6 +152,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     appCheckProviderFactory = null;
     appCheckProvider = null;
     cachedToken = null;
+    cachedTokenTask = null;
     storageHelper.clearSharedPrefs();
   }
 
@@ -278,13 +293,12 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     // We explicitly do not call the fetchTokenFromProvider helper method, as that method includes
     // side effects such as notifying listeners, updating the cached token, and scheduling token
     // refresh.
-    return appCheckProvider.getLimitedUseToken();
+    return withProviderTimeout(appCheckProvider.getLimitedUseToken());
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
   Task<AppCheckToken> fetchTokenFromProvider() {
-    return appCheckProvider
-        .getToken()
+    return withProviderTimeout(appCheckProvider.getToken())
         .onSuccessTask(
             uiExecutor,
             token -> {
@@ -299,6 +313,43 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
               }
               return Tasks.forResult(token);
             });
+  }
+
+  /**
+   * Returns a task that completes like {@code providerTask}, or fails with a {@link
+   * FirebaseException} if {@code providerTask} doesn't complete within {@link
+   * #PROVIDER_TIMEOUT_SECONDS}.
+   */
+  private Task<AppCheckToken> withProviderTimeout(@NonNull Task<AppCheckToken> providerTask) {
+    if (providerTask.isComplete()) {
+      return providerTask;
+    }
+    CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+    TaskCompletionSource<AppCheckToken> taskCompletionSource =
+        new TaskCompletionSource<>(cancellationTokenSource.getToken());
+    Runnable failOnTimeout =
+        () ->
+            taskCompletionSource.trySetException(
+                new FirebaseException(
+                    "Timed out after "
+                        + PROVIDER_TIMEOUT_SECONDS
+                        + " seconds waiting for the AppCheckProvider to return a token."));
+    ScheduledFuture<?> timeoutFuture =
+        scheduledExecutorService.schedule(
+            failOnTimeout, PROVIDER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    providerTask.addOnCompleteListener(
+        liteExecutor,
+        task -> {
+          timeoutFuture.cancel(/* mayInterruptIfRunning= */ false);
+          if (task.isCanceled()) {
+            cancellationTokenSource.cancel();
+          } else if (task.isSuccessful()) {
+            taskCompletionSource.trySetResult(task.getResult());
+          } else {
+            taskCompletionSource.trySetException(task.getException());
+          }
+        });
+    return taskCompletionSource.getTask();
   }
 
   @NonNull
