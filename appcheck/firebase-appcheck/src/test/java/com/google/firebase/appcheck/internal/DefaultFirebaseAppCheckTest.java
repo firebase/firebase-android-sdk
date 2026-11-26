@@ -15,11 +15,9 @@
 package com.google.firebase.appcheck.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -48,9 +46,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,8 +81,6 @@ public class DefaultFirebaseAppCheckTest {
   @Mock private AppCheckTokenListener mockAppCheckTokenListener;
   @Mock private AppCheckListener mockAppCheckListener;
   @Mock private HeartBeatController mockHeartBeatController;
-  @Mock private ScheduledExecutorService mockScheduledExecutorService;
-  @Mock private ScheduledFuture<?> mockScheduledFuture;
 
   private DefaultAppCheckToken validDefaultAppCheckToken;
   private DefaultFirebaseAppCheck defaultFirebaseAppCheck;
@@ -596,43 +590,35 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetAppCheckToken_providerNeverCompletes_failsAfterTimeout() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getToken())
         .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
 
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS - 1, SECONDS);
     assertThat(tokenTask.isComplete()).isFalse();
-    assertThat(scheduledTimeouts).hasSize(1);
-    verify(mockScheduledExecutorService)
-        .schedule(
-            any(Runnable.class),
-            eq(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS),
-            eq(TimeUnit.SECONDS));
 
-    scheduledTimeouts.get(0).run();
-    ShadowLooper.idleMainLooper();
+    ShadowLooper.idleMainLooper(1, SECONDS);
 
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.isSuccessful()).isFalse();
     assertThat(tokenTask.getException()).isInstanceOf(FirebaseException.class);
     assertThat(tokenTask.getException()).hasMessageThat().contains("Timed out");
+    assertThat(tokenTask.getException()).hasCauseThat().isInstanceOf(TimeoutException.class);
   }
 
   @Test
   public void testGetToken_providerNeverCompletes_returnsResultWithErrorAfterTimeout() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getToken())
         .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
 
-    Task<AppCheckTokenResult> tokenTask = firebaseAppCheck.getToken(/* forceRefresh= */ false);
+    Task<AppCheckTokenResult> tokenTask =
+        defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
     assertThat(tokenTask.isComplete()).isFalse();
 
-    scheduledTimeouts.get(0).run();
-    ShadowLooper.idleMainLooper();
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
 
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.getResult().getToken()).isNotNull();
@@ -641,19 +627,17 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetAppCheckToken_afterProviderTimeout_requestsNewToken() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getToken())
         .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask())
         .thenReturn(Tasks.forResult(validDefaultAppCheckToken));
     Task<AppCheckToken> hangingTokenTask =
-        firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
-    scheduledTimeouts.get(0).run();
-    ShadowLooper.idleMainLooper();
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
     assertThat(hangingTokenTask.isSuccessful()).isFalse();
 
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
     ShadowLooper.idleMainLooper();
 
     verify(mockAppCheckProvider, times(2)).getToken();
@@ -662,34 +646,31 @@ public class DefaultFirebaseAppCheckTest {
   }
 
   @Test
-  public void testGetAppCheckToken_providerCompletesBeforeTimeout_cancelsTimeout() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+  public void testGetAppCheckToken_providerCompletesBeforeTimeout_returnsToken() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     TaskCompletionSource<AppCheckToken> providerTaskSource = new TaskCompletionSource<>();
     when(mockAppCheckProvider.getToken()).thenReturn(providerTaskSource.getTask());
 
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
     providerTaskSource.setResult(validDefaultAppCheckToken);
     ShadowLooper.idleMainLooper();
 
-    verify(mockScheduledFuture).cancel(/* mayInterruptIfRunning= */ false);
     assertThat(tokenTask.isSuccessful()).isTrue();
     assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
-    // A late timeout doesn't change the result.
-    scheduledTimeouts.get(0).run();
-    assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
+    // The timeout doesn't change the result later.
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
+    assertThat(tokenTask.isSuccessful()).isTrue();
   }
 
   @Test
   public void testGetAppCheckToken_providerFailsBeforeTimeout_failsWithProviderException() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     TaskCompletionSource<AppCheckToken> providerTaskSource = new TaskCompletionSource<>();
     when(mockAppCheckProvider.getToken()).thenReturn(providerTaskSource.getTask());
 
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
     providerTaskSource.setException(new Exception(EXCEPTION_TEXT));
     ShadowLooper.idleMainLooper();
 
@@ -699,16 +680,14 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetLimitedUseAppCheckToken_providerNeverCompletes_failsAfterTimeout() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getLimitedUseToken())
         .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
 
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getLimitedUseAppCheckToken();
+    Task<AppCheckToken> tokenTask = defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
     assertThat(tokenTask.isComplete()).isFalse();
 
-    scheduledTimeouts.get(0).run();
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
 
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.getException()).hasMessageThat().contains("Timed out");
@@ -716,47 +695,25 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testInstallAppCheckProviderFactory_pendingRequest_usesNewProvider() {
-    List<Runnable> scheduledTimeouts = new ArrayList<>();
-    DefaultFirebaseAppCheck firebaseAppCheck = createWithFakeScheduler(scheduledTimeouts);
-    firebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     when(mockAppCheckProvider.getToken())
         .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
     Task<AppCheckToken> hangingTokenTask =
-        firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
     AppCheckProvider newAppCheckProvider = mock(AppCheckProvider.class);
     when(newAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
     AppCheckProviderFactory newAppCheckProviderFactory = mock(AppCheckProviderFactory.class);
     when(newAppCheckProviderFactory.create(any())).thenReturn(newAppCheckProvider);
 
-    firebaseAppCheck.installAppCheckProviderFactory(newAppCheckProviderFactory);
-    Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(newAppCheckProviderFactory);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
     ShadowLooper.idleMainLooper();
 
     assertThat(hangingTokenTask.isComplete()).isFalse();
     verify(newAppCheckProvider).getToken();
     assertThat(tokenTask.isSuccessful()).isTrue();
     assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
-  }
-
-  /**
-   * Creates a {@link DefaultFirebaseAppCheck} whose scheduled executor doesn't run tasks, but adds
-   * them to {@code scheduledTasks} for the test to run.
-   */
-  private DefaultFirebaseAppCheck createWithFakeScheduler(List<Runnable> scheduledTasks) {
-    doAnswer(
-            invocation -> {
-              scheduledTasks.add(invocation.getArgument(0));
-              return mockScheduledFuture;
-            })
-        .when(mockScheduledExecutorService)
-        .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
-    return new DefaultFirebaseAppCheck(
-        mockFirebaseApp,
-        () -> mockHeartBeatController,
-        TestOnlyExecutors.ui(),
-        /* liteExecutor= */ MoreExecutors.directExecutor(),
-        /* backgroundExecutor= */ MoreExecutors.directExecutor(),
-        mockScheduledExecutorService);
   }
 
   private static String constructFakeRawToken(long iat, long exp) throws Exception {
