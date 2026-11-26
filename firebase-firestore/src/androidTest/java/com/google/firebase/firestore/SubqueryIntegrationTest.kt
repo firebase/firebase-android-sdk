@@ -895,4 +895,20 @@ class SubqueryIntegrationTest {
         "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
       )
   }
+
+  @Test
+  fun testUnionWithSubqueryExecutionThrows() {
+    val exception =
+      org.junit.Assert.assertThrows(RuntimeException::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .collection(collection.path)
+            .union(PipelineSource.subcollection("subcollection"))
+            .execute()
+        )
+      }
+
+    assertThat(exception.cause).isNotNull()
+  }
 }
