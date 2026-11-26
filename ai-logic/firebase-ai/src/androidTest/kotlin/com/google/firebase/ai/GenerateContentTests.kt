@@ -29,7 +29,9 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.SpeakerVoiceConfig
 import com.google.firebase.ai.type.SpeechConfig
+import com.google.firebase.ai.type.SpeechMetadata
 import com.google.firebase.ai.type.Voice
+import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.imageConfig
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -191,15 +193,20 @@ class GenerateContentTests {
                 SpeakerVoiceConfig("Speaker2", Voice("Charon")),
                 SpeakerVoiceConfig("Speaker3", Voice("Aoede"))
               )
-            ),
-          languageCode = "en-US"
+            )
         )
     }
-    val models = AIModels.getGenerativeModels(modelName = ttsModelName, config = config)
+    val models =
+      AIModels.getGenerativeModels(modelName = "gemini-3.8-flash-lite-tts", config = config)
+    val prompt = content {
+      text("Hello Speaker2!", SpeechMetadata(speaker = "Speaker1"))
+      text("Hello Speaker3!", SpeechMetadata(speaker = "Speaker2"))
+      text("Hello everyone!", SpeechMetadata(speaker = "Speaker3"))
+    }
     runBlocking {
       for (model in models) {
         try {
-          model.generateContent("Hello")
+          model.generateContent(prompt)
           org.junit.Assert.fail(
             "Expected an exception from the backend for invalid multi-speaker list size."
           )
