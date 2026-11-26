@@ -98,9 +98,9 @@ import kotlinx.serialization.serializer
  * val products = sql.from("products").select().execute().decodeList<Product>()
  * ```
  *
- * When the headers can differ between the calls that get the instance, check [isMutable] before
- * [setHeaders]: once the instance is in use, [setHeaders] throws a [FirebaseSqlMutationException]
- * for other headers.
+ * Set the headers where the app creates the instance, before it shares the instance: once the
+ * instance is in use, [setHeaders] accepts only the headers that it already has, and throws a
+ * [FirebaseSqlMutationException] for other headers.
  */
 @SubclassOptInRequired(InternalForInheritanceFirebaseApi::class)
 public interface FirebaseSql {
@@ -132,33 +132,10 @@ public interface FirebaseSql {
   public val restUrl: String
 
   /**
-   * Whether the setters of this instance, such as [setHeaders], can still change its settings.
-   *
-   * It is `true` for a new instance, and becomes `false` on the first call of [from], [rpc],
-   * [terminate], or [suspendingTerminate]: from then on, the requests of the instance use its
-   * settings, or the instance is terminated. It never becomes `true` again. A call of [from] or
-   * [rpc] that throws because of its arguments, such as `from("")`, does not count.
-   *
-   * [getInstance] returns the same instance for equal configs, so another part of the app can have
-   * used it already, with its own settings. When a setting can differ between the calls that get
-   * the instance, check this property before its setter, which throws a
-   * [FirebaseSqlMutationException] for another value once the instance is in use. A setter called
-   * with the current value never throws, so it needs no check.
-   *
-   * **Example: set the headers unless the instance is already in use**
-   * ```kotlin
-   * val sql = Firebase.sql(ServiceConfig(serviceId = "my-service", location = "us-central1"))
-   * if (sql.isMutable) {
-   *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
-   * }
-   * ```
-   */
-  public val isMutable: Boolean
-
-  /**
    * Sets the custom headers that every request of this instance sends. Call it before the first
    * request: the first call of [from], [rpc], [terminate], or [suspendingTerminate] freezes the
-   * settings of the instance, and [isMutable] becomes `false`.
+   * settings of the instance. A call of [from] or [rpc] that throws because of its arguments, such
+   * as `from("")`, does not count.
    *
    * Each call replaces the headers of the earlier calls, and an empty map removes them. The map is
    * copied, so later changes to it have no effect. Header names are compared ignoring case. A
@@ -168,18 +145,21 @@ public interface FirebaseSql {
    * request, which the SDK computes, for example for a count, or which `setHeader()` sets, so that
    * the preferences of the request win.
    *
-   * Once [isMutable] is `false`, a call with headers equal to the current headers has no effect, so
-   * code that runs again, such as `onCreate()` after a rotation, can set the same headers safely.
-   * Headers are equal when they have the same names, ignoring case, and the same values, ignoring
-   * the whitespace at their start and end. A call with other headers throws a
+   * Once the settings are frozen, a call with headers equal to the current headers has no effect,
+   * so code that runs again, such as `onCreate()` after a rotation, can set the same headers
+   * safely. Headers are equal when they have the same names, ignoring case, and the same values,
+   * ignoring the whitespace at their start and end. A call with other headers throws a
    * [FirebaseSqlMutationException]. To send other headers, set a header for one request with
    * `setHeader()`, or terminate this instance and set the headers on the new instance that
    * [getInstance] returns.
    *
-   * It can be called from any thread. When another thread calls [from] or [rpc] at the same time,
-   * the headers change either before the instance uses them, or not at all: [setHeaders] then
-   * throws for other headers, even right after [isMutable] returned `true`. The headers never
-   * change once the instance is in use.
+   * It can be called from any thread. It checks whether the settings are frozen and changes the
+   * headers in one step, so when another thread calls [from] or [rpc] at the same time, the headers
+   * change either before the instance uses them, or not at all, and [setHeaders] then throws for
+   * other headers. The headers never change once the instance is in use. There is no separate
+   * check, because a check before the call could be out of date by the time of the call: when
+   * another part of the app can already use this instance with other headers, catch the
+   * [FirebaseSqlMutationException].
    *
    * **Example: send a custom header with every request**
    * ```kotlin
@@ -190,6 +170,15 @@ public interface FirebaseSql {
    * val products = sql.from("products").select().execute().decodeList<Product>()
    * ```
    *
+   * **Example: set the headers unless another part of the app uses the instance with others**
+   * ```kotlin
+   * try {
+   *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+   * } catch (e: FirebaseSqlMutationException) {
+   *   Log.w("Products", "The instance is already in use with other headers", e)
+   * }
+   * ```
+   *
    * @param headers The custom headers, by name. `Authorization`, the headers that the SDK sets
    * itself, and the headers that Firebase reserves are not allowed, in any case: the tokens
    * (`x-firebase-auth-token` and `X-Firebase-AppCheck`), the schema (`Accept-Profile` and
@@ -198,13 +187,14 @@ public interface FirebaseSql {
    * `x-goog-request-params`), and the heartbeat headers (`x-firebase-client` and
    * `x-firebase-client-log-type`). Choose the schema with [ServiceConfig.schemaName].
    * @throws ReservedHeaderException If [headers] has a header that the SDK reserves, whether or not
-   * this instance is mutable. It is an `IllegalArgumentException`.
+   * the settings are frozen. It is an `IllegalArgumentException`.
    * @throws IllegalArgumentException If [headers] has a name or a value that HTTP does not allow,
-   * whether or not this instance is mutable: an empty name, a name with a space or a character
+   * whether or not the settings are frozen: an empty name, a name with a space or a character
    * outside visible ASCII, or a value with a line break or a character outside ASCII, such as an
    * accented letter.
-   * @throws FirebaseSqlMutationException If [isMutable] is `false`, and [headers] are not equal to
-   * the current headers. It is an `IllegalStateException`.
+   * @throws FirebaseSqlMutationException If the settings are frozen, after the first call of [from]
+   * , [rpc], [terminate], or [suspendingTerminate], and [headers] are not equal to the current
+   * headers. It is an `IllegalStateException`.
    */
   public fun setHeaders(headers: Map<String, String>)
 
@@ -439,8 +429,8 @@ public interface FirebaseSql {
    * - A request in flight stops, whether it is getting its tokens, waiting for the server, or
    * waiting before a retry. Its `execute()` throws an [IllegalStateException] that says that the
    * instance is terminated.
-   * - [isMutable] is `false`, so [setHeaders] throws a [FirebaseSqlMutationException] for headers
-   * that differ from the headers of this instance.
+   * - [setHeaders] throws a [FirebaseSqlMutationException] for headers that differ from the headers
+   * of this instance.
    * - [getInstance] with the same config creates another instance, which works normally.
    *
    * Calling [terminate] again has no effect. Terminating an instance does not terminate the other

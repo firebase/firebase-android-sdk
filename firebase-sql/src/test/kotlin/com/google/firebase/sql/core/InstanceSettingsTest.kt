@@ -27,8 +27,8 @@ import org.junit.Test
 
 /**
  * Tests that [InstanceSettings] compares and changes a setting in one step, so that the settings of
- * an instance never change once it is in use. `FirebaseSqlTest` tests `setHeaders()` and
- * `isMutable` through the public API.
+ * an instance never change once it is in use. `FirebaseSqlTest` tests `setHeaders()` through the
+ * public API.
  */
 class InstanceSettingsTest {
 

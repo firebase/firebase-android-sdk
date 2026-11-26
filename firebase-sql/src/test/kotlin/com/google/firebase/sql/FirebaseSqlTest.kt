@@ -720,8 +720,7 @@ class FirebaseSqlTest {
     for (headers in invalidHeaders) {
       assertThrows("$headers", IllegalArgumentException::class.java) { fsql.setHeaders(headers) }
     }
-    // Nothing changed: the instance is still mutable, and accepts valid headers.
-    assertThat(fsql.isMutable).isTrue()
+    // Nothing changed: the settings are not frozen, so the instance still accepts other headers.
     fsql.setHeaders(CUSTOM)
   }
 
@@ -737,29 +736,28 @@ class FirebaseSqlTest {
     }
   }
 
-  // --- isMutable, and setHeaders() on an instance in use ---
+  // --- setHeaders() on an instance in use ---
 
   @Test
-  fun aNewInstanceIsMutable() {
+  fun aNewInstanceAcceptsOtherHeaders() {
     val fsql = component.get(config())
 
-    assertThat(fsql.isMutable).isTrue()
-    // Setting the headers does not use the instance.
+    // Setting the headers does not use the instance, so other headers can still replace them.
     fsql.setHeaders(CUSTOM)
-    assertThat(fsql.isMutable).isTrue()
+    fsql.setHeaders(mapOf("X-Other" to "1"))
   }
 
   @Test
-  fun fromMakesTheInstanceImmutable() {
+  fun fromFreezesTheHeaders() {
     val fsql = component.get(config())
 
     fsql.from("products")
 
-    assertThat(fsql.isMutable).isFalse()
+    assertThrows(FirebaseSqlMutationException::class.java) { fsql.setHeaders(CUSTOM) }
   }
 
   @Test
-  fun rpcMakesTheInstanceImmutable() {
+  fun rpcFreezesTheHeaders() {
     // Both rpc() functions: with a map of arguments, and with an object and its serializer.
     val withMap = component.get(config())
     val withObject = component.get(config(schemaName = "inventory"))
@@ -767,21 +765,21 @@ class FirebaseSqlTest {
     withMap.rpc("my_function")
     withObject.rpc("products_under", PriceLimit(maxPrice = 10.0))
 
-    assertThat(withMap.isMutable).isFalse()
-    assertThat(withObject.isMutable).isFalse()
+    assertThrows(FirebaseSqlMutationException::class.java) { withMap.setHeaders(CUSTOM) }
+    assertThrows(FirebaseSqlMutationException::class.java) { withObject.setHeaders(CUSTOM) }
   }
 
   @Test
-  fun aCallWithInvalidArgumentsKeepsTheInstanceMutable() {
+  fun aCallWithInvalidArgumentsDoesNotFreezeTheHeaders() {
     val fsql = component.get(config())
 
     assertThrows(IllegalArgumentException::class.java) { fsql.from("") }
 
-    assertThat(fsql.isMutable).isTrue()
+    fsql.setHeaders(CUSTOM)
   }
 
   @Test
-  fun terminateMakesTheInstanceImmutable() =
+  fun terminateFreezesTheHeaders() =
     runBlocking<Unit> {
       val terminated = component.get(config())
       val suspendingTerminated = component.get(config(schemaName = "inventory"))
@@ -789,20 +787,20 @@ class FirebaseSqlTest {
       terminated.terminate()
       suspendingTerminated.suspendingTerminate()
 
-      assertThat(terminated.isMutable).isFalse()
-      assertThat(suspendingTerminated.isMutable).isFalse()
       assertThrows(FirebaseSqlMutationException::class.java) { terminated.setHeaders(CUSTOM) }
+      assertThrows(FirebaseSqlMutationException::class.java) {
+        suspendingTerminated.setHeaders(CUSTOM)
+      }
     }
 
   @Test
-  fun theInstanceThatReplacesATerminatedInstanceIsMutable() {
+  fun theInstanceThatReplacesATerminatedInstanceAcceptsHeaders() {
     val terminated = component.get(config())
     terminated.from("products")
     terminated.terminate()
 
     val replacement = component.get(config())
 
-    assertThat(replacement.isMutable).isTrue()
     replacement.setHeaders(CUSTOM)
   }
 
@@ -866,7 +864,6 @@ class FirebaseSqlTest {
           assertThat(request.getHeader("X-Custom")).isEqualTo("value")
           assertThat(request.getHeader("X-Other")).isEqualTo("other")
         }
-        assertThat(fsql.isMutable).isFalse()
       }
     }
 

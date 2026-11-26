@@ -50,9 +50,6 @@ internal class FirebaseSqlImpl(
   private val executor: OperationsExecutor
 ) : FirebaseSql {
 
-  override val isMutable: Boolean
-    get() = settings.isMutable
-
   override fun setHeaders(headers: Map<String, String>) {
     // An invalid header is an invalid argument, whether or not the settings can still change.
     // Checking it here keeps OkHttp from rejecting it on every request once the settings freeze.
