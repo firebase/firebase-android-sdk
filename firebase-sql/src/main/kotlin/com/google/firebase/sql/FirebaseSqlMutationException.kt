@@ -19,11 +19,11 @@ package com.google.firebase.sql
 /**
  * The error of a change to a setting of a [FirebaseSql] instance that can no longer change.
  *
- * The setters of an instance, such as [FirebaseSql.setHeaders], throw it when
- * [FirebaseSql.isMutable] is `false`, that is after the first call of [FirebaseSql.from],
- * [FirebaseSql.rpc], [FirebaseSql.terminate], or [FirebaseSql.suspendingTerminate], for a value
- * that is not equal to the current one. They do not throw it for an equal value, so that code that
- * runs again can set the same value. The message names the setter.
+ * The setters of an instance, such as [FirebaseSql.setHeaders], throw it after the first call of
+ * [FirebaseSql.from], [FirebaseSql.rpc], [FirebaseSql.terminate], or
+ * [FirebaseSql.suspendingTerminate], for a value that is not equal to the current one. They do not
+ * throw it for an equal value, so that code that runs again can set the same value. The message
+ * names the setter.
  *
  * It is about the instance, not about the data: the errors of an insert, an update, or a delete are
  * [FirebaseSqlException]s.
@@ -32,11 +32,17 @@ package com.google.firebase.sql
  * does not allow, so code that catches `IllegalStateException` also catches it. Tests can create
  * it, for example to check how an app handles it.
  *
- * **Example: set the headers only on an instance that is not in use yet**
+ * A setter checks whether the instance is in use and changes the setting in one step. To set a
+ * value unless another part of the app already uses the instance with another one, catch this
+ * exception: a check before the call could be out of date by the time of the call.
+ *
+ * **Example: set the headers unless another part of the app uses the instance with others**
  * ```kotlin
  * val sql = Firebase.sql(ServiceConfig(serviceId = "my-service", location = "us-central1"))
- * if (sql.isMutable) {
+ * try {
  *   sql.setHeaders(mapOf("X-Request-Source" to "sync"))
+ * } catch (e: FirebaseSqlMutationException) {
+ *   Log.w("Products", "The instance is already in use with other headers", e)
  * }
  * ```
  *

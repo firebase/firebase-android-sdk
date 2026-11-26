@@ -45,10 +45,6 @@ internal class InstanceSettings {
 
   @GuardedBy("lock") private var headers: Map<String, String> = emptyMap()
 
-  /** `true` until [freeze] is called. */
-  val isMutable: Boolean
-    get() = synchronized(lock) { !frozen }
-
   /** Returns the current custom headers. */
   fun headers(): Map<String, String> = synchronized(lock) { headers }
 

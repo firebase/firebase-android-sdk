@@ -60,7 +60,7 @@ Run these commands from the root of the repository after a change:
   them. After that, a setter accepts only a value equal to the current one, and throws a
   `FirebaseSqlMutationException` for another value. A new setting goes in `InstanceSettings`,
   behind the same lock and frozen flag as the others, with a setter on `FirebaseSql` that follows
-  the same rules, so that `isMutable` covers it.
+  the same rules, so that it freezes with the others.
 - **Kotlin only:** the API is built on coroutines and kotlinx.serialization, and is not designed to
   be called from Java. `execute()` is a suspend function.
 - **Public interfaces:** `FirebaseSql` and the three builders are marked
