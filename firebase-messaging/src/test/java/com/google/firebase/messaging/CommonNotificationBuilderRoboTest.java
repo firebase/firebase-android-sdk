@@ -217,6 +217,22 @@ public class CommonNotificationBuilderRoboTest {
   }
 
   @Test
+  public void createNotificationInfo_withInvalidLightSettings_ColorEmpty() {
+    // An empty color must not crash the app. The notification is built without custom lights.
+    String lightSettingsInput = "[\"\",\"1000\",\"1000\"]";
+
+    Bundle data = Bundles.of(KEY_LIGHT_SETTINGS, lightSettingsInput);
+
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
+
+    android.app.Notification notification = notificationInfo.notificationBuilder.getNotification();
+    assertThat(notification.ledARGB).isEqualTo(0);
+    assertThat(notification.ledOnMS).isEqualTo(0);
+    assertThat(notification.ledOffMS).isEqualTo(0);
+  }
+
+  @Test
   public void createNotificationInfo_withDefaults_allTrue() {
     String defaultSound = "true";
     String defaultVibrateTimings = "true";

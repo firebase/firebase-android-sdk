@@ -3,6 +3,10 @@
 - [fixed] Fixed crashes and silently disabled crash reporting caused by
   out-of-range on-demand upload settings from the server, including settings
   already cached on the device. (#8761)
+- [fixed] Avoid overwriting the app's `ActivityManager.setProcessStateSummary` value when recording
+  an OOM issue on API levels 37+ [#8846]
+- [fixed] Aligned heap dump uploads on API levels 37+ with the Crashlytics automatic data collection
+  setting, including when it is enabled during the app run [#8862]
 
 # 21.1.0
 
