@@ -1790,6 +1790,174 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void
+      realtime_exhaustedRetriesDuringActiveBackoff_propagatesErrorImmediatelyWithoutScheduling()
+          throws Exception {
+    MockClock mockClock = new MockClock(1_000L);
+    Date backoffEndTime = new Date(61_000L);
+    realtimeSharedPrefsClient.setRealtimeBackoffMetadata(8, backoffEndTime);
+    FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService(mockClock);
+    ConfigUpdateListener errorListener =
+        new ConfigUpdateListener() {
+          @Override
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
+
+          @Override
+          public void onError(@NonNull FirebaseRemoteConfigException error) {
+            mockStreamErrorEventListener.onError(error);
+          }
+        };
+    ConfigRealtimeHttpClient client =
+        spy(
+            new ConfigRealtimeHttpClient(
+                FirebaseApp.getInstance(),
+                mockFirebaseInstallations,
+                mockFetchHandler,
+                mockActivatedCache,
+                ApplicationProvider.getApplicationContext(),
+                "firebase",
+                ImmutableSet.of(errorListener),
+                realtimeSharedPrefsClient,
+                fakeExecutor,
+                mockClock));
+    doReturn(Tasks.forException(new IOException("offline")))
+        .when(client)
+        .createRealtimeConnection();
+    doNothing()
+        .when(client)
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
+
+    // Exhaust the single remaining retry after the initial backoff ends.
+    client.startHttpConnection();
+    mockClock.advance(60_000L);
+    fakeExecutor.runDueTasks();
+
+    verify(client, times(1)).createRealtimeConnection();
+    verify(mockStreamErrorEventListener, times(1))
+        .onError(any(FirebaseRemoteConfigClientException.class));
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(0);
+    assertThat(client.getBackoffEndTime().after(new Date(mockClock.currentTimeMillis()))).isTrue();
+
+    // With retries exhausted and a new active backoff persisted, a subsequent start should
+    // propagate the error immediately instead of scheduling a doomed deferred task.
+    client.startHttpConnection();
+
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(0);
+    verify(client, times(1)).createRealtimeConnection();
+    verify(mockStreamErrorEventListener, times(2))
+        .onError(any(FirebaseRemoteConfigClientException.class));
+  }
+
+  @Test
+  public void realtime_beginStreamDuringActiveBackoff_deferredTaskConnectsWhenBackoffEnds()
+      throws Exception {
+    MockClock mockClock = new MockClock(1_000L);
+    Date backoffEndTime = new Date(61_000L);
+    realtimeSharedPrefsClient.setRealtimeBackoffMetadata(8, backoffEndTime);
+    FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService(mockClock);
+    ConfigUpdateListener errorListener =
+        new ConfigUpdateListener() {
+          @Override
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
+
+          @Override
+          public void onError(@NonNull FirebaseRemoteConfigException error) {
+            mockStreamErrorEventListener.onError(error);
+          }
+        };
+    ConfigRealtimeHttpClient client =
+        spy(
+            new ConfigRealtimeHttpClient(
+                FirebaseApp.getInstance(),
+                mockFirebaseInstallations,
+                mockFetchHandler,
+                mockActivatedCache,
+                ApplicationProvider.getApplicationContext(),
+                "firebase",
+                ImmutableSet.of(errorListener),
+                realtimeSharedPrefsClient,
+                fakeExecutor,
+                mockClock));
+    doReturn(Tasks.forResult(mockHttpURLConnection)).when(client).createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(client).startAutoFetch(any());
+    doAnswer(
+            invocation -> {
+              // Concurrent startHttpConnection while stream is active should be a no-op.
+              client.startHttpConnection();
+              client.setIsInBackground(true);
+              return null;
+            })
+        .when(mockConfigAutoFetch)
+        .listenForNotifications();
+    doNothing()
+        .when(client)
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+
+    client.beginRealtimeHttpStream();
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(1);
+    verify(client, never()).createRealtimeConnection();
+
+    mockClock.advance(60_000L);
+    fakeExecutor.runDueTasks();
+
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(0);
+    verify(client, times(1)).createRealtimeConnection();
+    verify(mockConfigAutoFetch, times(1)).listenForNotifications();
+    verify(mockStreamErrorEventListener, never()).onError(any());
+  }
+
+  @Test
+  public void realtime_scheduledStreamSkippedInBackground_allowsSubsequentForegroundStart()
+      throws Exception {
+    MockClock mockClock = new MockClock(1_000L);
+    FakeScheduledExecutorService fakeExecutor = new FakeScheduledExecutorService(mockClock);
+    ConfigRealtimeHttpClient client =
+        spy(
+            new ConfigRealtimeHttpClient(
+                FirebaseApp.getInstance(),
+                mockFirebaseInstallations,
+                mockFetchHandler,
+                mockActivatedCache,
+                ApplicationProvider.getApplicationContext(),
+                "firebase",
+                ImmutableSet.of(generateEmptyRealtimeListener()),
+                realtimeSharedPrefsClient,
+                fakeExecutor,
+                mockClock));
+    doReturn(Tasks.forResult(mockHttpURLConnection)).when(client).createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(client).startAutoFetch(any());
+    doAnswer(
+            invocation -> {
+              client.setIsInBackground(true);
+              return null;
+            })
+        .when(mockConfigAutoFetch)
+        .listenForNotifications();
+    doNothing()
+        .when(client)
+        .closeRealtimeHttpConnection(any(InputStream.class), any(InputStream.class));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+
+    // Schedule a connection, move to background before it runs, and verify it clears
+    // isConnectionScheduled without blocking a later foreground start.
+    client.startHttpConnection();
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(1);
+    client.setIsInBackground(true);
+    fakeExecutor.runDueTasks();
+
+    verify(client, never()).createRealtimeConnection();
+    assertThat(fakeExecutor.pendingTaskCount()).isEqualTo(0);
+
+    client.setIsInBackground(false);
+    client.startHttpConnection();
+    fakeExecutor.runDueTasks();
+
+    verify(client, times(1)).createRealtimeConnection();
+    verify(mockConfigAutoFetch, times(1)).listenForNotifications();
+  }
+
+  @Test
   public void realtime_stream_listen_and_failsafe_enabled() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream())

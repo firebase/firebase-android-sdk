@@ -392,12 +392,14 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    Date currentTime = new Date(clock.currentTimeMillis());
-    Date backoffEndTime = sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime();
-    if (currentTime.before(backoffEndTime)) {
-      scheduleDeferredStreamLocked(
-          backoffEndTime.getTime() - currentTime.getTime(), /* useRetryBudget= */ true);
-      return;
+    if (httpRetriesRemaining > 0) {
+      Date currentTime = new Date(clock.currentTimeMillis());
+      Date backoffEndTime = sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime();
+      if (currentTime.before(backoffEndTime)) {
+        scheduleDeferredStreamLocked(
+            backoffEndTime.getTime() - currentTime.getTime(), /* useRetryBudget= */ true);
+        return;
+      }
     }
 
     makeRealtimeHttpConnection(/* retryMilliseconds= */ 0);
@@ -442,10 +444,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private void onScheduledConnection() {
-    synchronized (this) {
-      isConnectionScheduled = false;
-    }
-    beginRealtimeHttpStream();
+    beginScheduledRealtimeHttpStream();
   }
 
   private synchronized void deferStreamUntilBackoffEnds(long delayMillis) {
@@ -478,11 +477,18 @@ public class ConfigRealtimeHttpClient {
         startHttpConnection();
       }
     } else {
-      synchronized (this) {
-        isConnectionScheduled = false;
-      }
-      beginRealtimeHttpStream();
+      beginScheduledRealtimeHttpStream();
     }
+  }
+
+  private void beginScheduledRealtimeHttpStream() {
+    synchronized (this) {
+      isConnectionScheduled = false;
+      if (!checkAndSetHttpConnectionFlagIfNotRunning()) {
+        return;
+      }
+    }
+    openRealtimeHttpStream();
   }
 
   public void setIsInBackground(boolean isInBackground) {
@@ -595,12 +601,15 @@ public class ConfigRealtimeHttpClient {
    * <p>If the connection is successful, this method will block on its thread while it reads the
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
-  @SuppressLint({"VisibleForTests", "DefaultLocale"})
   public void beginRealtimeHttpStream() {
     if (!checkAndSetHttpConnectionFlagIfNotRunning()) {
       return;
     }
+    openRealtimeHttpStream();
+  }
 
+  @SuppressLint({"VisibleForTests", "DefaultLocale"})
+  private void openRealtimeHttpStream() {
     ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
         sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
