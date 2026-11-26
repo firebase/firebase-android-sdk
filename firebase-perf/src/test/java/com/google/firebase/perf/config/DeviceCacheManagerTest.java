@@ -26,6 +26,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.Constants;
 import com.google.testing.timing.FakeScheduledExecutorService;
+import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -348,5 +350,170 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
     deviceCacheManager.setContext(appContext);
     fakeScheduledExecutorService.runAll();
     assertThat(deviceCacheManager.setValue(null, 10.0)).isFalse();
+  }
+
+  private static final class EditCountingSharedPreferences implements SharedPreferences {
+    private final SharedPreferences delegate;
+    int editCalls;
+
+    EditCountingSharedPreferences(SharedPreferences delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public Map<String, ?> getAll() {
+      return delegate.getAll();
+    }
+
+    @Override
+    public String getString(String key, String defValue) {
+      return delegate.getString(key, defValue);
+    }
+
+    @Override
+    public Set<String> getStringSet(String key, Set<String> defValues) {
+      return delegate.getStringSet(key, defValues);
+    }
+
+    @Override
+    public int getInt(String key, int defValue) {
+      return delegate.getInt(key, defValue);
+    }
+
+    @Override
+    public long getLong(String key, long defValue) {
+      return delegate.getLong(key, defValue);
+    }
+
+    @Override
+    public float getFloat(String key, float defValue) {
+      return delegate.getFloat(key, defValue);
+    }
+
+    @Override
+    public boolean getBoolean(String key, boolean defValue) {
+      return delegate.getBoolean(key, defValue);
+    }
+
+    @Override
+    public boolean contains(String key) {
+      return delegate.contains(key);
+    }
+
+    @Override
+    public Editor edit() {
+      editCalls++;
+      return delegate.edit();
+    }
+
+    @Override
+    public void registerOnSharedPreferenceChangeListener(
+        OnSharedPreferenceChangeListener listener) {
+      delegate.registerOnSharedPreferenceChangeListener(listener);
+    }
+
+    @Override
+    public void unregisterOnSharedPreferenceChangeListener(
+        OnSharedPreferenceChangeListener listener) {
+      delegate.unregisterOnSharedPreferenceChangeListener(listener);
+    }
+  }
+
+  private EditCountingSharedPreferences setUpWithEditCountingSharedPreferences() {
+    EditCountingSharedPreferences trackingPrefs =
+        new EditCountingSharedPreferences(
+            appContext.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE));
+    Context trackingContext =
+        new ContextWrapper(appContext) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            return trackingPrefs;
+          }
+        };
+    deviceCacheManager.setContext(trackingContext);
+    fakeScheduledExecutorService.runAll();
+    return trackingPrefs;
+  }
+
+  @Test
+  public void setValueBoolean_sameValue_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+    assertThat(deviceCacheManager.setValue("some_key", true)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", true)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", false)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(2);
+    assertThat(deviceCacheManager.getBoolean("some_key").get()).isFalse();
+  }
+
+  @Test
+  public void setValueString_sameValue_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+    assertThat(deviceCacheManager.setValue("some_key", "sameValue")).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", "sameValue")).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", "newValue")).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(2);
+    assertThat(deviceCacheManager.getString("some_key").get()).isEqualTo("newValue");
+  }
+
+  @Test
+  public void setValueString_nullWhenKeyAbsent_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+
+    assertThat(deviceCacheManager.setValue("missing_key", null)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(0);
+  }
+
+  @Test
+  public void setValueDouble_sameValue_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+    assertThat(deviceCacheManager.setValue("some_key", 0.5)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", 0.5)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", 0.25)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(2);
+    assertThat(deviceCacheManager.getDouble("some_key").get()).isEqualTo(0.25);
+  }
+
+  @Test
+  public void setValueDouble_wasSetAsLegacyFloat_overwritesWithLong() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+    prefs.delegate.edit().putFloat("some_key", 0.5f).apply();
+
+    assertThat(deviceCacheManager.setValue("some_key", 0.5)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+    assertThat(prefs.getLong("some_key", 0L)).isEqualTo(Double.doubleToRawLongBits(0.5));
+  }
+
+  @Test
+  public void setValueLong_sameValue_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+    assertThat(deviceCacheManager.setValue("some_key", 42L)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", 42L)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(1);
+
+    assertThat(deviceCacheManager.setValue("some_key", 99L)).isTrue();
+    assertThat(prefs.editCalls).isEqualTo(2);
+    assertThat(deviceCacheManager.getLong("some_key").get()).isEqualTo(99L);
+  }
+
+  @Test
+  public void clear_keyAbsent_doesNotEditSharedPreferences() {
+    EditCountingSharedPreferences prefs = setUpWithEditCountingSharedPreferences();
+
+    deviceCacheManager.clear("missing_key");
+    assertThat(prefs.editCalls).isEqualTo(0);
   }
 }

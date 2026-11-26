@@ -124,6 +124,9 @@ public class DeviceCacheManager {
       logger.debug("Key is null. Cannot clear nullable key");
       return;
     }
+    if (sharedPref == null || !sharedPref.contains(key)) {
+      return;
+    }
     sharedPref.edit().remove(key).apply();
   }
 
@@ -142,6 +145,15 @@ public class DeviceCacheManager {
       setContext(getFirebaseApplicationContext());
       if (sharedPref == null) {
         return false;
+      }
+    }
+    if (sharedPref.contains(key)) {
+      try {
+        if (sharedPref.getBoolean(key, false) == value) {
+          return true;
+        }
+      } catch (ClassCastException unused) {
+        // Existing entry has a different type; overwrite it below.
       }
     }
     sharedPref.edit().putBoolean(key, value).apply();
@@ -200,10 +212,21 @@ public class DeviceCacheManager {
     }
 
     if (value == null) {
-      sharedPref.edit().remove(key).apply();
+      if (sharedPref.contains(key)) {
+        sharedPref.edit().remove(key).apply();
+      }
       return true;
     }
 
+    if (sharedPref.contains(key)) {
+      try {
+        if (value.equals(sharedPref.getString(key, null))) {
+          return true;
+        }
+      } catch (ClassCastException unused) {
+        // Existing entry has a different type; overwrite it below.
+      }
+    }
     sharedPref.edit().putString(key, value).apply();
     return true;
   }
@@ -268,7 +291,17 @@ public class DeviceCacheManager {
     // SharedPreferences does not allow storing a Double directly. The main way to store it without
     // losing precision is to store the double's bits as a long so it can then be converted back to
     // a double.
-    sharedPref.edit().putLong(key, Double.doubleToRawLongBits(value)).apply();
+    long valueBits = Double.doubleToRawLongBits(value);
+    if (sharedPref.contains(key)) {
+      try {
+        if (sharedPref.getLong(key, 0L) == valueBits) {
+          return true;
+        }
+      } catch (ClassCastException unused) {
+        // Existing entry has a different type (e.g., legacy Float); overwrite it below.
+      }
+    }
+    sharedPref.edit().putLong(key, valueBits).apply();
     return true;
   }
 
@@ -318,6 +351,15 @@ public class DeviceCacheManager {
       setContext(getFirebaseApplicationContext());
       if (sharedPref == null) {
         return false;
+      }
+    }
+    if (sharedPref.contains(key)) {
+      try {
+        if (sharedPref.getLong(key, 0L) == value) {
+          return true;
+        }
+      } catch (ClassCastException unused) {
+        // Existing entry has a different type; overwrite it below.
       }
     }
     sharedPref.edit().putLong(key, value).apply();

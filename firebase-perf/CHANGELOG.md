@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Skipped redundant `SharedPreferences.Editor.apply()` calls in
+  `DeviceCacheManager` when the cached value is unchanged. (#8850)
 - [fixed] Fixed an issue where `NoSuchFieldException` was thrown at runtime in
   apps compiled with R8 or ProGuard optimizations enabled.
   ([#8697](https://github.com/firebase/firebase-android-sdk/pull/8697))
