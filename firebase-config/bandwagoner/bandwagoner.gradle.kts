@@ -1,0 +1,119 @@
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+  id("com.android.application")
+  id("org.jetbrains.kotlin.android")
+  id("copy-google-services")
+}
+
+// Uncomment this line after adding a google-services.json file to the project.
+// apply(plugin = "com.google.gms.google-services")
+
+android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
+  namespace = "com.googletest.firebase.remoteconfig.bandwagoner"
+  compileSdk = compileSdkVersion
+  lint { abortOnError = false }
+  testBuildType = "release"
+
+  defaultConfig {
+    applicationId = "com.googletest.firebase.remoteconfig.bandwagoner"
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
+    versionCode = 1
+    versionName = "1.0"
+    multiDexEnabled = true
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  testOptions { animationsDisabled = true }
+
+  buildTypes {
+    release {
+      isMinifyEnabled = false
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      signingConfig = signingConfigs.getByName("debug")
+    }
+  }
+
+  // Required for lambda expressions.
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+}
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
+apply<FirebaseTestLabPlugin>()
+
+configure<FirebaseTestLabExtension> {
+  device("model=panther,version=33,locale=en,orientation=portrait")
+}
+
+dependencies {
+  "api"(libs.autovalue.annotations)
+
+  // Depend on development artifacts for Remote Config.
+  implementation(project(":firebase-config")) {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  implementation(project(":firebase-installations")) {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  implementation(libs.androidx.annotation)
+  implementation(libs.androidx.appcompat)
+  implementation(libs.androidx.core)
+  implementation(libs.androidx.legacy.support.v4)
+  implementation(libs.androidx.espresso.idling.resource)
+  implementation(libs.playservices.basement)
+  implementation(libs.playservices.tasks)
+  implementation(libs.material)
+  // This is required since a `project` dependency on frc does not expose the APIs of its
+  // "implementation" dependencies. The alternative would be to make common an "api" dep of
+  // remote-config.
+  // Released artifacts don't need these dependencies since they don't use `project` to refer
+  // to Remote Config.
+  implementation(libs.firebase.common)
+  implementation(libs.firebase.components)
+  implementation("com.google.firebase:firebase-installations-interop:17.3.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  // Support Libraries
+  implementation("com.google.guava:guava:28.1-android")
+  implementation(libs.kotlinx.coroutines.core)
+
+  annotationProcessor(libs.autovalue)
+
+  androidTestImplementation(libs.androidx.test.rules)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.androidx.espresso.core)
+  androidTestImplementation(libs.androidx.espresso.idling.resource)
+}
