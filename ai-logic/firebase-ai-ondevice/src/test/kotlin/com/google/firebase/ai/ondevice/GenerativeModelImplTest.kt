@@ -321,18 +321,7 @@ class GenerativeModelImplTest {
     val mlkitModel =
       mockk<MlKitGenerativeModel> {
         coEvery { getBaseModelName() } returns "gemini-3.1-flash-lite"
-        coEvery { generateContent(capture(capturedRequest)) } returns
-          mockk {
-            every { candidates } returns
-              listOf(
-                mockk {
-                  every { text } returns "I am doing great!"
-                  every { finishReason } returns MlKitCandidate.FinishReason.STOP
-                  every { functionCalls } returns emptyList()
-                }
-              )
-            every { thoughtProcess } returns emptyList()
-          }
+        coEvery { generateContent(capture(capturedRequest)) } returns mockk(relaxed = true)
       }
     val model = GenerativeModelImpl(mlkitModel)
 
