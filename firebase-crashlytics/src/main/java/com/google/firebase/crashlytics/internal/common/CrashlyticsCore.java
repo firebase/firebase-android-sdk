@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
@@ -301,17 +302,44 @@ public class CrashlyticsCore {
 
   // region Unsent report management.
 
+  // These run on the caller's thread, so they must not throw when initialization failed and left
+  // controller null. Each reads the field once so that the null check and the call see the same
+  // value.
+
   @NonNull
   public Task<Boolean> checkForUnsentReports() {
+    CrashlyticsController controller = this.controller;
+    if (controller == null) {
+      logInitializationFailed("checkForUnsentReports");
+      return Tasks.forResult(false);
+    }
     return controller.checkForUnsentReports();
   }
 
   public Task<Void> sendUnsentReports() {
+    CrashlyticsController controller = this.controller;
+    if (controller == null) {
+      logInitializationFailed("sendUnsentReports");
+      return Tasks.forResult(null);
+    }
     return controller.sendUnsentReports();
   }
 
   public Task<Void> deleteUnsentReports() {
+    CrashlyticsController controller = this.controller;
+    if (controller == null) {
+      logInitializationFailed("deleteUnsentReports");
+      return Tasks.forResult(null);
+    }
     return controller.deleteUnsentReports();
+  }
+
+  private static void logInitializationFailed(String methodName) {
+    Logger.getLogger()
+        .w(
+            "Crashlytics failed to initialize, so the call to "
+                + methodName
+                + " was ignored. Check the logs for the earlier initialization error.");
   }
 
   // endregion

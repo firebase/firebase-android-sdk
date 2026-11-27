@@ -29,10 +29,20 @@ import org.json.JSONObject;
 public class CachedSettingsIo {
   private static final String SETTINGS_CACHE_FILENAME = "com.crashlytics.settings.json";
 
+  /**
+   * Marker file that exists from the time cached settings are applied until the synchronous part of
+   * initialization completes. If it still exists at the next launch, the cached settings might have
+   * crashed the app during initialization.
+   */
+  private static final String SETTINGS_APPLYING_MARKER_FILENAME =
+      "com.crashlytics.settings.applying";
+
   private final File cachedSettingsFile;
+  private final File applyingMarkerFile;
 
   public CachedSettingsIo(FileStore fileStore) {
     this.cachedSettingsFile = fileStore.getCommonFile(SETTINGS_CACHE_FILENAME);
+    this.applyingMarkerFile = fileStore.getCommonFile(SETTINGS_APPLYING_MARKER_FILENAME);
   }
 
   private File getSettingsFile() {
@@ -93,6 +103,52 @@ public class CachedSettingsIo {
       } finally {
         CommonUtils.closeOrLog(writer, "Failed to close settings writer.");
       }
+    }
+  }
+
+  /** Deletes the cached settings, if there are any. Never throws. */
+  public void deleteCachedSettings() {
+    try {
+      if (cachedSettingsFile.exists() && !cachedSettingsFile.delete()) {
+        Logger.getLogger().w("Failed to delete cached settings.");
+      }
+    } catch (Exception e) {
+      Logger.getLogger().e("Failed to delete cached settings", e);
+    }
+  }
+
+  /**
+   * Creates the marker that shows that cached settings are applied. Never throws: if the marker
+   * can't be created, the cached settings are applied without it.
+   */
+  public void createApplyingMarker() {
+    try {
+      if (!applyingMarkerFile.createNewFile()) {
+        Logger.getLogger().v("Cached settings marker already exists.");
+      }
+    } catch (Exception e) {
+      Logger.getLogger().e("Failed to create cached settings marker", e);
+    }
+  }
+
+  /** Returns whether the marker exists, or {@code false} if that can't be checked. */
+  public boolean isApplyingMarkerPresent() {
+    try {
+      return applyingMarkerFile.exists();
+    } catch (Exception e) {
+      Logger.getLogger().e("Failed to check for cached settings marker", e);
+      return false;
+    }
+  }
+
+  /** Removes the marker, if it exists. Never throws. */
+  public void removeApplyingMarker() {
+    try {
+      if (applyingMarkerFile.exists() && !applyingMarkerFile.delete()) {
+        Logger.getLogger().w("Failed to remove cached settings marker.");
+      }
+    } catch (Exception e) {
+      Logger.getLogger().e("Failed to remove cached settings marker", e);
     }
   }
 }
