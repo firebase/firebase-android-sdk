@@ -1,10 +1,23 @@
 # Unreleased
 
+- [fixed] Fixed crashes and silently disabled crash reporting caused by
+  out-of-range on-demand upload settings from the server, including settings
+  already cached on the device. (#8761)
+- [fixed] Avoid overwriting the app's `ActivityManager.setProcessStateSummary` value when recording
+  an OOM issue on API levels 37+ [#8846]
+- [fixed] Aligned heap dump uploads on API levels 37+ with the Crashlytics automatic data collection
+  setting, including when it is enabled during the app run [#8862]
+
+# 21.1.0
+
 - [feature] Enable heap dump uploads for OOM and Memory Limiter issues on API levels 37+ [#8661]
 - [feature] Prevent heap dump uploads on metered networks [#8712]
 - [fixed] Fixed an issue where cached settings that crashed the app during
   Crashlytics initialization caused a crash on every launch. Crashlytics now
   discards those settings on the next launch and fetches new ones. (#8779)
+- [fixed] Fixed a `NullPointerException` thrown by `checkForUnsentReports()`,
+  `sendUnsentReports()`, and `deleteUnsentReports()` when Crashlytics failed to
+  initialize. (#8757)
 
 # 21.0.1
 

@@ -19,7 +19,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.datatransport.Transport;
@@ -64,8 +63,8 @@ public class DataTransportCrashlyticsReportSenderTest {
   public void testSendReportsSuccessful() throws Exception {
     doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
-    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report1 = createTestReportWithSessionId("sessionId1");
+    final CrashlyticsReportWithSessionId report2 = createTestReportWithSessionId("sessionId2");
 
     final Task<CrashlyticsReportWithSessionId> send1 =
         reportSender.enqueueReport(report1, /* isOnDemand= */ true);
@@ -91,8 +90,8 @@ public class DataTransportCrashlyticsReportSenderTest {
     final Exception ex = new Exception("fail");
     doAnswer(callbackAnswer(ex)).when(mockTransport).schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
-    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report1 = createTestReportWithSessionId("sessionId1");
+    final CrashlyticsReportWithSessionId report2 = createTestReportWithSessionId("sessionId2");
 
     final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
     final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
@@ -119,8 +118,8 @@ public class DataTransportCrashlyticsReportSenderTest {
         .when(mockTransport)
         .schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
-    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report1 = createTestReportWithSessionId("sessionId1");
+    final CrashlyticsReportWithSessionId report2 = createTestReportWithSessionId("sessionId2");
 
     final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
     final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
@@ -147,8 +146,16 @@ public class DataTransportCrashlyticsReportSenderTest {
     };
   }
 
-  private static CrashlyticsReportWithSessionId mockReportWithSessionId() {
-    return CrashlyticsReportWithSessionId.create(
-        mock(CrashlyticsReport.class), "sessionId", new File("fake"));
+  private static CrashlyticsReportWithSessionId createTestReportWithSessionId(String sessionId) {
+    CrashlyticsReport report =
+        CrashlyticsReport.builder()
+            .setSdkVersion("sdkVersion")
+            .setGmpAppId("gmpAppId")
+            .setPlatform(1)
+            .setInstallationUuid("installationId")
+            .setBuildVersion("1")
+            .setDisplayVersion("1.0.0")
+            .build();
+    return CrashlyticsReportWithSessionId.create(report, sessionId, new File("fake"));
   }
 }

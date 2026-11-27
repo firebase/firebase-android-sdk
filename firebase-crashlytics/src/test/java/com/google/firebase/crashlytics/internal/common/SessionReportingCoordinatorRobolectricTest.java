@@ -39,6 +39,7 @@ import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsRep
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,15 +57,12 @@ public class SessionReportingCoordinatorRobolectricTest {
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
   @Mock private IdManager idManager;
-  @Mock private CrashlyticsReport.Session.Event mockEvent;
-  @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
-  @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
-  @Mock private CrashlyticsReport.Session.Event.Application.Builder mockEventAppBuilder;
   @Mock private LogFileManager mockLogFileManager;
   @Mock UserMetadata mockUserMetadata;
 
   @Mock private ResumableUploadMetadataStore store;
 
+  private final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
   private SessionReportingCoordinator reportingCoordinator;
 
   private final CrashlyticsWorkers crashlyticsWorkers =
@@ -84,7 +82,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             idManager,
             crashlyticsWorkers,
             store);
-    mockEventInteractions();
+    when(dataCapture.captureAnrEventData(any(CrashlyticsReport.ApplicationExitInfo.class)))
+        .thenReturn(testEvent);
   }
 
   @Test
@@ -95,7 +94,6 @@ public class SessionReportingCoordinatorRobolectricTest {
     final String sessionId = "testSessionId";
     when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
 
-    mockEventInteractions();
     addAppExitInfo(ApplicationExitInfo.REASON_ANR);
     List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
 
@@ -105,7 +103,7 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     verify(dataCapture)
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(0)));
-    verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
+    verify(reportPersistence).persistEvent(testEvent, sessionId, true);
   }
 
   @Test
@@ -116,7 +114,6 @@ public class SessionReportingCoordinatorRobolectricTest {
     final String sessionId = "testSessionId";
     when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
 
-    mockEventInteractions();
     addAppExitInfo(ApplicationExitInfo.REASON_ANR);
     addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
     List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
@@ -127,7 +124,7 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     verify(dataCapture)
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(1)));
-    verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
+    verify(reportPersistence).persistEvent(testEvent, sessionId, true);
   }
 
   @Test
@@ -176,15 +173,33 @@ public class SessionReportingCoordinatorRobolectricTest {
     assertEquals(stackTrace, SessionReportingCoordinator.convertInputStreamToString(inputStream));
   }
 
-  private void mockEventInteractions() {
-    when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
-    when(mockEventBuilder.build()).thenReturn(mockEvent);
-    when(mockEvent.getApp()).thenReturn(mockEventApp);
-    when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
-    when(dataCapture.captureAnrEventData(any(CrashlyticsReport.ApplicationExitInfo.class)))
-        .thenReturn(mockEvent);
+  private static CrashlyticsReport.Session.Event makeTestEvent() {
+    return CrashlyticsReport.Session.Event.builder()
+        .setType("anr")
+        .setTimestamp(1000L)
+        .setApp(
+            CrashlyticsReport.Session.Event.Application.builder()
+                .setExecution(
+                    CrashlyticsReport.Session.Event.Application.Execution.builder()
+                        .setSignal(
+                            CrashlyticsReport.Session.Event.Application.Execution.Signal.builder()
+                                .setName("0")
+                                .setCode("0")
+                                .setAddress(0)
+                                .build())
+                        .setBinaries(Collections.emptyList())
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            CrashlyticsReport.Session.Event.Device.builder()
+                .setBatteryVelocity(3)
+                .setProximityOn(false)
+                .setOrientation(1)
+                .setRamUsed(10000L)
+                .setDiskUsed(10000L)
+                .build())
+        .build();
   }
 
   private void addAppExitInfo(int reason) {

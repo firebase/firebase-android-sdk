@@ -7,3 +7,6 @@ code_review:
     help: true
     summary: false
     code_review: true
+    include_drafts: false
+ignore_patterns:
+  - "**/api.txt"

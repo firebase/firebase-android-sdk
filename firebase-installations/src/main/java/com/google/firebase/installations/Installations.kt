@@ -18,8 +18,6 @@ package com.google.firebase.installations
 
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */
 val Firebase.installations: FirebaseInstallations
@@ -28,8 +26,3 @@ val Firebase.installations: FirebaseInstallations
 /** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
   FirebaseInstallations.getInstance(app)
-
-/** @suppress */
-class FirebaseInstallationsKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

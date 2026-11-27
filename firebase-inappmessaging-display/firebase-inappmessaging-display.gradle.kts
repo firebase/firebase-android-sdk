@@ -1,0 +1,126 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+  id("firebase-library")
+  id("kotlin-android")
+  id("firebase-vendor")
+}
+
+firebaseLibrary {
+  libraryGroup = "inappmessaging"
+  testLab.enabled = true
+  releaseNotes {
+    name.set("{{inappmessaging}} Display")
+    versionName.set("inappmessaging-display")
+  }
+}
+
+android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
+  namespace = "com.google.firebase.inappmessaging.display"
+  compileSdk = compileSdkVersion
+  defaultConfig {
+    minSdk = minSdkVersion
+    multiDexEnabled = true
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  lint {
+    // com.squareup.picasso:picasso:2.71828 depends on com.android.support:exifinterface so we
+    // disable this lint error since we have no control over that dependency and enabling
+    // jetification in our SDK build will still require developers to use jetification in their
+    // apps.
+    disable += "GradleCompatible"
+    baseline = file("lint-baseline.xml")
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+  sourceSets {
+    getByName("androidTest") { java.srcDir("../firebase-inappmessaging/src/testData") }
+    getByName("test") { java.srcDir("../firebase-inappmessaging/src/testData") }
+  }
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+}
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
+thirdPartyLicenses {
+  add("Apache-2.0", "${rootDir}/third_party/licenses/apache-2.0.txt")
+  add("Dagger", "${rootDir}/third_party/licenses/dagger.txt")
+}
+
+dependencies {
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
+
+  api(project(":firebase-inappmessaging"))
+  api(libs.firebase.common)
+  api(libs.firebase.components)
+
+  implementation(libs.androidx.annotation)
+  implementation(libs.androidx.appcompat)
+  implementation(libs.androidx.browser)
+  implementation(libs.androidx.cardview)
+  implementation(libs.androidx.constraintlayout)
+  implementation(libs.androidx.legacy.support.v4)
+  implementation(libs.glide)
+  implementation(libs.playservices.tasks)
+  implementation(libs.autovalue.annotations)
+  implementation(libs.javax.inject)
+  implementation(libs.kotlin.stdlib)
+
+  annotationProcessor(libs.compiler)
+  annotationProcessor(libs.autovalue)
+  annotationProcessor(libs.auto.value.parcel)
+  annotationProcessor(libs.dagger.compiler)
+
+  testImplementation(libs.androidx.test.core)
+  testImplementation("com.google.firebase:firebase-analytics:17.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  testImplementation("com.google.guava:guava:30.1-android")
+  testImplementation(libs.truth)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+
+  androidTestImplementation(project(":integ-testing")) {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  androidTestImplementation(libs.androidx.annotation)
+  androidTestImplementation(libs.androidx.test.rules)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.google.dexmaker)
+  androidTestImplementation("com.google.firebase:firebase-analytics:17.4.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
+    exclude(group = "com.google.firebase", module = "firebase-installations")
+  }
+  androidTestImplementation(libs.mockito.dexmaker)
+  androidTestImplementation(libs.mockito.core)
+}
