@@ -20,6 +20,7 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.FragmentActivity;
 import com.google.firebase.perf.config.ConfigResolver;
@@ -43,6 +44,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Trace timer implementation to send foreground and background session log. */
@@ -79,6 +81,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private boolean isRegisteredForLifecycleCallbacks = false;
   private boolean isColdStart = true;
+  private volatile @Nullable Executor backgroundExecutor;
 
   public static AppStateMonitor getInstance() {
     if (instance == null) {
@@ -111,6 +114,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     this.screenPerformanceRecordingSupported = screenPerformanceRecordingSupported;
   }
 
+  public void setBackgroundExecutor(@Nullable Executor backgroundExecutor) {
+    this.backgroundExecutor = backgroundExecutor;
+  }
+
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
     // Make sure the callback is registered only once.
     if (isRegisteredForLifecycleCallbacks) {
@@ -120,6 +127,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
       isRegisteredForLifecycleCallbacks = true;
+      if (screenPerformanceRecordingSupported && configResolver.isPerformanceMonitoringEnabled()) {
+        // Start the frame metrics thread off the main thread so that FrameMetricsRecorder.start()
+        // in onActivityStarted never blocks or spawns a thread on the main thread.
+        prewarmFrameMetricsIfConfigured();
+      }
     }
   }
 
@@ -152,9 +164,17 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     tsnsCount.addAndGet(value);
   }
 
+  private void prewarmFrameMetricsIfConfigured() {
+    Executor executor = backgroundExecutor;
+    if (executor != null) {
+      PerfFrameMetricsAggregator.prewarm(executor);
+    }
+  }
+
   // Starts tracking the frame metrics for an activity.
   private void startFrameMonitoring(Activity activity) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
+      prewarmFrameMetricsIfConfigured();
       FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity);
       activityToRecorderMap.put(activity, recorder);
       if (activity instanceof FragmentActivity) {

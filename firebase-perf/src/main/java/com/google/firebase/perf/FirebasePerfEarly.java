@@ -35,7 +35,10 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
+      FirebaseApp app,
+      @Nullable StartupTime startupTime,
+      Executor uiExecutor,
+      Executor backgroundExecutor) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -43,6 +46,7 @@ public class FirebasePerfEarly {
     configResolver.setApplicationContext(context);
 
     AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
+    appStateMonitor.setBackgroundExecutor(backgroundExecutor);
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 

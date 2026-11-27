@@ -46,7 +46,7 @@ public class FrameMetricsRecorder {
       "androidx.core.app.FrameMetricsAggregator";
 
   private final Activity activity;
-  private final FrameMetricsAggregator frameMetricsAggregator;
+  private final PerfFrameMetricsAggregator frameMetricsAggregator;
   private final Map<Fragment, PerfFrameMetrics> fragmentSnapshotMap;
 
   private boolean isRecording = false;
@@ -66,13 +66,13 @@ public class FrameMetricsRecorder {
    * @param activity the activity that the recorder is collecting data from.
    */
   public FrameMetricsRecorder(Activity activity) {
-    this(activity, new FrameMetricsAggregator(), new HashMap<>());
+    this(activity, new PerfFrameMetricsAggregator(), new HashMap<>());
   }
 
   @VisibleForTesting
   FrameMetricsRecorder(
       Activity activity,
-      FrameMetricsAggregator frameMetricsAggregator,
+      PerfFrameMetricsAggregator frameMetricsAggregator,
       Map<Fragment, PerfFrameMetrics> subTraceMap) {
     this.activity = activity;
     this.frameMetricsAggregator = frameMetricsAggregator;

@@ -51,6 +51,9 @@ import com.google.testing.timing.FakeDirectExecutorService;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,6 +94,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+    PerfFrameMetricsAggregator.resetForTesting();
+  }
+
+  @After
+  public void tearDown() {
+    PerfFrameMetricsAggregator.resetForTesting();
   }
 
   @Test
@@ -329,6 +338,45 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // registerActivityLifecycleCallbacks is not invoked again on the application object.
     monitor.registerActivityLifecycleCallbacks(context);
     verify(application, times(1)).registerActivityLifecycleCallbacks(monitor);
+  }
+
+  @Test
+  public void registerActivityLifecycleCallbacks_whenPerfEnabled_prewarmsOnBackgroundExecutor() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AtomicInteger prewarmTasks = new AtomicInteger(0);
+    Executor recordingExecutor = command -> prewarmTasks.incrementAndGet();
+    monitor.setBackgroundExecutor(recordingExecutor);
+
+    Context context = mock(Context.class);
+    Application application = mock(Application.class);
+    when(context.getApplicationContext()).thenReturn(application);
+
+    monitor.registerActivityLifecycleCallbacks(context);
+
+    assertThat(prewarmTasks.get()).isEqualTo(1);
+  }
+
+  @Test
+  public void registerActivityLifecycleCallbacks_whenPerfDisabled_doesNotPrewarmUntilEnabled() {
+    Bundle bundle = new Bundle();
+    bundle.putBoolean("firebase_performance_collection_enabled", false);
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
+
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AtomicInteger prewarmTasks = new AtomicInteger(0);
+    Executor recordingExecutor = command -> prewarmTasks.incrementAndGet();
+    monitor.setBackgroundExecutor(recordingExecutor);
+
+    Context context = mock(Context.class);
+    Application application = mock(Application.class);
+    when(context.getApplicationContext()).thenReturn(application);
+
+    monitor.registerActivityLifecycleCallbacks(context);
+    assertThat(prewarmTasks.get()).isEqualTo(0);
+
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
+    monitor.onActivityStarted(activity1);
+    assertThat(prewarmTasks.get()).isEqualTo(1);
   }
 
   @Test
