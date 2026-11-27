@@ -44,7 +44,15 @@ def main():
   if not os.path.exists(file_folder):
     os.makedirs(file_folder)
 
-  workflow_summary = get_workflow_summary(gh, args)
+  # https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
+  days = args.days
+  current_datetime = datetime.datetime.utcnow()
+  since_datetime = current_datetime - datetime.timedelta(days=days)
+  created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+  logging.info('created:' + created)
+
+  workflow_summary = get_workflow_summary(gh, args.token, args.workflow_name, created, args.event, args.actor, args.branch, args.jobs)
+
   workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
   with open(workflow_summary_file_path, 'w') as f:
     json.dump(workflow_summary, f)
@@ -64,15 +72,7 @@ def main():
   logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
-def get_workflow_summary(gh, args):  
-  token = args.token
-  workflow_name = args.workflow_name
-  # https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
-  days = args.days
-  current_datetime = datetime.datetime.utcnow()
-  since_datetime = current_datetime - datetime.timedelta(days=days)
-  created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
-
+def get_workflow_summary(gh, token, workflow_name, created, event='', actor='', branch='', jobs='all'):  
   workflow_summary = {'workflow_name': workflow_name, 
                     'total_count': 0, 
                     'success_count': 0, 
@@ -84,12 +84,12 @@ def get_workflow_summary(gh, args):
   workflow_page = 0
   per_page = 100 # max 100
   list_workflows_params = {'status': 'completed', 'created': created, 'page': workflow_page, 'per_page': per_page}
-  if args.event:
-    list_workflows_params['event'] = args.event
-  if args.actor:
-    list_workflows_params['actor'] = args.actor
-  if args.branch:
-    list_workflows_params['branch'] = args.branch
+  if event:
+    list_workflows_params['event'] = event
+  if actor:
+    list_workflows_params['actor'] = actor
+  if branch:
+    list_workflows_params['branch'] = branch
 
   while True:
     workflow_page += 1
@@ -117,23 +117,23 @@ def get_workflow_summary(gh, args):
 
   logging.info('START collecting job data by workflow run\n')
   for workflow_run in workflow_summary['workflow_runs']:
-    get_workflow_jobs(gh, args, workflow_run)
+    get_workflow_jobs(gh, token, jobs, workflow_run)
   logging.info('END collecting job data by workflow run\n')
 
   return workflow_summary
 
-def get_workflow_jobs(gh, args, workflow_run):
+def get_workflow_jobs(gh, token, jobs, workflow_run):
   workflow_jobs = workflow_run['jobs']
   job_page = 0
   while True:
     job_page += 1
-    list_jobs_params = {'filter': args.jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
-    jobs = gh.list_jobs(args.token, workflow_run['workflow_id'], list_jobs_params)
+    list_jobs_params = {'filter': jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
+    job_list = gh.list_jobs(token, workflow_run['workflow_id'], list_jobs_params)
 
-    if 'jobs' not in jobs or jobs['total_count'] < job_page * 100:
+    if 'jobs' not in job_list or job_list['total_count'] < job_page * 100:
       break
 
-    for job in jobs['jobs']:
+    for job in job_list['jobs']:
       workflow_jobs['job_runs'].append({'job_id': job['id'], 'job_name': job['name'], 'conclusion': job['conclusion'], 
                                         'created_at': job['created_at'], 'started_at': job['started_at'], 'completed_at': job['completed_at'],
                                         'run_attempt': job['run_attempt'], 'html_url': job['html_url']})
