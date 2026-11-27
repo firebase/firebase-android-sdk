@@ -28,7 +28,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
  *
  * @hide
  */
-internal object ProcessDetailsProvider {
+object ProcessDetailsProvider {
   // TODO(mrober): Merge this with [com.google.firebase.sessions.ProcessDetailsProvider].
 
   /** Gets the details for all of this app's running processes. */
