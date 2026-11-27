@@ -128,7 +128,7 @@ public class Datastore {
       builder.addWrites(serializer.encodeMutation(mutation));
     }
     return channel
-        .runRpc(FirestoreGrpc.getCommitMethod(), builder.build())
+        .runRpc(FirestoreGrpc.getCommitMethod(), builder.build(), /* isTransaction= */ true)
         .continueWith(
             workerQueue.getExecutor(),
             task -> {
@@ -165,6 +165,7 @@ public class Datastore {
     channel.runStreamingResponseRpc(
         FirestoreGrpc.getBatchGetDocumentsMethod(),
         builder.build(),
+        /* isTransaction= */ true,
         new FirestoreChannel.StreamingListener<BatchGetDocumentsResponse>() {
           @Override
           public void onMessage(BatchGetDocumentsResponse message) {
@@ -213,7 +214,10 @@ public class Datastore {
     request.setStructuredAggregationQuery(structuredAggregationQuery);
 
     return channel
-        .runRpc(FirestoreGrpc.getRunAggregationQueryMethod(), request.build())
+        .runRpc(
+            FirestoreGrpc.getRunAggregationQueryMethod(),
+            request.build(),
+            /* isTransaction= */ false)
         .continueWith(
             workerQueue.getExecutor(),
             task -> {
@@ -244,9 +248,11 @@ public class Datastore {
   }
 
   public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    boolean isTransaction = !request.getTransaction().isEmpty() || request.hasNewTransaction();
     channel.runStreamingResponseRpc(
         FirestoreGrpc.getExecutePipelineMethod(),
         request,
+        isTransaction,
         new FirestoreChannel.StreamingListener<ExecutePipelineResponse>() {
 
           private Timestamp executionTime = null;
