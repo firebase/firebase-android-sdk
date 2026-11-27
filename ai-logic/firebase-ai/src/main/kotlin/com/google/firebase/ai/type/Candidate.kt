@@ -94,7 +94,7 @@ internal constructor(
     fun fromInterop(candidate: OnDeviceCandidate, thoughts: List<OnDeviceCandidate> = emptyList()) =
       Candidate(
         content =
-          content {
+          content("model") {
             val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
             nonEmptyThoughts.forEach { thought ->
               part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))
@@ -126,7 +126,7 @@ internal constructor(
     fun fromInteropThought(thoughts: List<OnDeviceCandidate>) =
       Candidate(
         content =
-          content {
+          content("model") {
             val nonEmptyThoughts = thoughts.filter { it.text.isNotEmpty() }
             nonEmptyThoughts.forEach { thought ->
               part(TextPart(text = thought.text, isThought = true, thoughtSignature = null))

@@ -21,6 +21,7 @@ import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
 import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
+import com.google.firebase.ai.ondevice.interop.Content as OnDeviceContent
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
@@ -91,6 +92,7 @@ internal class OnDeviceGenerativeModelProviderTests {
     val response = provider.generateContent(prompt)
 
     response.text shouldBe "generated text"
+    response.candidates.first().content.role shouldBe "model"
     response.inferenceSource shouldBe InferenceSource.ON_DEVICE
   }
 
@@ -117,6 +119,7 @@ internal class OnDeviceGenerativeModelProviderTests {
     val response = provider.generateContentStream(prompt).first()
 
     response.text shouldBe "streamed text"
+    response.candidates.first().content.role shouldBe "model"
     response.inferenceSource shouldBe InferenceSource.ON_DEVICE
   }
 
@@ -140,6 +143,7 @@ internal class OnDeviceGenerativeModelProviderTests {
     val response = provider.generateObject(schema, prompt)
 
     response.response.inferenceSource shouldBe InferenceSource.ON_DEVICE
+    response.response.candidates.first().content.role shouldBe "model"
     response.getObject() shouldBe dummyInstance
   }
 
@@ -199,7 +203,10 @@ internal class OnDeviceGenerativeModelProviderTests {
 
     provider.generateContent(promptWithMultipleParts)
 
-    val parts = capturedRequest.captured.parts
+    val contents = capturedRequest.captured.contents
+    contents shouldHaveSize 1
+    contents[0].role shouldBe OnDeviceContent.Role.USER
+    val parts = contents[0].parts
     parts.size shouldBe 4
     (parts[0] as com.google.firebase.ai.ondevice.interop.TextPart).text shouldBe "hello"
     (parts[1] as com.google.firebase.ai.ondevice.interop.ImagePart).bitmap shouldBe bitmap1
@@ -230,29 +237,196 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateContent flattens parts from multiple prompts for chat history`(): Unit =
+  fun `generateContent preserves roles and turns for multi-turn prompts`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+      )
+
+    val multiPrompt =
+      listOf(
+        Content(role = "user", parts = listOf(TextPart("hello"))),
+        Content(role = "model", parts = listOf(TextPart("hi there"))),
+        Content(role = "user", parts = listOf(TextPart("how are you?")))
+      )
+
+    provider.generateContent(multiPrompt)
+
+    val contents = capturedRequest.captured.contents
+    contents shouldHaveSize 3
+    contents[0].role shouldBe OnDeviceContent.Role.USER
+    contents[0].parts.map { (it as com.google.firebase.ai.ondevice.interop.TextPart).text } shouldBe
+      listOf("hello")
+    contents[1].role shouldBe OnDeviceContent.Role.MODEL
+    contents[1].parts.map { (it as com.google.firebase.ai.ondevice.interop.TextPart).text } shouldBe
+      listOf("hi there")
+    contents[2].role shouldBe OnDeviceContent.Role.USER
+    contents[2].parts.map { (it as com.google.firebase.ai.ondevice.interop.TextPart).text } shouldBe
+      listOf("how are you?")
+  }
+
+  @Test
+  fun `generateContent defaults null role to USER`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+      )
+
+    val promptWithNullRole = listOf(Content(role = null, parts = listOf(TextPart("hello"))))
+
+    provider.generateContent(promptWithNullRole)
+
+    val contents = capturedRequest.captured.contents
+    contents shouldHaveSize 1
+    contents[0].role shouldBe OnDeviceContent.Role.USER
+    (contents[0].parts.single() as com.google.firebase.ai.ondevice.interop.TextPart).text shouldBe
+      "hello"
+  }
+
+  @Test
+  fun `generateContent maps deprecated function role to USER`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
+      )
+
+    val promptWithFunctionRole =
+      listOf(
+        Content(
+          role = "function",
+          parts =
+            listOf(
+              FunctionResponsePart(
+                name = "fetchWeather",
+                response = buildJsonObject { put("condition", "sunny") },
+                id = "call-1"
+              )
+            )
+        )
+      )
+
+    provider.generateContent(promptWithFunctionRole)
+
+    val contents = capturedRequest.captured.contents
+    contents shouldHaveSize 1
+    contents[0].role shouldBe OnDeviceContent.Role.USER
+    val responsePart = contents[0].parts.single() as OnDeviceFunctionResponsePart
+    responsePart.name shouldBe "fetchWeather"
+    responsePart.response shouldBe mapOf("condition" to "sunny")
+    responsePart.id shouldBe "call-1"
+  }
+
+  @Test
+  fun `generateContent throws when prompt has unsupported role`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val promptWithUnsupportedRole =
+      listOf(Content(role = "system", parts = listOf(TextPart("hello"))))
+
+    val exception =
+      shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+        provider.generateContent(promptWithUnsupportedRole)
+      }
+    exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
+  }
+
+  @Test
+  fun `generateContent throws when any content turn in multi-turn prompt has no parts`(): Unit =
     runBlocking {
       coEvery { onDeviceModel.isAvailable() } returns true
-      val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
-      coEvery { onDeviceModel.generateContent(capture(capturedRequest)) } returns
-        OnDeviceGenerateContentResponse(
-          listOf(OnDeviceCandidate("response text", OnDeviceFinishReason.STOP))
-        )
-
-      val multiPrompt =
+      val multiTurnWithEmpty =
         listOf(
           Content(role = "user", parts = listOf(TextPart("hello"))),
-          Content(role = "model", parts = listOf(TextPart("hi there"))),
-          Content(role = "user", parts = listOf(TextPart("how are you?")))
+          Content(role = "model", parts = emptyList())
         )
 
-      provider.generateContent(multiPrompt)
-
-      val parts = capturedRequest.captured.parts
-      parts.size shouldBe 3
-      parts.map { (it as com.google.firebase.ai.ondevice.interop.TextPart).text } shouldBe
-        listOf("hello", "hi there", "how are you?")
+      val exception =
+        shouldThrow<com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException> {
+          provider.generateContent(multiTurnWithEmpty)
+        }
+      exception.cause!!::class shouldBe FirebaseAIOnDeviceInvalidRequestException::class
     }
+
+  @Test
+  fun `countTokens preserves multi-turn contents and roles`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    coEvery { onDeviceModel.countTokens(capture(capturedRequest)) } returns
+      OnDeviceCountTokensResponse(15)
+
+    val multiPrompt =
+      listOf(
+        Content(role = "user", parts = listOf(TextPart("hello"))),
+        Content(role = "model", parts = listOf(TextPart("hi")))
+      )
+
+    val response = provider.countTokens(multiPrompt)
+
+    response.totalTokens shouldBe 15
+    capturedRequest.captured.contents shouldHaveSize 2
+    capturedRequest.captured.contents[0].role shouldBe OnDeviceContent.Role.USER
+    capturedRequest.captured.contents[1].role shouldBe OnDeviceContent.Role.MODEL
+  }
+
+  @Test
+  fun `generateContentStream preserves multi-turn contents and roles`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    every { onDeviceModel.generateContentStream(capture(capturedRequest)) } returns
+      flowOf(
+        OnDeviceGenerateContentResponse(
+          listOf(OnDeviceCandidate("streamed text", OnDeviceFinishReason.STOP))
+        )
+      )
+
+    val multiPrompt =
+      listOf(
+        Content(role = "user", parts = listOf(TextPart("hello"))),
+        Content(role = "model", parts = listOf(TextPart("hi"))),
+        Content(role = "user", parts = listOf(TextPart("next")))
+      )
+
+    provider.generateContentStream(multiPrompt).first()
+
+    capturedRequest.captured.contents shouldHaveSize 3
+    capturedRequest.captured.contents.map { it.role } shouldBe
+      listOf(OnDeviceContent.Role.USER, OnDeviceContent.Role.MODEL, OnDeviceContent.Role.USER)
+  }
+
+  @Test
+  fun `generateObject preserves multi-turn contents and roles`(): Unit = runBlocking {
+    coEvery { onDeviceModel.isAvailable() } returns true
+    val capturedRequest = slot<com.google.firebase.ai.ondevice.interop.GenerateContentRequest>()
+    val dummyInstance = TestMovieReview("Inception", 5)
+    val schema: JsonSchema<TestMovieReview> = mockk {
+      every { clazz } returns TestMovieReview::class
+    }
+    coEvery {
+      onDeviceModel.generateObject(
+        capture(capturedRequest),
+        any<kotlin.reflect.KClass<TestMovieReview>>()
+      )
+    } returns
+      com.google.firebase.ai.ondevice.interop.GenerateObjectResponse(instance = dummyInstance)
+
+    val multiPrompt =
+      listOf(
+        Content(role = "user", parts = listOf(TextPart("Review Inception"))),
+        Content(role = "model", parts = listOf(TextPart("Great movie"))),
+        Content(role = "user", parts = listOf(TextPart("Return JSON")))
+      )
+
+    provider.generateObject(schema, multiPrompt)
+
+    capturedRequest.captured.contents shouldHaveSize 3
+    capturedRequest.captured.contents.map { it.role } shouldBe
+      listOf(OnDeviceContent.Role.USER, OnDeviceContent.Role.MODEL, OnDeviceContent.Role.USER)
+  }
 
   @Test
   fun `generateContent includes systemInstruction when configured`(): Unit = runBlocking {
@@ -394,8 +568,10 @@ internal class OnDeviceGenerativeModelProviderTests {
 
       emissions.size shouldBe 2
       emissions[0].candidates.size shouldBe 1
+      emissions[0].candidates[0].content.role shouldBe "model"
       emissions[0].thoughtSummary shouldBe "thinking 1... thinking 2..."
       emissions[0].text shouldBe null
+      emissions[1].candidates[0].content.role shouldBe "model"
       emissions[1].thoughtSummary shouldBe "done thinking"
       emissions[1].text shouldBe "streamed answer"
     }
@@ -561,18 +737,22 @@ internal class OnDeviceGenerativeModelProviderTests {
 
     val response = functionProvider.generateContent(multiTurnPrompt)
 
-    capturedRequest.captured.parts shouldHaveSize 2
-    val callPart = capturedRequest.captured.parts[0] as OnDeviceFunctionCallPart
+    val contents = capturedRequest.captured.contents
+    contents shouldHaveSize 2
+    contents[0].role shouldBe OnDeviceContent.Role.MODEL
+    val callPart = contents[0].parts.single() as OnDeviceFunctionCallPart
     callPart.name shouldBe "fetchWeather"
     callPart.args shouldBe mapOf("city" to "London")
     callPart.id shouldBe "call-123"
 
-    val responsePart = capturedRequest.captured.parts[1] as OnDeviceFunctionResponsePart
+    contents[1].role shouldBe OnDeviceContent.Role.USER
+    val responsePart = contents[1].parts.single() as OnDeviceFunctionResponsePart
     responsePart.name shouldBe "fetchWeather"
     responsePart.response shouldBe mapOf("condition" to "sunny")
     responsePart.id shouldBe "call-123"
 
     response.text shouldBe "The weather is sunny"
+    response.candidates.first().content.role shouldBe "model"
   }
 
   @Test

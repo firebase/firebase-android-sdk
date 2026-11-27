@@ -19,6 +19,7 @@ package com.google.firebase.ai.generativemodel
 import android.util.Log
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ondevice.interop.Content as OnDeviceContent
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.FunctionCallPart as OnDeviceFunctionCallPart
@@ -157,7 +158,7 @@ internal class OnDeviceGenerativeModelProvider(
     val candidates =
       interopResponse.instances.map {
         Candidate(
-          content = content { text("") },
+          content = content("model") { text("") },
           safetyRatings = emptyList(),
           citationMetadata = null,
           finishReason = FinishReason.STOP,
@@ -272,44 +273,61 @@ internal class OnDeviceGenerativeModelProvider(
         FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
       )
     }
-    val parts =
-      if (prompt.size == 1) {
-        prompt.first().parts
-      } else {
-        Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
-        prompt.flatMap { it.parts }
-      }
-    if (parts.isEmpty()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
-      )
-    }
-    val onDeviceParts =
-      parts.map { part ->
-        when (part) {
-          is TextPart -> OnDeviceTextPart(part.text)
-          is ImagePart -> OnDeviceImagePart(part.image)
-          is FunctionCallPart ->
-            OnDeviceFunctionCallPart(
-              name = part.name,
-              args = part.args.mapValues { it.value.toAny() },
-              id = part.id
-            )
-          is FunctionResponsePart ->
-            OnDeviceFunctionResponsePart(
-              name = part.name,
-              response = part.response.entries.associate { it.key to it.value.toAny() },
-              id = part.id
-            )
-          else ->
-            throw FirebaseAIException.from(
-              FirebaseAIOnDeviceInvalidRequestException(
-                IllegalArgumentException(
-                  "On-device model does not support part type: ${part::class.java.simpleName}"
+    val onDeviceContents =
+      prompt.map { content ->
+        if (content.parts.isEmpty()) {
+          throw FirebaseAIException.from(
+            FirebaseAIOnDeviceInvalidRequestException(IllegalArgumentException("Prompt is empty"))
+          )
+        }
+        val onDeviceRole =
+          when (content.role) {
+            null,
+            "user" -> OnDeviceContent.Role.USER
+            "model" -> OnDeviceContent.Role.MODEL
+            "function" -> {
+              Log.w(
+                TAG,
+                "The 'function' role is deprecated and will be removed in a future release. " +
+                  "Mapping to 'user' role for on-device inference."
+              )
+              OnDeviceContent.Role.USER
+            }
+            else ->
+              throw FirebaseAIException.from(
+                FirebaseAIOnDeviceInvalidRequestException(
+                  IllegalArgumentException("On-device model does not support role: ${content.role}")
                 )
               )
-            )
-        }
+          }
+        val onDeviceParts =
+          content.parts.map { part ->
+            when (part) {
+              is TextPart -> OnDeviceTextPart(part.text)
+              is ImagePart -> OnDeviceImagePart(part.image)
+              is FunctionCallPart ->
+                OnDeviceFunctionCallPart(
+                  name = part.name,
+                  args = part.args.mapValues { it.value.toAny() },
+                  id = part.id
+                )
+              is FunctionResponsePart ->
+                OnDeviceFunctionResponsePart(
+                  name = part.name,
+                  response = part.response.entries.associate { it.key to it.value.toAny() },
+                  id = part.id
+                )
+              else ->
+                throw FirebaseAIException.from(
+                  FirebaseAIOnDeviceInvalidRequestException(
+                    IllegalArgumentException(
+                      "On-device model does not support part type: ${part::class.java.simpleName}"
+                    )
+                  )
+                )
+            }
+          }
+        OnDeviceContent(parts = onDeviceParts, role = onDeviceRole)
       }
     val onDeviceSystemInstruction =
       systemInstruction?.let { instruction ->
@@ -340,7 +358,7 @@ internal class OnDeviceGenerativeModelProvider(
         normal + auto
       }
     return OnDeviceGenerateContentRequest(
-      parts = onDeviceParts,
+      contents = onDeviceContents,
       temperature = onDeviceConfig.temperature,
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,

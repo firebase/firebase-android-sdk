@@ -35,7 +35,6 @@ import com.google.mlkit.genai.prompt.Part
 import com.google.mlkit.genai.prompt.SystemInstruction
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.content
-import com.google.mlkit.genai.prompt.generateContentRequest
 import com.google.mlkit.genai.prompt.generationConfig
 import com.google.mlkit.genai.prompt.modelConfig
 import com.google.mlkit.genai.schema.tools.FunctionType
@@ -179,27 +178,46 @@ internal fun com.google.firebase.ai.ondevice.interop.FunctionSchema.toMlKit():
     items = items?.toMlKit()
   )
 
+// =======================================
+// `Content` converter extension functions
+// =======================================
+@com.google.mlkit.genai.prompt.Content.Role
+internal fun com.google.firebase.ai.ondevice.interop.Content.Role.toMlKit(): Int =
+  when (this) {
+    com.google.firebase.ai.ondevice.interop.Content.Role.USER ->
+      com.google.mlkit.genai.prompt.Content.Role.USER
+    com.google.firebase.ai.ondevice.interop.Content.Role.MODEL ->
+      com.google.mlkit.genai.prompt.Content.Role.MODEL
+  }
+
+internal fun com.google.firebase.ai.ondevice.interop.Content.toMlKit():
+  com.google.mlkit.genai.prompt.Content {
+  require(parts.isNotEmpty()) { "parts must not be empty" }
+  return content(role.toMlKit()) { this@toMlKit.parts.forEach { addPart(it.toMlKit()) } }
+}
+
 // ================================================
 // `GenerateContent*` converter extension functions
 // ================================================
 internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMlKit():
   GenerateContentRequest {
   try {
-    require(parts.isNotEmpty()) { "parts must not be empty" }
-    return generateContentRequest(
-      content { this@toMlKit.parts.forEach { addPart(it.toMlKit()) } }
-    ) {
-      temperature = this@toMlKit.temperature
-      maxOutputTokens = this@toMlKit.maxOutputTokens
-      candidateCount = this@toMlKit.candidateCount
-      topK = this@toMlKit.topK
-      seed = this@toMlKit.seed
-      systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
-      enableThinking = this@toMlKit.enableThinking ?: false
-      if (this@toMlKit.tools.isNotEmpty()) {
-        setTools(this@toMlKit.tools.map { it.toMlKit() })
+    require(contents.isNotEmpty()) { "contents must not be empty" }
+    val mlKitContents = contents.map { it.toMlKit() }
+    return GenerateContentRequest.Builder(mlKitContents)
+      .apply {
+        temperature = this@toMlKit.temperature
+        maxOutputTokens = this@toMlKit.maxOutputTokens
+        candidateCount = this@toMlKit.candidateCount
+        topK = this@toMlKit.topK
+        seed = this@toMlKit.seed
+        systemInstruction = this@toMlKit.systemInstruction?.toMlKitSystemInstruction()
+        enableThinking = this@toMlKit.enableThinking ?: false
+        if (this@toMlKit.tools.isNotEmpty()) {
+          setTools(this@toMlKit.tools.map { it.toMlKit() })
+        }
       }
-    }
+      .build()
   } catch (e: IllegalArgumentException) {
     throw FirebaseAIOnDeviceInvalidRequestException(e)
   }

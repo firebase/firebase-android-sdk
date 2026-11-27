@@ -1,5 +1,11 @@
 # Unreleased
 
+- [feature] Added support for multi-turn prompts and `Content` roles
+  (`"user"` and `"model"`) for on-device and hybrid inference modes. (#8856)
+
+- [fixed] Fixed on-device response candidates to set `Content.role` to
+  `"model"` instead of defaulting to `"user"`. (#8856)
+
 - [fixed] Fixed a crash when an error occurred during a `LiveSession` audio
   conversation, such as a server message that the SDK couldn't process or an
   exception from a function call handler. The conversation now stops and logs

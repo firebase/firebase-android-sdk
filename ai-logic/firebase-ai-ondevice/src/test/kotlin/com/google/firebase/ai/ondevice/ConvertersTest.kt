@@ -17,6 +17,7 @@
 package com.google.firebase.ai.ondevice
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.ai.ondevice.interop.Content as InteropContent
 import com.google.firebase.ai.ondevice.interop.FinishReason as InteropFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FunctionCallPart as InteropFunctionCallPart
@@ -28,6 +29,7 @@ import com.google.firebase.ai.ondevice.interop.TextPart as InteropTextPart
 import com.google.mlkit.genai.common.FunctionArgValue
 import com.google.mlkit.genai.common.FunctionCall
 import com.google.mlkit.genai.prompt.Candidate
+import com.google.mlkit.genai.prompt.Content as MlKitContent
 import com.google.mlkit.genai.prompt.CountTokensResponse
 import com.google.mlkit.genai.prompt.FunctionCallPart
 import com.google.mlkit.genai.prompt.FunctionResponsePart
@@ -157,6 +159,29 @@ internal class ConvertersTest {
   }
 
   @Test
+  fun `Content Role toMlKit should map USER and MODEL correctly`() {
+    assertThat(InteropContent.Role.USER.toMlKit()).isEqualTo(MlKitContent.Role.USER)
+    assertThat(InteropContent.Role.MODEL.toMlKit()).isEqualTo(MlKitContent.Role.MODEL)
+  }
+
+  @Test
+  fun `Content toMlKit should preserve role and parts`() {
+    val userContent = InteropContent(parts = listOf(InteropTextPart("hello")))
+    val mlKitUserContent = userContent.toMlKit()
+    assertThat(mlKitUserContent.role).isEqualTo(MlKitContent.Role.USER)
+    assertThat(mlKitUserContent.parts).containsExactly(TextPart("hello"))
+
+    val modelContent =
+      InteropContent(
+        parts = listOf(InteropTextPart("hi"), InteropTextPart("there")),
+        role = InteropContent.Role.MODEL
+      )
+    val mlKitModelContent = modelContent.toMlKit()
+    assertThat(mlKitModelContent.role).isEqualTo(MlKitContent.Role.MODEL)
+    assertThat(mlKitModelContent.parts).containsExactly(TextPart("hi"), TextPart("there")).inOrder()
+  }
+
+  @Test
   fun `GenerateContentRequest toMlKit should convert tools correctly`() {
     val schema =
       InteropFunctionSchema(
@@ -174,7 +199,7 @@ internal class ConvertersTest {
       )
     val interopRequest =
       InteropGenerateContentRequest(
-        parts = listOf(InteropTextPart("What is the weather?")),
+        contents = listOf(InteropContent(listOf(InteropTextPart("What is the weather?")))),
         tools = listOf(declaration)
       )
     val mlKitRequest = interopRequest.toMlKit()
@@ -191,7 +216,13 @@ internal class ConvertersTest {
   fun `GenerateContentRequest toMlKit should convert correctly and cover all fields`() {
     val interopRequest =
       InteropGenerateContentRequest(
-        parts = listOf(InteropTextPart("prompt 1"), InteropTextPart("prompt 2")),
+        contents =
+          listOf(
+            InteropContent(
+              parts = listOf(InteropTextPart("prompt 1"), InteropTextPart("prompt 2")),
+              role = InteropContent.Role.USER
+            )
+          ),
         temperature = 0.7f,
         topK = 20,
         seed = 42,
@@ -203,6 +234,7 @@ internal class ConvertersTest {
     val mlKitRequest = interopRequest.toMlKit()
 
     assertThat(mlKitRequest.contents).hasSize(1)
+    assertThat(mlKitRequest.contents[0].role).isEqualTo(MlKitContent.Role.USER)
     assertThat(mlKitRequest.contents[0].parts)
       .containsExactly(TextPart("prompt 1"), TextPart("prompt 2"))
       .inOrder()
@@ -216,21 +248,103 @@ internal class ConvertersTest {
   }
 
   @Test
+  fun `GenerateContentRequest toMlKit should preserve multi-turn contents and roles`() {
+    val interopRequest =
+      InteropGenerateContentRequest(
+        contents =
+          listOf(
+            InteropContent(
+              parts = listOf(InteropTextPart("What is the weather in London?")),
+              role = InteropContent.Role.USER
+            ),
+            InteropContent(
+              parts =
+                listOf(
+                  InteropFunctionCallPart("fetchWeather", mapOf("city" to "London"), "call-1")
+                ),
+              role = InteropContent.Role.MODEL
+            ),
+            InteropContent(
+              parts =
+                listOf(
+                  InteropFunctionResponsePart(
+                    "fetchWeather",
+                    mapOf("condition" to "sunny"),
+                    "call-1"
+                  )
+                ),
+              role = InteropContent.Role.USER
+            ),
+            InteropContent(
+              parts = listOf(InteropTextPart("It is sunny in London.")),
+              role = InteropContent.Role.MODEL
+            ),
+            InteropContent(
+              parts = listOf(InteropTextPart("Thanks!")),
+              role = InteropContent.Role.USER
+            )
+          )
+      )
+
+    val mlKitRequest = interopRequest.toMlKit()
+
+    assertThat(mlKitRequest.contents).hasSize(5)
+    assertThat(mlKitRequest.contents[0].role).isEqualTo(MlKitContent.Role.USER)
+    assertThat(mlKitRequest.contents[0].parts)
+      .containsExactly(TextPart("What is the weather in London?"))
+
+    assertThat(mlKitRequest.contents[1].role).isEqualTo(MlKitContent.Role.MODEL)
+    val mlKitCallPart = mlKitRequest.contents[1].parts.single() as FunctionCallPart
+    assertThat(mlKitCallPart.functionCall.name).isEqualTo("fetchWeather")
+    assertThat(mlKitCallPart.functionCall.id).isEqualTo("call-1")
+
+    assertThat(mlKitRequest.contents[2].role).isEqualTo(MlKitContent.Role.USER)
+    val mlKitResponsePart = mlKitRequest.contents[2].parts.single() as FunctionResponsePart
+    assertThat(mlKitResponsePart.name).isEqualTo("fetchWeather")
+    assertThat(mlKitResponsePart.response).isEqualTo(mapOf("condition" to "sunny"))
+    assertThat(mlKitResponsePart.id).isEqualTo("call-1")
+
+    assertThat(mlKitRequest.contents[3].role).isEqualTo(MlKitContent.Role.MODEL)
+    assertThat(mlKitRequest.contents[3].parts).containsExactly(TextPart("It is sunny in London."))
+
+    assertThat(mlKitRequest.contents[4].role).isEqualTo(MlKitContent.Role.USER)
+    assertThat(mlKitRequest.contents[4].parts).containsExactly(TextPart("Thanks!"))
+  }
+
+  @Test
   fun `GenerateContentRequest toMlKit should convert correctly optional fields`() {
-    val interopRequest = InteropGenerateContentRequest(parts = listOf(InteropTextPart("prompt")))
+    val interopRequest =
+      InteropGenerateContentRequest(
+        contents = listOf(InteropContent(listOf(InteropTextPart("prompt"))))
+      )
     val mlKitRequest = interopRequest.toMlKit()
 
     // We only assert the fields we explicitly set,
     // as ML Kit's internal defaults may vary by version or environment.
     assertThat(mlKitRequest.contents).hasSize(1)
+    assertThat(mlKitRequest.contents[0].role).isEqualTo(MlKitContent.Role.USER)
     assertThat(mlKitRequest.contents[0].parts).containsExactly(TextPart("prompt"))
     assertThat(mlKitRequest.systemInstruction).isNull()
     assertThat(mlKitRequest.enableThinking).isFalse()
   }
 
   @Test
-  fun `GenerateContentRequest toMlKit should throw when parts is empty`() {
-    val interopRequest = InteropGenerateContentRequest(parts = emptyList())
+  fun `GenerateContentRequest toMlKit should throw when contents is empty`() {
+    val interopRequest = InteropGenerateContentRequest(contents = emptyList())
+
+    assertThrows(FirebaseAIOnDeviceInvalidRequestException::class.java) { interopRequest.toMlKit() }
+  }
+
+  @Test
+  fun `GenerateContentRequest toMlKit should throw when any content has empty parts`() {
+    val interopRequest =
+      InteropGenerateContentRequest(
+        contents =
+          listOf(
+            InteropContent(listOf(InteropTextPart("hello")), InteropContent.Role.USER),
+            InteropContent(emptyList(), InteropContent.Role.MODEL)
+          )
+      )
 
     assertThrows(FirebaseAIOnDeviceInvalidRequestException::class.java) { interopRequest.toMlKit() }
   }

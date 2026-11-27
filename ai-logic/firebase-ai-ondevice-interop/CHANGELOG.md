@@ -1,5 +1,9 @@
 # Unreleased
 
+- [changed] **Breaking change:** Added `Content` and `Content.Role` and
+  updated `GenerateContentRequest` to accept `List<Content>` instead of
+  `List<Part>` to support multi-turn prompts with roles. (#8856)
+
 # 16.0.0-beta08
 
 - [feature] Added support for function calling in on-device content generation
