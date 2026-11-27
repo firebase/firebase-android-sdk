@@ -15,17 +15,26 @@
 package com.google.firebase.appcheck.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.SharedPreferences;
+import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.AppCheckToken;
@@ -34,6 +43,11 @@ import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeoutException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +70,10 @@ public class DefaultFirebaseAppCheckTest {
   private static final String TOKEN_PAYLOAD = "tokenPayload";
   private static final long EXPIRES_IN_ONE_HOUR = 60L * 60L * 1000L; // 1 hour in millis
   private static final long EXPIRES_NOW = 0L;
+  // 2100-01-01T00:00:00Z and one hour earlier, in seconds. Both are larger than Integer.MAX_VALUE,
+  // and a token restored with these claims is still valid when the tests run.
+  private static final long IAT_AFTER_2038 = 4102441200L;
+  private static final long EXP_AFTER_2038 = 4102444800L;
 
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private AppCheckProviderFactory mockAppCheckProviderFactory;
@@ -487,5 +505,225 @@ public class DefaultFirebaseAppCheckTest {
     assertThat(tokenTask.isComplete()).isTrue();
     assertThat(tokenTask.isSuccessful()).isTrue();
     assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  @Test
+  public void testGetToken_customTokenWithClaimsAfter2038_returnsToken() throws Exception {
+    String rawToken = constructFakeRawToken(IAT_AFTER_2038, EXP_AFTER_2038);
+    AppCheckToken customToken = mock(AppCheckToken.class);
+    when(customToken.getToken()).thenReturn(rawToken);
+    when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(customToken));
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    Task<AppCheckTokenResult> tokenTask =
+        defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNull();
+    assertThat(tokenTask.getResult().getToken()).isEqualTo(rawToken);
+  }
+
+  @Test
+  public void testConstructor_storedCustomTokenWithClaimsAfter2038_restoresToken()
+      throws Exception {
+    String rawToken = constructFakeRawToken(IAT_AFTER_2038, EXP_AFTER_2038);
+    AppCheckToken customToken = mock(AppCheckToken.class);
+    when(customToken.getToken()).thenReturn(rawToken);
+    new StorageHelper(ApplicationProvider.getApplicationContext(), PERSISTENCE_KEY)
+        .saveAppCheckToken(customToken);
+
+    // Like on the next app launch, a new instance restores the stored token.
+    DefaultFirebaseAppCheck restartedFirebaseAppCheck =
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            TestOnlyExecutors.ui(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            /* backgroundExecutor= */ MoreExecutors.directExecutor(),
+            TestOnlyExecutors.blocking());
+    Task<AppCheckTokenResult> tokenTask =
+        restartedFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNull();
+    assertThat(tokenTask.getResult().getToken()).isEqualTo(rawToken);
+  }
+
+  @Test
+  public void testGetToken_storageUnavailable_doesNotThrowOrHang() {
+    Context contextWithoutStorage =
+        new ContextWrapper(ApplicationProvider.getApplicationContext()) {
+          @Override
+          public SharedPreferences getSharedPreferences(String name, int mode) {
+            throw new IllegalStateException("Storage is not available");
+          }
+        };
+    when(mockFirebaseApp.getApplicationContext()).thenReturn(contextWithoutStorage);
+    List<RuntimeException> backgroundExceptions = new ArrayList<>();
+    // Like a thread pool, this executor does not throw exceptions from the task to the caller.
+    Executor backgroundExecutor =
+        runnable -> {
+          try {
+            runnable.run();
+          } catch (RuntimeException e) {
+            backgroundExceptions.add(e);
+          }
+        };
+
+    DefaultFirebaseAppCheck firebaseAppCheck =
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            TestOnlyExecutors.ui(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            backgroundExecutor,
+            TestOnlyExecutors.blocking());
+    Task<AppCheckTokenResult> tokenTask = firebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    // Restoring the stored token fails without throwing, and the token request still completes
+    // (with an error, because no provider is installed).
+    assertThat(backgroundExceptions).isEmpty();
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  @Test
+  public void testGetAppCheckToken_providerNeverCompletes_failsAfterTimeout() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
+
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS - 1, SECONDS);
+    assertThat(tokenTask.isComplete()).isFalse();
+
+    ShadowLooper.idleMainLooper(1, SECONDS);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isFalse();
+    assertThat(tokenTask.getException()).isInstanceOf(FirebaseException.class);
+    assertThat(tokenTask.getException()).hasMessageThat().contains("Timed out");
+    assertThat(tokenTask.getException()).hasCauseThat().isInstanceOf(TimeoutException.class);
+  }
+
+  @Test
+  public void testGetToken_providerNeverCompletes_returnsResultWithErrorAfterTimeout() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
+
+    Task<AppCheckTokenResult> tokenTask =
+        defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+    assertThat(tokenTask.isComplete()).isFalse();
+
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getResult().getToken()).isNotNull();
+    assertThat(tokenTask.getResult().getError()).hasMessageThat().contains("Timed out");
+  }
+
+  @Test
+  public void testGetAppCheckToken_afterProviderTimeout_requestsNewToken() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask())
+        .thenReturn(Tasks.forResult(validDefaultAppCheckToken));
+    Task<AppCheckToken> hangingTokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
+    assertThat(hangingTokenTask.isSuccessful()).isFalse();
+
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
+    ShadowLooper.idleMainLooper();
+
+    verify(mockAppCheckProvider, times(2)).getToken();
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
+  }
+
+  @Test
+  public void testGetAppCheckToken_providerCompletesBeforeTimeout_returnsToken() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    TaskCompletionSource<AppCheckToken> providerTaskSource = new TaskCompletionSource<>();
+    when(mockAppCheckProvider.getToken()).thenReturn(providerTaskSource.getTask());
+
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    providerTaskSource.setResult(validDefaultAppCheckToken);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
+    // The timeout doesn't change the result later.
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
+    assertThat(tokenTask.isSuccessful()).isTrue();
+  }
+
+  @Test
+  public void testGetAppCheckToken_providerFailsBeforeTimeout_failsWithProviderException() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    TaskCompletionSource<AppCheckToken> providerTaskSource = new TaskCompletionSource<>();
+    when(mockAppCheckProvider.getToken()).thenReturn(providerTaskSource.getTask());
+
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    providerTaskSource.setException(new Exception(EXCEPTION_TEXT));
+    ShadowLooper.idleMainLooper();
+
+    assertThat(tokenTask.isSuccessful()).isFalse();
+    assertThat(tokenTask.getException()).hasMessageThat().isEqualTo(EXCEPTION_TEXT);
+  }
+
+  @Test
+  public void testGetLimitedUseAppCheckToken_providerNeverCompletes_failsAfterTimeout() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getLimitedUseToken())
+        .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
+
+    Task<AppCheckToken> tokenTask = defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
+    assertThat(tokenTask.isComplete()).isFalse();
+
+    ShadowLooper.idleMainLooper(DefaultFirebaseAppCheck.PROVIDER_TIMEOUT_SECONDS, SECONDS);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.getException()).hasMessageThat().contains("Timed out");
+  }
+
+  @Test
+  public void testInstallAppCheckProviderFactory_pendingRequest_usesNewProvider() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(new TaskCompletionSource<AppCheckToken>().getTask());
+    Task<AppCheckToken> hangingTokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    AppCheckProvider newAppCheckProvider = mock(AppCheckProvider.class);
+    when(newAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
+    AppCheckProviderFactory newAppCheckProviderFactory = mock(AppCheckProviderFactory.class);
+    when(newAppCheckProviderFactory.create(any())).thenReturn(newAppCheckProvider);
+
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(newAppCheckProviderFactory);
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(hangingTokenTask.isComplete()).isFalse();
+    verify(newAppCheckProvider).getToken();
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult()).isEqualTo(validDefaultAppCheckToken);
+  }
+
+  private static String constructFakeRawToken(long iat, long exp) throws Exception {
+    JSONObject claims = new JSONObject();
+    claims.put(DefaultAppCheckToken.ISSUED_AT_KEY, iat);
+    claims.put(DefaultAppCheckToken.EXPIRATION_TIME_KEY, exp);
+    // Raw tokens are JWTs with 3 parts which are split by '.'.
+    return "header."
+        + Base64.encodeToString(
+            claims.toString().getBytes(), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING)
+        + ".signature";
   }
 }

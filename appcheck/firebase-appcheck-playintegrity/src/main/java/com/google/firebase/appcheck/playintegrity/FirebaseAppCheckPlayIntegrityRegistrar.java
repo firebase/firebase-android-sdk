@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck.playintegrity;
 
+import androidx.annotation.Keep;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
@@ -35,6 +36,7 @@ import java.util.concurrent.Executor;
  * @hide
  */
 @KeepForSdk
+@Keep
 public class FirebaseAppCheckPlayIntegrityRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-app-check-play-integrity";
 

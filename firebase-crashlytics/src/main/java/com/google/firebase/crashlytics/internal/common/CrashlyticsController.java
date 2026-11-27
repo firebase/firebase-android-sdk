@@ -257,11 +257,10 @@ class CrashlyticsController {
                     && !isOnDemand) {
                   Logger.getLogger().i("OOMs will be sent on restart");
 
-                  ActivityManager activityManager =
-                      (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                  activityManager.setProcessStateSummary("OOM, Java Heap".getBytes());
+                  // Leave the session open so it can be finalized on the next launch, where this
+                  // marker tells us the trigger was an OOM so any heap dump can be attached
+                  reportingCoordinator.persistOomMarker(currentSessionId);
 
-                  crashMarker.remove();
                   return Tasks.forResult(null);
                 }
 
@@ -577,51 +576,61 @@ class CrashlyticsController {
   }
 
   private void triggerHeapdumpUpload() {
-    if (isActiveNetworkMetered()) {
-      Logger.getLogger().i("Won't upload heap dumps due to metered network");
-      return;
+    if (!dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
+      Logger.getLogger().d("Waiting for data collection to be enabled before uploading heap dumps");
     }
 
-    resumableUploadMetadataStore
-        .getUpload()
-        .ifPresent(
-            upload -> {
-              String gmpAppId = appData.googleAppId;
-              String sessionId = upload.sessionId;
-              String heapdump = upload.path;
-
-              Logger.getLogger().d("About to trigger an upload!");
-
-              if (upload.isInProgress()) {
-                scottyUploader.resumeUpload(
-                    heapdump,
-                    upload.handle,
-                    new ScottyUploader.Listener() {
-                      @Override
-                      public void onDoneOrUnrecoverable() {
-                        resumableUploadMetadataStore.removeInProgressUpload(heapdump);
-                      }
-                    });
+    dataCollectionArbiter
+        .waitForAutomaticDataCollectionEnabled()
+        .addOnSuccessListener(
+            crashlyticsWorkers.common,
+            unused -> {
+              if (isActiveNetworkMetered()) {
+                Logger.getLogger().i("Won't upload heap dumps due to metered network");
+                return;
               }
 
-              if (upload.isNew()) {
-                scottyUploader.triggerUpload(
-                    gmpAppId,
-                    sessionId,
-                    upload.type,
-                    heapdump,
-                    new ScottyUploader.Listener() {
-                      @Override
-                      public void onHandleAvailable(String handle) {
-                        resumableUploadMetadataStore.updateHandle(heapdump, handle);
-                      }
+              resumableUploadMetadataStore
+                  .getUpload()
+                  .ifPresent(
+                      upload -> {
+                        String gmpAppId = appData.googleAppId;
+                        String sessionId = upload.sessionId;
+                        String heapdump = upload.path;
 
-                      @Override
-                      public void onDoneOrUnrecoverable() {
-                        resumableUploadMetadataStore.removeInProgressUpload(heapdump);
-                      }
-                    });
-              }
+                        Logger.getLogger().d("About to trigger an upload!");
+
+                        if (upload.isInProgress()) {
+                          scottyUploader.resumeUpload(
+                              heapdump,
+                              upload.handle,
+                              new ScottyUploader.Listener() {
+                                @Override
+                                public void onDoneOrUnrecoverable() {
+                                  resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                                }
+                              });
+                        }
+
+                        if (upload.isNew()) {
+                          scottyUploader.triggerUpload(
+                              gmpAppId,
+                              sessionId,
+                              upload.type,
+                              heapdump,
+                              new ScottyUploader.Listener() {
+                                @Override
+                                public void onHandleAvailable(String handle) {
+                                  resumableUploadMetadataStore.updateHandle(heapdump, handle);
+                                }
+
+                                @Override
+                                public void onDoneOrUnrecoverable() {
+                                  resumableUploadMetadataStore.removeInProgressUpload(heapdump);
+                                }
+                              });
+                        }
+                      });
             });
   }
 
@@ -1056,9 +1065,15 @@ class CrashlyticsController {
 
     List<ApplicationExitInfo> appExits = manager.getHistoricalProcessExitReasons(null, 0, 0);
 
+    LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
+    UserMetadata relevantUserMetadata =
+        UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
+
     reportingCoordinator.persistProfilingManagerInfo(
         context.getFilesDir(),
         sessionId,
+        relevantSessionLogManager,
+        relevantUserMetadata,
         appExits,
         settingsProvider.getSettingsSync().profiling.heapDumpCollectionEnabled);
   }

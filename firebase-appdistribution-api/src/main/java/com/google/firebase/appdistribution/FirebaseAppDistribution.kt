@@ -16,11 +16,8 @@
 
 package com.google.firebase.appdistribution
 
-import androidx.annotation.Keep
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 
 /** Returns the [FirebaseAppDistribution] instance of the default [FirebaseApp]. */
 val Firebase.appDistribution: FirebaseAppDistribution
@@ -74,9 +71,3 @@ operator fun UpdateProgress.component2() = apkFileTotalBytes
  * @return the updateStatus of the [UpdateProgress]
  */
 operator fun UpdateProgress.component3() = updateStatus
-
-/** @suppress */
-@Keep
-class FirebaseAppDistributionKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}

@@ -16,12 +16,9 @@
 
 package com.google.firebase.storage
 
-import androidx.annotation.Keep
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
@@ -176,9 +173,3 @@ val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T
       removeOnCompleteListener(completionListener)
     }
   }
-
-/** @suppress */
-@Keep
-class FirebaseStorageKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> = listOf()
-}
