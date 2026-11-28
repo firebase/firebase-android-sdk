@@ -13,6 +13,8 @@
 - [fixed] Fixed a crash when the Realtime Database server sent a host or
   session ID that wasn't valid in a URL. The SDK now ignores the value.
   (#8780)
+- [fixed] Fixed a crash when calling `keepSynced(true)` and `get()` on the
+  same query. (#8544)
 
 # 23.0.0
 
