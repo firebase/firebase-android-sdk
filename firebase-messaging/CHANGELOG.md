@@ -1,5 +1,6 @@
 # Unreleased
 
+- [fixed] Fixed race condition de-duplicating received messages.
 - [changed] Added support for setting notification ID from the notification payload. (#8737)
 
 # 26.0.2
