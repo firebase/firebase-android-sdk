@@ -20,6 +20,7 @@ import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
@@ -106,10 +107,27 @@ public class WatchStream
 
   @Override
   public void onNext(ListenResponse listenResponse) {
-    // A successful response means the stream is healthy
+    // A successful response means the stream is healthy. This is also true for a response that is
+    // ignored below because this SDK version does not recognize it.
     backoff.reset();
 
     WatchChange watchChange = serializer.decodeWatchChange(listenResponse);
+    if (watchChange == null) {
+      // The response uses a response type or target change type that this SDK version does not
+      // recognize, for example one that was added to the backend later. Ignore it, like protobuf
+      // ignores unknown fields, instead of failing. Do not compute a snapshot version from it
+      // either, because its meaning is unknown.
+      Logger.warn(
+          getClass().getSimpleName(),
+          "(%x) Ignoring unrecognized listen response (response type: %s, target change type: %s)",
+          System.identityHashCode(this),
+          listenResponse.getResponseTypeCase(),
+          listenResponse.hasTargetChange()
+              ? listenResponse.getTargetChange().getTargetChangeTypeValue()
+              : "none");
+      return;
+    }
+
     SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(listenResponse);
     listener.onWatchChange(snapshotVersion, watchChange);
   }
